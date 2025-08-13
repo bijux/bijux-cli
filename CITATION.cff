@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as:"
+title: "bijux-cli"
+version: "0.1.0"
+date-released: 2025-08-11
+authors:
+  - family-names: "Mousavi"
+    given-names: "Bijan"
+    orcid: "https://orcid.org/0009-0002-4092-2854"
+repository-code: "https://github.com/bijux/bijux-cli"
+url: "https://github.com/bijux/bijux-cli"
+license: "MIT"
+keywords: ["cli", "developer-tools", "plugins"]
+preferred-citation:
+  type: software
+  title: "bijux-cli"
+  version: "0.1.0"
+  authors:
+    - family-names: "Mousavi"
+      given-names: "Bijan"
+  year: 2025
+  month: 8
+  url: "https://github.com/bijux/bijux-cli"

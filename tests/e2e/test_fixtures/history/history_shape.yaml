@@ -1,0 +1,7 @@
+entries:
+- command: version
+  params: []
+  timestamp: 1753807141.480036
+  success: true
+  return_code: 0
+  duration_ms: 0.0

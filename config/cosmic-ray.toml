@@ -1,0 +1,23 @@
+[cosmic-ray]
+python        = "python3.11"
+test-command  = "pytest -q -x -k 'not slow' --tb=short --disable-warnings"
+module-path   = ["src/bijux_cli"]
+timeout       = 300.0
+
+[cosmic-ray.distributor]
+name              = "local"
+worker-processes  = 4
+
+[cosmic-ray.mutators]
+enabled = [
+  "arithmetic",
+  "boolean",
+  "comparison",
+  "constant",
+  "return-value",
+]
+
+[cosmic-ray.logging]
+level   = "INFO"
+file    = "artifacts/cosmic-ray.log"
+format  = "plain"

@@ -1,0 +1,403 @@
+openapi: 3.0.3
+info:
+  title: Bijux CLI API
+  version: 1.0.0
+  description: |
+    Elite, production-grade OpenAPI schema for Bijux CLI item management.
+    Includes robust error handling, pagination, and industry-standard response objects.
+    Designed for SDK/code generation, documentation, monitoring, and security review.
+  contact:
+    name: Bijux CLI Support
+    url: https://bijux-cli.dev/support
+    email: mousavi.bijan@gmail.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+tags:
+  - name: Items
+    description: Operations related to items
+servers:
+  - url: http://127.0.0.1:8000/v1
+    description: Local development server
+  - url: https://api.bijux-cli.dev/v1
+    description: |
+      Production API server (planned; not live yet).
+      This URL is a placeholder. API endpoints are not currently deployed.
+security: []
+
+paths:
+  /items:
+    get:
+      tags: [Items]
+      summary: List all items
+      description: |
+        Retrieves all items with pagination.
+        Results are paginated. Use `limit` and `offset` query parameters.
+      operationId: listItems
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of items to return (default 10, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 20
+        - name: offset
+          in: query
+          description: Offset from start of the list (for pagination)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+      responses:
+        '200':
+          description: A paginated list of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList'
+              examples:
+                success:
+                  value:
+                    items:
+                      - id: 1
+                        name: "Item One"
+                        description: "Desc1"
+                      - id: 2
+                        name: "Item Two"
+                        description: "Desc2"
+                    total: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Items]
+      summary: Create a new item
+      description: Creates a new item with the provided data.
+      operationId: createItem
+      requestBody:
+        description: Data for the new item
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+            examples:
+              create:
+                value:
+                  name: "New Item"
+                  description: "A new item description"
+      responses:
+        '201':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                created:
+                  value:
+                    id: 3
+                    name: "New Item"
+                    description: "A new item description"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /items/{item_id}:
+    get:
+      tags: [Items]
+      summary: Get item by ID
+      description: Retrieve item details by unique ID.
+      operationId: getItemById
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Unique item identifier
+          example: 1
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                found:
+                  value:
+                    id: 1
+                    name: "Item One"
+                    description: "Desc1"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Items]
+      summary: Update item by ID
+      description: Updates an existing item with the provided data.
+      operationId: updateItemById
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Unique item identifier
+          example: 1
+      requestBody:
+        description: Updated data for the item
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+            examples:
+              update:
+                value:
+                  name: "Updated Item"
+                  description: "Updated description"
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                updated:
+                  value:
+                    id: 1
+                    name: "Updated Item"
+                    description: "Updated description"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Items]
+      summary: Delete item by ID
+      description: Deletes an item by its unique ID.
+      operationId: deleteItemById
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Unique item identifier
+          example: 1
+      responses:
+        '204':
+          description: Item deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  schemas:
+    ItemCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Item name
+          minLength: 1
+          maxLength: 100
+          example: "Sample"
+        description:
+          type: string
+          description: Optional item description
+          maxLength: 500
+          nullable: true
+          example: "Details about this item"
+      required: [name]
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Item ID
+          example: 1
+        name:
+          type: string
+          description: Item name
+          example: "Item One"
+        description:
+          type: string
+          description: Optional item description
+          nullable: true
+          example: "Desc1"
+      required: [id, name]
+
+    ItemList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        total:
+          type: integer
+          description: Total items available
+          example: 2
+      required: [items, total]
+
+    Problem:
+      type: object
+      description: Error object in RFC7807 format
+      properties:
+        type:
+          type: string
+          description: Error type URI
+          example: "https://bijux-cli.dev/docs/errors/invalid-request"
+        title:
+          type: string
+          description: Short, human-readable summary
+          example: "Invalid request"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Detailed explanation
+          example: "Query parameter 'limit' must be between 1 and 100"
+        instance:
+          type: string
+          description: URI of the request/instance
+          example: "/items?limit=1000"
+
+  responses:
+    BadRequest:
+      description: Invalid request (bad parameters, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            badRequest:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/invalid-request"
+                title: "Invalid request"
+                status: 400
+                detail: "Query parameter 'limit' must be between 1 and 100"
+                instance: "/items?limit=1000"
+
+    NotFound:
+      description: Item not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            notFound:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/not-found"
+                title: "Not found"
+                status: 404
+                detail: "Item not found"
+                instance: "/items/99"
+
+    Conflict:
+      description: Conflict (e.g., duplicate name)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            conflict:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/conflict"
+                title: "Conflict"
+                status: 409
+                detail: "Item with this name already exists"
+                instance: "/items"
+
+    ValidationError:
+      description: Unprocessable entity (validation failed)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            validation:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/validation-error"
+                title: "Validation error"
+                status: 422
+                detail: "Input validation failed"
+                instance: "/items"
+
+    RateLimit:
+      description: Too many requests
+      headers:
+        Retry-After:
+          description: How many seconds to wait before retrying
+          schema:
+            type: integer
+            example: 60
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            rateLimit:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/rate-limit"
+                title: "Rate limit exceeded"
+                status: 429
+                detail: "Too many requests, slow down"
+                instance: "/items"
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            serverError:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/internal-server-error"
+                title: "Internal server error"
+                status: 500
+                detail: "An unexpected error occurred"
+                instance: "/items"

@@ -1,0 +1,113 @@
+site_name: Bijux CLI
+site_url: https://bijux.github.io/bijux-cli/
+repo_url: https://github.com/bijux/bijux-cli
+repo_name: bijux/bijux-cli
+edit_uri: edit/main/docs/
+
+strict: true
+use_directory_urls: true
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/bijux_logo_hq.png
+  favicon: assets/bijux_icon.png
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: lime
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.instant
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            docstring_section_style: list
+            merge_init_into_class: true
+            show_source: true
+            show_if_no_docstring: false
+  - include-markdown:
+      recursive: true
+      dedent: true
+      preserve_includer_indent: false
+      trailing_newlines: true
+      comments: false
+      rewrite_relative_urls: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+      enabled: !ENV [CI, false]
+  - gen-files:
+      scripts:
+        - scripts/helper_mkdocs.py
+  - literate-nav:
+      nav_file: nav.md
+  - autorefs
+  - redirects:
+      redirect_maps:
+        'CONTRIBUTING.md': 'contributing.md'
+        'SECURITY.md': 'security.md'
+        'CODE_OF_CONDUCT.md': 'code_of_conduct.md'
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - docs
+        - .
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - pymdownx.magiclink
+  - pymdownx.tasklist
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+
+
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+watch:
+  - src
+  - scripts
+  - config

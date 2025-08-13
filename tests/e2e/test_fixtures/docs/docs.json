@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "commands": [
+    "audit",
+    "config",
+    "dev",
+    "docs",
+    "doctor",
+    "help",
+    "history",
+    "memory",
+    "plugins",
+    "repl",
+    "sleep",
+    "status",
+    "version"
+  ],
+  "python": "3.11.9",
+  "platform": "macOS-15.5-arm64-arm-64bit"
+}

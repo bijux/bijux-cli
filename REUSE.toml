@@ -1,0 +1,35 @@
+version = 1
+
+# Config/docs/assets: public domain
+[[annotations]]
+path = [
+  "**/*.png", "**/*.svg", "**/*.ico", "**/*.gif", "**/*.jpg", "**/*.jpeg",
+  "**/*.html", "**/*.toml", "**/*.ini", "**/*.cfg", "**/*.conf",
+  "**/*.env", "**/*.env.*", "**/*.yaml", "**/*.yml", "**/*.json",
+  "**/*.cff", "**/*.dic", ".coverage*", ".gitattributes", ".gitignore",
+  "changelog.d/**", "**/.editorconfig", "artifacts/**", "scripts/git-hooks/**"
+]
+precedence = "override"
+SPDX-License-Identifier = "CC0-1.0"
+SPDX-FileCopyrightText = "© 2025 Bijan Mousavi"
+
+# Templates: public domain
+[[annotations]]
+path = ["plugin_template/**"]
+precedence = "override"
+SPDX-License-Identifier = "CC0-1.0"
+SPDX-FileCopyrightText = "© 2025 Bijan Mousavi"
+
+# Code: MIT
+[[annotations]]
+path = ["**/*.py", "**/*.pyi", "**/*.sh", "**/*.mk", "Makefile", "Dockerfile", "Dockerfile.*"]
+precedence = "closest"
+SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "© 2025 Bijan Mousavi"
+
+# Markdown docs: MIT
+[[annotations]]
+path = ["**/*.md"]
+precedence = "closest"
+SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "© 2025 Bijan Mousavi"

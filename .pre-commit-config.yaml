@@ -1,0 +1,144 @@
+ci:
+  autofix_prs: true
+  autoupdate_schedule: monthly
+
+fail_fast: true
+minimum_pre_commit_version: "3.7.0"
+
+default_language_version:
+  python: python3.11
+
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+
+exclude: |
+  (?x)^(
+    node_modules/|
+    \.venv/|
+    dist/|
+    build/|
+    artifacts/|
+    site/|
+    plugin_template/|
+    .*/__pycache__/|
+    .*\.min\.(js|css)$
+  )
+
+repos:
+  # --- Core hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-ast
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ["--allow-missing-credentials"]
+      - id: forbid-new-submodules
+      - id: end-of-file-fixer
+        exclude: |
+          (?x)^(
+            tests/(e2e|integration|functional)/test_fixtures/|
+            tests/.*/snapshots/
+          )
+      - id: trailing-whitespace
+        exclude: |
+          (?x)^(
+            tests/(e2e|integration|functional)/test_fixtures/|
+            tests/.*/snapshots/
+          )
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: |
+          (?x)^(
+            tests/(e2e|integration|functional)/test_fixtures/|
+            tests/.*/snapshots/
+          )
+      - id: check-yaml
+        args: ["--allow-multiple-documents", "--unsafe"]
+      - id: check-json
+        files: \.json$
+        exclude: |
+          (?x)^(
+            tests/(e2e|integration|functional)/test_fixtures/.*\.json$
+            | tests/.*/snapshots/.*\.json$
+          )
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=300"]
+      - id: debug-statements
+      - id: pretty-format-json
+        files: \.json$
+        exclude: |
+          (?x)^(
+            tests/(e2e|integration|functional)/test_fixtures/.*\.json$
+          )
+        args: ["--autofix", "--no-sort-keys"]
+
+  # --- Ruff (src/ and tests/)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.8
+    hooks:
+      - id: ruff-format
+        types: [python]
+        files: ^(src/|tests/)
+        args: ["--config", "config/ruff.toml"]
+        stages: [pre-commit]
+      - id: ruff
+        types: [python]
+        files: ^(src/|tests/)
+        args: ["--fix", "--config", "config/ruff.toml"]
+        stages: [pre-commit]
+
+  # --- Markdown formatting
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        additional_dependencies: [mdformat-gfm, mdformat-frontmatter]
+        files: ^(docs/|README\.md|CONTRIBUTING\.md|USAGE\.md|SECURITY\.md|CODE_OF_CONDUCT\.md)$
+        args: ["--wrap", "88"]
+
+  # --- Spelling
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args: ["-I", "config/bijux.dic"]
+        exclude: "^CHANGELOG\\.md$"
+
+  # --- Conventional commits
+  - repo: local
+    hooks:
+      - id: no-commit-to-main
+        name: prevent direct commits to main
+        entry: bash -c 'branch="$(git rev-parse --abbrev-ref HEAD)"; test "$branch" != "main" || { echo "Do not commit to main"; exit 1; }'
+        language: system
+        stages: [pre-commit]
+
+      - id: commitizen-check
+        name: commitizen check message
+        entry: cz check --commit-msg-file
+        language: system
+        stages: [commit-msg]
+        pass_filenames: true
+
+  # --- Heavy checks via Makefile gate
+  - repo: local
+    hooks:
+      - id: gate-pre-push
+        name: project gate (make pre-push)
+        entry: make pre-push
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+  # --- Towncrier
+  - repo: local
+    hooks:
+      - id: towncrier-fragment-required
+        name: towncrier - require fragment for user-facing commits
+        language: script
+        stages: [ commit-msg ]
+        entry: scripts/check-towncrier-fragment.sh

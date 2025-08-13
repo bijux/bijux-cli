@@ -1,0 +1,42 @@
+# Ensure consistent line endings for all text files
+*        text=auto
+
+# Force LF line endings for source code (especially Python)
+*.py     text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+*.sh     text eol=lf
+*.toml   text eol=lf
+*.cfg    text eol=lf
+*.ini    text eol=lf
+*.txt    text eol=lf
+
+# Prevent CRLF for code and config, enforce as-needed for Windows binaries/scripts
+*.bat    text eol=crlf
+*.ps1    text eol=crlf
+
+# Treat images and binaries as binary (no line ending normalization)
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.zip    binary
+*.tar.gz binary
+*.whl    binary
+*.so     binary
+*.dll    binary
+*.exe    binary
+*.h5     binary
+*.bam    binary
+*.bai    binary
+*.vcf.gz binary
+*.bcf    binary
+*.db     binary
+*.pkl    binary
+
+# Unicode normalization
+*.txt   text working-tree-encoding=UTF-8

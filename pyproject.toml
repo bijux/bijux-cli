@@ -1,0 +1,216 @@
+[build-system]
+requires = [
+  "hatchling>=1.27.0,<1.28",
+  "hatch-fancy-pypi-readme>=24.2,<26.0",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "bijux-cli"
+version = "0.1.0"
+description = "Lean, plug-in-driven CLI kernel"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+license = {file = "LICENSES/MIT.txt" }
+authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
+keywords = ["cli", "developer-tools", "plugins"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Utilities",
+  "Framework :: FastAPI",
+  "Typing :: Typed",
+]
+
+dependencies = [
+  "typer>=0.12.5",
+  "click>=8.1.7",
+  "pydantic>=2.9.2,<3.0",
+  "pydantic-settings~=2.0",
+  "packaging>=23.0",
+  "injector>=0.20.1",
+  "fastapi>=0.110,<1.0",
+  "orjson>=3.9.0",
+  "pyyaml>=6.0.2",
+  "cookiecutter>=2.3.0",
+  "cryptography>=44.0.1",
+  "psutil>=6.0.0",
+  "rapidfuzz>=3.0.0",
+  "prompt_toolkit>=3.0.0",
+  "structlog>=24.4.0",
+  "colorama>=0.4.6",
+  "pluggy>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "types-PyYAML>=6.0.12,<7.0",
+  "types-orjson>=3.6.0,<4.0",
+  "types-colorama>=0.0.14,<1.0",
+  "types-psutil>=6.0.0,<7.0",
+  "typing-extensions>=4.5.0,<5.0",
+
+  "pytest>=8.4.1,<9.0",
+  "pytest-cov>=6.2.1,<7.0",
+  "pytest-asyncio>=1.0.0,<2.0",
+  "pytest-timeout>=2.4.0,<3.0",
+  "pytest-rerunfailures>=13.0,<14.0",
+  "pytest-benchmark>=4.0.0,<5.0",
+  "hypothesis>=6.103.0,<7.0",
+  "hypothesis-jsonschema>=0.23.0,<1.0",
+  "pexpect>=4.8.0,<5.0",
+
+  "black>=25.1.0,<26.0",
+  "isort>=5.11.0,<6.0",
+  "ruff>=0.6.8,<1.0",
+  "mypy>=1.11.2,<2.0",
+  "pytype>=2024.10.11",
+  "codespell>=2.3.0,<3.0",
+  "pyright>=1.1.320,<2.0",
+  "pydocstyle>=6.2.1,<7.0",
+  "radon>=5.1.0,<6.0",
+
+  "vulture>=2.7,<3.0",
+  "deptry>=0.10.0,<1.0",
+  "reuse>=4.0.0,<6.0.0",
+
+  "build>=1.0.3,<2.0",
+  "bandit>=1.7.10,<2.0",
+  "pip-audit>=2.7.3,<3.0",
+  "commitizen>=3.21.0,<4.0",
+
+  "interrogate>=1.7.0,<2.0",
+  "mkdocs>=1.6.1,<2.0",
+  "mkdocs-material>=9.5.39,<10.0",
+  "mkdocstrings[python]>=0.26.1,<1.0",
+  "mkdocs-git-revision-date-localized-plugin>=1.2.0,<2.0",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-redirects>=1.2,<2.0",
+
+  "prance>=0.22.0,<1.0",
+  "openapi-spec-validator>=0.7.1,<1.0",
+  "schemathesis>=3.16.0,<4.0",
+  "anyio>=4.4.0,<5.0",
+  "uvicorn>=0.30.1,<1.0",
+
+  "pre-commit>=3.8.0,<4.0",
+  "twine>=6.1.0,<7.0",
+  "towncrier>=23.0,<25.0",
+
+  "mutmut>=2.1.0,<3.0",
+  "cosmic-ray>=4.0.0",
+]
+
+[project.scripts]
+bijux = "bijux_cli.__main__:main"
+
+[project.urls]
+"Homepage" = "https://github.com/bijux/bijux-cli"
+"Repository" = "https://github.com/bijux/bijux-cli.git"
+"Bug Tracker" = "https://github.com/bijux/bijux-cli/issues"
+"Documentation" = "https://bijux.github.io/bijux-cli/"
+"Changelog" = "https://github.com/bijux/bijux-cli/releases"
+
+# bijux start
+[tool.bijux]
+api_version = "0.1.0"
+# bijux end
+
+# hatch start
+[tool.hatch.build]
+include = [
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "LICENSES/**",
+  "REUSE.toml",
+  "CITATION.cff",
+  "src/bijux_cli/py.typed",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bijux_cli"]
+zip-safe = false
+include = ["/bijux_cli"]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+fragments = [
+  { path = "README.md" },
+  { path = "CHANGELOG.md" },
+]
+# hatch end
+
+# deptry start
+[tool.deptry]
+ignore = ["DEP002", "DEP003"]
+# deptry end
+
+# interrogate start
+[tool.interrogate]
+fail-under = 98
+exclude = ["src/bijux_cli/core/di.py"]
+color = true
+# interrogate end
+
+# commitizen start
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = ["pyproject.toml:project.version"]
+tag_format = "v$version"
+update_changelog_on_bump = false
+version_files = ["pyproject.toml:project.version"]
+# commitizen end
+
+# towncrier start
+[tool.towncrier]
+filename = "CHANGELOG.md"
+directory = "changelog.d"
+title_format = "## [{version}] – {project_date}"
+issue_format = "[#{issue}](https://github.com/bijux/bijux-cli/issues/{issue})"
+start_string = "<!-- towncrier start -->"
+all_bullets = true
+single_file = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "New Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "refactor"
+name = "Refactoring"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "chore"
+name = "Miscellaneous Chores"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "trivial"
+name = "Trivial"
+showcontent = false
+# towncrier end

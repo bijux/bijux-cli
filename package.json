@@ -1,0 +1,31 @@
+{
+  "name": "bijux-cli-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dev dependencies for OpenAPI validation (Redocly CLI, OpenAPI Generator CLI) in Bijux CLI project.",
+  "scripts": {
+    "lint:openapi": "npx redocly lint api/v1/schema.yaml",
+    "validate:openapi": "npx openapi-generator-cli validate -i api/v1/schema.yaml"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.22.0",
+    "@redocly/cli": "2.0.5"
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bijux/bijux-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bijux/bijux-cli/issues"
+  },
+  "homepage": "https://github.com/bijux/bijux-cli#readme"
+}
