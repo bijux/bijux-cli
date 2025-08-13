@@ -1,0 +1,42 @@
+[project]
+name = "{{cookiecutter.project_name}}"
+version = "{{cookiecutter.plugin_version}}"
+description = "Bijux CLI plugin for {{cookiecutter.project_name}}"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com"},
+]
+dependencies = [
+    "bijux-cli>={{cookiecutter.cli_min}},<{{cookiecutter.cli_max}}"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "typer[all]",
+    "cookiecutter"
+]
+
+[project.urls]
+Homepage = "https://github.com/bijanflow/{{cookiecutter.project_slug}}"
+
+[tool.hatch.version]
+path = "{{cookiecutter.project_slug}}/plugin.py"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.entry-points."bijux_cli.plugins"]
+{{cookiecutter.project_name}} = "{{cookiecutter.project_slug}}.plugin:Plugin"
+
+[tool.setuptools.package-data]
+"{{cookiecutter.project_slug}}" = ["*.json"]
+
+[project.metadata]
+requires-cli-api = "~={{cookiecutter.api_major_minor}}"
+requires-cli-version = ">={{cookiecutter.cli_min}},<{{cookiecutter.cli_max}}"
+template-version = "{{cookiecutter._template_version}}"

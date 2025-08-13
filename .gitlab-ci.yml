@@ -1,0 +1,50 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+stages:
+  - test
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+default:
+  interruptible: true
+  cache:
+    key: "$CI_JOB_NAME-$PYTHON_VERSION"
+    paths:
+      - .cache/pip
+
+tox:
+  stage: test
+  image: python:${PYTHON_VERSION}
+  parallel:
+    matrix:
+      - PYTHON_VERSION: "3.11"
+        TOX_ENVS: "py311,lint,quality,security,api,docs,build,sbom,changelog,citation"
+      - PYTHON_VERSION: "3.12"
+        TOX_ENVS: "py312"
+      - PYTHON_VERSION: "3.13"
+        TOX_ENVS: "py313"
+  before_script:
+    - python -V
+    - python -m pip install -U pip tox
+    # Tools needed by `make api` (only on 3.11 matrix job)
+    - |
+      if [ "$PYTHON_VERSION" = "3.11" ]; then
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+        apt-get update && apt-get install -y nodejs openjdk-17-jre-headless && rm -rf /var/lib/apt/lists/*
+        node -v
+        npm -v
+        java -version
+      fi
+  script:
+    - tox -e "$TOX_ENVS"
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - .tox/**/coverage.xml
+      - artifacts/api-server.log

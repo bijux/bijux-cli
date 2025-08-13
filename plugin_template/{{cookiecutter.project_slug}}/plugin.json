@@ -1,0 +1,5 @@
+{
+  "name": "{{cookiecutter.project_slug}}",
+  "desc": "A plugin for {{cookiecutter.project_slug}}.",
+  "version": "0.1.0"
+}

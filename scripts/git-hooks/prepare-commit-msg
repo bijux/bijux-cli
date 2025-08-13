@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Automatically create a changelog fragment based on commit message
+
+MSG_FILE="$1"
+TYPE=$(awk '{print $1}' "$MSG_FILE" | cut -d: -f1)
+DESC=$(awk -F': ' 'NR==1{print $2}' "$MSG_FILE")
+
+# Map commit type to Towncrier fragment type
+case "$TYPE" in
+  feat) KIND="feature" ;;
+  fix) KIND="bugfix" ;;
+  chore|refactor|docs|style) KIND="misc" ;;
+  *) KIND="misc" ;;
+esac
+
+if [ -n "$DESC" ]; then
+    ID=$(date +%s)
+    mkdir -p changelog.d
+    echo "$DESC" > "changelog.d/${ID}.${KIND}.md"
+fi

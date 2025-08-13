@@ -1,0 +1,7 @@
+factories:
+  - protocol: "<str>"
+    alias: "<str|null>"
+services:
+  - protocol: "<str>"
+    alias: "<str|null>"
+    implementation: "<null>"
