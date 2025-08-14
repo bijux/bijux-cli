@@ -45,16 +45,9 @@ bootstrap: $(VENV) install-git-hooks
 
 # Cleanup
 clean:
-	@echo "→ Cleaning..."
-	@$(RM) \
-	  $(VENV) \
-	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
-	  .ruff_cache .mypy_cache .pytype .hypothesis .coverage.* .coverage .benchmarks \
-	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
-	  docs/reference artifacts usage_test usage_test_artifacts citation.bib || true
-	@if [ "$(OS)" != "Windows_NT" ]; then \
-	  find . -type d -name '__pycache__' -exec $(RM) {} +; \
-	fi
+	@$(MAKE) clean-soft
+	@echo "→ Cleaning (.venv) ..."
+	@$(RM) $(VENV)
 
 clean-soft:
 	@echo "→ Cleaning (no .venv) ..."
@@ -62,7 +55,7 @@ clean-soft:
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
 	  .ruff_cache .mypy_cache .pytype .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
-	  docs/reference artifacts usage_test usage_test_artifacts citation.bib || true
+	  docs/reference artifacts usage_test usage_test_artifacts citation.bib .cache || true
 	@if [ "$(OS)" != "Windows_NT" ]; then \
 	  find . -type d -name '__pycache__' -exec $(RM) {} +; \
 	fi

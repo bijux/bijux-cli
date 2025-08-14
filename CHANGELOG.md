@@ -1,27 +1,67 @@
 # Changelog
+<a id="top"></a>
 
 All notable changes to **Bijux CLI** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+<a id="unreleased"></a>
 ## [Unreleased]
 
 ### Added
-
 * (add new entries via Towncrier fragments in `changelog.d/`)
 
 ### Changed
-
 * (add here)
 
 ### Fixed
-
 * (add here)
+
+[Back to top](#top)
 
 ---
 
 <!-- towncrier start -->
 
+<a id="v0-1-1"></a>
+## [0.1.1] – 2025-08-14
+
+### Added
+* **Publish pipeline:** GitHub Actions `publish.yml` that publishes via `make publish` only after required checks are green and a tag is present.
+* **Project map:** `PROJECT_TREE.md` (and `docs/project_tree.md`) with a curated overview.
+* **Developer Tooling page:** `TOOLING.md` (and `docs/tooling.md`) with embedded configs, Makefile snippets, and CI workflows via `include-markdown`.
+* **Docs assets:** Community landing page, Plausible analytics partial, and CSS overrides.
+
+### Changed
+* **Docs generator (`scripts/helper_mkdocs.py`):**
+  * Copies **README**, **USAGE**, **TESTS**, **PROJECT_TREE**, and **TOOLING** into the site with link rewrites and `{#top}` anchors.
+  * Generates mkdocstrings pages for all modules under `src/bijux_cli/**`.
+  * Builds **one** consolidated **API Reference** with this structure:
+    * top: **Api Module**, **Cli Module**, **Httpapi Module**
+    * sections (collapsed by default): **Commands**, **Contracts**, **Core**, **Infra**, **Services**
+    * nested groups for command subpackages (`config/`, `dev/`, `history/`, `memory/`, `plugins/`) beneath **Commands**.
+  * Emits `reference/**/index.md` to power Material’s section indexes.
+* **MkDocs config (`mkdocs.yml`):** tightened plugin ordering and settings for `include-markdown`, enabled section indexes, and strict mode; added watch paths for configs and scripts.
+* **README / USAGE:** Refined copy; standardized **top anchors** and links to **TESTS.md**/**PROJECT_TREE.md**/**TOOLING.md**.
+* **SECURITY.md:** Rewritten with clearer reporting, SLAs, scope, and safe harbor.
+* **Makefiles:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
+* **Config:** Expanded lints/dictionary.
+
+### Fixed
+* **Docs build (strict):** resolved broken/unknown links in **TOOLING.md** and removed duplicate **API Reference** sections; left sidebar now stays populated when deep-linking into API pages.
+* **Tests:** E2E version fixtures cleaned up.
+
+### Packaging
+* **PyPI links corrected:** `project.urls` now points to accurate Homepage/Docs/Changelog/Issues/Discussions.
+* **Dynamic versioning from Git tags:** Using `hatch-vcs` with `dynamic = ["version"]`; annotated tags like `v0.1.1` define the release version. `commitizen` tags as `v$version`.
+* **Richer PyPI description:** `hatch-fancy-pypi-readme` renders **README.md** + **CHANGELOG.md** on PyPI.
+* **Wheel/Sdist layout:** Explicit Hatch build config ensures `py.typed`, licenses, and metadata are included.
+
+[Back to top](#top)
+
+---
+
+<a id="v0-1-0"></a>
 ## [0.1.0] – 2025-08-12
 
 ### Added
@@ -57,7 +97,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Structured output & flags**
 
-    * Added JSON/YAML output via `--format`, pretty printing, and deterministic global flag precedence ([ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence/)).
+    * Added JSON/YAML output via `--format`, pretty printing, and deterministic global flag precedence ([ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)).
 
 * **API contract validation & testing**
 
@@ -125,5 +165,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * None
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.1.0...HEAD
+[Back to top](#top)
+
+[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bijux/bijux-cli/releases/tag/v0.1.0

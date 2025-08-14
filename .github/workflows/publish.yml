@@ -1,0 +1,260 @@
+name: Publish to PyPI
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: publish-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: true
+
+env:
+  DOCS_WORKFLOW_NAME: "Deploy Docs"
+
+jobs:
+  publish:
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine target SHA
+        id: sha
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "value=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout (with full history & tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.sha.outputs.value }}
+
+      - name: Ensure tags present
+        run: git fetch --tags --force --prune
+
+      - name: Find SemVer tag for this commit
+        id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA="${{ steps.sha.outputs.value }}"
+
+          TAGS=$(git tag --points-at "$SHA" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+
+          if [ -z "$TAGS" ] && [ "${{ github.event_name }}" = "push" ]; then
+            if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              TAGS="${GITHUB_REF_NAME}"
+            fi
+          fi
+
+          if [ -z "$TAGS" ]; then
+            echo "No SemVer tag on this commit; skipping publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG=$(echo "$TAGS" | head -n1)
+          echo "Using tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
+      - name: Export version for Make/Hatch
+        if: steps.tag.outputs.publish == 'true'
+        run: |
+          VERSION="${{ steps.tag.outputs.tag }}"
+          VERSION="${VERSION#v}"
+          echo "PKG_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "HATCH_BUILD_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Wait for CI to be green
+        if: steps.tag.outputs.publish == 'true'
+        uses: actions/github-script@v7
+        env:
+          SHA: ${{ steps.sha.outputs.value }}
+        with:
+          script: |
+            const REQUIRED = ['CI']; // must match your CI workflow name
+            const { owner, repo } = context.repo;
+            const sha = process.env.SHA;
+            const timeoutMs = 20 * 60 * 1000;
+            const pollMs = 15000;
+            const deadline = Date.now() + timeoutMs;
+
+            async function latestRunByName(name) {
+              const runsResp = await github.rest.actions.listWorkflowRunsForRepo({
+                owner, repo, per_page: 100, head_sha: sha
+              });
+              const runs = (runsResp.data.workflow_runs || [])
+                .filter(r => r.name === name)
+                .sort((a,b) => new Date(b.run_started_at) - new Date(a.run_started_at));
+              return runs[0];
+            }
+
+            for (const name of REQUIRED) {
+              while (true) {
+                const run = await latestRunByName(name);
+                if (!run) {
+                  core.info(`[${name}] no run yet for this commit; waiting...`);
+                } else if (run.status === 'completed') {
+                  if (run.conclusion === 'success') {
+                    core.info(`[${name}] completed: success`);
+                    break;
+                  } else {
+                    core.setFailed(`[${name}] completed: ${run.conclusion}`);
+                    return;
+                  }
+                } else {
+                  core.info(`[${name}] status=${run.status}; waiting...`);
+                }
+
+                if (Date.now() > deadline) {
+                  core.setFailed(`[${name}] timed out waiting to complete`);
+                  return;
+                }
+                await new Promise(r => setTimeout(r, pollMs));
+              }
+            }
+
+      - name: Wait for Docs to be green (optional)
+        if: steps.tag.outputs.publish == 'true' && env.DOCS_WORKFLOW_NAME != ''
+        uses: actions/github-script@v7
+        env:
+          SHA: ${{ steps.sha.outputs.value }}
+          DOCS_NAME: ${{ env.DOCS_WORKFLOW_NAME }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = process.env.SHA;
+            const name = process.env.DOCS_NAME;
+            const timeoutMs = 20 * 60 * 1000;
+            const pollMs = 15000;
+            const deadline = Date.now() + timeoutMs;
+
+            async function latestRun() {
+              const runsResp = await github.rest.actions.listWorkflowRunsForRepo({
+                owner, repo, per_page: 100, head_sha: sha
+              });
+              const runs = (runsResp.data.workflow_runs || [])
+                .filter(r => r.name === name)
+                .sort((a,b) => new Date(b.run_started_at) - new Date(a.run_started_at));
+              return runs[0];
+            }
+
+            while (true) {
+              const run = await latestRun();
+              if (!run) {
+                core.info(`[${name}] no run yet for this commit; waiting...`);
+              } else if (run.status === 'completed') {
+                if (run.conclusion === 'success') {
+                  core.info(`[${name}] completed: success`);
+                  break;
+                } else {
+                  core.setFailed(`[${name}] completed: ${run.conclusion}`);
+                  return;
+                }
+              } else {
+                core.info(`[${name}] status=${run.status}; waiting...`);
+              }
+
+              if (Date.now() > deadline) {
+                core.setFailed(`[${name}] timed out waiting to complete`);
+                return;
+              }
+              await new Promise(r => setTimeout(r, pollMs));
+            }
+
+      - name: Set up Python
+        if: steps.tag.outputs.publish == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            mkdocs.yml
+
+      - name: Create virtual environment
+        if: steps.tag.outputs.publish == 'true'
+        run: python -m venv .venv
+
+      - name: Install build deps
+        if: steps.tag.outputs.publish == 'true'
+        run: |
+          . .venv/bin/activate
+          python -m pip install -U pip
+          pip install ".[dev]"
+
+      - name: Publish to PyPI
+        if: steps.tag.outputs.publish == 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          . .venv/bin/activate
+          make publish
+
+  create-release:
+    name: Create GitHub Release
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install .[dev]
+
+      - name: Build & SBOM
+        run: |
+          make build
+          make sbom
+          (cd dist && sha256sum * > ../checksums-${GITHUB_REF_NAME}.txt)
+
+      - name: Compute changelog anchor
+        id: anchor
+        shell: bash
+        run: |
+          ref="${GITHUB_REF_NAME#v}"
+          echo "anchor=v${ref//./-}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: |
+            See the full changelog entry at https://bijux.github.io/bijux-cli/changelog/#${{ steps.anchor.outputs.anchor }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            artifacts/sbom.json
+            api/v1/schema.yaml
+            checksums-${{ github.ref_name }}.txt
+
+      - name: Generate provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*"

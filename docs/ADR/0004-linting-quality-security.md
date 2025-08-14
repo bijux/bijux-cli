@@ -107,7 +107,7 @@ The toolchain is driven by unified configs:
 <summary>Deptry (<code>pyproject.toml</code>)</summary>
 
 ```toml
-{% include-markdown "../../pyproject.toml" start="# deptry start" end="# deptry end" comments=false dedent=true %}
+--8<-- "pyproject.toml:deptry"
 ```
 
 </details>
@@ -116,7 +116,7 @@ The toolchain is driven by unified configs:
 <summary>Interrogate (<code>pyproject.toml</code>)</summary>
 
 ```toml
-{% include-markdown "../../pyproject.toml" start="# interrogate start" end="# interrogate end" comments=false dedent=true %}
+--8<-- "pyproject.toml:interrogate"
 ```
 
 </details>

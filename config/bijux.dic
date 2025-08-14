@@ -18,12 +18,14 @@ coveragerc
 envlist
 fcntl
 forkpty
+glightbox
 hel
 htmlcov
 inlinehilite
 inproj
 jsdelivr
 keyerror
+libffi
 linenums
 magiclink
 makeflags
@@ -36,6 +38,7 @@ nfkd
 noequals
 nonlist
 norecursedirs
+noreply
 nosec
 oserror
 pipefail
@@ -50,6 +53,7 @@ redocly
 returncode
 secho
 shellflags
+softprops
 superfences
 temurin
 testpaths
