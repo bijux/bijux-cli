@@ -11,7 +11,7 @@ exclude = [
 [lint]
 select = [
   "E","F","I","B","UP","SIM","PT","N","A","C4","S","TID","PERF",
-  # TODO: Fix - "RUF","ARG","TRY","T20","BLE","ERA"
+  # "RUF","ARG","TRY","T20","BLE","ERA"
 ]
 ignore = ["E501", "E203"]
 

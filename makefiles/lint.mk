@@ -1,8 +1,5 @@
 # Lint Configuration
 
-
-INTERROGATE_PATHS ?= src/bijux_cli
-
 RUFF        := $(ACT)/ruff
 MYPY        := $(ACT)/mypy
 PYTYPE      := $(ACT)/pytype
@@ -10,9 +7,8 @@ CODESPELL   := $(ACT)/codespell
 PYRIGHT     := $(ACT)/pyright
 PYDOCSTYLE  := $(ACT)/pydocstyle
 RADON       := $(ACT)/radon
-INTERROGATE := $(ACT)/interrogate
 
-.PHONY: lint lint-file lint-dir interrogate-report
+.PHONY: lint lint-file lint-dir
 
 lint:
 	@echo "→ Running all linting checks"
@@ -46,20 +42,7 @@ endif
         $(call run_tool,Pytype,$(PYTYPE) --disable import-error); \
     fi
 
-interrogate-report:
-	@echo "→ Generating docstring coverage report (<100%)"
-	@set +e; \
-	  OUT="$$( $(INTERROGATE) --no-color --verbose $(INTERROGATE_PATHS) )"; \
-	  rc=$$?; \
-	  OFF="$$(printf '%s\n' "$$OUT" | awk -F'|' 'NR>3 && $$0 ~ /^\|/ { \
-	    name=$$2; cov=$$6; gsub(/^[ \t]+|[ \t]+$$/, "", name); gsub(/^[ \t]+|[ \t]+$$/, "", cov); \
-	    if (name !~ /^-+$$/ && cov != "100%") printf("  - %s (%s)\n", name, cov); \
-	  }')"; \
-	  if [ -n "$$OFF" ]; then printf "%s\n" "$$OFF"; else echo "✔ All files 100% documented"; fi; \
-	  exit $$rc
-
 ##@ Lint
 lint: ## Run all lint checks (ruff, mypy, pyright, codespell, radon, pydocstyle)
 lint-file: ## Lint a single Python file (requires file=<path>)
 lint-dir: ## Lint all Python files in a directory (requires dir=<path>)
-interrogate-report: ## Generate docstring coverage report for files <100%

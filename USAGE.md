@@ -1,426 +1,395 @@
 # Bijux CLI — User Guide
+<a id="top"></a>
 
-A concise, production-ready reference for **commands**, **global flags**, **configuration**, and **operational behavior**.
+A practical reference for installation, global flags, commands, configuration, and behavior. For a project overview and motivation, see the README on GitHub: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 
 ---
 
+## Table of Contents
+
+* [Installation](#installation)
+* [Quick Start](#quick-start)
+* [Shell Completion](#shell-completion)
+* [Global Flags – Precedence](#global-flags--precedence)
+* [Command Reference](#command-reference)
+
+  * [`config` — Settings](#config--settings)
+  * [`plugins` — Plugin Management](#plugins--plugin-management)
+  * [`history` — REPL History](#history--repl-history)
+  * [`dev` — Developer Tools](#dev--developer-tools)
+* [Built-in Commands (Index)](#built-in-commands-index)
+* [Advanced Usage Patterns](#advanced-usage-patterns)
+* [Configuration](#configuration)
+* [End-to-End Workflows](#end-to-end-workflows)
+
+  * [Core Workflow (no plugins)](#core-workflow-no-plugins)
+  * [Plugin Workflow (requires a real template)](#plugin-workflow-requires-a-real-template)
+* [Structured Error Model](#structured-error-model)
+* [Exit Codes](#exit-codes)
+* [Troubleshooting & FAQs](#troubleshooting--faqs)
+
+[Back to top](#top)
+
+---
+
+<a id="installation"></a>
+
 ## Installation
 
-**Requires:** Python 3.11+
+Requires **Python 3.11+**.
 
-### Using pip
+### pipx (recommended)
+
+```bash
+pipx install bijux-cli
+pipx ensurepath       # first-time pipx users
+# later
+pipx upgrade bijux-cli
+```
+
+### pip
 
 ```bash
 python -m pip install -U bijux-cli
 ```
 
-### Using pipx (recommended for isolation)
+> Tip: use a virtual environment when installing with plain `pip`.
 
-```bash
-pipx install bijux-cli
-# later
-pipx upgrade bijux-cli
-# first-time pipx users:
-pipx ensurepath
-```
+[Back to top](#top)
 
 ---
+
+<a id="quick-start"></a>
 
 ## Quick Start
 
 ```bash
-# See all commands and global flags
-bijux --help
+bijux --help          # commands and global flags
+bijux --version       # version/sanity
+bijux doctor          # environment diagnostics
 
-# Version / sanity check
-bijux --version
-
-# Environment health check
-bijux doctor
-
-# Launch interactive REPL
+# REPL
 bijux
 bijux> help
+bijux> status -f json   # {"version":"<current>", ...}
 bijux> exit
 ```
 
+[Back to top](#top)
+
 ---
+
+<a id="shell-completion"></a>
 
 ## Shell Completion
 
-Enable tab-completion (no sudo required).
-
 ```bash
-# Install completion for your shell
-bijux --install-completion
-
-# Or print the script (for manual setup)
-bijux --show-completion
+bijux --install-completion   # install for your current shell
+bijux --show-completion      # print the script for manual setup
 ```
 
-**One-liners by shell**
+Shell notes:
 
-* **Bash (current session)**
+* **Bash** (current session): `eval "$(bijux --show-completion)"`
+* **Zsh** (persistent): add to `~/.zshrc`:
 
-  ```bash
-  eval "$(bijux --show-completion)"
-  ```
+  * `fpath+=("$HOME/.zfunc")`
+  * `autoload -U compinit && compinit`
+  * then run `bijux --install-completion`
+* **Fish / PowerShell**: run `--install-completion`
 
-* **Zsh (persist)**
+> Restart your shell after installing. For Zsh, ensure `compinit` runs and your `fpath` includes the completions directory.
 
-  ```bash
-  echo 'fpath+=("$HOME/.zfunc")' >> ~/.zshrc
-  echo 'autoload -U compinit && compinit' >> ~/.zshrc
-  bijux --install-completion
-  ```
-
-* **Fish**
-
-  ```bash
-  bijux --install-completion
-  ```
-
-* **PowerShell**
-
-  ```powershell
-  bijux --install-completion
-  ```
-
-> After installing, restart your shell. For zsh, ensure `compinit` runs and your `fpath` includes completions directory.
+[Back to top](#top)
 
 ---
 
-## Global Flags — Precedence Rules
+<a id="global-flags--precedence"></a>
 
-Flags apply to every command and are evaluated in strict priority order. Higher-priority flags override or short-circuit lower ones.
+## Global Flags – Precedence
 
-| Priority | Flag(s)                     | Behavior                                                                  |
-|---------:|-----------------------------|---------------------------------------------------------------------------|
-|        1 | `-h`, `--help`              | Exit with code `0` immediately; ignore all other flags.                   |
-|        2 | `-q`, `--quiet`             | Suppress **both stdout and stderr**; exit code still reflects the result. |
-|        3 | `-d`, `--debug`             | Full diagnostics; implies `--verbose` and forces `--pretty`.              |
-|        4 | `-f, --format <json\|yaml>` | Structured output format; invalid value → exit code `2`.                  |
-|        5 | `--pretty` / `--no-pretty`  | Control indentation (default: `--pretty`).                                |
-|        6 | `-v`, `--verbose`           | Add runtime metadata; implied by `--debug`.                               |
+Flags are evaluated in strict order; higher priority short-circuits lower ones.
 
-For details, see **ADR-0002: Global Flags Precedence**.
+| Priority | Flag(s)                         | Behavior                                                     |
+| -------: | ------------------------------- | ------------------------------------------------------------ |
+|        1 | `-h`, `--help`                  | Exit 0 with usage; ignore all other flags.                   |
+|        2 | `-q`, `--quiet`                 | Suppress stdout/stderr; exit code still reflects result.     |
+|        3 | `-d`, `--debug`                 | Full diagnostics; implies `--verbose` and forces `--pretty`. |
+|        4 | `-f`, `--format` `<json\|yaml>` | Structured output; invalid value → exit code 2.              |
+|        5 | `--pretty` / `--no-pretty`      | Indentation control (default: `--pretty`).                   |
+|        6 | `-v`, `--verbose`               | Include runtime metadata; implied by `--debug`.              |
 
-**Notes**
+Details: ADR-0002 (Global Flags Precedence) — [https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
 
-* When `--format` is set, **errors** are emitted in that format to **stderr** (unless `--quiet`).
-* `--debug` implies `--verbose` and forces pretty printing.
+> When `--format` is set, **errors** are emitted in that format to **stderr** (unless `--quiet`).
+
+[Back to top](#top)
 
 ---
+
+<a id="command-reference"></a>
 
 ## Command Reference
 
-### `config` — Manage CLI Configuration
+<a id="config--settings"></a>
 
-Key-value settings stored in a dotenv-style file. Keys must use **alphanumeric characters and underscores only** (no dots).
+### `config` — Settings
 
-* **list** — `{"items":[{"key":"..."}, ...]}`
+Dotenv-style key/value settings. Keys must be alphanumeric or underscore.
+
+* `list` → `{"items":[{"key":"...","value":"..."}]}`
 
   ```bash
-  bijux config list
+  bijux config list -f json --no-pretty
   ```
-
-* **get \<key>** — `{"value":"..."}`
+* `get <key>` → `{"value":"..."}`
 
   ```bash
   bijux config get core_timeout
   ```
-
-* **set \<key=value>**
+* `set <key=value>` / `unset <key>`
 
   ```bash
   bijux config set core_timeout=30
-  ```
-
-* **unset \<key>**
-
-  ```bash
   bijux config unset core_timeout
   ```
-
-* **export \<path>** (supports `--format json|yaml`)
+* `export <path>` (supports `-f json|yaml`)
 
   ```bash
   bijux config export ./settings.env
-  bijux config export ./settings.json --format json
+  bijux config export ./settings.json -f json
   ```
+* `load <path>` (dotenv), `reload`, `clear`
 
-* **load \<path>** (dotenv format)
+> Tip: Use `-f json --no-pretty` for machine-readable output in scripts.
 
-  ```bash
-  bijux config load ./settings.env
-  ```
-
-* **reload**
-
-  ```bash
-  bijux config reload
-  ```
-
-* **clear**
-
-  ```bash
-  bijux config clear
-  ```
-
-> Tip: machine-friendly output
-> `bijux config list --format json --no-pretty`
+[Back to top](#top)
 
 ---
 
-### `plugins` — Manage Plugins
+<a id="plugins--plugin-management"></a>
 
-Default install directory: `~/.bijux/.plugins` (override via `BIJUXCLI_PLUGINS_DIR`).
+### `plugins` — Plugin Management
 
-* **list** — `{"plugins":["...", ...]}`
+Default install dir: `~/.bijux/.plugins` (override via `BIJUXCLI_PLUGINS_DIR`).
+
+* `list` → `{"plugins":["...", ...]}`
 
   ```bash
   bijux plugins list
   ```
-
-* **info \<name|path>**
-
-  ```bash
-  bijux plugins info my_plugin
-  bijux plugins info ./path/to/my_plugin
-  ```
-
-* **install \<path>** (infers name from basename; use `--force` to overwrite)
+* `info <name|path>`, `check <name|path>`, `uninstall <name>`
+* `install <path>` — install a plugin directory (use `--force` to overwrite)
 
   ```bash
   bijux plugins install ./path/to/my_plugin --force
   ```
-
-* **check \<name|path>**
-
-  ```bash
-  bijux plugins check my_plugin
-  bijux plugins check ./path/to/my_plugin
-  ```
-
-* **uninstall \<name>**
+* `scaffold <name> --template <path-or-git-url>` — create a plugin from a template
 
   ```bash
-  bijux plugins uninstall my_plugin
+  # Requires a real template (local dir or cookiecutter-compatible Git URL)
+  bijux plugins scaffold my_plugin --template ./templates/bijux-plugin --force
+  # or
+  bijux plugins scaffold my_plugin --template https://github.com/bijux/bijux-plugin-template.git --force
   ```
 
-* **scaffold \<name>** (outputs to current dir; `--force` to overwrite)
+> `scaffold` **requires** `--template`. Without it you’ll get `no_template`.
+> `--force` overwrites files in the destination.
 
-  ```bash
-  mkdir -p ./temp_scaffold
-  cd ./temp_scaffold
-  bijux plugins scaffold my_plugin --template=../plugin_template --force
-  cd ..
-  bijux plugins install ./temp_scaffold/my_plugin --force
-  ```
+[Back to top](#top)
 
 ---
 
-### `history` — Manage REPL History
+<a id="history--repl-history"></a>
 
-* **list** (supports `--limit <n>`, `--group-by <field>`, `--filter <str>`, `--sort <field>`)
-  Output shape: `{"entries":[ ... ]}`
+### `history` — REPL History
 
-  ```bash
-  bijux history --limit 10
-  ```
-
-* **--export \<path>**
+* `list` (supports `--limit`, `--group-by`, `--filter`, `--sort`) → `{"entries":[...]}`
 
   ```bash
-  bijux history --export ./history.json
+  bijux history --limit 10 -f json --no-pretty
   ```
+* `--export <path>`, `--import <path>`, `clear`
 
-* **--import \<path>**
-
-  ```bash
-  bijux history --import ./history.json
-  ```
-
-* **clear**
-
-  ```bash
-  bijux history clear
-  ```
+[Back to top](#top)
 
 ---
+
+<a id="dev--developer-tools"></a>
 
 ### `dev` — Developer Tools
 
-* **di** — Dependency injection inventory
-  Output shape: `{"factories":[...], "services":[...]}`
+* `di` → `{"factories":[...],"services":[...]}`
 
   ```bash
-  bijux dev di
+  bijux dev di -f json
   ```
+* `list-plugins` — diagnostic list of discovered plugins
 
-* **list-plugins**
-
-  ```bash
-  bijux dev list-plugins
-  ```
+[Back to top](#top)
 
 ---
 
-## Built-in Commands
+<a id="built-in-commands-index"></a>
 
-| Command   | Purpose                   | Example                      |
-|-----------|---------------------------|------------------------------|
-| `audit`   | Security/compliance audit | `bijux audit --dry-run`      |
-| `docs`    | Generate API docs/specs   | `bijux docs --out spec.json` |
-| `doctor`  | Environment health check  | `bijux doctor`               |
-| `memory`  | In-memory key-value store | `bijux memory set key=val`   |
-| `repl`    | Interactive shell         | `bijux repl`                 |
-| `sleep`   | Pause execution           | `bijux sleep -s 5`           |
-| `status`  | CLI status snapshot       | `bijux status`               |
-| `version` | Display version info      | `bijux version`              |
+## Built-in Commands (Index)
 
-Installed plugins appear as top-level commands (e.g., `my_plugin`).
+| Command   | Purpose                    | Example (sample output)                                 |
+| --------- | -------------------------- | ------------------------------------------------------- |
+| `audit`   | Security/compliance checks | `bijux audit --dry-run` → `{"issues":[...]}`            |
+| `docs`    | Generate specs/docs        | `bijux docs --out spec.json` → writes file              |
+| `doctor`  | Health diagnostics         | `bijux doctor` → summary or detailed findings           |
+| `memory`  | Key-value store            | `bijux memory set key=val` → `{"status":"set"}`         |
+| `repl`    | Interactive shell          | `bijux repl` → interactive `bijux>` prompt              |
+| `sleep`   | Pause execution            | `bijux sleep -s 5` → pauses for 5 seconds               |
+| `status`  | CLI status snapshot        | `bijux status -f json` → `{"version":"<current>", ...}` |
+| `version` | Version info               | `bijux version` → `<current>`                           |
+
+Plugins appear as additional top-level commands after install.
+
+[Back to top](#top)
 
 ---
+
+<a id="advanced-usage-patterns"></a>
+
+## Advanced Usage Patterns
+
+* Batch config apply:
+
+  ```bash
+  bijux config set core_timeout=30 && bijux config reload
+  ```
+* Check all installed plugins:
+
+  ```bash
+  bijux plugins list -f json --no-pretty \
+    | jq -r '.plugins[]' \
+    | xargs -I {} bijux plugins check {}
+  ```
+* Diagnostics pipeline:
+
+  ```bash
+  bijux doctor --debug > diag.log
+  bijux status -d >> diag.log
+  ```
+
+> Combine with `--quiet` in CI to suppress output while preserving exit codes.
+
+[Back to top](#top)
+
+---
+
+<a id="configuration"></a>
 
 ## Configuration
 
-**Default Paths** (overridable via env vars):
+**Default paths** (overridable via environment variables):
 
-* Config: `~/.bijux/.env` (`BIJUXCLI_CONFIG`)
-* History: `~/.bijux/.history` (`BIJUXCLI_HISTORY_FILE`)
-* Plugins: `~/.bijux/.plugins` (`BIJUXCLI_PLUGINS_DIR`)
+* Config file: `~/.bijux/.env` (`BIJUXCLI_CONFIG`)
+* History file: `~/.bijux/.history` (`BIJUXCLI_HISTORY_FILE`)
+* Plugins dir: `~/.bijux/.plugins` (`BIJUXCLI_PLUGINS_DIR`)
 
-To customize (e.g., plugins dir), add to your shell profile:
+Override example (shell profile):
 
 ```bash
-export BIJUXCLI_PLUGINS_DIR=~/custom_plugins
+export BIJUXCLI_PLUGINS_DIR=./plugins
 ```
 
-**Resolution Precedence**
+**Resolution precedence:**
 
-1) CLI flags → 2) Environment variables → 3) Config file → 4) Defaults
+1. CLI flags → 2) Environment variables → 3) Config file → 4) Defaults
+
+[Back to top](#top)
 
 ---
 
-## End-to-End Examples
+<a id="end-to-end-workflows"></a>
 
-### Using Default Paths
+## End-to-End Workflows
+
+<a id="core-workflow-no-plugins"></a>
+
+### Core Workflow (no plugins)
+
+This flow works on any install; it does not assume a template or extra files.
 
 ```bash
-# Clean up (optional)
+# Fresh artifacts directory
+rm -rf artifacts && mkdir -p artifacts
+
+# Version and health
+bijux --version
+bijux doctor
+
+# Config operations
+bijux config set core_timeout=30
+bijux config get core_timeout                 # {"value":"30"}
+bijux config list -f json --no-pretty > artifacts/config.json
+bijux config export artifacts/settings.env
+bijux config export artifacts/settings.json -f json
+
+# REPL creates history
+bijux repl <<'EOF'
+version
+help
+exit
+EOF
+
+# History operations
+bijux history --limit 5 -f json --no-pretty > artifacts/history.json
+bijux history --export artifacts/history-full.json
+bijux history --import artifacts/history-full.json
+
+# Cleanup
+bijux history clear
+bijux config clear
+```
+
+<a id="plugin-workflow-requires-a-real-template"></a>
+
+### Plugin Workflow (requires a real template)
+
+Choose **one**:
+
+* **A) Local template directory** (e.g., `./templates/bijux-plugin`)
+* **B) Cookiecutter-compatible Git URL** (e.g., https://github.com/bijux/bijux-plugin-template.git )
+
+```bash
+# Start clean
 bijux plugins uninstall my_plugin || true
-rm -rf ./temp_scaffold ./usage_test_artifacts
-mkdir -p ./usage_test_artifacts
+rm -rf tmp && mkdir -p tmp
 
-# Scaffold and install
-mkdir -p ./temp_scaffold
-cd ./temp_scaffold
-bijux plugins scaffold my_plugin --template=../plugin_template --force
-cd ..
-bijux plugins install ./temp_scaffold/my_plugin --force
+# Scaffold (requires a real template path or Git URL)
+# Option A: local template directory
+bijux plugins scaffold my_plugin --template ./templates/bijux-plugin --force
 
-# Verify
-bijux plugins list
+# Option B: cookiecutter-compatible Git URL
+# bijux plugins scaffold my_plugin --template https://github.com/bijux/bijux-plugin-template.git --force
+
+# Install the newly scaffolded plugin
+bijux plugins install ./my_plugin --force
+
+# Verify & validate
+bijux plugins list                     # {"plugins":["my_plugin", ...]}
 bijux plugins info my_plugin
 bijux plugins check my_plugin
 
-# Config
-bijux config set core_timeout=30
-bijux config get core_timeout
-bijux config list
-
-# Export config
-bijux config export ./usage_test_artifacts/settings.env
-bijux config export ./usage_test_artifacts/settings.json --format json
-
-# History via REPL
-bijux repl <<'EOF'
-version
-help
-exit
-EOF
-
-# History ops
-bijux history --limit 10
-bijux history --export ./usage_test_artifacts/history.json
-bijux history --import ./usage_test_artifacts/history.json
-
-# Cleanup
-bijux history clear
-bijux config clear
-bijux plugins uninstall my_plugin
-rm -rf ./temp_scaffold
-
-# Confirm
-bijux plugins list
+# Uninstall when done
+bijux plugins uninstall my_plugin || true
 ```
 
-### Using Local Paths
+> If you do not provide a real template, `scaffold` will fail with `no_template`, and subsequent `install/info/check` will also fail.
 
-```bash
-# Clean up
-rm -rf ./usage_test ./temp_scaffold
-mkdir -p ./usage_test/plugins ./usage_test_artifacts
-
-# Overrides
-export BIJUXCLI_PLUGINS_DIR=./usage_test/plugins
-export BIJUXCLI_CONFIG=./usage_test_artifacts/.env
-export BIJUXCLI_HISTORY_FILE=./usage_test_artifacts/.history
-
-# Scaffold and install
-mkdir -p ./temp_scaffold
-cd ./temp_scaffold
-bijux plugins scaffold my_plugin --template=../plugin_template --force
-cd ..
-bijux plugins install ./temp_scaffold/my_plugin --force
-
-# Verify
-bijux plugins list
-bijux plugins info my_plugin
-bijux plugins check my_plugin
-
-# Config
-bijux config set core_timeout=30
-bijux config get core_timeout
-bijux config list
-
-# Export config
-bijux config export ./usage_test_artifacts/settings.env
-bijux config export ./usage_test_artifacts/settings.json --format json
-
-# History via REPL
-bijux repl <<'EOF'
-version
-help
-exit
-EOF
-
-# History ops
-bijux history --limit 10
-bijux history --export ./usage_test_artifacts/history.json
-bijux history --import ./usage_test_artifacts/history.json
-
-# Cleanup
-bijux history clear
-bijux config clear
-bijux plugins uninstall my_plugin
-rm -rf ./temp_scaffold
-
-# Confirm
-bijux plugins list
-
-# Reset overrides (optional)
-unset BIJUXCLI_PLUGINS_DIR
-unset BIJUXCLI_CONFIG
-unset BIJUXCLI_HISTORY_FILE
-```
+[Back to top](#top)
 
 ---
 
-## Error Model (Structured)
+<a id="structured-error-model"></a>
 
-When `--format` is set, errors are structured and emitted to **stderr** (unless `--quiet`):
+## Structured Error Model
+
+With `--format`, errors are structured and written to **stderr** (unless `--quiet`):
 
 ```json
 {
@@ -428,28 +397,47 @@ When `--format` is set, errors are structured and emitted to **stderr** (unless 
   "code": 2,
   "failure": "machine_readable_reason",
   "command": "subcommand path",
-  "fmt": "json|yaml"
+  "fmt": "json"
 }
 ```
 
+(YAML is emitted when `-f yaml` is used.)
+
+[Back to top](#top)
+
 ---
+
+<a id="exit-codes"></a>
 
 ## Exit Codes
 
 | Code | Meaning                |
-|-----:|------------------------|
-|  `0` | Success                |
-|  `1` | General/internal error |
-|  `2` | Usage/invalid argument |
-|  `3` | Encoding/hygiene error |
+| ---: | ---------------------- |
+|    0 | Success                |
+|    1 | General/internal error |
+|    2 | Usage/invalid argument |
+|    3 | Encoding/hygiene error |
 
-Commands may extend with non-conflicting codes.
+Commands may define additional non-conflicting codes.
+
+[Back to top](#top)
 
 ---
 
-## Troubleshooting
+<a id="troubleshooting--faqs"></a>
 
-* **Diagnostics:** `bijux doctor`
-* **Verbosity:** add `--verbose` or `--debug`
-* **Logs:** check stderr in `--debug` mode
-* **Issues:** include `--debug` output when reporting bugs
+## Troubleshooting & FAQs
+
+* Start with `bijux doctor`.
+* Need more detail? Use `--verbose` or `--debug` (adds pretty printing and diagnostics).
+* Scripting? Prefer `-f json --no-pretty` and read from **stdout**; errors go to **stderr**.
+* Completion not working? Re-run `--install-completion` and restart the shell; ensure Zsh `compinit` and `fpath` are correct.
+* Permission denied? Ensure paths are writable; avoid `sudo` unless absolutely required.
+* Plugin errors?
+
+  * `no_template`: pass a real `--template` (path or Git URL) to `plugins scaffold`.
+  * `not_found` / `not_installed`: confirm plugin name; check `bijux plugins list`.
+  * Use `bijux plugins check <name>` after installing.
+* Bug reports: include `--debug` output, version (`bijux --version`), OS, and repro steps.
+
+[Back to top](#top)

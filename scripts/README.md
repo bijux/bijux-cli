@@ -1,24 +1,59 @@
-# `scripts/`
+# Scripts
+<a id="top"></a>
 
 A small collection of **purpose-built developer utilities** for code hygiene, documentation automation, and release workflow integration.
 
-## Contents
+---
 
-### 1. **Comment Harvester** (`helper_comments.py`)
+## Table of Contents
+
+- [Directory](#directory)
+- [Comment Harvester (`helper_comments.py`)](#comment-harvester)
+- [MkDocs API & Navigation Generator (`helper_mkdocs.py`)](#mkdocs-api--navigation-generator)
+- [Commit Hook – Changelog Fragment Generator (`git-hooks/prepare-commit-msg`)](#commit-hook--changelog-fragment-generator)
+- [Towncrier Guard (`check-towncrier-fragment.sh`)](#towncrier-guard)
+- [Workflow Philosophy](#workflow-philosophy)
+
+[Back to top](#top)
+
+---
+
+<a id="directory"></a>
+
+## Directory
+
+```
+
+scripts/
+├── README.md
+├── check-towncrier-fragment.sh
+├── git-hooks/
+│   └── prepare-commit-msg
+├── helper\_comments.py
+└── helper\_mkdocs.py
+
+````
+
+[Back to top](#top)
+
+---
+
+<a id="comment-harvester"></a>
+
+## Comment Harvester (`helper_comments.py`)
 
 Scans a codebase for **all lines containing `#`** (including `# noqa`, `# type: ignore`, and TODO/FIXME notes).
-Useful for:
 
-* Building a **baseline** for linter/typing ignore rules.
-* Periodic triage of technical debt and ignored checks.
+**Why?**  
+Build a **baseline** for linter/typing ignore rules and periodically triage technical debt.
 
-**Example:**
+**Usage**
 
 ```bash
 python scripts/helper_comments.py src -o comments.txt -e .py .pyi
-```
+````
 
-**Sample output:**
+**Sample output**
 
 ```
 src/example.py
@@ -26,19 +61,37 @@ src/example.py
 47: # TODO: refactor
 ```
 
-Notes:
+**Notes**
 
-* Any `#` is treated as a comment (including shebangs and inline hashes in strings).
+* Any `#` is treated as a comment (includes shebangs and inline `#` inside strings).
 * Skips unreadable files.
 * Respects `--ext` filter.
+* Prints a summary path: `Violation lines written to <output>`.
+
+[Back to top](#top)
 
 ---
 
-### 2. **MkDocs API & Navigation Generator** (`helper_mkdocs.py`)
+<a id="mkdocs-api--navigation-generator"></a>
 
-Generates **API reference pages** for all Python modules in `src/bijux_cli` and an auto-synced `nav.md` for [literate-nav](https://github.com/oprypin/mkdocs-literate-nav).
+## MkDocs API & Navigation Generator (`helper_mkdocs.py`)
 
-Integrated into `mkdocs.yml`:
+Runs via **mkdocs-gen-files** during MkDocs builds to keep docs in sync.
+
+**What it does**
+
+1. Copies root docs into the site with safe link rewrites:
+
+   * `README.md` → `docs/index.md`
+   * `USAGE.md` → `docs/usage.md`
+   * `TESTS.md` → `docs/tests.md`
+   * `PROJECT_TREE.md` → `docs/project_tree.md`
+2. Ensures a hidden top anchor on copied pages.
+3. Generates **API reference** pages for `src/bijux_cli/**.py` (mkdocstrings).
+4. Creates per-package `reference/**/index.md`.
+5. Builds `nav.md` with **Home / User Guide / Project Tree / Tests / API / Changelog / ADRs / Community**.
+
+**MkDocs config snippet**
 
 ```yaml
 plugins:
@@ -49,36 +102,95 @@ plugins:
   - mkdocstrings
 ```
 
-Run locally:
+**Local preview**
 
 ```bash
 mkdocs serve    # preview
-mkdocs build    # build static site
+mkdocs build    # static site
 ```
+
+[Back to top](#top)
 
 ---
 
-### 3. **Commit Hook – Changelog Fragment Generator** (`git-hooks/prepare-commit-msg`)
+<a id="commit-hook--changelog-fragment-generator"></a>
 
-A **Git `prepare-commit-msg` hook** that automatically creates a [Towncrier](https://towncrier.readthedocs.io/) changelog fragment when committing with a Conventional Commit message.
+## Commit Hook – Changelog Fragment Generator (`git-hooks/prepare-commit-msg`)
 
-Example:
+A **Git `prepare-commit-msg` hook** that auto-creates a Towncrier fragment from a **Conventional Commit** subject.
 
-```bash
+**Example**
+
+```
 feat(api): add streaming support
 ```
 
-Automatically produces:
+Produces (timestamped):
 
 ```
 changelog.d/1691940245.feature.md
 ```
 
+**Type mapping**
+
+* `feat` → `feature`
+* `fix` → `bugfix`
+* `refactor`/`docs`/`style`/`chore` → `misc`
+* others → `misc`
+
+**Install**
+
+```bash
+# from repo root
+chmod +x scripts/git-hooks/prepare-commit-msg
+ln -sf ../../scripts/git-hooks/prepare-commit-msg .git/hooks/prepare-commit-msg
+make bootstrap   # installs hooks idempotently
+```
+
+[Back to top](#top)
+
 ---
+
+<a id="towncrier-guard"></a>
+
+## Towncrier Guard (`check-towncrier-fragment.sh`)
+
+Blocks commits of types that **should** have a Towncrier fragment if none is staged.
+
+**Behavior**
+
+* Skips `Merge`, `Revert`, `fixup!`, `squash!`, and `chore: release` subjects.
+* Looks for staged `changelog.d/*.md`.
+* Enforces for common types: `feat`, `fix`, `refactor`, `perf`, `docs`.
+* Allow override with `TOWNCRIER_ALLOW_SKIP=1`.
+
+**Wire it up (pre-commit, commit-msg stage)**
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: towncrier-guard
+        name: Towncrier fragment required
+        entry: scripts/check-towncrier-fragment.sh
+        language: system
+        stages: [commit-msg]
+```
+
+Alternatively, call it in CI before merge.
+
+[Back to top](#top)
+
+---
+
+<a id="workflow-philosophy"></a>
 
 ## Workflow Philosophy
 
-* **Automation first**: anything repetitive belongs in a script or hook.
-* **Debt visibility**: helper comments are tracked, triaged, and expire.
-* **Docs in sync**: API navigation is regenerated automatically at build time.
-* **Release-ready commits**: hooks enforce fragment creation for changelog accuracy.
+* **Automation first** — anything repetitive belongs in a script or hook.
+* **Debt visibility** — helper comments are tracked, triaged, and expire.
+* **Docs in sync** — API/navigation are regenerated automatically at build time.
+* **Release-ready commits** — hooks ensure changelog accuracy.
+
+[Back to top](#top)

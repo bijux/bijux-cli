@@ -140,3 +140,5 @@ openapitools.json
 comments.txt
 artifacts/
 artifacts
+.cache
+changelog.d/*.md

@@ -6,12 +6,14 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+import os
+import uuid
 
 import httpx
 import pytest
 
-FASTAPI_HOST = "0.0.0.0"  # noqa: S104
-FASTAPI_PORT = 8000
+FASTAPI_HOST = os.getenv("API_HOST", "127.0.0.1")
+FASTAPI_PORT = int(os.getenv("API_PORT", "8000"))
 BASE_URL = f"http://{FASTAPI_HOST}:{FASTAPI_PORT}/v1"
 
 
@@ -30,7 +32,7 @@ def create_test_item(client: httpx.Client) -> Generator[int, None, None]:
     """Create a test item and clean it up after the test.
 
     This fixture POSTs a new item to the API at the beginning of a test
-    and DELETEs it upon completion, ensuring a clean state.
+    and DELETEEs it upon completion, ensuring a clean state.
 
     Args:
         client: The `httpx.Client` fixture.
@@ -38,7 +40,8 @@ def create_test_item(client: httpx.Client) -> Generator[int, None, None]:
     Yields:
         The ID of the newly created test item.
     """
-    payload = {"name": "Test Item", "description": "A test description"}
+    name = f"Test Item {uuid.uuid4()}"
+    payload = {"name": name, "description": "A test description"}
     response = client.post("/items", json=payload)
     assert response.status_code == 201, f"Failed to create test item: {response.text}"
     item = response.json()

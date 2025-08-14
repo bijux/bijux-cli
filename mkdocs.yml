@@ -1,11 +1,14 @@
 site_name: Bijux CLI
+site_description: A modern, predictable Python CLI framework with plugins, DI, strict flag precedence, and an interactive REPL.
 site_url: https://bijux.github.io/bijux-cli/
+site_author: Bijan Mousavi
 repo_url: https://github.com/bijux/bijux-cli
 repo_name: bijux/bijux-cli
 edit_uri: edit/main/docs/
 
 strict: true
 use_directory_urls: true
+dev_addr: 127.0.0.1:8000
 
 theme:
   name: material
@@ -30,18 +33,25 @@ theme:
         name: Switch to light mode
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
-    - navigation.expand
+    - navigation.indexes
     - navigation.top
+    - navigation.path
+    - navigation.tracking
     - navigation.instant
     - toc.follow
     - search.suggest
     - search.highlight
     - content.tabs.link
-    - content.code.annotation
+    - content.code.annotate
     - content.code.copy
+    - content.code.select
     - content.action.edit
     - content.action.view
+    - navigation.footer
+  icon:
+    repo: fontawesome/brands/github
 
 plugins:
   - search
@@ -55,6 +65,12 @@ plugins:
             merge_init_into_class: true
             show_source: true
             show_if_no_docstring: false
+            show_root_heading: true
+            heading_level: 2
+            separate_signature: true
+            signature_crossrefs: true
+            filters:
+              - "!^_"
   - include-markdown:
       recursive: true
       dedent: true
@@ -72,15 +88,24 @@ plugins:
       nav_file: nav.md
   - autorefs
   - redirects:
-      redirect_maps:
-        'CONTRIBUTING.md': 'contributing.md'
-        'SECURITY.md': 'security.md'
-        'CODE_OF_CONDUCT.md': 'code_of_conduct.md'
+
+  - tags
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+  - social
+  - offline
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
 
 markdown_extensions:
   - admonition
   - footnotes
   - attr_list
+  - md_in_html
   - toc:
       permalink: true
   - pymdownx.highlight:
@@ -95,14 +120,29 @@ markdown_extensions:
   - pymdownx.mark
   - pymdownx.magiclink
   - pymdownx.tasklist
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.keys
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/bijux/bijux-cli
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/bijux-cli/
+  analytics:
+    provider: plausible
+    domain: bijux.github.io
+  copyright:
+    text: "© 2025 Bijan Mousavi"
 
-
+extra_css:
+  - assets/styles/extra.css
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
@@ -111,3 +151,5 @@ watch:
   - src
   - scripts
   - config
+  - tests
+  - changelog.d

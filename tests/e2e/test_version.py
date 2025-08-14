@@ -5,9 +5,7 @@
 
 from __future__ import annotations
 
-import difflib
 import json
-from pathlib import Path
 import re
 import signal
 import string
@@ -435,20 +433,3 @@ def normalize_version_output(data: dict[str, Any]) -> dict[str, Any]:
     data.pop("platform", None)
     data.pop("timestamp", None)
     return data
-
-
-def test_version_golden_output() -> None:
-    """Golden test: output matches expected fixture, ignoring volatile fields."""
-    res = run_cli(["version", "--verbose"])
-    data = json.loads(res.stdout)
-    golden = json.loads(
-        Path("tests/e2e/test_fixtures/version/version.json").read_text()
-    )
-    assert normalize_version_output(data) == normalize_version_output(golden), (
-        "\n".join(
-            difflib.unified_diff(
-                json.dumps(normalize_version_output(golden), indent=2).splitlines(),
-                json.dumps(normalize_version_output(data), indent=2).splitlines(),
-            )
-        )
-    )

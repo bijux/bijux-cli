@@ -2,18 +2,19 @@
 requires = [
   "hatchling>=1.27.0,<1.28",
   "hatch-fancy-pypi-readme>=24.2,<26.0",
+  "hatch-vcs>=0.4.0,<1.0"
 ]
 build-backend = "hatchling.build"
 
 [project]
 name = "bijux-cli"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Lean, plug-in-driven CLI kernel"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = {file = "LICENSES/MIT.txt" }
 authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
-keywords = ["cli", "developer-tools", "plugins"]
+keywords = ["cli", "developer-tools", "plugins", "dependency-injection", "repl", "fastapi", "typer", "pluggy"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
@@ -21,14 +22,20 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
   "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Terminals",
   "Topic :: Utilities",
   "Framework :: FastAPI",
+  "Framework :: Pytest",
   "Typing :: Typed",
 ]
 
@@ -70,8 +77,6 @@ dev = [
   "hypothesis-jsonschema>=0.23.0,<1.0",
   "pexpect>=4.8.0,<5.0",
 
-  "black>=25.1.0,<26.0",
-  "isort>=5.11.0,<6.0",
   "ruff>=0.6.8,<1.0",
   "mypy>=1.11.2,<2.0",
   "pytype>=2024.10.11",
@@ -98,6 +103,9 @@ dev = [
   "mkdocs-gen-files",
   "mkdocs-literate-nav",
   "mkdocs-redirects>=1.2,<2.0",
+  "mkdocs-minify-plugin>=0.7,<1.0",
+  "mkdocs-glightbox>=0.3,<1.0",
+  "mkdocs-material[imaging]>=9.5.39,<10.0",
 
   "prance>=0.22.0,<1.0",
   "openapi-spec-validator>=0.7.1,<1.0",
@@ -121,14 +129,15 @@ bijux = "bijux_cli.__main__:main"
 "Repository" = "https://github.com/bijux/bijux-cli.git"
 "Bug Tracker" = "https://github.com/bijux/bijux-cli/issues"
 "Documentation" = "https://bijux.github.io/bijux-cli/"
-"Changelog" = "https://github.com/bijux/bijux-cli/releases"
+"Changelog" = "https://bijux.github.io/bijux-cli/changelog/"
+"Discussions" = "https://github.com/bijux/bijux-cli/discussions"
 
-# bijux start
+# --8<-- [start:bijux]
 [tool.bijux]
 api_version = "0.1.0"
-# bijux end
+# --8<-- [end:bijux]
 
-# hatch start
+# --8<-- [start:hatch]
 [tool.hatch.build]
 include = [
   "README.md",
@@ -140,10 +149,12 @@ include = [
   "src/bijux_cli/py.typed",
 ]
 
+[tool.hatch.version]
+source = "vcs"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/bijux_cli"]
 zip-safe = false
-include = ["/bijux_cli"]
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
 content-type = "text/markdown"
@@ -151,30 +162,28 @@ fragments = [
   { path = "README.md" },
   { path = "CHANGELOG.md" },
 ]
-# hatch end
+# --8<-- [end:hatch]
 
-# deptry start
+# --8<-- [start:deptry]
 [tool.deptry]
 ignore = ["DEP002", "DEP003"]
-# deptry end
+# --8<-- [end:deptry]
 
-# interrogate start
+# --8<-- [start:interrogate]
 [tool.interrogate]
 fail-under = 98
 exclude = ["src/bijux_cli/core/di.py"]
 color = true
-# interrogate end
+# --8<-- [end:interrogate]
 
-# commitizen start
+# --8<-- [start:commitizen]
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = ["pyproject.toml:project.version"]
 tag_format = "v$version"
 update_changelog_on_bump = false
-version_files = ["pyproject.toml:project.version"]
-# commitizen end
+# --8<-- [end:commitizen]
 
-# towncrier start
+# --8<-- [start:towncrier]
 [tool.towncrier]
 filename = "CHANGELOG.md"
 directory = "changelog.d"
@@ -213,4 +222,4 @@ showcontent = true
 directory = "trivial"
 name = "Trivial"
 showcontent = false
-# towncrier end
+# --8<-- [end:towncrier]
