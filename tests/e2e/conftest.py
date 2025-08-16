@@ -20,9 +20,9 @@ from subprocess import CompletedProcess, TimeoutExpired, run
 import sys
 from typing import Any, cast
 
-import pexpect  # type: ignore[import-untyped]
+import pexpect
 import pytest
-import yaml  # pyright: ignore[reportMissingModuleSource]
+import yaml
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
@@ -404,7 +404,7 @@ def spawn_repl(
     return pexpect.spawn(
         cmd[0],
         cmd[1:],
-        env=env,  # pyright: ignore[reportArgumentType]
+        env=cast(os._Environ[str], env),  # pyright: ignore[reportPrivateUsage]
         encoding="utf-8",
         timeout=timeout,
     )

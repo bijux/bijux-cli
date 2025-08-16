@@ -19,7 +19,7 @@ from typing import Any
 import pytest
 import yaml
 
-from tests.e2e.conftest import BIN  # pyright: ignore[reportMissingImports]
+from tests.e2e.conftest import BIN
 
 SAFE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ :/."
 MAX_EXAMPLES = int(os.environ.get("BIJUX_TEST_FUZZ_EXAMPLES", "35"))

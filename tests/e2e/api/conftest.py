@@ -24,7 +24,8 @@ def client() -> httpx.Client:
     Returns:
         An `httpx.Client` instance configured with the base URL of the API.
     """
-    return httpx.Client(base_url=BASE_URL, timeout=5.0)
+    limits = httpx.Limits(max_connections=1, max_keepalive_connections=1)
+    return httpx.Client(base_url=BASE_URL, timeout=5.0, limits=limits)
 
 
 @pytest.fixture

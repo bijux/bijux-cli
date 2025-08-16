@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import typer
@@ -27,6 +27,8 @@ def test_maybe_default_to_repl_invokes_subprocess_when_no_subcommand(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Test that the REPL is invoked when no subcommand is given."""
+    from typer.models import Context as TyperContext
+
     called: dict[str, Any] = {}
 
     def fake_call(args: list[str]) -> int:
@@ -35,8 +37,8 @@ def test_maybe_default_to_repl_invokes_subprocess_when_no_subcommand(
 
     monkeypatch.setattr(subprocess, "call", fake_call)
 
-    ctx = DummyCtx(invoked_subcommand=None)
-    cli_mod.maybe_default_to_repl(ctx)  # type: ignore[arg-type]
+    ctx = cast(TyperContext, DummyCtx(invoked_subcommand=None))
+    cli_mod.maybe_default_to_repl(ctx)
 
     assert "args" in called
     assert called["args"] == [sys.argv[0], "repl"]
@@ -46,14 +48,16 @@ def test_maybe_default_to_repl_skips_when_there_is_a_subcommand(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that the REPL is not invoked when a subcommand is present."""
+    from typer.models import Context as TyperContext
+
     monkeypatch.setattr(
         subprocess,
         "call",
         lambda args: (_ for _ in ()).throw(AssertionError("should not be called")),
     )
 
-    ctx = DummyCtx(invoked_subcommand="foo")
-    cli_mod.maybe_default_to_repl(ctx)  # type: ignore[arg-type]
+    ctx = cast(TyperContext, DummyCtx(invoked_subcommand="foo"))
+    cli_mod.maybe_default_to_repl(ctx)
 
 
 def test_module_level_app_is_build_app() -> None:

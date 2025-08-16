@@ -223,17 +223,47 @@ def test_group_by_command() -> None:
     assert any(g.get("group") == "status" and g.get("count") >= 2 for g in groups)
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
 def test_json_shape_golden(golden_dir: Path) -> None:
-    """Compares JSON output against a golden file to ensure consistent shape."""
+    """Assert the emitted history JSON shape matches (is a superset of) the golden shape.
+
+    Steps:
+      1) Clear history and add at least one entry (`version`).
+      2) Read live JSON & normalize volatile fields.
+      3) Compare keys against the golden's normalized first-entry keys.
+    """
     run_cli(["history", "clear"])
     run_cli(["version"])
-    r = run_cli(["history", "--format", "json"])
-    live = normalize_history_payload(assert_json(r.stdout))
-    want = normalize_history_payload(
-        assert_json((golden_dir / "history_shape.json").read_text())
-    )
-    assert len(live) >= 1
-    assert set(live[0].keys()).issuperset(set(want[0].keys()))
+
+    res = run_cli(["history", "--format", "json"])
+    live = normalize_history_payload(assert_json(res.stdout))
+
+    golden_path = golden_dir / "history_shape.json"
+    want = normalize_history_payload(assert_json(golden_path.read_text()))
+
+    assert live, "history output is empty"
+    assert want, f"golden file is empty: {golden_path}"
+
+    want_keys = set(want[0].keys())
+    for idx, item in enumerate(live):
+        live_keys = set(item.keys())
+        missing = want_keys - live_keys
+        assert not missing, (
+            f"Item {idx} missing expected keys: {sorted(missing)}.\n"
+            f"Live keys: {sorted(live_keys)}\nGolden keys: {sorted(want_keys)}"
+        )
 
 
 def test_yaml_shape_golden(golden_dir: Path) -> None:

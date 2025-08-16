@@ -1,7 +1,11 @@
 {
   "include": [
-    "src",
-    "tests"
+    "../src/bijux_cli",
+    "../tests"
+  ],
+  "extraPaths": [
+    "../src",
+    ".."
   ],
   "exclude": [
     ".venv",
@@ -42,6 +46,7 @@
   "reportUnknownArgumentType": "none",
   "reportUnknownLambdaType": "none",
   "reportUnusedVariable": "information",
+  "reportMethodAssign": "none",
   "executionEnvironments": [
     {
       "root": ".",

@@ -36,34 +36,39 @@ def _fake_configure_emitter(monkeypatch: pytest.MonkeyPatch, emitter: Any) -> No
 
 
 class DummyEmitter:
-    """A mock Emitter that records all calls to its emit method."""
+    """Test emitter: matches EmitterProtocol, keeps legacy `emitted`."""
 
     def __init__(self) -> None:
-        """Initialize the emitter."""
-        self.emitted: list[dict[str, Any]] = []
+        self._records: list[dict[str, Any]] = []
+
+    @property
+    def emitted(self) -> list[dict[str, Any]]:
+        return self._records
 
     def emit(
         self,
         payload: Any,
-        fmt: OutputFormat,
-        pretty: bool,
-        message: str,
-        debug: bool,
-        output: str | None,
-        quiet: bool,
+        *,
+        fmt: OutputFormat | None = None,
+        pretty: bool = False,
+        level: str = "info",
+        message: str = "",
+        output: str | None = None,
+        **context: Any,
     ) -> None:
-        """Record all parameters of an emit call."""
-        self.emitted.append(
-            {
-                "payload": payload,
-                "fmt": fmt,
-                "pretty": pretty,
-                "message": message,
-                "debug": debug,
-                "output": output,
-                "quiet": quiet,
-            }
-        )
+        rec = {
+            "payload": payload,
+            "fmt": fmt,
+            "pretty": pretty,
+            "level": level,
+            "message": message,
+            "output": output,
+        }
+        rec.update(context)
+        self._records.append(rec)
+
+    def flush(self) -> None:
+        pass
 
 
 def test_build_payload_without_runtime() -> None:
@@ -105,7 +110,7 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
         _write_output_file(
             output_path=out,
             payload=payload,
-            emitter=emitter,  # type: ignore[arg-type]
+            emitter=emitter,
             fmt=OutputFormat.YAML,
             pretty=False,
             debug=True,
@@ -290,8 +295,8 @@ def test_write_output_file_success(
     _write_output_file(
         output_path=out,
         payload={"foo": "bar"},
-        emitter=emitter,  # type: ignore[arg-type]
-        fmt=None,  # type: ignore[arg-type]
+        emitter=emitter,
+        fmt=OutputFormat.JSON,
         pretty=True,
         debug=False,
         dry_run=True,
@@ -300,7 +305,7 @@ def test_write_output_file_success(
     assert called["payload"] == {"foo": "bar"}
     assert called["output"] == str(out)
     assert "dry-run" in called["message"]
-    assert called["fmt"] is None
+    assert called["fmt"] is OutputFormat.JSON
     assert called["pretty"] is True
     assert called["level"] == "info"
 
@@ -312,8 +317,8 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
         _write_output_file(
             output_path=out,
             payload={},
-            emitter=DummyEmitter(),  # type: ignore[arg-type]
-            fmt=None,  # type: ignore[arg-type]
+            emitter=DummyEmitter(),
+            fmt=OutputFormat.JSON,
             pretty=False,
             debug=False,
             dry_run=False,

@@ -21,7 +21,7 @@ T = TypeVar("T")
 @runtime_checkable
 class AuditProtocol(
     ProcessPoolProtocol,
-    Protocol,  # pyright: ignore[reportUntypedBaseClass]
+    Protocol,
 ):
     """Defines the contract for audit logging and system diagnostics.
 

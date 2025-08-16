@@ -10,11 +10,12 @@
 from __future__ import annotations
 
 import builtins
+from collections.abc import Callable
 import json
 from pathlib import Path
 import sys
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from typer.testing import CliRunner
@@ -161,8 +162,7 @@ def test_remove_failed(
     target = parent / "plugin"
     target.mkdir()
     monkeypatch.setattr(
-        scaffold_mod.shutil,  # type: ignore[attr-defined]
-        "rmtree",
+        "bijux_cli.commands.plugins.scaffold.shutil.rmtree",
         lambda p: (_ for _ in ()).throw(RuntimeError("rm fail")),
     )
     result = runner.invoke(
@@ -215,16 +215,20 @@ def test_scaffold_failed(
     parent = tmp_path / "out"
     parent.mkdir()
 
-    m = ModuleType("cookiecutter.main")
-
     def bad_cc(
-        template: str, no_input: bool, output_dir: str, extra_context: dict[str, Any]
+        template: str,
+        no_input: bool,
+        output_dir: str,
+        extra_context: dict[str, Any],
+        **_: Any,
     ) -> None:
         raise RuntimeError("bad template")
 
-    m.cookiecutter = bad_cc  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
+    m = cast(Any, ModuleType("cookiecutter.main"))
+    m.cookiecutter = bad_cc
+
     monkeypatch.setitem(sys.modules, "cookiecutter", ModuleType("cookiecutter"))
+    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
 
     result = runner.invoke(
         cli_app,
@@ -244,17 +248,21 @@ def test_plugin_json_missing(
     parent = tmp_path / "out"
     parent.mkdir()
 
-    m = ModuleType("cookiecutter.main")
-
     def make_dir(
-        template: str, no_input: bool, output_dir: str, extra_context: dict[str, Any]
+        template: str,
+        no_input: bool,
+        output_dir: str,
+        extra_context: dict[str, Any],
+        **_: Any,
     ) -> None:
         tgt = Path(output_dir) / extra_context["project_name"]
         tgt.mkdir()
 
-    m.cookiecutter = make_dir  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
+    m = cast(Any, ModuleType("cookiecutter.main"))
+    m.cookiecutter = make_dir
+
     monkeypatch.setitem(sys.modules, "cookiecutter", ModuleType("cookiecutter"))
+    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
 
     result = runner.invoke(
         cli_app,
@@ -274,10 +282,12 @@ def test_plugin_json_invalid(
     parent = tmp_path / "out"
     parent.mkdir()
 
-    m = ModuleType("cookiecutter.main")
-
     def make_bad_json(
-        template: str, no_input: bool, output_dir: str, extra_context: dict[str, Any]
+        template: str,
+        no_input: bool,
+        output_dir: str,
+        extra_context: dict[str, Any],
+        **_: Any,
     ) -> None:
         tgt = Path(output_dir) / extra_context["project_name"]
         tgt.mkdir()
@@ -285,9 +295,11 @@ def test_plugin_json_invalid(
             json.dumps({"name": extra_context["project_name"]})
         )
 
-    m.cookiecutter = make_bad_json  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
+    m = cast(Any, ModuleType("cookiecutter.main"))
+    m.cookiecutter = make_bad_json
+
     monkeypatch.setitem(sys.modules, "cookiecutter", ModuleType("cookiecutter"))
+    monkeypatch.setitem(sys.modules, "cookiecutter.main", m)
 
     result = runner.invoke(
         cli_app,
@@ -301,7 +313,6 @@ def test_success(cap: dict[str, Any], runner: CliRunner, tmp_path: Path) -> None
     """Test the successful scaffolding of a new plugin."""
     parent = tmp_path / "out"
     parent.mkdir()
-
     m = ModuleType("cookiecutter.main")
 
     def make_good(
@@ -315,16 +326,14 @@ def test_success(cap: dict[str, Any], runner: CliRunner, tmp_path: Path) -> None
             )
         )
 
-    m.cookiecutter = make_good  # type: ignore[attr-defined]
+    cast(Any, m).cookiecutter = make_good
     sys.modules["cookiecutter.main"] = m
     sys.modules["cookiecutter"] = ModuleType("cookiecutter")
-
     result = runner.invoke(
         cli_app,
         ["plugins", "scaffold", "plugin", "-o", str(parent), "-t", "tpl", "--force"],
     )
     assert result.exit_code == 0
-
     assert cap["payload"] == {
         "status": "created",
         "plugin": "plugin",
@@ -347,7 +356,7 @@ def _stub_cookiecutter_creates_good_dir() -> None:
             )
         )
 
-    m.cookiecutter = cc  # type: ignore[attr-defined]
+    cast(Any, m).cookiecutter = cc
     sys.modules["cookiecutter.main"] = m
     sys.modules["cookiecutter"] = ModuleType("cookiecutter")
 
@@ -402,10 +411,11 @@ def test_scaffold_fails_if_template_does_not_create_dir(
     """Test that a failure is reported if cookiecutter does not create the target directory."""
     parent = tmp_path / "out"
     parent.mkdir()
-    m = ModuleType("cookiecutter.main")
-    m.cookiecutter = lambda *args, **kwargs: None  # type: ignore[attr-defined]
-    sys.modules["cookiecutter.main"] = m
+
+    m = cast(Any, ModuleType("cookiecutter.main"))
+    m.cookiecutter = lambda *_a, **_k: None
     sys.modules["cookiecutter"] = ModuleType("cookiecutter")
+    sys.modules["cookiecutter.main"] = m
 
     result = runner.invoke(
         cli_app,
@@ -456,12 +466,15 @@ def _stub_out(  # pyright: ignore[reportUnusedFunction]
     monkeypatch.setattr(scaffold_mod, "emit_error_and_exit", fake_emit_error_and_exit)
 
 
-def _inject_cookiecutter(fn: Any) -> None:
+def _inject_cookiecutter(fn: Callable[[str, bool, str, dict[str, Any]], None]) -> None:
     """Inject a fake cookiecutter function into sys.modules."""
-    m = ModuleType("cookiecutter.main")
-    m.cookiecutter = fn  # type: ignore[attr-defined]
-    sys.modules["cookiecutter.main"] = m
-    sys.modules["cookiecutter"] = ModuleType("cookiecutter")
+    pkg: ModuleType = ModuleType("cookiecutter")
+    pkg.__path__ = []
+    sub: ModuleType = ModuleType("cookiecutter.main")
+    cast(Any, sub).cookiecutter = fn
+    sys.modules["cookiecutter"] = pkg
+    sys.modules["cookiecutter.main"] = sub
+    cast(Any, pkg).main = sub
 
 
 def test_force_removes_existing_file(

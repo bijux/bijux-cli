@@ -183,7 +183,7 @@ def _decolorise(text: str) -> str:
     return _ANSI_RE.sub("", text or "")
 
 
-def _run_repl_script(
+def run_repl_script(
     lines: list[str],
     env: dict[str, str] | None = None,
     cwd: Path | None = None,
@@ -1225,7 +1225,7 @@ def test_plugins_list_pretty() -> None:
 
 def test_repl_basic() -> None:
     """Test that the REPL starts and exits cleanly."""
-    r = _run_repl_script(["quit"], timeout=2)
+    r = run_repl_script(["quit"], timeout=2)
     assert r.returncode in (0, 1, -signal.SIGTERM)
     out = _decolorise((r.stdout or "").lower())
     if out:
@@ -1236,19 +1236,19 @@ def test_repl_config_set(tmp_path: Path) -> None:
     """Test running the config set command within the REPL."""
     cfg = tmp_path / ".env"
     env = {"BIJUXCLI_CONFIG": str(cfg)}
-    _ = _run_repl_script(["config set foo=bar", "quit"], env=env, timeout=2)
+    _ = run_repl_script(["config set foo=bar", "quit"], env=env, timeout=2)
     assert "BIJUXCLI_FOO=bar" in cfg.read_text(encoding="utf-8")
 
 
 def test_repl_help() -> None:
     """Test running the help command within the REPL."""
-    r = _run_repl_script(["help", "quit"], timeout=2)
+    r = run_repl_script(["help", "quit"], timeout=2)
     assert "usage" in _decolorise(r.stdout.lower())
 
 
 def test_repl_invalid() -> None:
     """Test that an invalid command in the REPL is handled gracefully."""
-    r = _run_repl_script(["invalid", "quit"], timeout=2)
+    r = run_repl_script(["invalid", "quit"], timeout=2)
     assert r.returncode in (0, 1, 2, -signal.SIGTERM)
     out = _decolorise((r.stdout or "").lower())
     err = _decolorise((r.stderr or "").lower())
@@ -1264,7 +1264,7 @@ def test_repl_invalid() -> None:
 
 def test_repl_empty_line() -> None:
     """Test that an empty line in the REPL is handled gracefully."""
-    r = _run_repl_script(["", "quit"], timeout=2)
+    r = run_repl_script(["", "quit"], timeout=2)
     assert r.returncode in (0, 1, -signal.SIGTERM)
     out = _decolorise((r.stdout or "").lower())
     if out:
@@ -1273,7 +1273,7 @@ def test_repl_empty_line() -> None:
 
 def test_repl_sigint() -> None:
     """Test that a SIGINT signal in the REPL is handled gracefully."""
-    r = _run_repl_script(["\x03", "quit"], timeout=2)
+    r = run_repl_script(["\x03", "quit"], timeout=2)
     assert r.returncode in (0, 1, -signal.SIGTERM)
     out = _decolorise((r.stdout or "").lower())
     if out:
@@ -1284,7 +1284,7 @@ def test_repl_with_env(tmp_path: Path) -> None:
     """Test that the REPL correctly uses passed environment variables."""
     cfg = tmp_path / ".env"
     env = {"BIJUXCLI_CONFIG": str(cfg)}
-    r = _run_repl_script(["config list", "quit"], env=env, timeout=2)
+    r = run_repl_script(["config list", "quit"], env=env, timeout=2)
     assert "[]" in r.stdout
 
 
@@ -1521,19 +1521,19 @@ def test_config_set_large_value() -> None:
 
 def test_repl_multiple_sigint() -> None:
     """Test that multiple SIGINT signals in the REPL are handled gracefully."""
-    r = _run_repl_script(["\x03", "\x03", "quit"], timeout=2)
+    r = run_repl_script(["\x03", "\x03", "quit"], timeout=2)
     assert r.returncode in (0, -signal.SIGTERM)
 
 
 def test_repl_invalid_subcommand() -> None:
     """Test that an invalid subcommand in the REPL is handled gracefully."""
-    r = _run_repl_script(["config invalid", "quit"], timeout=2)
+    r = run_repl_script(["config invalid", "quit"], timeout=2)
     assert r.returncode in (0, -signal.SIGTERM)
 
 
 def test_repl_history() -> None:
     """Test the history command within the REPL."""
-    r = _run_repl_script(["history service list", "quit"], timeout=2)
+    r = run_repl_script(["history service list", "quit"], timeout=2)
     out = (r.stdout or "").strip()
     if out:
         try:
@@ -1549,43 +1549,43 @@ def test_repl_history() -> None:
 
 def test_repl_memory_set() -> None:
     """Test the memory set command within the REPL."""
-    r = _run_repl_script(["memory set key=val", "quit"], timeout=2)
+    r = run_repl_script(["memory set key=val", "quit"], timeout=2)
     assert r.returncode in (0, -signal.SIGTERM)
 
 
 def test_repl_docs() -> None:
     """Test the docs command within the REPL."""
-    r = _run_repl_script(["docs", "quit"], timeout=2)
+    r = run_repl_script(["docs", "quit"], timeout=2)
     assert r.returncode in (0, -signal.SIGTERM)
 
 
 def test_repl_audit() -> None:
     """Test the audit command within the REPL."""
-    r = _run_repl_script(["audit", "quit"], timeout=2)
+    r = run_repl_script(["audit", "quit"], timeout=2)
     assert "status" in _decolorise(r.stdout.lower())
 
 
 def test_repl_sleep() -> None:
     """Test the sleep command within the REPL."""
-    r = _run_repl_script(["sleep 0.1", "quit"], timeout=2)
+    r = run_repl_script(["sleep 0.1", "quit"], timeout=2)
     assert r.returncode in (0, -signal.SIGTERM)
 
 
 def test_repl_status() -> None:
     """Test the status command within the REPL."""
-    r = _run_repl_script(["status", "quit"], timeout=2)
+    r = run_repl_script(["status", "quit"], timeout=2)
     assert "status" in _decolorise(r.stdout.lower())
 
 
 def test_repl_dev_di() -> None:
     """Test the dev di command within the REPL."""
-    r = _run_repl_script(["dev di", "quit"], timeout=2)
+    r = run_repl_script(["dev di", "quit"], timeout=2)
     assert "protocol" in _decolorise(r.stdout.lower())
 
 
 def test_repl_plugins_list() -> None:
     """Test the plugins list command within the REPL."""
-    r = _run_repl_script(["plugins list", "quit"], timeout=2)
+    r = run_repl_script(["plugins list", "quit"], timeout=2)
     assert "plugins" in _decolorise(r.stdout.lower())
 
 

@@ -417,6 +417,19 @@ def normalize_docs_output(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
 def test_docs_spec_has_valid_structure_and_contains_core_commands(
     tmp_path: Path,
 ) -> None:
@@ -424,15 +437,19 @@ def test_docs_spec_has_valid_structure_and_contains_core_commands(
     actual_spec_path = tmp_path / "spec.json"
     run_cli(["docs", "--out", str(actual_spec_path)])
 
-    golden_data = json.loads(Path("tests/e2e/test_fixtures/docs/docs.json").read_text())
+    golden_path = e2e_fixture("docs", "docs.json")
+    golden_data = json.loads(golden_path.read_text())
     actual_data = json.loads(actual_spec_path.read_text())
 
     assert isinstance(actual_data, dict)
+
     assert "version" in actual_data
     assert isinstance(actual_data["version"], str)
+
     assert "commands" in actual_data
     assert isinstance(actual_data["commands"], list)
     assert all(isinstance(cmd, str) for cmd in actual_data["commands"])
+
     expected_core_commands = set(golden_data.get("commands", []))
     actual_commands = set(actual_data.get("commands", []))
     missing_commands = expected_core_commands - actual_commands

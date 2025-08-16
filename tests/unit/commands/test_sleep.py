@@ -22,7 +22,7 @@ runner: CliRunner = CliRunner()
 
 def test_build_payload_no_runtime() -> None:
     """Builds payload without runtime fields."""
-    payload = _build_payload(include_runtime=False, slept=1.25)  # pyright: ignore[reportPrivateUsage]
+    payload = _build_payload(include_runtime=False, slept=1.25)
     assert payload == {"slept": 1.25}
 
 
@@ -46,7 +46,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("platform.python_version", fake_pyver, raising=True)
     monkeypatch.setattr("platform.platform", fake_platform, raising=True)
 
-    payload = _build_payload(include_runtime=True, slept=0.5)  # pyright: ignore[reportPrivateUsage]
+    payload = _build_payload(include_runtime=True, slept=0.5)
     assert payload["slept"] == 0.5
     assert payload["python"] == "SAFE(python_version)"
     assert payload["platform"] == "SAFE(platform)"
@@ -69,9 +69,7 @@ def _install_fake_container(
                 raise get_raises
             return get_returns if get_returns is not None else default
 
-    fake_container = SimpleNamespace(
-        resolve=lambda _proto: FakeCfg()  # pyright: ignore[reportUnknownLambdaType]
-    )
+    fake_container = SimpleNamespace(resolve=lambda _proto: FakeCfg())
     monkeypatch.setattr(
         "bijux_cli.core.di.DIContainer.current",
         staticmethod(lambda: fake_container),

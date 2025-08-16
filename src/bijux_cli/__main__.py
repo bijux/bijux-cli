@@ -153,7 +153,7 @@ def disable_cli_colors_for_test() -> None:
     except ImportError:
         pass
     try:
-        import colorama  # pyright: ignore[reportMissingModuleSource]
+        import colorama
 
         colorama.deinit()
     except ImportError:
@@ -161,9 +161,7 @@ def disable_cli_colors_for_test() -> None:
     try:
         import prompt_toolkit
 
-        prompt_toolkit.shortcuts.set_title = (
-            lambda text: None  # pyright: ignore[reportUnknownLambdaType]
-        )
+        prompt_toolkit.shortcuts.set_title = lambda text: None
     except ImportError:  # pragma: no cover
         pass
 

@@ -315,8 +315,8 @@ export BIJUXCLI_PLUGINS_DIR=./plugins
 This flow works on any install; it does not assume a template or extra files.
 
 ```bash
-# Fresh artifacts directory
-rm -rf artifacts && mkdir -p artifacts
+# Fresh artifacts_pages directory
+rm -rf artifacts_pages && mkdir -p artifacts_pages
 
 # Version and health
 bijux --version
@@ -325,9 +325,9 @@ bijux doctor
 # Config operations
 bijux config set core_timeout=30
 bijux config get core_timeout                 # {"value":"30"}
-bijux config list -f json --no-pretty > artifacts/config.json
-bijux config export artifacts/settings.env
-bijux config export artifacts/settings.json -f json
+bijux config list -f json --no-pretty > artifacts_pages/config.json
+bijux config export artifacts_pages/settings.env
+bijux config export artifacts_pages/settings.json -f json
 
 # REPL creates history
 bijux repl <<'EOF'
@@ -337,9 +337,9 @@ exit
 EOF
 
 # History operations
-bijux history --limit 5 -f json --no-pretty > artifacts/history.json
-bijux history --export artifacts/history-full.json
-bijux history --import artifacts/history-full.json
+bijux history --limit 5 -f json --no-pretty > artifacts_pages/history.json
+bijux history --export artifacts_pages/history-full.json
+bijux history --import artifacts_pages/history-full.json
 
 # Cleanup
 bijux history clear

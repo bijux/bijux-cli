@@ -1,4 +1,5 @@
 # Git Hooks
+
 GIT_HOOKS_DIR 	:= .git/hooks
 LOCAL_HOOKS_DIR := scripts/git-hooks
 

@@ -185,7 +185,7 @@ def test_emit_telemetry_fail_no_debug(
     emitter._debug = False
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "output"
-    mock_serializer_for.return_value = mock_serializer  # pyright: ignore[reportAttributeAccessIssue]
+    mock_serializer_for.return_value = mock_serializer
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "error") as mock_log:

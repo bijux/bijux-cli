@@ -16,6 +16,7 @@ import types
 from typing import Any, cast
 from unittest.mock import patch
 
+from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 import pytest
 import typer
@@ -166,9 +167,7 @@ def test_run_piped_flow_and_messages(
     monkeypatch.setattr(
         mod,
         "_suggest",
-        lambda s: (  # pyright: ignore[reportUnknownLambdaType]
-            " Did you mean 'status'?" if s != "status" else None
-        ),
+        lambda s: (" Did you mean 'status'?" if s != "status" else None),
     )
 
     _run_piped_lines(
@@ -207,12 +206,12 @@ def test_run_piped_quiet_suppresses_everything(
     monkeypatch.setattr(
         mod,
         "_suggest",
-        lambda s: None,  # pyright: ignore[reportUnknownLambdaType]
+        lambda s: None,
     )
     monkeypatch.setattr(
         mod,
         "_invoke",
-        lambda *a, **k: 0,  # pyright: ignore[reportUnknownLambdaType]
+        lambda *a, **k: 0,
     )
     _run_piped_lines(["", "# x", ";bad", "-flag", "config set"], quiet=True)
     out = capsys.readouterr()
@@ -280,20 +279,33 @@ class FakeApp:
 
 
 def make_fake_completer() -> mod.CommandCompleter:
-    """Construct a CommandCompleter using fake app graph."""
-    status = FakeCmd("status", [FakeParam(["--no-pretty", "--pretty"])])
-    version = FakeCmd("version")
-    config_cmds = [FakeCmd("set", [])]
-    config_app = FakeApp(config_cmds, [])
-    config_group = FakeGroup("config", config_app)
-    app = FakeApp([status, version], [config_group])
-    return mod.CommandCompleter(app)  # type: ignore[arg-type]
+    """Build a minimal real Typer app (not FakeApp) for the completer."""
+    app = typer.Typer()
+
+    @app.command("status")
+    def status(  # pyright: ignore[reportUnusedFunction]
+        pretty: bool = typer.Option(False, "--pretty/--no-pretty"),
+    ) -> None:
+        pass  # no-op
+
+    @app.command("version")
+    def version() -> None:  # pyright: ignore[reportUnusedFunction]
+        pass  # no-op
+
+    config = typer.Typer()
+
+    @config.command("set")
+    def config_set() -> None:  # pyright: ignore[reportUnusedFunction]
+        pass  # no-op
+
+    app.add_typer(config, name="config")
+    return mod.CommandCompleter(app)
 
 
 def complete_text(comp: mod.CommandCompleter, text: str) -> list[str]:
     """Return completion texts for input."""
-    ev = object()
-    return [c.text for c in comp.get_completions(Document(text), ev)]  # type: ignore[arg-type]
+    ev = CompleteEvent(text_inserted=True)
+    return [c.text for c in comp.get_completions(Document(text), ev)]
 
 
 def test_completer_global_opts_builtins_and_top() -> None:
@@ -335,7 +347,7 @@ def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(
         signal,
         "signal",
-        lambda *a, **k: None,  # pyright: ignore[reportUnknownLambdaType]
+        lambda *a, **k: None,
     )
     monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
     flag: dict[str, bool] = {}
@@ -378,12 +390,12 @@ def test_main_invalid_format_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(
         sys.stdin,
         "isatty",
-        lambda: False,  # pyright: ignore[reportUnknownLambdaType]
+        lambda: False,
     )
     monkeypatch.setattr(
         signal,
         "signal",
-        lambda *a, **k: None,  # pyright: ignore[reportUnknownLambdaType]
+        lambda *a, **k: None,
     )
     from typer.testing import CliRunner
 
@@ -428,7 +440,7 @@ def test_known_commands_spec_invalid_json_falls_back(
     monkeypatch.setattr(
         mod,
         "Path",
-        lambda *_: FakePath("dummy"),  # pyright: ignore[reportUnknownLambdaType]
+        lambda *_: FakePath("dummy"),
     )
     cmds = mod._known_commands()  # pyright: ignore[reportPrivateUsage]
     assert {"status", "version", "repl"} <= set(cmds)
@@ -496,7 +508,7 @@ async def test_run_interactive_end_to_end(
     monkeypatch.setattr(
         importlib,
         "import_module",
-        lambda name: fake_cli_mod,  # pyright: ignore[reportUnknownLambdaType]
+        lambda name: fake_cli_mod,
     )
 
     import prompt_toolkit
@@ -528,9 +540,7 @@ async def test_run_interactive_end_to_end(
     monkeypatch.setattr(
         mod,
         "_suggest",
-        lambda s: (  # pyright: ignore[reportUnknownLambdaType]
-            " Did you mean 'status'?" if s != "status" else None
-        ),
+        lambda s: (" Did you mean 'status'?" if s != "status" else None),
     )
 
     monkeypatch.setenv("BIJUXCLI_HISTORY_FILE", str(Path.cwd() / ".tmp_history"))
@@ -553,27 +563,21 @@ def test_invoke_json_commands_and_quiet(monkeypatch: pytest.MonkeyPatch) -> None
 
     monkeypatch.setattr(typer_testing, "CliRunner", _RecordingFakeRunner)
 
-    out, err, m = _capture_io()  # pyright: ignore[reportPrivateUsage] # pyright: ignore[reportUnusedVariable]
+    out, _, m = _capture_io()
     try:
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
-            ["version"], repl_quiet=False
-        )
+        code = mod._invoke(["version"], repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
         assert code == 0
         assert out.getvalue().strip().startswith("{")
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
-            ["status", "--quiet"], repl_quiet=False
-        )
+        code = mod._invoke(["status", "--quiet"], repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
         assert code == 0
         assert out.getvalue() == ""
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
-            ["status"], repl_quiet=True
-        )
+        code = mod._invoke(["status"], repl_quiet=True)  # pyright: ignore[reportPrivateUsage]
         assert code == 0
         assert out.getvalue() == ""
     finally:
@@ -651,7 +655,7 @@ def test_known_commands_spec_wrong_type(monkeypatch: pytest.MonkeyPatch) -> None
         def __str__(self) -> str:
             return self._path
 
-    monkeypatch.setattr(mod, "Path", lambda *_: FakePath("dummy"))  # pyright: ignore[reportUnknownLambdaType]
+    monkeypatch.setattr(mod, "Path", lambda *_: FakePath("dummy"))
     cmds = mod._known_commands()  # pyright: ignore[reportPrivateUsage]
     assert "status" in cmds
     assert "version" in cmds
@@ -695,7 +699,8 @@ def test_run_piped_ignores_unclosed_quote(
 def test_completer_handles_shlex_valueerror() -> None:
     """Handle ValueError during completion parsing."""
     comp = make_fake_completer()
-    list(comp.get_completions(Document('unclosed "'), object()))  # type: ignore[arg-type]
+    ev = CompleteEvent(text_inserted=True)
+    assert list(comp.get_completions(Document('unclosed "'), ev)) == []
 
 
 def test_completer_find_longest_prefix() -> None:
@@ -1017,6 +1022,7 @@ def test_main_guard_invokes_repl_app_without_side_effects(
         testing=_types.SimpleNamespace(CliRunner=lambda: _RecordingFakeRunner()),
     )
     monkeypatch.setitem(_sys.modules, "typer", fake_typer)
+    _sys.modules.pop("bijux_cli.commands.repl", None)
     runpy.run_module("bijux_cli.commands.repl", run_name="__main__", alter_sys=True)
 
 
@@ -1091,7 +1097,7 @@ def test_run_piped_config_get_missing_arg_emits_json(
     """Emit JSON error for missing config get argument."""
     monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO("config get\n")
-    out, err, mp = _capture_io()
+    out, _, mp = _capture_io()
     try:
         with pytest.raises(SystemExit) as se:
             mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
@@ -1119,7 +1125,7 @@ def test_run_piped_skips_empty_and_comment_segments(
     """Treat leading semicolon as unknown command."""
     monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO(" ;   #comment only\n")
-    out, err, mp = _capture_io()
+    _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
             mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
@@ -1137,7 +1143,7 @@ def test_run_piped_prints_prompt_for_pure_blank_or_comment(
     """Print prompt for pure blank or comment lines."""
     monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO("\n# only comment\n")
-    out, err, mp = _capture_io()
+    _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
             mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]

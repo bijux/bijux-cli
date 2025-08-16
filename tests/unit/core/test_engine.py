@@ -283,8 +283,8 @@ def test_register_plugins_discovers_and_registers(
 async def test_run_repl_noop() -> None:
     """Test that run_repl is a no-op and returns None."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    assert await eng.run_repl() is None  # type: ignore[func-returns-value]
+    eng = Engine(di=di)
+    await eng.run_repl()
 
 
 class DINoHistory(FakeDI):

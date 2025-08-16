@@ -10,7 +10,7 @@ from collections.abc import Iterator
 import importlib
 import sys
 import time
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import click
@@ -49,7 +49,7 @@ def _cleanup_help_module_patches() -> Iterator[None]:  # pyright: ignore[reportU
     click.secho = _real_click_secho
     typer.echo = _real_typer_echo
     typer.secho = _real_typer_secho
-    sys.stderr.write = _real_stderr_write  # type: ignore[method-assign]
+    cast(Any, sys.stderr).write = _real_stderr_write
 
 
 def test_find_target_command_no_parent() -> None:
@@ -109,7 +109,11 @@ def test_build_help_payload_without_runtime() -> None:
 
 def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test building a help payload with runtime info."""
-    monkeypatch.setattr(help_mod.time, "perf_counter", lambda: 1000.0)  # type: ignore[attr-defined]
+    monkeypatch.setattr(
+        "bijux_cli.commands.help.time.perf_counter",
+        lambda: 1000.0,
+        raising=True,
+    )
     p = _build_help_payload("txt", True, started_at=999.0)
     assert p["help"] == "txt"
     assert "python" in p

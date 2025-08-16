@@ -37,6 +37,7 @@ One place for all the extra tools this repo uses—what they do, where they’re
 make install   # bootstrap virtualenv, pin tools
 tox -av        # list CI-mirrored environments
 ```
+**Artifacts:** See the consolidated [Artifacts index](artifacts/index.md) for all generated reports.
 
 [Back to top](#top)
 
@@ -124,6 +125,8 @@ make quality      # vulture, deptry, reuse, interrogate, codespell, radon
 
 </details>
 
+**Artifacts:** [Lint Artifacts](artifacts/lint.md) · [Quality Artifacts](artifacts/quality.md)
+
 [Back to top](#top)
 
 ---
@@ -155,6 +158,9 @@ make lint   # includes mypy + pyright + pytype
 ```
 
 </details>
+
+**Artifacts:** Logs live under [Lint Artifacts](artifacts/lint.md) — direct sections:
+[`mypy.log`](artifacts/lint.md#mypy-log) · [`pyright.log`](artifacts/lint.md#pyright-log) · [`pytype.log`](artifacts/lint.md#pytype-log)
 
 [Back to top](#top)
 
@@ -190,6 +196,10 @@ pytest --cov=bijux_cli --cov-report=html && open htmlcov/index.html
 ```
 
 </details>
+
+**Artifacts:** [Test Artifacts](artifacts/test.md) ·
+<a href="artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">HTML coverage report</a> ·
+[JUnit report](artifacts/test.md#junit-xml)
 
 [Back to top](#top)
 
@@ -229,7 +239,7 @@ make mutation
 
 ```bash
 make security   # bandit + pip-audit
-make sbom       # writes artifacts/sbom.json
+make sbom       # writes artifacts_pages/sbom.json
 ```
 
 <details>
@@ -259,6 +269,8 @@ make sbom       # writes artifacts/sbom.json
 
 </details>
 
+**Artifacts:** [Security Artifacts](artifacts/security.md) · [SBOM Artifacts](artifacts/sbom.md)
+
 [Back to top](#top)
 
 ---
@@ -268,7 +280,7 @@ make sbom       # writes artifacts/sbom.json
 ## Docs Toolchain
 
 * **MkDocs (Material)** + **mkdocstrings** + **literate-nav**.
-* `scripts/helper_mkdocs.py` copies top-level Markdown into `docs/`, generates `reference/**` API pages, `nav.md`, and ensures `{#top}` anchors.
+* `scripts/docs_builder/mkdocs_manager.py` copies top-level Markdown into `docs/`, generates `reference/**` API pages, `nav.md`, and ensures `{#top}` anchors.
 
 ```bash
 make docs
@@ -285,10 +297,10 @@ make docs-serve
 </details>
 
 <details>
-<summary>Docs generator (<code>scripts/helper_mkdocs.py</code>)</summary>
+<summary>Docs generator (<code>scripts/docs_builder/mkdocs_manager.py</code>)</summary>
 
 ```python
---8<-- "scripts/helper_mkdocs.py"
+--8<-- "scripts/docs_builder/mkdocs_manager.py"
 ```
 
 </details>
@@ -327,6 +339,8 @@ make api
 ```
 
 </details>
+
+**Artifacts:** [API Artifacts](artifacts/api.md)
 
 [Back to top](#top)
 
@@ -462,6 +476,8 @@ tox -q -p auto
 ```
 
 </details>
+
+**Artifacts:** Browse CI-produced reports under [Artifacts](artifacts/index.md).
 
 [Back to top](#top)
 

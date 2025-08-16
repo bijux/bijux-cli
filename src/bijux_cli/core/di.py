@@ -354,21 +354,56 @@ class DIContainer:
                     extra={"service_name": name_str},
                 )
             raw = factory() if is_function_like else factory
-            if asyncio.iscoroutine(raw):
+            if inspect.isawaitable(raw):
                 if async_mode:
-                    return cast(Coroutine[Any, Any, T], raw)
-                else:
+                    return cast(Awaitable[T], raw)
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+                if loop is not None:
+                    if not hasattr(loop, "run_until_complete"):
+                        with suppress(Exception):
+                            if asyncio.iscoroutine(raw) and hasattr(raw, "close"):
+                                cast(Any, raw).close()
+                        raise RuntimeError(
+                            "Cannot sync-resolve while an event loop is running"
+                        )
+
+                    is_coro = asyncio.iscoroutine(raw)
+                    try:
+                        if is_coro:
+                            result = loop.run_until_complete(
+                                cast(Coroutine[Any, Any, T], raw)
+                            )
+                        else:
+
+                            async def _await(a: Awaitable[T]) -> T:
+                                return await a
+
+                            result = loop.run_until_complete(
+                                _await(cast(Awaitable[T], raw))
+                            )
+                    finally:
+                        if is_coro:
+                            with suppress(Exception):
+                                if hasattr(raw, "close"):
+                                    cast(Any, raw).close()
+                    return result
+                if asyncio.iscoroutine(raw):
                     coro = cast(Coroutine[Any, Any, T], raw)
                     try:
-                        try:
-                            loop = asyncio.get_running_loop()
-                            result = loop.run_until_complete(coro)
-                        except RuntimeError:
-                            result = asyncio.run(coro)
+                        result = asyncio.run(coro)
                     finally:
                         with suppress(Exception):
                             if hasattr(coro, "close"):
                                 coro.close()
+                else:
+
+                    async def _await(a: Awaitable[T]) -> T:
+                        return await a
+
+                    result = asyncio.run(_await(cast(Awaitable[T], raw)))
             else:
                 result = cast(T, raw)
             if result is None:

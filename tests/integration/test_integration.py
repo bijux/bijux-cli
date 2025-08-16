@@ -13,12 +13,7 @@ from typing import Any
 import pytest
 import yaml
 
-from tests.functional.test_functional import cli
-
-try:
-    from tests.functional.test_functional import _run_repl_script
-except Exception:
-    _run_repl_script = None  # type: ignore[assignment]
+from tests.functional.test_functional import cli, run_repl_script
 
 
 @pytest.mark.parametrize(
@@ -209,10 +204,10 @@ def test_sleep_quiet() -> None:
     _assert_ok_or_sigterm(r.returncode)
 
 
-@pytest.mark.skipif(_run_repl_script is None, reason="repl helper not available")
+@pytest.mark.skipif(run_repl_script is None, reason="repl helper not available")
 def test_repl_smoke() -> None:
     """Perform a smoke test of the REPL by starting and quitting."""
-    r = _run_repl_script(["quit"], timeout=2)  # pyright: ignore[reportOptionalCall]
+    r = run_repl_script(["quit"], timeout=2)
     assert r.returncode in (0, 2, -signal.SIGTERM)
     assert r.stderr is not None
 

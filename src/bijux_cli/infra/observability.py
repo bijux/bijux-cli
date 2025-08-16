@@ -23,7 +23,7 @@ from bijux_cli.core.exceptions import ServiceError
 from bijux_cli.infra.telemetry import NullTelemetry
 
 
-class Observability(ObservabilityProtocol):  # pyright: ignore[reportUntypedBaseClass]
+class Observability(ObservabilityProtocol):
     """A structured logging service integrating `structlog` and telemetry.
 
     This class wraps a `structlog` logger to produce structured log entries.

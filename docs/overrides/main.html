@@ -1,7 +1,21 @@
 {% extends "base.html" %}
+
 {% block extrahead %}
   {{ super() }}
   <link rel="icon" href="{{ 'assets/bijux_icon.png' | url }}" type="image/png">
   <link rel="shortcut icon" href="{{ 'assets/bijux_icon.png' | url }}" type="image/png">
   <link rel="apple-touch-icon" href="{{ 'assets/bijux_icon.png' | url }}">
+{% endblock %}
+
+{% block header %}
+  {{ super() }}
+  {% set tag = config.extra.release_tag %}
+  {% if tag %}
+    <a
+      href="{{ config.repo_url }}/releases/tag/{{ tag }}"
+      class="version-badge md-header__button"
+      title="Release {{ tag }}">
+      {{ tag }}
+    </a>
+  {% endif %}
 {% endblock %}

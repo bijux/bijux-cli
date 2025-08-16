@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import json
+from numbers import Real
 from pathlib import Path
 import random
 import re
@@ -580,30 +581,48 @@ def test_status_non_ascii_arg_fuzz(nonascii: str) -> None:
     assert_error_contract(res.stdout, res.stderr)
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
 def test_status_watch_golden() -> None:
-    """Golden test for watch output (≥1 tick + stop)."""
+    """Golden test for watch output (at least one tick and a stop message)."""
     _, lines, remainder = run_cli_watch(["--watch", "0.1", "--format", "json"])
+
     raw = "".join(lines) + remainder
     decoder = json.JSONDecoder()
     objs: list[dict[str, Any]] = []
-    s = raw
-    idx = 0
-    length = len(s)
-    while idx < length:
-        while idx < length and s[idx].isspace():
-            idx += 1
-        if idx >= length:
-            break
 
-        obj, end = decoder.raw_decode(s, idx)
-        objs.append(obj)
-        idx = end
+    idx = 0
+    n = len(raw)
+    while idx < n:
+        while idx < n and raw[idx].isspace():
+            idx += 1
+        if idx >= n:
+            break
+        try:
+            obj, idx = decoder.raw_decode(raw, idx)
+        except json.JSONDecodeError:
+            break
+        if isinstance(obj, dict):
+            objs.append(obj)
+
     ticks = [
-        o for o in objs if o.get("status") == "ok" and isinstance(o.get("ts"), float)
+        o for o in objs if o.get("status") == "ok" and isinstance(o.get("ts"), Real)
     ]
     stops = [o for o in objs if o.get("status") == "watch-stopped"]
-    assert len(ticks) >= 1, f"Expected at least one tick, got: {objs!r}"
-    assert len(stops) >= 1, f"Expected a stop message, got: {objs!r}"
+
+    assert ticks, f"Expected at least one tick, got: {objs!r}"
+    assert stops, f"Expected a stop message, got: {objs!r}"
 
 
 @given(

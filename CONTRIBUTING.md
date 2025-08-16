@@ -169,7 +169,7 @@ make lint
 
 ```bash
 make security  # bandit + pip-audit
-make sbom      # CycloneDX, saved to artifacts/
+make sbom      # CycloneDX, saved to artifacts_pages/
 ```
 
 * No secrets in code or tests
