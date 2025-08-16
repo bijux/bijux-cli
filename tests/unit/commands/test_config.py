@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 import builtins
+from collections.abc import Callable
 import fcntl
 from io import StringIO
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
+import click
 import pytest
 from typer import Context
 
@@ -124,8 +126,8 @@ def test_export_config_stdout(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        export_config(ctx, "-", None)  # type: ignore[arg-type]
-        mock_config_svc.export.assert_called_with("-", None)
+        export_config(ctx, "-", "json")
+        mock_config_svc.export.assert_called_with("-", "json")
 
 
 def test_export_config_file(
@@ -488,7 +490,7 @@ def test_export_config_command_error(
         ctx = Context(MagicMock())
         mock_config_svc.export.side_effect = CommandError("error")
         with pytest.raises(SystemExit):
-            export_config(ctx, "file", None)  # type: ignore[arg-type]
+            export_config(ctx, "file", "json")
         mock_emit.assert_called()
 
 
@@ -508,7 +510,7 @@ def test_export_config_exception(
         ctx = Context(MagicMock())
         mock_config_svc.export.side_effect = Exception("error")
         with pytest.raises(Exception, match="error"):
-            export_config(ctx, "file", None)  # type: ignore[arg-type]
+            export_config(ctx, "file", "json")
 
 
 def test_get_config_not_found(
@@ -660,11 +662,17 @@ def test_get_config_other_command_error(
         )
 
 
-class DummyCmd:
-    """A mock Click/Typer Command with necessary flags for tests."""
+class DummyCmd(click.Command):
+    """Minimal Click/Typer command for Context construction in tests."""
 
-    allow_extra_args = True
-    allow_interspersed_args = True
+    def __init__(self) -> None:
+        super().__init__(name="dummy")
+        self.allow_extra_args = True
+        self.allow_interspersed_args = True
+        self.ignore_unknown_options = True
+
+    def invoke(self, ctx: click.Context) -> Any:
+        return None
 
 
 def test_config_root_with_subcommand_skips_execution(
@@ -672,7 +680,7 @@ def test_config_root_with_subcommand_skips_execution(
 ) -> None:
     """Test that the main config callback returns early if a subcommand is invoked."""
     fake_ctx = Context(
-        command=DummyCmd(),  # type: ignore[arg-type]
+        command=DummyCmd(),
         allow_extra_args=True,
         ignore_unknown_options=True,
     )
@@ -697,7 +705,7 @@ def test_config_root_with_subcommand_skips_execution(
         ),
     )
 
-    result = config(fake_ctx)  # type: ignore[func-returns-value]
+    result = cast(Callable[..., Any], config)(fake_ctx)
     assert result is None
 
 
@@ -711,7 +719,7 @@ class DummySvc:
 def make_ctx() -> Context:
     """Build a Typer Context with a dummy command allowing extra arguments."""
     return Context(
-        command=DummyCmd(),  # type: ignore[arg-type]
+        command=DummyCmd(),
         allow_extra_args=True,
         ignore_unknown_options=True,
     )
@@ -888,7 +896,7 @@ def test_posix_lock_import_failure_skips_lock(
     )
 
     ctx = Context(
-        DummyCmd(),  # type: ignore[arg-type]
+        DummyCmd(),
         allow_extra_args=True,
         allow_interspersed_args=True,
         ignore_unknown_options=True,
@@ -946,7 +954,7 @@ def test_posix_unlock_failure_is_ignored(
     )
 
     ctx = Context(
-        DummyCmd(),  # type: ignore[arg-type]
+        DummyCmd(),
         allow_extra_args=True,
         allow_interspersed_args=True,
         ignore_unknown_options=True,
@@ -998,7 +1006,7 @@ def test_non_posix_skips_file_lock_block(
     )
 
     ctx = Context(
-        DummyCmd(),  # type: ignore[arg-type]
+        DummyCmd(),
         allow_extra_args=True,
         allow_interspersed_args=True,
         ignore_unknown_options=True,

@@ -9,11 +9,12 @@ from __future__ import annotations
 import sys
 import types
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, call
 
 import pytest
 
+from bijux_cli.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.exceptions import BijuxError
 from bijux_cli.infra.process import ProcessPool
 
@@ -84,7 +85,11 @@ def test_run_success_and_cache_hit(
 
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
-    pool = ProcessPool(fake_obs, fake_tel, max_workers=3)  # type: ignore[arg-type]
+    pool = ProcessPool(
+        cast(ObservabilityProtocol, fake_obs),
+        cast(TelemetryProtocol, fake_tel),
+        max_workers=3,
+    )
     rc, out, err = pool.run(["echo", "x"], executor="unit")
 
     assert rc == 0
@@ -135,7 +140,11 @@ def test_run_validation_failure(
 
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
-    pool = ProcessPool(fake_obs, fake_tel, max_workers=2)  # type: ignore[arg-type]
+    pool = ProcessPool(
+        cast(ObservabilityProtocol, fake_obs),
+        cast(TelemetryProtocol, fake_tel),
+        max_workers=2,
+    )
 
     with pytest.raises(BijuxError, match="invalid"):
         pool.run(["bad", "cmd"], executor="unit")
@@ -160,7 +169,9 @@ def test_run_subprocess_exception_wrapped(
 
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", boom)
 
-    pool = ProcessPool(fake_obs, fake_tel)  # type: ignore[arg-type]
+    pool = ProcessPool(
+        cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
+    )
 
     with pytest.raises(BijuxError, match="Process-pool execution failed:"):
         pool.run(["ls"], executor="unit")
@@ -191,7 +202,9 @@ def test_lru_eviction_via_max_cache_override(
 
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
-    pool = ProcessPool(fake_obs, fake_tel)  # type: ignore[arg-type]
+    pool = ProcessPool(
+        cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
+    )
     pool._MAX_CACHE = 2  # pyright: ignore[reportAttributeAccessIssue]
 
     pool.run(["c1"], executor="unit")

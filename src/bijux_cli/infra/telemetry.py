@@ -84,7 +84,7 @@ class TelemetryEvent(str, Enum):
     PLUGIN_LOAD_FAILED = "plugin_load_failed"
 
 
-class NullTelemetry(TelemetryProtocol):  # pyright: ignore[reportUntypedBaseClass]
+class NullTelemetry(TelemetryProtocol):
     """A no-op telemetry service that discards all events.
 
     This implementation of `TelemetryProtocol` can be used to effectively
@@ -112,7 +112,7 @@ class NullTelemetry(TelemetryProtocol):  # pyright: ignore[reportUntypedBaseClas
         return
 
 
-class LoggingTelemetry(TelemetryProtocol):  # pyright: ignore[reportUntypedBaseClass]
+class LoggingTelemetry(TelemetryProtocol):
     """A telemetry service that logs events via the `Observability` service.
 
     This implementation of `TelemetryProtocol` forwards all telemetry events

@@ -1,14 +1,16 @@
 site_name: Bijux CLI
 site_description: A modern, predictable Python CLI framework with plugins, DI, strict flag precedence, and an interactive REPL.
-site_url: https://bijux.github.io/bijux-cli/
+site_url: !ENV [SITE_URL, https://bijux.github.io/bijux-cli/]
 site_author: Bijan Mousavi
 repo_url: https://github.com/bijux/bijux-cli
 repo_name: bijux/bijux-cli
-edit_uri: edit/main/docs/
+edit_uri: ""
 
 strict: true
 use_directory_urls: true
 dev_addr: 127.0.0.1:8000
+docs_dir: artifacts/docs/docs
+site_dir: artifacts/docs/site
 
 theme:
   name: material
@@ -54,7 +56,21 @@ theme:
     repo: fontawesome/brands/github
 
 plugins:
-  - search
+  - gen-files:
+      scripts:
+        - scripts/docs_builder/mkdocs_manager.py
+
+  - literate-nav:
+      nav_file: nav.md
+
+  - include-markdown:
+      recursive: true
+      dedent: true
+      preserve_includer_indent: false
+      trailing_newlines: true
+      comments: false
+      rewrite_relative_urls: true
+
   - mkdocstrings:
       handlers:
         python:
@@ -69,33 +85,19 @@ plugins:
             heading_level: 2
             separate_signature: true
             signature_crossrefs: true
-            filters:
-              - "!^_"
-  - include-markdown:
-      recursive: true
-      dedent: true
-      preserve_includer_indent: false
-      trailing_newlines: true
-      comments: false
-      rewrite_relative_urls: true
-  - git-revision-date-localized:
-      enable_creation_date: true
-      enabled: !ENV [CI, false]
-  - gen-files:
-      scripts:
-        - scripts/helper_mkdocs.py
-  - literate-nav:
-      nav_file: nav.md
-  - autorefs
-  - redirects:
+            filters: ["!^_"]
 
+  - search
+  - social:
+      enabled: !ENV [ENABLE_SOCIAL_CARDS, false]
+      cache_dir: artifacts/docs/.cache/social
+  - autorefs
+  - redirects: {}
   - tags
   - minify:
       minify_html: true
       minify_js: true
       minify_css: true
-  - social
-  - offline
   - glightbox:
       touchNavigation: true
       loop: false
@@ -113,8 +115,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       base_path:
-        - docs
         - .
+        - docs
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.mark
@@ -129,6 +131,7 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
+
 extra:
   social:
     - icon: fontawesome/brands/github
@@ -140,6 +143,7 @@ extra:
     domain: bijux.github.io
   copyright:
     text: "© 2025 Bijan Mousavi"
+  release_tag: !ENV [RELEASE_TAG, "main"]
 
 extra_css:
   - assets/styles/extra.css
@@ -148,6 +152,7 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 watch:
+  - artifacts
   - src
   - scripts
   - config

@@ -46,7 +46,7 @@ We enforce Makefile targets to run the full toolchain consistently.
 <summary>Lint (<code>Makefile</code>)</summary>
 
 ```make
-{% include-markdown "../../makefiles/lint.mk"  comments=false dedent=true %}
+--8<-- "makefiles/lint.mk"
 ```
 
 </details>
@@ -55,7 +55,7 @@ We enforce Makefile targets to run the full toolchain consistently.
 <summary>Quality (<code>Makefile</code>)</summary>
 
 ```make
-{% include-markdown "../../makefiles/quality.mk"  comments=false dedent=true %}
+--8<-- "makefiles/quality.mk"
 ```
 
 </details>
@@ -64,7 +64,7 @@ We enforce Makefile targets to run the full toolchain consistently.
 <summary>Security (<code>Makefile</code>)</summary>
 
 ```make
-{% include-markdown "../../makefiles/security.mk"  comments=false dedent=true %}
+--8<-- "makefiles/security.mk"
 ```
 
 </details>
@@ -80,7 +80,7 @@ The toolchain is driven by unified configs:
 <summary>Ruff (<code>config/ruff.toml</code>)</summary>
 
 ```toml
-{% include-markdown "../../config/ruff.toml" %}
+--8<-- "config/ruff.toml"
 ```
 
 </details>
@@ -89,7 +89,7 @@ The toolchain is driven by unified configs:
 <summary>Mypy (<code>config/mypy.ini</code>)</summary>
 
 ```ini
-{% include-markdown "../../config/mypy.ini" %}
+--8<-- "config/mypy.ini"
 ```
 
 </details>
@@ -98,7 +98,7 @@ The toolchain is driven by unified configs:
 <summary>Pyright (<code>config/pyrightconfig.json</code>)</summary>
 
 ```json
-{% include-markdown "../../config/pyrightconfig.json" %}
+--8<-- "config/pyrightconfig.json"
 ```
 
 </details>
@@ -125,7 +125,7 @@ The toolchain is driven by unified configs:
 <summary>REUSE (<code>REUSE.toml</code>)</summary>
 
 ```toml
-{% include-markdown "../../REUSE.toml" %}
+--8<-- "REUSE.toml"
 ```
 
 </details>

@@ -1,0 +1,201 @@
+name: Deploy Docs
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: docs-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      ENABLE_SOCIAL_CARDS: "true"
+
+    steps:
+      - name: Checkout (full history for revision-date plugin)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            mkdocs.yml
+
+      - name: Install dev toolchain (MkDocs + docs builder deps)
+        run: |
+          python -m pip install -U pip
+          pip install ".[dev]" tox
+          mkdocs --version
+
+      - name: Determine target commit SHA
+        id: sha
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force --prune
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            COMMIT_SHA="$(git rev-list -n 1 "${GITHUB_REF}")"
+          else
+            COMMIT_SHA="${GITHUB_SHA}"
+          fi
+          echo "value=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for CI success & get run id
+        if: ${{ github.event_name == 'push' }}
+        id: ci
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = `${{ steps.sha.outputs.value }}`;
+            const timeoutMs = 20 * 60 * 1000, pollMs = 15000;
+            const deadline = Date.now() + timeoutMs;
+
+            async function latestCI() {
+              const res = await github.rest.actions.listWorkflowRunsForRepo({
+                owner, repo, head_sha: sha, per_page: 100
+              });
+              return (res.data.workflow_runs || [])
+                .filter(r => r.name === 'CI')
+                .sort((a,b) => new Date(b.run_started_at) - new Date(a.run_started_at))[0];
+            }
+
+            while (true) {
+              const run = await latestCI();
+              if (run && run.status === 'completed') {
+                if (run.conclusion === 'success') {
+                  core.setOutput('run_id', String(run.id));
+                  return;
+                }
+                core.setFailed(`CI concluded: ${run.conclusion}`);
+                return;
+              }
+              if (Date.now() > deadline) { core.setFailed('CI wait timeout'); return; }
+              await new Promise(r => setTimeout(r, pollMs));
+            }
+
+      - name: Download CI artifacts
+        if: ${{ steps.ci.outputs.run_id && steps.ci.outputs.run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p _ci_artifacts
+          gh run download "${{ steps.ci.outputs.run_id }}" -D _ci_artifacts
+          ls -la _ci_artifacts || true
+
+      - name: |
+          Hydrate artifacts into ./artifacts (single test env: py311 preferred)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p artifacts
+
+          for name in dist sbom citation lint quality security docs build; do
+            if [ -d "_ci_artifacts/${name}" ]; then
+              mkdir -p "artifacts/${name}"
+              rsync -a "_ci_artifacts/${name}/" "artifacts/${name}/"
+            fi
+          done
+
+          if [ -d "_ci_artifacts/api" ] || [ -d "_ci_artifacts/api-full" ]; then
+            mkdir -p artifacts/api
+          fi
+          if [ -d "_ci_artifacts/api" ]; then
+            rsync -a "_ci_artifacts/api/" "artifacts/api/"
+          fi
+          if [ -d "_ci_artifacts/api-full" ]; then
+            rsync -a "_ci_artifacts/api-full/" "artifacts/api/"
+          fi
+          if [ -f "_ci_artifacts/api/v1/schema.yaml" ]; then
+            mkdir -p artifacts/api/v1
+            cp -f "_ci_artifacts/api/v1/schema.yaml" "artifacts/api/v1/schema.yaml"
+          fi
+
+          mkdir -p artifacts/test
+          choose_test_dir() {
+            if [ -d "_ci_artifacts/test-py311" ]; then
+              echo "_ci_artifacts/test-py311"; return
+            fi
+            for d in _ci_artifacts/test-*; do
+              [ -d "$d" ] || continue
+              echo "$d"; return
+            done
+            echo ""
+          }
+          TEST_SRC="$(choose_test_dir)"
+          if [ -n "$TEST_SRC" ]; then
+            CAND_ROOTS=("$TEST_SRC/artifacts/test_upload" "$TEST_SRC/test_upload" "$TEST_SRC")
+            FOUND_ROOT=""
+            for r in "${CAND_ROOTS[@]}"; do
+              if [ -d "$r" ]; then FOUND_ROOT="$r"; break; fi
+            done
+            # htmlcov
+            HTMLCOV_DIR="$(find "$FOUND_ROOT" -type d -name htmlcov -print -quit || true)"
+            if [ -n "$HTMLCOV_DIR" ]; then
+              mkdir -p artifacts/test/htmlcov
+              rsync -a "$HTMLCOV_DIR/" "artifacts/test/htmlcov/"
+            fi
+            # junit.xml (normalize filename)
+            JXML="$(find "$FOUND_ROOT" -type f \( -name 'junit*.xml' -o -name 'pytest*.xml' -o -name 'report.xml' \) -print -quit || true)"
+            if [ -n "$JXML" ]; then cp -f "$JXML" "artifacts/test/junit.xml"; fi
+            # coverage.xml (optional)
+            COV_XML="$(find "$FOUND_ROOT" -type f -name 'coverage.xml' -print -quit || true)"
+            if [ -n "$COV_XML" ]; then cp -f "$COV_XML" "artifacts/test/coverage.xml"; fi
+          fi
+
+          echo "::group::Hydrated ./artifacts snapshot"
+          find artifacts -maxdepth 3 -type f | sort || true
+          echo "::endgroup::"
+
+      - name: Expose release tag to MkDocs
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "RELEASE_TAG=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_TAG=main" >> "$GITHUB_ENV"
+          fi
+
+      - name: Prepare docs (make docs-prep)
+        run: make docs-prep
+
+      - name: |
+          Sanity: required pages must exist (no placeholders)
+        shell: bash
+        run: |
+          set -euo pipefail
+          GEN_DIR="artifacts/docs/docs/artifacts"
+          req=(index test lint quality security api sbom citation)
+          for p in "${req[@]}"; do
+            f="$GEN_DIR/${p}.md"
+            if [[ ! -f "$f" ]]; then
+              echo "::error file=$f::Missing required docs page: ${p}.md"
+              exit 1
+            fi
+          done
+
+      - name: Check docs (make docs-check)
+        run: make docs-check
+
+      - name: Configure Git author (for gh-deploy)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy docs (make docs-deploy)
+        run: make docs-deploy

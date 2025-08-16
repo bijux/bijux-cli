@@ -1,9 +1,10 @@
 openapi: 3.0.3
+
 info:
   title: Bijux CLI API
   version: 1.0.0
   description: |
-    Elite, production-grade OpenAPI schema for Bijux CLI item management.
+    OpenAPI schema for Bijux CLI item management.
     Includes robust error handling, pagination, and industry-standard response objects.
     Designed for SDK/code generation, documentation, monitoring, and security review.
   contact:
@@ -13,9 +14,11 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+
 tags:
   - name: Items
     description: Operations related to items
+
 servers:
   - url: http://127.0.0.1:8000/v1
     description: Local development server
@@ -23,16 +26,17 @@ servers:
     description: |
       Production API server (planned; not live yet).
       This URL is a placeholder. API endpoints are not currently deployed.
+
 security: []
 
 paths:
   /items:
     get:
       tags: [Items]
-      summary: List all items
+      summary: List items
       description: |
-        Retrieves all items with pagination.
-        Results are paginated. Use `limit` and `offset` query parameters.
+        Return a paginated list of items.
+        Use `limit` and `offset` for pagination.
       operationId: listItems
       parameters:
         - name: limit
@@ -47,7 +51,7 @@ paths:
           example: 20
         - name: offset
           in: query
-          description: Offset from start of the list (for pagination)
+          description: Offset from the start of the list (for pagination)
           required: false
           schema:
             type: integer
@@ -67,21 +71,22 @@ paths:
                     items:
                       - id: 1
                         name: "Item One"
-                        description: "Desc1"
+                        description: "Description one"
                       - id: 2
                         name: "Item Two"
-                        description: "Desc2"
+                        description: "Description two"
                     total: 2
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '429':
-          $ref: '#/components/responses/RateLimit'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ServerError'
+
     post:
       tags: [Items]
       summary: Create a new item
-      description: Creates a new item with the provided data.
+      description: Create a new item with the provided data. If an item with the same name exists, returns the existing item (idempotent).
       operationId: createItem
       requestBody:
         description: Data for the new item
@@ -91,10 +96,15 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemCreate'
             examples:
-              create:
+              minimalItem:
+                summary: A request with only the required fields
                 value:
-                  name: "New Item"
-                  description: "A new item description"
+                  name: "Minimal Item"
+              fullItem:
+                summary: A request with all optional fields included
+                value:
+                  name: "Full Item"
+                  description: "This item has a detailed description."
       responses:
         '201':
           description: Item created successfully
@@ -108,32 +118,56 @@ paths:
                     id: 3
                     name: "New Item"
                     description: "A new item description"
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          links:
+            GetCreatedItem:
+              operationId: getItemById
+              parameters:
+                item_id: '$response.body#/id'
+            UpdateCreatedItem:
+              operationId: updateItemById
+              parameters:
+                item_id: '$response.body#/id'
+            DeleteCreatedItem:
+              operationId: deleteItemById
+              parameters:
+                item_id: '$response.body#/id'
+        '200':
+          description: Item already exists (idempotent create); existing resource is returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                existed:
+                  value:
+                    id: 3
+                    name: "Full Item"
+                    description: "This item has a detailed description."
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '409':
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '429':
-          $ref: '#/components/responses/RateLimit'
         '500':
           $ref: '#/components/responses/ServerError'
 
   /items/{item_id}:
+    parameters:
+      - name: item_id
+        in: path
+        required: true
+        description: Unique item identifier
+        schema:
+          type: integer
+          minimum: 1
+        example: 1
+
     get:
       tags: [Items]
       summary: Get item by ID
       description: Retrieve item details by unique ID.
       operationId: getItemById
-      parameters:
-        - name: item_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Unique item identifier
-          example: 1
       responses:
         '200':
           description: Item details
@@ -146,29 +180,21 @@ paths:
                   value:
                     id: 1
                     name: "Item One"
-                    description: "Desc1"
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                    description: "Description one"
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimit'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ServerError'
+
     put:
       tags: [Items]
       summary: Update item by ID
-      description: Updates an existing item with the provided data.
+      description: Update an existing item with the provided data. Raises conflict if the new name is already in use by another item.
       operationId: updateItemById
-      parameters:
-        - name: item_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Unique item identifier
-          example: 1
       requestBody:
         description: Updated data for the item
         required: true
@@ -177,6 +203,13 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemCreate'
             examples:
+              valid1:
+                value:
+                  name: "Alpha"
+                  description: "ok"
+              valid2:
+                value:
+                  name: "Beta"
               update:
                 value:
                   name: "Updated Item"
@@ -194,39 +227,40 @@ paths:
                     id: 1
                     name: "Updated Item"
                     description: "Updated description"
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          links:
+            GetUpdatedItem:
+              operationId: getItemById
+              parameters:
+                item_id: '$response.body#/id'
+            DeleteUpdatedItem:
+              operationId: deleteItemById
+              parameters:
+                item_id: '$response.body#/id'
         '404':
           $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '409':
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '429':
-          $ref: '#/components/responses/RateLimit'
         '500':
           $ref: '#/components/responses/ServerError'
+
     delete:
       tags: [Items]
       summary: Delete item by ID
-      description: Deletes an item by its unique ID.
+      description: Delete an item by its unique ID. Returns 404 if the item does not exist.
       operationId: deleteItemById
-      parameters:
-        - name: item_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-          description: Unique item identifier
-          example: 1
       responses:
         '204':
           description: Item deleted successfully
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimit'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -234,19 +268,19 @@ components:
   schemas:
     ItemCreate:
       type: object
+      additionalProperties: false
       properties:
         name:
           type: string
-          description: Item name
+          description: Item name (cannot be empty or only whitespace; trimmed on input).
           minLength: 1
           maxLength: 100
-          example: "Sample"
+          pattern: '.*\S.*'
         description:
           type: string
           description: Optional item description
           maxLength: 500
           nullable: true
-          example: "Details about this item"
       required: [name]
 
     Item:
@@ -264,7 +298,7 @@ components:
           type: string
           description: Optional item description
           nullable: true
-          example: "Desc1"
+          example: "Description one"
       required: [id, name]
 
     ItemList:
@@ -306,21 +340,6 @@ components:
           example: "/items?limit=1000"
 
   responses:
-    BadRequest:
-      description: Invalid request (bad parameters, etc.)
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            badRequest:
-              value:
-                type: "https://bijux-cli.dev/docs/errors/invalid-request"
-                title: "Invalid request"
-                status: 400
-                detail: "Query parameter 'limit' must be between 1 and 100"
-                instance: "/items?limit=1000"
-
     NotFound:
       description: Item not found
       content:
@@ -335,6 +354,21 @@ components:
                 status: 404
                 detail: "Item not found"
                 instance: "/items/99"
+
+    NotAcceptable:
+      description: Client must accept application/json
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            notAcceptable:
+              value:
+                type: "https://bijux-cli.dev/docs/errors/not-acceptable"
+                title: "Not Acceptable"
+                status: 406
+                detail: "Set 'Accept: application/json' for this endpoint"
+                instance: "/items/1"
 
     Conflict:
       description: Conflict (e.g., duplicate name)
@@ -364,27 +398,6 @@ components:
                 title: "Validation error"
                 status: 422
                 detail: "Input validation failed"
-                instance: "/items"
-
-    RateLimit:
-      description: Too many requests
-      headers:
-        Retry-After:
-          description: How many seconds to wait before retrying
-          schema:
-            type: integer
-            example: 60
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            rateLimit:
-              value:
-                type: "https://bijux-cli.dev/docs/errors/rate-limit"
-                title: "Rate limit exceeded"
-                status: 429
-                detail: "Too many requests, slow down"
                 instance: "/items"
 
     ServerError:

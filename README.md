@@ -5,12 +5,17 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
+[![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/MIT.txt)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
 
 > **At a glance:** Plugin-driven • deterministic flags • DI for testability • REPL • structured JSON/YAML  
-> **Quality:** **2,600+ tests** across layers with **98%+ coverage**. Multi-version CI. Docs build enforced. No telemetry.
+> **Quality:** **2,600+ tests** across layers with **98%+ coverage** (see
+> [Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/)
+> and
+> [HTML coverage](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)).
+> Multi-version CI. Docs build enforced. No telemetry.
 
 ---
 
@@ -195,14 +200,14 @@ bijux dev list-plugins
 
 Fixed ordering eliminates ambiguity.
 
-| Priority | Flag                        | Effect                                                    |
-| -------: | --------------------------- | --------------------------------------------------------- |
-|        1 | `-h`, `--help`              | Immediate exit (code 0) with usage; ignores all.          |
-|        2 | `-q`, `--quiet`             | Suppress stdout/stderr; preserves exit code.              |
-|        3 | `-d`, `--debug`             | Full diagnostics; implies `--verbose`, forces `--pretty`. |
-|        4 | `-f, --format <json\|yaml>` | Structured output; invalid → code 2.                      |
-|        5 | `--pretty` / `--no-pretty`  | Indentation toggle (default: `--pretty`).                 |
-|        6 | `-v`, `--verbose`           | Runtime metadata; implied by `--debug`.                   |
+| Priority | Flag                          | Effect                                                    |
+| -------: |-------------------------------| --------------------------------------------------------- |
+|        1 | `-h`, `--help`                | Immediate exit (code 0) with usage; ignores all.          |
+|        2 | `-q`, `--quiet`               | Suppress stdout/stderr; preserves exit code.              |
+|        3 | `-d`, `--debug`               | Full diagnostics; implies `--verbose`, forces `--pretty`. |
+|        4 | `-f`, `--format <json\|yaml>` | Structured output; invalid → code 2.                      |
+|        5 | `--pretty` / `--no-pretty`    | Indentation toggle (default: `--pretty`).                 |
+|        6 | `-v`, `--verbose`             | Runtime metadata; implied by `--debug`.                   |
 
 Rationale: [ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
 
@@ -298,7 +303,7 @@ export BIJUXCLI_PLUGINS_DIR=./custom-plugins
 * **Coverage:** **98%+** code coverage (measured via `pytest-cov` in CI).
 * **Determinism:** CI runs the full suite on multiple Python versions (3.11+).
 * **Artifacts:** JSON/YAML fixtures validate structured outputs; E2E simulates real usage (REPL, plugins, DI).
-* **Docs:** Read the full testing guide → **[TESTS.md](TESTS.md)**.
+* **Docs:** Read the full testing guide → **[TESTS.md](https://github.com/bijux/bijux-cli/blob/main/TESTS.md)**.
 
 Quick commands:
 
@@ -307,6 +312,11 @@ make test         # all tests
 make test-unit    # unit tests only
 make test-e2e     # end-to-end tests only
 ```
+
+**Artifacts:**
+[Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/) ·
+[JUnit report](https://bijux.github.io/bijux-cli/artifacts/test/#junit-xml) ·
+[HTML coverage report](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)
 
 [Back to top](#top)
 
@@ -317,7 +327,7 @@ make test-e2e     # end-to-end tests only
 ## Project Tree
 
 A guided map of the repository (what lives where, and why).
-See **[PROJECT\_TREE.md](PROJECT_TREE.md)** for the full breakdown.
+See **[PROJECT\_TREE.md](https://github.com/bijux/bijux-cli/blob/main/PROJECT_TREE.md)** for the full breakdown.
 
 Quick glance:
 
@@ -358,8 +368,12 @@ Track progress and suggest features via [Issues](https://github.com/bijux/bijux-
 * **Repository**: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 * **Issues**: [https://github.com/bijux/bijux-cli/issues](https://github.com/bijux/bijux-cli/issues)
 * **Security** (private reports): [https://github.com/bijux/bijux-cli/security/advisories/new](https://github.com/bijux/bijux-cli/security/advisories/new)
-* **Tests:** See **[TESTS.md](TESTS.md)**
-* **Project Tree:** See **[PROJECT\_TREE.md](PROJECT_TREE.md)**
+* **Tests:** **[TESTS.md](https://github.com/bijux/bijux-cli/blob/main/TESTS.md)**
+* **Project Tree:** **[PROJECT\_TREE.md](https://github.com/bijux/bijux-cli/blob/main/PROJECT_TREE.md)**
+* **Artifacts:** Browse all reports & logs — [index](https://bijux.github.io/bijux-cli/artifacts/)
+  · [Tests](https://bijux.github.io/bijux-cli/artifacts/test/) · [Lint](https://bijux.github.io/bijux-cli/artifacts/lint/)
+  · [Quality](https://bijux.github.io/bijux-cli/artifacts/quality/) · [Security](https://bijux.github.io/bijux-cli/artifacts/security/)
+  · [SBOM](https://bijux.github.io/bijux-cli/artifacts/sbom/) · [API](https://bijux.github.io/bijux-cli/artifacts/api/) · [Citation](https://bijux.github.io/bijux-cli/artifacts/citation/)
 
 *When filing issues, include `--debug` output where possible.*
 

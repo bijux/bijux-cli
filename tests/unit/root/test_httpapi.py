@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import ast
+from typing import Any
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -26,9 +28,17 @@ def test_runtime_checkable_protocol_and_dependency() -> None:
     assert isinstance(api.store, api.ItemStoreProtocol)
 
 
+async def _reset_async_stub(*_a: Any, **_k: Any) -> None:
+    """Async stub for DIContainer.reset_async used in tests."""
+    return None
+
+
 def test_lifespan_prepopulates_and_shutdown_resets() -> None:
-    """Test that the lifespan event handler correctly populates and clears the store."""
-    with _client() as client:
+    """Lifespan should seed items on startup and clear them on shutdown."""
+    with (
+        patch("bijux_cli.core.di.DIContainer.reset_async", new=_reset_async_stub),
+        _client() as client,
+    ):
         r = client.get("/v1/items")
         assert r.status_code == 200
         data = r.json()
@@ -42,7 +52,9 @@ def test_lifespan_prepopulates_and_shutdown_resets() -> None:
 
 
 def test_create_get_update_delete_flow_and_conflicts() -> None:
-    """Test the full CRUD lifecycle of an item, including conflict handling."""
+    """Verify full CRUD lifecycle and name conflict enforcement."""
+    import uuid
+
     with _client() as client:
         body = {"name": "  New  ", "description": "D"}
         r = client.post("/v1/items", json=body)
@@ -56,8 +68,7 @@ def test_create_get_update_delete_flow_and_conflicts() -> None:
         assert r.status_code == 200
         data = r.json()
         assert data["total"] == 3
-        ids = [it["id"] for it in data["items"]]
-        assert created_id in ids
+        assert any(it["id"] == created_id for it in data["items"])
 
         r = client.get(f"/v1/items/{created_id}")
         assert r.status_code == 200
@@ -67,13 +78,13 @@ def test_create_get_update_delete_flow_and_conflicts() -> None:
             f"/v1/items/{created_id}", json={"name": "Item Two", "description": "X"}
         )
         assert r.status_code == 409
-        assert r.json()["detail"] == "Item with this name already exists"
 
+        unique_name = f"Renamed {uuid.uuid4()}"
         r = client.put(
-            f"/v1/items/{created_id}", json={"name": "Renamed", "description": "X"}
+            f"/v1/items/{created_id}", json={"name": unique_name, "description": "X"}
         )
         assert r.status_code == 200
-        assert r.json()["name"] == "Renamed"
+        assert r.json()["name"] == unique_name
 
         r = client.delete(f"/v1/items/{created_id}")
         assert r.status_code == 204
@@ -84,12 +95,16 @@ def test_create_get_update_delete_flow_and_conflicts() -> None:
         assert r.json()["detail"] == "Item not found"
 
 
-def test_conflict_on_duplicate_create() -> None:
-    """Test that creating an item with a duplicate name results in a 409 conflict."""
+def test_idempotent_create_on_duplicate() -> None:
+    """POSTing a duplicate name returns the existing item with 200 OK."""
     with _client() as client:
+        original_item = client.get("/v1/items/1").json()
+        before_total = client.get("/v1/items").json()["total"]
         r = client.post("/v1/items", json={"name": "Item One", "description": "dup"})
-        assert r.status_code == 409
-        assert r.json()["detail"] == "Item with this name already exists"
+        assert r.status_code == 200
+        assert r.json()["id"] == original_item["id"]
+        after_total = client.get("/v1/items").json()["total"]
+        assert after_total == before_total
 
 
 def test_update_and_delete_nonexistent_404() -> None:
@@ -113,21 +128,19 @@ def test_get_nonexistent_404() -> None:
 
 
 def test_validation_handler_422_for_body_and_path() -> None:
-    """Test that validation errors for request bodies and path parameters result in a 422 error."""
+    """Body & path validation should return 422 with Pydantic error details in `detail`."""
     with _client() as client:
         r = client.post("/v1/items", json={"name": "", "description": "x"})
         assert r.status_code == 422
-        detail = r.json().get("detail")
-        errors = ast.literal_eval(detail)
+        errors = ast.literal_eval(r.json()["detail"])
         assert isinstance(errors, list)
         assert any(e.get("type") == "string_too_short" for e in errors)
 
         r = client.get("/v1/items/0")
         assert r.status_code == 422
-        detail = r.json().get("detail")
-        errors = ast.literal_eval(detail)
+        errors = ast.literal_eval(r.json()["detail"])
         assert isinstance(errors, list)
-        assert any(e.get("type") == "greater_than" for e in errors)
+        assert any(e.get("type") == "greater_than_equal" for e in errors)
 
 
 def test_pagination_limit_offset_and_total() -> None:

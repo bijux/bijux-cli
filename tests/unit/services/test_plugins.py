@@ -12,16 +12,18 @@ import importlib
 import importlib.metadata
 from pathlib import Path
 import sys
-from typing import Any
-from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, patch
+from typing import Any, cast
+from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, create_autospec, patch
 
 import pytest
+from typer.models import ParameterInfo
 
 from bijux_cli.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
+from bijux_cli.core import DIContainer
 from bijux_cli.core.exceptions import BijuxError, ServiceError
 from bijux_cli.services.plugins import (
     get_plugins_dir,
@@ -48,15 +50,18 @@ def mock_tel() -> Mock:
 
 
 @pytest.fixture
-def mock_obs() -> Mock:
+def mock_obs() -> ObservabilityProtocol:
     """Provide a mock ObservabilityProtocol instance."""
-    return Mock(spec=ObservabilityProtocol)
+    return cast(
+        ObservabilityProtocol,
+        create_autospec(ObservabilityProtocol, instance=True),
+    )
 
 
 @pytest.fixture
-def mock_reg() -> Mock:
+def mock_reg() -> RegistryProtocol:
     """Provide a mock RegistryProtocol instance."""
-    return Mock(spec=RegistryProtocol)
+    return cast(RegistryProtocol, create_autospec(RegistryProtocol, instance=True))
 
 
 @pytest.fixture
@@ -1088,26 +1093,32 @@ def test_command_group_no_di() -> None:
 
 def test_dynamic_choices_case_sensitive() -> None:
     """Test case-sensitive dynamic choices for command completion."""
+    from typer.models import Context as TyperContext
 
     def cb() -> list[str]:
-        """Provide a list of choices."""
         return ["abc", "abd", "bcd"]
 
     completer = dynamic_choices(cb)
-    assert completer(None, None, "ab") == ["abc", "abd"]  # type: ignore[arg-type]
-    assert not completer(None, None, "Ab")  # type: ignore[arg-type]
+    ctx = cast(TyperContext, None)
+    param = cast(ParameterInfo, None)
+
+    assert completer(ctx, param, "ab") == ["abc", "abd"]
+    assert completer(ctx, param, "Ab") == []
 
 
 def test_dynamic_choices_case_insensitive() -> None:
     """Test case-insensitive dynamic choices for command completion."""
+    from typer.models import Context as TyperContext
 
     def cb() -> list[str]:
-        """Provide a list of choices."""
         return ["abc", "abd", "bcd"]
 
     completer = dynamic_choices(cb, case_sensitive=False)
-    assert completer(None, None, "ab") == ["abc", "abd"]  # type: ignore[arg-type]
-    assert completer(None, None, "Ab") == ["abc", "abd"]  # type: ignore[arg-type]
+    ctx = cast(TyperContext, None)
+    param = cast(ParameterInfo, None)
+
+    assert completer(ctx, param, "ab") == ["abc", "abd"]
+    assert completer(ctx, param, "Ab") == ["abc", "abd"]
 
 
 def test_core_spec_init(mock_di: Any) -> None:
@@ -1584,7 +1595,7 @@ async def test_entrypoints_pkgversion_and_sync_startup(
     assert startup_calls
     assert startup_calls[0] is di
     registry.register.assert_called_once()
-    reg_name, reg_plugin = registry.register.call_args.args[:2]
+    reg_name, _ = registry.register.call_args.args[:2]
     assert reg_name == "dummy_plugin"
     assert registry.register.call_args.kwargs.get("version") == "2.0"
     obs.log.assert_any_call("info", "Loaded plugin 'dummy_plugin'")
@@ -1631,8 +1642,6 @@ class _EPs:
 async def test_entrypoints_startup_not_callable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test loading an entry point where the startup attribute is not callable."""
-
     class Plugin:
         version = "1.0"
         requires_api_version = ">=0.0.0"
@@ -1648,29 +1657,34 @@ async def test_entrypoints_startup_not_callable(
 
     monkeypatch.setattr(bijux_cli, "api_version", "1.0", raising=False)
 
-    registry = Mock(spec=RegistryProtocol)
-    obs = Mock(spec=ObservabilityProtocol)
-    tel = Mock(spec=TelemetryProtocol)
+    registry = create_autospec(RegistryProtocol, instance=True)
+    obs = create_autospec(ObservabilityProtocol, instance=True)
+    tel = create_autospec(TelemetryProtocol, instance=True)
 
-    class DI:
-        def resolve(self, token: Any, default: Any = None) -> Any:
-            if token is RegistryProtocol:
-                return registry
-            if token is ObservabilityProtocol:
-                return obs
-            if token is TelemetryProtocol:
-                return tel
-            return default
+    di = create_autospec(DIContainer, instance=True)
 
-    await load_entrypoints(di=DI(), registry=registry)  # type: ignore[arg-type]
+    def _resolve(token: Any, default: Any = None) -> Any:
+        if token is RegistryProtocol:
+            return registry
+        if token is ObservabilityProtocol:
+            return obs
+        if token is TelemetryProtocol:
+            return tel
+        return default
+
+    di.resolve.side_effect = _resolve
+
+    await load_entrypoints(di=cast(DIContainer, di), registry=registry)
 
 
 def test_dunder_getattr_submodule_hooks(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test lazy loading of the 'hooks' submodule."""
     import bijux_cli.services.plugins as plugins
 
-    if hasattr(plugins, "hooks"):
-        del sys.modules[plugins.__name__].hooks  # pyright: ignore[reportAttributeAccessIssue]
+    mod = cast(Any, sys.modules[plugins.__name__])
+    if hasattr(mod, "hooks"):
+        delattr(mod, "hooks")
+
     hooks_mod = plugins.hooks
     assert hooks_mod.__name__.endswith("hooks")
     assert plugins.hooks is hooks_mod
@@ -1680,10 +1694,12 @@ def test_dunder_getattr_submodule_entrypoints(monkeypatch: pytest.MonkeyPatch) -
     """Test lazy loading of the 'entrypoints' submodule."""
     import bijux_cli.services.plugins as plugins
 
-    if hasattr(plugins, "entrypoints"):
-        del sys.modules[plugins.__name__].entrypoints  # pyright: ignore[reportAttributeAccessIssue]
+    mod = cast(Any, sys.modules[plugins.__name__])
+    if hasattr(mod, "entrypoints"):
+        delattr(mod, "entrypoints")
+
     entrypoints_mod = plugins.entrypoints
-    assert entrypoints_mod.__name__.endswith("entrypoints")  # pyright: ignore[reportAttributeAccessIssue]
+    assert entrypoints_mod.__name__.endswith("entrypoints")
     assert plugins.entrypoints is entrypoints_mod
 
 
@@ -1691,10 +1707,12 @@ def test_dunder_getattr_submodule_groups(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test lazy loading of the 'groups' submodule."""
     import bijux_cli.services.plugins as plugins
 
-    if hasattr(plugins, "groups"):
-        del sys.modules[plugins.__name__].groups  # pyright: ignore[reportAttributeAccessIssue]
+    mod = cast(Any, sys.modules[plugins.__name__])
+    if hasattr(mod, "groups"):
+        delattr(mod, "groups")
+
     groups_mod = plugins.groups
-    assert groups_mod.__name__.endswith("groups")  # pyright: ignore[reportAttributeAccessIssue]
+    assert groups_mod.__name__.endswith("groups")
     assert plugins.groups is groups_mod
 
 
@@ -1702,8 +1720,11 @@ def test_dunder_getattr_submodule_registry(monkeypatch: pytest.MonkeyPatch) -> N
     """Test lazy loading of the 'registry' submodule."""
     import bijux_cli.services.plugins as plugins
 
-    if hasattr(plugins, "registry"):
-        del sys.modules[plugins.__name__].registry  # pyright: ignore[reportAttributeAccessIssue]
+    mod = cast(Any, sys.modules[plugins.__name__])
+
+    if hasattr(mod, "registry"):
+        delattr(mod, "registry")
+
     registry_mod = plugins.registry
-    assert registry_mod.__name__.endswith("registry")  # pyright: ignore[reportAttributeAccessIssue]
+    assert registry_mod.__name__.endswith("registry")
     assert plugins.registry is registry_mod

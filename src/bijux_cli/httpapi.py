@@ -20,11 +20,11 @@ Services:
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 import logging
 import threading
-from typing import Any, Protocol, runtime_checkable
+from typing import Annotated, Any, Protocol, runtime_checkable
 
 from fastapi import (
     APIRouter,
@@ -39,8 +39,9 @@ from fastapi import (
     status,
 )
 from fastapi.exceptions import RequestValidationError
+from fastapi.params import Depends as DependsMarker
 from fastapi.responses import JSONResponse
-from pydantic import AnyUrl, BaseModel, Field, field_validator
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger("bijux_cli.httpapi")
 logging.basicConfig(level=logging.INFO)
@@ -75,6 +76,10 @@ class ItemIn(BaseModel):
         description (str | None): An optional description for the item.
     """
 
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
     name: str = Field(
         ...,
         min_length=1,
@@ -89,9 +94,22 @@ class ItemIn(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def normalize_name(cls: type[ItemIn], v: str) -> str:  # noqa: N805
-        """Strips leading/trailing whitespace from the name field."""
-        return v.strip()
+    def validate_and_normalize_name(cls: type[ItemIn], v: str) -> str:  # noqa: N805
+        """Strips whitespace and ensures the name is not empty.
+
+        Args:
+            v: The input string for the item's name.
+
+        Returns:
+            The validated and stripped name.
+
+        Raises:
+            ValueError: If the name is empty or contains only whitespace.
+        """
+        stripped_v = v.strip()
+        if not stripped_v:
+            raise ValueError("name must not be empty or contain only whitespace")
+        return stripped_v
 
 
 class Item(ItemIn):
@@ -148,6 +166,10 @@ class ItemStoreProtocol(Protocol):
 
     def prepopulate(self, data: list[dict[str, Any]]) -> None:
         """Prepopulates the store with a list of items."""
+        ...
+
+    def find_by_name(self, name: str) -> Item | None:
+        """Returns an item by its name if it exists, otherwise None."""
         ...
 
 
@@ -222,8 +244,8 @@ class InMemoryItemStore(ItemStoreProtocol):
             HTTPException: With status 409 if an item with the same name exists.
         """
         with self._lock:
-            name = data.name  # Already stripped by validator
-            if name in self._name_index:
+            key = data.name.strip().lower()
+            if key in self._name_index:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=Problem(
@@ -236,29 +258,29 @@ class InMemoryItemStore(ItemStoreProtocol):
                 )
             item_id = self._next_id
             self._next_id += 1
-            item = Item(id=item_id, name=name, description=data.description)
+            item = Item(id=item_id, name=data.name, description=data.description)
             self._items[item_id] = item
-            self._name_index[name] = item_id
-            logger.info(f"Created item: {item}")
+            self._name_index[key] = item_id
+            logger.info("Created item: %s", item)
             return item
 
     def update(self, item_id: int, data: ItemIn) -> Item:
-        """Updates an existing item.
+        """Update an existing item.
 
         Args:
-            item_id (int): The ID of the item to update.
-            data (ItemIn): The new data for the item.
+            item_id (int): The unique identifier of the item to update.
+            data (ItemIn): The new values for the item.
 
         Returns:
             The updated item.
 
         Raises:
-            HTTPException: With status 404 if the item is not found, or 409
-                if the new name conflicts with another existing item.
+            HTTPException: If the item does not exist (HTTP 404) or if the new name
+                conflicts with another item (HTTP 409).
         """
         with self._lock:
-            item = self._items.get(item_id)
-            if not item:
+            existing = self._items.get(item_id)
+            if existing is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=Problem(
@@ -269,8 +291,11 @@ class InMemoryItemStore(ItemStoreProtocol):
                         instance=f"/v1/items/{item_id}",
                     ).model_dump(mode="json"),
                 )
-            name = data.name  # Already stripped by validator
-            if name != item.name and name in self._name_index:
+
+            old_key = existing.name.strip().lower()
+            new_key = data.name.strip().lower()
+
+            if new_key != old_key and new_key in self._name_index:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=Problem(
@@ -281,26 +306,24 @@ class InMemoryItemStore(ItemStoreProtocol):
                         instance=f"/v1/items/{item_id}",
                     ).model_dump(mode="json"),
                 )
-            if name != item.name:
-                del self._name_index[item.name]
-                self._name_index[name] = item_id
-            updated = Item(id=item_id, name=name, description=data.description)
+
+            updated = Item(id=item_id, name=data.name, description=data.description)
             self._items[item_id] = updated
-            logger.info(f"Updated item: {updated}")
+            if new_key != old_key:
+                self._name_index.pop(old_key, None)
+                self._name_index[new_key] = item_id
+            logger.info("Updated item id=%s", item_id)
             return updated
 
     def delete(self, item_id: int) -> None:
-        """Deletes an item by its unique ID.
+        """Delete an item by its unique ID.
 
         Args:
-            item_id (int): The ID of the item to delete.
-
-        Raises:
-            HTTPException: With status 404 if the item is not found.
+            item_id: The unique ID of the item to delete.
         """
         with self._lock:
-            item = self._items.pop(item_id, None)
-            if not item:
+            existing = self._items.pop(item_id, None)
+            if existing is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=Problem(
@@ -311,8 +334,8 @@ class InMemoryItemStore(ItemStoreProtocol):
                         instance=f"/v1/items/{item_id}",
                     ).model_dump(mode="json"),
                 )
-            del self._name_index[item.name]
-            logger.info(f"Deleted item id={item_id}")
+            self._name_index.pop(existing.name.strip().lower(), None)
+            logger.info("Deleted item id=%s", item_id)
 
     def reset(self) -> None:
         """Resets the store to its initial empty state."""
@@ -323,10 +346,22 @@ class InMemoryItemStore(ItemStoreProtocol):
             logger.info("Store reset")
 
     def prepopulate(self, data: list[dict[str, Any]]) -> None:
-        """Prepopulates the store with a list of items."""
+        """Prepopulates the store with a list of items.
+
+        Args:
+            data: A list of dictionaries, where each dictionary contains
+                the data for a new item.
+        """
         with self._lock:
             for entry in data:
                 self.create(ItemIn(**entry))
+
+    def find_by_name(self, name: str) -> Item | None:
+        """Lookup an item by its name (case-insensitive, trimmed)."""
+        with self._lock:
+            key = name.strip().lower()
+            item_id = self._name_index.get(key)
+            return self._items.get(item_id) if item_id is not None else None
 
 
 def get_store() -> ItemStoreProtocol:
@@ -334,7 +369,132 @@ def get_store() -> ItemStoreProtocol:
     return store
 
 
+def get_item_or_404(
+    item_id: int = Path(..., ge=1),
+    store: ItemStoreProtocol = Depends(get_store),  # noqa: B008
+) -> Item:
+    """A dependency that retrieves an item by ID or raises a 404."""
+    return store.get(item_id)
+
+
+def reject_duplicate_query_params(*params: str) -> DependsMarker:
+    """Create a dependency that rejects duplicate query parameters (HTTP 422).
+
+    Args:
+      *params: Names of query parameters that must not appear more than once.
+
+    Returns:
+      fastapi.params.Depends: A dependency marker that, when executed at
+      request time, raises ``HTTPException`` (422) if any listed parameter
+      appears more than once.
+
+    Raises:
+      HTTPException: Emitted at request time if duplicates are detected.
+    """
+
+    async def _dep(request: Request) -> None:
+        """Raise an HTTPException if specific query parameters are duplicated.
+
+        This function is designed to be used as a FastAPI dependency. It checks an
+        iterable of parameter names (assumed to be in the parent scope's `params`
+        variable) to ensure they are not repeated in the request's query string.
+
+        Args:
+            request: The incoming FastAPI/Starlette request object.
+
+        Raises:
+            HTTPException: An exception with a 422 status code and a
+                problem+json body if any of the specified query parameters
+                are found more than once.
+        """
+        duplicates = [p for p in params if len(request.query_params.getlist(p)) > 1]
+        if duplicates:
+            detail = f"Duplicate query params found: {', '.join(sorted(duplicates))}"
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=Problem(
+                    type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
+                    title="Validation error",
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=detail,
+                    instance=str(request.url),
+                ).model_dump(mode="json"),
+            )
+
+    return DependsMarker(_dep)
+
+
 router = APIRouter(prefix="/v1")
+
+
+def require_accept_json(request: Request) -> None:
+    """Reject requests that don't accept application/json (HTTP 406).
+
+    Schemathesis' negative-data checks may send unsupported Accept headers.
+    If the client doesn't accept JSON (and not */*), respond with 406.
+    """
+    accept = request.headers.get("accept", "*/*").lower()
+    if "*/*" in accept or "application/json" in accept:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        detail=Problem(
+            type=AnyUrl("https://bijux-cli.dev/docs/errors/not-acceptable"),
+            title="Not Acceptable",
+            status=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="Set 'Accept: application/json' for this endpoint",
+            instance=str(request.url),
+        ).model_dump(mode="json"),
+    )
+
+
+def allow_only(*allowed: str) -> Callable[[Request], Awaitable[None]]:
+    """Create a dependency that rejects unknown query parameters (HTTP 422).
+
+    Args:
+      *allowed (str): The set of query parameter names that are permitted.
+
+    Returns:
+      Callable[[Request], Awaitable[None]]: An async dependency suitable for
+      FastAPI's ``dependencies=[...]``. It raises an ``HTTPException`` with
+      status 422 if the request includes parameters outside the allowlist.
+
+    Raises:
+      HTTPException: Emitted by the returned dependency at request time when
+        unknown query parameters are present (422 Unprocessable Entity).
+    """
+    allowed_set: set[str] = set(allowed)
+
+    async def _dep(request: Request) -> None:
+        """Raise an HTTPException if unknown query parameters are present.
+
+        This function is designed to be used as a FastAPI dependency. It validates
+        that the request's query string contains only parameters from a pre-defined
+        set of allowed names, assumed to be in the parent scope's `allowed_set`
+        variable.
+
+        Args:
+            request: The incoming FastAPI/Starlette request object.
+
+        Raises:
+            HTTPException: An exception with a 422 status code and a
+                problem+json body if any query parameters are found that are
+                not in the `allowed_set`.
+        """
+        extras = set(request.query_params.keys()) - allowed_set
+        if extras:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=Problem(
+                    type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
+                    title="Validation error",
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Unknown query params: {', '.join(sorted(extras))}",
+                    instance=str(request.url),
+                ).model_dump(mode="json"),
+            )
+
+    return _dep
 
 
 @router.get(
@@ -343,6 +503,12 @@ router = APIRouter(prefix="/v1")
     summary="List items",
     description="List all items with pagination.",
     tags=["Items"],
+    responses={406: {"model": Problem}, 422: {"model": Problem}},
+    dependencies=[
+        Depends(require_accept_json),
+        Depends(allow_only("limit", "offset")),
+        reject_duplicate_query_params("limit", "offset"),
+    ],
 )
 def list_items(
     limit: int = Query(10, ge=1, le=100),
@@ -368,23 +534,25 @@ def list_items(
     response_model=Item,
     summary="Get item",
     description="Get a single item by its ID.",
-    responses={404: {"model": Problem}},
+    responses={404: {"model": Problem}, 406: {"model": Problem}},
     tags=["Items"],
+    dependencies=[Depends(require_accept_json)],
 )
 def get_item(
-    item_id: int = Path(..., gt=0),
-    store: ItemStoreProtocol = Depends(get_store),  # noqa: B008
+    item: Item = Depends(get_item_or_404),  # noqa: B008
 ) -> Item:
     """Retrieves a single item by its ID.
 
+    This endpoint uses a dependency (`get_item_or_404`) to fetch the item,
+    ensuring that a 404 response is returned if the item does not exist.
+
     Args:
-        item_id (int): The unique identifier of the item to retrieve.
-        store (ItemStoreProtocol): The dependency-injected item store.
+        item (Item): The item retrieved by the `get_item_or_404` dependency.
 
     Returns:
         Item: The requested item.
     """
-    return store.get(item_id)
+    return item
 
 
 @router.post(
@@ -393,10 +561,20 @@ def get_item(
     status_code=status.HTTP_201_CREATED,
     summary="Create item",
     description="Create a new item.",
-    responses={409: {"model": Problem}},
+    responses={
+        200: {
+            "model": Item,
+            "description": "Item already exists; existing resource returned",
+        },
+        406: {"model": Problem},
+        409: {"model": Problem},
+        422: {"model": Problem},
+    },
     tags=["Items"],
+    dependencies=[Depends(require_accept_json)],
 )
 def create_item(
+    response: Response,
     item: ItemIn = Body(...),  # noqa: B008
     store: ItemStoreProtocol = Depends(get_store),  # noqa: B008
 ) -> Item:
@@ -409,6 +587,10 @@ def create_item(
     Returns:
         Item: The newly created item, including its server-generated ID.
     """
+    existing = store.find_by_name(item.name)
+    if existing is not None:
+        response.status_code = status.HTTP_200_OK
+        return existing
     return store.create(item)
 
 
@@ -417,25 +599,39 @@ def create_item(
     response_model=Item,
     summary="Update item",
     description="Update an existing item.",
-    responses={404: {"model": Problem}, 409: {"model": Problem}},
+    responses={
+        406: {"model": Problem},
+        404: {"model": Problem},
+        409: {"model": Problem},
+        422: {"model": Problem},
+    },
     tags=["Items"],
+    dependencies=[Depends(require_accept_json)],
 )
 def update_item(
-    item_id: int = Path(..., gt=0),
-    item: ItemIn = Body(...),  # noqa: B008
-    store: ItemStoreProtocol = Depends(get_store),  # noqa: B008
+    item: Annotated[Item, Depends(get_item_or_404)],
+    update_data: Annotated[ItemIn, Body(...)],
+    store: Annotated[ItemStoreProtocol, Depends(get_store)],
 ) -> Item:
-    """Updates an existing item by its ID.
+    """Update an existing item.
 
     Args:
-        item_id (int): The unique identifier of the item to update.
-        item (ItemIn): The new data for the item from the request body.
-        store (ItemStoreProtocol): The dependency-injected item store.
+      item (Item): The current item resolved from the path parameter,
+        injected by ``get_item_or_404``.
+      update_data (ItemIn): The new values for the item (request body).
+      store (ItemStoreProtocol): The item store implementation (injected).
 
     Returns:
-        Item: The updated item.
+      The updated item.
+
+    Raises:
+      HTTPException: If the item does not exist (404) or if the new name
+        conflicts with another item (409). These are raised by the dependency
+        or the store layer.
+      RequestValidationError: If the path/body validation fails (422). Handled
+        by the global validation exception handler.
     """
-    return store.update(item_id, item)
+    return store.update(item.id, update_data)
 
 
 @router.delete(
@@ -443,23 +639,34 @@ def update_item(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete item",
     description="Delete an item by its ID.",
-    responses={404: {"model": Problem}},
+    responses={
+        406: {"model": Problem},
+        404: {"model": Problem},
+        422: {"model": Problem},
+    },
     tags=["Items"],
+    dependencies=[Depends(require_accept_json)],
 )
 def delete_item(
-    item_id: int = Path(..., gt=0),
-    store: ItemStoreProtocol = Depends(get_store),  # noqa: B008
+    item: Annotated[Item, Depends(get_item_or_404)],
+    store: Annotated[ItemStoreProtocol, Depends(get_store)],
 ) -> Response:
-    """Deletes an item by its ID.
+    """Delete an item by its unique ID.
+
+    The target item is resolved by the `get_item_or_404` dependency before this
+    handler runs.
 
     Args:
-        item_id (int): The unique identifier of the item to delete.
-        store (ItemStoreProtocol): The dependency-injected item store.
+        item: The item to delete, injected by `get_item_or_404`.
+        store: The item store implementation, injected.
 
     Returns:
-        Response: An empty response with a 204 No Content status code.
+        Response: Empty body with **204 No Content** on successful deletion.
+
+    Raises:
+        HTTPException: 404 if the item does not exist (raised by the dependency).
     """
-    store.delete(item_id)
+    store.delete(item.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -521,7 +728,7 @@ async def validation_exception_handler(
     Returns:
         JSONResponse: A JSON response detailing the validation error.
     """
-    logger.warning(f"Validation error: {exc.errors()}")
+    logger.warning("Validation error: %s", exc.errors())
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=Problem(
@@ -548,5 +755,5 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     Returns:
         JSONResponse: A JSON response detailing the HTTP error.
     """
-    logger.warning(f"HTTP error: {exc.status_code} {exc.detail}")
+    logger.warning("HTTP error: %s %s", exc.status_code, exc.detail)
     return JSONResponse(status_code=exc.status_code, content=exc.detail)

@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import re
 
-import pexpect  # type: ignore[import-untyped]
+import pexpect
 import pytest
 
 from tests.e2e.conftest import PROMPT_REGEX, run_cli, spawn_repl
@@ -62,9 +62,11 @@ def _expect_any(
         pexpect.TIMEOUT: If none of the patterns (including the prompt) match
             within the timeout period.
     """
-    compiled = [re.compile(p) if isinstance(p, str) else p for p in patterns]
-    compiled.append(re.compile(PROMPT_REGEX))
-    child.expect_list(compiled, timeout=timeout)  # pyright: ignore[reportArgumentType]
+    compiled: list[re.Pattern[str] | type[pexpect.EOF] | type[pexpect.TIMEOUT]] = [
+        re.compile(p) if isinstance(p, str) else p for p in patterns
+    ]
+    compiled.append(re.compile(r"^\(bijux\)\s.*>"))
+    child.expect_list(compiled, timeout=timeout)
 
 
 @pytest.fixture

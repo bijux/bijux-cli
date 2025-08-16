@@ -16,12 +16,14 @@ within another Python application.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable
+from contextlib import suppress
 import importlib
+import inspect
 import os
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, cast
 
 from bijux_cli.commands.utilities import validate_common_flags
 from bijux_cli.contracts import (
@@ -35,6 +37,17 @@ from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.exceptions import BijuxError, CommandError, ServiceError
 
 IGNORE = {"PS1", "LS_COLORS", "PROMPT_COMMAND", "GIT_PS1_FORMAT"}
+
+
+def _consume_task(task: asyncio.Future[Any]) -> None:
+    """Consumes an asyncio task to suppress unhandled exceptions."""
+
+    def _eat_exc(t: asyncio.Future[Any]) -> None:
+        """Retrieves and suppresses exceptions from a future."""
+        with suppress(Exception):
+            _ = t.exception()
+
+    task.add_done_callback(_eat_exc)
 
 
 class BijuxAPI:
@@ -80,13 +93,18 @@ class BijuxAPI:
             name (str): The name of the telemetry event.
             payload (dict[str, Any]): The data associated with the event.
         """
-        maybe_coro: Coroutine[Any, Any, None] | None = self._tel.event(name, payload)
-        if asyncio.iscoroutine(maybe_coro):
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(maybe_coro)
-            except RuntimeError:
-                asyncio.run(maybe_coro)
+        maybe = self._tel.event(name, payload)
+        if not inspect.isawaitable(maybe):
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(maybe)
+        else:
+            if hasattr(loop, "create_task"):
+                loop.create_task(maybe)
+            else:
+                asyncio.run(maybe)
 
     def register(self, name: str, callback: Callable[..., Any]) -> None:
         """Registers or replaces a Python callable as a CLI command.
@@ -130,9 +148,13 @@ class BijuxAPI:
                 return self._cb(*args, **kwargs)
 
         try:
-            if self._registry.has(name):
-                self._registry.deregister(name)
-            self._registry.register(name, _Wrapper(callback))
+            exists = bool(self._await_maybe(self._registry.has(name), want_result=True))
+            if exists:
+                maybe = cast(Any, self._registry.deregister(name))
+                self._await_maybe(maybe)
+            maybe2 = cast(Any, self._registry.register(name, _Wrapper(callback)))
+            self._await_maybe(maybe2)
+
             self._obs.log("info", "Registered command", extra={"name": name})
             self._schedule_event("api.register", {"name": name})
         except ServiceError as exc:
@@ -189,18 +211,24 @@ class BijuxAPI:
                 )
             )
         else:
-            return loop.run_until_complete(
-                self.run_async(
-                    name,
-                    *args,
-                    quiet=quiet,
-                    verbose=verbose,
-                    fmt=fmt,
-                    pretty=pretty,
-                    debug=debug,
-                    **kwargs,
-                )
+            if not hasattr(loop, "run_until_complete"):
+                raise RuntimeError("Cannot call run_sync from a running event loop")
+            coro = self.run_async(
+                name,
+                *args,
+                quiet=quiet,
+                verbose=verbose,
+                fmt=fmt,
+                pretty=pretty,
+                debug=debug,
+                **kwargs,
             )
+            try:
+                return loop.run_until_complete(coro)
+            finally:
+                with suppress(Exception):
+                    if hasattr(coro, "close"):
+                        coro.close()
 
     async def run_async(
         self,
@@ -306,13 +334,16 @@ class BijuxAPI:
             plugin = _load_plugin(p, module_name)
             plugin.startup(self._engine.di)
 
-            if self._registry.has(p.stem):
-                self._registry.deregister(p.stem)
+            exists = bool(
+                self._await_maybe(self._registry.has(p.stem), want_result=True)
+            )
+            if exists:
+                self._await_maybe(cast(Any, self._registry).deregister(p.stem))
 
-            self._registry.register(
-                p.stem,
-                plugin,
-                alias=str(__version__),
+            self._await_maybe(
+                cast(Any, self._registry).register(
+                    p.stem, plugin, alias=str(__version__)
+                )
             )
             self._obs.log("info", "Loaded plugin", extra={"path": str(p)})
             self._schedule_event("api.plugin_loaded", {"path": str(p)})
@@ -324,3 +355,83 @@ class BijuxAPI:
             raise BijuxError(
                 f"Failed to load plugin {p}: {exc}", http_status=500
             ) from exc
+
+    @staticmethod
+    def _await_maybe(value: Any, *, want_result: bool = False) -> Any:
+        """Synchronously handle possibly-awaitable values with safe fallbacks.
+
+        Args:
+          value: A value that may or may not be awaitable (e.g., a coroutine,
+            Future, Task, or a plain value).
+          want_result: When `True`, and the coroutine is *scheduled* (not awaited),
+            return `False` instead of `None` so callers can reliably detect that
+            no immediate result is available.
+
+        Returns:
+          The original `value` if it is not awaitable; otherwise, either the
+          awaited result (when run synchronously) or `None`/`False` when the
+          coroutine is scheduled for background execution.
+
+        Raises:
+          Exception: Any exception raised by the coroutine when it is run
+            synchronously via `asyncio.run` or `run_until_complete` is propagated.
+        """
+        import inspect as _inspect
+
+        if not _inspect.isawaitable(value):
+            return value
+
+        async def _inner() -> Any:
+            """Await and return the captured awaitable `value`.
+
+            Returns:
+                Any: The result produced by awaiting `value`.
+            """
+            return await value
+
+        coro = _inner()
+
+        def _close_if_possible(obj: Any) -> None:
+            """Attempt to call ``close()`` on an object, suppressing errors.
+
+            Args:
+                obj: Object that may expose a callable ``close`` attribute.
+
+            Notes:
+                Any exception raised by ``close()`` is suppressed.
+            """
+            with suppress(Exception):
+                close = getattr(obj, "close", None)
+                if callable(close):
+                    close()
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            try:
+                return asyncio.run(coro)
+            finally:
+                _close_if_possible(value)
+                coro.close()
+        else:
+            if hasattr(loop, "create_task"):
+                task = loop.create_task(coro)
+                _consume_task(task)
+                return False if want_result else None
+
+            run_uc = getattr(loop, "run_until_complete", None)
+            if callable(run_uc):
+                try:
+                    return run_uc(coro)
+                finally:
+                    _close_if_possible(value)
+                    coro.close()
+
+            try:
+                task = asyncio.ensure_future(coro, loop=loop)
+                _consume_task(task)
+                return False if want_result else None
+            except Exception:
+                _close_if_possible(value)
+                coro.close()
+                return False if want_result else None

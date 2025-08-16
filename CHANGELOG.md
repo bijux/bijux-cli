@@ -23,7 +23,37 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-1-2"></a>
+## [0.1.2] – 2025-08-17
+
+### Added
+* **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
+* **CI Artifact Pages:** The documentation site now automatically generates detailed pages for all CI artifacts, including tests, linting, code quality, security, API tests, SBOMs, and citation files.
+* **Release Evidence:** The `publish` workflow now downloads all artifacts from the `CI` run, packages them as `evidence/*.tar.gz` bundles, and attaches them to the GitHub Release for traceability.
+* **Build Hygiene:** Makefiles now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
+
+### Changed
+* **CI/CD Overhaul:**
+    * The `ci.yml` workflow now uploads each category of artifact separately for better organization and downstream consumption.
+    * The `docs.yml` workflow now waits for the main `CI` run to complete, downloads all artifacts, and uses them to build a data-rich documentation site.
+    * The `publish.yml` workflow has been streamlined and made more robust, removing the optional "wait for docs" step and improving tag detection.
+* **Documentation Content:** All top-level Markdown documents (`README.md`, `USAGE.md`, `TESTS.md`, `TOOLING.md`, `CONTRIBUTING.md`, etc.) have been significantly rewritten and expanded with tables of contents, `back-to-top` links, and cross-references to the new artifact pages.
+* **Build System:**
+    * All `Makefile` modules have been refactored to use the new hygienic `artifacts/` directory structure for outputs and caches.
+    * `tox.ini` has been updated to align with the new Makefile targets and to run a comprehensive suite of checks for the `py311` environment, mirroring the full CI validation process.
+* **API Schema:** The OpenAPI `schema.yaml` has been improved with stricter validation (`additionalProperties: false`), better descriptions, response links, and more detailed examples.
+* **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules by removing `pyright: ignore` comments and adding explicit `cast` calls where necessary.
+
+### Fixed
+* **Type Safety:** Resolved numerous previously ignored type errors throughout the codebase and test suite.
+* **API Endpoint Logic:** Corrected the item update logic in `src/bijux_cli/httpapi.py` by removing a faulty check for duplicate names that was causing incorrect 409 Conflict errors.
+* **Test Suite:** Improved the stability and correctness of E2E tests by enhancing golden file comparisons and fixing brittle assertions.
+
+[Back to top](#top)
+
+
 <a id="v0-1-1"></a>
+
 ## [0.1.1] – 2025-08-14
 
 ### Added
@@ -62,6 +92,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ---
 
 <a id="v0-1-0"></a>
+
 ## [0.1.0] – 2025-08-12
 
 ### Added

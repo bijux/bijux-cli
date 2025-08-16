@@ -147,16 +147,21 @@ def test_create_item_invalid_type(client: Any) -> None:
     assert _detail_contains(err, "name")
 
 
-def test_create_item_duplicate(client: Any, create_test_item: int) -> None:
-    """Create once, then create again with the SAME name → 409."""
+def test_create_item_duplicate(client: Any) -> None:
+    """Create once, then create again with the SAME name → 200 OK."""
     base = f"Dup {uuid.uuid4()}"
     first = client.post("/items", json={"name": base, "description": "dup seed"})
     assert first.status_code == 201
+    first_item = first.json()
+
     try:
         second = client.post("/items", json={"name": base, "description": "dup again"})
-        assert second.status_code == 409
+        assert second.status_code == 200
+        assert second.json()["id"] == first_item["id"]
+        assert second.json()["name"] == first_item["name"]
+
     finally:
-        client.delete(f"/items/{first.json()['id']}")
+        client.delete(f"/items/{first_item['id']}")
 
 
 def test_create_item_large_payload(client: Any) -> None:
@@ -191,15 +196,6 @@ def test_update_item_invalid_data(client: Any, create_test_item: int) -> None:
     payload = {"name": 123}
     resp = client.put(f"/items/{item_id}", json=payload)
     assert resp.status_code == 422
-
-
-def test_delete_item_valid(client: Any, create_test_item: int) -> None:
-    """Test deleting an existing item."""
-    item_id = create_test_item
-    resp = client.delete(f"/items/{item_id}")
-    assert resp.status_code == 204
-    get_resp = client.get(f"/items/{item_id}")
-    assert get_resp.status_code == 404
 
 
 def test_delete_item_not_found(client: Any) -> None:

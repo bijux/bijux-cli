@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import builtins
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Generator
 from contextlib import suppress
 import logging
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -202,26 +202,29 @@ def test_resolve_coroutine_sync_via_asyncio_run_v1(
     monkeypatch.setenv("VERBOSE_DI", "1")
     monkeypatch.delenv("BIJUXCLI_TEST_MODE", raising=False)
 
-    c.register("AsyncSvc", maker)  # type: ignore[arg-type]
+    c.register("AsyncSvc", cast(Any, maker))
     assert c.resolve("AsyncSvc") == "ok-sync"
 
 
 def test_resolve_coroutine_sync_with_fake_running_loop_v1(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test synchronous resolution of a coroutine factory with a fake running loop (v1)."""
+    """When an event loop is running, sync resolve must refuse and raise."""
     c = DIContainer.current()
 
     async def maker() -> str:
         return "ok-loop"
 
-    class FakeLoop:
-        def run_until_complete(self, _coro: Any) -> str:
-            return "ok-loop"
+    monkeypatch.setattr(asyncio, "get_running_loop", lambda: object())
 
-    monkeypatch.setattr(asyncio, "get_running_loop", FakeLoop)
-    c.register("AsyncSvc2", maker)  # type: ignore[arg-type]
-    assert c.resolve("AsyncSvc2") == "ok-loop"
+    factory: Any = maker
+    with (
+        c.override("AsyncSvc2", factory),
+        pytest.raises(
+            RuntimeError, match="Cannot sync-resolve while an event loop is running"
+        ),
+    ):
+        c.resolve("AsyncSvc2")
 
 
 @pytest.mark.asyncio
@@ -232,7 +235,7 @@ async def test_resolve_async_returns_awaited_value_v1() -> None:
     async def maker() -> int:
         return 123
 
-    c.register("AsyncSvc3", maker)  # type: ignore[arg-type]
+    c.register("AsyncSvc3", cast(Any, maker))
     assert await c.resolve_async("AsyncSvc3") == 123
 
 
@@ -245,7 +248,7 @@ def test_factory_returns_none_raises_v1() -> None:
         """Async factory that returns None."""
         return None
 
-    c.register("NoneFactory", _none_factory)  # type: ignore[arg-type]
+    c.register("NoneFactory", cast(Any, _none_factory))
 
     with pytest.raises(BijuxError, match="returned None"):
         c.resolve("NoneFactory")
@@ -259,7 +262,7 @@ def test_factory_raises_typeerror_is_reraised_v1() -> None:
         """Always raises a TypeError."""
         raise TypeError("bad")
 
-    c.register("BadType", bad)  # type: ignore[arg-type]
+    c.register("BadType", cast(Any, bad))
     with pytest.raises(TypeError):
         c.resolve("BadType")
 
@@ -272,7 +275,7 @@ def test_factory_raises_other_exception_is_wrapped_v1() -> None:
         """Always raises a ValueError."""
         raise ValueError("boom")
 
-    c.register("BadOther", bad)  # type: ignore[arg-type]
+    c.register("BadOther", cast(Any, bad))
     with pytest.raises(BijuxError, match="Factory for BadOther raised: boom"):
         c.resolve("BadOther")
 
@@ -329,7 +332,7 @@ def test_services_and_factories_views_v1() -> None:
     async def factory_b() -> int:
         return 2
 
-    c.register("b", factory_b)  # type: ignore[arg-type]
+    c.register("b", cast(Any, factory_b))
     facts = set(c.factories())
     assert ("a", None) in facts
     assert ("b", None) in facts
@@ -466,7 +469,7 @@ def test_register_invalid_key_type_v1() -> None:
     c = DIContainer.current()
     with pytest.raises(BijuxError, match="Service key must be a type or str"):
         c.register(
-            123,  # type: ignore[arg-type]
+            cast(Any, 123),
             "value",
         )
 
@@ -520,25 +523,30 @@ def test_resolve_circular_dependency() -> None:
 async def test_resolve_async_with_sync_factory() -> None:
     """Test that resolve_async can correctly resolve a synchronous factory."""
     c = DIContainer.current()
-    c.register("sync-val", lambda: 42)  # type: ignore[arg-type, return-value]
+    c.register("sync-val", cast(Any, lambda: 42))
     assert await c.resolve_async("sync-val") == 42
 
 
 class ClosableCoroService:
-    """A mock service whose factory returns a coroutine with a close method."""
+    """A mock service whose factory returns an awaitable with a close() method."""
 
     @staticmethod
     async def factory() -> Awaitable[Any]:
-        """Create a mock coroutine with a close method."""
-        coro = asyncio.sleep(0)
-        coro.close = MagicMock()  # type: ignore[method-assign]
-        return coro
+        class _ClosableAwaitable(Awaitable[Any]):
+            def __init__(self) -> None:
+                self._inner: Awaitable[Any] = asyncio.sleep(0)
+                self.close = MagicMock()
+
+            def __await__(self) -> Generator[Any, None, Any]:
+                return self._inner.__await__()
+
+        return _ClosableAwaitable()
 
 
 def test_factory_returns_none_raises_error() -> None:
     """Test that a factory returning None raises a BijuxError."""
     c = DIContainer.current()
-    c.register("NoneFactory", lambda: None)  # type: ignore[arg-type, return-value]
+    c.register("NoneFactory", cast(Any, lambda: None))
     with pytest.raises(BijuxError, match="Factory for NoneFactory returned None"):
         c.resolve("NoneFactory")
 
@@ -562,9 +570,10 @@ def test_unregister_nonexistent_key(caplog: pytest.LogCaptureFixture) -> None:
 def test_override_restores_unresolved_service() -> None:
     """Test that the override context manager correctly restores an unresolved service."""
     c = DIContainer.current()
-    c.register("service", lambda: "original")  # type: ignore[arg-type, return-value]
-    with c.override("service", lambda: "overridden"):  # type: ignore[arg-type, return-value]
+    c.register("service", cast(Any, lambda: "original"))
+    with c.override("service", cast(Any, "overridden")):
         assert c.resolve("service") == "overridden"
+
     assert c.resolve("service") == "original"
 
 
@@ -637,7 +646,7 @@ def test_resolve_coroutine_hasattr_false_branch(
 
     monkeypatch.setattr(asyncio, "get_running_loop", FakeLoop)
 
-    c.register("AsyncSvcNoClose", maker)  # type: ignore[arg-type]
+    c.register("AsyncSvcNoClose", cast(Any, maker))
 
     real_hasattr = builtins.hasattr
 

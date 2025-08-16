@@ -464,13 +464,37 @@ def test_command_performance_audit_under_load(tmp_path: Path) -> None:
     assert max_time < 5.0, f"Max single audit call too slow: {max_time:.2f}s"
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
 def test_audit_golden_output(tmp_path: Path) -> None:
-    """Golden test: output matches expected fixture."""
+    """Verify `bijux audit` JSON matches the golden fixture."""
     out_file = tmp_path / "audit.json"
     run_cli(["audit", "--dry-run", "--output", str(out_file)])
-    golden = Path("tests/e2e/test_fixtures/audit/audit.json").read_text()
+
+    golden_path = e2e_fixture("audit", "audit.json")
+    golden = golden_path.read_text()
     actual = out_file.read_text()
-    diff = list(difflib.unified_diff(golden.splitlines(), actual.splitlines()))
+
+    diff = list(
+        difflib.unified_diff(
+            golden.splitlines(),
+            actual.splitlines(),
+            fromfile=str(golden_path),
+            tofile=str(out_file),
+            lineterm="",
+        )
+    )
     assert not diff, "\n".join(diff)
 
 

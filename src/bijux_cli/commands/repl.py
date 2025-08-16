@@ -480,7 +480,10 @@ class CommandCompleter(Completer):
                     yield Completion(key[0], start_position=-len(current))
             return
 
-        if isinstance(cmd_obj, typer.Typer):
+        is_group = hasattr(cmd_obj, "registered_commands") or hasattr(
+            cmd_obj, "registered_groups"
+        )
+        if is_group:
             names = [c.name for c in getattr(cmd_obj, "registered_commands", [])]
             names += [g.name for g in getattr(cmd_obj, "registered_groups", [])]
             for n in names:
@@ -488,7 +491,7 @@ class CommandCompleter(Completer):
                     found = True
                     yield Completion(n, start_position=-len(current))
 
-        if not isinstance(cmd_obj, typer.Typer) and hasattr(cmd_obj, "params"):
+        if (not is_group) and hasattr(cmd_obj, "params"):
             for param in cmd_obj.params:
                 for opt in (*param.opts, *(getattr(param, "secondary_opts", []) or [])):
                     if opt.startswith(current):

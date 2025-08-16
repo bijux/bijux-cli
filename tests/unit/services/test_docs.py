@@ -335,7 +335,7 @@ def test_render_empty_spec(docs: Docs) -> None:
 
 def test_write_empty_spec(docs: Docs, temp_root: Path) -> None:
     """Test that writing an empty spec creates a file with an empty JSON object."""
-    path = docs.write({}, name=temp_root / "empty")  # type:ignore[arg-type]
+    path = docs.write({}, name=temp_root / "empty")  # type: ignore[arg-type]
     assert Path(path).read_text() == "{}"
 
 
@@ -389,10 +389,9 @@ def test_render_yaml(docs: Docs) -> None:
 def test_write_yaml(docs: Docs, temp_root: Path) -> None:
     """Test writing a spec to a YAML file."""
     path_str = docs.write(
-        {"key": "value"},
-        fmt=OutputFormat.YAML,
-        name=temp_root / "spec.yaml",  # type:ignore[arg-type]
+        {"key": "value"}, fmt=OutputFormat.YAML, name=str(temp_root / "spec.yaml")
     )
+
     text = Path(path_str).read_text()
     assert "key: value" in text
 

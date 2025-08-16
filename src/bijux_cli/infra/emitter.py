@@ -23,7 +23,7 @@ from bijux_cli.core.exceptions import CommandError
 from bijux_cli.infra.serializer import serializer_for
 
 
-class Emitter(EmitterProtocol):  # pyright: ignore[reportUntypedBaseClass]
+class Emitter(EmitterProtocol):
     """A service for serializing and emitting structured output.
 
     This class implements the `EmitterProtocol`. It handles the serialization

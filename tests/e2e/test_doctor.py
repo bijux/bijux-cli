@@ -382,21 +382,45 @@ def test_doctor_high_parallelism() -> None:
     assert ok >= 10, f"doctor JSON successes too low: {ok}/50"
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
+def _assert_matches_golden(actual_text: str, *fixture_parts: str) -> None:
+    """Diff helper that asserts CLI output matches a golden fixture."""
+    golden_path = e2e_fixture(*fixture_parts)
+    golden_text = golden_path.read_text()
+    diff = list(
+        difflib.unified_diff(
+            golden_text.splitlines(),
+            actual_text.splitlines(),
+            fromfile=str(golden_path),
+            tofile="<actual>",
+            lineterm="",
+        )
+    )
+    assert not diff, "\n".join(diff)
+
+
 def test_doctor_output_golden() -> None:
     """Doctor output should match the golden file."""
     res = run_cli(["doctor", "--format", "json"])
-    with open("tests/e2e/test_fixtures/doctor/doctor.json") as f:
-        golden = f.read()
-    diff = list(difflib.unified_diff(golden.splitlines(), res.stdout.splitlines()))
-    assert not diff, "\n".join(diff)
+    _assert_matches_golden(res.stdout, "doctor", "doctor.json")
 
 
 def test_doctor_golden_healthy() -> None:
     """Golden test for healthy doctor output."""
     res = run_cli(["doctor", "--format", "json"])
-    golden = Path("tests/e2e/test_fixtures/doctor/doctor.json").read_text()
-    diff = list(difflib.unified_diff(golden.splitlines(), res.stdout.splitlines()))
-    assert not diff, "\n".join(diff)
+    _assert_matches_golden(res.stdout, "doctor", "doctor.json")
 
 
 def test_doctor_signal_interrupt() -> None:

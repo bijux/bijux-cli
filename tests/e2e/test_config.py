@@ -20,7 +20,7 @@ from typing import Any
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 import pytest
-import yaml  # pyright: ignore[reportMissingModuleSource]
+import yaml
 
 from tests.e2e.conftest import BIN, assert_log_has, assert_text, run_cli
 

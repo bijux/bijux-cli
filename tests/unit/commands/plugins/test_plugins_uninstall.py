@@ -7,8 +7,9 @@
 # pyright: reportOptionalMemberAccess=false
 from __future__ import annotations
 
+from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 from typer.testing import CliRunner
@@ -136,10 +137,17 @@ def test_permission_denied(
     plugins_dir = tmp_path / "plugins"
     (plugins_dir / "corge").mkdir(parents=True)
 
+    def _raise_perm(
+        path: str | PathLike[str],
+        ignore_errors: bool = False,
+        onerror: Any | None = None,
+    ) -> NoReturn:
+        raise PermissionError()
+
     monkeypatch.setattr(
-        uninstall_mod.shutil,  # type: ignore[attr-defined]
-        "rmtree",
-        lambda p: (_ for _ in ()).throw(PermissionError()),
+        "shutil.rmtree",
+        _raise_perm,
+        raising=True,
     )
 
     result = runner.invoke(cli_app, ["plugins", "uninstall", "corge"])
@@ -159,8 +167,7 @@ def test_remove_failed(
     (plugins_dir / "grault").mkdir(parents=True)
 
     monkeypatch.setattr(
-        uninstall_mod.shutil,  # type: ignore[attr-defined]
-        "rmtree",
+        "bijux_cli.commands.plugins.uninstall.shutil.rmtree",
         lambda p: (_ for _ in ()).throw(RuntimeError("boom")),
     )
 

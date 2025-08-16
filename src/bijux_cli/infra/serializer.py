@@ -46,7 +46,7 @@ _ORJSON: Final[ModuleType | None] = _orjson_mod
 
 _yaml_mod: ModuleType | None
 try:
-    import yaml as _yaml_mod  # pyright: ignore[reportMissingModuleSource]
+    import yaml as _yaml_mod
 except ImportError:
     _yaml_mod = None
 _YAML: Final[ModuleType | None] = _yaml_mod

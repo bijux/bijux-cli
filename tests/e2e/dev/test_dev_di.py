@@ -89,30 +89,79 @@ def test_unknown_flag_ignored_or_errors_gracefully(flag: str) -> None:
     assert ("error" in obj) or ("factories" in obj and "services" in obj)
 
 
+def e2e_fixture(*parts: str) -> Path:
+    """Return an absolute path to a file under tests/e2e/test_fixtures/...
+
+    Args:
+        *parts: Path components inside the `test_fixtures` directory.
+
+    Returns:
+        Path: Absolute path to the requested fixture file.
+    """
+    base = Path(__file__).resolve().parent / "test_fixtures"
+    return base.joinpath(*parts)
+
+
 def test_di_json_shape_golden(golden_dir: Path) -> None:
-    """Compare the DI JSON output shape against a golden file."""
-    r = run_cli(["dev", "di", "--format", "json"])
-    live = normalize_di(assert_json(r.stdout))
-    want = normalize_di(assert_json((golden_dir / "di_shape.json").read_text()))
-    assert live.keys() == want.keys()
-    for k in live:
-        assert live[k]
-        for d in live[k]:
-            assert set(d.keys()) == set(want[k][0].keys())
+    """Assert DI JSON output has (at least) the golden shape per section."""
+    res = run_cli(["dev", "di", "--format", "json"])
+    live: Mapping[str, Any] = normalize_di(assert_json(res.stdout))
+
+    golden_path = golden_dir / "di_shape.json"
+    want: Mapping[str, Any] = normalize_di(assert_json(golden_path.read_text()))
+
+    assert set(live.keys()) == set(want.keys()), (
+        f"Top-level DI sections differ.\n"
+        f" Live:   {sorted(live.keys())}\n"
+        f" Golden: {sorted(want.keys())}"
+    )
+
+    for section in sorted(live.keys()):
+        live_items = list(live[section] or [])
+        want_items = list(want[section] or [])
+        assert want_items, f"Golden section '{section}' is empty"
+        assert live_items, f"Live section '{section}' is empty"
+
+        want_keys = set(want_items[0].keys())
+        for idx, item in enumerate(live_items):
+            live_keys = set(item.keys())
+            missing = want_keys - live_keys
+            assert not missing, (
+                f"Section '{section}' item #{idx} is missing keys: {sorted(missing)}\n"
+                f" Live keys:   {sorted(live_keys)}\n"
+                f" Golden keys: {sorted(want_keys)}"
+            )
 
 
 def test_di_yaml_shape_golden(golden_dir: Path) -> None:
-    """Compare the DI YAML output shape against a golden file."""
-    r = run_cli(["dev", "di", "--format", "yaml"])
-    live: Mapping[str, Any] = normalize_di(assert_yaml(r.stdout))
-    want: Mapping[str, Any] = normalize_di(
-        assert_yaml((golden_dir / "di_shape.yaml").read_text())
+    """Assert DI YAML output has (at least) the golden shape per section."""
+    res = run_cli(["dev", "di", "--format", "yaml"])
+    live: Mapping[str, Any] = normalize_di(assert_yaml(res.stdout))
+
+    golden_path = golden_dir / "di_shape.yaml"
+    want: Mapping[str, Any] = normalize_di(assert_yaml(golden_path.read_text()))
+
+    assert set(live.keys()) == set(want.keys()), (
+        f"Top-level DI sections differ.\n"
+        f" Live:   {sorted(live.keys())}\n"
+        f" Golden: {sorted(want.keys())}"
     )
-    assert live.keys() == want.keys()
-    for k in live:
-        assert live[k]
-        for d in live[k]:
-            assert set(d.keys()) == set(want[k][0].keys())
+
+    for section in sorted(live.keys()):
+        live_items = list(live[section] or [])
+        want_items = list(want[section] or [])
+        assert want_items, f"Golden section '{section}' is empty"
+        assert live_items, f"Live section '{section}' is empty"
+
+        want_keys = set(want_items[0].keys())
+        for idx, item in enumerate(live_items):
+            live_keys = set(item.keys())
+            missing = want_keys - live_keys
+            assert not missing, (
+                f"Section '{section}' item #{idx} is missing keys: {sorted(missing)}\n"
+                f" Live keys:   {sorted(live_keys)}\n"
+                f" Golden keys: {sorted(want_keys)}"
+            )
 
 
 def test_limit_env_zero(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

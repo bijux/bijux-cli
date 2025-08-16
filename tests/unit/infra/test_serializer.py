@@ -7,12 +7,12 @@
 from __future__ import annotations
 
 import builtins
+from enum import Enum
 import importlib
 import io
 import json
 import sys
-from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
@@ -81,8 +81,8 @@ def test_base_emit_writes_and_newline(monkeypatch: pytest.MonkeyPatch) -> None:
     tel = MagicMock()
     s = OrjsonSerializer(tel)
     fake = FakeStdout()
-    monkeypatch.setattr(infra_serializer.sys, "stdout", fake)  # type: ignore[attr-defined]
-    s.emit({"k": "v"}, fmt=OutputFormat.JSON, pretty=False)
+    monkeypatch.setattr("bijux_cli.infra.serializer.sys.stdout", fake)
+    s.emit({"k": "v"})
     text = fake.getvalue().strip()
     assert text in ('{"k":"v"}', '{"k": "v"}')
 
@@ -96,18 +96,18 @@ def test_orjson_serializer_json_with_orjson(monkeypatch: pytest.MonkeyPatch) -> 
     s = OrjsonSerializer(tel)
 
     payload = {"a": 1, "secret": Redacted("top")}
-    txt = s.dumps(payload, fmt=OutputFormat.JSON, pretty=True)
+    txt = s.dumps(payload, pretty=True)
     assert '"a": 1' in txt
     assert '"secret": "top"' in txt
     tel.event.assert_any_call("serialize_dumps", {"format": "json", "pretty": True})
 
-    raw = s.dumps_bytes(payload, fmt=OutputFormat.JSON, pretty=False)
+    raw = s.dumps_bytes(payload, pretty=False)
     assert isinstance(raw, bytes | bytearray)
     tel.event.assert_any_call(
         "serialize_dumps_bytes", {"format": "json", "pretty": False}
     )
 
-    back = s.loads(raw, fmt=OutputFormat.JSON)
+    back = s.loads(raw)
     assert back["a"] == 1
 
 
@@ -122,18 +122,18 @@ def test_orjson_serializer_json_without_orjson_fallback(
     s = OrjsonSerializer(tel)
 
     payload = {"a": 2, "secret": Redacted("xxx")}
-    txt = s.dumps(payload, fmt=OutputFormat.JSON, pretty=True)
+    txt = s.dumps(payload, pretty=True)
     assert '"a": 2' in txt
     assert '"secret": "xxx"' in txt
     tel.event.assert_any_call("serialize_dumps", {"format": "json", "pretty": True})
 
-    raw = s.dumps_bytes(payload, fmt=OutputFormat.JSON, pretty=False)
+    raw = s.dumps_bytes(payload)
     assert isinstance(raw, (bytes | bytearray))
     tel.event.assert_any_call(
         "serialize_dumps_bytes", {"format": "json", "pretty": False}
     )
 
-    back = s.loads(txt, fmt=OutputFormat.JSON)
+    back = s.loads(txt)
     assert back["a"] == 2
 
 
@@ -153,7 +153,7 @@ def test_orjson_serializer_json_default_typeerror_emits_failure(
     with pytest.raises(
         BijuxError, match=r"Failed to serialize json: .*JSON serialisable"
     ):
-        s.dumps({"x": NotJSON()}, fmt=OutputFormat.JSON)
+        s.dumps({"x": NotJSON()})
 
     tel.event.assert_any_call(
         "serialize_dumps_failed", {"format": "json", "error": ANY}
@@ -168,7 +168,7 @@ def test_orjson_serializer_yaml_success() -> None:
     assert "a:" in txt
     tel.event.assert_any_call("serialize_dumps", {"format": "yaml", "pretty": True})
 
-    raw = s.dumps_bytes({"a": 3}, fmt=OutputFormat.YAML, pretty=False)
+    raw = s.dumps_bytes({"a": 3}, fmt=OutputFormat.YAML)
     assert isinstance(raw, (bytes | bytearray))
     tel.event.assert_any_call(
         "serialize_dumps_bytes", {"format": "yaml", "pretty": False}
@@ -203,21 +203,23 @@ def test_orjson_serializer_yaml_missing(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_orjson_serializer_unsupported_format() -> None:
-    """Test that an unsupported serialization format raises an error."""
+    """Unsupported fmt should raise BijuxError across APIs."""
     tel = MagicMock()
     s = OrjsonSerializer(tel)
 
-    class FakeFormat(SimpleNamespace):
-        value = "fake"
+    class FakeFormat(Enum):
+        FAKE = "fake"
+
+    bad_fmt = cast(OutputFormat, FakeFormat.FAKE)
 
     with pytest.raises(BijuxError, match="Unsupported format"):
-        s.dumps({"a": 1}, fmt=FakeFormat)  # type: ignore[arg-type]
+        s.dumps({"a": 1}, fmt=bad_fmt)
 
     with pytest.raises(BijuxError, match="Unsupported format"):
-        s.dumps_bytes({"a": 1}, fmt=FakeFormat)  # type: ignore[arg-type]
+        s.dumps_bytes({"a": 1}, fmt=bad_fmt)
 
     with pytest.raises(BijuxError, match="Unsupported format"):
-        s.loads("{}", fmt=FakeFormat)  # type: ignore[arg-type]
+        s.loads("{}", fmt=bad_fmt)
 
 
 def test_orjson_serializer_loads_json_with_orjson(
@@ -229,7 +231,7 @@ def test_orjson_serializer_loads_json_with_orjson(
     tel = MagicMock()
     s = OrjsonSerializer(tel)
     data = FakeOrjson.dumps({"k": "v"})
-    out = s.loads(data, fmt=OutputFormat.JSON)
+    out = s.loads(data)
     assert out == {"k": "v"}
     tel.event.assert_any_call("serialize_loads", {"format": "json"})
 
@@ -238,11 +240,11 @@ def test_pyyaml_serializer_init_and_roundtrip() -> None:
     """Test the PyYAMLSerializer for a full serialization/deserialization roundtrip."""
     tel = MagicMock()
     y = PyYAMLSerializer(tel)
-    txt = y.dumps({"k": Redacted("secret")}, fmt=OutputFormat.YAML, pretty=True)
+    txt = y.dumps({"k": Redacted("secret")}, pretty=True)
     assert "***" in txt
-    raw = y.dumps_bytes({"n": 1}, fmt=OutputFormat.YAML)
+    raw = y.dumps_bytes({"n": 1})
     assert isinstance(raw, (bytes | bytearray))
-    back = y.loads("n: 1\n", fmt=OutputFormat.YAML)
+    back = y.loads("n: 1\n")
     assert back == {"n": 1}
 
 

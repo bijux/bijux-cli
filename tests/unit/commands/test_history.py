@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
@@ -94,7 +94,9 @@ def test_history_no_subcommand(mock_flags: dict[str, Any]) -> None:
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
-        history(ctx, 20, None, None, None, None, None, **mock_flags)  # type: ignore[arg-type]
+        history(
+            ctx, 20, None, None, None, cast(str, None), cast(str, None), **mock_flags
+        )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         assert builder(False) == {"entries": [{"command": "cmd1"}]}
         assert "python" in builder(True)
@@ -117,7 +119,9 @@ def test_history_limit_zero(mock_flags: dict[str, Any]) -> None:
         mock_history_svc.list.return_value = [{"command": "cmd1"}]
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
-        history(ctx, 0, None, None, None, None, None, **mock_flags)  # type: ignore[arg-type]
+        history(
+            ctx, 0, None, None, None, cast(str, None), cast(str, None), **mock_flags
+        )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         assert builder(False) == {"entries": []}
 
@@ -142,7 +146,9 @@ def test_history_filter_cmd(mock_flags: dict[str, Any]) -> None:
         ]
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
-        history(ctx, 20, None, "cmd1", None, None, None, **mock_flags)  # type: ignore[arg-type]
+        history(
+            ctx, 20, None, "cmd1", None, cast(str, None), cast(str, None), **mock_flags
+        )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         assert builder(False) == {"entries": [{"command": "cmd1"}]}
 
@@ -164,7 +170,16 @@ def test_history_sort_timestamp(mock_flags: dict[str, Any]) -> None:
         mock_history_svc.list.return_value = [{"timestamp": 2}, {"timestamp": 1}]
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
-        history(ctx, 20, None, None, "timestamp", None, None, **mock_flags)  # type: ignore[arg-type]
+        history(
+            ctx,
+            20,
+            None,
+            None,
+            "timestamp",
+            cast(str, None),
+            cast(str, None),
+            **mock_flags,
+        )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         assert builder(False) == {"entries": [{"timestamp": 1}, {"timestamp": 2}]}
 
@@ -190,7 +205,16 @@ def test_history_group_by_command(mock_flags: dict[str, Any]) -> None:
         ]
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
-        history(ctx, 20, "command", None, None, None, None, **mock_flags)  # type: ignore[arg-type]
+        history(
+            ctx,
+            20,
+            "command",
+            None,
+            None,
+            cast(str, None),
+            cast(str, None),
+            **mock_flags,
+        )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         entries = builder(False)["entries"]
         assert len(entries) == 2
@@ -227,7 +251,7 @@ def test_history_export_path(mock_flags: dict[str, Any]) -> None:
             None,
             None,
             "export.json",
-            None,  # type: ignore[arg-type]
+            cast(str, None),
             **mock_flags,
         )
 
@@ -274,7 +298,7 @@ def test_history_import_path(mock_flags: dict[str, Any]) -> None:
             None,
             None,
             None,
-            None,  # type: ignore[arg-type]
+            cast(str, None),
             "import.json",
             **mock_flags,
         )
@@ -312,7 +336,16 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
         ctx.invoked_subcommand = None
 
         with pytest.raises(SystemExit):
-            history(ctx, -1, None, None, None, None, None, **mock_flags)  # type: ignore[arg-type]
+            history(
+                ctx,
+                -1,
+                None,
+                None,
+                None,
+                cast(str, None),
+                cast(str, None),
+                **mock_flags,
+            )
 
         mock_emit.assert_called_with(
             "Invalid value for --limit: must be non-negative.",
@@ -345,7 +378,16 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
         ctx.invoked_subcommand = None
 
         with pytest.raises(SystemExit):
-            history(ctx, 20, None, None, "invalid", None, None, **mock_flags)  # type: ignore[arg-type]
+            history(
+                ctx,
+                20,
+                None,
+                None,
+                "invalid",
+                cast(str, None),
+                cast(str, None),
+                **mock_flags,
+            )
 
         mock_emit.assert_called_with(
             "Invalid sort key: only 'timestamp' is supported.",
@@ -378,7 +420,16 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
         ctx.invoked_subcommand = None
 
         with pytest.raises(SystemExit):
-            history(ctx, 20, "invalid", None, None, None, None, **mock_flags)  # type: ignore[arg-type]
+            history(
+                ctx,
+                20,
+                "invalid",
+                None,
+                None,
+                cast(str, None),
+                cast(str, None),
+                **mock_flags,
+            )
 
         mock_emit.assert_called_with(
             "Invalid group_by: only 'command' is supported.",
@@ -421,7 +472,7 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
                 None,
                 None,
                 None,
-                None,  # type: ignore[arg-type]
+                cast(str, None),
                 "import.json",
                 **mock_flags,
             )
@@ -461,7 +512,9 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
         ctx.invoked_subcommand = None
 
         with pytest.raises(SystemExit):
-            history(ctx, 20, None, None, None, None, "import.json", **mock_flags)  # type: ignore[arg-type]
+            history(
+                ctx, 20, None, None, None, cast(str, None), "import.json", **mock_flags
+            )
 
         mock_emit.assert_called_with(
             ANY,
@@ -502,7 +555,7 @@ def test_history_import_non_dict(mock_flags: dict[str, Any]) -> None:
             None,
             None,
             None,
-            None,  # type: ignore[arg-type]
+            cast(str, None),
             "import.json",
             **mock_flags,
         )
@@ -531,7 +584,9 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
         ctx.invoked_subcommand = None
 
         with pytest.raises(SystemExit):
-            history(ctx, 20, None, None, None, "export.json", None, **mock_flags)  # type: ignore[arg-type]
+            history(
+                ctx, 20, None, None, None, "export.json", cast(str, None), **mock_flags
+            )
 
         mock_emit.assert_called_with(
             ANY,
@@ -697,8 +752,8 @@ def test_history_list_positive_limit_and_failure(
             None,
             None,
             None,
-            None,  # type: ignore[arg-type]
-            None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             quiet=False,
             verbose=False,
             fmt="json",
@@ -729,8 +784,8 @@ def test_history_list_positive_limit_and_failure(
                 None,
                 None,
                 None,
-                None,  # type: ignore[arg-type]
-                None,  # type: ignore[arg-type]
+                export_path=cast(str, None),
+                import_path=cast(str, None),
                 quiet=False,
                 verbose=False,
                 fmt="json",
@@ -775,7 +830,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             filter_cmd=None,
             sort=None,
             export_path=str(out_path),
-            import_path=None,  # type: ignore[arg-type]
+            import_path=cast(str, None),
             quiet=False,
             verbose=True,
             fmt="json",
@@ -815,8 +870,8 @@ def test_history_debug_flag_overrides() -> None:
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
-            import_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             quiet=False,
             verbose=False,
             fmt="json",
@@ -845,8 +900,8 @@ def test_history_invoked_subcommand_skips() -> None:
             None,
             None,
             None,
-            None,  # type: ignore[arg-type]
-            None,  # type: ignore[arg-type]
+            cast(str, None),
+            cast(str, None),
             False,
             False,
             "json",
@@ -883,8 +938,8 @@ def test_history_list_failure() -> None:
                 None,
                 None,
                 None,
-                None,  # type: ignore[arg-type]
-                None,  # type: ignore[arg-type]
+                cast(str, None),
+                cast(str, None),
                 False,
                 False,
                 "json",
@@ -940,7 +995,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
             import_path=str(p),
             quiet=False,
             verbose=False,
@@ -988,7 +1043,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
             import_path=str(p),
             quiet=False,
             verbose=True,
@@ -1032,7 +1087,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             filter_cmd=None,
             sort=None,
             export_path=str(out),
-            import_path=None,  # type: ignore[arg-type]
+            import_path=cast(str, None),
             quiet=False,
             verbose=False,
             fmt="json",
@@ -1074,7 +1129,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             filter_cmd=None,
             sort=None,
             export_path=str(out),
-            import_path=None,  # type: ignore[arg-type]
+            import_path=cast(str, None),
             quiet=False,
             verbose=True,
             fmt="json",
@@ -1114,8 +1169,8 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
-            import_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             quiet=False,
             verbose=False,
             fmt="json",
@@ -1154,8 +1209,8 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
-            import_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             quiet=False,
             verbose=False,
             fmt="json",
@@ -1210,8 +1265,8 @@ def test_history_positive_limit_branch_and_payload_builder(
         group_by=None,
         filter_cmd=None,
         sort=None,
-        export_path=None,  # type: ignore[arg-type]
-        import_path=None,  # type: ignore[arg-type]
+        export_path=cast(str, None),
+        import_path=cast(str, None),
         quiet=False,
         verbose=False,
         fmt="json",
@@ -1266,8 +1321,8 @@ def test_history_list_slicing_for_positive_limit(
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
-            import_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             **mock_flags,
         )
 
@@ -1312,8 +1367,8 @@ def test_history_positive_limit_slicing_and_successful_completion(
             group_by=None,
             filter_cmd=None,
             sort=None,
-            export_path=None,  # type: ignore[arg-type]
-            import_path=None,  # type: ignore[arg-type]
+            export_path=cast(str, None),
+            import_path=cast(str, None),
             **mock_flags,
         )
 

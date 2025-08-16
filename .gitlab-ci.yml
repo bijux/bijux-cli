@@ -47,4 +47,4 @@ tox:
     expire_in: 1 week
     paths:
       - .tox/**/coverage.xml
-      - artifacts/api-server.log
+      - artifacts_pages/api-server.log

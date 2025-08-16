@@ -15,7 +15,7 @@ import time
 from typing import Any
 
 import pytest
-import yaml  # pyright: ignore[reportMissingModuleSource]
+import yaml
 
 from .conftest import run_cli
 

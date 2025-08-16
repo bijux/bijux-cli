@@ -28,7 +28,7 @@ from bijux_cli.contracts import (
 from bijux_cli.core.exceptions import BijuxError
 
 
-class ProcessPool(ProcessPoolProtocol):  # pyright: ignore[reportUntypedBaseClass]
+class ProcessPool(ProcessPoolProtocol):
     """Executes validated commands in a worker pool with an LRU cache.
 
     This class manages a `ProcessPoolExecutor` to run commands in separate

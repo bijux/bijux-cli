@@ -13,9 +13,13 @@ bijuxcli
 caplog
 capsys
 cffenv
+compgen
 compinit
+covcfg
 coveragerc
+endgroup
 envlist
+envname
 fcntl
 forkpty
 glightbox
@@ -29,6 +33,8 @@ libffi
 linenums
 magiclink
 makeflags
+maxdepth
+maxfail
 maxkb
 minversion
 monkeypatches
@@ -37,13 +43,17 @@ mykey
 nfkd
 noequals
 nonlist
+noopener
 norecursedirs
 noreply
 nosec
+nullglob
 oserror
+outdir
 pipefail
 pymdownx
 pyrightconfig
+pytestmark
 pythondontwritebytecode
 pythonpath
 pythonunbuffered
@@ -53,6 +63,7 @@ redocly
 returncode
 secho
 shellflags
+shopt
 softprops
 superfences
 temurin
@@ -61,6 +72,7 @@ thirdparty
 thiskeydoesnotexist
 tmpfile
 tomllib
+toxenv
 versoin
 weakdict
 withcomments

@@ -133,8 +133,7 @@ def test_remove_failed_on_force(
     (src / "plugin.py").write_text("#")
     (tmp_path / "plugins" / "plugin").mkdir(parents=True)
     monkeypatch.setattr(
-        install_mod.shutil,  # type: ignore[attr-defined]
-        "rmtree",
+        "bijux_cli.commands.plugins.install.shutil.rmtree",
         lambda p: (_ for _ in ()).throw(RuntimeError("nope")),
     )
     result = runner.invoke(cli_app, ["plugins", "install", "--force", str(src)])
@@ -177,8 +176,7 @@ def test_disk_full(
 ) -> None:
     """Test that an ENOSPC OSError during copy is handled."""
     monkeypatch.setattr(
-        install_mod.shutil,  # type: ignore[attr-defined]
-        "copytree",
+        "bijux_cli.commands.plugins.install.shutil.copytree",
         lambda s, d, **kw: (_ for _ in ()).throw(OSError(errno.ENOSPC, "No space")),
     )
     src = tmp_path / "plugin"
@@ -197,8 +195,7 @@ def test_permission_denied(
 ) -> None:
     """Test that an EACCES OSError during copy is handled."""
     monkeypatch.setattr(
-        install_mod.shutil,  # type: ignore[attr-defined]
-        "copytree",
+        "bijux_cli.commands.plugins.install.shutil.copytree",
         lambda s, d, **kw: (_ for _ in ()).throw(OSError(errno.EACCES, "Denied")),
     )
     src = tmp_path / "plugin"
@@ -217,8 +214,7 @@ def test_os_error_other(
 ) -> None:
     """Test that a generic OSError during copy is handled."""
     monkeypatch.setattr(
-        install_mod.shutil,  # type: ignore[attr-defined]
-        "copytree",
+        "bijux_cli.commands.plugins.install.shutil.copytree",
         lambda s, d, **kw: (_ for _ in ()).throw(OSError(123, "oops")),
     )
     src = tmp_path / "plugin"
@@ -241,8 +237,7 @@ def test_plugin_py_missing_after_copy(
         Path(dst_arg).mkdir(parents=True)
 
     monkeypatch.setattr(
-        install_mod.shutil,  # type: ignore[attr-defined]
-        "copytree",
+        "bijux_cli.commands.plugins.install.shutil.copytree",
         fake_copytree,
     )
     src = tmp_path / "plugin"
@@ -312,8 +307,7 @@ def test_src_resolve_fallback(
 ) -> None:
     """Test that the source path falls back to absolute() if resolve() fails."""
     monkeypatch.setattr(
-        install_mod.Path,  # type: ignore[attr-defined]
-        "resolve",
+        "bijux_cli.commands.plugins.install.Path.resolve",
         lambda self: (_ for _ in ()).throw(OSError("fail resolve")),
     )
 
@@ -378,14 +372,18 @@ def test_plugins_dir_create_failure(
     src.mkdir()
     (src / "plugin.py").write_text("# create-dir-fail test")
 
-    orig_mkdir = install_mod.Path.mkdir  # type: ignore[attr-defined]
+    orig_mkdir = Path.mkdir
 
     def fail_plugins_mkdir(self: Path, *args: Any, **kwargs: Any) -> None:
         if self == tmp_path / "plugins":
             raise RuntimeError("mkdir boom")
         return orig_mkdir(self, *args, **kwargs)
 
-    monkeypatch.setattr(install_mod.Path, "mkdir", fail_plugins_mkdir)  # type: ignore[attr-defined]
+    monkeypatch.setattr(
+        "bijux_cli.commands.plugins.install.Path.mkdir",
+        fail_plugins_mkdir,
+        raising=True,
+    )
 
     result = runner.invoke(cli_app, ["plugins", "install", str(src)])
     assert result.exit_code == 1

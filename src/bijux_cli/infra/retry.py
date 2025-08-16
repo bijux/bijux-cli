@@ -141,9 +141,7 @@ async def _backoff_loop(
     raise RuntimeError("Unreachable code")  # pragma: no cover
 
 
-class TimeoutRetryPolicy(
-    RetryPolicyProtocol  # pyright: ignore[reportUntypedBaseClass]
-):
+class TimeoutRetryPolicy(RetryPolicyProtocol):
     """A retry policy that applies a single, one-time timeout to an operation.
 
     Attributes:
@@ -208,9 +206,7 @@ class TimeoutRetryPolicy(
         self._telemetry.event("retry_reset", {})
 
 
-class ExponentialBackoffRetryPolicy(
-    RetryPolicyProtocol  # pyright: ignore[reportUntypedBaseClass]
-):
+class ExponentialBackoffRetryPolicy(RetryPolicyProtocol):
     """A retry policy with exponential backoff, jitter, and per-attempt timeouts.
 
     Attributes:

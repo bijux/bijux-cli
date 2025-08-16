@@ -142,3 +142,7 @@ artifacts/
 artifacts
 .cache
 changelog.d/*.md
+docs/reference
+docs/reference/
+
+

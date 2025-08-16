@@ -9,7 +9,7 @@ import contextlib
 import json
 from pathlib import Path
 
-import yaml  # pyright: ignore[reportMissingModuleSource]
+import yaml
 
 from tests.e2e.conftest import TEST_TEMPLATE, assert_log_has, run_cli
 
