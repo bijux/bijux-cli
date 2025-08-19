@@ -23,7 +23,24 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-1-3"></a>
+
+## [0.1.3] – 2025-08-20
+
+### Added
+* **ADR-0005:** Zero-root-pollution via **Makefile-orchestrated artifact containment** (all generated outputs under `artifacts/`).  
+* **Curated release assets:** zipped bundles for **tests (py311/py312/py313)** and for **lint, quality, security, api, docs, sbom, citation, build**, plus consolidated **checksums**.
+* **End-to-end automation:** GitHub Actions to **publish to PyPI**, **create a GitHub Release** with curated bundles, and **deploy docs**.
+
+### Changed
+* **Makefiles + workflows** brought into **full ADR-0005 compliance**: CI uploads/downloads only `artifacts/**`; docs deploy hydrates from CI artifacts and builds from `artifacts/docs/**`.
+
+[Back to top](#top)
+
+---
+
 <a id="v0-1-2"></a>
+
 ## [0.1.2] – 2025-08-17
 
 ### Added
@@ -51,6 +68,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
+---
 
 <a id="v0-1-1"></a>
 
@@ -198,6 +216,9 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/bijux/bijux-cli/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bijux/bijux-cli/releases/tag/v0.1.0
+

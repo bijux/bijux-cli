@@ -1,8 +1,8 @@
-# ADR 0004: Linting, Quality, and Security Toolchain
+# ADR-0004: Linting, Quality, and Security Toolchain
 
-* **Date:** 2025-08-01
-* **Status:** Accepted
-* **Author:** Bijan Mousavi
+* **Date:** 2025-08-01  
+* **Status:** Accepted  
+* **Author:** Bijan Mousavi  
 
 ---
 
@@ -69,7 +69,6 @@ We enforce Makefile targets to run the full toolchain consistently.
 
 </details>
 
-
 This setup supports whole-project runs as well as per-directory/per-file runs, with reasonable exclusions for generated or template content.
 
 ### Tool Configurations
@@ -131,6 +130,7 @@ The toolchain is driven by unified configs:
 </details>
 
 **Docstring Style Enforcement**
+
 We mandate Google-style docstrings via Pydocstyle (enforced in Makefile):
 
 ```bash
@@ -145,6 +145,7 @@ Interrogate enforces documentation coverage thresholds as configured.
 
 * `make lint` runs over `src/` and `tests/`.
 * `make quality` and `make security` run project-wide.
+* All Makefile targets are configured to write their reports and logs to the canonical locations defined in ADR-0005.
 * Any failure blocks the build; no overrides.
 
 ---
