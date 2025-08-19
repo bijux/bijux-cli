@@ -7,7 +7,8 @@ path = [
   "**/*.html", "**/*.toml", "**/*.ini", "**/*.cfg", "**/*.conf",
   "**/*.env", "**/*.env.*", "**/*.yaml", "**/*.yml", "**/*.json",
   "**/*.cff", "**/*.dic", ".coverage*", ".gitattributes", ".gitignore",
-  "changelog.d/**", "**/.editorconfig", "artifacts/**", "scripts/git-hooks/**"
+  "changelog.d/**", "**/.editorconfig", "artifacts/**", "scripts/git-hooks/**",
+  "docs/assets/styles/**"
 ]
 precedence = "override"
 SPDX-License-Identifier = "CC0-1.0"
