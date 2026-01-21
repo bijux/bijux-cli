@@ -43,7 +43,7 @@ import structlog
 import typer
 
 from bijux_cli.cli.root import build_app
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError

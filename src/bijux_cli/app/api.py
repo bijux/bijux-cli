@@ -32,7 +32,7 @@ from bijux_cli.core.contracts import (
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
@@ -290,7 +290,7 @@ class BijuxAPI:
         Raises:
             BijuxError: If plugin loading, initialization, or registration fails.
         """
-        from bijux_cli.core.version import __version__
+        from bijux_cli.version import __version__
         from bijux_cli.plugins import load_plugin as _load_plugin
 
         p = Path(path).expanduser().resolve()

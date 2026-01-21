@@ -15,7 +15,6 @@ from typing import Any, Protocol, Self, runtime_checkable
 
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.core.contracts_pkg.telemetry import TelemetryProtocol
 
 
 @runtime_checkable

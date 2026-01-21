@@ -25,7 +25,7 @@ import inspect
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
 
 from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
@@ -72,7 +72,7 @@ class Engine:
             logging_config (LoggingConfig | None): Optional logging configuration
                 override for service registration.
         """
-        from bijux_cli.core.di import DIContainer
+        from bijux_cli.app.di import DIContainer
 
         self._di = di or DIContainer.current()
         self._debug = debug

@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from bijux_cli.core.contracts import ObservabilityProtocol
-from bijux_cli.core.context import Context, _current_context
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.context import Context, _current_context
+from bijux_cli.app.di import DIContainer
 
 
 @pytest.fixture
@@ -20,6 +20,7 @@ def mock_di() -> MagicMock:
     """Provide a mock DIContainer."""
     di = MagicMock(spec=DIContainer)
     di.resolve.return_value = MagicMock(spec=ObservabilityProtocol)
+    di.is_verbose.return_value = False
     return di
 
 
@@ -31,8 +32,7 @@ def context(mock_di: MagicMock) -> Context:
 
 def test_init_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that context initialization logs when verbose mode is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    mock_di.is_verbose.return_value = True
     mock_log = mock_di.resolve.return_value
     Context(mock_di)
     mock_log.log.assert_called_with("debug", "Context initialized", extra={})
@@ -40,7 +40,7 @@ def test_init_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_init_no_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that context initialization does not log when verbose mode is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    mock_di.is_verbose.return_value = False
     mock_log = mock_di.resolve.return_value
     Context(mock_di)
     mock_log.log.assert_not_called()
@@ -48,8 +48,7 @@ def test_init_no_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) ->
 
 def test_init_test_mode(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that context initialization does not log when in test mode."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "1")
+    mock_di.is_verbose.return_value = False
     mock_log = mock_di.resolve.return_value
     Context(mock_di)
     mock_log.log.assert_not_called()
@@ -57,8 +56,7 @@ def test_init_test_mode(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_set_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that setting a context value logs when verbose mode is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     context.set("key", "value")
     assert context._data["key"] == "value"
     context._log.log.assert_called_with(  # type: ignore[attr-defined]
@@ -68,7 +66,7 @@ def test_set_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_set_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that setting a context value does not log when verbose mode is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     context.set("key", "value")
     assert context._data["key"] == "value"
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
@@ -77,7 +75,7 @@ def test_set_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> No
 def test_get_success_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that getting a context value logs when verbose mode is enabled."""
     context._data["key"] = "value"
-    monkeypatch.setenv("VERBOSE_DI", "1")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
     assert context.get("key") == "value"
     context._log.log.assert_called_with(  # type: ignore[attr-defined]
@@ -90,15 +88,14 @@ def test_get_success_no_verbose(
 ) -> None:
     """Test that getting a context value does not log when verbose mode is disabled."""
     context._data["key"] = "value"
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     assert context.get("key") == "value"
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
 
 
 def test_get_fail_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that failing to get a value logs when verbose mode is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     with pytest.raises(KeyError, match="not found"):
         context.get("missing")
     context._log.log.assert_called_with(  # type: ignore[attr-defined]
@@ -108,7 +105,7 @@ def test_get_fail_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_get_fail_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that failing to get a value does not log when verbose mode is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     with pytest.raises(KeyError, match="not found"):
         context.get("missing")
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
@@ -116,8 +113,7 @@ def test_get_fail_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) 
 
 def test_clear_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that clearing the context logs when verbose mode is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     context.clear()
     assert context._data == {}
     context._log.log.assert_called_with(  # type: ignore[attr-defined]
@@ -127,15 +123,14 @@ def test_clear_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_clear_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that clearing the context does not log when verbose mode is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     context.clear()
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
 
 
 def test_enter_exit_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that entering and exiting a context logs when verbose mode is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     with context:
         assert _current_context.get() is context._data
     context._log.log.assert_any_call(  # type: ignore[attr-defined]
@@ -151,7 +146,7 @@ def test_enter_exit_no_verbose(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that entering and exiting a context does not log when verbose is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     with context:
         assert _current_context.get() is context._data
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
@@ -170,8 +165,7 @@ async def test_aenter_aexit_verbose(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that entering and exiting an async context logs when verbose is enabled."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
     async with context:
         assert _current_context.get() is context._data
     context._log.log.assert_any_call(  # type: ignore[attr-defined]
@@ -188,7 +182,7 @@ async def test_aenter_aexit_no_verbose(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that async enter/exit does not log when verbose is disabled."""
-    monkeypatch.delenv("VERBOSE_DI", raising=False)
+    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
     async with context:
         assert _current_context.get() is context._data
     context._log.log.assert_not_called()  # type: ignore[attr-defined]
@@ -249,8 +243,7 @@ def test_exit_without_token_noop_and_logs(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that __exit__ without a token does not reset the context but still logs."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
 
     sentinel = {"keep": "me"}
     tok = _current_context.set(sentinel)
@@ -270,8 +263,7 @@ async def test_aexit_without_token_noop_and_logs(
     context: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that __aexit__ without a token does not reset the context but still logs."""
-    monkeypatch.setenv("VERBOSE_DI", "1")
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
+    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
 
     sentinel = {"keep": "me-too"}
     tok = _current_context.set(sentinel)

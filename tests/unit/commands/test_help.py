@@ -19,7 +19,7 @@ import typer
 
 import bijux_cli.cli.commands.help as help_mod
 from bijux_cli.cli.commands.help import _HUMAN, _build_help_payload, _find_target_command
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 

@@ -41,7 +41,7 @@ from bijux_cli.services.plugins.contracts import PluginConfig
 from bijux_cli.core.enums import OutputFormat
 
 if TYPE_CHECKING:
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
     from bijux_cli.core.enums import OutputFormat
 
 
@@ -68,7 +68,7 @@ def register_default_services(
     Returns:
         None:
     """
-    import bijux_cli.core.context
+    import bijux_cli.app.context
     import bijux_cli.infra.emitter
     import bijux_cli.services.logging.observability
     import bijux_cli.infra.process
@@ -181,10 +181,10 @@ def register_default_services(
     di.register(LoggingConfig, lambda: logging_config)
 
     di.register(
-        bijux_cli.core.context.Context,
-        lambda: bijux_cli.core.context.Context(di),
+        bijux_cli.app.context.Context,
+        lambda: bijux_cli.app.context.Context(di),
     )
-    di.register(ContextProtocol, lambda: di.resolve(bijux_cli.core.context.Context))
+    di.register(ContextProtocol, lambda: di.resolve(bijux_cli.app.context.Context))
 
     di.register(
         bijux_cli.services.config.Config,

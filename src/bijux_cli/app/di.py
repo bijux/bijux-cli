@@ -27,7 +27,6 @@ from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 import inspect
 import logging
-import os
 from threading import RLock
 from typing import Any, Literal, TypeVar, cast, overload
 
@@ -165,8 +164,17 @@ class DIContainer:
         ] = {}
         self._services: dict[tuple[type[Any] | str, str | None], Any] = {}
         self._obs: ObservabilityProtocol | None = None
+        self._verbose = False
         self._initialised = True
         self._log_static(logging.INFO, "DIContainer initialised")
+
+    def set_verbose(self, enabled: bool) -> None:
+        """Enable or disable verbose DI logging."""
+        self._verbose = enabled
+
+    def is_verbose(self) -> bool:
+        """Return whether verbose DI logging is enabled."""
+        return self._verbose
 
     def register(
         self,
@@ -332,7 +340,7 @@ class DIContainer:
                 or inspect.ismethod(factory)
                 or inspect.iscoroutinefunction(factory)
             )
-            if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+            if self._verbose:
                 self._log(
                     logging.DEBUG,
                     f"Executing factory for service: {name_str}",

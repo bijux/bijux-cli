@@ -23,7 +23,7 @@ from bijux_cli.cli.commands.audit import (
     audit,
     audit_app,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 runner = CliRunner()

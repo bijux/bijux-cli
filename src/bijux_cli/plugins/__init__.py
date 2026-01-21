@@ -27,7 +27,7 @@ from typing import Any, cast
 
 from packaging.specifiers import SpecifierSet
 
-from bijux_cli.core.version import version as cli_version
+from bijux_cli.version import version as cli_version
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
@@ -45,7 +45,7 @@ def _di() -> Any | None:
         DIContainer | None: The current dependency injection container, or None
             if it is not available or an error occurs.
     """
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
 
     try:
         return DIContainer.current()
@@ -99,7 +99,7 @@ def get_plugins_dir() -> Path:
     if env_path:
         plugins_dir = Path(env_path)
     else:
-        from bijux_cli.core.paths import PLUGINS_DIR
+        from bijux_cli.infra.paths import PLUGINS_DIR
 
         plugins_dir = PLUGINS_DIR
     plugins_dir = plugins_dir.expanduser()

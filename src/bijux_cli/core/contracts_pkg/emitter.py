@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
-from bijux_cli.core.enums import OutputFormat
-
 T = TypeVar("T")
 
 
@@ -29,7 +27,7 @@ class EmitterProtocol(Protocol):
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: str | None = None,
         pretty: bool = False,
         level: str = "info",
         message: str = "Emitting output",

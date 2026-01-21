@@ -50,7 +50,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]

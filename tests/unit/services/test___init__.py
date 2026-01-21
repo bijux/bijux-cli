@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services import register_default_services
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -61,7 +61,7 @@ def test_register_default_services_100pct(
             return_value=None,
         ) as mock_exp_init,
         patch(
-            "bijux_cli.core.context.Context.__init__", return_value=None
+            "bijux_cli.app.context.Context.__init__", return_value=None
         ) as mock_context_init,
         patch(
             "bijux_cli.services.config.Config.__init__", return_value=None
@@ -108,7 +108,7 @@ def test_register_default_services_100pct(
         from bijux_cli.services.history.contracts import HistoryProtocol
         from bijux_cli.services.plugins.contracts import PluginConfig
         from bijux_cli.services.diagnostics.contracts import DiagnosticsConfig
-        import bijux_cli.core.context as core_context
+        import bijux_cli.app.context as core_context
         import bijux_cli.infra.emitter as infra_emitter
         import bijux_cli.services.logging.observability as infra_obs
         import bijux_cli.infra.process as infra_process

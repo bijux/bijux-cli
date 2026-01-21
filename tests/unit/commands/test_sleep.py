@@ -71,7 +71,7 @@ def _install_fake_container(
 
     fake_container = SimpleNamespace(resolve=lambda _proto: FakeCfg())
     monkeypatch.setattr(
-        "bijux_cli.core.di.DIContainer.current",
+        "bijux_cli.app.di.DIContainer.current",
         staticmethod(lambda: fake_container),
         raising=True,
     )

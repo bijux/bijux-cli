@@ -22,7 +22,7 @@ from bijux_cli.core.contracts import (
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 
@@ -323,7 +323,7 @@ def test_load_plugin(bijux_api: BijuxAPI, tmp_path: Path) -> None:
     mock_plugin.startup = MagicMock()
     with (
         patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.core.version", "1.0"),
+        patch("bijux_cli.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_plugin.startup.assert_called_once_with(bijux_api._engine.di)
@@ -343,7 +343,7 @@ def test_load_plugin_reload(
     with (
         patch("importlib.reload") as mock_reload,
         patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.core.version", "1.0"),
+        patch("bijux_cli.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_reload.assert_called_once_with(mock_module)
@@ -476,7 +476,7 @@ def test_load_plugin_no_deregister_if_not_has(
     mock_registry.has.return_value = False
     with (
         patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.core.version", "1.0"),
+        patch("bijux_cli.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_registry.deregister.assert_not_called()
@@ -678,7 +678,7 @@ def _make_fake_loader(monkeypatch: pytest.MonkeyPatch, plugin_obj: Any) -> Modul
 
 
 def _install_version(monkeypatch: pytest.MonkeyPatch, v: str = "1.2.3") -> None:
-    _install_fake_module(monkeypatch, "bijux_cli.core.version", __version__=v)
+    _install_fake_module(monkeypatch, "bijux_cli.version", __version__=v)
 
 
 def test_load_plugin_reload_and_register(
