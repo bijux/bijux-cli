@@ -14,39 +14,35 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any
-from weakref import WeakKeyDictionary
 
 from injector import inject
 
-from bijux_cli.core.contracts import DocsProtocol, ObservabilityProtocol, TelemetryProtocol
+from bijux_cli.services.diagnostics.contracts import DocsProtocol
+from bijux_cli.core.contracts import (
+    ObservabilityProtocol,
+    SerializerProtocol,
+    TelemetryProtocol,
+)
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.infra.serializer import serializer_for
-
-
 class Docs(DocsProtocol):
     """A service for writing API specification documents to disk.
 
     This class implements the `DocsProtocol` to handle the serialization and
-    writing of specifications (e.g., OpenAPI, JSON Schema) to files. It
-    maintains a cache of serializer instances for performance.
+    writing of specifications (e.g., OpenAPI, JSON Schema) to files.
 
     Attributes:
-        _serializers (WeakKeyDictionary): A cache of serializer instances, keyed
-            by the telemetry service instance.
         _observability (ObservabilityProtocol): The logging service.
+        _serializer (SerializerProtocol): The serializer adapter for output.
         _telemetry (TelemetryProtocol): The telemetry service for event tracking.
         _root (Path): The root directory where documents will be written.
     """
-
-    _serializers: WeakKeyDictionary[TelemetryProtocol, dict[OutputFormat, Any]] = (
-        WeakKeyDictionary()
-    )
 
     @inject
     def __init__(
         self,
         observability: ObservabilityProtocol,
+        serializer: SerializerProtocol,
         telemetry: TelemetryProtocol,
         root: str | Path | None = None,
     ) -> None:
@@ -54,19 +50,19 @@ class Docs(DocsProtocol):
 
         Args:
             observability (ObservabilityProtocol): The service for logging.
+            serializer (SerializerProtocol): The serializer adapter for output.
             telemetry (TelemetryProtocol): The service for event tracking.
             root (str | Path | None): The root directory for writing documents.
                 It defaults to the `BIJUXCLI_DOCS_DIR` environment variable,
                 or "docs" if not set.
         """
         self._observability = observability
+        self._serializer = serializer
         self._telemetry = telemetry
         env_root = os.getenv("BIJUXCLI_DOCS_DIR")
         root_dir = env_root if env_root else (root or "docs")
         self._root = Path(root_dir)
         self._root.mkdir(exist_ok=True, parents=True)
-        if telemetry not in self._serializers:
-            self._serializers[telemetry] = {}
 
     def render(self, spec: dict[str, Any], *, fmt: OutputFormat) -> str:
         """Renders a specification dictionary to a string in the given format.
@@ -81,15 +77,7 @@ class Docs(DocsProtocol):
         Raises:
             TypeError: If the underlying serializer returns a non-string result.
         """
-        if self._telemetry not in self._serializers:
-            self._serializers[self._telemetry] = {}
-        if fmt not in self._serializers[self._telemetry]:
-            self._serializers[self._telemetry][fmt] = serializer_for(
-                fmt, self._telemetry
-            )
-        result = self._serializers[self._telemetry][fmt].dumps(
-            spec, fmt=fmt, pretty=False
-        )
+        result = self._serializer.dumps(spec, fmt=fmt, pretty=False)
         if not isinstance(result, str):
             raise TypeError(
                 f"Expected str from serializer.dumps, got {type(result).__name__}"

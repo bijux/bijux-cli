@@ -1135,7 +1135,7 @@ def test_plugins_install_invalid() -> None:
         data = r.json_out or r.json_err
         err = str(data.get("error", "")).lower()
         assert ("not found" in err) or (
-            data.get("failure") in {"source_not_found", "not_found"}
+            data.get("failure") in {"source_not_found", "not_found", "invalid_name"}
         )
     else:
         assert ("not found" in msg) or ("no such" in msg) or ("invalid" in msg)

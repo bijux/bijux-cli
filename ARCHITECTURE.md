@@ -10,6 +10,12 @@ Dependency direction is strict and non-negotiable:
 
 These rules prevent architectural drift and keep boundaries testable.
 
+## Contract Ownership Rules
+
+- core: cross-cutting behavior and infra-facing interfaces only
+- services: service protocols and expectations (config/diagnostics/history/etc.)
+- infra: concrete adapters that implement core interfaces
+
 ## Plugin Pipeline
 
 Stages are fixed and ordered:

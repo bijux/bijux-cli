@@ -23,7 +23,7 @@ from bijux_cli.core.contracts import (
     TelemetryProtocol,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.engine import Engine
+from bijux_cli.app.engine import Engine
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 
 pytestmark = pytest.mark.filterwarnings(

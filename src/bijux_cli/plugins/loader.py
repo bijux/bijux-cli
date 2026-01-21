@@ -98,7 +98,13 @@ class LazyTyper(AsyncTyper):
                 app = _entrypoint_loader(self._meta)
             else:
                 app = _local_loader(self._meta)
-            self._loaded = typer.main.get_command(app)
+            loaded = typer.main.get_command(app)
+            if isinstance(loaded, click.Group):
+                self._loaded = loaded
+            else:
+                wrapper = click.Group(name=self._meta.name)
+                wrapper.add_command(loaded, loaded.name)
+                self._loaded = wrapper
         return self._loaded
 
     def list_commands(self, ctx: click.Context) -> list[str]:
@@ -112,4 +118,11 @@ class LazyTyper(AsyncTyper):
 
 
 def lazy_command_for(meta: PluginMetadata) -> typer.Typer:
-    return LazyTyper(meta)
+    return load_command_for(meta)
+
+
+def load_command_for(meta: PluginMetadata) -> typer.Typer:
+    """Load a plugin Typer app immediately."""
+    if meta.source == "entrypoint":
+        return _entrypoint_loader(meta)
+    return _local_loader(meta)

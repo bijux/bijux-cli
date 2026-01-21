@@ -31,12 +31,11 @@ import os
 from threading import RLock
 from typing import Any, Literal, TypeVar, cast, overload
 
-from injector import Binder, Injector, Module, singleton
+from injector import Injector
 
-from bijux_cli.core.contracts import ConfigProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ObservabilityProtocol
 from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.core.errors import BijuxError
-from bijux_cli.services.config import Config
 
 T = TypeVar("T")
 _SENTINEL = object()
@@ -57,21 +56,6 @@ def _key_name(key: type[Any] | str) -> str:
         return key.__name__
     except AttributeError:
         return str(key)
-
-
-class AppConfigModule(Module):
-    """An `injector` module for configuring core CLI dependencies."""
-
-    def configure(self, binder: Binder) -> None:
-        """Binds the `ConfigProtocol` to its default `Config` implementation.
-
-        Args:
-            binder (Binder): The `injector` binder instance.
-
-        Returns:
-            None:
-        """
-        binder.bind(ConfigProtocol, to=Config, scope=singleton)
 
 
 class DIContainer:
@@ -175,7 +159,7 @@ class DIContainer:
         """
         if getattr(self, "_initialised", False):
             return
-        self._injector = Injector(AppConfigModule())
+        self._injector = Injector()
         self._store: dict[
             tuple[type[Any] | str, str | None], Callable[[], Any | Awaitable[Any]] | Any
         ] = {}

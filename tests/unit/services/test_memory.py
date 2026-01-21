@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from bijux_cli.core.contracts import MemoryProtocol
+from bijux_cli.services.diagnostics.contracts import MemoryProtocol
 from bijux_cli.services.diagnostics.memory import Memory
 
 

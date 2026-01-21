@@ -18,14 +18,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bijux_cli.core.contracts import (
-    AuditProtocol,
-    ConfigProtocol,
     ContextProtocol,
-    DocsProtocol,
-    DoctorProtocol,
     EmitterProtocol,
-    HistoryProtocol,
-    MemoryProtocol,
     ObservabilityProtocol,
     ProcessPoolProtocol,
     RegistryProtocol,
@@ -33,6 +27,14 @@ from bijux_cli.core.contracts import (
     SerializerProtocol,
     TelemetryProtocol,
 )
+from bijux_cli.services.config.contracts import ConfigProtocol
+from bijux_cli.services.diagnostics.contracts import (
+    AuditProtocol,
+    DocsProtocol,
+    DoctorProtocol,
+    MemoryProtocol,
+)
+from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.core.enums import OutputFormat
 
 if TYPE_CHECKING:
@@ -75,7 +77,11 @@ def register_default_services(
     import bijux_cli.services.diagnostics.memory
     import bijux_cli.plugins.registry
 
-    obs_service = bijux_cli.services.logging.observability.Observability(debug=debug)
+    noop_telemetry = bijux_cli.infra.telemetry.NoopTelemetry()
+    obs_service = bijux_cli.services.logging.observability.Observability(
+        debug=debug,
+        telemetry=noop_telemetry,
+    )
 
     di.register(bijux_cli.services.logging.observability.Observability, lambda: obs_service)
     di.register(
@@ -89,10 +95,7 @@ def register_default_services(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability)
         ),
     )
-    di.register(
-        bijux_cli.infra.telemetry.NoopTelemetry,
-        lambda: bijux_cli.infra.telemetry.NoopTelemetry(),
-    )
+    di.register(bijux_cli.infra.telemetry.NoopTelemetry, lambda: noop_telemetry)
     di.register(
         TelemetryProtocol,
         lambda: bijux_cli.services.diagnostics.telemetry.resolve_telemetry(di),
@@ -210,6 +213,7 @@ def register_default_services(
         bijux_cli.services.diagnostics.docs.Docs,
         lambda: bijux_cli.services.diagnostics.docs.Docs(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability),
+            serializer=di.resolve(SerializerProtocol),
             telemetry=di.resolve(TelemetryProtocol),
         ),
     )

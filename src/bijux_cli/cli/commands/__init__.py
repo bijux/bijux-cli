@@ -45,6 +45,8 @@ _REGISTERED_COMMANDS: set[str] = set(_CORE_COMMANDS.keys())
 
 def register_commands(app: Typer) -> list[str]:
     """Registers all core, built-in commands with the main Typer application."""
+    _REGISTERED_COMMANDS.clear()
+    _REGISTERED_COMMANDS.update(_CORE_COMMANDS.keys())
     for name, cmd in sorted(_CORE_COMMANDS.items()):
         app.add_typer(cmd, name=name, invoke_without_command=True)
         _REGISTERED_COMMANDS.add(name)
@@ -55,9 +57,13 @@ def register_dynamic_plugins(app: Typer) -> None:
     """Discovers and registers all third-party plugins."""
     from bijux_cli.plugins.metadata import discover_plugins
     from bijux_cli.plugins.loader import lazy_command_for
+    import inspect
 
     try:
-        plugins = discover_plugins()
+        if "strict" in inspect.signature(discover_plugins).parameters:
+            plugins = discover_plugins(strict=False)
+        else:
+            plugins = discover_plugins()
     except Exception as exc:
         logger.warning("Plugin discovery failed: %s", exc)
         return

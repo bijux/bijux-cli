@@ -6,15 +6,18 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
-from bijux_cli.core.contracts import ConfigProtocol, RegistryProtocol
+from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.async_exec import run_awaitable
-from bijux_cli.core.engine import Engine
+from bijux_cli.app.engine import Engine
+from bijux_cli.infra.telemetry import NoopTelemetry
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.services.logging.observability import Observability
@@ -65,57 +68,6 @@ class FakeRegistry(RegistryProtocol):
         return None
 
 
-class FakeConfig(ConfigProtocol):
-    """Test double for ConfigProtocol."""
-
-    def __init__(self, value: Any) -> None:
-        self._value = value
-        self._store: dict[str, Any] = {}
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Return configured timeout or default for others."""
-        if key != "BIJUXCLI_COMMAND_TIMEOUT":
-            return self._store.get(key, default)
-        if isinstance(self._value, BaseException):
-            raise self._value
-        return self._value
-
-    def all(self) -> dict[str, Any]:
-        return dict(self._store)
-
-    def set(self, key: str, value: Any) -> None:
-        self._store[key] = value
-
-    def unset(self, key: str) -> None:
-        self._store.pop(key, None)
-
-    def delete(self, key: str) -> None:
-        """Alias some protocols expect; remove a key if present."""
-        self._store.pop(key, None)
-
-    def clear(self) -> None:
-        self._store.clear()
-
-    def list_keys(self) -> list[str]:
-        return list(self._store.keys())
-
-    def load(self, path: str | Path | None = None) -> None:
-        """No-op for tests."""
-        return None
-
-    def save(self) -> None:
-        """No-op for tests."""
-        return None
-
-    def export(self, path: str | Path, out_format: str | None = None) -> None:
-        """No-op for tests."""
-        return None
-
-    def reload(self) -> None:
-        """No-op for tests."""
-        return None
-
-
 class FakeHistory(History):
     """A fake implementation of the History service for testing."""
 
@@ -131,12 +83,11 @@ class FakeHistory(History):
 class FakeDI:
     """A minimal DI-like container for testing the Engine."""
 
-    def __init__(self, config: ConfigProtocol | None = None) -> None:
+    def __init__(self) -> None:
         """Initialize the fake DI container."""
         self._registry = FakeRegistry()
         self._history = FakeHistory()
         self._shutdown_called = False
-        self._config = config if config is not None else FakeConfig(30.0)
         self._registered: dict[tuple[str, str | None], Any] = {}
 
     def register(
@@ -149,11 +100,9 @@ class FakeDI:
     def resolve(self, key: Any) -> Any:
         """Resolve a dependency from the container."""
         if key is Observability:
-            return Observability(debug=False)
+            return Observability(debug=False, telemetry=NoopTelemetry())
         if key is RegistryProtocol:
             return self._registry
-        if key is ConfigProtocol:
-            return self._config
         if key is History:
             return self._history
         raise KeyError(f"Unexpected resolve: {key}")
@@ -172,34 +121,30 @@ def make_plugin_dir(base: Path, name: str) -> Path:
     return folder
 
 
-@pytest.mark.parametrize(
-    ("result", "expected"),
-    [
-        (30.0, 30.0),
-        ({"value": "5"}, 5.0),
-        ({"value": 7}, 7.0),
-    ],
-)
-def test_timeout_valid_values(result: Any, expected: float) -> None:
+@pytest.mark.parametrize(("value", "expected"), [("30.0", 30.0), ("5", 5.0), ("7", 7.0)])
+def test_timeout_valid_values(value: str, expected: float) -> None:
     """Test that valid timeout configuration values are parsed correctly."""
-    di = FakeDI(config=FakeConfig(result))
+    di = FakeDI()
     eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    assert eng._timeout() == expected
+    with patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": value}):
+        assert eng._timeout() == expected
 
 
 def test_timeout_keyerror_uses_default() -> None:
-    """Test that the default timeout is used when the config key is not found."""
-    di = FakeDI(config=FakeConfig(KeyError("not found")))
+    """Test that the default timeout is used when the env var is missing."""
+    di = FakeDI()
     eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    assert eng._timeout() == 30.0
+    with patch.dict(os.environ, {}, clear=True):
+        assert eng._timeout() == 30.0
 
 
 def test_timeout_invalid_raises_valueerror() -> None:
     """Test that an invalid timeout configuration raises a ValueError."""
-    di = FakeDI(config=FakeConfig({"value": "oops"}))
+    di = FakeDI()
     eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    with pytest.raises(ValueError, match="Invalid timeout configuration"):
-        eng._timeout()
+    with patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": "oops"}):
+        with pytest.raises(ValueError, match="Invalid timeout configuration"):
+            eng._timeout()
 
 
 @pytest.mark.asyncio
@@ -248,7 +193,7 @@ def test_register_plugins_discovers_and_registers(
 ) -> None:
     """Test that plugins are correctly discovered and registered during engine initialization."""
     di = FakeDI()
-    import bijux_cli.core.engine as engine_mod
+    import bijux_cli.app.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path)
     calls: list[tuple[Path, str]] = []
@@ -311,7 +256,7 @@ def test_register_plugins_skips_dirs_without_plugin_py(
 ) -> None:
     """Test that directories without a plugin.py are skipped during plugin registration."""
     di = FakeDI()
-    import bijux_cli.core.engine as engine_mod
+    import bijux_cli.app.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path, raising=True)
 
@@ -337,7 +282,7 @@ def test_register_plugins_registers_without_startup(
 ) -> None:
     """Test that a plugin is registered correctly even if it lacks a startup hook."""
     di = FakeDI()
-    import bijux_cli.core.engine as engine_mod
+    import bijux_cli.app.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path, raising=True)
     make_plugin_dir(tmp_path, "gamma")

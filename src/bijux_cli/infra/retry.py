@@ -8,17 +8,9 @@ from __future__ import annotations
 import random
 import time
 from collections.abc import Callable
-from typing import Any, Protocol, TypeVar
-
-from bijux_cli.infra.telemetry import Telemetry
+from typing import Any, TypeVar
 
 T = TypeVar("T")
-
-
-class RetryPolicy(Protocol):
-    """Adapter for retrying callables."""
-
-    def run(self, func: Callable[[], T]) -> T: ...
 
 
 class NoopRetryPolicy:
@@ -31,7 +23,7 @@ class NoopRetryPolicy:
 class TimeoutRetryPolicy:
     """Retries a callable until a timeout is reached."""
 
-    def __init__(self, telemetry: Telemetry, timeout: float = 5.0) -> None:
+    def __init__(self, telemetry: Any, timeout: float = 5.0) -> None:
         self._telemetry = telemetry
         self._timeout = timeout
 
@@ -53,7 +45,7 @@ class ExponentialBackoffRetryPolicy:
 
     def __init__(
         self,
-        telemetry: Telemetry,
+        telemetry: Any,
         *,
         base_delay: float = 0.1,
         max_delay: float = 2.0,
@@ -83,9 +75,4 @@ class ExponentialBackoffRetryPolicy:
         raise RuntimeError(f"Retry attempts exhausted: {last_error}")
 
 
-__all__ = [
-    "RetryPolicy",
-    "NoopRetryPolicy",
-    "TimeoutRetryPolicy",
-    "ExponentialBackoffRetryPolicy",
-]
+__all__ = ["NoopRetryPolicy", "TimeoutRetryPolicy", "ExponentialBackoffRetryPolicy"]

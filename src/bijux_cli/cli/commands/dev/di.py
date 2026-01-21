@@ -238,10 +238,9 @@ def dev_di_graph(
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
-                from bijux_cli.infra.serializer import serializer_for
-                from bijux_cli.infra.telemetry import NoopTelemetry
+                from bijux_cli.cli.commands.utilities import resolve_serializer
 
-                rendered = serializer_for(fmt_lower, NoopTelemetry()).dumps(
+                rendered = resolve_serializer().dumps(
                     payload, fmt=fmt_lower, pretty=effective_pretty
                 )
                 p.write_text(rendered.rstrip("\n") + "\n", encoding="utf-8")

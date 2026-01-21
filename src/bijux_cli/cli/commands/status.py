@@ -28,6 +28,7 @@ from collections.abc import Mapping
 import platform
 import signal
 import sys
+import threading
 import time
 from types import FrameType
 
@@ -141,7 +142,12 @@ def _run_watch_mode(
         nonlocal stop
         stop = True
 
-    old_handler = signal.signal(signal.SIGINT, _sigint_handler)
+    old_handler = None
+    if threading.current_thread() is threading.main_thread():
+        try:
+            old_handler = signal.signal(signal.SIGINT, _sigint_handler)
+        except ValueError:
+            old_handler = None
     try:
         while not stop:
             try:
@@ -184,7 +190,8 @@ def _run_watch_mode(
                     include_runtime=include_runtime,
                 )
     finally:
-        signal.signal(signal.SIGINT, old_handler)
+        if old_handler is not None:
+            signal.signal(signal.SIGINT, old_handler)
         try:
             stop_payload = dict(_build_payload(include_runtime))
             stop_payload["status"] = "watch-stopped"

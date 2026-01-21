@@ -27,7 +27,6 @@ from bijux_cli.core.contracts import (
     TelemetryProtocol,
 )
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.infra.telemetry import LoggingTelemetry
 from bijux_cli.core.di import DIContainer
 import importlib.metadata as im
 import logging
@@ -232,7 +231,7 @@ class Registry(RegistryProtocol):
     on top of the core `pluggy` plugin management system.
 
     Attributes:
-        _telemetry (LoggingTelemetry): The telemetry service for events.
+        _telemetry (TelemetryProtocol): The telemetry service for events.
         _pm (pluggy.PluginManager): The underlying `pluggy` plugin manager.
         _plugins (dict): A mapping of canonical plugin names to plugin objects.
         _aliases (dict): A mapping of alias names to canonical plugin names.
@@ -241,11 +240,11 @@ class Registry(RegistryProtocol):
     """
 
     @inject
-    def __init__(self, telemetry: LoggingTelemetry):
+    def __init__(self, telemetry: TelemetryProtocol):
         """Initializes the `Registry` service.
 
         Args:
-            telemetry (LoggingTelemetry): The telemetry service for tracking
+            telemetry (TelemetryProtocol): The telemetry service for tracking
                 registry events.
         """
         self._telemetry = telemetry

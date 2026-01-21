@@ -20,7 +20,6 @@ from structlog.typing import FilteringBoundLogger
 
 from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.infra.telemetry import NoopTelemetry
 
 
 class Observability(ObservabilityProtocol):
@@ -33,19 +32,19 @@ class Observability(ObservabilityProtocol):
     Attributes:
         _logger (FilteringBoundLogger): The underlying `structlog` logger instance.
         _telemetry (TelemetryProtocol): The telemetry service for event forwarding.
-            Defaults to a `NoopTelemetry` instance that does nothing.
     """
 
     @inject
-    def __init__(self, *, debug: bool = False) -> None:
+    def __init__(self, *, debug: bool = False, telemetry: TelemetryProtocol) -> None:
         """Initializes the observability service.
 
         Args:
             debug (bool): If True, configures the service for debug-level
                 logging.
+            telemetry (TelemetryProtocol): The telemetry sink used for events.
         """
         self._logger: FilteringBoundLogger = structlog.get_logger("bijux_cli")
-        self._telemetry: TelemetryProtocol = NoopTelemetry()
+        self._telemetry = telemetry
 
     def set_telemetry(self, telemetry: TelemetryProtocol) -> Self:
         """Attaches a telemetry backend for forwarding log events.
@@ -63,16 +62,17 @@ class Observability(ObservabilityProtocol):
         return self
 
     @classmethod
-    def setup(cls, *, debug: bool = False) -> Self:
+    def setup(cls, *, debug: bool = False, telemetry: TelemetryProtocol) -> Self:
         """Instantiates and configures an `Observability` service.
 
         Args:
             debug (bool): If True, enables debug-level logging.
+            telemetry (TelemetryProtocol): The telemetry sink for events.
 
         Returns:
             Self: A new, configured `Observability` instance.
         """
-        return cls(debug=debug)
+        return cls(debug=debug, telemetry=telemetry)
 
     def get_logger(self) -> FilteringBoundLogger:
         """Retrieves the underlying `structlog` logger instance.
@@ -127,10 +127,9 @@ class Observability(ObservabilityProtocol):
         else:
             log_func(msg)
 
-        if not isinstance(self._telemetry, NoopTelemetry):
-            telemetry_payload = {"level": level, "message": msg}
-            telemetry_payload.update(log_context)
-            self._telemetry.event("LOG_EMITTED", telemetry_payload)
+        telemetry_payload = {"level": level, "message": msg}
+        telemetry_payload.update(log_context)
+        self._telemetry.event("LOG_EMITTED", telemetry_payload)
 
         return self
 

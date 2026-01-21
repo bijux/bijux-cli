@@ -195,9 +195,8 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
     Returns:
         int: The exit code returned by the command invocation.
     """
+    from importlib import import_module
     from typer.testing import CliRunner
-
-    from bijux_cli.cli.root import app as _root_app
 
     env = {**os.environ, "PS1": ""}
 
@@ -217,7 +216,13 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
     ):
         tokens.append("--no-pretty")
 
-    result = CliRunner().invoke(_root_app, tokens, env=env)
+    cli_root = import_module("bijux_cli.cli.root")
+    app = getattr(cli_root, "build_app", None)
+    if callable(app):
+        typer_app = app()
+    else:
+        typer_app = getattr(cli_root, "app")
+    result = CliRunner().invoke(typer_app, tokens, env=env)
 
     sub_quiet = any(t in ("-q", "--quiet") for t in tokens)
     should_print = not repl_quiet and not sub_quiet
@@ -227,12 +232,10 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
             data = json.loads(result.stdout or "{}")
             if data.get("entries", []) == []:
                 if should_print:
-                    from bijux_cli.infra.serializer import serializer_for
-                    from bijux_cli.infra.telemetry import NoopTelemetry
+                    from bijux_cli.cli.commands.utilities import resolve_serializer
 
                     pretty = (
-                        serializer_for("json", NoopTelemetry())
-                        .dumps(data, fmt="json", pretty=True)
+                        resolve_serializer().dumps(data, fmt="json", pretty=True)
                         .rstrip("\n")
                         + "\n"
                     )
@@ -336,13 +339,10 @@ def _run_piped(repl_quiet: bool) -> None:
                         "command": f"config {subcommand[0] if subcommand else ''}".strip(),
                         "format": "json",
                     }
-                    from bijux_cli.infra.serializer import serializer_for
-                    from bijux_cli.infra.telemetry import NoopTelemetry
+                    from bijux_cli.cli.commands.utilities import resolve_serializer
 
                     print(
-                        serializer_for("json", NoopTelemetry()).dumps(
-                            error_obj, fmt="json", pretty=False
-                        )
+                        resolve_serializer().dumps(error_obj, fmt="json", pretty=False)
                     )
 
                 if not sub:
@@ -553,7 +553,11 @@ async def _run_interactive() -> None:
     from prompt_toolkit.output import ColorDepth
 
     cli_mod = import_module("bijux_cli.cli.root")
-    app = cli_mod.build_app()
+    build_app = getattr(cli_mod, "build_app", None)
+    if callable(build_app):
+        app = build_app()
+    else:
+        app = getattr(cli_mod, "app")
 
     kb = KeyBindings()
 

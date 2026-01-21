@@ -10,22 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 import os
 import shutil
 import subprocess  # nosec B404
-from typing import Any, Protocol
-
-from bijux_cli.infra.telemetry import Telemetry
-
-
-class Observability(Protocol):
-    """Minimal logger contract for process execution."""
-
-    def log(self, level: str, msg: str, *, extra: dict[str, Any] | None = None) -> None:
-        ...
-
-
-class ProcessExecutor(Protocol):
-    """Adapter for executing external commands."""
-
-    def run(self, cmd: list[str], *, executor: str) -> tuple[int, bytes, bytes]: ...
+from typing import Any
 
 
 def validate_command(cmd: list[str]) -> list[str]:
@@ -53,15 +38,15 @@ def validate_command(cmd: list[str]) -> list[str]:
     return cmd
 
 
-class ProcessPool(ProcessExecutor):
+class ProcessPool:
     """Executes validated commands in a worker pool with an LRU cache."""
 
     _MAX_CACHE = 1000
 
     def __init__(
         self,
-        observability: Observability,
-        telemetry: Telemetry,
+        observability: Any,
+        telemetry: Any,
         max_workers: int = 4,
     ) -> None:
         max_workers = int(os.getenv("BIJUXCLI_MAX_WORKERS", str(max_workers)))
@@ -135,7 +120,7 @@ class ProcessPool(ProcessExecutor):
 
 
 def get_process_pool(
-    logger: Observability, telemetry: Telemetry
+    logger: Any, telemetry: Any
 ) -> ProcessPool:
     return ProcessPool(logger, telemetry)
 
@@ -147,11 +132,4 @@ class NoopProcessExecutor:
         return 0, b"", b""
 
 
-__all__ = [
-    "Observability",
-    "ProcessExecutor",
-    "NoopProcessExecutor",
-    "ProcessPool",
-    "get_process_pool",
-    "validate_command",
-]
+__all__ = ["NoopProcessExecutor", "ProcessPool", "get_process_pool", "validate_command"]

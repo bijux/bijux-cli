@@ -6,24 +6,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Protocol
-
-
-class Observability(Protocol):
-    """Minimal logger contract for telemetry sinks."""
-
-    def log(self, level: str, msg: str, *, extra: dict[str, Any] | None = None) -> None:
-        ...
-
-
-class Telemetry(Protocol):
-    """Adapter for telemetry/event sinks."""
-
-    def event(self, name: str, payload: dict[str, Any]) -> None: ...
-
-    def flush(self) -> None: ...
-
-    def enable(self) -> None: ...
+from typing import Any
 
 
 class TelemetryEvent(str, Enum):
@@ -100,7 +83,7 @@ class NoopTelemetry:
 class LoggingTelemetry:
     """Telemetry adapter that logs events via an observability sink."""
 
-    def __init__(self, observability: Observability) -> None:
+    def __init__(self, observability: Any) -> None:
         self._observability = observability
         self._buffer: list[tuple[str, dict[str, Any]]] = []
 
@@ -117,8 +100,6 @@ class LoggingTelemetry:
 
 
 __all__ = [
-    "Observability",
-    "Telemetry",
     "TelemetryEvent",
     "NoopTelemetry",
     "LoggingTelemetry",
