@@ -171,12 +171,20 @@ def memory_summary(
             payload upon completion or error.
     """
     command = "memory"
-    include_runtime = verbose or debug
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    include_runtime = resolved["include_runtime"]
 
     fmt_lower = validate_common_flags(fmt, command, quiet)
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
-    effective_pretty = debug or pretty
+    effective_pretty = resolved["pretty"]
 
     svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, debug)
 

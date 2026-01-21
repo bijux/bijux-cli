@@ -191,7 +191,7 @@ def test_run_piped_flow_and_messages(
     out = capsys.readouterr()
     assert "Available topics: …" in out.out
     assert "topicX" in out.out
-    assert '"failure": "missing_argument"' in out.out
+    assert '"failure": "missing_argument"' in out.out or '"failure":"missing_argument"' in out.out
     assert ["memory", "list"] in calls
     assert ["status", "-q"] in calls
     assert "No such command 'bad'. Did you mean 'status'?" in (out.err or out.out)

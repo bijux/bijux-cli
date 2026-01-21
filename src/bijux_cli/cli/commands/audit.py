@@ -188,13 +188,22 @@ def audit(
 
     command = "audit"
 
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    include_runtime = resolved["include_runtime"]
+    effective_pretty = resolved["pretty"]
+
     try:
         stray_args = [a for a in ctx.args if not a.startswith("-")]
         if stray_args:
             raise typer.BadParameter(f"No such argument: {stray_args[0]}")
         fmt_lower = validate_common_flags(fmt, command, quiet)
-        include_runtime = verbose or debug
-        effective_pretty = debug or pretty
         out_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
 
         if contains_non_ascii_env():
@@ -229,7 +238,7 @@ def audit(
             command=command,
             fmt=error_fmt,
             quiet=quiet,
-            include_runtime=verbose or debug,
+            include_runtime=include_runtime,
         )
 
     try:
@@ -257,9 +266,9 @@ def audit(
             command_name=command,
             payload_builder=lambda _: payload,
             quiet=quiet,
-            verbose=(verbose or debug),
+            verbose=include_runtime,
             fmt=fmt_lower,
-            pretty=(debug or pretty),
+            pretty=effective_pretty,
             debug=debug,
         )
 

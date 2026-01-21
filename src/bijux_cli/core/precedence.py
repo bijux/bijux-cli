@@ -23,6 +23,8 @@ def parse_global_flags(
         "verbose": False,
         "format": "json",
         "pretty": True,
+        "log_level": "info",
+        "color": "auto",
     }
     retained: list[str] = []
     it = iter(argv)
@@ -50,6 +52,21 @@ def parse_global_flags(
             if flags["format"] not in ("json", "yaml"):
                 on_error("Invalid output format.", "invalid_format", flags)
                 break
+        elif token == "--log-level":
+            try:
+                flags["log_level"] = next(it)
+            except StopIteration:
+                on_error("Missing value for --log-level.", "missing_argument", flags)
+                break
+        elif token == "--color":
+            try:
+                flags["color"] = next(it)
+            except StopIteration:
+                on_error("Missing value for --color.", "missing_argument", flags)
+                break
+            if flags["color"] not in ("auto", "always", "never"):
+                on_error("Invalid color mode.", "invalid_color", flags)
+                break
         elif token == "--pretty":
             flags["pretty"] = True
         elif token == "--no-pretty":
@@ -62,3 +79,31 @@ def parse_global_flags(
 def apply_parsed_flags(flags: dict[str, Any], retained: list[str]) -> None:
     """Rewrite sys.argv with parsed global flags removed."""
     sys.argv = [sys.argv[0], *retained]
+
+
+def resolve_output_flags(
+    *,
+    quiet: bool,
+    verbose: bool,
+    debug: bool,
+    pretty: bool,
+    log_level: str = "info",
+    color: str = "auto",
+) -> dict[str, Any]:
+    """Resolve logging/color/pretty flags from a single source of truth."""
+    if color not in ("auto", "always", "never"):
+        color = "auto"
+    include_runtime = (verbose or debug) and not quiet
+    effective_pretty = True if (debug and not quiet) else pretty
+    if debug:
+        effective_log_level = "debug"
+    elif quiet:
+        effective_log_level = "error"
+    else:
+        effective_log_level = log_level
+    return {
+        "include_runtime": include_runtime,
+        "pretty": effective_pretty,
+        "log_level": effective_log_level,
+        "color": color,
+    }
