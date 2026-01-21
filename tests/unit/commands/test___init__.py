@@ -92,12 +92,21 @@ def test_register_dynamic_plugins_via_entry_points(
 
     from bijux_cli.plugins.metadata import PluginMetadata
 
+    class FakeEntryPoint:
+        def __init__(self, name: str, app_obj: Any) -> None:
+            self.name = name
+            self._app_obj = app_obj
+
+        def load(self) -> Any:
+            return self._app_obj
+
     good = PluginMetadata(
         name="good_ep",
         version="0.1.0",
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.1.0",
+        entrypoint=FakeEntryPoint("good_ep", DummyTyper()),
     )
     bad = PluginMetadata(
         name="bad_ep",
@@ -105,13 +114,14 @@ def test_register_dynamic_plugins_via_entry_points(
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.1.0",
+        entrypoint=FakeEntryPoint("bad_ep", object()),
     )
 
     monkeypatch.setattr(
         "bijux_cli.plugins.metadata.discover_plugins", lambda: [good, bad]
     )
     monkeypatch.setattr(
-        "bijux_cli.plugins.loader.lazy_command_for",
+        "bijux_cli.plugins.loader.activate_plugin",
         lambda meta: DummyTyper()
         if meta.name == "good_ep"
         else (_ for _ in ()).throw(RuntimeError("fail_load")),

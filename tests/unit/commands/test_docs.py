@@ -25,6 +25,35 @@ from bijux_cli.cli.commands.docs import (
 from bijux_cli.core.enums import OutputFormat
 
 
+class FakeDocsService:
+    def __init__(
+        self,
+        *,
+        render_value: str = "",
+        render_exc: Exception | None = None,
+        write_exc: Exception | None = None,
+    ) -> None:
+        self._render_value = render_value
+        self._render_exc = render_exc
+        self._write_exc = write_exc
+
+    def render(self, spec: dict[str, Any], *, fmt: Any, pretty: bool = False) -> str:
+        _ = spec, fmt, pretty
+        if self._render_exc:
+            raise self._render_exc
+        return self._render_value
+
+    def write(
+        self, spec: dict[str, Any], *, fmt: Any, name: str, pretty: bool = False
+    ) -> str:
+        _ = spec, fmt, pretty
+        if self._write_exc:
+            raise self._write_exc
+        path = Path(name)
+        path.write_text(self._render_value, encoding="utf-8")
+        return str(path)
+
+
 def test_default_output_path() -> None:
     """Test the default output path generation for different formats."""
     base = Path("/some/base")
@@ -265,8 +294,9 @@ def test_docs_stdout_branch(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"val": 3})
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "JSON_OUT"),
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="JSON_OUT"),
     )
 
     ctx: Context = MagicMock()
@@ -299,8 +329,9 @@ def test_docs_file_written_and_emit_and_exit(
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda spec, fmt, pretty: '{"hello":"world"}'),
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value='{"hello":"world"}'),
     )
 
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
@@ -349,8 +380,9 @@ def test_docs_write_failure(
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"b": 2})
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "{}")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="{}"),
     )
 
     def broken_write_text(self: Path, content: str, encoding: str) -> None:
@@ -403,8 +435,9 @@ def test_docs_missing_output_dir(
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "{}")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="{}"),
     )
 
     ctx: Context = MagicMock()
@@ -449,14 +482,11 @@ def test_docs_writes_yaml_and_emit(
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
-    class FakeYAML:
-        def __init__(self, tel: Any) -> None:
-            pass
-
-        def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
-            return yaml.safe_dump(spec, sort_keys=False)
-
-    monkeypatch.setattr("bijux_cli.cli.commands.utilities.resolve_serializer", lambda: FakeYAML(None))
+    monkeypatch.setattr(
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value=yaml.safe_dump({"foo": "bar"}, sort_keys=False)),
+    )
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
@@ -496,8 +526,9 @@ def test_docs_io_fail_flag(
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"x": 42})
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "{}")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="{}"),
     )
 
     ctx: Context = MagicMock()
@@ -542,8 +573,9 @@ def test_docs_internal_error_path_none(
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"k": "v"})
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "{}")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="{}"),
     )
 
     monkeypatch.setattr(
@@ -588,8 +620,9 @@ def test_docs_stdout_debug_no_diagnostics(
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"num": 7})
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "DUMP")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="DUMP"),
     )
 
     ctx: Context = MagicMock()
@@ -624,12 +657,9 @@ def test_docs_stdout_quiet_skips_echo(
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "X")
-    )
-    monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="X"),
     )
 
     ctx: Context = MagicMock()
@@ -663,16 +693,10 @@ def test_docs_stdout_yaml(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
-    class FakeYAMLSer:
-        def __init__(self, tel: Any) -> None:
-            pass
-
-        def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
-            return "{hello: world}\n"
-
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: FakeYAMLSer(None),
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_value="{hello: world}\n"),
     )
 
     ctx: Context = MagicMock()
@@ -711,18 +735,10 @@ def test_docs_yaml_serialization_failure(
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.resolve_serializer",
-        lambda: MagicMock(dumps=lambda *a, **k: "")
+        docs_mod,
+        "_resolve_docs_service",
+        lambda: FakeDocsService(render_exc=RuntimeError("yaml‐oops")),
     )
-
-    class BrokenYAML:
-        def __init__(self, tel: Any) -> None:
-            pass
-
-        def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
-            raise RuntimeError("yaml‐oops")
-
-    monkeypatch.setattr("bijux_cli.cli.commands.utilities.resolve_serializer", lambda: BrokenYAML(None))
 
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None

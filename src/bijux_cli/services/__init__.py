@@ -33,9 +33,11 @@ from bijux_cli.services.diagnostics.contracts import (
     DocsProtocol,
     DoctorProtocol,
     MemoryProtocol,
+    DiagnosticsConfig,
 )
 from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.contracts import LoggingConfig
+from bijux_cli.services.plugins.contracts import PluginConfig
 from bijux_cli.core.enums import OutputFormat
 
 if TYPE_CHECKING:
@@ -48,6 +50,8 @@ def register_default_services(
     *,
     logging_config: LoggingConfig,
     output_format: OutputFormat,
+    plugin_config: PluginConfig | None = None,
+    diagnostics_config: DiagnosticsConfig | None = None,
 ) -> None:
     """Registers all default service implementations with the DI container.
 
@@ -79,6 +83,14 @@ def register_default_services(
     import bijux_cli.services.history
     import bijux_cli.services.diagnostics.memory
     import bijux_cli.plugins.registry
+
+    if plugin_config is None:
+        plugin_config = PluginConfig(enabled=True, allow_entrypoints=True)
+    if diagnostics_config is None:
+        diagnostics_config = DiagnosticsConfig(enabled=True, telemetry_enabled=True)
+
+    di.register(PluginConfig, lambda: plugin_config)
+    di.register(DiagnosticsConfig, lambda: diagnostics_config)
 
     noop_telemetry = bijux_cli.infra.telemetry.NoopTelemetry()
     obs_service = bijux_cli.services.logging.observability.Observability(

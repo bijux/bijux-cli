@@ -106,6 +106,8 @@ def test_register_default_services_100pct(
             MemoryProtocol,
         )
         from bijux_cli.services.history.contracts import HistoryProtocol
+        from bijux_cli.services.plugins.contracts import PluginConfig
+        from bijux_cli.services.diagnostics.contracts import DiagnosticsConfig
         import bijux_cli.core.context as core_context
         import bijux_cli.infra.emitter as infra_emitter
         import bijux_cli.services.logging.observability as infra_obs
@@ -146,6 +148,9 @@ def test_register_default_services_100pct(
         tel_inst = di.resolve(TelemetryProtocol)
         mock_tel_init.assert_called_once_with()
         assert isinstance(tel_inst, infra_tel.NoopTelemetry)
+
+        assert isinstance(di.resolve(PluginConfig), PluginConfig)
+        assert isinstance(di.resolve(DiagnosticsConfig), DiagnosticsConfig)
 
         emitter_inst = di.resolve(EmitterProtocol)
         mock_emitter_init.assert_called_once()

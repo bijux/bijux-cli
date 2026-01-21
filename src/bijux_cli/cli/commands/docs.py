@@ -49,6 +49,7 @@ from bijux_cli.core.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.services.diagnostics.contracts import DocsProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -177,7 +178,7 @@ def docs(
             and payload upon any error, including argument validation, ASCII
             violations, serialization failures, or I/O issues.
     """
-    from bijux_cli.cli.commands.utilities import normalize_format, resolve_serializer
+    from bijux_cli.cli.commands.utilities import normalize_format
 
     command = "docs"
     from bijux_cli.core.precedence import resolve_output_flags
@@ -251,9 +252,11 @@ def docs(
         )
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
-    serializer = resolve_serializer()
+    docs_service = _resolve_docs_service()
     try:
-        content = serializer.dumps(spec, fmt=output_format, pretty=effective_pretty)
+        content = docs_service.render(
+            spec, fmt=output_format, pretty=effective_pretty
+        )
     except Exception as exc:
         emit_error_and_exit(
             f"Serialization failed: {exc}",
@@ -309,7 +312,12 @@ def docs(
         )
 
     try:
-        path.write_text(content, encoding="utf-8")
+        docs_service.write(
+            spec,
+            fmt=output_format,
+            name=str(path),
+            pretty=effective_pretty,
+        )
     except Exception as exc:
         emit_error_and_exit(
             f"Failed to write spec: {exc}",
@@ -331,3 +339,10 @@ def docs(
         quiet,
         command,
     )
+
+
+def _resolve_docs_service() -> DocsProtocol:
+    """Resolve the docs service from the DI container."""
+    from bijux_cli.core.di import DIContainer
+
+    return DIContainer.current().resolve(DocsProtocol)

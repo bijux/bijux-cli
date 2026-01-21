@@ -157,7 +157,11 @@ def _plugin_meta_from_local(plug_dir: Path) -> PluginMetadata:
 
 
 def discover_plugins(*, strict: bool = True) -> list[PluginMetadata]:
-    """Discover plugins without importing plugin bodies."""
+    """Discover plugins without importing plugin bodies.
+
+    Stages: discover → validate metadata → register → activate (lazy) → unload.
+    This function performs discovery + metadata validation only.
+    """
     global _CACHE
     if _CACHE is not None:
         return list(_CACHE)

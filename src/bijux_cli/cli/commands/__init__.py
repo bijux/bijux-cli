@@ -56,7 +56,7 @@ def register_commands(app: Typer) -> list[str]:
 def register_dynamic_plugins(app: Typer) -> None:
     """Discovers and registers all third-party plugins."""
     from bijux_cli.plugins.metadata import discover_plugins
-    from bijux_cli.plugins.loader import lazy_command_for
+    from bijux_cli.plugins.loader import activate_plugin
     import inspect
 
     try:
@@ -72,7 +72,7 @@ def register_dynamic_plugins(app: Typer) -> None:
         if meta.name in _REGISTERED_COMMANDS:
             raise RuntimeError(f"Plugin name collision: {meta.name!r}")
         try:
-            app.add_typer(lazy_command_for(meta), name=meta.name)
+            app.add_typer(activate_plugin(meta), name=meta.name)
         except Exception as exc:
             logger.warning("Plugin %s failed to register: %s", meta.name, exc)
             continue

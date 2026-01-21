@@ -56,3 +56,8 @@ def test_infra_has_no_core_or_services_imports() -> None:
     _assert_no_prefix_imports(
         infra_modules, ("bijux_cli.core", "bijux_cli.services")
     )
+
+
+def test_cli_has_no_infra_imports() -> None:
+    cli_modules = _collect_modules(SRC / "cli")
+    _assert_no_prefix_imports(cli_modules, ("bijux_cli.infra",))
