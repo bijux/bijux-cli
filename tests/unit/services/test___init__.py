@@ -38,25 +38,25 @@ def test_register_default_services_100pct(
             side_effect=lambda self, *a, **k: self,
         ) as mock_obs_log,
         patch(
-            "bijux_cli.services.logging.telemetry.LoggingTelemetry.__init__", return_value=None
+            "bijux_cli.infra.telemetry.NoopTelemetry.__init__", return_value=None
         ) as mock_tel_init,
         patch(
-            "bijux_cli.services.logging.emitter.Emitter.__init__", return_value=None
+            "bijux_cli.infra.emitter.ConsoleEmitter.__init__", return_value=None
         ) as mock_emitter_init,
         patch(
-            "bijux_cli.services.logging.serializer.OrjsonSerializer.__init__", return_value=None
+            "bijux_cli.infra.serializer.OrjsonSerializer.__init__", return_value=None
         ) as mock_orjson_init,
         patch(
-            "bijux_cli.services.logging.serializer.PyYAMLSerializer.__init__", return_value=None
+            "bijux_cli.infra.serializer.PyYAMLSerializer.__init__", return_value=None
         ) as mock_yaml_init,
         patch(
-            "bijux_cli.services.diagnostics.process.ProcessPool.__init__", return_value=None
+            "bijux_cli.infra.process.ProcessPool.__init__", return_value=None
         ) as mock_process_init,
         patch(
-            "bijux_cli.services.diagnostics.retry.TimeoutRetryPolicy.__init__", return_value=None
+            "bijux_cli.infra.retry.TimeoutRetryPolicy.__init__", return_value=None
         ) as mock_timeout_init,
         patch(
-            "bijux_cli.services.diagnostics.retry.ExponentialBackoffRetryPolicy.__init__",
+            "bijux_cli.infra.retry.ExponentialBackoffRetryPolicy.__init__",
             return_value=None,
         ) as mock_exp_init,
         patch(
@@ -104,12 +104,12 @@ def test_register_default_services_100pct(
             TelemetryProtocol,
         )
         import bijux_cli.core.context as core_context
-        import bijux_cli.services.logging.emitter as infra_emitter
+        import bijux_cli.infra.emitter as infra_emitter
         import bijux_cli.services.logging.observability as infra_obs
-        import bijux_cli.services.diagnostics.process as infra_process
-        import bijux_cli.services.diagnostics.retry as infra_retry
-        import bijux_cli.services.logging.serializer as infra_serializer
-        import bijux_cli.services.logging.telemetry as infra_tel
+        import bijux_cli.infra.process as infra_process
+        import bijux_cli.infra.retry as infra_retry
+        import bijux_cli.infra.serializer as infra_serializer
+        import bijux_cli.infra.telemetry as infra_tel
         import bijux_cli.services.diagnostics.audit as svc_audit
         import bijux_cli.services.config as svc_config
         import bijux_cli.services.diagnostics.docs as svc_docs
@@ -128,8 +128,8 @@ def test_register_default_services_100pct(
         assert mock_obs_log.call_count >= 1
 
         tel_inst = di.resolve(TelemetryProtocol)
-        mock_tel_init.assert_called_once()
-        assert mock_tel_init.call_args.kwargs == {"observability": obs_inst}
+        mock_tel_init.assert_called_once_with()
+        assert isinstance(tel_inst, infra_tel.NoopTelemetry)
 
         emitter_inst = di.resolve(EmitterProtocol)
         mock_emitter_init.assert_called_once()
@@ -212,8 +212,8 @@ def test_register_default_services_100pct(
         mock_memory_init.assert_called_once_with()
 
         assert isinstance(obs_inst, infra_obs.Observability)
-        assert isinstance(tel_inst, infra_tel.LoggingTelemetry)
-        assert isinstance(emitter_inst, infra_emitter.Emitter)
+        assert isinstance(tel_inst, infra_tel.NoopTelemetry)
+        assert isinstance(emitter_inst, infra_emitter.ConsoleEmitter)
         assert isinstance(proc_inst, infra_process.ProcessPool)
         assert isinstance(ctx_inst, core_context.Context)
         assert isinstance(cfg_inst, svc_config.Config)

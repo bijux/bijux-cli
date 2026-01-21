@@ -43,8 +43,8 @@ from injector import inject
 
 from bijux_cli.core.contracts import HistoryProtocol
 from bijux_cli.core.paths import HISTORY_FILE
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.services.logging.observability import Observability
-from bijux_cli.services.logging.telemetry import LoggingTelemetry
 
 _MAX_IN_MEMORY: Final[int] = 10_000
 """Maximum number of entries retained in memory (and considered for writes)."""
@@ -176,7 +176,7 @@ class History(HistoryProtocol):
     atomically, and release lock.
 
     Attributes:
-        _tel (LoggingTelemetry): The telemetry service for emitting events.
+        _tel (TelemetryProtocol): The telemetry service for emitting events.
         _obs (Observability): The logging service for operational errors.
         _explicit_path (Path | None): A specific path to the history file, if
             provided during initialization.
@@ -188,14 +188,14 @@ class History(HistoryProtocol):
     @inject
     def __init__(
         self,
-        telemetry: LoggingTelemetry,
+        telemetry: TelemetryProtocol,
         observability: Observability,
         history_path: Path | None = None,
     ) -> None:
         """Initializes the History service.
 
         Args:
-            telemetry (LoggingTelemetry): The telemetry service.
+            telemetry (TelemetryProtocol): The telemetry service.
             observability (Observability): The logging service.
             history_path (Path | None): An optional, explicit path to the
                 history file. If None, a default path will be used.

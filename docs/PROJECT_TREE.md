@@ -148,9 +148,8 @@ Concrete implementations behind commands. Orchestrate work, depend on `contracts
 
 ```
 src/bijux_cli/services/
-├── audit.py  config.py  docs.py  doctor.py
-├── history.py  memory.py  utils.py
-└── plugins/ (cache.py, loader.py, metadata.py, registry.py)
+├── config/  diagnostics/  history/  logging/
+└── (service wiring and stateful implementations)
 ```
 
 [Back to top](#top)
@@ -160,12 +159,11 @@ src/bijux_cli/services/
 ### Contracts
 
 Typed interfaces (protocols/ABCs) consumed by services — clean DI seams.
+Service-local contracts live under `services/<domain>/contracts.py`.
 
 ```
-src/bijux_cli/contracts/
-audit.py  config.py  context.py  docs.py  doctor.py  emitter.py
-history.py  memory.py  observability.py  process.py  registry.py
-retry.py  serializer.py  telemetry.py
+src/bijux_cli/core/contracts.py
+src/bijux_cli/core/contracts_pkg/
 ```
 
 [Back to top](#top)
@@ -188,6 +186,11 @@ constants.py  context.py  di.py  engine.py  enums.py  exceptions.py  paths.py
 ### Infra
 
 Foundational adapters/utilities used across services.
+
+```
+src/bijux_cli/infra/
+emitter.py  fs.py  process.py  retry.py  serializer.py  telemetry.py  terminal.py
+```
 
 ```
 src/bijux_cli/infra/

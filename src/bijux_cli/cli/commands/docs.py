@@ -178,8 +178,8 @@ def docs(
             violations, serialization failures, or I/O issues.
     """
     from bijux_cli.cli.commands.utilities import normalize_format
-    from bijux_cli.services.logging.serializer import OrjsonSerializer, PyYAMLSerializer
-    from bijux_cli.services.logging.telemetry import NullTelemetry
+    from bijux_cli.infra.serializer import OrjsonSerializer, PyYAMLSerializer
+    from bijux_cli.infra.telemetry import NoopTelemetry
 
     command = "docs"
     effective_include_runtime = (verbose or debug) and not quiet
@@ -246,9 +246,9 @@ def docs(
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
     serializer = (
-        PyYAMLSerializer(NullTelemetry())
+        PyYAMLSerializer(NoopTelemetry())
         if output_format is OutputFormat.YAML
-        else OrjsonSerializer(NullTelemetry())
+        else OrjsonSerializer(NoopTelemetry())
     )
     try:
         content = serializer.dumps(spec, fmt=output_format, pretty=effective_pretty)

@@ -1,7 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Protocol and contract definitions (facade)."""
+"""Protocol and contract definitions (facade).
+
+Contracts in this module are application-wide interfaces used by core and
+services. Service-local interfaces belong in `services/<domain>/contracts.py`
+and are not promoted into the core contract surface.
+"""
 
 from __future__ import annotations
 

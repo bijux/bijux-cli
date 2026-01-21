@@ -22,7 +22,7 @@ from injector import inject
 
 from bijux_cli.core.contracts import AuditProtocol, ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.errors import BijuxError
-from bijux_cli.services.diagnostics.process import validate_command
+from bijux_cli.infra.process import validate_command
 
 
 class _BaseAudit(AuditProtocol):
@@ -217,12 +217,12 @@ class RealAudit(_BaseAudit):
                 },
             )
             return proc.returncode, proc.stdout, proc.stderr
-        except BijuxError as err:
+        except ValueError as err:
             self._tel.event(
                 "audit_execution_failed",
                 {"cmd": cmd, "executor": executor, "error": str(err)},
             )
-            raise
+            raise BijuxError(f"Command validation failed: {err}") from err
         except Exception as err:
             self._tel.event(
                 "audit_execution_failed",

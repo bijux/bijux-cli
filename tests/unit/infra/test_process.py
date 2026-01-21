@@ -15,8 +15,7 @@ from unittest.mock import MagicMock, call
 import pytest
 
 from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
-from bijux_cli.core.errors import BijuxError
-from bijux_cli.services.diagnostics.process import ProcessPool
+from bijux_cli.infra.process import ProcessPool
 
 
 class FakeExecutor:
@@ -50,9 +49,9 @@ class FakeObservability:
 
 def install_validate(monkeypatch: pytest.MonkeyPatch, func: Any) -> None:
     """Inject a fake validate_command function into a mock module."""
-    mod = types.ModuleType("bijux_cli.services.diagnostics.process")
+    mod = types.ModuleType("bijux_cli.infra.process")
     mod.validate_command = func  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "bijux_cli.services.diagnostics.process", mod)
+    monkeypatch.setitem(sys.modules, "bijux_cli.infra.process", mod)
 
 
 @pytest.fixture
@@ -83,7 +82,7 @@ def test_run_success_and_cache_hit(
         run_calls["count"] += 1
         return SimpleNamespace(returncode=0, stdout=b"OK", stderr=b"")
 
-    monkeypatch.setattr("bijux_cli.services.diagnostics.process.subprocess.run", fake_run)
+    monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
     pool = ProcessPool(
         cast(ObservabilityProtocol, fake_obs),
@@ -126,7 +125,7 @@ def test_run_validation_failure(
     """Test that a command validation failure is handled correctly."""
 
     def bad_validate(cmd: list[str]) -> None:
-        raise BijuxError("invalid")
+        raise ValueError("invalid")
 
     install_validate(monkeypatch, bad_validate)
 
@@ -138,7 +137,7 @@ def test_run_validation_failure(
             "subprocess.run should not be reached on validation failure"
         )
 
-    monkeypatch.setattr("bijux_cli.services.diagnostics.process.subprocess.run", fake_run)
+    monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
     pool = ProcessPool(
         cast(ObservabilityProtocol, fake_obs),
@@ -146,7 +145,7 @@ def test_run_validation_failure(
         max_workers=2,
     )
 
-    with pytest.raises(BijuxError, match="invalid"):
+    with pytest.raises(ValueError, match="invalid"):
         pool.run(["bad", "cmd"], executor="unit")
 
     fake_tel.event.assert_any_call(
@@ -161,19 +160,19 @@ def test_run_subprocess_exception_wrapped(
     fake_obs: FakeObservability,
     fake_tel: MagicMock,
 ) -> None:
-    """Test that an exception from subprocess.run is wrapped in a BijuxError."""
+    """Test that an exception from subprocess.run is wrapped in a RuntimeError."""
     install_validate(monkeypatch, lambda cmd: cmd)
 
     def boom(*a: Any, **k: Any) -> None:
         raise ValueError("boom")
 
-    monkeypatch.setattr("bijux_cli.services.diagnostics.process.subprocess.run", boom)
+    monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", boom)
 
     pool = ProcessPool(
         cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
     )
 
-    with pytest.raises(BijuxError, match="Process-pool execution failed:"):
+    with pytest.raises(RuntimeError, match="Process-pool execution failed:"):
         pool.run(["ls"], executor="unit")
 
     fake_tel.event.assert_any_call(
@@ -200,7 +199,7 @@ def test_lru_eviction_via_max_cache_override(
             returncode=0, stdout=f"ok{counter['n']}".encode(), stderr=b""
         )
 
-    monkeypatch.setattr("bijux_cli.services.diagnostics.process.subprocess.run", fake_run)
+    monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
     pool = ProcessPool(
         cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)

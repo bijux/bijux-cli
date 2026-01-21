@@ -60,16 +60,17 @@ def register_default_services(
         None:
     """
     import bijux_cli.core.context
-    import bijux_cli.services.logging.emitter
+    import bijux_cli.infra.emitter
     import bijux_cli.services.logging.observability
-    import bijux_cli.services.diagnostics.process
-    import bijux_cli.services.diagnostics.retry
-    import bijux_cli.services.logging.serializer
-    import bijux_cli.services.logging.telemetry
+    import bijux_cli.infra.process
+    import bijux_cli.infra.retry
+    import bijux_cli.infra.serializer
+    import bijux_cli.infra.telemetry
     import bijux_cli.services.diagnostics.audit
     import bijux_cli.services.config
     import bijux_cli.services.diagnostics.docs
     import bijux_cli.services.diagnostics.doctor
+    import bijux_cli.services.diagnostics.telemetry
     import bijux_cli.services.history
     import bijux_cli.services.diagnostics.memory
     import bijux_cli.plugins.registry
@@ -83,74 +84,80 @@ def register_default_services(
     )
 
     di.register(
-        bijux_cli.services.logging.telemetry.LoggingTelemetry,
-        lambda: bijux_cli.services.logging.telemetry.LoggingTelemetry(
+        bijux_cli.infra.telemetry.LoggingTelemetry,
+        lambda: bijux_cli.infra.telemetry.LoggingTelemetry(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability)
         ),
     )
     di.register(
+        bijux_cli.infra.telemetry.NoopTelemetry,
+        lambda: bijux_cli.infra.telemetry.NoopTelemetry(),
+    )
+    di.register(
         TelemetryProtocol,
-        lambda: di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+        lambda: bijux_cli.services.diagnostics.telemetry.resolve_telemetry(di),
     )
 
     di.register(
-        bijux_cli.services.logging.emitter.Emitter,
-        lambda: bijux_cli.services.logging.emitter.Emitter(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+        bijux_cli.infra.emitter.ConsoleEmitter,
+        lambda: bijux_cli.infra.emitter.ConsoleEmitter(
+            telemetry=di.resolve(TelemetryProtocol),
             output_format=output_format,
             debug=debug,
             quiet=quiet,
         ),
     )
-    di.register(EmitterProtocol, lambda: di.resolve(bijux_cli.services.logging.emitter.Emitter))
+    di.register(
+        EmitterProtocol, lambda: di.resolve(bijux_cli.infra.emitter.ConsoleEmitter)
+    )
 
     di.register(
-        bijux_cli.services.logging.serializer.OrjsonSerializer,
-        lambda: bijux_cli.services.logging.serializer.OrjsonSerializer(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry)
+        bijux_cli.infra.serializer.OrjsonSerializer,
+        lambda: bijux_cli.infra.serializer.OrjsonSerializer(
+            telemetry=di.resolve(TelemetryProtocol)
         ),
     )
     di.register(
-        bijux_cli.services.logging.serializer.PyYAMLSerializer,
-        lambda: bijux_cli.services.logging.serializer.PyYAMLSerializer(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry)
+        bijux_cli.infra.serializer.PyYAMLSerializer,
+        lambda: bijux_cli.infra.serializer.PyYAMLSerializer(
+            telemetry=di.resolve(TelemetryProtocol)
         ),
     )
     di.register(
         SerializerProtocol,
         lambda: (
-            di.resolve(bijux_cli.services.logging.serializer.OrjsonSerializer)
+            di.resolve(bijux_cli.infra.serializer.OrjsonSerializer)
             if output_format is OutputFormat.JSON
-            else di.resolve(bijux_cli.services.logging.serializer.PyYAMLSerializer)
+            else di.resolve(bijux_cli.infra.serializer.PyYAMLSerializer)
         ),
     )
 
     di.register(
-        bijux_cli.services.diagnostics.process.ProcessPool,
-        lambda: bijux_cli.services.diagnostics.process.ProcessPool(
+        bijux_cli.infra.process.ProcessPool,
+        lambda: bijux_cli.infra.process.ProcessPool(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability),
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            telemetry=di.resolve(TelemetryProtocol),
         ),
     )
     di.register(
-        ProcessPoolProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.process.ProcessPool)
+        ProcessPoolProtocol, lambda: di.resolve(bijux_cli.infra.process.ProcessPool)
     )
 
     di.register(
-        bijux_cli.services.diagnostics.retry.TimeoutRetryPolicy,
-        lambda: bijux_cli.services.diagnostics.retry.TimeoutRetryPolicy(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry)
+        bijux_cli.infra.retry.TimeoutRetryPolicy,
+        lambda: bijux_cli.infra.retry.TimeoutRetryPolicy(
+            telemetry=di.resolve(TelemetryProtocol)
         ),
     )
     di.register(
-        bijux_cli.services.diagnostics.retry.ExponentialBackoffRetryPolicy,
-        lambda: bijux_cli.services.diagnostics.retry.ExponentialBackoffRetryPolicy(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry)
+        bijux_cli.infra.retry.ExponentialBackoffRetryPolicy,
+        lambda: bijux_cli.infra.retry.ExponentialBackoffRetryPolicy(
+            telemetry=di.resolve(TelemetryProtocol)
         ),
     )
     di.register(
         RetryPolicyProtocol,
-        lambda: di.resolve(bijux_cli.services.diagnostics.retry.TimeoutRetryPolicy),
+        lambda: di.resolve(bijux_cli.infra.retry.TimeoutRetryPolicy),
     )
 
     di.register(
@@ -168,7 +175,7 @@ def register_default_services(
     di.register(
         bijux_cli.plugins.registry.Registry,
         lambda: bijux_cli.plugins.registry.Registry(
-            di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry)
+            di.resolve(TelemetryProtocol)
         ),
     )
     di.register(
@@ -180,21 +187,21 @@ def register_default_services(
         bijux_cli.services.diagnostics.audit.DryRunAudit,
         lambda: bijux_cli.services.diagnostics.audit.DryRunAudit(
             di.resolve(bijux_cli.services.logging.observability.Observability),
-            di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            di.resolve(TelemetryProtocol),
         ),
     )
     di.register(
         bijux_cli.services.diagnostics.audit.RealAudit,
         lambda: bijux_cli.services.diagnostics.audit.RealAudit(
             di.resolve(bijux_cli.services.logging.observability.Observability),
-            di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            di.resolve(TelemetryProtocol),
         ),
     )
     di.register(
         AuditProtocol,
         lambda: bijux_cli.services.diagnostics.audit.get_audit_service(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability),
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            telemetry=di.resolve(TelemetryProtocol),
             dry_run=False,
         ),
     )
@@ -203,7 +210,7 @@ def register_default_services(
         bijux_cli.services.diagnostics.docs.Docs,
         lambda: bijux_cli.services.diagnostics.docs.Docs(
             observability=di.resolve(bijux_cli.services.logging.observability.Observability),
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            telemetry=di.resolve(TelemetryProtocol),
         ),
     )
     di.register(DocsProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.docs.Docs))
@@ -217,7 +224,7 @@ def register_default_services(
     di.register(
         bijux_cli.services.history.History,
         lambda: bijux_cli.services.history.History(
-            telemetry=di.resolve(bijux_cli.services.logging.telemetry.LoggingTelemetry),
+            telemetry=di.resolve(TelemetryProtocol),
             observability=di.resolve(bijux_cli.services.logging.observability.Observability),
         ),
     )

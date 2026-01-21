@@ -149,7 +149,7 @@ def test_real_run_validate_fail(mock_log: Mock, mock_tel: Mock) -> None:
     with (
         patch(
             "bijux_cli.services.diagnostics.audit.validate_command",
-            side_effect=BijuxError("invalid"),
+            side_effect=ValueError("invalid"),
         ),
         pytest.raises(BijuxError, match="invalid"),
     ):

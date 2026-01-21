@@ -21,7 +21,7 @@ from injector import inject
 from bijux_cli.core.contracts import DocsProtocol, ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.services.logging.serializer import serializer_for
+from bijux_cli.infra.serializer import serializer_for
 
 
 class Docs(DocsProtocol):

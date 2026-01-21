@@ -1,33 +1,33 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Provides concrete telemetry service implementations for event tracking.
-
-This module defines concrete classes that implement the `TelemetryProtocol`.
-It offers different strategies for handling telemetry events, allowing the
-application's analytics behavior to be configured easily.
-
-Key components include:
-    * `TelemetryEvent`: An enumeration of all standardized event names, providing
-        a single source of truth for telemetry event types.
-    * `NullTelemetry`: A no-op implementation that silently discards all events,
-        useful for disabling telemetry entirely.
-    * `LoggingTelemetry`: An implementation that forwards all telemetry events to
-        the application's structured logging service.
-"""
+"""Telemetry adapter interfaces and default implementations."""
 
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Protocol
 
-from injector import inject
 
-from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
+class Observability(Protocol):
+    """Minimal logger contract for telemetry sinks."""
+
+    def log(self, level: str, msg: str, *, extra: dict[str, Any] | None = None) -> None:
+        ...
+
+
+class Telemetry(Protocol):
+    """Adapter for telemetry/event sinks."""
+
+    def event(self, name: str, payload: dict[str, Any]) -> None: ...
+
+    def flush(self) -> None: ...
+
+    def enable(self) -> None: ...
 
 
 class TelemetryEvent(str, Enum):
-    """Defines standardized telemetry event names for tracking CLI activities."""
+    """Standardized telemetry event names."""
 
     CLI_STARTED = "cli_started"
     CLI_ERROR = "cli_error"
@@ -84,76 +84,42 @@ class TelemetryEvent(str, Enum):
     PLUGIN_LOAD_FAILED = "plugin_load_failed"
 
 
-class NullTelemetry(TelemetryProtocol):
-    """A no-op telemetry service that discards all events.
-
-    This implementation of `TelemetryProtocol` can be used to effectively
-    disable analytics and event tracking.
-    """
+class NoopTelemetry:
+    """No-op telemetry adapter."""
 
     def event(self, name: str | TelemetryEvent, payload: dict[str, Any]) -> None:
-        """Discards the telemetry event.
-
-        Args:
-            name (str | TelemetryEvent): The event name (ignored).
-            payload (dict[str, Any]): The event data (ignored).
-
-        Returns:
-            None:
-        """
-        return
+        return None
 
     def flush(self) -> None:
-        """Performs a no-op flush operation."""
-        return
+        return None
 
     def enable(self) -> None:
-        """Performs a no-op enable operation."""
-        return
+        return None
 
 
-class LoggingTelemetry(TelemetryProtocol):
-    """A telemetry service that logs events via the `Observability` service.
+class LoggingTelemetry:
+    """Telemetry adapter that logs events via an observability sink."""
 
-    This implementation of `TelemetryProtocol` forwards all telemetry events
-    to the structured logger as debug-level messages.
-
-    Attributes:
-        _obs (ObservabilityProtocol): The logging service instance.
-        _buffer (list): A buffer to store events (currently only cleared on flush).
-    """
-
-    @inject
-    def __init__(self, observability: ObservabilityProtocol):
-        """Initializes the `LoggingTelemetry` service.
-
-        Args:
-            observability (ObservabilityProtocol): The service for logging events.
-        """
-        self._obs = observability
+    def __init__(self, observability: Observability) -> None:
+        self._observability = observability
         self._buffer: list[tuple[str, dict[str, Any]]] = []
 
     def event(self, name: str | TelemetryEvent, payload: dict[str, Any]) -> None:
-        """Logs a telemetry event at the 'debug' level.
-
-        Args:
-            name (str | TelemetryEvent): The event name or enum member.
-            payload (dict[str, Any]): The event data dictionary.
-
-        Returns:
-            None:
-        """
-        event_name = name.value if isinstance(name, TelemetryEvent) else name
-        self._obs.log("debug", f"Telemetry event: {event_name}", extra=payload)
-        self._buffer.append((event_name, payload))
+        event = name.value if isinstance(name, TelemetryEvent) else str(name)
+        self._buffer.append((event, payload))
+        self._observability.log("debug", f"telemetry:{event}", extra={"event": event, **payload})
 
     def flush(self) -> None:
-        """Clears the internal buffer of telemetry events."""
         self._buffer.clear()
 
     def enable(self) -> None:
-        """Performs a no-op enable operation."""
-        return
+        return None
 
 
-__all__ = ["TelemetryEvent", "NullTelemetry", "LoggingTelemetry"]
+__all__ = [
+    "Observability",
+    "Telemetry",
+    "TelemetryEvent",
+    "NoopTelemetry",
+    "LoggingTelemetry",
+]
