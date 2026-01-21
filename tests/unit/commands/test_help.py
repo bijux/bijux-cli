@@ -3,7 +3,6 @@
 
 """Unit tests for the help command."""
 
-
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -17,9 +16,13 @@ import click
 import pytest
 import typer
 
-import bijux_cli.cli.commands.help as help_mod
-from bijux_cli.cli.commands.help import _HUMAN, _build_help_payload, _find_target_command
 from bijux_cli.app.di import DIContainer
+import bijux_cli.cli.commands.help as help_mod
+from bijux_cli.cli.commands.help import (
+    _HUMAN,
+    _build_help_payload,
+    _find_target_command,
+)
 from bijux_cli.core.enums import OutputFormat
 
 

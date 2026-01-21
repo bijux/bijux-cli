@@ -9,12 +9,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.infra.retry import (
     ExponentialBackoffRetryPolicy,
     NoopRetryPolicy,
     TimeoutRetryPolicy,
 )
-from bijux_cli.core.contracts import TelemetryProtocol
 
 
 def test_noop_retry_policy_calls_once() -> None:

@@ -13,11 +13,11 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.version import __version__ as cli_version
 from bijux_cli.cli.commands.version import (
     _build_payload,
     version_app,
 )
+from bijux_cli.version import __version__ as cli_version
 
 runner = CliRunner()
 

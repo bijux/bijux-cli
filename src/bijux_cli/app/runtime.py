@@ -5,12 +5,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 import asyncio
+from collections.abc import Awaitable, Callable
 import contextlib
 import functools
 import inspect
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import anyio
 import typer
@@ -33,7 +33,7 @@ def run_command(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
     return anyio.run(_inner)
 
 
-def run_awaitable(value: Awaitable[T], *, want_result: bool = False) -> T | bool | None:
+def run_awaitable(value: Awaitable[T], *, want_result: bool = False) -> T | None:
     """Synchronously handle an awaitable, scheduling if already in a loop."""
 
     async def _inner() -> T:
@@ -46,7 +46,7 @@ def run_awaitable(value: Awaitable[T], *, want_result: bool = False) -> T | bool
 
     if hasattr(loop, "create_task"):
         loop.create_task(_inner())
-        return False if want_result else None
+        return None
 
     run_uc = getattr(loop, "run_until_complete", None)
     if callable(run_uc):
@@ -55,13 +55,13 @@ def run_awaitable(value: Awaitable[T], *, want_result: bool = False) -> T | bool
         if callable(close):
             with contextlib.suppress(Exception):
                 close()
-        return result
+        return cast(T, result)
 
     close = getattr(value, "close", None)
     if callable(close):
         close()
 
-    return False if want_result else None
+    return None
 
 
 def command_adapter(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -96,6 +96,7 @@ class AsyncTyper(typer.Typer):
     """Typer subclass that routes all commands through the async adapter."""
 
     def command(self, *args: Any, **kwargs: Any) -> Callable[[Callable[..., Any]], Any]:
+        """Wrap Typer commands with the async adapter."""
         decorator = super().command(*args, **kwargs)
 
         def wrapper(func: Callable[..., Any]) -> Any:
@@ -103,7 +104,10 @@ class AsyncTyper(typer.Typer):
 
         return wrapper
 
-    def callback(self, *args: Any, **kwargs: Any) -> Callable[[Callable[..., Any]], Any]:
+    def callback(
+        self, *args: Any, **kwargs: Any
+    ) -> Callable[[Callable[..., Any]], Any]:
+        """Wrap Typer callbacks with the async adapter."""
         decorator = super().callback(*args, **kwargs)
 
         def wrapper(func: Callable[..., Any]) -> Any:
@@ -112,6 +116,7 @@ class AsyncTyper(typer.Typer):
         return wrapper
 
     def add_typer(self, *args: Any, **kwargs: Any) -> None:
+        """Attach a Typer sub-app and adapt its commands."""
         super().add_typer(*args, **kwargs)
         if args:
             sub = args[0]

@@ -34,15 +34,14 @@ from types import FrameType
 
 import typer
 
-from bijux_cli.core.async_exec import AsyncTyper
-
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+from bijux_cli.core.async_exec import AsyncTyper
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -50,8 +49,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -161,8 +159,11 @@ def _run_watch_mode(
                 if not quiet:
                     emitter.emit(
                         payload,
-                        fmt=OutputFormat.JSON,
+                        fmt="json",
                         pretty=effective_pretty,
+                        level="info",
+                        message="Status update",
+                        output=None,
                     )
                 telemetry.event(
                     "COMMAND_SUCCESS",
@@ -200,9 +201,11 @@ def _run_watch_mode(
             if not quiet:
                 emitter.emit(
                     stop_payload,
-                    fmt=OutputFormat.JSON,
+                    fmt="json",
                     pretty=effective_pretty,
                     level="info",
+                    message="Status watch stopped",
+                    output=None,
                 )
             telemetry.event(
                 "COMMAND_STOPPED",

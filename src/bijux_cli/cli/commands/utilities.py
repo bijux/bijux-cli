@@ -29,6 +29,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 import json
+import logging
 import os
 from pathlib import Path
 import platform
@@ -38,7 +39,6 @@ import time
 from typing import Any, NoReturn
 
 from bijux_cli.core.contracts import SerializerProtocol
-
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.plugins import get_plugins_dir
 
@@ -67,8 +67,8 @@ def resolve_serializer() -> SerializerProtocol:
         serializer = DIContainer.current().resolve(SerializerProtocol)
         if hasattr(serializer, "dumps"):
             return serializer
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.getLogger(__name__).debug("Failed to resolve serializer", exc_info=exc)
 
     class _FallbackSerializer:
         def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
@@ -86,7 +86,9 @@ def resolve_serializer() -> SerializerProtocol:
         ) -> bytes:
             return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
 
-        def loads(self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False) -> Any:
+        def loads(
+            self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False
+        ) -> Any:
             _ = pretty
             if str(fmt).lower() == "yaml":
                 try:
@@ -257,7 +259,7 @@ def new_run_command(
     pretty: bool,
     debug: bool,
     exit_code: int = 0,
-) -> NoReturn:
+) -> None:
     """Orchestrates the standard execution flow of a CLI command.
 
     This function handles dependency resolution, validation, payload
@@ -279,8 +281,8 @@ def new_run_command(
         SystemExit: Always exits the process with the given `exit_code` or an
             appropriate error code on failure.
     """
-    from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
     from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
 
     DIContainer.current().resolve(EmitterProtocol)
     DIContainer.current().resolve(TelemetryProtocol)
@@ -359,8 +361,8 @@ def emit_and_exit(
     """
     if (not quiet) and (not command.startswith("history")):
         try:
-            from bijux_cli.services.history.contracts import HistoryProtocol
             from bijux_cli.app.di import DIContainer
+            from bijux_cli.services.history.contracts import HistoryProtocol
 
             hist = DIContainer.current().resolve(HistoryProtocol)
             hist.add(
@@ -453,7 +455,7 @@ def emit_error_and_exit(
     try:
         output = serializer.dumps(
             error_payload,
-            fmt=error_payload.get("format", "json"),
+            fmt=str(error_payload.get("format", "json")),
             pretty=False,
         ).rstrip("\n")
         print(output, file=sys.stderr, flush=True)
@@ -464,7 +466,12 @@ def emit_error_and_exit(
 
 def parse_global_flags() -> dict[str, Any]:
     """Parses global CLI flags from `sys.argv` before Typer dispatch."""
-    from bijux_cli.core.precedence import apply_parsed_flags, parse_global_flags as _parse
+    from bijux_cli.core.precedence import (
+        apply_parsed_flags,
+    )
+    from bijux_cli.core.precedence import (
+        parse_global_flags as _parse,
+    )
 
     def _bail(msg: str, failure: str, flags: dict[str, Any]) -> None:
         emit_error_and_exit(

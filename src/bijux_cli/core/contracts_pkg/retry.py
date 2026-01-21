@@ -11,7 +11,7 @@ network requests or other I/O-bound tasks.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from typing import Protocol, TypeVar, runtime_checkable
 
 T = TypeVar("T")
@@ -26,17 +26,15 @@ class RetryPolicyProtocol(Protocol):
     state.
     """
 
-    async def run(
-        self, supplier: Callable[[], Awaitable[T]], seconds: float = 1.0
-    ) -> T:
+    def run(self, supplier: Callable[[], T], seconds: float) -> T:
         """Runs an asynchronous operation with a retry policy.
 
         Implementations of this method will repeatedly call the `supplier`
         until it succeeds or the retry policy is exhausted.
 
         Args:
-            supplier (Callable[[], Awaitable[T]]): A no-argument function that
-                returns an awaitable (e.g., a coroutine).
+            supplier (Callable[[], T]): A no-argument function that returns a
+                result to retry.
             seconds (float): The timeout for each attempt in seconds.
 
         Returns:

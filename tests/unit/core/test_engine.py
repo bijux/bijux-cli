@@ -3,7 +3,6 @@
 
 """Unit tests for the core engine module."""
 
-
 from __future__ import annotations
 
 import os
@@ -14,14 +13,14 @@ from unittest.mock import patch
 
 import pytest
 
-from bijux_cli.core.contracts import RegistryProtocol
-from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.app.engine import Engine
-from bijux_cli.infra.telemetry import NoopTelemetry
+from bijux_cli.core.async_exec import run_awaitable
+from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
-from bijux_cli.services.logging.observability import Observability
+from bijux_cli.infra.telemetry import NoopTelemetry
 from bijux_cli.services.history import History
+from bijux_cli.services.logging.observability import Observability
 
 
 class FakeRegistry(RegistryProtocol):
@@ -121,7 +120,9 @@ def make_plugin_dir(base: Path, name: str) -> Path:
     return folder
 
 
-@pytest.mark.parametrize(("value", "expected"), [("30.0", 30.0), ("5", 5.0), ("7", 7.0)])
+@pytest.mark.parametrize(
+    ("value", "expected"), [("30.0", 30.0), ("5", 5.0), ("7", 7.0)]
+)
 def test_timeout_valid_values(value: str, expected: float) -> None:
     """Test that valid timeout configuration values are parsed correctly."""
     di = FakeDI()
@@ -142,9 +143,11 @@ def test_timeout_invalid_raises_valueerror() -> None:
     """Test that an invalid timeout configuration raises a ValueError."""
     di = FakeDI()
     eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    with patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": "oops"}):
-        with pytest.raises(ValueError, match="Invalid timeout configuration"):
-            eng._timeout()
+    with (
+        patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": "oops"}),
+        pytest.raises(ValueError, match="Invalid timeout configuration"),
+    ):
+        eng._timeout()
 
 
 @pytest.mark.asyncio

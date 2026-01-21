@@ -26,9 +26,8 @@ from typing import Any
 import typer
 from typer import Context
 
-from bijux_cli.core.async_exec import AsyncTyper
-
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
+from bijux_cli.core.async_exec import AsyncTyper
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -56,7 +55,7 @@ def _collect_names(container: Mapping[Any, Any] | Iterable[Any]) -> list[str]:
     return names
 
 
-def _existing_top_level_names(app: AsyncTyper) -> set[str]:
+def _existing_top_level_names(app: typer.Typer) -> set[str]:
     """Return the set of names already registered at the top level.
 
     Args:
@@ -97,7 +96,7 @@ def maybe_default_to_repl(ctx: Context) -> None:
         raise typer.Exit(code=2)
 
 
-def _log_registered(app: AsyncTyper) -> None:
+def _log_registered(app: typer.Typer) -> None:
     """Log the names of registered core commands and groups at debug level.
 
     Args:

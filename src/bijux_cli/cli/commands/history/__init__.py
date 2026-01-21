@@ -24,10 +24,9 @@ from __future__ import annotations
 
 import typer
 
-from bijux_cli.core.async_exec import AsyncTyper
-
 from bijux_cli.cli.commands.history.clear import clear_history
 from bijux_cli.cli.commands.history.service import history
+from bijux_cli.core.async_exec import AsyncTyper
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 

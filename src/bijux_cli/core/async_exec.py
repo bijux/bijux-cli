@@ -6,7 +6,16 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from bijux_cli.app.runtime import (  # pragma: no cover
+        AsyncTyper,
+        adapt_typer,
+        command_adapter,
+        run_awaitable,
+        run_command,
+    )
 
 __all__ = [
     "AsyncTyper",

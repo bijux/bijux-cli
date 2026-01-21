@@ -32,9 +32,9 @@ from typing import Any
 from injector import inject
 
 from bijux_cli.core.contracts import ObservabilityProtocol
-from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.core.errors import CommandError
 from bijux_cli.infra.paths import CONFIG_FILE
+from bijux_cli.services.config.contracts import ConfigProtocol
 
 yaml: Any
 try:

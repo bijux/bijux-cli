@@ -24,9 +24,6 @@ import typer
 import bijux_cli.cli.commands.repl as mod
 
 
-
-
-
 class _FakeResult:
     """Fake result object resembling Typer's runner result."""
 
@@ -191,7 +188,10 @@ def test_run_piped_flow_and_messages(
     out = capsys.readouterr()
     assert "Available topics: …" in out.out
     assert "topicX" in out.out
-    assert '"failure": "missing_argument"' in out.out or '"failure":"missing_argument"' in out.out
+    assert (
+        '"failure": "missing_argument"' in out.out
+        or '"failure":"missing_argument"' in out.out
+    )
     assert ["memory", "list"] in calls
     assert ["status", "-q"] in calls
     assert "No such command 'bad'. Did you mean 'status'?" in (out.err or out.out)
@@ -453,9 +453,7 @@ def test_invoke_history_prints_empty_entries_pretty(
     _install_fake_cli_module(build_fake_root_app())
     out, err, m = _capture_io()
     try:
-        code = mod._invoke(
-            ["history"], repl_quiet=False
-        )
+        code = mod._invoke(["history"], repl_quiet=False)
         assert code == 0
         s = out.getvalue().strip()
         assert s.startswith("{")
@@ -592,12 +590,7 @@ def test_invoke_config_list_forces_no_pretty(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _RecordingFakeRunner(calls))
     out, _, m = _capture_io()
     try:
-        assert (
-            mod._invoke(
-                ["config", "list"], repl_quiet=False
-            )
-            == 0
-        )
+        assert mod._invoke(["config", "list"], repl_quiet=False) == 0
         assert "CONFIG-LIST-COMPACT" in out.getvalue()
         assert any(c[:2] == ["config", "list"] and "--no-pretty" in c for c in calls)
     finally:
@@ -609,7 +602,9 @@ def test_completer_subcommands_params_help_placeholder_and_dummy(
 ) -> None:
     """Complete group subcommands, params, help, and placeholders."""
     comp = make_fake_completer()
-    monkeypatch.setattr(sys.modules["bijux_cli.cli.commands.repl"].typer, "Typer", FakeApp)
+    monkeypatch.setattr(
+        sys.modules["bijux_cli.cli.commands.repl"].typer, "Typer", FakeApp
+    )
     assert "set" in complete_text(comp, "config ")
     opts = complete_text(comp, "status --")
     assert "--no-pretty" in opts
@@ -674,9 +669,7 @@ def test_invoke_history_non_empty_prints_raw(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(
-            ["history"], repl_quiet=False
-        )
+        code = mod._invoke(["history"], repl_quiet=False)
         assert code == 0
         assert '"y"' in out.getvalue()
         assert err.getvalue() == ""
@@ -706,9 +699,7 @@ def test_completer_handles_shlex_valueerror() -> None:
 def test_completer_find_longest_prefix() -> None:
     """Prefer the longest matching prefix in finder."""
     comp = make_fake_completer()
-    obj, rem = comp._find(
-        ["config", "set", "foo"]
-    )
+    obj, rem = comp._find(["config", "set", "foo"])
     assert getattr(obj, "name", None) == "set"
     assert rem == ["foo"]
 
@@ -779,9 +770,7 @@ def test_invoke_history_empty_quiet_skips_pretty(
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(
-            ["history"], repl_quiet=True
-        )
+        code = mod._invoke(["history"], repl_quiet=True)
         assert code == 0
         assert out.getvalue() == ""
         assert err.getvalue() == ""
@@ -1017,6 +1006,7 @@ def test_main_guard_invokes_repl_app_without_side_effects(
             return deco
 
     import click
+
     fake_typer = _types.SimpleNamespace(
         Typer=_DummyTyper,
         Option=lambda default=False, *a, **k: default,
@@ -1025,18 +1015,18 @@ def test_main_guard_invokes_repl_app_without_side_effects(
     )
     monkeypatch.setitem(_sys.modules, "typer", fake_typer)
     import bijux_cli.core.async_exec as async_exec
+
     monkeypatch.setattr(async_exec, "run_command", lambda *a, **k: None)
     monkeypatch.setattr(_sys.stdin, "isatty", lambda: True)
     _sys.modules.pop("bijux_cli.cli.commands.repl", None)
     old_argv = _sys.argv[:]
     _sys.argv = ["bijux_cli.cli.commands.repl"]
-    try:
-        try:
-            runpy.run_module("bijux_cli.cli.commands.repl", run_name="__main__", alter_sys=True)
-        except SystemExit as exc:
-            assert exc.code in (0, None)
-    finally:
-        _sys.argv = old_argv
+    with pytest.raises(SystemExit) as excinfo:
+        runpy.run_module(
+            "bijux_cli.cli.commands.repl", run_name="__main__", alter_sys=True
+        )
+    assert excinfo.value.code in (0, None)
+    _sys.argv = old_argv
 
 
 @pytest.mark.asyncio

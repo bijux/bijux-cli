@@ -3,11 +3,10 @@
 
 """Unit tests for the commands' module init."""
 
-
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from typer import Typer
@@ -106,7 +105,7 @@ def test_register_dynamic_plugins_via_entry_points(
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.1.0",
-        entrypoint=FakeEntryPoint("good_ep", DummyTyper()),
+        entrypoint=cast(Any, FakeEntryPoint("good_ep", DummyTyper())),
     )
     bad = PluginMetadata(
         name="bad_ep",
@@ -114,7 +113,7 @@ def test_register_dynamic_plugins_via_entry_points(
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.1.0",
-        entrypoint=FakeEntryPoint("bad_ep", object()),
+        entrypoint=cast(Any, FakeEntryPoint("bad_ep", object())),
     )
 
     monkeypatch.setattr(

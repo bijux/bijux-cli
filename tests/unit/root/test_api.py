@@ -17,20 +17,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bijux_cli.app.api import BijuxAPI, _consume_task
+from bijux_cli.app.di import DIContainer
+from bijux_cli.app.engine import Engine
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.app.di import DIContainer
-from bijux_cli.app.engine import Engine
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:coroutine .* was never awaited:RuntimeWarning"
 )
-
-
 
 
 @pytest.fixture
@@ -109,6 +107,7 @@ def test_schedule_event_coro_with_loop(bijux_api: BijuxAPI) -> None:
     mock_coro_func = AsyncMock()
     bijux_api._tel.event.return_value = mock_coro_func()  # type: ignore[attr-defined]
     with patch("asyncio.get_running_loop") as mock_loop:
+
         def _run(coro: Any) -> None:
             loop = asyncio.new_event_loop()
             try:
@@ -454,9 +453,7 @@ def test_load_plugin_deregisters_existing_plugin_v3(
     mock_plugin_object = MagicMock()
     mock_plugin_object.startup = MagicMock()
 
-    with patch(
-        "bijux_cli.plugins.load_plugin", return_value=mock_plugin_object
-    ):
+    with patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin_object):
         bijux_api.load_plugin(plugin_file)
 
     mock_registry.has.assert_called_once_with(plugin_file.stem)
@@ -757,7 +754,7 @@ def test_await_maybe_ensure_future_fallback_and_close(
 
     with patch.object(asyncio, "ensure_future", _ensure_future):
         out = BijuxAPI._await_maybe(obj, want_result=True)
-    assert out is False
+    assert out is None
     assert obj.closed is True
 
 

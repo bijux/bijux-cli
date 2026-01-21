@@ -17,7 +17,6 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 import pytest
-
 from tests.e2e.conftest import run_cli
 from tests.e2e.history.conftest import (
     MAX_EXAMPLES,

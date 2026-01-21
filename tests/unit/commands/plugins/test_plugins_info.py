@@ -44,7 +44,9 @@ def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda _: (_ for _ in ()).throw(PluginMetadataError("not found")),
     )
     with pytest.raises(DummyExitError) as exc:
-        info_plugin("foo", fmt="json", quiet=False, verbose=False, pretty=False, debug=False)
+        info_plugin(
+            "foo", fmt="json", quiet=False, verbose=False, pretty=False, debug=False
+        )
     assert exc.value.code == 1
     assert exc.value.payload["failure"] == "metadata_error"
 

@@ -27,13 +27,13 @@ from typing import Any, cast
 
 from packaging.specifiers import SpecifierSet
 
-from bijux_cli.version import version as cli_version
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
 from bijux_cli.core.errors import BijuxError
+from bijux_cli.version import version as cli_version
 
 logger = logging.getLogger(__name__)
 

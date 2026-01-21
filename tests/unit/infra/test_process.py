@@ -3,7 +3,6 @@
 
 """Unit tests for the infra process module."""
 
-
 from __future__ import annotations
 
 import sys

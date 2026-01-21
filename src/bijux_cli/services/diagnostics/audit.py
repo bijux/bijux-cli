@@ -20,10 +20,10 @@ from typing import Any
 
 from injector import inject
 
-from bijux_cli.services.diagnostics.contracts import AuditProtocol
 from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.errors import BijuxError
 from bijux_cli.infra.process import validate_command
+from bijux_cli.services.diagnostics.contracts import AuditProtocol
 
 
 class _BaseAudit(AuditProtocol):

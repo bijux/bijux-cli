@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 
 from bijux_cli.plugins.metadata import (
+    PluginMetadataError,
     discover_plugins,
     invalidate_plugin_cache,
-    PluginMetadataError,
 )
 
 
@@ -23,7 +23,9 @@ def _write_plugin(dir_path: Path, payload: dict[str, object]) -> None:
     (dir_path / "plugin.json").write_text(json.dumps(payload), encoding="utf-8")
 
 
-def test_discover_plugins_requires_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_discover_plugins_requires_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     plugins_dir = tmp_path / "plugins"
     plugins_dir.mkdir()
     (plugins_dir / "broken").mkdir()

@@ -27,30 +27,16 @@ class EmitterProtocol(Protocol):
         self,
         payload: Any,
         *,
-        fmt: str | None = None,
-        pretty: bool = False,
-        level: str = "info",
-        message: str = "Emitting output",
-        output: str | None = None,
+        fmt: str | None,
+        pretty: bool,
+        level: str,
+        message: str,
+        output: str | None,
         **context: Any,
     ) -> None:
-        """Serializes and emits a structured data payload.
-
-        Args:
-            payload (Any): The data payload to serialize and emit.
-            fmt (OutputFormat | None): The output format for serialization.
-            pretty (bool): If True, pretty-prints the output with indentation.
-            level (str): The log level for any accompanying message.
-            message (str): A descriptive message for logging.
-            output (str | None): An optional pre-formatted string to emit
-                instead of serializing the payload.
-            **context (Any): Additional key-value pairs for structured logging.
-
-        Returns:
-            None:
-        """
+        """Serialize and emit a structured payload."""
         ...
 
     def flush(self) -> None:
-        """Flushes any buffered output to its destination stream."""
+        """Flush any buffered output."""
         ...

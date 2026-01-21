@@ -12,9 +12,9 @@ unavailable.
 
 from __future__ import annotations
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import emit_error_and_exit
 from bijux_cli.services.diagnostics.contracts import MemoryProtocol
-from bijux_cli.app.di import DIContainer
 
 
 def resolve_memory_service(

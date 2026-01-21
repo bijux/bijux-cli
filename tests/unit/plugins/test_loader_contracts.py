@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 
 from bijux_cli.plugins.loader import activate_plugin
@@ -25,7 +27,7 @@ def test_activate_plugin_requires_typer_app() -> None:
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.0.0",
-        entrypoint=_BadEntryPoint(),
+        entrypoint=cast(Any, _BadEntryPoint()),
     )
 
     with pytest.raises(PluginMetadataError):

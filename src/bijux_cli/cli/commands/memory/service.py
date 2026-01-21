@@ -238,9 +238,7 @@ def memory(
             cmd = getattr(ctx.command, "get_command", None)
             sub_cmd = cmd(ctx, ctx.invoked_subcommand) if callable(cmd) else None
             if sub_cmd and hasattr(sub_cmd, "get_help"):
-                typer.echo(
-                    sub_cmd.get_help(ctx)
-                )
+                typer.echo(sub_cmd.get_help(ctx))
             else:
                 typer.echo(ctx.get_help())
         else:

@@ -3,7 +3,6 @@
 
 """Unit tests for the services audit module."""
 
-
 from __future__ import annotations
 
 from unittest.mock import Mock, call, patch
@@ -122,7 +121,10 @@ def test_real_run_success(mock_log: Mock, mock_tel: Mock) -> None:
     mock_proc.stderr = b""
     with (
         patch("subprocess.run", return_value=mock_proc) as mock_run,
-        patch("bijux_cli.services.diagnostics.audit.validate_command", return_value=safe_cmd),
+        patch(
+            "bijux_cli.services.diagnostics.audit.validate_command",
+            return_value=safe_cmd,
+        ),
     ):
         rc, out, err = audit.run(cmd, executor="exec")
         assert rc == 0
@@ -166,7 +168,10 @@ def test_real_run_exec_fail(mock_log: Mock, mock_tel: Mock) -> None:
     safe_cmd = cmd
     with (
         patch("subprocess.run", side_effect=Exception("exec fail")),
-        patch("bijux_cli.services.diagnostics.audit.validate_command", return_value=safe_cmd),
+        patch(
+            "bijux_cli.services.diagnostics.audit.validate_command",
+            return_value=safe_cmd,
+        ),
         pytest.raises(BijuxError, match="exec fail"),
     ):
         audit.run(cmd, executor="exec")

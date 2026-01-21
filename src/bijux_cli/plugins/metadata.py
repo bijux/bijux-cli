@@ -5,20 +5,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
 import importlib.metadata as im
 import json
+from pathlib import Path
+from typing import Any, cast
 
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.utils import canonicalize_name
 
-from bijux_cli.version import __version__ as cli_version
 from bijux_cli.cli.commands.plugins.validation import PLUGIN_NAME_RE
 from bijux_cli.core.errors import BijuxError
 from bijux_cli.plugins import get_plugins_dir
+from bijux_cli.version import __version__ as cli_version
 
 
 class PluginMetadataError(BijuxError):
@@ -27,6 +28,8 @@ class PluginMetadataError(BijuxError):
 
 @dataclass(frozen=True)
 class PluginMetadata:
+    """Holds metadata for a discovered plugin."""
+
     name: str
     version: str
     enabled: bool
@@ -78,7 +81,11 @@ def _plugin_meta_from_dist(ep: im.EntryPoint) -> PluginMetadata:
                 http_status=400,
             ) from exc
 
-    dist_name = dist.metadata.get("Name") or dist.name
+    meta = dist.metadata
+    if hasattr(meta, "get"):
+        dist_name = cast(Mapping[str, str], meta).get("Name") or dist.name
+    else:
+        dist_name = dist.name
     requires = dist.metadata.get_all("Requires-Dist") or []
     spec = None
     for req_line in requires:
@@ -204,6 +211,7 @@ def discover_plugins(*, strict: bool = True) -> list[PluginMetadata]:
 
 
 def get_plugin_metadata(name: str) -> PluginMetadata:
+    """Return metadata for a plugin by name."""
     for meta in discover_plugins():
         if meta.name == name:
             return meta
@@ -211,6 +219,7 @@ def get_plugin_metadata(name: str) -> PluginMetadata:
 
 
 def list_plugins() -> list[dict[str, Any]]:
+    """List plugin metadata as dictionaries."""
     return [
         {
             "name": meta.name,
@@ -222,6 +231,7 @@ def list_plugins() -> list[dict[str, Any]]:
 
 
 def plugins_for_package(package: str) -> list[PluginMetadata]:
+    """Return plugins belonging to a package name."""
     pkg = canonicalize_name(package)
     return [
         meta

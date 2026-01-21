@@ -3,7 +3,6 @@
 
 """Unit tests for the docs command."""
 
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -485,7 +484,9 @@ def test_docs_writes_yaml_and_emit(
     monkeypatch.setattr(
         docs_mod,
         "_resolve_docs_service",
-        lambda: FakeDocsService(render_value=yaml.safe_dump({"foo": "bar"}, sort_keys=False)),
+        lambda: FakeDocsService(
+            render_value=yaml.safe_dump({"foo": "bar"}, sort_keys=False)
+        ),
     )
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None

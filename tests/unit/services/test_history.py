@@ -3,8 +3,6 @@
 
 """Unit tests for the services history module."""
 
-
-
 from __future__ import annotations
 
 import errno
@@ -18,7 +16,6 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from bijux_cli.services.logging.observability import Observability
 from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.services.history import (
     _MAX_IN_MEMORY,
@@ -31,6 +28,7 @@ from bijux_cli.services.history import (
     _maybe_simulate_disk_full,
     _now,
 )
+from bijux_cli.services.logging.observability import Observability
 
 
 @pytest.fixture

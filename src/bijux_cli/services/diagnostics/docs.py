@@ -11,13 +11,13 @@ integrates with observability and telemetry services to log its activities.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import os
 from pathlib import Path
 from typing import Any
 
 from injector import inject
 
-from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     SerializerProtocol,
@@ -25,6 +25,9 @@ from bijux_cli.core.contracts import (
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.diagnostics.contracts import DocsProtocol
+
+
 class Docs(DocsProtocol):
     """A service for writing API specification documents to disk.
 
@@ -65,7 +68,7 @@ class Docs(DocsProtocol):
         self._root.mkdir(exist_ok=True, parents=True)
 
     def render(
-        self, spec: dict[str, Any], *, fmt: OutputFormat, pretty: bool = False
+        self, spec: Mapping[str, Any], *, fmt: OutputFormat, pretty: bool = False
     ) -> str:
         """Renders a specification dictionary to a string in the given format.
 
@@ -88,7 +91,7 @@ class Docs(DocsProtocol):
 
     def write(
         self,
-        spec: dict[str, Any],
+        spec: Mapping[str, Any],
         *,
         fmt: OutputFormat = OutputFormat.JSON,
         name: str = "spec",
@@ -111,7 +114,7 @@ class Docs(DocsProtocol):
 
     def write_sync(
         self,
-        spec: dict[str, Any],
+        spec: Mapping[str, Any],
         fmt: OutputFormat,
         name: str | Path,
         pretty: bool = False,
@@ -140,7 +143,7 @@ class Docs(DocsProtocol):
             final_path.parent.mkdir(parents=True, exist_ok=True)
             content = self.render(spec, fmt=fmt, pretty=pretty)
             final_path.write_text(content, encoding="utf-8")
-            self._observability.log("info", f"Wrote docs to {final_path}")
+            self._observability.log("info", f"Wrote docs to {final_path}", extra={})
             self._telemetry.event(
                 "docs_written", {"path": str(final_path), "format": fmt.value}
             )

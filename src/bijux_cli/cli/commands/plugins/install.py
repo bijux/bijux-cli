@@ -106,7 +106,7 @@ def install_plugin(
         )
 
     if dry_run:
-        payload = {"status": "dry-run", "package": name}
+        payload: dict[str, object] = {"status": "dry-run", "package": name}
     else:
         invalidate_plugin_cache()
         cmd = [sys.executable, "-m", "pip", "install", name]
@@ -114,7 +114,12 @@ def install_plugin(
             cmd.append("--upgrade")
         env = os.environ.copy()
         env.setdefault("PIP_DISABLE_PIP_VERSION_CHECK", "1")
-        proc = subprocess.run(cmd, env=env, capture_output=True, text=True)
+        proc = subprocess.run(  # noqa: S603
+            cmd,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
             emit_error_and_exit(

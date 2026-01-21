@@ -14,9 +14,9 @@ from typing import Any, NoReturn
 import pytest
 from typer.testing import CliRunner
 
+import bijux_cli.cli.commands.plugins.uninstall as uninstall_mod
 import bijux_cli.cli.root as cli
 from bijux_cli.cli.root import app as cli_app
-import bijux_cli.cli.commands.plugins.uninstall as uninstall_mod
 from bijux_cli.plugins.metadata import PluginMetadata
 
 

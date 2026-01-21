@@ -31,7 +31,8 @@ def test_register_default_services_100pct(
             return_value=sentinel_audit_obj,
         ) as mock_get_audit,
         patch(
-            "bijux_cli.services.logging.observability.Observability.__init__", return_value=None
+            "bijux_cli.services.logging.observability.Observability.__init__",
+            return_value=None,
         ) as mock_obs_init,
         patch(
             "bijux_cli.services.logging.observability.Observability.log",
@@ -70,7 +71,8 @@ def test_register_default_services_100pct(
             "bijux_cli.plugins.registry.Registry.__init__", return_value=None
         ) as mock_registry_init,
         patch(
-            "bijux_cli.services.diagnostics.audit.DryRunAudit.__init__", return_value=None
+            "bijux_cli.services.diagnostics.audit.DryRunAudit.__init__",
+            return_value=None,
         ) as mock_dry_audit_init,
         patch(
             "bijux_cli.services.diagnostics.audit.RealAudit.__init__", return_value=None
@@ -88,6 +90,7 @@ def test_register_default_services_100pct(
             "bijux_cli.services.diagnostics.memory.Memory.__init__", return_value=None
         ) as mock_memory_init,
     ):
+        import bijux_cli.app.context as core_context
         from bijux_cli.core.contracts import (
             ContextProtocol,
             EmitterProtocol,
@@ -98,30 +101,29 @@ def test_register_default_services_100pct(
             SerializerProtocol,
             TelemetryProtocol,
         )
-        from bijux_cli.services.config.contracts import ConfigProtocol
-        from bijux_cli.services.diagnostics.contracts import (
-            AuditProtocol,
-            DocsProtocol,
-            DoctorProtocol,
-            MemoryProtocol,
-        )
-        from bijux_cli.services.history.contracts import HistoryProtocol
-        from bijux_cli.services.plugins.contracts import PluginConfig
-        from bijux_cli.services.diagnostics.contracts import DiagnosticsConfig
-        import bijux_cli.app.context as core_context
         import bijux_cli.infra.emitter as infra_emitter
-        import bijux_cli.services.logging.observability as infra_obs
         import bijux_cli.infra.process as infra_process
         import bijux_cli.infra.retry as infra_retry
         import bijux_cli.infra.serializer as infra_serializer
         import bijux_cli.infra.telemetry as infra_tel
-        import bijux_cli.services.diagnostics.audit as svc_audit
+        import bijux_cli.plugins.registry as svc_registry
         import bijux_cli.services.config as svc_config
+        from bijux_cli.services.config.contracts import ConfigProtocol
+        import bijux_cli.services.diagnostics.audit as svc_audit
+        from bijux_cli.services.diagnostics.contracts import (
+            AuditProtocol,
+            DiagnosticsConfig,
+            DocsProtocol,
+            DoctorProtocol,
+            MemoryProtocol,
+        )
         import bijux_cli.services.diagnostics.docs as svc_docs
         import bijux_cli.services.diagnostics.doctor as svc_doctor
-        import bijux_cli.services.history as svc_history
         import bijux_cli.services.diagnostics.memory as svc_memory
-        import bijux_cli.plugins.registry as svc_registry
+        import bijux_cli.services.history as svc_history
+        from bijux_cli.services.history.contracts import HistoryProtocol
+        import bijux_cli.services.logging.observability as infra_obs
+        from bijux_cli.services.plugins.contracts import PluginConfig
 
         logging_config = LoggingConfig(
             debug=debug,

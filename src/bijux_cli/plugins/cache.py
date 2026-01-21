@@ -3,6 +3,8 @@
 
 """Plugin cache helpers (placeholder)."""
 
+from __future__ import annotations
+
 
 def invalidate() -> None:
     """Placeholder for cache invalidation."""

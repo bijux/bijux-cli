@@ -3,7 +3,6 @@
 
 """Unit tests for the infra emitter module."""
 
-
 from __future__ import annotations
 
 import sys
@@ -12,9 +11,9 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.infra.emitter import ConsoleEmitter
-from bijux_cli.core.contracts import TelemetryProtocol
 
 
 @pytest.fixture
@@ -119,7 +118,9 @@ def test_emit_debug_print(
 
 
 @patch("bijux_cli.infra.emitter.serializer_for")
-def test_emit_quiet_skip(mock_serializer_for: MagicMock, emitter: ConsoleEmitter) -> None:
+def test_emit_quiet_skip(
+    mock_serializer_for: MagicMock, emitter: ConsoleEmitter
+) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
     emitter._quiet = True
     emitter.emit({}, level="info")

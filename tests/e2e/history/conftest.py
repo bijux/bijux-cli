@@ -80,9 +80,7 @@ def golden_dir() -> Path:
 
 
 @pytest.fixture(autouse=True)
-def _clean_env(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def _clean_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Set up a clean, isolated environment for each test.
 
     This auto-use fixture ensures a deterministic environment by setting a consistent

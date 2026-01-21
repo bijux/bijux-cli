@@ -15,7 +15,7 @@ def parse_global_flags(
     on_error: Callable[[str, str, dict[str, Any]], None],
 ) -> tuple[dict[str, Any], list[str]]:
     """Parse global CLI flags from argv and return flags + remaining args."""
-    help_present = any(token in ("-h", "--help") for token in argv)
+    help_present = any(flag in ("-h", "--help") for flag in argv)
     flags: dict[str, Any] = {
         "help": False,
         "quiet": False,
@@ -28,22 +28,22 @@ def parse_global_flags(
     }
     retained: list[str] = []
     it = iter(argv)
-    for token in it:
-        if token in ("-h", "--help"):
+    for flag in it:
+        if flag in ("-h", "--help"):
             flags["help"] = True
-            retained.append(token)
+            retained.append(flag)
             continue
         if help_present:
-            retained.append(token.lstrip("-"))
+            retained.append(flag.lstrip("-"))
             continue
-        elif token in ("-q", "--quiet"):
+        elif flag in ("-q", "--quiet"):
             flags["quiet"] = True
-        elif token in ("-d", "--debug"):
+        elif flag in ("-d", "--debug"):
             flags["debug"] = True
             flags["verbose"] = True
-        elif token in ("-v", "--verbose"):
+        elif flag in ("-v", "--verbose"):
             flags["verbose"] = True
-        elif token in ("-f", "--format"):
+        elif flag in ("-f", "--format"):
             try:
                 flags["format"] = next(it)
             except StopIteration:
@@ -52,13 +52,13 @@ def parse_global_flags(
             if flags["format"] not in ("json", "yaml"):
                 on_error("Invalid output format.", "invalid_format", flags)
                 break
-        elif token == "--log-level":
+        elif flag == "--log-level":
             try:
                 flags["log_level"] = next(it)
             except StopIteration:
                 on_error("Missing value for --log-level.", "missing_argument", flags)
                 break
-        elif token == "--color":
+        elif flag == "--color":
             try:
                 flags["color"] = next(it)
             except StopIteration:
@@ -67,12 +67,12 @@ def parse_global_flags(
             if flags["color"] not in ("auto", "always", "never"):
                 on_error("Invalid color mode.", "invalid_color", flags)
                 break
-        elif token == "--pretty":
+        elif flag == "--pretty":
             flags["pretty"] = True
-        elif token == "--no-pretty":
+        elif flag == "--no-pretty":
             flags["pretty"] = False
         else:
-            retained.append(token)
+            retained.append(flag)
     return flags, retained
 
 

@@ -5,8 +5,6 @@
 
 # mypy: disable-error-code="union-attr"
 
-
-
 from __future__ import annotations
 
 import builtins
@@ -20,8 +18,8 @@ from typing import Any, cast
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.cli.root import app as cli_app
 import bijux_cli.cli.commands.plugins.scaffold as scaffold_mod
+from bijux_cli.cli.root import app as cli_app
 
 
 @pytest.fixture
@@ -442,9 +440,7 @@ def captured() -> dict[str, Any]:
 
 
 @pytest.fixture(autouse=True)
-def _stub_out(
-    monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]
-) -> None:
+def _stub_out(monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]) -> None:
     """Stub out command runners and error emitters for tests."""
 
     def fake_new_run_command(**kwargs: Any) -> None:

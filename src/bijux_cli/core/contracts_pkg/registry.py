@@ -28,8 +28,8 @@ class RegistryProtocol(Protocol):
         name: str,
         plugin: object,
         *,
-        alias: str | None = None,
-        version: str | None = None,
+        alias: str | None,
+        version: str | None,
     ) -> None:
         """Registers a plugin with the registry.
 

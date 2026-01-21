@@ -3,6 +3,8 @@
 
 """Help command facade."""
 
+from __future__ import annotations
+
 from bijux_cli.cli.commands.help import help_app
 
 __all__ = ["help_app"]

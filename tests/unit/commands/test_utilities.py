@@ -17,6 +17,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
@@ -30,9 +31,8 @@ from bijux_cli.cli.commands.utilities import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.services.history.contracts import HistoryProtocol
-from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.services.history.contracts import HistoryProtocol
 
 
 @pytest.fixture
@@ -264,7 +264,8 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
     """Test a successful command execution via new_run_command."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags",
+            return_value="json",
         ),
         patch("bijux_cli.cli.commands.utilities.emit_and_exit") as mock_emit_exit,
     ):
@@ -328,9 +329,12 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
     """Test command execution where the payload builder fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_error_exit,
+        patch(
+            "bijux_cli.cli.commands.utilities.emit_error_and_exit"
+        ) as mock_error_exit,
     ):
 
         def builder(include: bool) -> dict[str, Any]:
@@ -782,8 +786,9 @@ def test_emit_error_and_exit_json() -> None:
 
 def test_emit_error_and_exit_include_runtime() -> None:
     """Test that runtime info is included in error payload when requested."""
-    with patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory, patch(
-        "builtins.print"
+    with (
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
+        patch("builtins.print"),
     ):
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
@@ -798,8 +803,9 @@ def test_emit_error_and_exit_include_runtime() -> None:
 
 def test_emit_error_and_exit_extra() -> None:
     """Test that extra data can be added to the error payload."""
-    with patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory, patch(
-        "builtins.print"
+    with (
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
+        patch("builtins.print"),
     ):
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"error": "test", "extra": "data"}\n'
@@ -961,7 +967,8 @@ def test_parse_global_flags_unknown_help() -> None:
 def test_list_installed_plugins_non_exist() -> None:
     """Test listing plugins when the plugins directory does not exist."""
     with patch(
-        "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=Path("/non_exist")
+        "bijux_cli.cli.commands.utilities.get_plugins_dir",
+        return_value=Path("/non_exist"),
     ):
         assert list_installed_plugins() == []
 
@@ -971,7 +978,9 @@ def test_list_installed_plugins_symlink_loop() -> None:
     mock_path = MagicMock()
     mock_path.resolve.side_effect = RuntimeError
     with (
-        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=mock_path),
+        patch(
+            "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=mock_path
+        ),
         pytest.raises(RuntimeError, match="Symlink loop"),
     ):
         list_installed_plugins()
@@ -982,7 +991,9 @@ def test_list_installed_plugins_not_dir(tmp_path: Path) -> None:
     file_path = tmp_path / "file"
     file_path.touch()
     with (
-        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=file_path),
+        patch(
+            "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=file_path
+        ),
         pytest.raises(RuntimeError, match="not a directory"),
     ):
         list_installed_plugins()
@@ -991,7 +1002,9 @@ def test_list_installed_plugins_not_dir(tmp_path: Path) -> None:
 def test_list_installed_plugins_invalid_access(tmp_path: Path) -> None:
     """Test that an error is raised if the plugins directory is inaccessible."""
     with (
-        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path),
+        patch(
+            "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path
+        ),
         patch.object(Path, "resolve", side_effect=OSError("access denied")),
         pytest.raises(RuntimeError, match="invalid or inaccessible"),
     ):
@@ -1008,7 +1021,9 @@ def test_list_installed_plugins_success(tmp_path: Path) -> None:
     (plugin2 / "plugin.py").touch()
     invalid = tmp_path / "invalid"
     invalid.mkdir()
-    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch(
+        "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path
+    ):
         plugins = list_installed_plugins()
         assert plugins == ["plugin1", "plugin2"]
 
@@ -1020,7 +1035,9 @@ def test_list_installed_plugins_symlink_dir(tmp_path: Path) -> None:
     (real / "plugin.py").touch()
     sym = tmp_path / "sym"
     sym.symlink_to(real)
-    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch(
+        "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path
+    ):
         plugins = list_installed_plugins()
         assert "sym" in plugins
 
@@ -1032,7 +1049,9 @@ def test_list_installed_plugins_ignore_errors(tmp_path: Path) -> None:
     (plugin / "plugin.py").touch()
     invalid = tmp_path / "invalid"
     invalid.touch()
-    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch(
+        "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path
+    ):
         plugins = list_installed_plugins()
         assert plugins == ["plugin"]
 
@@ -1043,11 +1062,15 @@ def test_handle_list_plugins_success(
     """Test the successful execution of the list-plugins handler."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags",
+            return_value="json",
         ),
         patch(
             "bijux_cli.plugins.metadata.list_plugins",
-            return_value=[{"name": "p1", "version": "0.1.0", "enabled": True}, {"name": "p2", "version": "0.2.0", "enabled": True}],
+            return_value=[
+                {"name": "p1", "version": "0.1.0", "enabled": True},
+                {"name": "p2", "version": "0.2.0", "enabled": True},
+            ],
         ),
         patch("bijux_cli.cli.commands.utilities.new_run_command") as mock_run,
     ):
@@ -1079,7 +1102,8 @@ def test_handle_list_plugins_fail(
     """Test the failure path of the list-plugins handler."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags",
+            return_value="json",
         ),
         patch(
             "bijux_cli.plugins.metadata.list_plugins",

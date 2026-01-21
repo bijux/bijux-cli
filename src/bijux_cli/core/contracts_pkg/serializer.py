@@ -10,13 +10,11 @@ JSON or YAML format) and deserializing them back must implement.
 
 from __future__ import annotations
 
-from typing import Protocol, TypeVar, runtime_checkable
-
-T = TypeVar("T")
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
-class SerializerProtocol(Protocol[T]):
+class SerializerProtocol(Protocol):
     """Defines the contract for stateless, thread-safe object serialization.
 
     This interface specifies methods for serializing and deserializing objects
@@ -25,74 +23,34 @@ class SerializerProtocol(Protocol[T]):
 
     def dumps(
         self,
-        obj: T,
+        obj: Any,
         *,
-        fmt: str = "json",
-        pretty: bool = False,
+        fmt: str,
+        pretty: bool,
     ) -> str:
-        """Serializes an object to a string.
-
-        Args:
-            obj (T): The object to serialize.
-            fmt (OutputFormat): The output format. Defaults to `OutputFormat.JSON`.
-            pretty (bool): If True, formats the output for human readability.
-
-        Returns:
-            str: The serialized object as a string.
-        """
+        """Serialize an object to a string."""
         ...
 
     def dumps_bytes(
         self,
-        obj: T,
+        obj: Any,
         *,
-        fmt: str = "json",
-        pretty: bool = False,
+        fmt: str,
+        pretty: bool,
     ) -> bytes:
-        """Serializes an object to bytes.
-
-        Args:
-            obj (T): The object to serialize.
-            fmt (OutputFormat): The output format. Defaults to `OutputFormat.JSON`.
-            pretty (bool): If True, formats the output for human readability.
-
-        Returns:
-            bytes: The serialized object as bytes.
-        """
+        """Serialize an object to bytes."""
         ...
 
     def loads(
         self,
         data: str | bytes,
         *,
-        fmt: str = "json",
-        pretty: bool = False,
-    ) -> T:
-        """Deserializes data from a string or bytes into an object.
-
-        Args:
-            data (str | bytes): The string or bytes to deserialize.
-            fmt (OutputFormat): The format of the input data. Defaults to
-                `OutputFormat.JSON`.
-            pretty (bool): A hint that may affect parsing, though often unused
-                during deserialization.
-
-        Returns:
-            T: The deserialized object.
-        """
+        fmt: str,
+        pretty: bool,
+    ) -> Any:
+        """Deserialize data to an object."""
         ...
 
-    def emit(
-        self, payload: T, *, fmt: str = "json", pretty: bool = False
-    ) -> None:
-        """Serializes and emits a payload to standard output.
-
-        Args:
-            payload (T): The object to serialize and emit.
-            fmt (OutputFormat): The output format.
-            pretty (bool): If True, formats the output for human readability.
-
-        Returns:
-            None:
-        """
+    def emit(self, payload: Any, *, fmt: str, pretty: bool) -> None:
+        """Serialize and emit a payload."""
         ...

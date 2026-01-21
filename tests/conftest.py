@@ -30,9 +30,7 @@ os.environ.setdefault("BIJUXCLI_PLUGINS_DIR", str(_DEFAULT_PLUGINS_DIR))
 
 
 @pytest.fixture(autouse=True)
-def _reset_di_between_tests() -> (
-    Generator[None, None, None]
-):
+def _reset_di_between_tests() -> Generator[None, None, None]:
     """Resets the `DIContainer` singleton after each test.
 
     This autouse fixture ensures test isolation by clearing all registered
@@ -114,14 +112,14 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _isolate_plugins_dir(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
-) -> None:
+def _isolate_plugins_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     """Force tests to use an isolated plugins directory."""
     monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path / "plugins"))
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     """Apply unit/integration/night markers based on test location."""
     for item in items:
         path_str = str(item.fspath)

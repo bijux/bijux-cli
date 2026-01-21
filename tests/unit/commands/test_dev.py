@@ -3,8 +3,6 @@
 
 """Unit tests for the dev command."""
 
-
-
 from __future__ import annotations
 
 import json
@@ -18,7 +16,11 @@ from typer import Context
 import yaml
 
 import bijux_cli.cli.commands.dev as dev_pkg
-from bijux_cli.cli.commands.dev.di import _build_dev_di_payload, _key_to_name, dev_di_graph
+from bijux_cli.cli.commands.dev.di import (
+    _build_dev_di_payload,
+    _key_to_name,
+    dev_di_graph,
+)
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 
@@ -236,7 +238,9 @@ def test_dev_di_graph_output_yaml_writes_file(
         lambda include_runtime: dict(payload_in),
     )
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.new_run_command", lambda **_: None)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.di.new_run_command", lambda **_: None
+    )
 
     out_path = tmp_path / "di.yaml"
     dev_di_graph(

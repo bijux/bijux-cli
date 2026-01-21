@@ -14,7 +14,9 @@ import pytest
 from typer import Context
 
 from bijux_cli.cli.commands.history.clear import clear_history
-from bijux_cli.cli.commands.history.clear import resolve_history_service as clear_resolve
+from bijux_cli.cli.commands.history.clear import (
+    resolve_history_service as clear_resolve,
+)
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
 
 
@@ -328,7 +330,9 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -370,7 +374,9 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -412,7 +418,9 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -455,7 +463,9 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
             return_value=MagicMock(),
         ),
         patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -501,7 +511,9 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
             return_value=MagicMock(),
         ),
         patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -573,7 +585,9 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -654,7 +668,9 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
 def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
     """Test exception handling during history service resolution for the clear command."""
     with (
-        patch("bijux_cli.cli.commands.history.clear.DIContainer.current") as mock_current,
+        patch(
+            "bijux_cli.cli.commands.history.clear.DIContainer.current"
+        ) as mock_current,
         patch("bijux_cli.cli.commands.history.clear.emit_error_and_exit") as mock_emit,
     ):
         mock_di_instance = MagicMock()
@@ -709,7 +725,8 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
     fake.resolve.side_effect = RuntimeError("boom")
     with (
         patch(
-            "bijux_cli.cli.commands.history.service.DIContainer.current", return_value=fake
+            "bijux_cli.cli.commands.history.service.DIContainer.current",
+            return_value=fake,
         ) as _,
         patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as err,
     ):
@@ -891,7 +908,9 @@ def test_history_debug_flag_overrides() -> None:
 
 def test_history_invoked_subcommand_skips() -> None:
     """Test that history() returns early if a subcommand was invoked."""
-    with patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run:
+    with patch(
+        "bijux_cli.cli.commands.history.service.new_run_command"
+    ) as mock_new_run:
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = "some_sub"
         history(
@@ -921,7 +940,9 @@ def test_history_list_failure() -> None:
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
+        ) as mock_emit,
     ):
         svc = MagicMock()
         svc.list.side_effect = Exception("boom")

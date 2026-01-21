@@ -33,13 +33,13 @@ import sys
 
 import typer
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
     parse_global_flags,
 )
-from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -47,7 +47,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
+from bijux_cli.services.config.contracts import ConfigProtocol
 
 
 def set_config(
@@ -112,25 +112,24 @@ def set_config(
     fmt_lower = fmt.lower()
     command = "config set"
     if cfg_path:
-        with suppress(Exception):
-            with open(cfg_path, "a+") as fh:
-                try:
-                    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except OSError:
-                    emit_error_and_exit(
-                        "Config file is locked",
-                        code=1,
-                        failure="file_locked",
-                        command=command,
-                        fmt=fmt_lower,
-                        quiet=quiet,
-                        include_runtime=include_runtime,
-                        debug=debug,
-                        extra={"path": cfg_path},
-                    )
-                finally:
-                    with suppress(Exception):
-                        fcntl.flock(fh, fcntl.LOCK_UN)
+        with suppress(Exception), open(cfg_path, "a+") as fh:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                emit_error_and_exit(
+                    "Config file is locked",
+                    code=1,
+                    failure="file_locked",
+                    command=command,
+                    fmt=fmt_lower,
+                    quiet=quiet,
+                    include_runtime=include_runtime,
+                    debug=debug,
+                    extra={"path": cfg_path},
+                )
+            finally:
+                with suppress(Exception):
+                    fcntl.flock(fh, fcntl.LOCK_UN)
     if pair is None:
         if sys.stdin.isatty():
             emit_error_and_exit(

@@ -40,13 +40,13 @@ from typing import Any
 
 import typer
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
     validate_common_flags,
 )
-from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -54,7 +54,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
+from bijux_cli.services.history.contracts import HistoryProtocol
 
 
 def resolve_history_service(

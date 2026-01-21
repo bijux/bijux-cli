@@ -14,8 +14,9 @@ from typing import IO, Any
 from packaging.version import Version
 import pytest
 
-version_mod = importlib.import_module("bijux_cli.version")
 import bijux_cli.plugins as plugins
+
+version_mod = importlib.import_module("bijux_cli.version")
 
 
 def _reload_with(

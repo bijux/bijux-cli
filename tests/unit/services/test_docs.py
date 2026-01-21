@@ -3,7 +3,6 @@
 
 """Unit tests for the services docs module."""
 
-
 from __future__ import annotations
 
 import json
@@ -14,7 +13,6 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     SerializerProtocol,
@@ -22,6 +20,7 @@ from bijux_cli.core.contracts import (
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.services.diagnostics.docs import Docs
 
 
@@ -114,7 +113,9 @@ def test_init_none_root(
         assert d._root.name == "docs"
 
 
-def test_render_uses_serializer(docs: Docs, mock_serializer: SerializerProtocol) -> None:
+def test_render_uses_serializer(
+    docs: Docs, mock_serializer: SerializerProtocol
+) -> None:
     """Test that the render method calls the serializer adapter."""
     cast(Mock, mock_serializer).dumps.return_value = "serialized"
     spec = {"key": "value"}
@@ -192,7 +193,7 @@ def test_write_sync_logs(
     file_path = tmp_path / "test.json"
     path = docs.write_sync({}, OutputFormat.JSON, file_path)
     mock_observability.log.assert_called_with(  # type: ignore[attr-defined]
-        "info", f"Wrote docs to {path}"
+        "info", f"Wrote docs to {path}", extra={}
     )
     mock_telemetry.event.assert_called_with(  # type:ignore[attr-defined]
         "docs_written", {"path": str(path), "format": "json"}
