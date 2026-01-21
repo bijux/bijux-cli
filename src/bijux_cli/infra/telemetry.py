@@ -71,12 +71,15 @@ class NoopTelemetry:
     """No-op telemetry adapter."""
 
     def event(self, name: str | TelemetryEvent, payload: dict[str, Any]) -> None:
+        """Record a telemetry event and do nothing."""
         return None
 
     def flush(self) -> None:
+        """Flush buffered events (no-op)."""
         return None
 
     def enable(self) -> None:
+        """Enable telemetry (no-op)."""
         return None
 
 
@@ -84,18 +87,24 @@ class LoggingTelemetry:
     """Telemetry adapter that logs events via an observability sink."""
 
     def __init__(self, observability: Any) -> None:
+        """Initialize with an observability sink."""
         self._observability = observability
         self._buffer: list[tuple[str, dict[str, Any]]] = []
 
     def event(self, name: str | TelemetryEvent, payload: dict[str, Any]) -> None:
+        """Record and log a telemetry event."""
         event = name.value if isinstance(name, TelemetryEvent) else str(name)
         self._buffer.append((event, payload))
-        self._observability.log("debug", f"telemetry:{event}", extra={"event": event, **payload})
+        self._observability.log(
+            "debug", f"telemetry:{event}", extra={"event": event, **payload}
+        )
 
     def flush(self) -> None:
+        """Clear buffered telemetry events."""
         self._buffer.clear()
 
     def enable(self) -> None:
+        """Enable telemetry (no-op for logging adapter)."""
         return None
 
 

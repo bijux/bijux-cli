@@ -12,8 +12,8 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.cli.root import app as cli_app
 import bijux_cli.cli.commands.plugins.install as install_mod
+from bijux_cli.cli.root import app as cli_app
 
 
 @pytest.fixture
@@ -72,15 +72,15 @@ def test_local_path_rejected(
     plug.mkdir()
     result = runner.invoke(cli_app, ["plugins", "install", str(plug)])
     assert result.exit_code == 1
+    assert result.exception is not None
     assert result.exception.args[0]["failure"] == "local_path_not_supported"
 
 
-def test_invalid_package_name(
-    captured: dict[str, Any], runner: CliRunner
-) -> None:
+def test_invalid_package_name(captured: dict[str, Any], runner: CliRunner) -> None:
     """Test that invalid package names are rejected."""
     result = runner.invoke(cli_app, ["plugins", "install", "bad name"])
     assert result.exit_code == 1
+    assert result.exception is not None
     assert result.exception.args[0]["failure"] == "invalid_name"
 
 
@@ -104,9 +104,12 @@ def test_pip_failure(
 ) -> None:
     """Test that pip install failures are reported."""
     proc = SimpleNamespace(returncode=1, stderr="nope", stdout="")
-    monkeypatch.setattr(install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc))
+    monkeypatch.setattr(
+        install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc)
+    )
     result = runner.invoke(cli_app, ["plugins", "install", "goodpkg"])
     assert result.exit_code == 1
+    assert result.exception is not None
     assert result.exception.args[0]["failure"] == "pip_install_failed"
 
 
@@ -115,10 +118,17 @@ def test_metadata_error(
 ) -> None:
     """Test that metadata errors are surfaced."""
     proc = SimpleNamespace(returncode=0, stderr="", stdout="")
-    monkeypatch.setattr(install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc))
-    monkeypatch.setattr(install_mod, "discover_plugins", lambda: (_ for _ in ()).throw(RuntimeError("bad")))
+    monkeypatch.setattr(
+        install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc)
+    )
+    monkeypatch.setattr(
+        install_mod,
+        "discover_plugins",
+        lambda: (_ for _ in ()).throw(RuntimeError("bad")),
+    )
     result = runner.invoke(cli_app, ["plugins", "install", "goodpkg"])
     assert result.exit_code == 1
+    assert result.exception is not None
     assert result.exception.args[0]["failure"] == "metadata_error"
 
 
@@ -127,11 +137,14 @@ def test_entrypoint_missing(
 ) -> None:
     """Test that missing entry points are reported."""
     proc = SimpleNamespace(returncode=0, stderr="", stdout="")
-    monkeypatch.setattr(install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc))
+    monkeypatch.setattr(
+        install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc)
+    )
     monkeypatch.setattr(install_mod, "discover_plugins", lambda: [])
     monkeypatch.setattr(install_mod, "plugins_for_package", lambda _: [])
     result = runner.invoke(cli_app, ["plugins", "install", "goodpkg"])
     assert result.exit_code == 1
+    assert result.exception is not None
     assert result.exception.args[0]["failure"] == "entrypoint_missing"
 
 
@@ -140,7 +153,9 @@ def test_successful_install(
 ) -> None:
     """Test a successful PyPI install path."""
     proc = SimpleNamespace(returncode=0, stderr="", stdout="")
-    monkeypatch.setattr(install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc))
+    monkeypatch.setattr(
+        install_mod, "subprocess", SimpleNamespace(run=lambda *a, **k: proc)
+    )
     monkeypatch.setattr(install_mod, "discover_plugins", lambda: [])
     monkeypatch.setattr(
         install_mod,

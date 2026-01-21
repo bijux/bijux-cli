@@ -22,9 +22,9 @@ Exit Codes:
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Iterator
 from contextlib import suppress
+import json
 import os
 from pathlib import Path
 import re
@@ -42,9 +42,8 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from rapidfuzz import process as rf_process
 import typer
 
-from bijux_cli.core.async_exec import AsyncTyper, run_command
-
 from bijux_cli.cli.commands.utilities import emit_error_and_exit, validate_common_flags
+from bijux_cli.core.async_exec import AsyncTyper, run_command
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT_HELP,
@@ -196,6 +195,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
         int: The exit code returned by the command invocation.
     """
     from importlib import import_module
+
     from typer.testing import CliRunner
 
     env = {**os.environ, "PS1": ""}
@@ -218,10 +218,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
 
     cli_root = import_module("bijux_cli.cli.root")
     app = getattr(cli_root, "build_app", None)
-    if callable(app):
-        typer_app = app()
-    else:
-        typer_app = getattr(cli_root, "app")
+    typer_app = app() if callable(app) else cli_root.app
     result = CliRunner().invoke(typer_app, tokens, env=env)
 
     sub_quiet = any(t in ("-q", "--quiet") for t in tokens)
@@ -235,7 +232,8 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
                     from bijux_cli.cli.commands.utilities import resolve_serializer
 
                     pretty = (
-                        resolve_serializer().dumps(data, fmt="json", pretty=True)
+                        resolve_serializer()
+                        .dumps(data, fmt="json", pretty=True)
                         .rstrip("\n")
                         + "\n"
                     )
@@ -397,7 +395,7 @@ _BUILTINS = ("exit", "quit")
 class CommandCompleter(Completer):
     """Provides context-aware tab-completion for the REPL."""
 
-    def __init__(self, main_app: AsyncTyper) -> None:
+    def __init__(self, main_app: typer.Typer) -> None:
         """Initializes the completer.
 
         Args:
@@ -410,7 +408,7 @@ class CommandCompleter(Completer):
 
     def _collect(
         self,
-        app: AsyncTyper,
+        app: typer.Typer,
         path: list[str] | None = None,
     ) -> dict[tuple[str, ...], Any]:
         """Recursively collects all commands from a Typer application.
@@ -554,10 +552,7 @@ async def _run_interactive() -> None:
 
     cli_mod = import_module("bijux_cli.cli.root")
     build_app = getattr(cli_mod, "build_app", None)
-    if callable(build_app):
-        app = build_app()
-    else:
-        app = getattr(cli_mod, "app")
+    app = build_app() if callable(build_app) else cli_mod.app
 
     kb = KeyBindings()
 

@@ -55,9 +55,10 @@ def register_commands(app: Typer) -> list[str]:
 
 def register_dynamic_plugins(app: Typer) -> None:
     """Discovers and registers all third-party plugins."""
-    from bijux_cli.plugins.metadata import discover_plugins
-    from bijux_cli.plugins.loader import activate_plugin
     import inspect
+
+    from bijux_cli.plugins.loader import activate_plugin
+    from bijux_cli.plugins.metadata import discover_plugins
 
     try:
         if "strict" in inspect.signature(discover_plugins).parameters:

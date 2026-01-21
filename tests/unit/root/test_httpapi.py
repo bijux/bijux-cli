@@ -14,8 +14,6 @@ from fastapi.testclient import TestClient
 import bijux_cli.http.api as api
 
 
-
-
 def _client() -> TestClient:
     """Create a new test client for the FastAPI application."""
     return TestClient(api.app)

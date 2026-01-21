@@ -3,8 +3,6 @@
 
 """Unit tests for the services plugins module."""
 
-
-
 from __future__ import annotations
 
 import asyncio
@@ -19,12 +17,12 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, create_autospec
 import pytest
 from typer.models import ParameterInfo
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.app.di import DIContainer
 from bijux_cli.core.errors import BijuxError, ServiceError
 from bijux_cli.plugins import (
     get_plugins_dir,
@@ -35,13 +33,14 @@ from bijux_cli.plugins import (
     verify_plugin_signature,
 )
 from bijux_cli.plugins.registry import (
+    CoreSpec,
+    Registry,
     _compatible,
     _iter_plugin_eps,
+    command_group,
+    dynamic_choices,
     load_entrypoints,
 )
-from bijux_cli.plugins.registry import command_group, dynamic_choices
-from bijux_cli.plugins.registry import CoreSpec
-from bijux_cli.plugins.registry import Registry
 
 
 @pytest.fixture
@@ -778,15 +777,15 @@ async def test_load_entrypoints_success(mock_di: Any, mock_reg: Mock) -> None:
         "bijux_cli.plugins.registry._iter_plugin_eps",
         return_value=[mock_ep],
     ):
-        with patch(
-            "bijux_cli.plugins.registry._compatible", return_value=True
-        ):
+        with patch("bijux_cli.plugins.registry._compatible", return_value=True):
             await load_entrypoints(di=mock_di, registry=mock_reg)
             assert mock_plugin_class.version == "1"
             assert mock_plugin.version == "1"
-            mock_reg.register.assert_called_with("test", mock_plugin, version="1")
+            mock_reg.register.assert_called_with(
+                "test", mock_plugin, alias=None, version="1"
+            )
             mock_plugin.startup.assert_awaited_with(mock_di)
-            mock_obs.log.assert_called_with("info", "Loaded plugin 'test'")
+            mock_obs.log.assert_called_with("info", "Loaded plugin 'test'", extra={})
             mock_tel.event.assert_called_with(
                 "entrypoint_plugin_loaded", {"name": "test"}
             )
@@ -897,7 +896,7 @@ async def test_load_entrypoints_success_no_tel(mock_di: Any, mock_reg: Mock) -> 
         patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
-        mock_obs.log.assert_called_with("info", "Loaded plugin 'test'")
+    mock_obs.log.assert_called_with("info", "Loaded plugin 'test'", extra={})
 
 
 @pytest.mark.asyncio
@@ -1086,9 +1085,9 @@ def test_command_group_register(
         def func() -> None:
             pass
 
-        mock_reg.register.assert_called_with("test sub", func, version="1.0")
-        mock_obs.log.assert_called_with("info", "Registered command group", extra=ANY)
-        mock_tel.event.assert_called_with("command_group_registered", ANY)
+    mock_reg.register.assert_called_with("test sub", func, alias=None, version="1.0")
+    mock_obs.log.assert_called_with("info", "Registered command group", extra=ANY)
+    mock_tel.event.assert_called_with("command_group_registered", ANY)
 
 
 def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> None:
@@ -1640,7 +1639,7 @@ async def test_entrypoints_pkgversion_and_sync_startup(
     reg_name, _ = registry.register.call_args.args[:2]
     assert reg_name == "dummy_plugin"
     assert registry.register.call_args.kwargs.get("version") == "2.0"
-    obs.log.assert_any_call("info", "Loaded plugin 'dummy_plugin'")
+    obs.log.assert_any_call("info", "Loaded plugin 'dummy_plugin'", extra={})
     assert any(
         c == call("entrypoint_plugin_loaded", {"name": "dummy_plugin"})
         for c in tel.event.call_args_list

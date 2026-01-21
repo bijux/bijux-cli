@@ -26,7 +26,9 @@ def memory_file(tmp_path: Path) -> Path:
 @pytest.fixture
 def memory(monkeypatch: pytest.MonkeyPatch, memory_file: Path) -> Memory:
     """Provide a Memory instance with a patched file path."""
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     return Memory()
 
 
@@ -40,7 +42,9 @@ def test_init_with_valid_file(
 ) -> None:
     """Test that initialization with a valid JSON file loads the data."""
     memory_file.write_text('{"key": "value"}')
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     m = Memory()
     assert m.get("key") == "value"
 
@@ -50,7 +54,9 @@ def test_init_with_invalid_json(
 ) -> None:
     """Test that initialization with invalid JSON results in an empty store."""
     memory_file.write_text("invalid json")
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     m = Memory()
     assert not m.keys()
 
@@ -60,7 +66,9 @@ def test_init_with_non_dict_json(
 ) -> None:
     """Test that initialization with a non-dictionary JSON object raises an error."""
     memory_file.write_text("[1,2,3]")
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     m = Memory()
     with pytest.raises(AttributeError):
         m.keys()
@@ -298,7 +306,9 @@ def test_init_with_empty_file(
 ) -> None:
     """Test that initializing from an empty JSON file results in an empty store."""
     memory_file.write_text("{}")
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     m = Memory()
     assert not m.keys()
 
@@ -470,7 +480,9 @@ def test_init_with_large_file(
     """Test initialization from a large data file."""
     large_data = {f"key{i}": i for i in range(1000)}
     memory_file.write_text(json.dumps(large_data))
-    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr(
+        "bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file
+    )
     m = Memory()
     assert len(m.keys()) == 1000
 

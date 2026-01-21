@@ -3,7 +3,6 @@
 
 """Unit tests for the audit command."""
 
-
 from __future__ import annotations
 
 import json
@@ -17,13 +16,13 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.audit import (
     _build_payload,
     _write_output_file,
     audit,
     audit_app,
 )
-from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 runner = CliRunner()
@@ -49,7 +48,7 @@ class DummyEmitter:
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: str | None = None,
         pretty: bool = False,
         level: str = "info",
         message: str = "",
@@ -120,7 +119,9 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
 
 def test_audit_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables trigger a structured error."""
-    monkeypatch.setattr("bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True
+    )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
 
@@ -327,7 +328,9 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
 
 def test_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables are correctly detected."""
-    monkeypatch.setattr("bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True
+    )
     result = runner.invoke(audit_app, ["--dry-run"], catch_exceptions=False)
     assert result.exit_code == 3
     err = json.loads((result.stdout or result.stderr).strip())
@@ -542,7 +545,9 @@ def test_audit_output_to_file_with_verbose(
 def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the stray argument handling logic."""
     mock_emit_error = MagicMock(side_effect=SystemExit(2))
-    monkeypatch.setattr("bijux_cli.cli.commands.audit.emit_error_and_exit", mock_emit_error)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.audit.emit_error_and_exit", mock_emit_error
+    )
 
     mock_ctx = MagicMock(spec=typer.Context)
     mock_ctx.invoked_subcommand = False

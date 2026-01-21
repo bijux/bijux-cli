@@ -8,7 +8,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import click
 import typer
@@ -88,11 +88,12 @@ class LazyTyper(AsyncTyper):
     """Typer app that loads a plugin Typer app on first access."""
 
     def __init__(self, meta: PluginMetadata):
+        """Initialize a lazy-loading Typer wrapper."""
         super().__init__(name=meta.name, invoke_without_command=True)
         self._meta = meta
-        self._loaded: click.Command | None = None
+        self._loaded: click.Group | None = None
 
-    def _load(self) -> click.Command:
+    def _load(self) -> click.Group:
         if self._loaded is None:
             if self._meta.source == "entrypoint":
                 app = _entrypoint_loader(self._meta)
@@ -108,16 +109,20 @@ class LazyTyper(AsyncTyper):
         return self._loaded
 
     def list_commands(self, ctx: click.Context) -> list[str]:
+        """List commands after loading the plugin."""
         return self._load().list_commands(ctx)
 
     def get_command(self, ctx: click.Context, name: str) -> click.Command | None:
+        """Resolve a command after loading the plugin."""
         return self._load().get_command(ctx, name)
 
     def invoke(self, ctx: click.Context) -> Any:
+        """Invoke the loaded plugin command group."""
         return self._load().invoke(ctx)
 
 
 def lazy_command_for(meta: PluginMetadata) -> typer.Typer:
+    """Return a lazy-loading Typer wrapper for a plugin."""
     return load_command_for(meta)
 
 

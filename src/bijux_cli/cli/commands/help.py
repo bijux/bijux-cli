@@ -34,10 +34,9 @@ from typing import Any
 import click
 import click as _click
 import typer
-
-from bijux_cli.core.async_exec import AsyncTyper
 import typer as _typer
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
@@ -45,7 +44,7 @@ from bijux_cli.cli.commands.utilities import (
     emit_error_and_exit,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import EmitterProtocol
+from bijux_cli.core.async_exec import AsyncTyper
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT_HELP,
@@ -53,7 +52,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
+from bijux_cli.core.contracts import EmitterProtocol
 from bijux_cli.core.enums import OutputFormat
 
 if len(_sys.argv) > 1 and _sys.argv[1] == "help" and "--quiet" in _sys.argv:

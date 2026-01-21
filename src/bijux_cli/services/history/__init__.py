@@ -41,9 +41,9 @@ import unicodedata
 
 from injector import inject
 
-from bijux_cli.services.history.contracts import HistoryProtocol
-from bijux_cli.infra.paths import HISTORY_FILE
 from bijux_cli.core.contracts import TelemetryProtocol
+from bijux_cli.infra.paths import HISTORY_FILE
+from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.observability import Observability
 
 _MAX_IN_MEMORY: Final[int] = 10_000
@@ -305,6 +305,7 @@ class History(HistoryProtocol):
         success: bool | None = True,
         return_code: int | None = 0,
         duration_ms: float | None = None,
+        raw: dict[str, Any] | None = None,
     ) -> None:
         """Appends a new command invocation to the history.
 
@@ -319,6 +320,7 @@ class History(HistoryProtocol):
             success (bool | None): Whether the command succeeded.
             return_code (int | None): The exit code of the command.
             duration_ms (float | None): The command's duration in milliseconds.
+            raw (dict[str, Any] | None): Optional raw metadata payload.
         """
         fp = self._get_history_path()
         entry = {
@@ -328,6 +330,7 @@ class History(HistoryProtocol):
             "success": bool(success),
             "return_code": return_code if return_code is not None else 0,
             "duration_ms": float(duration_ms) if duration_ms is not None else None,
+            "raw": raw or {},
         }
         with _interprocess_lock(fp):
             self._reload()

@@ -11,10 +11,12 @@ log messages throughout the application.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Self, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
+
+if TYPE_CHECKING:
+    from bijux_cli.core.contracts_pkg.telemetry import TelemetryProtocol
 
 from structlog.typing import FilteringBoundLogger
-
 
 
 @runtime_checkable
@@ -26,7 +28,7 @@ class ObservabilityProtocol(Protocol):
     """
 
     @classmethod
-    def setup(cls, *, debug: bool = False, telemetry: TelemetryProtocol) -> Self:
+    def setup(cls, *, debug: bool, telemetry: TelemetryProtocol) -> Self:
         """Creates and configures a new instance of the observability service.
 
         Args:
@@ -63,7 +65,7 @@ class ObservabilityProtocol(Protocol):
         level: str,
         msg: str,
         *,
-        extra: dict[str, Any] | None = None,
+        extra: dict[str, Any] | None,
     ) -> Self:
         """Logs a message with the specified level and context.
 

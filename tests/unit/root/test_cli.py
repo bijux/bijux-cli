@@ -3,8 +3,6 @@
 
 """Unit tests for the Bijux CLI root cli module."""
 
-
-
 from __future__ import annotations
 
 import subprocess

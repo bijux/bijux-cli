@@ -30,17 +30,15 @@ from pathlib import Path
 import platform
 
 import typer
-
-from bijux_cli.core.async_exec import AsyncTyper
 import typer.core
 
-from bijux_cli.version import __version__
 from bijux_cli.cli.commands.utilities import (
     contains_non_ascii_env,
     emit_and_exit,
     emit_error_and_exit,
     validate_common_flags,
 )
+from bijux_cli.core.async_exec import AsyncTyper
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -50,6 +48,7 @@ from bijux_cli.core.constants import (
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
+from bijux_cli.version import __version__
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -254,9 +253,7 @@ def docs(
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
     docs_service = _resolve_docs_service()
     try:
-        content = docs_service.render(
-            spec, fmt=output_format, pretty=effective_pretty
-        )
+        content = docs_service.render(spec, fmt=output_format, pretty=effective_pretty)
     except Exception as exc:
         emit_error_and_exit(
             f"Serialization failed: {exc}",

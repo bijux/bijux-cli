@@ -20,8 +20,8 @@ underlying services and plugins.
 from __future__ import annotations
 
 import asyncio
-import os
 import inspect
+import os
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -31,11 +31,11 @@ from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.precedence import resolve_output_flags
-from bijux_cli.services.logging.observability import Observability
+from bijux_cli.plugins import get_plugins_dir, load_plugin
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
-from bijux_cli.plugins import get_plugins_dir, load_plugin
+from bijux_cli.services.logging.observability import Observability
 
 
 class Engine:
@@ -191,7 +191,9 @@ class Engine:
                 plugin = load_plugin(path, module_name)
                 if startup := getattr(plugin, "startup", None):
                     startup(self._di)
-                self._registry.register(plugin.name, plugin, version=plugin.version)
+                self._registry.register(
+                    plugin.name, plugin, alias=None, version=plugin.version
+                )
             except Exception as e:  # pragma: no cover
                 telemetry.log("error", f"Loading plugin {folder.name} failed: {e}")
 

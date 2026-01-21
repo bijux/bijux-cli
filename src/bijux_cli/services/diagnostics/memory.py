@@ -18,8 +18,8 @@ from typing import Any
 
 from injector import inject
 
-from bijux_cli.services.diagnostics.contracts import MemoryProtocol
 from bijux_cli.infra.paths import MEMORY_FILE
+from bijux_cli.services.diagnostics.contracts import MemoryProtocol
 
 
 class Memory(MemoryProtocol):

@@ -93,6 +93,9 @@ def test_all_exports_are_correct() -> None:
 
     expected_exports = [
         "BijuxError",
+        "UserInputError",
+        "PluginError",
+        "InternalError",
         "ServiceError",
         "CommandError",
         "ConfigError",

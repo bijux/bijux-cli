@@ -19,8 +19,8 @@ from typing import Any, TypeVar
 
 from injector import inject
 
-from bijux_cli.core.contracts import ContextProtocol, ObservabilityProtocol
 from bijux_cli.app.di import DIContainer
+from bijux_cli.core.contracts import ContextProtocol, ObservabilityProtocol
 
 T = TypeVar("T")
 _current_context: ContextVar[dict[str, Any] | None] = ContextVar(

@@ -93,7 +93,7 @@ def uninstall_plugin(
 
     if meta and meta.source == "entrypoint" and meta.dist_name:
         cmd = [sys.executable, "-m", "pip", "uninstall", "-y", meta.dist_name]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        proc = subprocess.run(cmd, capture_output=True, text=True)  # noqa: S603
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
             emit_error_and_exit(

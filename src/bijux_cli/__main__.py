@@ -9,6 +9,5 @@ import sys
 
 from bijux_cli.app.bootstrap import main
 
-
 if __name__ == "__main__":
     sys.exit(main())

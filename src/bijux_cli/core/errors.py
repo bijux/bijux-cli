@@ -41,17 +41,8 @@ class BijuxError(Exception):
         super().__init__(message)
 
 
-class ServiceError(BijuxError):
-    """Raised for service-related failures.
-
-    This exception is used for errors originating from core services like
-    Observability, Telemetry, or the Registry.
-
-    Args:
-        message (str): The human-readable error message.
-        command (str | None): The name of the command.
-        http_status (int | None): The associated status code. Defaults to 500.
-    """
+class UserInputError(BijuxError):
+    """Raised for user input and validation failures."""
 
     def __init__(
         self,
@@ -60,7 +51,47 @@ class ServiceError(BijuxError):
         command: str | None = None,
         http_status: int | None = None,
     ) -> None:
-        """Initialize the ServiceError exception."""
+        """Initialize a user input error."""
+        super().__init__(
+            message,
+            command=command,
+            http_status=http_status if http_status is not None else 400,
+        )
+
+
+class ConfigError(UserInputError):
+    """Raised for configuration loading or parsing failures."""
+
+
+class PluginError(BijuxError):
+    """Raised for plugin lifecycle and compatibility failures."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        command: str | None = None,
+        http_status: int | None = None,
+    ) -> None:
+        """Initialize a plugin error."""
+        super().__init__(
+            message,
+            command=command,
+            http_status=http_status if http_status is not None else 400,
+        )
+
+
+class InternalError(BijuxError):
+    """Raised for internal failures."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        command: str | None = None,
+        http_status: int | None = None,
+    ) -> None:
+        """Initialize an internal error."""
         super().__init__(
             message,
             command=command,
@@ -68,41 +99,20 @@ class ServiceError(BijuxError):
         )
 
 
-class CommandError(BijuxError):
-    """Raised for command execution failures.
-
-    This exception is used for command-specific errors, such as invalid
-    arguments or missing resources, that represent a client-side error.
-
-    Args:
-        message (str): The human-readable error message.
-        command (str | None): The name of the command.
-        http_status (int | None): The associated status code. Defaults to 400.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        command: str | None = None,
-        http_status: int | None = None,
-    ) -> None:
-        """Initialize the CommandError exception."""
-        super().__init__(
-            message,
-            command=command,
-            http_status=http_status if http_status is not None else 400,
-        )
+class ServiceError(InternalError):
+    """Raised for service-related failures."""
 
 
-class ConfigError(BijuxError):
-    """Raised for configuration loading or parsing failures.
+class CommandError(UserInputError):
+    """Raised for command execution failures."""
 
-    Args:
-        message (str): The human-readable error message.
-        command (str | None): The name of the command.
-        http_status (int | None): The associated status code. Defaults to 400.
-    """
+
+class ValidationError(UserInputError):
+    """Raised for validation failures (deprecated)."""
+
+
+class CliTimeoutError(InternalError):
+    """Raised for timeout errors (deprecated)."""
 
     def __init__(
         self,
@@ -111,62 +121,7 @@ class ConfigError(BijuxError):
         command: str | None = None,
         http_status: int | None = None,
     ) -> None:
-        """Initialize the ConfigError exception."""
-        super().__init__(
-            message,
-            command=command,
-            http_status=http_status if http_status is not None else 400,
-        )
-
-
-class ValidationError(BijuxError):
-    """Raised for validation failures (deprecated).
-
-    Note:
-        This exception is deprecated. Use `CommandError` for new code.
-
-    Args:
-        message (str): The human-readable error message.
-        command (str | None): The name of the command.
-        http_status (int | None): The associated status code. Defaults to 400.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        command: str | None = None,
-        http_status: int | None = None,
-    ) -> None:
-        """Initialize the ValidationError exception."""
-        super().__init__(
-            message,
-            command=command,
-            http_status=http_status if http_status is not None else 400,
-        )
-
-
-class CliTimeoutError(BijuxError):
-    """Raised for timeout errors (deprecated).
-
-    Note:
-        This exception is deprecated. Use `CommandError` or Python's built-in
-        `TimeoutError` for new code.
-
-    Args:
-        message (str): The human-readable error message.
-        command (str | None): The name of the command.
-        http_status (int | None): The associated status code. Defaults to 504.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        command: str | None = None,
-        http_status: int | None = None,
-    ) -> None:
-        """Initialize the CliTimeoutError exception."""
+        """Initialize a timeout error."""
         super().__init__(
             message,
             command=command,
@@ -176,6 +131,9 @@ class CliTimeoutError(BijuxError):
 
 __all__ = [
     "BijuxError",
+    "UserInputError",
+    "PluginError",
+    "InternalError",
     "ServiceError",
     "CommandError",
     "ConfigError",

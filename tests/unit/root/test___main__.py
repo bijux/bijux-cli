@@ -34,8 +34,6 @@ from bijux_cli.app.bootstrap import (
 )
 
 
-
-
 class DummyHistory:
     """A mock History service that records calls to its 'add' method."""
 

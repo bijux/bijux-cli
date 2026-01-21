@@ -34,6 +34,7 @@ import traceback
 import types
 from typing import Any
 
+import anyio
 import typer
 
 from bijux_cli.cli.commands.utilities import (
@@ -49,8 +50,6 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-import anyio
-
 from bijux_cli.plugins.metadata import get_plugin_metadata
 
 

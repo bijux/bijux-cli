@@ -59,7 +59,7 @@ def test_plugin_install_load_run(tmp_path: Path) -> None:
 
     wheel_dir = tmp_path / "wheels"
     wheel_dir.mkdir()
-    subprocess.run(
+    subprocess.run(  # noqa: S603
         [sys.executable, "-m", "pip", "wheel", str(pkg_dir), "-w", str(wheel_dir)],
         check=True,
         capture_output=True,
@@ -85,14 +85,18 @@ def test_plugin_install_load_run(tmp_path: Path) -> None:
     listed = cli("plugins", "list", env=env, json_output=True, expect_exit_code=None)
     assert listed.returncode in (0, 1)
     data = listed.json_out or listed.json_err
-    plugins = []
+    plugins: object = []
     if isinstance(data, dict):
         plugins = data.get("plugins", [])
     elif isinstance(data, list):
         plugins = data
     if isinstance(plugins, str):
         plugins = json.loads(plugins)
-    names = {p["name"] for p in plugins if isinstance(p, dict)}
+    names = {
+        p["name"]
+        for p in (plugins if isinstance(plugins, list) else [])
+        if isinstance(p, dict)
+    }
     assert "smoke" in names
 
     cmd = cli("smoke", "hello", env=env, expect_exit_code=None)

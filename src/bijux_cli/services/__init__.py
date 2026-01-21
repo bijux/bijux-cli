@@ -15,7 +15,7 @@ for testing.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from bijux_cli.core.contracts import (
     ContextProtocol,
@@ -27,18 +27,18 @@ from bijux_cli.core.contracts import (
     SerializerProtocol,
     TelemetryProtocol,
 )
+from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.diagnostics.contracts import (
     AuditProtocol,
+    DiagnosticsConfig,
     DocsProtocol,
     DoctorProtocol,
     MemoryProtocol,
-    DiagnosticsConfig,
 )
 from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.contracts import LoggingConfig
 from bijux_cli.services.plugins.contracts import PluginConfig
-from bijux_cli.core.enums import OutputFormat
 
 if TYPE_CHECKING:
     from bijux_cli.app.di import DIContainer
@@ -70,19 +70,19 @@ def register_default_services(
     """
     import bijux_cli.app.context
     import bijux_cli.infra.emitter
-    import bijux_cli.services.logging.observability
     import bijux_cli.infra.process
     import bijux_cli.infra.retry
     import bijux_cli.infra.serializer
     import bijux_cli.infra.telemetry
-    import bijux_cli.services.diagnostics.audit
+    import bijux_cli.plugins.registry
     import bijux_cli.services.config
+    import bijux_cli.services.diagnostics.audit
     import bijux_cli.services.diagnostics.docs
     import bijux_cli.services.diagnostics.doctor
+    import bijux_cli.services.diagnostics.memory
     import bijux_cli.services.diagnostics.telemetry
     import bijux_cli.services.history
-    import bijux_cli.services.diagnostics.memory
-    import bijux_cli.plugins.registry
+    import bijux_cli.services.logging.observability
 
     if plugin_config is None:
         plugin_config = PluginConfig(enabled=True, allow_entrypoints=True)
@@ -98,7 +98,9 @@ def register_default_services(
         telemetry=noop_telemetry,
     )
 
-    di.register(bijux_cli.services.logging.observability.Observability, lambda: obs_service)
+    di.register(
+        bijux_cli.services.logging.observability.Observability, lambda: obs_service
+    )
     di.register(
         ObservabilityProtocol,
         lambda: di.resolve(bijux_cli.services.logging.observability.Observability),
@@ -107,7 +109,9 @@ def register_default_services(
     di.register(
         bijux_cli.infra.telemetry.LoggingTelemetry,
         lambda: bijux_cli.infra.telemetry.LoggingTelemetry(
-            observability=di.resolve(bijux_cli.services.logging.observability.Observability)
+            observability=di.resolve(
+                bijux_cli.services.logging.observability.Observability
+            )
         ),
     )
     di.register(bijux_cli.infra.telemetry.NoopTelemetry, lambda: noop_telemetry)
@@ -153,7 +157,9 @@ def register_default_services(
     di.register(
         bijux_cli.infra.process.ProcessPool,
         lambda: bijux_cli.infra.process.ProcessPool(
-            observability=di.resolve(bijux_cli.services.logging.observability.Observability),
+            observability=di.resolve(
+                bijux_cli.services.logging.observability.Observability
+            ),
             telemetry=di.resolve(TelemetryProtocol),
         ),
     )
@@ -175,7 +181,10 @@ def register_default_services(
     )
     di.register(
         RetryPolicyProtocol,
-        lambda: di.resolve(bijux_cli.infra.retry.TimeoutRetryPolicy),
+        lambda: cast(
+            RetryPolicyProtocol,
+            di.resolve(bijux_cli.infra.retry.TimeoutRetryPolicy),
+        ),
     )
 
     di.register(LoggingConfig, lambda: logging_config)
@@ -194,9 +203,7 @@ def register_default_services(
 
     di.register(
         bijux_cli.plugins.registry.Registry,
-        lambda: bijux_cli.plugins.registry.Registry(
-            di.resolve(TelemetryProtocol)
-        ),
+        lambda: bijux_cli.plugins.registry.Registry(di.resolve(TelemetryProtocol)),
     )
     di.register(
         RegistryProtocol,
@@ -220,7 +227,9 @@ def register_default_services(
     di.register(
         AuditProtocol,
         lambda: bijux_cli.services.diagnostics.audit.get_audit_service(
-            observability=di.resolve(bijux_cli.services.logging.observability.Observability),
+            observability=di.resolve(
+                bijux_cli.services.logging.observability.Observability
+            ),
             telemetry=di.resolve(TelemetryProtocol),
             dry_run=False,
         ),
@@ -229,24 +238,32 @@ def register_default_services(
     di.register(
         bijux_cli.services.diagnostics.docs.Docs,
         lambda: bijux_cli.services.diagnostics.docs.Docs(
-            observability=di.resolve(bijux_cli.services.logging.observability.Observability),
+            observability=di.resolve(
+                bijux_cli.services.logging.observability.Observability
+            ),
             serializer=di.resolve(SerializerProtocol),
             telemetry=di.resolve(TelemetryProtocol),
         ),
     )
-    di.register(DocsProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.docs.Docs))
+    di.register(
+        DocsProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.docs.Docs)
+    )
 
     di.register(
         bijux_cli.services.diagnostics.doctor.Doctor,
         lambda: bijux_cli.services.diagnostics.doctor.Doctor(),
     )
-    di.register(DoctorProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.doctor.Doctor))
+    di.register(
+        DoctorProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.doctor.Doctor)
+    )
 
     di.register(
         bijux_cli.services.history.History,
         lambda: bijux_cli.services.history.History(
             telemetry=di.resolve(TelemetryProtocol),
-            observability=di.resolve(bijux_cli.services.logging.observability.Observability),
+            observability=di.resolve(
+                bijux_cli.services.logging.observability.Observability
+            ),
         ),
     )
     di.register(HistoryProtocol, lambda: di.resolve(bijux_cli.services.history.History))
@@ -255,7 +272,9 @@ def register_default_services(
         bijux_cli.services.diagnostics.memory.Memory,
         lambda: bijux_cli.services.diagnostics.memory.Memory(),
     )
-    di.register(MemoryProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.memory.Memory))
+    di.register(
+        MemoryProtocol, lambda: di.resolve(bijux_cli.services.diagnostics.memory.Memory)
+    )
 
 
 __all__ = ["register_default_services"]

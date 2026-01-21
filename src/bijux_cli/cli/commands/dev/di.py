@@ -30,6 +30,7 @@ from typing import Any
 
 import typer
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
@@ -43,7 +44,6 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
 
 QUIET_OPTION = typer.Option(False, "-q", "--quiet", help=HELP_QUIET)
 VERBOSE_OPTION = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE)

@@ -32,6 +32,7 @@ from bijux_cli.cli.commands.memory.list import (
     _build_payload as list_build_payload,
 )
 from bijux_cli.cli.commands.memory.list import list_memory
+from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.memory.service import (
     _build_payload as summary_build_payload,
 )
@@ -44,7 +45,6 @@ from bijux_cli.cli.commands.memory.set import (
     _build_payload as set_build_payload,
 )
 from bijux_cli.cli.commands.memory.set import set_memory
-from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.core.enums import OutputFormat
 
 
@@ -68,7 +68,9 @@ def mock_memory_svc() -> MagicMock:
 
 def test_resolve_memory_service_success(mock_flags: dict[str, Any]) -> None:
     """Resolve memory service successfully."""
-    with patch("bijux_cli.cli.commands.memory.resolve.DIContainer.current") as mock_current:
+    with patch(
+        "bijux_cli.cli.commands.memory.resolve.DIContainer.current"
+    ) as mock_current:
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
         mock_memory_svc = MagicMock()
@@ -80,7 +82,9 @@ def test_resolve_memory_service_success(mock_flags: dict[str, Any]) -> None:
 def test_resolve_memory_service_exception(mock_flags: dict[str, Any]) -> None:
     """Emit error when memory service resolution fails."""
     with (
-        patch("bijux_cli.cli.commands.memory.resolve.DIContainer.current") as mock_current,
+        patch(
+            "bijux_cli.cli.commands.memory.resolve.DIContainer.current"
+        ) as mock_current,
         patch("bijux_cli.cli.commands.memory.resolve.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
@@ -275,9 +279,12 @@ def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
     """Clear memory successfully."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.clear.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.clear.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.clear.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.clear.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.clear.new_run_command") as mock_new_run,
     ):
         mock_memory_svc = MagicMock()
@@ -295,9 +302,12 @@ def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
     """Emit error when clearing memory fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.clear.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.clear.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.clear.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.clear.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.clear.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
@@ -436,9 +446,12 @@ def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
     """Get a memory key successfully."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.get.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.get.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.get.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.get.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.get.new_run_command") as mock_new_run,
     ):
         mock_memory_svc = MagicMock()
@@ -457,7 +470,8 @@ def test_get_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
     """Emit error when get key is empty."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.get.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.get.validate_common_flags",
+            return_value="json",
         ),
         patch("bijux_cli.cli.commands.memory.get.emit_error_and_exit") as mock_emit,
     ):
@@ -471,9 +485,12 @@ def test_get_memory_key_error(mock_flags: dict[str, Any]) -> None:
     """Emit not-found error when getting unknown key."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.get.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.get.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.get.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.get.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.get.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
@@ -498,9 +515,12 @@ def test_get_memory_exception(mock_flags: dict[str, Any]) -> None:
     """Emit error when get raises Exception."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.get.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.get.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.get.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.get.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.get.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
@@ -533,9 +553,12 @@ def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
     """List memory keys successfully."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.list.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.list.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.list.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.list.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.list.new_run_command") as mock_new_run,
     ):
         mock_memory_svc = MagicMock()
@@ -554,9 +577,12 @@ def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
     """Emit error when list raises Exception."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.list.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.list.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.list.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.list.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.list.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
@@ -589,9 +615,12 @@ def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
     """Set a memory key successfully."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.set.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.set.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.set.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.set.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.set.new_run_command") as mock_new_run,
     ):
         mock_memory_svc = MagicMock()
@@ -609,7 +638,8 @@ def test_set_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
     """Emit error when set key is empty."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.set.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.set.validate_common_flags",
+            return_value="json",
         ),
         patch("bijux_cli.cli.commands.memory.set.emit_error_and_exit") as mock_emit,
     ):
@@ -623,9 +653,12 @@ def test_set_memory_exception(mock_flags: dict[str, Any]) -> None:
     """Emit error when set raises Exception."""
     with (
         patch(
-            "bijux_cli.cli.commands.memory.set.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.memory.set.validate_common_flags",
+            return_value="json",
         ),
-        patch("bijux_cli.cli.commands.memory.set.resolve_memory_service") as mock_resolve,
+        patch(
+            "bijux_cli.cli.commands.memory.set.resolve_memory_service"
+        ) as mock_resolve,
         patch("bijux_cli.cli.commands.memory.set.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit

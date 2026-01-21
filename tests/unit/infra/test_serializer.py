@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.infra.serializer import (
     OrjsonSerializer,
@@ -17,26 +18,27 @@ from bijux_cli.infra.serializer import (
     SerializationError,
     serializer_for,
 )
-from bijux_cli.core.contracts import TelemetryProtocol
 
 
 def test_orjson_serializer_json_roundtrip() -> None:
     """OrjsonSerializer should serialize JSON by default."""
     tel = MagicMock(spec=TelemetryProtocol)
-    ser = OrjsonSerializer(tel)
+    serializer = OrjsonSerializer(tel)
     payload = {"a": 1}
-    dumped = ser.dumps(payload)
+    dumped = serializer.dumps(payload)
     assert json.loads(dumped) == payload
 
 
 def test_orjson_serializer_yaml_requires_yaml() -> None:
     """YAML serialization should raise when PyYAML is missing."""
+    from bijux_cli.infra import serializer as serializer_mod
+
+    if serializer_mod._YAML is not None:
+        pytest.skip("PyYAML is available")
     tel = MagicMock(spec=TelemetryProtocol)
-    ser = OrjsonSerializer(tel)
-    try:
-        _ = ser.dumps({"a": 1}, fmt=OutputFormat.YAML)
-    except SerializationError as exc:
-        assert "PyYAML is required" in str(exc)
+    serializer = OrjsonSerializer(tel)
+    with pytest.raises(SerializationError, match="PyYAML is required"):
+        _ = serializer.dumps({"a": 1}, fmt=OutputFormat.YAML)
 
 
 def test_serializer_for_rejects_unknown_format() -> None:
@@ -48,8 +50,10 @@ def test_serializer_for_rejects_unknown_format() -> None:
 
 def test_pyyaml_serializer_requires_yaml() -> None:
     """PyYAMLSerializer should raise if PyYAML is unavailable."""
+    from bijux_cli.infra import serializer as serializer_mod
+
+    if serializer_mod._YAML is not None:
+        pytest.skip("PyYAML is available")
     tel = MagicMock(spec=TelemetryProtocol)
-    try:
+    with pytest.raises(SerializationError, match="PyYAML is not installed"):
         _ = PyYAMLSerializer(tel)
-    except SerializationError as exc:
-        assert "PyYAML is not installed" in str(exc)

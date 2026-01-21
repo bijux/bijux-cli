@@ -13,27 +13,26 @@ provide a robust and extensible plugin architecture.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterable, Callable
+import contextlib
+import importlib.metadata as im
+import logging
+import traceback
 from types import MappingProxyType
 from typing import Any
 
 from injector import inject
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version as PkgVersion
 import pluggy
 
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.app.di import DIContainer
-import importlib.metadata as im
-import logging
-import traceback
-from packaging.specifiers import SpecifierSet
-from packaging.version import Version as PkgVersion
-
 
 PRE_EXECUTE = "pre_execute"
 POST_EXECUTE = "post_execute"
@@ -46,20 +45,24 @@ class CoreSpec:
     """Defines the core hook specifications for CLI plugins."""
 
     def __init__(self, dependency_injector: DIContainer) -> None:
+        """Initialize with observability from DI."""
         self._log = dependency_injector.resolve(ObservabilityProtocol)
 
     @hookspec
     async def startup(self) -> None:
+        """Hook called at startup."""
         self._log.log("debug", "Hook startup called", extra={})
 
     @hookspec
     async def shutdown(self) -> None:
+        """Hook called at shutdown."""
         self._log.log("debug", "Hook shutdown called", extra={})
 
     @hookspec
     async def pre_execute(
         self, name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
     ) -> None:
+        """Hook called before command execution."""
         self._log.log(
             "debug",
             "Hook pre_execute called",
@@ -68,6 +71,7 @@ class CoreSpec:
 
     @hookspec
     async def post_execute(self, name: str, result: Any) -> None:
+        """Hook called after command execution."""
         self._log.log(
             "debug",
             "Hook post_execute called",
@@ -76,6 +80,7 @@ class CoreSpec:
 
     @hookspec
     def health(self) -> bool | str:
+        """Hook used for health checks."""
         self._log.log("debug", "Hook health called", extra={})
         return True
 
@@ -99,7 +104,7 @@ def command_group(
             except KeyError as exc:
                 raise RuntimeError("RegistryProtocol is not initialized") from exc
 
-            reg.register(full, fn, version=version)
+            reg.register(full, fn, alias=None, version=version)
 
             try:
                 obs: ObservabilityProtocol = di.resolve(ObservabilityProtocol)
@@ -193,7 +198,7 @@ async def load_entrypoints(
                 if raw is not None and not isinstance(raw, str):
                     tgt.version = str(raw)
 
-            registry.register(ep.name, plugin, version=plugin.version)
+            registry.register(ep.name, plugin, alias=None, version=plugin.version)
 
             startup = getattr(plugin, "startup", None)
             if asyncio.iscoroutinefunction(startup):
@@ -202,7 +207,7 @@ async def load_entrypoints(
                 await asyncio.to_thread(startup, di)
 
             if obs:
-                obs.log("info", f"Loaded plugin '{ep.name}'")
+                obs.log("info", f"Loaded plugin '{ep.name}'", extra={})
             if tel:
                 tel.event("entrypoint_plugin_loaded", {"name": ep.name})
 

@@ -32,8 +32,8 @@ from typing import Any, Literal, TypeVar, cast, overload
 
 from injector import Injector
 
-from bijux_cli.core.contracts import ObservabilityProtocol
 from bijux_cli.core.async_exec import run_awaitable
+from bijux_cli.core.contracts import ObservabilityProtocol
 from bijux_cli.core.errors import BijuxError
 
 T = TypeVar("T")
@@ -309,14 +309,14 @@ class DIContainer:
             if store_key not in self._store:
                 if isinstance(key, type):
                     try:
-                        result: T = self._injector.get(key)
-                        self._services[store_key] = result
+                        resolved: T = self._injector.get(key)
+                        self._services[store_key] = resolved
                         self._log(
                             logging.DEBUG,
-                            f"Resolved service via injector: {type(result).__name__}",
+                            f"Resolved service via injector: {type(resolved).__name__}",
                             extra={"service_name": name_str},
                         )
-                        return result
+                        return resolved
                     except Exception as exc:
                         self._log(
                             logging.ERROR,
@@ -340,6 +340,7 @@ class DIContainer:
                 or inspect.ismethod(factory)
                 or inspect.iscoroutinefunction(factory)
             )
+            result: T | None
             if self._verbose:
                 self._log(
                     logging.DEBUG,

@@ -31,8 +31,7 @@ import platform
 
 import typer
 
-from bijux_cli.core.async_exec import AsyncTyper
-
+from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
@@ -41,7 +40,7 @@ from bijux_cli.cli.commands.utilities import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.core.contracts import EmitterProtocol
+from bijux_cli.core.async_exec import AsyncTyper
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -49,7 +48,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.app.di import DIContainer
+from bijux_cli.core.contracts import EmitterProtocol
 from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -131,10 +130,9 @@ def _write_output_file(
         payload,
         fmt=fmt,
         pretty=pretty,
+        level="info",
         message="Audit dry-run completed" if dry_run else "Audit completed",
-        debug=debug,
         output=str(output_path),
-        quiet=False,
     )
 
 

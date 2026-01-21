@@ -49,6 +49,7 @@ class ProcessPool:
         telemetry: Any,
         max_workers: int = 4,
     ) -> None:
+        """Initialize the process pool executor."""
         max_workers = int(os.getenv("BIJUXCLI_MAX_WORKERS", str(max_workers)))
         self._exec = ProcessPoolExecutor(max_workers=max_workers)
         self._log = observability
@@ -58,6 +59,7 @@ class ProcessPool:
         )
 
     def run(self, cmd: list[str], *, executor: str) -> tuple[int, bytes, bytes]:
+        """Run a validated command via the process pool."""
         key = tuple(cmd)
         if key in self._cache:
             self._log.log("debug", "Process-pool cache hit", extra={"cmd": cmd})
@@ -111,17 +113,18 @@ class ProcessPool:
             raise RuntimeError(f"Process-pool execution failed: {exc}") from exc
 
     def shutdown(self) -> None:
+        """Shutdown the process pool and emit telemetry."""
         self._exec.shutdown(wait=True)
         self._tel.event("procpool_shutdown", {})
         self._log.log("debug", "Process-pool shutdown")
 
     def get_status(self) -> dict[str, Any]:
+        """Return basic status for the process pool."""
         return {"commands_processed": len(self._cache)}
 
 
-def get_process_pool(
-    logger: Any, telemetry: Any
-) -> ProcessPool:
+def get_process_pool(logger: Any, telemetry: Any) -> ProcessPool:
+    """Build a process pool instance."""
     return ProcessPool(logger, telemetry)
 
 
@@ -129,6 +132,7 @@ class NoopProcessExecutor:
     """No-op executor that returns empty success."""
 
     def run(self, cmd: list[str], *, executor: str) -> tuple[int, bytes, bytes]:
+        """Return a zero result for any command."""
         return 0, b"", b""
 
 

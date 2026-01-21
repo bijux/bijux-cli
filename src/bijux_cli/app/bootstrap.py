@@ -42,15 +42,15 @@ from click.exceptions import NoSuchOption, UsageError
 import structlog
 import typer
 
-from bijux_cli.cli.root import build_app
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
+from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.precedence import resolve_output_flags
 from bijux_cli.services import register_default_services
-from bijux_cli.services.logging.contracts import LoggingConfig
 from bijux_cli.services.history import History
+from bijux_cli.services.logging.contracts import LoggingConfig
 
 _orig_stderr = sys.stderr
 _orig_click_echo = click.echo
@@ -301,6 +301,7 @@ def setup_structlog(debug: bool = False, log_level: str | None = None) -> None:
     Args:
         debug (bool): If True, configures human-readable console output at the
             DEBUG level. If False, configures JSON output at the CRITICAL level.
+        log_level (str | None): Optional explicit log level override.
     """
     if debug:
         level = logging.DEBUG

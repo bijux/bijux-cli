@@ -8,7 +8,6 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 import fcntl
 import json
-import os
 from pathlib import Path
 import resource
 import string

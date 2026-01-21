@@ -3,7 +3,6 @@
 
 """Unit tests for the plugins check module."""
 
-
 from __future__ import annotations
 
 import importlib.util
@@ -45,11 +44,15 @@ def _make_dir(
     if with_py:
         (plugin / "plugin.py").write_text(py_code)
     if with_json:
-        data = meta if meta is not None else {
-            "name": name,
-            "desc": "d",
-            "bijux_cli_version": ">=0.1.0",
-        }
+        data = (
+            meta
+            if meta is not None
+            else {
+                "name": name,
+                "desc": "d",
+                "bijux_cli_version": ">=0.1.0",
+            }
+        )
         (plugin / "plugin.json").write_text(json.dumps(data))
     return root
 
@@ -69,11 +72,15 @@ def make_plugin_dir(
     if with_py:
         (plugin_dir / "plugin.py").write_text(py_code or "pass\n")
     if with_json:
-        data = json_data if json_data is not None else {
-            "name": name,
-            "desc": "desc",
-            "bijux_cli_version": ">=0.1.0",
-        }
+        data = (
+            json_data
+            if json_data is not None
+            else {
+                "name": name,
+                "desc": "desc",
+                "bijux_cli_version": ">=0.1.0",
+            }
+        )
         (plugin_dir / "plugin.json").write_text(json.dumps(data))
     return plugin_dir
 
@@ -160,7 +167,9 @@ def test_health_various_returns(
         path=root / "foo",
     )
     with (
-        patch("bijux_cli.cli.commands.plugins.check.get_plugin_metadata", lambda _: meta),
+        patch(
+            "bijux_cli.cli.commands.plugins.check.get_plugin_metadata", lambda _: meta
+        ),
         patch("bijux_cli.cli.commands.plugins.check.new_run_command") as mock_new_run,
     ):
         run_command(

@@ -23,6 +23,7 @@ class ConsoleEmitter:
         debug: bool = False,
         quiet: bool = False,
     ) -> None:
+        """Initialize the console emitter."""
         self._telemetry = telemetry
         self._default_format = output_format
         self._debug = debug
@@ -40,6 +41,7 @@ class ConsoleEmitter:
         output: str | None = None,
         **context: Any,
     ) -> None:
+        """Serialize and emit a payload."""
         if self._quiet and level not in ["error", "critical"]:
             return
 
@@ -65,7 +67,7 @@ class ConsoleEmitter:
 
         try:
             format_name = (
-                str(getattr(output_format, "value"))
+                str(output_format.value)
                 if hasattr(output_format, "value")
                 else str(output_format)
             )
@@ -95,9 +97,11 @@ class NullEmitter:
         output: str | None = None,
         **context: Any,
     ) -> None:
+        """Drop emitted payloads."""
         return None
 
     def flush(self) -> None:
+        """No-op flush for the null emitter."""
         return None
 
 

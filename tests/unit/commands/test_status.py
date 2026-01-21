@@ -13,10 +13,9 @@ from typing import Any
 import pytest
 import typer
 
+from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
-from bijux_cli.app.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
 
 
 class FakeEmitter(EmitterProtocol):
@@ -31,7 +30,7 @@ class FakeEmitter(EmitterProtocol):
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: str | None = None,
         pretty: bool = False,
         level: str = "info",
         message: str = "Emitting output",
@@ -130,9 +129,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         return v
 
     monkeypatch.setattr(mod, "ascii_safe", fake_ascii_safe)
-    p: Mapping[str, object] = mod._build_payload(
-        include_runtime=True
-    )
+    p: Mapping[str, object] = mod._build_payload(include_runtime=True)
     assert p["status"] == "ok"
     assert isinstance(p["python"], str)
     assert isinstance(p["platform"], str)
@@ -470,7 +467,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
     def raising_emit(
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: str | None = None,
         pretty: bool = False,
         level: str = "info",
         message: str = "Emitting output",

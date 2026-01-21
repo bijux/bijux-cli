@@ -25,6 +25,8 @@ from pathlib import Path
 import sys
 from typing import Any, cast
 
+from bijux_cli.app.di import DIContainer
+from bijux_cli.app.engine import Engine
 from bijux_cli.cli.commands.utilities import validate_common_flags
 from bijux_cli.core.async_exec import run_awaitable, run_command
 from bijux_cli.core.contracts import (
@@ -32,8 +34,6 @@ from bijux_cli.core.contracts import (
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.app.di import DIContainer
-from bijux_cli.app.engine import Engine
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 
@@ -144,7 +144,12 @@ class BijuxAPI:
             if exists:
                 maybe = cast(Any, self._registry.deregister(name))
                 self._await_maybe(maybe)
-            maybe2 = cast(Any, self._registry.register(name, _Wrapper(callback)))
+            maybe2 = cast(
+                Any,
+                self._registry.register(
+                    name, _Wrapper(callback), alias=None, version=None
+                ),
+            )
             self._await_maybe(maybe2)
 
             self._obs.log("info", "Registered command", extra={"name": name})
@@ -290,8 +295,8 @@ class BijuxAPI:
         Raises:
             BijuxError: If plugin loading, initialization, or registration fails.
         """
-        from bijux_cli.version import __version__
         from bijux_cli.plugins import load_plugin as _load_plugin
+        from bijux_cli.version import __version__
 
         p = Path(path).expanduser().resolve()
         module_name = f"bijux_plugin_{p.stem}"
@@ -311,7 +316,10 @@ class BijuxAPI:
 
             self._await_maybe(
                 cast(Any, self._registry).register(
-                    p.stem, plugin, alias=str(__version__)
+                    p.stem,
+                    plugin,
+                    alias=str(__version__),
+                    version=getattr(plugin, "version", None),
                 )
             )
             self._obs.log("info", "Loaded plugin", extra={"path": str(p)})

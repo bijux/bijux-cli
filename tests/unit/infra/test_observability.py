@@ -13,10 +13,8 @@ from structlog.typing import FilteringBoundLogger
 
 from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.services.logging.observability import Observability
 from bijux_cli.infra.telemetry import NoopTelemetry
-
-
+from bijux_cli.services.logging.observability import Observability
 
 
 def test_setup_and_defaults() -> None:
