@@ -27,7 +27,7 @@ from bijux_cli.core.contracts import (
     TelemetryProtocol,
 )
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.services.logging.telemetry import LoggingTelemetry
+from bijux_cli.infra.telemetry import LoggingTelemetry
 from bijux_cli.core.di import DIContainer
 import importlib.metadata as im
 import logging

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bijux_cli.services.logging.telemetry import LoggingTelemetry, NullTelemetry, TelemetryEvent
+from bijux_cli.infra.telemetry import LoggingTelemetry, NoopTelemetry, TelemetryEvent
 
 
 class DummyObs:
@@ -24,8 +24,8 @@ class DummyObs:
 
 
 def test_nulltelemetry_methods_accept_all_args_and_do_nothing() -> None:
-    """Test that NullTelemetry methods are no-ops and do not raise errors."""
-    nt = NullTelemetry()
+    """Test that NoopTelemetry methods are no-ops and do not raise errors."""
+    nt = NoopTelemetry()
     nt.event("foo", {"bar": 1})
     nt.event(TelemetryEvent.CLI_STARTED, {"baz": 2})
     nt.flush()

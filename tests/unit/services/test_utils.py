@@ -9,22 +9,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bijux_cli.core.errors import BijuxError
-from bijux_cli.services.diagnostics.process import validate_command
+from bijux_cli.infra.process import validate_command
 
 
 def test_validate_command_empty() -> None:
     """Test that providing an empty command list raises an error."""
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command([])
-    assert "Empty command not allowed" in str(excinfo.value)
+    assert "invalid command" in str(excinfo.value)
 
 
 @patch("os.getenv")
 def test_validate_command_not_allowed(mock_getenv: MagicMock) -> None:
     """Test that a command not in the allowed list is rejected."""
     mock_getenv.return_value = "echo,ls"
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command(["cat", "file.txt"])
     assert "not in allowed list" in str(excinfo.value)
 
@@ -37,7 +36,7 @@ def test_validate_command_not_found(
     """Test that a command not found on the system PATH is rejected."""
     mock_getenv.return_value = "echo,cat"
     mock_which.return_value = None
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command(["cat", "file.txt"])
     msg = str(excinfo.value)
     assert any(sub in msg for sub in ["not found", "not executable"])
@@ -53,7 +52,7 @@ def test_validate_command_disallowed_path(
     mock_getenv.return_value = "cat"
     mock_which.return_value = "/bin/cat2"
     mock_basename.side_effect = lambda x: "cat" if x == "cat" else "cat2"
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command(["cat", "file.txt"])
     assert "Disallowed command path" in str(excinfo.value)
 
@@ -72,7 +71,7 @@ def test_validate_command_unsafe_arg(
     mock_getenv.return_value = "echo"
     mock_which.return_value = "/bin/echo"
     mock_basename.side_effect = lambda x: "echo"
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command(["echo", f"test{unsafe_char}"])
     assert "Unsafe argument" in str(excinfo.value)
 
@@ -111,7 +110,7 @@ def test_validate_command_success_full_path(
 def test_validate_command_custom_env(mock_getenv: MagicMock) -> None:
     """Test that a custom allowed commands environment variable is respected."""
     mock_getenv.return_value = "custom_cmd"
-    with pytest.raises(BijuxError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         validate_command(["echo", "test"])
     assert "not in allowed list" in str(excinfo.value)
 

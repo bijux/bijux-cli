@@ -14,7 +14,7 @@ from structlog.typing import FilteringBoundLogger
 from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.errors import ServiceError
 from bijux_cli.services.logging.observability import Observability
-from bijux_cli.services.logging.telemetry import NullTelemetry
+from bijux_cli.infra.telemetry import NoopTelemetry
 
 
 
@@ -23,7 +23,7 @@ def test_setup_and_defaults() -> None:
     """Test the setup and default state of the Observability service."""
     obs = Observability.setup()
     assert isinstance(obs, Observability)
-    assert isinstance(obs._telemetry, NullTelemetry)
+    assert isinstance(obs._telemetry, NoopTelemetry)
     assert obs.get_logger() is obs._logger
 
 
@@ -90,7 +90,7 @@ def test_log_without_extra_calls_level_and_emits_minimal_telemetry() -> None:
 
 
 def test_log_with_nulltelemetry_skips_telemetry_event() -> None:
-    """Test that no telemetry event is emitted when using NullTelemetry."""
+    """Test that no telemetry event is emitted when using NoopTelemetry."""
     obs = Observability.setup()
     logger = MagicMock()
     obs._logger = logger

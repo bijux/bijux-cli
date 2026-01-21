@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 import pytest
 
 from bijux_cli.services.logging.observability import Observability
-from bijux_cli.services.logging.telemetry import LoggingTelemetry
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.services.history import (
     _MAX_IN_MEMORY,
     _TRIM_THRESHOLD,
@@ -34,9 +34,9 @@ from bijux_cli.services.history import (
 
 
 @pytest.fixture
-def mock_telemetry() -> LoggingTelemetry:
-    """Provide a mock LoggingTelemetry instance."""
-    return Mock(spec=LoggingTelemetry)
+def mock_telemetry() -> TelemetryProtocol:
+    """Provide a mock TelemetryProtocol instance."""
+    return Mock(spec=TelemetryProtocol)
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def temp_history_file(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def history(
-    mock_telemetry: LoggingTelemetry,
+    mock_telemetry: TelemetryProtocol,
     mock_observability: Observability,
     temp_history_file: Path,
 ) -> History:
@@ -67,7 +67,7 @@ def history(
 
 @pytest.fixture
 def history_no_path(
-    mock_telemetry: LoggingTelemetry, mock_observability: Observability
+    mock_telemetry: TelemetryProtocol, mock_observability: Observability
 ) -> History:
     """Provide a History instance without an explicit file path."""
     return History(telemetry=mock_telemetry, observability=mock_observability)
@@ -207,7 +207,7 @@ def test_atomic_write_json_permission_error(
 
 
 def test_history_init(
-    mock_telemetry: LoggingTelemetry, mock_observability: Observability
+    mock_telemetry: TelemetryProtocol, mock_observability: Observability
 ) -> None:
     """Test the initialization of the History service."""
     h = History(mock_telemetry, mock_observability)
@@ -390,7 +390,7 @@ def test_handle_dump_error(
 
 
 def test_add_basic(
-    history: History, temp_history_file: Path, mock_telemetry: LoggingTelemetry
+    history: History, temp_history_file: Path, mock_telemetry: TelemetryProtocol
 ) -> None:
     """Test that the add method appends a correctly structured entry."""
     history.add("cmd", params=["arg"], success=True, return_code=0, duration_ms=100.5)
@@ -489,7 +489,7 @@ def test_add_other_oserror(
 
 
 def test_add_telemetry_exception(
-    history: History, mock_telemetry: LoggingTelemetry
+    history: History, mock_telemetry: TelemetryProtocol
 ) -> None:
     """Test that an exception from the telemetry service is handled gracefully."""
     mock_telemetry.event.side_effect = Exception("tel fail")  # type: ignore[attr-defined]
@@ -699,7 +699,7 @@ def test_import_exception(
 
 
 def test_import_telemetry(
-    history: History, mock_telemetry: LoggingTelemetry, tmp_path: Path
+    history: History, mock_telemetry: TelemetryProtocol, tmp_path: Path
 ) -> None:
     """Test that a telemetry event is emitted after a successful import."""
     src = tmp_path / "import.json"
@@ -766,7 +766,7 @@ def test_list_group_by_limit_none(history: History) -> None:
     assert len(history.list(group_by="command", limit=None)) == 1
 
 
-def test_clear_telemetry(history: History, mock_telemetry: LoggingTelemetry) -> None:
+def test_clear_telemetry(history: History, mock_telemetry: TelemetryProtocol) -> None:
     """Test that a telemetry event is emitted after clearing the history."""
     history.clear()
     mock_telemetry.event.assert_called_with("history_cleared", {})  # type: ignore[attr-defined]
@@ -897,7 +897,7 @@ def test_add_reload_error(
 
 
 def test_import_telemetry_exc(
-    history: History, mock_telemetry: LoggingTelemetry, tmp_path: Path
+    history: History, mock_telemetry: TelemetryProtocol, tmp_path: Path
 ) -> None:
     """Test that an exception from telemetry during import is handled gracefully."""
     mock_telemetry.event.side_effect = Exception("tel")  # type: ignore[attr-defined]

@@ -20,7 +20,7 @@ from structlog.typing import FilteringBoundLogger
 
 from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.errors import ServiceError
-from bijux_cli.services.logging.telemetry import NullTelemetry
+from bijux_cli.infra.telemetry import NoopTelemetry
 
 
 class Observability(ObservabilityProtocol):
@@ -33,7 +33,7 @@ class Observability(ObservabilityProtocol):
     Attributes:
         _logger (FilteringBoundLogger): The underlying `structlog` logger instance.
         _telemetry (TelemetryProtocol): The telemetry service for event forwarding.
-            Defaults to a `NullTelemetry` instance that does nothing.
+            Defaults to a `NoopTelemetry` instance that does nothing.
     """
 
     @inject
@@ -45,7 +45,7 @@ class Observability(ObservabilityProtocol):
                 logging.
         """
         self._logger: FilteringBoundLogger = structlog.get_logger("bijux_cli")
-        self._telemetry: TelemetryProtocol = NullTelemetry()
+        self._telemetry: TelemetryProtocol = NoopTelemetry()
 
     def set_telemetry(self, telemetry: TelemetryProtocol) -> Self:
         """Attaches a telemetry backend for forwarding log events.
@@ -127,7 +127,7 @@ class Observability(ObservabilityProtocol):
         else:
             log_func(msg)
 
-        if not isinstance(self._telemetry, NullTelemetry):
+        if not isinstance(self._telemetry, NoopTelemetry):
             telemetry_payload = {"level": level, "message": msg}
             telemetry_payload.update(log_context)
             self._telemetry.event("LOG_EMITTED", telemetry_payload)

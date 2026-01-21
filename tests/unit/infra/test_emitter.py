@@ -12,27 +12,26 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
-from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import CommandError
-from bijux_cli.services.logging.emitter import Emitter
+from bijux_cli.infra.emitter import ConsoleEmitter
+from bijux_cli.infra.telemetry import Telemetry
 
 
 @pytest.fixture
 def mock_telemetry() -> MagicMock:
     """Provide a mock of the TelemetryProtocol."""
-    return MagicMock(spec=TelemetryProtocol)
+    return MagicMock(spec=Telemetry)
 
 
 @pytest.fixture
-def emitter(mock_telemetry: MagicMock) -> Emitter:
-    """Provide an Emitter instance initialized with a mock telemetry service."""
-    return Emitter(mock_telemetry)
+def emitter(mock_telemetry: MagicMock) -> ConsoleEmitter:
+    """Provide an ConsoleEmitter instance initialized with a mock telemetry service."""
+    return ConsoleEmitter(mock_telemetry)
 
 
 def test_init(mock_telemetry: MagicMock) -> None:
-    """Test the Emitter's constructor with all parameters."""
-    em = Emitter(
+    """Test the ConsoleEmitter's constructor with all parameters."""
+    em = ConsoleEmitter(
         mock_telemetry, output_format=OutputFormat.YAML, debug=True, quiet=True
     )
     assert em._telemetry is mock_telemetry
@@ -41,10 +40,10 @@ def test_init(mock_telemetry: MagicMock) -> None:
     assert em._quiet is True
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_stdout_success(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test a successful emission to stdout."""
     mock_serializer = MagicMock()
@@ -71,10 +70,10 @@ def test_emit_stdout_success(
     )
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_default_format(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that the default format is used when no format is specified."""
     emitter._default_format = OutputFormat.YAML
@@ -87,25 +86,25 @@ def test_emit_default_format(
     mock_serializer_for.assert_called_with(OutputFormat.YAML, emitter._telemetry)
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 def test_emit_serialization_fail(
-    mock_serializer_for: MagicMock, emitter: Emitter
+    mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
-    """Test that a serialization failure is handled and raises a CommandError."""
+    """Test that a serialization failure is handled and raises a RuntimeError."""
     mock_serializer = MagicMock()
     mock_serializer.dumps.side_effect = Exception("fail")
     mock_serializer_for.return_value = mock_serializer
 
     with patch.object(emitter._logger, "error") as mock_log:  # noqa: SIM117
-        with pytest.raises(CommandError, match="Serialization failed: fail"):
+        with pytest.raises(RuntimeError, match="Serialization failed: fail"):
             emitter.emit({})
     mock_log.assert_called_with("Serialization failed", error="fail")
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_debug_print(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that diagnostic information is printed when debug mode is enabled."""
     emitter._debug = True
@@ -119,18 +118,18 @@ def test_emit_debug_print(
     mock_log.assert_called_with("test_msg", output="output")
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
-def test_emit_quiet_skip(mock_serializer_for: MagicMock, emitter: Emitter) -> None:
+@patch("bijux_cli.infra.emitter.serializer_for")
+def test_emit_quiet_skip(mock_serializer_for: MagicMock, emitter: ConsoleEmitter) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
     emitter._quiet = True
     emitter.emit({}, level="info")
     mock_serializer_for.assert_not_called()
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_quiet_error_proceed(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission proceeds for error level even in quiet mode."""
     emitter._quiet = True
@@ -143,10 +142,10 @@ def test_emit_quiet_error_proceed(
     mock_print.assert_called_with("error", file=sys.stdout, flush=True)
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_quiet_critical_proceed(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission proceeds for critical level even in quiet mode."""
     emitter._quiet = True
@@ -159,10 +158,10 @@ def test_emit_quiet_critical_proceed(
     mock_print.assert_called_with("critical", file=sys.stdout, flush=True)
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_telemetry_fail_debug(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that a telemetry failure is logged when debug mode is enabled."""
     emitter._debug = True
@@ -176,10 +175,10 @@ def test_emit_telemetry_fail_debug(
     mock_log.assert_called_with("Telemetry failed", error="tel fail")
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_telemetry_fail_no_debug(
-    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that a telemetry failure is silently ignored when debug is disabled."""
     emitter._debug = False
@@ -193,10 +192,10 @@ def test_emit_telemetry_fail_no_debug(
     mock_log.assert_not_called()
 
 
-@patch("bijux_cli.services.logging.emitter.serializer_for")
+@patch("bijux_cli.infra.emitter.serializer_for")
 @patch("builtins.open", new_callable=mock_open)
 def test_emit_file_success(
-    mock_file_open: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
+    mock_file_open: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test successful emission to a file."""
     mock_serializer = MagicMock()
@@ -210,7 +209,7 @@ def test_emit_file_success(
 
 
 @patch("sys.stdout.flush")
-def test_flush(mock_flush: MagicMock, emitter: Emitter) -> None:
+def test_flush(mock_flush: MagicMock, emitter: ConsoleEmitter) -> None:
     """Test that the flush method calls sys.stdout.flush."""
     emitter.flush()
     mock_flush.assert_called_once()
