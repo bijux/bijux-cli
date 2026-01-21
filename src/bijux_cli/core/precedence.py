@@ -95,10 +95,10 @@ def resolve_output_flags(
         color = "auto"
     include_runtime = (verbose or debug) and not quiet
     effective_pretty = True if (debug and not quiet) else pretty
-    if debug:
-        effective_log_level = "debug"
-    elif quiet:
+    if quiet:
         effective_log_level = "error"
+    elif debug:
+        effective_log_level = "debug"
     else:
         effective_log_level = log_level
     return {

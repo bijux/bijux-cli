@@ -24,6 +24,7 @@ Stages are fixed and ordered:
 2. validate metadata
 3. register
 4. activate (lazy)
+5. unload (if applicable)
 
 Enforce this order in code and reviews.
 
@@ -34,3 +35,21 @@ Until v0.2.0 ships:
 - no new layers
 - no new cross-dependencies
 - only bug fixes and plugin hardening
+
+## Logging Semantics (Truth Table)
+
+Flags resolve in this order: `quiet` → `debug` → `verbose` → `log_level`.
+Color defaults to `auto` and is only overridden by `--color`.
+
+| quiet | debug | verbose | log_level flag | effective log_level | include runtime | pretty |
+|------:|------:|--------:|---------------:|--------------------:|----------------:|-------:|
+| false | false | false   | info           | info                | false           | flag   |
+| false | false | true    | info           | info                | true            | flag   |
+| false | true  | any     | any            | debug               | true            | true   |
+| true  | any   | any     | any            | error               | false           | flag   |
+
+## Serializer Rules
+
+- Serializer formats output; CLI never formats directly.
+- Services choose representation (JSON/YAML), not the CLI.
+- JSON output is colorless and stable for automation.

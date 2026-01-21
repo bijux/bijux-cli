@@ -64,7 +64,9 @@ class Docs(DocsProtocol):
         self._root = Path(root_dir)
         self._root.mkdir(exist_ok=True, parents=True)
 
-    def render(self, spec: dict[str, Any], *, fmt: OutputFormat) -> str:
+    def render(
+        self, spec: dict[str, Any], *, fmt: OutputFormat, pretty: bool = False
+    ) -> str:
         """Renders a specification dictionary to a string in the given format.
 
         Args:
@@ -77,7 +79,7 @@ class Docs(DocsProtocol):
         Raises:
             TypeError: If the underlying serializer returns a non-string result.
         """
-        result = self._serializer.dumps(spec, fmt=fmt, pretty=False)
+        result = self._serializer.dumps(spec, fmt=fmt, pretty=pretty)
         if not isinstance(result, str):
             raise TypeError(
                 f"Expected str from serializer.dumps, got {type(result).__name__}"
@@ -90,6 +92,7 @@ class Docs(DocsProtocol):
         *,
         fmt: OutputFormat = OutputFormat.JSON,
         name: str = "spec",
+        pretty: bool = False,
     ) -> str:
         """Writes a specification to a file and returns the path as a string.
 
@@ -103,11 +106,15 @@ class Docs(DocsProtocol):
         Returns:
             str: The absolute path to the written file.
         """
-        path = self.write_sync(spec, fmt, name)
+        path = self.write_sync(spec, fmt, name, pretty)
         return str(path)
 
     def write_sync(
-        self, spec: dict[str, Any], fmt: OutputFormat, name: str | Path
+        self,
+        spec: dict[str, Any],
+        fmt: OutputFormat,
+        name: str | Path,
+        pretty: bool = False,
     ) -> Path:
         """Writes the specification to a file synchronously.
 
@@ -131,7 +138,7 @@ class Docs(DocsProtocol):
             if final_path.is_dir():
                 final_path = final_path / f"spec.{fmt.value}"
             final_path.parent.mkdir(parents=True, exist_ok=True)
-            content = self.render(spec, fmt=fmt)
+            content = self.render(spec, fmt=fmt, pretty=pretty)
             final_path.write_text(content, encoding="utf-8")
             self._observability.log("info", f"Wrote docs to {final_path}")
             self._telemetry.event(

@@ -295,27 +295,31 @@ def check_missing_format_argument(args: list[str]) -> str | None:
     return None
 
 
-def setup_structlog(debug: bool = False) -> None:
+def setup_structlog(debug: bool = False, log_level: str | None = None) -> None:
     """Configures `structlog` for the application.
 
     Args:
         debug (bool): If True, configures human-readable console output at the
             DEBUG level. If False, configures JSON output at the CRITICAL level.
     """
-    level = logging.DEBUG if debug else logging.CRITICAL
+    if debug:
+        level = logging.DEBUG
+    elif log_level:
+        level = getattr(logging, log_level.upper(), logging.CRITICAL)
+    else:
+        level = logging.CRITICAL
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
+    use_console = debug or os.environ.get("BIJUXCLI_TEST_MODE") == "1"
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.UnicodeDecoder(),
-            (
-                structlog.dev.ConsoleRenderer()
-                if debug
-                else structlog.processors.JSONRenderer()
-            ),
+            structlog.dev.ConsoleRenderer()
+            if use_console
+            else structlog.processors.JSONRenderer(),
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
@@ -369,7 +373,7 @@ def main() -> int:
         log_level=resolved["log_level"],
         color=resolved["color"],
     )
-    setup_structlog(debug)
+    setup_structlog(debug, resolved["log_level"])
     disable_cli_colors_for_test()
 
     if any(a in ("--version", "-V") for a in args):

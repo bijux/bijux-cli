@@ -126,3 +126,13 @@ def load_command_for(meta: PluginMetadata) -> typer.Typer:
     if meta.source == "entrypoint":
         return _entrypoint_loader(meta)
     return _local_loader(meta)
+
+
+def activate_plugin(meta: PluginMetadata) -> typer.Typer:
+    """Activate a plugin and return its Typer command tree."""
+    return load_command_for(meta)
+
+
+def deactivate_plugin(_meta: PluginMetadata) -> None:
+    """Deactivate a plugin if applicable (no-op for now)."""
+    return None
