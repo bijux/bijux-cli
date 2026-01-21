@@ -4,7 +4,7 @@
 """Unit tests for the plugins uninstall module."""
 
 # mypy: disable-error-code="union-attr"
-# pyright: reportOptionalMemberAccess=false
+
 from __future__ import annotations
 
 from os import PathLike

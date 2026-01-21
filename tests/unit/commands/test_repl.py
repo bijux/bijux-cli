@@ -23,8 +23,8 @@ import typer
 
 import bijux_cli.commands.repl as mod
 
-# pytype: disable=invalid-annotation
-# pytype: disable=name-error
+
+
 
 
 class _FakeResult:
@@ -75,13 +75,13 @@ def _capture_io() -> tuple[io.StringIO, io.StringIO, pytest.MonkeyPatch]:
 def test_filter_control_removes_ansi() -> None:
     """Remove ANSI escapes from text."""
     s = "\x1b[31mred\x1b[0m plain"
-    assert mod._filter_control(s) == "red plain"  # pyright: ignore[reportPrivateUsage]
+    assert mod._filter_control(s) == "red plain"
 
 
 def test_split_segments_handles_quotes_and_semicolons() -> None:
     """Split segments respecting quotes and semicolons."""
     text = "a; b\n'c; d'; \"e;f\" ;  ; g"
-    assert list(mod._split_segments(text)) == [  # pyright: ignore[reportPrivateUsage]
+    assert list(mod._split_segments(text)) == [
         "a",
         "b",
         "'c; d'",
@@ -92,19 +92,19 @@ def test_split_segments_handles_quotes_and_semicolons() -> None:
 
 def test_suggest() -> None:
     """Suggest nearest known command."""
-    orig = mod._known_commands  # pyright: ignore[reportPrivateUsage]
-    mod._known_commands = lambda: [  # pyright: ignore[reportPrivateUsage]
+    orig = mod._known_commands
+    mod._known_commands = lambda: [
         "status",
         "version",
     ]
     try:
-        hint = mod._suggest("verzion")  # pyright: ignore[reportPrivateUsage]
+        hint = mod._suggest("verzion")
         assert hint
         assert "version" in hint
-        assert mod._suggest("version") is None  # pyright: ignore[reportPrivateUsage]
-        assert mod._suggest("zzzz") is None  # pyright: ignore[reportPrivateUsage]
+        assert mod._suggest("version") is None
+        assert mod._suggest("zzzz") is None
     finally:
-        mod._known_commands = orig  # pyright: ignore[reportPrivateUsage]
+        mod._known_commands = orig
 
 
 def build_fake_root_app() -> Any:
@@ -114,7 +114,7 @@ def build_fake_root_app() -> Any:
     app = typer.Typer()
 
     @app.command()
-    def status(  # pyright: ignore[reportUnusedFunction]
+    def status(
         quiet: bool = typer.Option(False, "-q", "--quiet"),
         pretty: bool = typer.Option(True, "--pretty/--no-pretty"),
         fmt: str = typer.Option("json", "-f", "--format"),
@@ -125,7 +125,7 @@ def build_fake_root_app() -> Any:
             typer.echo(txt)
 
     @app.command()
-    def history(  # noqa: ARG001 # pyright: ignore[reportUnusedFunction]
+    def history(  # noqa: ARG001
         pretty: bool = typer.Option(True, "--pretty/--no-pretty"),
         fmt: str = typer.Option("json", "-f", "--format"),
     ) -> None:
@@ -146,7 +146,7 @@ def _run_piped_lines(lines: list[str], *, quiet: bool = False) -> None:
     buf = io.StringIO("\n".join(lines))
     with patch.object(sys, "stdin", buf):
         with pytest.raises(SystemExit) as ex:
-            mod._run_piped(quiet)  # pyright: ignore[reportPrivateUsage]
+            mod._run_piped(quiet)
         assert ex.value.code == 0
 
 
@@ -234,7 +234,7 @@ def test_get_prompt_plain_and_ansi(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_exit_on_signal() -> None:
     """Exit cleanly on signal."""
     with pytest.raises(SystemExit) as ex:
-        mod._exit_on_signal(2, None)  # pyright: ignore[reportPrivateUsage]
+        mod._exit_on_signal(2, None)
     assert ex.value.code == 0
 
 
@@ -283,19 +283,19 @@ def make_fake_completer() -> mod.CommandCompleter:
     app = typer.Typer()
 
     @app.command("status")
-    def status(  # pyright: ignore[reportUnusedFunction]
+    def status(
         pretty: bool = typer.Option(False, "--pretty/--no-pretty"),
     ) -> None:
         pass  # no-op
 
     @app.command("version")
-    def version() -> None:  # pyright: ignore[reportUnusedFunction]
+    def version() -> None:
         pass  # no-op
 
     config = typer.Typer()
 
     @config.command("set")
-    def config_set() -> None:  # pyright: ignore[reportUnusedFunction]
+    def config_set() -> None:
         pass  # no-op
 
     app.add_typer(config, name="config")
@@ -442,7 +442,7 @@ def test_known_commands_spec_invalid_json_falls_back(
         "Path",
         lambda *_: FakePath("dummy"),
     )
-    cmds = mod._known_commands()  # pyright: ignore[reportPrivateUsage]
+    cmds = mod._known_commands()
     assert {"status", "version", "repl"} <= set(cmds)
 
 
@@ -453,7 +453,7 @@ def test_invoke_history_prints_empty_entries_pretty(
     _install_fake_cli_module(build_fake_root_app())
     out, err, m = _capture_io()
     try:
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(
             ["history"], repl_quiet=False
         )
         assert code == 0
@@ -472,7 +472,7 @@ def make_real_completer() -> mod.CommandCompleter:
     app = typer.Typer()
 
     @app.command()
-    def status(  # noqa: D401 # pyright: ignore[reportUnusedFunction]
+    def status(  # noqa: D401
         no_pretty: bool = typer.Option(False, "--no-pretty"),
         pretty: bool = typer.Option(False, "--pretty"),
     ) -> None:
@@ -482,7 +482,7 @@ def make_real_completer() -> mod.CommandCompleter:
     config = typer.Typer()
 
     @config.command("set")
-    def config_set(  # pyright: ignore[reportUnusedFunction]
+    def config_set(
         arg: str = typer.Argument(""),
     ) -> None:  # noqa: D401, ARG001
         """Config set command."""
@@ -546,7 +546,7 @@ async def test_run_interactive_end_to_end(
     monkeypatch.setenv("BIJUXCLI_HISTORY_FILE", str(Path.cwd() / ".tmp_history"))
     monkeypatch.setattr(sys, "argv", ["bijux"])
 
-    await mod._run_interactive()  # pyright: ignore[reportPrivateUsage]
+    await mod._run_interactive()
 
     out = capsys.readouterr()
     assert "Available topics" in out.out
@@ -565,19 +565,19 @@ def test_invoke_json_commands_and_quiet(monkeypatch: pytest.MonkeyPatch) -> None
 
     out, _, m = _capture_io()
     try:
-        code = mod._invoke(["version"], repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(["version"], repl_quiet=False)
         assert code == 0
         assert out.getvalue().strip().startswith("{")
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(["status", "--quiet"], repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(["status", "--quiet"], repl_quiet=False)
         assert code == 0
         assert out.getvalue() == ""
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(["status"], repl_quiet=True)  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(["status"], repl_quiet=True)
         assert code == 0
         assert out.getvalue() == ""
     finally:
@@ -593,7 +593,7 @@ def test_invoke_config_list_forces_no_pretty(monkeypatch: pytest.MonkeyPatch) ->
     out, _, m = _capture_io()
     try:
         assert (
-            mod._invoke(  # pyright: ignore[reportPrivateUsage]
+            mod._invoke(
                 ["config", "list"], repl_quiet=False
             )
             == 0
@@ -656,7 +656,7 @@ def test_known_commands_spec_wrong_type(monkeypatch: pytest.MonkeyPatch) -> None
             return self._path
 
     monkeypatch.setattr(mod, "Path", lambda *_: FakePath("dummy"))
-    cmds = mod._known_commands()  # pyright: ignore[reportPrivateUsage]
+    cmds = mod._known_commands()
     assert "status" in cmds
     assert "version" in cmds
 
@@ -674,7 +674,7 @@ def test_invoke_history_non_empty_prints_raw(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(
             ["history"], repl_quiet=False
         )
         assert code == 0
@@ -706,7 +706,7 @@ def test_completer_handles_shlex_valueerror() -> None:
 def test_completer_find_longest_prefix() -> None:
     """Prefer the longest matching prefix in finder."""
     comp = make_fake_completer()
-    obj, rem = comp._find(  # pyright: ignore[reportPrivateUsage]
+    obj, rem = comp._find(
         ["config", "set", "foo"]
     )
     assert getattr(obj, "name", None) == "set"
@@ -779,7 +779,7 @@ def test_invoke_history_empty_quiet_skips_pretty(
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(  # pyright: ignore[reportPrivateUsage]
+        code = mod._invoke(
             ["history"], repl_quiet=True
         )
         assert code == 0
@@ -844,7 +844,7 @@ def test_completer_group_list_both_paths_and_help_false(
     assert "--help" not in complete_text(comp, "status --x")
 
 
-class _KBRecorder:  # pyright: ignore[reportUnusedClass]
+class _KBRecorder:
     """Fake keybindings that exercise branches."""
 
     def add(
@@ -867,7 +867,7 @@ class _KBRecorder:  # pyright: ignore[reportUnusedClass]
             class _State:
                 pass
 
-            class _BufB:  # pyright: ignore[reportUnusedClass]
+            class _BufB:
                 _next: bool
                 _applied: bool
                 complete_state: _State = _State()
@@ -958,7 +958,7 @@ async def test_run_interactive_keybindings_and_value_error_and_unknown(
     monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
     monkeypatch.setattr(mod, "_suggest", lambda s: None)
 
-    await mod._run_interactive()  # pyright: ignore[reportPrivateUsage]
+    await mod._run_interactive()
 
     out = capsys.readouterr()
     assert "No such command 'unknown'." in (out.err or out.out)
@@ -983,7 +983,7 @@ async def test_run_interactive_exits_on_keyboard_interrupt(
     import prompt_toolkit
 
     monkeypatch.setattr(prompt_toolkit, "PromptSession", PSKI)
-    await mod._run_interactive()  # pyright: ignore[reportPrivateUsage]
+    await mod._run_interactive()
     out = capsys.readouterr()
     assert "Exiting REPL." in out.out
 
@@ -1049,12 +1049,12 @@ async def test_run_interactive_keybindings_apply_completion(
     import prompt_toolkit
 
     monkeypatch.setattr(prompt_toolkit, "PromptSession", PSOnce)
-    await mod._run_interactive()  # pyright: ignore[reportPrivateUsage]
+    await mod._run_interactive()
 
     from prompt_toolkit.completion import Completion
 
     kb = getattr(
-        prompt_toolkit.key_binding.KeyBindings,  # pyright: ignore[reportAttributeAccessIssue]
+        prompt_toolkit.key_binding.KeyBindings,
         "last",
         None,
     )
@@ -1100,7 +1100,7 @@ def test_run_piped_config_get_missing_arg_emits_json(
     out, _, mp = _capture_io()
     try:
         with pytest.raises(SystemExit) as se:
-            mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
+            mod._run_piped(repl_quiet=False)
         assert se.value.code == 0
     finally:
         mp.undo()
@@ -1128,7 +1128,7 @@ def test_run_piped_skips_empty_and_comment_segments(
     _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
-            mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
+            mod._run_piped(repl_quiet=False)
     finally:
         mp.undo()
         sys.stdin = old_stdin
@@ -1146,7 +1146,7 @@ def test_run_piped_prints_prompt_for_pure_blank_or_comment(
     _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
-            mod._run_piped(repl_quiet=False)  # pyright: ignore[reportPrivateUsage]
+            mod._run_piped(repl_quiet=False)
     finally:
         mp.undo()
         sys.stdin = old_stdin

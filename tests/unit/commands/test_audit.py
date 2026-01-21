@@ -3,7 +3,7 @@
 
 """Unit tests for the audit command."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import json
@@ -393,7 +393,7 @@ def test_audit_invoked_subcommand_returns(monkeypatch: pytest.MonkeyPatch) -> No
     with patch("bijux_cli.commands.audit.validate_common_flags") as mock_vcf:
 
         @audit_app.command("sub")
-        def sub_command() -> None:  # pyright: ignore[reportUnusedFunction]
+        def sub_command() -> None:
             print("sub_command_output")
 
         result = runner.invoke(audit_app, ["sub"])

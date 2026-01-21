@@ -81,23 +81,12 @@ Hidden files/directories that govern editor behavior, linting, hooks, and pipeli
 ```
 
 .
-├── .editorconfig
-├── .gitattributes
 ├── .gitignore
-├── .gitlab-ci.yml
-├── .pre-commit-config.yaml
 └── .github/
     └── workflows/
         ├── ci.yml     # tests, lint, type-check, security, build
         └── docs.yml   # docs build/deploy
 
-```
-
-**Pre-commit (recommended):**
-```bash
-pipx install pre-commit || python -m pip install -U pre-commit
-pre-commit install
-pre-commit run --all-files
 ```
 
 [Back to top](#top)
@@ -276,7 +265,6 @@ Centralized tool configs:
 config/
 ├── bijux.dic             # custom dictionary
 ├── mypy.ini              # type checking
-├── pyrightconfig.json    # pyright settings
 ├── ruff.toml             # lint rules (ruff)
 ├── coveragerc.ini        # coverage config
 ├── cosmic-ray.toml       # mutation testing
@@ -349,7 +337,8 @@ tests/
 ├── unit/          # Fast, isolated component tests
 ├── integration/   # Subsystem wiring, DI, flows
 ├── functional/    # User-facing behavior/flags/output
-└── e2e/           # Full CLI runs + fixtures
+├── e2e/           # Full CLI runs + fixtures
+└── night/         # Long-running or flaky tests (not default)
 ```
 
 Highlights:
@@ -363,7 +352,7 @@ Run examples:
 ```bash
 make test           # all tests
 make test-unit      # unit only
-make test-e2e       # end-to-end only
+make test-night     # night-only
 ```
 
 [Back to top](#top)

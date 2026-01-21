@@ -27,6 +27,8 @@ from tests.e2e.history.conftest import (
     run_module,
 )
 
+pytestmark = pytest.mark.night
+
 
 def _worker_rw(hist_file: Path, n: int) -> None:
     """Helper for multiprocess test: does a mix of read/write ops."""

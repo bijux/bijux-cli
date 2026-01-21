@@ -15,10 +15,13 @@ from __future__ import annotations
 
 from contextlib import suppress
 import importlib
+import importlib.metadata as md
 import importlib.util
+import logging
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 from typing import Any, cast
 
@@ -31,6 +34,8 @@ from bijux_cli.contracts import (
     TelemetryProtocol,
 )
 from bijux_cli.core.exceptions import BijuxError
+
+logger = logging.getLogger(__name__)
 
 
 def _di() -> Any | None:
@@ -88,7 +93,7 @@ def get_plugins_dir() -> Path:
     created if it does not exist.
 
     Returns:
-        Path: The resolved path to the plugins directory.
+        Path: The resolved path to the plugins' directory.
     """
     env_path = os.environ.get("BIJUXCLI_PLUGINS_DIR")
     if env_path:
@@ -289,13 +294,60 @@ def uninstall_plugin(name: str, registry: RegistryProtocol) -> bool:
     return True
 
 
-def install_plugin(*args: Any, **kwargs: Any) -> None:
-    """Stub for plugin installation. Use the CLI command instead.
+def install_plugin(name: str, force: bool = False, **kwargs: Any) -> None:
+    """Installs a plugin, handling local paths or pip packages.
+
+    If name is a local path, copies to plugins dir. If not, installs via pip.
+
+    Args:
+        name (str): Plugin name or local path.
+        force (bool): Overwrite if exists.
+        **kwargs: Additional args (ignored for now).
 
     Raises:
-        NotImplementedError: Always, as this function is a stub.
+        BijuxError: On install failure.
     """
-    raise NotImplementedError("Use `bijux_cli.commands.plugins.install`")
+    plug_dir = get_plugins_dir() / Path(name).name
+    if Path(name).exists():
+        if plug_dir.exists() and force:
+            shutil.rmtree(plug_dir)
+        shutil.copytree(name, plug_dir)
+        logger.debug(f"Installed local plugin: {name}")
+    else:
+        try:
+            command = [sys.executable, "-m", "pip", "install", name]
+            subprocess.check_call(command)  # noqa: S603
+            logger.debug(f"Pip-installed plugin: {name}")
+        except Exception as exc:
+            logger.error(f"Failed to install {name}: {exc}")
+            raise BijuxError(f"Failed to pip install '{name}': {exc}") from exc
+
+
+def load_entrypoints(registry: RegistryProtocol | None = None) -> list[str]:
+    """Loads plugins from entry points and registers them if registry provided.
+
+    Returns:
+        list[str]: List of loaded plugin names.
+    """
+    loaded_names = []
+    for group in ["bijux_cli.plugins", "bijux.commands"]:
+        for ep in md.entry_points().select(group=group):
+            try:
+                loaded = ep.load()
+                if group == "bijux_cli.plugins":
+                    plugin = loaded()
+                    name = getattr(plugin, "name", ep.name)
+                    if registry:
+                        registry.register(name, plugin)
+                    loaded_names.append(name)
+                    logger.debug(f"Loaded legacy entry point: {name}")
+                else:
+                    name = ep.name
+                    loaded_names.append(name)
+                    logger.debug(f"Loaded new entry point: {name}")
+            except Exception as e:
+                logger.error(f"Failed to load entry point {ep.name}: {e}")
+    return loaded_names
 
 
 _SUBMODULES: dict[str, str] = {
@@ -331,8 +383,7 @@ def __getattr__(name: str) -> Any:
         groups_mod = importlib.import_module(_SUBMODULES["groups"])
         return getattr(groups_mod, name)
     if name == "load_entrypoints":
-        entrypoints_mod = importlib.import_module(_SUBMODULES["entrypoints"])
-        return entrypoints_mod.load_entrypoints
+        return load_entrypoints
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
@@ -343,4 +394,5 @@ __all__ = [
     "load_plugin",
     "uninstall_plugin",
     "install_plugin",
+    "load_entrypoints",
 ]

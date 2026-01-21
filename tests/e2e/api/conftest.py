@@ -6,26 +6,22 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-import os
 import uuid
 
 import httpx
 import pytest
+from starlette.testclient import TestClient
 
-FASTAPI_HOST = os.getenv("API_HOST", "127.0.0.1")
-FASTAPI_PORT = int(os.getenv("API_PORT", "8000"))
-BASE_URL = f"http://{FASTAPI_HOST}:{FASTAPI_PORT}/v1"
+from bijux_cli.httpapi import app
+
+BASE_URL = "http://testserver/v1"
 
 
 @pytest.fixture(scope="module")
-def client() -> httpx.Client:
-    """Provide an `httpx` client for making API requests.
-
-    Returns:
-        An `httpx.Client` instance configured with the base URL of the API.
-    """
-    limits = httpx.Limits(max_connections=1, max_keepalive_connections=1)
-    return httpx.Client(base_url=BASE_URL, timeout=5.0, limits=limits)
+def client() -> Generator[TestClient, None, None]:
+    """Provide an in-process TestClient with the app started (incl. lifespan)."""
+    with TestClient(app, base_url=BASE_URL) as c:
+        yield c
 
 
 @pytest.fixture
@@ -45,7 +41,8 @@ def create_test_item(client: httpx.Client) -> Generator[int, None, None]:
     payload = {"name": name, "description": "A test description"}
     response = client.post("/items", json=payload)
     assert response.status_code == 201, f"Failed to create test item: {response.text}"
-    item = response.json()
-    item_id = item["id"]
-    yield item_id
-    client.delete(f"/items/{item_id}")
+    item_id = response.json()["id"]
+    try:
+        yield item_id
+    finally:
+        client.delete(f"/items/{item_id}")

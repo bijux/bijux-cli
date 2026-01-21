@@ -53,7 +53,7 @@ from bijux_cli.core.constants import (
 from bijux_cli.services.plugins import get_plugins_dir
 
 
-def check_plugin(
+async def check_plugin(
     name: str = typer.Argument(..., help="Plugin name"),
     quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
@@ -183,8 +183,7 @@ def check_plugin(
             if asyncio.iscoroutinefunction(hook):
                 res = await hook(None)
             else:
-                loop = asyncio.get_running_loop()
-                res = await loop.run_in_executor(None, hook, None)
+                res = await asyncio.to_thread(hook, None)
         except BaseException as exc2:
             return {"plugin": name, "error": str(exc2) or exc2.__class__.__name__}
 
@@ -196,7 +195,7 @@ def check_plugin(
             return {"plugin": name, "status": res["status"]}
         return {"plugin": name, "status": "unhealthy"}
 
-    result = asyncio.run(_run_health())
+    result = await _run_health()
     sys.modules.pop(mod_name, None)
     exit_code = 1 if result.get("status") == "unhealthy" else 0
 

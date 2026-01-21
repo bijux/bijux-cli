@@ -29,7 +29,7 @@ from bijux_cli.commands.history.service import history
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-history_app = typer.Typer(  # pytype: skip-file
+history_app = typer.Typer(
     name="history",
     help="Inspect or manage command history.",
     rich_markup_mode=None,

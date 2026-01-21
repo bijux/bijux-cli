@@ -52,7 +52,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-status_app = typer.Typer(  # pytype: skip-file
+status_app = typer.Typer(
     name="status",
     help="Show the CLI Status (Lean probe).",
     rich_markup_mode=None,

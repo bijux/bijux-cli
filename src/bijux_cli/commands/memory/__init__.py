@@ -38,7 +38,7 @@ from bijux_cli.commands.memory.set import set_memory
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-memory_app = typer.Typer(  # pytype: skip-file
+memory_app = typer.Typer(
     name="memory",
     help="Manage CLI memory.",
     rich_markup_mode=None,

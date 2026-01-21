@@ -3,7 +3,7 @@
 
 """Unit tests for the infra serializer module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import builtins

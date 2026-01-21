@@ -43,7 +43,7 @@ from bijux_cli.commands.config.unset import unset_config
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-config_app = typer.Typer(  # pytype: skip-file
+config_app = typer.Typer(
     name="config",
     help="Manage CLI configuration.",
     rich_markup_mode=None,

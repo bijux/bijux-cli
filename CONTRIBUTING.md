@@ -16,7 +16,6 @@ This guide is the single source of truth for local setup, workflows, API validat
 - [Security & Supply Chain](#security-supply-chain)
 - [Tox Envs (Mirror CI)](#tox-envs-mirror-ci)
 - [Commits & PRs](#commits-prs)
-- [Pre-Commit](#pre-commit)
 - [Troubleshooting](#troubleshooting)
 - [Community & Conduct](#community-conduct)
 
@@ -33,7 +32,6 @@ This guide is the single source of truth for local setup, workflows, API validat
 - Python **3.11 / 3.12 / 3.13** (`pyenv` recommended)
 - **GNU Make**
 - **Node.js + npm** (for API validation tooling)
-- Optional: **pre-commit** (to catch issues before pushing)
 
 **Setup**
 
@@ -42,8 +40,6 @@ git clone https://github.com/bijux/bijux-cli.git
 cd bijux-cli
 make PYTHON=python3.11 install
 source .venv/bin/activate
-# optional but recommended
-pre-commit install
 ```
 
 **Sanity check**
@@ -72,7 +68,7 @@ make lint test docs api
 | Target          | What it does                                                                |
 | --------------- | --------------------------------------------------------------------------- |
 | `make test`     | `pytest` + coverage (HTML in `htmlcov/`)                                    |
-| `make lint`     | Format (ruff), lint (ruff), type-check (mypy/pyright), complexity (radon)   |
+| `make lint`     | Format (ruff), lint (ruff), type-check (mypy), complexity (radon)           |
 | `make quality`  | Dead code (vulture), deps hygiene (deptry), REUSE, docstrings (interrogate) |
 | `make security` | Bandit + pip-audit                                                          |
 | `make api`      | OpenAPI lint + generator compat + Schemathesis contract tests               |
@@ -149,7 +145,7 @@ make api
 
 * **Formatting:** `ruff format` (enforced in `make lint`)
 * **Linting:** `ruff`
-* **Types:** `mypy` (strict) + `pyright` (strict)
+* **Types:** `mypy` (strict)
 * **Complexity:** `radon`
 * **Docstrings:** `interrogate` (meet configured thresholds)
 
@@ -228,7 +224,7 @@ feat(plugins): add plugin scaffolding command
 BREAKING CHANGE: <explanation>
 ```
 
-> Commit messages are validated (Commitizen via pre-commit hook).
+> Commit messages are validated (Commitizen).
 
 ### PR Checklist
 
@@ -245,27 +241,12 @@ BREAKING CHANGE: <explanation>
 
 ---
 
-<a id="pre-commit"></a>
-
-## Pre-Commit
-
-```bash
-pre-commit install
-```
-
-Runs critical checks locally (format, lint, commit message validation, etc.).
-
-[Back to top](#top)
-
----
-
 <a id="troubleshooting"></a>
 
 ## Troubleshooting
 
 * **Missing Node.js** → required for API validation tools
 * **Docs fail** → MkDocs is strict; fix broken links/includes
-* **pytype on Python > 3.12** → skipped automatically
 * **Port in use for API tests** → kill old `uvicorn` or use a different port
 
 [Back to top](#top)

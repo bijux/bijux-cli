@@ -8,6 +8,7 @@ A practical reference for installation, global flags, commands, configuration, a
 ## Table of Contents
 
 * [Installation](#installation)
+* [Platform Support](#platform-support)
 * [Quick Start](#quick-start)
 * [Shell Completion](#shell-completion)
 * [Global Flags – Precedence](#global-flags--precedence)
@@ -36,7 +37,7 @@ A practical reference for installation, global flags, commands, configuration, a
 
 ## Installation
 
-Requires **Python 3.11+**.
+Requires **Python >= 3.11** (3.11–3.13 tested).
 
 ### pipx (recommended)
 
@@ -54,6 +55,15 @@ python -m pip install -U bijux-cli
 ```
 
 > Tip: use a virtual environment when installing with plain `pip`.
+
+[Back to top](#top)
+
+---
+
+## Platform Support
+
+Supported: **Linux**, **macOS**  
+Not supported: **Windows** — we rely on POSIX file locking and filesystem behavior.
 
 [Back to top](#top)
 

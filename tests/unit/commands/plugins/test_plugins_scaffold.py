@@ -4,8 +4,8 @@
 """Unit tests for the plugins scaffold module."""
 
 # mypy: disable-error-code="union-attr"
-# pyright: reportOptionalMemberAccess=false
-# pyright: reportAttributeAccessIssue=false
+
+
 
 from __future__ import annotations
 
@@ -433,7 +433,7 @@ def captured() -> dict[str, Any]:
 
 
 @pytest.fixture(autouse=True)
-def _stub_out(  # pyright: ignore[reportUnusedFunction]
+def _stub_out(
     monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]
 ) -> None:
     """Stub out command runners and error emitters for tests."""

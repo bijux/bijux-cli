@@ -690,7 +690,7 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
-        clear_history(**flags)  # pyright: ignore[reportArgumentType]
+        clear_history(**flags)
 
         call_kwargs = mock_new_run.call_args.kwargs
         assert call_kwargs["verbose"] is True

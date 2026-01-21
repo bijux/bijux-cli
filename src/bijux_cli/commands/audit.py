@@ -52,7 +52,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-audit_app = typer.Typer(  # pytype: skip-file
+audit_app = typer.Typer(
     name="audit",
     help="Audit the current environment for configuration and state issues.",
     rich_markup_mode=None,

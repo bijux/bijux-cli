@@ -25,6 +25,7 @@
 * [Try It in 20 Seconds](#try-it-in-20-seconds)
 * [Key Features](#key-features)
 * [Installation](#installation)
+* [Platform Support](#platform-support)
 * [Quick Start](#quick-start)
 * [Plugins in 60 Seconds](#plugins-in-60-seconds)
 * [Structured Output](#structured-output)
@@ -94,7 +95,7 @@ bijux status -f json --no-pretty
 
 ## Installation
 
-Requires **Python 3.11+**.
+Requires **Python >= 3.11** (3.11–3.13 tested).
 
 ```bash
 # Isolated install (recommended)
@@ -105,6 +106,15 @@ pip install bijux-cli
 ```
 
 Upgrade: `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
+
+[Back to top](#top)
+
+---
+
+## Platform Support
+
+Supported: **Linux**, **macOS**  
+Not supported: **Windows** — the CLI depends on POSIX filesystem and process semantics that Windows does not provide.
 
 [Back to top](#top)
 
@@ -310,7 +320,7 @@ Quick commands:
 ```bash
 make test         # all tests
 make test-unit    # unit tests only
-make test-e2e     # end-to-end tests only
+make test-night   # night-only tests
 ```
 
 **Artifacts:**

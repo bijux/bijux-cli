@@ -16,7 +16,7 @@ from bijux_cli.core.exceptions import ServiceError
 from bijux_cli.infra.observability import Observability
 from bijux_cli.infra.telemetry import NullTelemetry
 
-# pyright: reportPrivateUsage=false
+
 
 
 def test_setup_and_defaults() -> None:
@@ -105,7 +105,7 @@ def test_log_invalid_level_raises_service_error() -> None:
     obs = Observability.setup()
 
     class DummyLogger:
-        def bind(self, **kwargs: Any) -> DummyLogger:  # pytype: disable=name-error
+        def bind(self, **kwargs: Any) -> DummyLogger:
             """A dummy bind method that returns itself."""
             return self
 

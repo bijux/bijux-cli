@@ -17,31 +17,31 @@ import typer
 from typer import Context
 
 from bijux_cli.commands.memory.clear import (
-    _build_payload as clear_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as clear_build_payload,
 )
 from bijux_cli.commands.memory.clear import clear_memory
 from bijux_cli.commands.memory.delete import (
-    _build_payload as delete_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as delete_build_payload,
 )
 from bijux_cli.commands.memory.delete import delete_memory
 from bijux_cli.commands.memory.get import (
-    _build_payload as get_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as get_build_payload,
 )
 from bijux_cli.commands.memory.get import get_memory
 from bijux_cli.commands.memory.list import (
-    _build_payload as list_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as list_build_payload,
 )
 from bijux_cli.commands.memory.list import list_memory
 from bijux_cli.commands.memory.service import (
-    _build_payload as summary_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as summary_build_payload,
 )
 from bijux_cli.commands.memory.service import (
-    _run_one_shot_mode,  # pyright: ignore[reportPrivateUsage]
+    _run_one_shot_mode,
     memory,
     memory_summary,
 )
 from bijux_cli.commands.memory.set import (
-    _build_payload as set_build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload as set_build_payload,
 )
 from bijux_cli.commands.memory.set import set_memory
 from bijux_cli.commands.memory.utils import resolve_memory_service

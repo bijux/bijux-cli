@@ -31,7 +31,7 @@ from bijux_cli.commands.dev.service import dev
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-dev_app = typer.Typer(  # pytype: skip-file
+dev_app = typer.Typer(
     name="dev",
     help="Developer tools and diagnostics.",
     rich_markup_mode=None,

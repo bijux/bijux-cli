@@ -48,7 +48,7 @@ from bijux_cli.core.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-version_app = typer.Typer(  # pytype: skip-file
+version_app = typer.Typer(
     name="version",
     help="Show the CLI version.",
     rich_markup_mode=None,

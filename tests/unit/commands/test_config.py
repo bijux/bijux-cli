@@ -823,7 +823,7 @@ def test_posix_lock_success_and_run(
 
     class FakeContainer:
         def resolve(self, _: Any) -> DummySvc:
-            return DummySvc()  # pyright: ignore[reportReturnType]
+            return DummySvc()
 
     monkeypatch.setattr(
         "bijux_cli.commands.config.set.DIContainer.current", FakeContainer

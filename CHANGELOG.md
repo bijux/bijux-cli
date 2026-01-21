@@ -6,16 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 <a id="unreleased"></a>
-## [Unreleased]
+## Unreleased (v0.2.0)
 
-### Added
-* (add new entries via Towncrier fragments in `changelog.d/`)
-
-### Changed
-* (add here)
-
-### Fixed
-* (add here)
+* Removed tooling: pre-commit, pyright, pytype, and GitLab CI remnants.
+* Dropped Windows support; Linux/macOS only, with Windows-specific paths removed.
+* Test restructuring: added night tests, markers, and split CI fast vs night.
+* Python policy frozen at **>= 3.11** across docs, packaging, and CI.
 
 [Back to top](#top)
 
@@ -59,7 +55,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * All `Makefile` modules have been refactored to use the new hygienic `artifacts/` directory structure for outputs and caches.
     * `tox.ini` has been updated to align with the new Makefile targets and to run a comprehensive suite of checks for the `py311` environment, mirroring the full CI validation process.
 * **API Schema:** The OpenAPI `schema.yaml` has been improved with stricter validation (`additionalProperties: false`), better descriptions, response links, and more detailed examples.
-* **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules by removing `pyright: ignore` comments and adding explicit `cast` calls where necessary.
+* **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules with clearer casts.
 
 ### Fixed
 * **Type Safety:** Resolved numerous previously ignored type errors throughout the codebase and test suite.
@@ -161,7 +157,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Quality & security pipeline**
 
     * Added formatting/linting: `ruff` (+format).
-    * Added typing: `mypy`, `pyright`, `pytype`.
+    * Added typing: `mypy`.
     * Added docs style/coverage: `pydocstyle`, `interrogate`.
     * Added code health: `vulture`, `deptry`, `radon`, `codespell`, `reuse`.
     * Added security: `bandit`, `pip-audit`.
@@ -184,11 +180,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
 
-* **pre-commit**
-
-    * Added hygiene hooks: `ruff-format` + `ruff`, `mdformat`, and `codespell`.
-      * Enforced Conventional Commits via **commitizen** `commit-msg` hook.
-
 * **tox orchestration**
 
     * Configured multi-Python test envs (`py311`, `py312`, `py313`).
@@ -198,7 +189,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Continuous Integration**
 
     * Added **GitHub Actions** workflow running tox across Python versions with Node.js 20 and Java 17 for API checks.
-    * Added **GitLab CI** sample mirroring the GitHub workflow (tox-driven) with artifacts for coverage and API logs.
     * CI/CD pipelines directly leverage the modularized Makefile for consistent local/CI behavior.
 
 * **Packaging / PyPI page**
@@ -221,4 +211,3 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 [0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bijux/bijux-cli/releases/tag/v0.1.0
-

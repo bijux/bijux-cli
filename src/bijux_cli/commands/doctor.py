@@ -45,7 +45,7 @@ from bijux_cli.core.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-doctor_app = typer.Typer(  # pytype: skip-file
+doctor_app = typer.Typer(
     name="doctor",
     help="Run CLI health diagnostics and environment checks.",
     rich_markup_mode=None,

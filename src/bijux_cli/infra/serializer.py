@@ -309,7 +309,7 @@ class OrjsonSerializer(_Base):
             assert _ORJSON is not None  # noqa: S101 # nosec B101
             opts = _ORJSON.OPT_INDENT_2 if pretty else 0
             raw = _ORJSON.dumps(obj, option=opts, default=self._default)
-            return typing.cast(bytes, raw)  # pyright: ignore[reportUnnecessaryCast]
+            return typing.cast(bytes, raw)
         return json.dumps(
             obj,
             indent=2 if pretty else None,

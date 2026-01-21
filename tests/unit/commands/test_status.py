@@ -117,7 +117,7 @@ def test_build_payload_minimal(monkeypatch: pytest.MonkeyPatch) -> None:
         called["ascii"] += 1
 
     monkeypatch.setattr(mod, "ascii_safe", _fake_ascii)
-    p = mod._build_payload(include_runtime=False)  # pyright: ignore[reportPrivateUsage]
+    p = mod._build_payload(include_runtime=False)
     assert p == {"status": "ok"}
     assert called["ascii"] == 0
 
@@ -130,7 +130,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         return v
 
     monkeypatch.setattr(mod, "ascii_safe", fake_ascii_safe)
-    p: Mapping[str, object] = mod._build_payload(  # pyright: ignore[reportPrivateUsage]
+    p: Mapping[str, object] = mod._build_payload(
         include_runtime=True
     )
     assert p["status"] == "ok"
@@ -158,7 +158,7 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
     with pytest.raises(SystemExit) as ei:
-        mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+        mod._run_watch_mode(
             command="status",
             watch_interval=0.01,
             fmt="yaml",
@@ -189,7 +189,7 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
     with pytest.raises(SystemExit) as ei:
-        mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+        mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
             fmt="json",
@@ -219,7 +219,7 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
     with pytest.raises(SystemExit) as ei:
-        mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+        mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
             fmt="json",
@@ -403,7 +403,7 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
         signal.raise_signal(signal.SIGINT)
 
     monkeypatch.setattr(time, "sleep", _sleep)
-    mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+    mod._run_watch_mode(
         command="status",
         watch_interval=0.01,
         fmt="json",
@@ -432,7 +432,7 @@ def test_run_watch_mode_one_iteration_and_stop(
         signal.raise_signal(signal.SIGINT)
 
     monkeypatch.setattr(time, "sleep", sleep_then_sigint)
-    mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+    mod._run_watch_mode(
         command="status",
         watch_interval=0.01,
         fmt="json",
@@ -492,7 +492,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
 
     monkeypatch.setattr(time, "sleep", _sleep)
     monkeypatch.setattr(em, "emit", raising_emit)
-    mod._run_watch_mode(  # pyright: ignore[reportPrivateUsage]
+    mod._run_watch_mode(
         command="status",
         watch_interval=0.0,
         fmt="json",
