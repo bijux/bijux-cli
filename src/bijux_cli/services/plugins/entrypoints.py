@@ -103,8 +103,8 @@ async def load_entrypoints(
 
     for ep in _iter_plugin_eps():
         try:
-            plugin_class = ep.load()
-            plugin = plugin_class()
+            plugin_class = await asyncio.to_thread(ep.load)
+            plugin = await asyncio.to_thread(plugin_class)
 
             if not _compatible(plugin):
                 raise RuntimeError(
@@ -123,7 +123,7 @@ async def load_entrypoints(
             if asyncio.iscoroutinefunction(startup):
                 await startup(di)
             elif callable(startup):
-                startup(di)
+                await asyncio.to_thread(startup, di)
 
             if obs:
                 obs.log("info", f"Loaded plugin '{ep.name}'")

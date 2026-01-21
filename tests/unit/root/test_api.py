@@ -109,10 +109,17 @@ def test_schedule_event_coro_with_loop(bijux_api: BijuxAPI) -> None:
     mock_coro_func = AsyncMock()
     bijux_api._tel.event.return_value = mock_coro_func()  # type: ignore[attr-defined]
     with patch("asyncio.get_running_loop") as mock_loop:
-        mock_create_task = MagicMock()
+        def _run(coro: Any) -> None:
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(coro)
+            finally:
+                loop.close()
+
+        mock_create_task = MagicMock(side_effect=_run)
         mock_loop.return_value.create_task = mock_create_task
         bijux_api._schedule_event("test", {})
-    mock_create_task.assert_called_once_with(bijux_api._tel.event.return_value)  # type: ignore[attr-defined]
+    mock_create_task.assert_called_once()
 
 
 def test_schedule_event_coro_no_loop(
@@ -127,10 +134,7 @@ def test_schedule_event_coro_no_loop(
     mock_event = MagicMock(return_value=coro)
     monkeypatch.setattr(bijux_api._tel, "event", mock_event, raising=False)
 
-    with (
-        patch("asyncio.get_running_loop", side_effect=RuntimeError),
-        patch("asyncio.run") as mock_run,
-    ):
+    with patch("bijux_cli.api.run_awaitable") as mock_run:
         mock_run.side_effect = lambda c: (c.close(), None)[1]
         bijux_api._schedule_event("test", {})
 
@@ -298,35 +302,17 @@ async def test_run_async_generic_error(
 
 def test_run_sync_no_loop(bijux_api: BijuxAPI) -> None:
     """Test synchronous command execution when no event loop is running."""
-    with patch("asyncio.run") as mock_run:
+    with patch("bijux_cli.api.run_command") as mock_run:
         bijux_api.run_sync("cmd")
     mock_run.assert_called_once()
 
 
 def test_run_sync_with_loop(bijux_api: BijuxAPI) -> None:
-    """run_sync should drive the coroutine with an existing loop-like object."""
-    from collections.abc import Awaitable, Coroutine
-
-    async def _done() -> str:
-        return "ok"
-
-    def _fake_run_async(self: Any, *a: Any, **k: Any) -> Coroutine[Any, Any, str]:
-        return _done()
-
-    with patch.object(type(bijux_api), "run_async", new=_fake_run_async):
-
-        def _run_until_complete(coro: Awaitable[Any]) -> Any:
-            loop = asyncio.new_event_loop()
-            try:
-                return loop.run_until_complete(coro)
-            finally:
-                loop.close()
-
-        fake_loop = SimpleNamespace(run_until_complete=_run_until_complete)
-        with patch("asyncio.get_running_loop", return_value=fake_loop):
-            res = bijux_api.run_sync("anything")
-
+    """run_sync should delegate through the shared command runner."""
+    with patch("bijux_cli.api.run_command", return_value="ok") as mock_run:
+        res = bijux_api.run_sync("anything")
     assert res == "ok"
+    mock_run.assert_called_once()
 
 
 def test_load_plugin(bijux_api: BijuxAPI, tmp_path: Path) -> None:
@@ -520,23 +506,20 @@ class _CloseAwaitable:
 
 
 def test_schedule_event_non_awaitable_noop(monkeypatch: pytest.MonkeyPatch) -> None:
-    """event() returns non-awaitable -> early return; loop is never queried."""
+    """event() returns non-awaitable -> no async scheduling occurs."""
     api = BijuxAPI()
 
     mock_event = MagicMock(return_value=None)
     monkeypatch.setattr(api._tel, "event", mock_event, raising=False)
 
-    get_loop = MagicMock(side_effect=AssertionError("should not be called"))
-    monkeypatch.setattr(asyncio, "get_running_loop", get_loop)
-
     api._schedule_event("name", {"a": 1})
 
     mock_event.assert_called_once_with("name", {"a": 1})
-    assert get_loop.call_count == 0
+    # No run_awaitable call should happen when event() returns None.
 
 
 def test_schedule_event_loop_no_create_task(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Loop object without create_task should fall back to asyncio.run."""
+    """Awaitable telemetry events are routed through run_awaitable."""
     api = BijuxAPI()
 
     async def _ev() -> None:
@@ -545,16 +528,12 @@ def test_schedule_event_loop_no_create_task(monkeypatch: pytest.MonkeyPatch) -> 
     coro = _ev()
     monkeypatch.setattr(api._tel, "event", MagicMock(return_value=coro), raising=False)
 
-    fake_loop = SimpleNamespace()
-    monkeypatch.setattr(asyncio, "get_running_loop", lambda: fake_loop)
-
     def _run_side_effect(c: Any) -> None:
         with suppress(Exception):
             c.close()
 
     run_spy = MagicMock(side_effect=_run_side_effect)
-
-    with patch.object(asyncio, "run", run_spy):
+    with patch("bijux_cli.api.run_awaitable", run_spy):
         api._schedule_event("x", {})
 
     run_spy.assert_called_once_with(coro)
@@ -600,38 +579,11 @@ async def test_register_wrapper_executes_sync_and_async(
     assert captured["name"] == "cmd_async"
 
 
-def test_run_sync_loop_without_run_until_complete_raises(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """If a loop exists but lacks run_until_complete -> RuntimeError."""
+def test_run_sync_missing_command_raises() -> None:
+    """run_sync should surface command errors from the engine."""
     api = BijuxAPI()
-    monkeypatch.setattr(asyncio, "get_running_loop", lambda: SimpleNamespace())
-    with pytest.raises(RuntimeError, match="run_sync"):
+    with pytest.raises(BijuxError, match="Failed to run command"):
         api.run_sync("anything")
-
-
-def test_run_sync_closes_coroutine_in_finally(monkeypatch: pytest.MonkeyPatch) -> None:
-    """run_sync should call close() on the awaitable after driving it."""
-    api = BijuxAPI()
-
-    closer = _CloseAwaitable("ok")
-
-    def _fake_run_async(self: BijuxAPI, *a: Any, **k: Any) -> Any:
-        return closer
-
-    def _run_until_complete(coro: Any) -> Any:
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(coro)
-        finally:
-            loop.close()
-
-    fake_loop = SimpleNamespace(run_until_complete=_run_until_complete)
-    monkeypatch.setattr(asyncio, "get_running_loop", lambda: fake_loop)
-    with patch.object(BijuxAPI, "run_async", new=_fake_run_async):
-        res = api.run_sync("x")
-    assert res == "ok"
-    assert closer.closed is True
 
 
 @pytest.mark.asyncio

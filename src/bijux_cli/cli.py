@@ -18,32 +18,21 @@ external plugins via entry points:
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-import importlib.metadata as md
 import logging
 import subprocess  # noqa: S603
 import sys
 from typing import Any
 
 import typer
-from typer import Context, Typer
+from typer import Context
+
+from bijux_cli.core.async_exec import AsyncTyper
 
 from bijux_cli.commands import register_commands, register_dynamic_plugins
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.addHandler(logging.NullHandler())
-
-
-def _iter_entry_points(group: str) -> Iterable[md.EntryPoint]:
-    """Return entry points for a given group.
-
-    Args:
-        group: The entry-point group name.
-
-    Returns:
-        An iterable of entry points.
-    """
-    return md.entry_points(group=group)
 
 
 def _collect_names(container: Mapping[Any, Any] | Iterable[Any]) -> list[str]:
@@ -67,7 +56,7 @@ def _collect_names(container: Mapping[Any, Any] | Iterable[Any]) -> list[str]:
     return names
 
 
-def _existing_top_level_names(app: Typer) -> set[str]:
+def _existing_top_level_names(app: AsyncTyper) -> set[str]:
     """Return the set of names already registered at the top level.
 
     Args:
@@ -81,76 +70,13 @@ def _existing_top_level_names(app: Typer) -> set[str]:
     return set(groups) | set(commands)
 
 
-def _safe_add_typer(app: Typer, sub: Typer, name: str, seen: set[str]) -> None:
-    """Add a Typer sub-app if the name is not taken.
-
-    Args:
-        app: The root Typer application.
-        sub: The Typer sub-application to add.
-        name: The mount name.
-        seen: The set of already used names.
-    """
-    if name in seen:
-        logger.debug("Skipped plugin group '%s' (name already taken)", name)
-        return
-    app.add_typer(sub, name=name)
-    seen.add(name)
-    logger.debug("Registered plugin group: %s", name)
-
-
-def register_entrypoint_plugins(app: Typer) -> None:
+def register_entrypoint_plugins(app: AsyncTyper) -> None:
     """Discover and register plugins exposed via entry points.
 
     Args:
         app: The root Typer application.
     """
-    seen: set[str] = _existing_top_level_names(app)
-
-    for ep in _iter_entry_points("bijux.commands"):
-        try:
-            obj = ep.load()
-            if isinstance(obj, Typer):
-                _safe_add_typer(app, obj, ep.name, seen)
-            else:
-                logger.debug(
-                    "Entry point '%s' in 'bijux.commands' is not a Typer app", ep.name
-                )
-        except Exception as exc:
-            logger.debug("Failed to load entry point %s: %s", ep.name, exc)
-
-    for ep in _iter_entry_points("bijux_cli.plugins"):
-        try:
-            plugin = ep.load()
-            if isinstance(plugin, Typer):
-                _safe_add_typer(app, plugin, ep.name, seen)
-                continue
-            if callable(plugin):
-                try:
-                    plugin = plugin()
-                except Exception as inst_exc:
-                    logger.debug(
-                        "Failed to instantiate plugin %s: %s", ep.name, inst_exc
-                    )
-                    continue
-            groups = getattr(plugin, "registered_groups", None)
-            if isinstance(groups, dict):
-                for name, sub in groups.items():
-                    if isinstance(sub, Typer):
-                        _safe_add_typer(app, sub, name, seen)
-            register_hook = getattr(plugin, "register", None)
-            if callable(register_hook):
-                try:
-                    register_hook(app)
-                except Exception as hook_exc:
-                    logger.debug(
-                        "Plugin '%s' register(app) failed: %s", ep.name, hook_exc
-                    )
-            if not isinstance(plugin, Typer):
-                maybe_typer = getattr(plugin, "app", None)
-                if isinstance(maybe_typer, Typer):
-                    _safe_add_typer(app, maybe_typer, ep.name, seen)
-        except Exception as exc:
-            logger.debug("Failed to load plugin entry point %s: %s", ep.name, exc)
+    register_dynamic_plugins(app)
 
 
 def maybe_default_to_repl(ctx: Context) -> None:
@@ -171,7 +97,7 @@ def maybe_default_to_repl(ctx: Context) -> None:
         raise typer.Exit(code=2)
 
 
-def _log_registered(app: Typer) -> None:
+def _log_registered(app: AsyncTyper) -> None:
     """Log the names of registered core commands and groups at debug level.
 
     Args:
@@ -183,20 +109,19 @@ def _log_registered(app: Typer) -> None:
     logger.debug("Core groups registered: %s", grps)
 
 
-def build_app() -> Typer:
+def build_app() -> AsyncTyper:
     """Construct the root Typer application.
 
     Returns:
         The fully assembled Typer application with core and plugin commands.
     """
-    app = typer.Typer(
+    app = AsyncTyper(
         help="Bijux CLI – Lean, plug-in-driven command-line interface.",
         invoke_without_command=True,
     )
     register_commands(app)
     _log_registered(app)
     register_dynamic_plugins(app)
-    register_entrypoint_plugins(app)
     app.callback(invoke_without_command=True)(maybe_default_to_repl)
     return app
 

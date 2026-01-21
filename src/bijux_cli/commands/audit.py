@@ -31,6 +31,8 @@ import platform
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
@@ -52,7 +54,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-audit_app = typer.Typer(
+audit_app = AsyncTyper(
     name="audit",
     help="Audit the current environment for configuration and state issues.",
     rich_markup_mode=None,

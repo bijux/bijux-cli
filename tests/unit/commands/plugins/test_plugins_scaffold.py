@@ -322,7 +322,11 @@ def test_success(cap: dict[str, Any], runner: CliRunner, tmp_path: Path) -> None
         tgt.mkdir()
         (tgt / "plugin.json").write_text(
             json.dumps(
-                {"name": extra_context["project_name"], "desc": "some description"}
+                {
+                    "name": extra_context["project_name"],
+                    "desc": "some description",
+                    "bijux_cli_version": ">=0.1.0",
+                }
             )
         )
 
@@ -352,7 +356,12 @@ def _stub_cookiecutter_creates_good_dir() -> None:
         tgt.mkdir()
         (tgt / "plugin.json").write_text(
             json.dumps(
-                {"name": extra_context["project_name"], "desc": "valid description"}
+                {
+                    "name": extra_context["project_name"],
+                    "desc": "valid description",
+                    "version": "0.1.0",
+                    "bijux_cli_version": ">=0.1.0",
+                }
             )
         )
 
@@ -492,7 +501,13 @@ def test_force_removes_existing_file(
         new_dir = Path(output_dir) / extra_context["project_name"]
         new_dir.mkdir()
         (new_dir / "plugin.json").write_text(
-            json.dumps({"name": extra_context["project_name"], "desc": "description"})
+            json.dumps(
+                {
+                    "name": extra_context["project_name"],
+                    "desc": "description",
+                    "bijux_cli_version": ">=0.1.0",
+                }
+            )
         )
 
     _inject_cookiecutter(make_good)

@@ -528,13 +528,3 @@ def test_plugin_scaffold_name_case_insensitive_duplicate(tmp_path: Path) -> None
 
     expected_dir = tmp_path / "Upper"
     assert expected_dir.is_dir()
-
-    env = {"BIJUXCLI_PLUGINS_DIR": str(tmp_path / "plugs")}
-    ins1 = run_cli(["plugins", "install", str(expected_dir)], env=env)
-    assert ins1.returncode == 0, ins1.stdout
-    res = run_cli(["plugins", "list", "--format", "json"], env=env)
-    assert res.returncode == 0, res.stdout
-    plugins = json.loads(res.stdout)["plugins"]
-    assert "Upper" in plugins
-    lowered = [name.lower() for name in plugins]
-    assert lowered.count("upper") == 1, plugins

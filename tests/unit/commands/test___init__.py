@@ -6,11 +6,7 @@
 
 from __future__ import annotations
 
-import importlib
-import importlib.metadata
-import importlib.util
 from pathlib import Path
-import types
 from typing import Any
 
 import pytest
@@ -75,38 +71,6 @@ def test_list_registered_command_names_includes_cores_and_plugins() -> None:
         assert core in all_names
 
 
-def test_local_plugin_missing_loader(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """Test that a local plugin with a missing loader is skipped silently."""
-    root = Typer()
-    added: list[str] = []
-    monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
-
-    base = tmp_path / "plugins"
-    base.mkdir()
-    p = base / "no_loader"
-    p.mkdir()
-    (p / "plugin.py").write_text("from typer import Typer\napp = Typer()\n")
-
-    import bijux_cli.services.plugins as serv
-
-    monkeypatch.setattr(serv, "get_plugins_dir", lambda: base)
-
-    real_spec = importlib.util.spec_from_file_location
-
-    def fake_spec(name: str, path: str) -> Any:
-        return types.SimpleNamespace(loader=None)
-
-    monkeypatch.setattr(importlib.util, "spec_from_file_location", fake_spec)
-
-    register_dynamic_plugins(root)
-    assert not added
-    monkeypatch.setattr(importlib.util, "spec_from_file_location", real_spec)
-
-
 def test_list_registered_command_names_collects_dynamic(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -126,17 +90,32 @@ def test_register_dynamic_plugins_via_entry_points(
     added: list[str] = []
     monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
 
-    fake_eps = [
-        make_fake_ep("good_ep", app_obj=DummyTyper()),
-        make_fake_ep("bad_ep", exc=RuntimeError("fail_load")),
-    ]
+    from bijux_cli.services.plugins.catalog import PluginMetadata
 
-    class FakeEPs:
-        def select(self, *, group: str) -> list[Any]:
-            assert group == "bijux_cli.plugins"
-            return fake_eps
+    good = PluginMetadata(
+        name="good_ep",
+        version="0.1.0",
+        enabled=True,
+        source="entrypoint",
+        requires_cli=">=0.1.0",
+    )
+    bad = PluginMetadata(
+        name="bad_ep",
+        version="0.1.0",
+        enabled=True,
+        source="entrypoint",
+        requires_cli=">=0.1.0",
+    )
 
-    monkeypatch.setattr(importlib.metadata, "entry_points", FakeEPs)
+    monkeypatch.setattr(
+        "bijux_cli.services.plugins.catalog.discover_plugins", lambda: [good, bad]
+    )
+    monkeypatch.setattr(
+        "bijux_cli.services.plugins.lazy.lazy_command_for",
+        lambda meta: DummyTyper()
+        if meta.name == "good_ep"
+        else (_ for _ in ()).throw(RuntimeError("fail_load")),
+    )
 
     before = set(list_registered_command_names())
     register_dynamic_plugins(root)
@@ -155,8 +134,7 @@ def test_dynamic_plugins_entry_point_loading_fails_entire_metadata(
     root = Typer()
     monkeypatch.setattr(root, "add_typer", lambda *a, **k: None)
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
+        "bijux_cli.services.plugins.catalog.discover_plugins",
         lambda: (_ for _ in ()).throw(RuntimeError("broken")),
     )
 
@@ -173,111 +151,11 @@ def test_dynamic_plugins_discovery_bails_on_getdir_exception(
     root = Typer()
     monkeypatch.setattr(root, "add_typer", lambda *a, **k: None)
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: types.SimpleNamespace(select=lambda **kw: []),
-    )
-
-    import bijux_cli.services.plugins as serv
-
-    monkeypatch.setattr(
-        serv, "get_plugins_dir", lambda: (_ for _ in ()).throw(ValueError("no dirs"))
+        "bijux_cli.services.plugins.catalog.discover_plugins",
+        lambda: (_ for _ in ()).throw(ValueError("no dirs")),
     )
 
     before = set(list_registered_command_names())
     register_dynamic_plugins(root)
     after = set(list_registered_command_names())
     assert before == after
-
-
-def test_register_dynamic_plugins_local_dir(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Test the registration of dynamic plugins from a local directory."""
-    root = Typer()
-    added: list[str] = []
-    monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
-
-    base = tmp_path / "plugins"
-    base.mkdir()
-    (base / "plug1").mkdir()
-    (base / "plug1" / "plugin.py").write_text(
-        "from typer import Typer\ndef cli(): return Typer()"
-    )
-    (base / "plug2").mkdir()
-    (base / "plug2" / "plugin.py").write_text("from typer import Typer\napp = Typer()")
-    (base / "plug3").mkdir()
-    (base / "plug3" / "plugin.py").write_text("x = 5")
-    (base / "plug4").mkdir()
-
-    import bijux_cli.services.plugins as serv
-
-    monkeypatch.setattr(serv, "get_plugins_dir", lambda: base)
-
-    register_dynamic_plugins(root)
-
-    assert set(added) == {"plug1", "plug2"}
-
-
-def test_local_plugin_cli_returns_non_typer(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Test that a local plugin's 'cli' function returning a non-Typer object is skipped."""
-    root = Typer()
-    added: list[str] = []
-    monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
-
-    base = tmp_path / "plugins"
-    base.mkdir()
-    p = base / "bad_app"
-    p.mkdir()
-    (p / "plugin.py").write_text("def cli(): return 12345")
-
-    import bijux_cli.services.plugins as serv
-
-    monkeypatch.setattr(serv, "get_plugins_dir", lambda: base)
-
-    register_dynamic_plugins(root)
-
-    assert not added
-
-
-def test_local_plugin_module_load_exception(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Test that an exception during a local plugin's module import is handled."""
-    root = Typer()
-    added: list[str] = []
-    monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
-
-    base = tmp_path / "plugins"
-    base.mkdir()
-    p = base / "raiser"
-    p.mkdir()
-    (p / "plugin.py").write_text("raise ValueError('import-fail')")
-
-    import bijux_cli.services.plugins as serv
-
-    monkeypatch.setattr(serv, "get_plugins_dir", lambda: base)
-
-    register_dynamic_plugins(root)
-
-    assert not added
-
-
-def test_entry_points_loading_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Entry point failures shouldn't change the registered command names."""
-    before = set(list_registered_command_names())
-
-    root = Typer()
-    monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: (_ for _ in ()).throw(RuntimeError("ep-boom")),
-    )
-
-    register_dynamic_plugins(root)
-
-    after = set(list_registered_command_names())
-    assert after == before
-    assert "ep-boom" not in after

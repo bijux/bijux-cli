@@ -260,6 +260,7 @@ def scaffold_plugin(
             isinstance(meta, dict)
             and meta.get("name")
             and (meta.get("desc") or meta.get("description"))
+            and meta.get("bijux_cli_version")
         ):
             raise ValueError("Missing required fields")
     except Exception as exc:

@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.memory.clear import clear_memory
 from bijux_cli.commands.memory.delete import delete_memory
 from bijux_cli.commands.memory.get import get_memory
@@ -38,7 +40,7 @@ from bijux_cli.commands.memory.set import set_memory
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-memory_app = typer.Typer(
+memory_app = AsyncTyper(
     name="memory",
     help="Manage CLI memory.",
     rich_markup_mode=None,

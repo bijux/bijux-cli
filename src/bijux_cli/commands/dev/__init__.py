@@ -25,13 +25,15 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.dev.di import dev_di_graph
 from bijux_cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.commands.dev.service import dev
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-dev_app = typer.Typer(
+dev_app = AsyncTyper(
     name="dev",
     help="Developer tools and diagnostics.",
     rich_markup_mode=None,

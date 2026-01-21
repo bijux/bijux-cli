@@ -17,6 +17,7 @@ from typer.testing import CliRunner
 import bijux_cli.cli as cli
 from bijux_cli.cli import app as cli_app
 import bijux_cli.commands.plugins.uninstall as uninstall_mod
+from bijux_cli.services.plugins.catalog import PluginMetadata
 
 
 @pytest.fixture
@@ -193,6 +194,31 @@ def test_successful_uninstall(
     payload = captured["payload"]
     assert payload["status"] == "uninstalled"
     assert payload["plugin"] == "garply"
+
+
+def test_entrypoint_uninstall(
+    captured: dict[str, Any], runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test uninstalling an entrypoint plugin via pip."""
+    meta = PluginMetadata(
+        name="smoke",
+        version="0.1.0",
+        enabled=True,
+        source="entrypoint",
+        requires_cli=">=0.1.0",
+        dist_name="smoke-dist",
+    )
+    monkeypatch.setattr(uninstall_mod, "get_plugin_metadata", lambda _: meta)
+    proc = type("Proc", (), {"returncode": 0, "stderr": "", "stdout": ""})()
+    monkeypatch.setattr(
+        uninstall_mod, "subprocess", type("Sub", (), {"run": lambda *a, **k: proc})
+    )
+
+    result = runner.invoke(cli_app, ["plugins", "uninstall", "smoke"])
+    assert result.exit_code == 0
+    payload = captured["payload"]
+    assert payload["status"] == "uninstalled"
+    assert payload["plugin"] == "smoke"
 
 
 def test_not_dir_to_not_installed(

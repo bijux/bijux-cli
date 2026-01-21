@@ -27,6 +27,8 @@ import contextlib
 import fcntl
 from pathlib import Path
 import shutil
+import subprocess  # noqa: S603
+import sys
 import unicodedata
 
 import typer
@@ -45,6 +47,10 @@ from bijux_cli.core.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.services.plugins import get_plugins_dir
+from bijux_cli.services.plugins.catalog import (
+    get_plugin_metadata,
+    invalidate_plugin_cache,
+)
 
 
 def uninstall_plugin(
@@ -80,6 +86,39 @@ def uninstall_plugin(
     command = "plugins uninstall"
 
     fmt_lower = validate_common_flags(fmt, command, quiet)
+    try:
+        meta = get_plugin_metadata(name)
+    except Exception:
+        meta = None
+
+    if meta and meta.source == "entrypoint" and meta.dist_name:
+        cmd = [sys.executable, "-m", "pip", "uninstall", "-y", meta.dist_name]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            detail = proc.stderr.strip() or proc.stdout.strip()
+            emit_error_and_exit(
+                f"pip uninstall failed: {detail}",
+                code=1,
+                failure="pip_uninstall_failed",
+                command=command,
+                fmt=fmt_lower,
+                quiet=quiet,
+                include_runtime=verbose,
+                debug=debug,
+            )
+        invalidate_plugin_cache()
+        payload = {"status": "uninstalled", "plugin": name}
+        new_run_command(
+            command_name=command,
+            payload_builder=lambda include: payload,
+            quiet=quiet,
+            verbose=verbose,
+            fmt=fmt_lower,
+            pretty=pretty,
+            debug=debug,
+        )
+        return
+
     plugins_dir = get_plugins_dir()
     refuse_on_symlink(plugins_dir, command, fmt_lower, quiet, verbose, debug)
 
@@ -193,6 +232,7 @@ def uninstall_plugin(
                     debug=debug,
                 )
 
+    invalidate_plugin_cache()
     payload = {"status": "uninstalled", "plugin": name}
 
     new_run_command(

@@ -34,6 +34,8 @@ from typing import Any
 import click
 import click as _click
 import typer
+
+from bijux_cli.core.async_exec import AsyncTyper
 import typer as _typer
 
 from bijux_cli.commands.utilities import (
@@ -228,7 +230,7 @@ def _build_help_payload(
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-help_app = typer.Typer(
+help_app = AsyncTyper(
     name="help",
     add_completion=False,
     help="Show help for any CLI command or subcommand.",

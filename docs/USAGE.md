@@ -25,6 +25,7 @@ A practical reference for installation, global flags, commands, configuration, a
 
   * [Core Workflow (no plugins)](#core-workflow-no-plugins)
   * [Plugin Workflow (requires a real template)](#plugin-workflow-requires-a-real-template)
+* [Plugin Non-Goals](#plugin-non-goals)
 * [Structured Error Model](#structured-error-model)
 * [Exit Codes](#exit-codes)
 * [Troubleshooting & FAQs](#troubleshooting--faqs)
@@ -390,6 +391,16 @@ bijux plugins uninstall my_plugin || true
 ```
 
 > If you do not provide a real template, `scaffold` will fail with `no_template`, and subsequent `install/info/check` will also fail.
+
+[Back to top](#top)
+
+---
+
+<a id="plugin-non-goals"></a>
+
+## Plugin Non-Goals
+
+No sandboxing. No security guarantees. Use trusted plugins only.
 
 [Back to top](#top)
 

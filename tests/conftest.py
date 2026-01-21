@@ -18,9 +18,15 @@ from __future__ import annotations
 
 from collections.abc import Generator
 import contextlib
+import os
+from pathlib import Path
+import tempfile
 from typing import Any
 
 import pytest
+
+_DEFAULT_PLUGINS_DIR = Path(tempfile.mkdtemp(prefix="bijuxcli-plugins-")).resolve()
+os.environ.setdefault("BIJUXCLI_PLUGINS_DIR", str(_DEFAULT_PLUGINS_DIR))
 
 
 @pytest.fixture(autouse=True)
@@ -107,6 +113,14 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(var, raising=False)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_plugins_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """Force tests to use an isolated plugins directory."""
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path / "plugins"))
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Apply unit/integration/night markers based on test location."""
     for item in items:
@@ -115,5 +129,17 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker("unit")
         elif "/tests/integration/" in path_str:
             item.add_marker("integration")
+        elif "/tests/e2e/" in path_str:
+            item.add_marker("e2e")
+            item.add_marker("integration")
         elif "/tests/night/" in path_str:
             item.add_marker("night")
+            item.add_marker("slow")
+        timeout_marker = item.get_closest_marker("timeout")
+        if timeout_marker and timeout_marker.args:
+            try:
+                seconds = float(timeout_marker.args[0])
+            except (TypeError, ValueError):
+                seconds = None
+            if seconds is not None and seconds > 10:
+                item.add_marker("slow")

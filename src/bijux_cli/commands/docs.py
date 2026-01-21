@@ -30,6 +30,8 @@ from pathlib import Path
 import platform
 
 import typer
+
+from bijux_cli.core.async_exec import AsyncTyper
 import typer.core
 
 from bijux_cli.__version__ import __version__
@@ -50,7 +52,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-docs_app = typer.Typer(
+docs_app = AsyncTyper(
     name="docs",
     help="(-h, --help) Generate API specifications (OpenAPI-like) for Bijux CLI.",
     rich_markup_mode=None,
