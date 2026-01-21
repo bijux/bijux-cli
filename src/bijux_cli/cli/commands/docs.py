@@ -177,9 +177,7 @@ def docs(
             and payload upon any error, including argument validation, ASCII
             violations, serialization failures, or I/O issues.
     """
-    from bijux_cli.cli.commands.utilities import normalize_format
-    from bijux_cli.infra.serializer import OrjsonSerializer, PyYAMLSerializer
-    from bijux_cli.infra.telemetry import NoopTelemetry
+    from bijux_cli.cli.commands.utilities import normalize_format, resolve_serializer
 
     command = "docs"
     from bijux_cli.core.precedence import resolve_output_flags
@@ -253,11 +251,7 @@ def docs(
         )
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
-    serializer = (
-        PyYAMLSerializer(NoopTelemetry())
-        if output_format is OutputFormat.YAML
-        else OrjsonSerializer(NoopTelemetry())
-    )
+    serializer = resolve_serializer()
     try:
         content = serializer.dumps(spec, fmt=output_format, pretty=effective_pretty)
     except Exception as exc:

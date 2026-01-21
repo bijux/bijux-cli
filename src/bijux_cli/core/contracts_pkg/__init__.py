@@ -1,16 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Defines the public API for all service and infrastructure contracts.
+"""Defines the public API for core contracts.
 
-This module acts as the public facade for the application's service contracts,
-which are defined using Python's `Protocol`. It aggregates all individual
-protocol definitions from the `bijux_cli.core.contracts` submodules into a single,
-stable namespace.
-
-By importing from this module, other parts of the application can depend on
-these abstract interfaces without being coupled to the concrete implementation
-details or the internal structure of the contracts package.
+This module aggregates the core-facing protocols (cross-cutting behavior and
+infra-facing interfaces) into a single, stable namespace. Service-specific
+contracts live under `services/<name>/contracts.py`.
 """
 
 from __future__ import annotations

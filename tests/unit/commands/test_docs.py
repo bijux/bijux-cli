@@ -264,12 +264,9 @@ def test_docs_stdout_branch(
         docs_mod, "validate_common_flags", lambda f, c, q, include_runtime=None: f
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"val": 3})
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod,
-        "OrjsonSerializer",
-        lambda tel: MagicMock(dumps=lambda *a, **k: "JSON_OUT"),
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "JSON_OUT"),
     )
 
     ctx: Context = MagicMock()
@@ -301,12 +298,9 @@ def test_docs_file_written_and_emit_and_exit(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod,
-        "OrjsonSerializer",
-        lambda tel: MagicMock(dumps=lambda spec, fmt, pretty: '{"hello":"world"}'),
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda spec, fmt, pretty: '{"hello":"world"}'),
     )
 
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
@@ -354,10 +348,9 @@ def test_docs_write_failure(
 
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"b": 2})
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "{}")
     )
 
     def broken_write_text(self: Path, content: str, encoding: str) -> None:
@@ -409,10 +402,9 @@ def test_docs_missing_output_dir(
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(bad_dir))
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "{}")
     )
 
     ctx: Context = MagicMock()
@@ -457,8 +449,6 @@ def test_docs_writes_yaml_and_emit(
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
-    import bijux_cli.infra.serializer as ser_mod
-
     class FakeYAML:
         def __init__(self, tel: Any) -> None:
             pass
@@ -466,7 +456,7 @@ def test_docs_writes_yaml_and_emit(
         def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
             return yaml.safe_dump(spec, sort_keys=False)
 
-    monkeypatch.setattr(ser_mod, "PyYAMLSerializer", FakeYAML)
+    monkeypatch.setattr("bijux_cli.cli.commands.utilities.resolve_serializer", lambda: FakeYAML(None))
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
@@ -505,10 +495,9 @@ def test_docs_io_fail_flag(
     monkeypatch.setenv("BIJUXCLI_TEST_IO_FAIL", "1")
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"x": 42})
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "{}")
     )
 
     ctx: Context = MagicMock()
@@ -552,10 +541,9 @@ def test_docs_internal_error_path_none(
     mock_emit.side_effect = SystemExit()
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"k": "v"})
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "{}")
     )
 
     monkeypatch.setattr(
@@ -599,10 +587,9 @@ def test_docs_stdout_debug_no_diagnostics(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"num": 7})
 
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "DUMP")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "DUMP")
     )
 
     ctx: Context = MagicMock()
@@ -636,13 +623,13 @@ def test_docs_stdout_quiet_skips_echo(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
 
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "X")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "X")
     )
     monkeypatch.setattr(
-        ser_mod, "PyYAMLSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "")
     )
 
     ctx: Context = MagicMock()
@@ -676,8 +663,6 @@ def test_docs_stdout_yaml(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
-    import bijux_cli.infra.serializer as ser_mod
-
     class FakeYAMLSer:
         def __init__(self, tel: Any) -> None:
             pass
@@ -685,9 +670,9 @@ def test_docs_stdout_yaml(
         def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
             return "{hello: world}\n"
 
-    monkeypatch.setattr(ser_mod, "PyYAMLSerializer", FakeYAMLSer)
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: FakeYAMLSer(None),
     )
 
     ctx: Context = MagicMock()
@@ -725,10 +710,9 @@ def test_docs_yaml_serialization_failure(
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
 
-    import bijux_cli.infra.serializer as ser_mod
-
     monkeypatch.setattr(
-        ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "")
+        "bijux_cli.cli.commands.utilities.resolve_serializer",
+        lambda: MagicMock(dumps=lambda *a, **k: "")
     )
 
     class BrokenYAML:
@@ -738,7 +722,7 @@ def test_docs_yaml_serialization_failure(
         def dumps(self, spec: dict[str, Any], fmt: str, pretty: bool) -> str:
             raise RuntimeError("yaml‐oops")
 
-    monkeypatch.setattr(ser_mod, "PyYAMLSerializer", BrokenYAML)
+    monkeypatch.setattr("bijux_cli.cli.commands.utilities.resolve_serializer", lambda: BrokenYAML(None))
 
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None

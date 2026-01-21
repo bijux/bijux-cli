@@ -35,6 +35,7 @@ from bijux_cli.services.diagnostics.contracts import (
     MemoryProtocol,
 )
 from bijux_cli.services.history.contracts import HistoryProtocol
+from bijux_cli.services.logging.contracts import LoggingConfig
 from bijux_cli.core.enums import OutputFormat
 
 if TYPE_CHECKING:
@@ -43,7 +44,10 @@ if TYPE_CHECKING:
 
 
 def register_default_services(
-    di: DIContainer, debug: bool, output_format: OutputFormat, quiet: bool
+    di: DIContainer,
+    *,
+    logging_config: LoggingConfig,
+    output_format: OutputFormat,
 ) -> None:
     """Registers all default service implementations with the DI container.
 
@@ -53,10 +57,9 @@ def register_default_services(
 
     Args:
         di (DIContainer): The dependency injection container instance.
-        debug (bool): If True, services will be configured for debug mode.
+        logging_config (LoggingConfig): Logging configuration for services.
         output_format (OutputFormat): The default output format for services
             like the emitter and serializer.
-        quiet (bool): If True, services will be configured to suppress output.
 
     Returns:
         None:
@@ -79,7 +82,7 @@ def register_default_services(
 
     noop_telemetry = bijux_cli.infra.telemetry.NoopTelemetry()
     obs_service = bijux_cli.services.logging.observability.Observability(
-        debug=debug,
+        debug=logging_config.debug,
         telemetry=noop_telemetry,
     )
 
@@ -106,8 +109,8 @@ def register_default_services(
         lambda: bijux_cli.infra.emitter.ConsoleEmitter(
             telemetry=di.resolve(TelemetryProtocol),
             output_format=output_format,
-            debug=debug,
-            quiet=quiet,
+            debug=logging_config.debug,
+            quiet=logging_config.quiet,
         ),
     )
     di.register(
@@ -162,6 +165,8 @@ def register_default_services(
         RetryPolicyProtocol,
         lambda: di.resolve(bijux_cli.infra.retry.TimeoutRetryPolicy),
     )
+
+    di.register(LoggingConfig, lambda: logging_config)
 
     di.register(
         bijux_cli.core.context.Context,
