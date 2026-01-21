@@ -644,8 +644,13 @@ def test_emit_and_exit_quiet() -> None:
 
 def test_emit_and_exit_json_pretty() -> None:
     """Test pretty-printed JSON output."""
-    with patch("json.dumps") as mock_dumps, patch("builtins.print") as mock_print:
-        mock_dumps.return_value = '{"key": "value"}\n'
+    with (
+        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("builtins.print") as mock_print,
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"key": "value"}\n'
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_and_exit(
                 {"key": "value"},
@@ -656,14 +661,21 @@ def test_emit_and_exit_json_pretty() -> None:
                 False,
                 "cmd",
             )
-    mock_dumps.assert_called_with({"key": "value"}, indent=2, separators=(", ", ": "))
+    mock_serializer.dumps.assert_called_with(
+        {"key": "value"}, fmt=OutputFormat.JSON, pretty=True
+    )
     mock_print.assert_called_with('{"key": "value"}')
 
 
 def test_emit_and_exit_json_compact() -> None:
     """Test compact JSON output."""
-    with patch("json.dumps") as mock_dumps, patch("builtins.print") as mock_print:
-        mock_dumps.return_value = '{"key":"value"}\n'
+    with (
+        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("builtins.print") as mock_print,
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"key":"value"}\n'
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_and_exit(
                 {"key": "value"},
@@ -674,14 +686,21 @@ def test_emit_and_exit_json_compact() -> None:
                 False,
                 "cmd",
             )
-    mock_dumps.assert_called_with({"key": "value"}, indent=None, separators=(",", ":"))
+    mock_serializer.dumps.assert_called_with(
+        {"key": "value"}, fmt=OutputFormat.JSON, pretty=False
+    )
     mock_print.assert_called_with('{"key":"value"}')
 
 
 def test_emit_and_exit_yaml_pretty() -> None:
     """Test pretty-printed YAML output."""
-    with patch("yaml.safe_dump") as mock_dump, patch("builtins.print") as mock_print:
-        mock_dump.return_value = "key: value\n"
+    with (
+        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("builtins.print") as mock_print,
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = "key: value\n"
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_and_exit(
                 {"key": "value"},
@@ -692,16 +711,21 @@ def test_emit_and_exit_yaml_pretty() -> None:
                 False,
                 "cmd",
             )
-    mock_dump.assert_called_with(
-        {"key": "value"}, indent=2, sort_keys=False, default_flow_style=None
+    mock_serializer.dumps.assert_called_with(
+        {"key": "value"}, fmt=OutputFormat.YAML, pretty=True
     )
     mock_print.assert_called_with("key: value")
 
 
 def test_emit_and_exit_yaml_compact() -> None:
     """Test compact YAML output."""
-    with patch("yaml.safe_dump") as mock_dump, patch("builtins.print") as mock_print:
-        mock_dump.return_value = "key: value\n"
+    with (
+        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("builtins.print") as mock_print,
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = "key: value\n"
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_and_exit(
                 {"key": "value"},
@@ -712,8 +736,8 @@ def test_emit_and_exit_yaml_compact() -> None:
                 False,
                 "cmd",
             )
-    mock_dump.assert_called_with(
-        {"key": "value"}, indent=None, sort_keys=False, default_flow_style=True
+    mock_serializer.dumps.assert_called_with(
+        {"key": "value"}, fmt=OutputFormat.YAML, pretty=False
     )
     mock_print.assert_called_with("key: value")
 
@@ -721,7 +745,10 @@ def test_emit_and_exit_yaml_compact() -> None:
 def test_emit_and_exit_debug() -> None:
     """Test that diagnostics are printed in debug mode."""
     with (
-        patch("json.dumps", return_value='{"key": "value"}\n'),
+        patch(
+            "bijux_cli.cli.commands.utilities.serializer_for",
+            return_value=MagicMock(dumps=MagicMock(return_value='{"key": "value"}\n')),
+        ),
         patch("builtins.print") as mock_print,
         pytest.raises(SystemExit),
     ):
@@ -740,30 +767,43 @@ def test_emit_error_and_exit_quiet() -> None:
 
 def test_emit_error_and_exit_json() -> None:
     """Test JSON error output."""
-    with patch("json.dumps") as mock_dumps, patch("builtins.print") as mock_print:
-        mock_dumps.return_value = '{"error": "test"}\n'
+    with (
+        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("builtins.print") as mock_print,
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"error": "test"}\n'
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_error_and_exit("test", 1, "fail", "cmd", "json", False)
-    mock_dumps.assert_called_with(ANY)
+    mock_serializer.dumps.assert_called_with(ANY, fmt="json", pretty=False)
     mock_print.assert_called_with('{"error": "test"}', file=sys.stderr, flush=True)
 
 
 def test_emit_error_and_exit_include_runtime() -> None:
     """Test that runtime info is included in error payload when requested."""
-    with patch("json.dumps") as mock_dumps, patch("builtins.print"):
-        mock_dumps.return_value = '{"error": "test"}\n'
+    with patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory, patch(
+        "builtins.print"
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"error": "test"}\n'
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_error_and_exit("test", 1, "fail", "cmd", "json", False, True)
-    mock_dumps.assert_called_with(ANY)
-    assert "python" in mock_dumps.call_args[0][0]
-    assert "platform" in mock_dumps.call_args[0][0]
-    assert "timestamp" in mock_dumps.call_args[0][0]
+    mock_serializer.dumps.assert_called_with(ANY, fmt="json", pretty=False)
+    assert "python" in mock_serializer.dumps.call_args[0][0]
+    assert "platform" in mock_serializer.dumps.call_args[0][0]
+    assert "timestamp" in mock_serializer.dumps.call_args[0][0]
 
 
 def test_emit_error_and_exit_extra() -> None:
     """Test that extra data can be added to the error payload."""
-    with patch("json.dumps") as mock_dumps, patch("builtins.print"):
-        mock_dumps.return_value = '{"error": "test", "extra": "data"}\n'
+    with patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory, patch(
+        "builtins.print"
+    ):
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"error": "test", "extra": "data"}\n'
+        mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
             emit_error_and_exit(
                 "test",
@@ -776,13 +816,16 @@ def test_emit_error_and_exit_extra() -> None:
                 False,
                 {"extra": "data"},
             )
-    assert "extra" in mock_dumps.call_args[0][0]
+    assert "extra" in mock_serializer.dumps.call_args[0][0]
 
 
 def test_emit_error_and_exit_debug() -> None:
     """Test that a traceback is printed in debug mode."""
     with (
-        patch("json.dumps", return_value='{"error": "test"}\n'),
+        patch(
+            "bijux_cli.cli.commands.utilities.serializer_for",
+            return_value=MagicMock(dumps=MagicMock(return_value='{"error": "test"}\n')),
+        ),
         patch("builtins.print"),
         patch("traceback.print_exc") as mock_tb,
         pytest.raises(SystemExit),
@@ -802,6 +845,8 @@ def test_parse_global_flags_empty() -> None:
         "verbose": False,
         "format": "json",
         "pretty": True,
+        "log_level": "info",
+        "color": "auto",
     }
     assert sys.argv == ["bijux"]
 
@@ -1075,6 +1120,8 @@ def test_parse_global_flags_multiple() -> None:
         "verbose": True,
         "format": "yaml",
         "pretty": False,
+        "log_level": "info",
+        "color": "auto",
     }
     assert sys.argv == ["bijux", "--unknown"]
 
@@ -1115,7 +1162,14 @@ def test_emit_error_and_exit_no_failure() -> None:
     from contextlib import ExitStack
 
     with ExitStack() as stack:
-        mock_dumps = stack.enter_context(patch("json.dumps"))
+        mock_serializer = MagicMock()
+        mock_serializer.dumps.return_value = '{"error": "test"}\n'
+        stack.enter_context(
+            patch(
+                "bijux_cli.cli.commands.utilities.serializer_for",
+                return_value=mock_serializer,
+            )
+        )
         stack.enter_context(patch("builtins.print"))
 
         failure: Any = None
@@ -1129,38 +1183,47 @@ def test_emit_error_and_exit_no_failure() -> None:
                 False,
             )
 
-    payload = mock_dumps.call_args[0][0]
+    payload = mock_serializer.dumps.call_args[0][0]
     assert "failure" not in payload
 
 
 def test_emit_error_and_exit_no_command() -> None:
     """Test that the 'command' key is omitted from the error payload if None."""
     with (
-        patch("json.dumps") as mock_dumps,
+        patch(
+            "bijux_cli.cli.commands.utilities.serializer_for",
+            return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
+        ) as mock_factory,
         patch("builtins.print"),
         pytest.raises(SystemExit),
     ):
         emit_error_and_exit("test", 1, "fail", None, "json", False)
-    payload = mock_dumps.call_args[0][0]
+    payload = mock_factory.return_value.dumps.call_args[0][0]
     assert "command" not in payload
 
 
 def test_emit_error_and_exit_no_fmt() -> None:
     """Test that the 'fmt' key is omitted from the error payload if None."""
     with (
-        patch("json.dumps") as mock_dumps,
+        patch(
+            "bijux_cli.cli.commands.utilities.serializer_for",
+            return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
+        ) as mock_factory,
         patch("builtins.print"),
         pytest.raises(SystemExit),
     ):
         emit_error_and_exit("test", 1, "fail", "cmd", None, False)
-    payload = mock_dumps.call_args[0][0]
+    payload = mock_factory.return_value.dumps.call_args[0][0]
     assert "fmt" not in payload
 
 
 def test_emit_error_and_exit_json_dumps_fails() -> None:
     """Test fallback error message when JSON serialization of the error fails."""
     with (
-        patch("json.dumps", side_effect=ValueError("fail")),
+        patch(
+            "bijux_cli.cli.commands.utilities.serializer_for",
+            return_value=MagicMock(dumps=MagicMock(side_effect=ValueError("fail"))),
+        ),
         patch("builtins.print") as mock_print,
         pytest.raises(SystemExit),
     ):

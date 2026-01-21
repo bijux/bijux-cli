@@ -25,7 +25,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Iterator
 from contextlib import suppress
-import json
 import os
 from pathlib import Path
 import re
@@ -228,7 +227,15 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
             data = json.loads(result.stdout or "{}")
             if data.get("entries", []) == []:
                 if should_print:
-                    pretty = json.dumps(data, indent=2) + "\n"
+                    from bijux_cli.infra.serializer import serializer_for
+                    from bijux_cli.infra.telemetry import NoopTelemetry
+
+                    pretty = (
+                        serializer_for("json", NoopTelemetry())
+                        .dumps(data, fmt="json", pretty=True)
+                        .rstrip("\n")
+                        + "\n"
+                    )
                     sys.stdout.write(pretty)
                     sys.stderr.write(result.stderr or "")
                 return result.exit_code
@@ -329,7 +336,14 @@ def _run_piped(repl_quiet: bool) -> None:
                         "command": f"config {subcommand[0] if subcommand else ''}".strip(),
                         "format": "json",
                     }
-                    print(json.dumps(error_obj))
+                    from bijux_cli.infra.serializer import serializer_for
+                    from bijux_cli.infra.telemetry import NoopTelemetry
+
+                    print(
+                        serializer_for("json", NoopTelemetry()).dumps(
+                            error_obj, fmt="json", pretty=False
+                        )
+                    )
 
                 if not sub:
                     pass
@@ -667,7 +681,15 @@ def main(
         return
 
     command = "repl"
-    effective_include_runtime = (verbose or debug) and not quiet
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    effective_include_runtime = resolved["include_runtime"]
 
     fmt_lower = fmt.strip().lower()
 

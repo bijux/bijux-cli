@@ -182,8 +182,16 @@ def docs(
     from bijux_cli.infra.telemetry import NoopTelemetry
 
     command = "docs"
-    effective_include_runtime = (verbose or debug) and not quiet
-    effective_pretty = True if (debug and not quiet) else pretty
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    effective_include_runtime = resolved["include_runtime"]
+    effective_pretty = resolved["pretty"]
 
     fmt_lower = normalize_format(fmt)
 

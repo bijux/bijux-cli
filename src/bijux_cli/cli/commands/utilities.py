@@ -37,7 +37,8 @@ import sys
 import time
 from typing import Any, NoReturn
 
-import yaml
+from bijux_cli.infra.serializer import serializer_for
+from bijux_cli.infra.telemetry import NoopTelemetry
 
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.plugins import get_plugins_dir
@@ -238,7 +239,15 @@ def new_run_command(
     DIContainer.current().resolve(EmitterProtocol)
     DIContainer.current().resolve(TelemetryProtocol)
 
-    include_runtime = verbose or debug
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    include_runtime = resolved["include_runtime"]
 
     format_lower = validate_common_flags(
         fmt,
@@ -248,7 +257,7 @@ def new_run_command(
     )
 
     output_format = OutputFormat.YAML if format_lower == "yaml" else OutputFormat.JSON
-    effective_pretty = debug or pretty
+    effective_pretty = resolved["pretty"]
 
     try:
         payload = payload_builder(include_runtime)
@@ -338,18 +347,8 @@ def emit_and_exit(
     if debug:
         print("Diagnostics: emitted payload", file=sys.stderr)
 
-    indent = 2 if effective_pretty else None
-    if fmt == OutputFormat.JSON:
-        separators = (", ", ": ") if effective_pretty else (",", ":")
-        output = json.dumps(payload, indent=indent, separators=separators)
-    else:
-        default_flow_style = None if effective_pretty else True
-        output = yaml.safe_dump(
-            payload,
-            indent=indent,
-            sort_keys=False,
-            default_flow_style=default_flow_style,
-        )
+    serializer = serializer_for(fmt, NoopTelemetry())
+    output = serializer.dumps(payload, fmt=fmt, pretty=effective_pretty)
     cleaned = output.rstrip("\n")
     print(cleaned)
     sys.exit(exit_code)
@@ -404,8 +403,13 @@ def emit_error_and_exit(
         error_payload["platform"] = ascii_safe(platform.platform(), "platform")
         error_payload["timestamp"] = str(time.time())
 
+    serializer = serializer_for(error_payload.get("format", "json"), NoopTelemetry())
     try:
-        output = json.dumps(error_payload).rstrip("\n")
+        output = serializer.dumps(
+            error_payload,
+            fmt=error_payload.get("format", "json"),
+            pretty=False,
+        ).rstrip("\n")
         print(output, file=sys.stderr, flush=True)
     except Exception:
         print('{"error": "Unserializable error"}', file=sys.stderr, flush=True)

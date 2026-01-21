@@ -23,14 +23,12 @@ Exit Codes:
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 import platform
 from typing import Any
 
 import typer
-import yaml
 
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
@@ -134,8 +132,16 @@ def dev_di_graph(
             payload, indicating success or detailing an error.
     """
     command = "dev di"
-    effective_include_runtime = (verbose or debug) and not quiet
-    effective_pretty = True if (debug and not quiet) else pretty
+    from bijux_cli.core.precedence import resolve_output_flags
+
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=pretty,
+    )
+    effective_include_runtime = resolved["include_runtime"]
+    effective_pretty = resolved["pretty"]
 
     fmt_lower = validate_common_flags(
         fmt,
@@ -232,21 +238,13 @@ def dev_di_graph(
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
-                if fmt_lower == "json":
-                    p.write_text(
-                        json.dumps(payload, indent=2 if effective_pretty else None)
-                        + "\n",
-                        encoding="utf-8",
-                    )
-                else:
-                    p.write_text(
-                        yaml.safe_dump(
-                            payload,
-                            default_flow_style=False,
-                            indent=2 if effective_pretty else None,
-                        ),
-                        encoding="utf-8",
-                    )
+                from bijux_cli.infra.serializer import serializer_for
+                from bijux_cli.infra.telemetry import NoopTelemetry
+
+                rendered = serializer_for(fmt_lower, NoopTelemetry()).dumps(
+                    payload, fmt=fmt_lower, pretty=effective_pretty
+                )
+                p.write_text(rendered.rstrip("\n") + "\n", encoding="utf-8")
             except OSError as exc:
                 emit_error_and_exit(
                     f"Failed to write output file '{p}': {exc}",

@@ -263,8 +263,14 @@ def history(
     if export_path:
         try:
             entries = history_svc.list()
+            from bijux_cli.infra.serializer import serializer_for
+            from bijux_cli.infra.telemetry import NoopTelemetry
+
+            rendered = serializer_for(fmt_lower, NoopTelemetry()).dumps(
+                entries, fmt=fmt_lower, pretty=pretty
+            )
             Path(export_path).write_text(
-                json.dumps(entries, indent=2 if pretty else None) + "\n",
+                rendered.rstrip("\n") + "\n",
                 encoding="utf-8",
             )
         except Exception as exc:

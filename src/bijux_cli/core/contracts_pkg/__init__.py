@@ -21,6 +21,7 @@ from bijux_cli.core.contracts_pkg.context import ContextProtocol
 from bijux_cli.core.contracts_pkg.docs import DocsProtocol
 from bijux_cli.core.contracts_pkg.doctor import DoctorProtocol
 from bijux_cli.core.contracts_pkg.emitter import EmitterProtocol
+from bijux_cli.core.contracts_pkg.fs import FileSystemProtocol
 from bijux_cli.core.contracts_pkg.history import HistoryProtocol
 from bijux_cli.core.contracts_pkg.memory import MemoryProtocol
 from bijux_cli.core.contracts_pkg.observability import ObservabilityProtocol
@@ -29,6 +30,7 @@ from bijux_cli.core.contracts_pkg.registry import RegistryProtocol
 from bijux_cli.core.contracts_pkg.retry import RetryPolicyProtocol
 from bijux_cli.core.contracts_pkg.serializer import SerializerProtocol
 from bijux_cli.core.contracts_pkg.telemetry import TelemetryProtocol
+from bijux_cli.core.contracts_pkg.terminal import TerminalProtocol
 
 __all__ = [
     "AuditProtocol",
@@ -37,6 +39,7 @@ __all__ = [
     "DocsProtocol",
     "DoctorProtocol",
     "EmitterProtocol",
+    "FileSystemProtocol",
     "HistoryProtocol",
     "MemoryProtocol",
     "ObservabilityProtocol",
@@ -45,4 +48,5 @@ __all__ = [
     "RetryPolicyProtocol",
     "SerializerProtocol",
     "TelemetryProtocol",
+    "TerminalProtocol",
 ]
