@@ -12,6 +12,7 @@ import pytest
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services import register_default_services
+from bijux_cli.services.logging.contracts import LoggingConfig
 
 
 @pytest.mark.parametrize("output_format", [OutputFormat.JSON, OutputFormat.YAML])
@@ -120,12 +121,21 @@ def test_register_default_services_100pct(
         import bijux_cli.services.diagnostics.memory as svc_memory
         import bijux_cli.plugins.registry as svc_registry
 
+        logging_config = LoggingConfig(
+            debug=debug,
+            quiet=quiet,
+            verbose=False,
+            log_level="debug" if debug else "info",
+            color="auto",
+        )
         register_default_services(
-            di, debug=debug, output_format=output_format, quiet=quiet
+            di,
+            logging_config=logging_config,
+            output_format=output_format,
         )
 
         mock_obs_init.assert_called_once()
-        assert mock_obs_init.call_args.kwargs["debug"] == debug
+        assert mock_obs_init.call_args.kwargs["debug"] == logging_config.debug
         assert isinstance(
             mock_obs_init.call_args.kwargs["telemetry"], infra_tel.NoopTelemetry
         )
@@ -142,8 +152,8 @@ def test_register_default_services_100pct(
         assert mock_emitter_init.call_args.kwargs == {
             "telemetry": tel_inst,
             "output_format": output_format,
-            "debug": debug,
-            "quiet": quiet,
+            "debug": logging_config.debug,
+            "quiet": logging_config.quiet,
         }
 
         serializer_inst = di.resolve(SerializerProtocol)

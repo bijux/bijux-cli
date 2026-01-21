@@ -30,9 +30,11 @@ if TYPE_CHECKING:
 from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
+from bijux_cli.core.precedence import resolve_output_flags
 from bijux_cli.services.logging.observability import Observability
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
+from bijux_cli.services.logging.contracts import LoggingConfig
 from bijux_cli.plugins import get_plugins_dir, load_plugin
 
 
@@ -54,6 +56,7 @@ class Engine:
         debug: bool = False,
         fmt: OutputFormat = OutputFormat.JSON,
         quiet: bool = False,
+        logging_config: LoggingConfig | None = None,
     ) -> None:
         """Initializes the engine and its core services.
 
@@ -66,6 +69,8 @@ class Engine:
             debug (bool): If True, enables debug mode for services.
             fmt (OutputFormat): The default output format for services.
             quiet (bool): If True, suppresses output from services.
+            logging_config (LoggingConfig | None): Optional logging configuration
+                override for service registration.
         """
         from bijux_cli.core.di import DIContainer
 
@@ -73,7 +78,27 @@ class Engine:
         self._debug = debug
         self._format = fmt
         self._quiet = quiet
-        register_default_services(self._di, debug=debug, output_format=fmt, quiet=quiet)
+        if logging_config is None:
+            resolved = resolve_output_flags(
+                quiet=quiet,
+                verbose=False,
+                debug=debug,
+                pretty=True,
+                log_level="info",
+                color="auto",
+            )
+            logging_config = LoggingConfig(
+                debug=debug,
+                quiet=quiet,
+                verbose=False,
+                log_level=resolved["log_level"],
+                color=resolved["color"],
+            )
+        register_default_services(
+            self._di,
+            logging_config=logging_config,
+            output_format=fmt,
+        )
         self._di.register(Engine, self)
         self._registry: RegistryProtocol = self._di.resolve(RegistryProtocol)
         self._register_plugins()

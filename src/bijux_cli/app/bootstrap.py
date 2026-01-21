@@ -47,7 +47,9 @@ from bijux_cli.core.di import DIContainer
 from bijux_cli.app.engine import Engine
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
+from bijux_cli.core.precedence import resolve_output_flags
 from bijux_cli.services import register_default_services
+from bijux_cli.services.logging.contracts import LoggingConfig
 from bijux_cli.services.history import History
 
 _orig_stderr = sys.stderr
@@ -341,6 +343,32 @@ def main() -> int:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
     debug = "--debug" in sys.argv or os.environ.get("BIJUXCLI_DEBUG") == "1"
+    verbose = any(a in ("-v", "--verbose") for a in args)
+    log_level = "info"
+    color = "auto"
+    if "--log-level" in args:
+        idx = args.index("--log-level")
+        if idx + 1 < len(args):
+            log_level = args[idx + 1]
+    if "--color" in args:
+        idx = args.index("--color")
+        if idx + 1 < len(args):
+            color = args[idx + 1]
+    resolved = resolve_output_flags(
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        pretty=True,
+        log_level=log_level,
+        color=color,
+    )
+    logging_config = LoggingConfig(
+        debug=debug,
+        quiet=quiet,
+        verbose=verbose,
+        log_level=resolved["log_level"],
+        color=resolved["color"],
+    )
     setup_structlog(debug)
     disable_cli_colors_for_test()
 
@@ -354,7 +382,9 @@ def main() -> int:
 
     container = DIContainer.current()
     register_default_services(
-        container, debug=False, output_format=OutputFormat.JSON, quiet=False
+        container,
+        logging_config=logging_config,
+        output_format=OutputFormat.JSON,
     )
 
     Engine()

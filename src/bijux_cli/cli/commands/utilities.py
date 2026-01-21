@@ -70,9 +70,40 @@ def resolve_serializer() -> SerializerProtocol:
     except Exception:
         pass
 
-    from bijux_cli.infra.serializer import OrjsonSerializer
+    class _FallbackSerializer:
+        def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
+            if str(fmt).lower() == "yaml":
+                try:
+                    import yaml
 
-    return OrjsonSerializer(None)
+                    return yaml.safe_dump(obj, sort_keys=False)
+                except Exception:
+                    return json.dumps(obj, indent=2 if pretty else None)
+            return json.dumps(obj, indent=2 if pretty else None)
+
+        def dumps_bytes(
+            self, obj: Any, *, fmt: Any = "json", pretty: bool = False
+        ) -> bytes:
+            return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
+
+        def loads(self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False) -> Any:
+            _ = pretty
+            if str(fmt).lower() == "yaml":
+                try:
+                    import yaml
+
+                    return yaml.safe_load(data)
+                except Exception:
+                    return data
+            return json.loads(data)
+
+        def emit(
+            self, payload: Any, *, fmt: Any = "json", pretty: bool = False
+        ) -> None:
+            sys.stdout.write(self.dumps(payload, fmt=fmt, pretty=pretty))
+            sys.stdout.write("\n")
+
+    return _FallbackSerializer()
 
 
 def ascii_safe(text: Any, _field: str = "") -> str:

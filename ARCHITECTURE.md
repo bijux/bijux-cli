@@ -26,3 +26,11 @@ Stages are fixed and ordered:
 4. activate (lazy)
 
 Enforce this order in code and reviews.
+
+## v0.2 Architecture Freeze
+
+Until v0.2.0 ships:
+
+- no new layers
+- no new cross-dependencies
+- only bug fixes and plugin hardening
