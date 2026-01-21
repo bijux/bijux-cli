@@ -20,13 +20,14 @@ underlying services and plugins.
 from __future__ import annotations
 
 import asyncio
+import os
 import inspect
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from bijux_cli.core.di import DIContainer
 
-from bijux_cli.core.contracts import ConfigProtocol, RegistryProtocol
+from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.services.logging.observability import Observability
@@ -72,7 +73,6 @@ class Engine:
         self._debug = debug
         self._format = fmt
         self._quiet = quiet
-        self._di.register(Observability, lambda: Observability(debug=debug))
         register_default_services(self._di, debug=debug, output_format=fmt, quiet=quiet)
         self._di.register(Engine, self)
         self._registry: RegistryProtocol = self._di.resolve(RegistryProtocol)
@@ -179,14 +179,9 @@ class Engine:
         Raises:
             ValueError: If the timeout value in the configuration is malformed.
         """
+        raw = os.getenv("BIJUXCLI_COMMAND_TIMEOUT", "30.0")
         try:
-            cfg = self._di.resolve(ConfigProtocol)
-            raw = cfg.get("BIJUXCLI_COMMAND_TIMEOUT", default=30.0)
-        except KeyError:
-            raw = 30.0
-        value = raw.get("value", 30.0) if isinstance(raw, dict) else raw
-        try:
-            return float(value)
+            return float(raw)
         except (TypeError, ValueError) as err:
             raise ValueError(f"Invalid timeout configuration: {raw!r}") from err
 

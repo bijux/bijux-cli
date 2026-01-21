@@ -35,7 +35,7 @@ from bijux_cli.cli.commands.utilities import (
     new_run_command,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import ConfigProtocol
+from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.core.constants import (
     DEFAULT_COMMAND_TIMEOUT,
     HELP_DEBUG,

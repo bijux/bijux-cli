@@ -4,12 +4,15 @@ TEST_PATHS            ?= tests
 TEST_PATHS_UNIT       ?= tests/unit
 TEST_PATHS_E2E        ?= tests/e2e
 TEST_PATHS_NIGHT      ?= tests/night
+TEST_PATHS_FUNCTIONAL ?= tests/functional
+TEST_PATHS_INTEGRATION ?= tests/integration
 
 TEST_ARTIFACTS_DIR    ?= artifacts/test
 JUNIT_XML             ?= $(TEST_ARTIFACTS_DIR)/junit.xml
 TMP_DIR               ?= $(TEST_ARTIFACTS_DIR)/tmp
 HYPOTHESIS_DB_DIR     ?= $(TEST_ARTIFACTS_DIR)/hypothesis
 BENCHMARK_DIR         ?= $(TEST_ARTIFACTS_DIR)/benchmarks
+BIJUX_BIN             ?= bin/bijux
 
 ENABLE_BENCH          ?= 1
 PYTEST_ADDOPTS_EXTRA  ?=
@@ -18,6 +21,7 @@ PYTEST_ADDOPTS_EXTRA  ?=
 PY 					 ?= python
 PYTEST_BIN           := $(shell command -v pytest 2>/dev/null)
 PYTEST 				 ?= $(if $(PYTEST_BIN),$(PYTEST_BIN),$(PY) -m pytest)
+PYTHON_311           ?= $(shell command -v python3.11 2>/dev/null || command -v python3 2>/dev/null || command -v python 2>/dev/null)
 
 # absolute paths so running from artifacts_pages/test works cleanly
 PYTEST_INI_ABS        := $(abspath pytest.ini)
@@ -30,11 +34,14 @@ TEST_PATHS_ABS        := $(abspath $(TEST_PATHS))
 TEST_PATHS_UNIT_ABS   := $(abspath $(TEST_PATHS_UNIT))
 TEST_PATHS_E2E_ABS    := $(abspath $(TEST_PATHS_E2E))
 TEST_PATHS_NIGHT_ABS  := $(abspath $(TEST_PATHS_NIGHT))
+TEST_PATHS_FUNCTIONAL_ABS := $(abspath $(TEST_PATHS_FUNCTIONAL))
+TEST_PATHS_INTEGRATION_ABS := $(abspath $(TEST_PATHS_INTEGRATION))
 SRC_ABS               := $(abspath src)
 JUNIT_XML_ABS         := $(abspath $(JUNIT_XML))
 TMP_DIR_ABS           := $(abspath $(TMP_DIR))
 HYPOTHESIS_DB_ABS     := $(abspath $(HYPOTHESIS_DB_DIR))
 BENCHMARK_DIR_ABS     := $(abspath $(BENCHMARK_DIR))
+BIJUX_BIN_ABS         := $(abspath $(BIJUX_BIN))
 
 # override ini-relative bits with absolute paths
 PYTEST_FLAGS = \
@@ -46,8 +53,14 @@ PYTEST_FLAGS = \
   -o cache_dir="$(CACHE_DIR_ABS)" \
   $(PYTEST_ADDOPTS_EXTRA)
 
+PYTEST_FLAGS_NOCOV = \
+  --junitxml "$(JUNIT_XML_ABS)" \
+  --basetemp "$(TMP_DIR_ABS)" \
+  -o cache_dir="$(CACHE_DIR_ABS)" \
+  $(PYTEST_ADDOPTS_EXTRA)
 
-.PHONY: test test-unit test-e2e test-night test-clean
+
+.PHONY: test test-unit test-e2e test-night test-regression test-clean
 
 test:
 	@echo "→ Running full test suite on $(TEST_PATHS)"
@@ -129,6 +142,12 @@ test-night:
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
+
+test-regression:
+	@echo "→ Running regression tests (functional + integration)"
+	@$(PYTEST) --version
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
+	@rm -rf .hypothesis .benchmarks || true
 	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
 	@echo "   • Hypothesis DB → $(HYPOTHESIS_DB_ABS)"
 	@echo "   • Using pytest → $(PYTEST)"
@@ -139,13 +158,23 @@ test-night:
 	else \
 	  echo "   • pytest-benchmark disabled or not installed"; \
 	fi; \
-	if [ -d "$(TEST_PATHS_NIGHT)" ] && find "$(TEST_PATHS_NIGHT)" -type f -name 'test_*.py' | grep -q .; then \
+	HAS_FUN=0; \
+	HAS_INT=0; \
+	if [ -d "$(TEST_PATHS_FUNCTIONAL)" ] && find "$(TEST_PATHS_FUNCTIONAL)" -type f -name 'test_*.py' | grep -q .; then HAS_FUN=1; fi; \
+	if [ -d "$(TEST_PATHS_INTEGRATION)" ] && find "$(TEST_PATHS_INTEGRATION)" -type f -name 'test_*.py' | grep -q .; then HAS_INT=1; fi; \
+	if [ "$$HAS_FUN" = "1" ] || [ "$$HAS_INT" = "1" ]; then \
+	  PATHS=""; \
+	  if [ "$$HAS_FUN" = "1" ]; then PATHS="$(TEST_PATHS_FUNCTIONAL_ABS)"; fi; \
+	  if [ "$$HAS_INT" = "1" ]; then PATHS="$$PATHS $(TEST_PATHS_INTEGRATION_ABS)"; fi; \
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
+	    BIJUX_BIN="$(BIJUX_BIN_ABS)" \
+	    BIJUXCLI_PLUGINS_DIR="$(TMP_DIR_ABS)/plugins" \
+	    BIJUX_PYTHON="$(PYTHON_311)" \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_NIGHT_ABS)" -m "night" -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" '"$$PATHS"' -m "not night and not slow" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
 	else \
-	  echo "   • no $(TEST_PATHS_NIGHT); nothing to run"; \
+	  echo "   • no $(TEST_PATHS_FUNCTIONAL) or $(TEST_PATHS_INTEGRATION); nothing to run"; \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
@@ -160,4 +189,5 @@ test: ## Run full test suite; all side-effects contained in artifacts_pages/test
 test-unit: ## Run unit tests only; same containment; fallback excludes e2e/integration/functional/slow
 test-e2e: ## Run e2e tests only (marked), not recommended for quick runs
 test-night: ## Run night tests only (marked), excluded from default runs
+test-regression: ## Run functional + integration tests
 test-clean: ## Remove stray root .hypothesis/.benchmarks and coverage files

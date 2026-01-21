@@ -31,7 +31,8 @@ from typing import Any
 
 from injector import inject
 
-from bijux_cli.core.contracts import ConfigProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ObservabilityProtocol
+from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.paths import CONFIG_FILE
 
@@ -234,6 +235,7 @@ class Config(ConfigProtocol):
         _detect_symlink_loop(self._path)
         self._path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = self._path.with_suffix(".tmp")
+        tmp_path.parent.mkdir(parents=True, exist_ok=True)
         retry = 40
         while retry > 0:
             try:

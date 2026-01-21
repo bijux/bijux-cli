@@ -17,12 +17,12 @@ from bijux_cli.infra.serializer import (
     SerializationError,
     serializer_for,
 )
-from bijux_cli.infra.telemetry import Telemetry
+from bijux_cli.core.contracts import TelemetryProtocol
 
 
 def test_orjson_serializer_json_roundtrip() -> None:
     """OrjsonSerializer should serialize JSON by default."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     ser = OrjsonSerializer(tel)
     payload = {"a": 1}
     dumped = ser.dumps(payload)
@@ -31,7 +31,7 @@ def test_orjson_serializer_json_roundtrip() -> None:
 
 def test_orjson_serializer_yaml_requires_yaml() -> None:
     """YAML serialization should raise when PyYAML is missing."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     ser = OrjsonSerializer(tel)
     try:
         _ = ser.dumps({"a": 1}, fmt=OutputFormat.YAML)
@@ -41,14 +41,14 @@ def test_orjson_serializer_yaml_requires_yaml() -> None:
 
 def test_serializer_for_rejects_unknown_format() -> None:
     """serializer_for should reject unknown formats."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     with pytest.raises(SerializationError, match="Unsupported format"):
         serializer_for("toml", tel)
 
 
 def test_pyyaml_serializer_requires_yaml() -> None:
     """PyYAMLSerializer should raise if PyYAML is unavailable."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     try:
         _ = PyYAMLSerializer(tel)
     except SerializationError as exc:

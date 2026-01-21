@@ -6,31 +6,11 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, Protocol
+from typing import Any
 
 import structlog
 
 from bijux_cli.infra.serializer import serializer_for
-from bijux_cli.infra.telemetry import Telemetry
-
-
-class Emitter(Protocol):
-    """Adapter for emitting structured output."""
-
-    def emit(
-        self,
-        payload: Any,
-        *,
-        fmt: Any | None = None,
-        pretty: bool = False,
-        level: str = "info",
-        message: str = "Emitting output",
-        output: str | None = None,
-        **context: Any,
-    ) -> None:
-        ...
-
-    def flush(self) -> None: ...
 
 
 class ConsoleEmitter:
@@ -38,7 +18,7 @@ class ConsoleEmitter:
 
     def __init__(
         self,
-        telemetry: Telemetry,
+        telemetry: Any,
         output_format: Any = "json",
         debug: bool = False,
         quiet: bool = False,
@@ -121,4 +101,4 @@ class NullEmitter:
         return None
 
 
-__all__ = ["Emitter", "ConsoleEmitter", "NullEmitter"]
+__all__ = ["ConsoleEmitter", "NullEmitter"]

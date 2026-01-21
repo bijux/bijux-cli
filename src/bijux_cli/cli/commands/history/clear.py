@@ -32,7 +32,7 @@ from bijux_cli.cli.commands.utilities import (
     new_run_command,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import HistoryProtocol
+from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,

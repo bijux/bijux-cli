@@ -128,4 +128,5 @@ def build_app() -> AsyncTyper:
 
 app = build_app()
 
-__all__ = ["build_app", "app", "register_entrypoint_plugins"]
+
+__all__ = ["app", "build_app", "register_entrypoint_plugins"]

@@ -37,8 +37,7 @@ import sys
 import time
 from typing import Any, NoReturn
 
-from bijux_cli.infra.serializer import serializer_for
-from bijux_cli.infra.telemetry import NoopTelemetry
+from bijux_cli.core.contracts import SerializerProtocol
 
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.plugins import get_plugins_dir
@@ -58,6 +57,22 @@ KNOWN = {
     "--pretty",
     "--no-pretty",
 }
+
+
+def resolve_serializer() -> SerializerProtocol:
+    """Resolve the serializer adapter from the DI container or fallback."""
+    try:
+        from bijux_cli.core.di import DIContainer
+
+        serializer = DIContainer.current().resolve(SerializerProtocol)
+        if hasattr(serializer, "dumps"):
+            return serializer
+    except Exception:
+        pass
+
+    from bijux_cli.infra.serializer import OrjsonSerializer
+
+    return OrjsonSerializer(None)
 
 
 def ascii_safe(text: Any, _field: str = "") -> str:
@@ -313,7 +328,7 @@ def emit_and_exit(
     """
     if (not quiet) and (not command.startswith("history")):
         try:
-            from bijux_cli.core.contracts import HistoryProtocol
+            from bijux_cli.services.history.contracts import HistoryProtocol
             from bijux_cli.core.di import DIContainer
 
             hist = DIContainer.current().resolve(HistoryProtocol)
@@ -347,7 +362,7 @@ def emit_and_exit(
     if debug:
         print("Diagnostics: emitted payload", file=sys.stderr)
 
-    serializer = serializer_for(fmt, NoopTelemetry())
+    serializer = resolve_serializer()
     output = serializer.dumps(payload, fmt=fmt, pretty=effective_pretty)
     cleaned = output.rstrip("\n")
     print(cleaned)
@@ -403,7 +418,7 @@ def emit_error_and_exit(
         error_payload["platform"] = ascii_safe(platform.platform(), "platform")
         error_payload["timestamp"] = str(time.time())
 
-    serializer = serializer_for(error_payload.get("format", "json"), NoopTelemetry())
+    serializer = resolve_serializer()
     try:
         output = serializer.dumps(
             error_payload,
@@ -562,4 +577,5 @@ __all__ = [
     "contains_non_ascii_env",
     "normalize_format",
     "ascii_safe",
+    "resolve_serializer",
 ]

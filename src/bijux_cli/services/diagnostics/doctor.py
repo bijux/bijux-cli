@@ -10,7 +10,7 @@ and its environment.
 
 from __future__ import annotations
 
-from bijux_cli.core.contracts import DoctorProtocol
+from bijux_cli.services.diagnostics.contracts import DoctorProtocol
 
 
 class Doctor(DoctorProtocol):

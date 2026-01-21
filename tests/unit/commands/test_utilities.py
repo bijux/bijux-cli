@@ -30,7 +30,7 @@ from bijux_cli.cli.commands.utilities import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.core.contracts import HistoryProtocol
+from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
@@ -645,7 +645,7 @@ def test_emit_and_exit_quiet() -> None:
 def test_emit_and_exit_json_pretty() -> None:
     """Test pretty-printed JSON output."""
     with (
-        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
         patch("builtins.print") as mock_print,
     ):
         mock_serializer = MagicMock()
@@ -670,7 +670,7 @@ def test_emit_and_exit_json_pretty() -> None:
 def test_emit_and_exit_json_compact() -> None:
     """Test compact JSON output."""
     with (
-        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
         patch("builtins.print") as mock_print,
     ):
         mock_serializer = MagicMock()
@@ -695,7 +695,7 @@ def test_emit_and_exit_json_compact() -> None:
 def test_emit_and_exit_yaml_pretty() -> None:
     """Test pretty-printed YAML output."""
     with (
-        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
         patch("builtins.print") as mock_print,
     ):
         mock_serializer = MagicMock()
@@ -720,7 +720,7 @@ def test_emit_and_exit_yaml_pretty() -> None:
 def test_emit_and_exit_yaml_compact() -> None:
     """Test compact YAML output."""
     with (
-        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
         patch("builtins.print") as mock_print,
     ):
         mock_serializer = MagicMock()
@@ -746,7 +746,7 @@ def test_emit_and_exit_debug() -> None:
     """Test that diagnostics are printed in debug mode."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.serializer_for",
+            "bijux_cli.cli.commands.utilities.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(return_value='{"key": "value"}\n')),
         ),
         patch("builtins.print") as mock_print,
@@ -768,7 +768,7 @@ def test_emit_error_and_exit_quiet() -> None:
 def test_emit_error_and_exit_json() -> None:
     """Test JSON error output."""
     with (
-        patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory,
+        patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory,
         patch("builtins.print") as mock_print,
     ):
         mock_serializer = MagicMock()
@@ -782,7 +782,7 @@ def test_emit_error_and_exit_json() -> None:
 
 def test_emit_error_and_exit_include_runtime() -> None:
     """Test that runtime info is included in error payload when requested."""
-    with patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory, patch(
+    with patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory, patch(
         "builtins.print"
     ):
         mock_serializer = MagicMock()
@@ -798,7 +798,7 @@ def test_emit_error_and_exit_include_runtime() -> None:
 
 def test_emit_error_and_exit_extra() -> None:
     """Test that extra data can be added to the error payload."""
-    with patch("bijux_cli.cli.commands.utilities.serializer_for") as mock_factory, patch(
+    with patch("bijux_cli.cli.commands.utilities.resolve_serializer") as mock_factory, patch(
         "builtins.print"
     ):
         mock_serializer = MagicMock()
@@ -823,7 +823,7 @@ def test_emit_error_and_exit_debug() -> None:
     """Test that a traceback is printed in debug mode."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.serializer_for",
+            "bijux_cli.cli.commands.utilities.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(return_value='{"error": "test"}\n')),
         ),
         patch("builtins.print"),
@@ -1141,6 +1141,7 @@ def test_all_exported() -> None:
             "new_run_command",
             "normalize_format",
             "parse_global_flags",
+            "resolve_serializer",
             "validate_common_flags",
             "validate_env_file_if_present",
         ]
@@ -1166,7 +1167,7 @@ def test_emit_error_and_exit_no_failure() -> None:
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
         stack.enter_context(
             patch(
-                "bijux_cli.cli.commands.utilities.serializer_for",
+                "bijux_cli.cli.commands.utilities.resolve_serializer",
                 return_value=mock_serializer,
             )
         )
@@ -1191,7 +1192,7 @@ def test_emit_error_and_exit_no_command() -> None:
     """Test that the 'command' key is omitted from the error payload if None."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.serializer_for",
+            "bijux_cli.cli.commands.utilities.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
         ) as mock_factory,
         patch("builtins.print"),
@@ -1206,7 +1207,7 @@ def test_emit_error_and_exit_no_fmt() -> None:
     """Test that the 'fmt' key is omitted from the error payload if None."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.serializer_for",
+            "bijux_cli.cli.commands.utilities.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
         ) as mock_factory,
         patch("builtins.print"),
@@ -1221,7 +1222,7 @@ def test_emit_error_and_exit_json_dumps_fails() -> None:
     """Test fallback error message when JSON serialization of the error fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.utilities.serializer_for",
+            "bijux_cli.cli.commands.utilities.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(side_effect=ValueError("fail"))),
         ),
         patch("builtins.print") as mock_print,

@@ -14,7 +14,7 @@ from bijux_cli.infra.retry import (
     NoopRetryPolicy,
     TimeoutRetryPolicy,
 )
-from bijux_cli.infra.telemetry import Telemetry
+from bijux_cli.core.contracts import TelemetryProtocol
 
 
 def test_noop_retry_policy_calls_once() -> None:
@@ -32,7 +32,7 @@ def test_noop_retry_policy_calls_once() -> None:
 
 def test_timeout_retry_policy_raises() -> None:
     """TimeoutRetryPolicy should raise after timeout expires."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     policy = TimeoutRetryPolicy(tel, timeout=0.01)
 
     def fail() -> None:
@@ -44,7 +44,7 @@ def test_timeout_retry_policy_raises() -> None:
 
 def test_exponential_backoff_succeeds() -> None:
     """ExponentialBackoffRetryPolicy should return once a call succeeds."""
-    tel = MagicMock(spec=Telemetry)
+    tel = MagicMock(spec=TelemetryProtocol)
     policy = ExponentialBackoffRetryPolicy(tel, max_attempts=3, base_delay=0.0)
     called = {"n": 0}
 

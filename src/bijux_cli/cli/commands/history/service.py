@@ -46,7 +46,7 @@ from bijux_cli.cli.commands.utilities import (
     new_run_command,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import HistoryProtocol
+from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -263,12 +263,9 @@ def history(
     if export_path:
         try:
             entries = history_svc.list()
-            from bijux_cli.infra.serializer import serializer_for
-            from bijux_cli.infra.telemetry import NoopTelemetry
+            from bijux_cli.cli.commands.utilities import resolve_serializer
 
-            rendered = serializer_for(fmt_lower, NoopTelemetry()).dumps(
-                entries, fmt=fmt_lower, pretty=pretty
-            )
+            rendered = resolve_serializer().dumps(entries, fmt=fmt_lower, pretty=pretty)
             Path(export_path).write_text(
                 rendered.rstrip("\n") + "\n",
                 encoding="utf-8",

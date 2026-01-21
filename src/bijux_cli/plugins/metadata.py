@@ -213,7 +213,7 @@ def list_plugins() -> list[dict[str, Any]]:
             "version": meta.version,
             "enabled": meta.enabled,
         }
-        for meta in discover_plugins()
+        for meta in discover_plugins(strict=False)
     ]
 
 

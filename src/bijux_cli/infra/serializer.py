@@ -9,9 +9,7 @@ import importlib.util as _importlib_util
 import json
 import sys
 from types import ModuleType
-from typing import Any, Final, Protocol, TypeVar
-
-from bijux_cli.infra.telemetry import Telemetry
+from typing import Any, Final
 
 _orjson_spec = _importlib_util.find_spec("orjson")
 _yaml_spec = _importlib_util.find_spec("yaml")
@@ -33,21 +31,6 @@ _YAML: Final[ModuleType | None] = _yaml_mod
 
 class SerializationError(RuntimeError):
     """Raised when serialization or deserialization fails."""
-
-
-T = TypeVar("T")
-
-
-class Serializer(Protocol[T]):
-    """Adapter for structured serialization."""
-
-    def dumps(self, obj: T, *, fmt: Any = "json", pretty: bool = False) -> str: ...
-
-    def dumps_bytes(self, obj: T, *, fmt: Any = "json", pretty: bool = False) -> bytes: ...
-
-    def loads(self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False) -> T: ...
-
-    def emit(self, payload: T, *, fmt: Any = "json", pretty: bool = False) -> None: ...
 
 
 class NoopSerializer:
@@ -103,7 +86,7 @@ def _yaml_dump(obj: Any, pretty: bool) -> str:
 class OrjsonSerializer:
     """Serializer that handles JSON (and YAML via PyYAML)."""
 
-    def __init__(self, telemetry: Telemetry | None) -> None:
+    def __init__(self, telemetry: Any | None) -> None:
         self._telemetry = telemetry
 
     def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
@@ -148,7 +131,7 @@ class OrjsonSerializer:
 class PyYAMLSerializer:
     """Serializer restricted to YAML format."""
 
-    def __init__(self, telemetry: Telemetry | None) -> None:
+    def __init__(self, telemetry: Any | None) -> None:
         if _YAML is None:
             raise SerializationError("PyYAML is not installed")
         self._telemetry = telemetry
@@ -173,7 +156,7 @@ class PyYAMLSerializer:
             self._telemetry.event("serializer_emit", {"format": _format_name(fmt)})
 
 
-def serializer_for(fmt: Any, telemetry: Telemetry) -> OrjsonSerializer | PyYAMLSerializer:
+def serializer_for(fmt: Any, telemetry: Any | None) -> OrjsonSerializer | PyYAMLSerializer:
     """Return the best serializer for the requested format."""
     name = _format_name(fmt)
     if name == "json":
@@ -185,7 +168,6 @@ def serializer_for(fmt: Any, telemetry: Telemetry) -> OrjsonSerializer | PyYAMLS
 
 __all__ = [
     "SerializationError",
-    "Serializer",
     "NoopSerializer",
     "Redacted",
     "OrjsonSerializer",

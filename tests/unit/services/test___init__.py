@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -88,14 +88,8 @@ def test_register_default_services_100pct(
         ) as mock_memory_init,
     ):
         from bijux_cli.core.contracts import (
-            AuditProtocol,
-            ConfigProtocol,
             ContextProtocol,
-            DocsProtocol,
-            DoctorProtocol,
             EmitterProtocol,
-            HistoryProtocol,
-            MemoryProtocol,
             ObservabilityProtocol,
             ProcessPoolProtocol,
             RegistryProtocol,
@@ -103,6 +97,14 @@ def test_register_default_services_100pct(
             SerializerProtocol,
             TelemetryProtocol,
         )
+        from bijux_cli.services.config.contracts import ConfigProtocol
+        from bijux_cli.services.diagnostics.contracts import (
+            AuditProtocol,
+            DocsProtocol,
+            DoctorProtocol,
+            MemoryProtocol,
+        )
+        from bijux_cli.services.history.contracts import HistoryProtocol
         import bijux_cli.core.context as core_context
         import bijux_cli.infra.emitter as infra_emitter
         import bijux_cli.services.logging.observability as infra_obs
@@ -122,7 +124,11 @@ def test_register_default_services_100pct(
             di, debug=debug, output_format=output_format, quiet=quiet
         )
 
-        mock_obs_init.assert_called_once_with(debug=debug)
+        mock_obs_init.assert_called_once()
+        assert mock_obs_init.call_args.kwargs["debug"] == debug
+        assert isinstance(
+            mock_obs_init.call_args.kwargs["telemetry"], infra_tel.NoopTelemetry
+        )
         obs_inst = di.resolve(infra_obs.Observability)
         assert di.resolve(ObservabilityProtocol) is obs_inst
         assert mock_obs_log.call_count >= 1
@@ -195,6 +201,7 @@ def test_register_default_services_100pct(
         mock_docs_init.assert_called_once()
         assert mock_docs_init.call_args.kwargs == {
             "observability": obs_inst,
+            "serializer": serializer_inst,
             "telemetry": tel_inst,
         }
 
@@ -212,6 +219,7 @@ def test_register_default_services_100pct(
         mock_memory_init.assert_called_once_with()
 
         assert isinstance(obs_inst, infra_obs.Observability)
+        obs_inst._logger = MagicMock()
         assert isinstance(tel_inst, infra_tel.NoopTelemetry)
         assert isinstance(emitter_inst, infra_emitter.ConsoleEmitter)
         assert isinstance(proc_inst, infra_process.ProcessPool)

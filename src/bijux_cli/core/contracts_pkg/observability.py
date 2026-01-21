@@ -27,11 +27,12 @@ class ObservabilityProtocol(Protocol):
     """
 
     @classmethod
-    def setup(cls, *, debug: bool = False) -> Self:
+    def setup(cls, *, debug: bool = False, telemetry: TelemetryProtocol) -> Self:
         """Creates and configures a new instance of the observability service.
 
         Args:
             debug (bool): If True, configures the logger for debug-level output.
+            telemetry (TelemetryProtocol): The telemetry sink for events.
 
         Returns:
             Self: A new, configured instance of the service.

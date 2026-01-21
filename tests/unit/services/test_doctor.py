@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from bijux_cli.core.contracts import DoctorProtocol
+from bijux_cli.services.diagnostics.contracts import DoctorProtocol
 from bijux_cli.services.diagnostics.doctor import Doctor
 
 

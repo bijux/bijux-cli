@@ -1,0 +1,22 @@
+#!/usr/bin/env python3.11
+# SPDX-License-Identifier: MIT
+# Copyright © 2025 Bijan Mousavi
+
+"""Local development wrapper for the Bijux CLI."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root / "src"))
+    from bijux_cli.app.bootstrap import main as cli_main
+
+    return cli_main()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

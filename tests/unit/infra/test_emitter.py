@@ -14,13 +14,13 @@ import pytest
 
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.infra.emitter import ConsoleEmitter
-from bijux_cli.infra.telemetry import Telemetry
+from bijux_cli.core.contracts import TelemetryProtocol
 
 
 @pytest.fixture
 def mock_telemetry() -> MagicMock:
     """Provide a mock of the TelemetryProtocol."""
-    return MagicMock(spec=Telemetry)
+    return MagicMock(spec=TelemetryProtocol)
 
 
 @pytest.fixture

@@ -21,7 +21,7 @@ from bijux_cli.infra.telemetry import NoopTelemetry
 
 def test_setup_and_defaults() -> None:
     """Test the setup and default state of the Observability service."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
     assert isinstance(obs, Observability)
     assert isinstance(obs._telemetry, NoopTelemetry)
     assert obs.get_logger() is obs._logger
@@ -29,7 +29,7 @@ def test_setup_and_defaults() -> None:
 
 def test_set_telemetry_is_chainable_and_sets_backend() -> None:
     """Test that setting a telemetry backend is chainable and correctly assigned."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
     telemetry = MagicMock(spec=TelemetryProtocol)
 
     returned = obs.set_telemetry(telemetry)
@@ -40,7 +40,7 @@ def test_set_telemetry_is_chainable_and_sets_backend() -> None:
 
 def test_bind_replaces_logger_and_is_chainable() -> None:
     """Test that binding context to the logger returns a new logger and is chainable."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
 
     original_logger = MagicMock()
     bound_logger = MagicMock()
@@ -56,7 +56,7 @@ def test_bind_replaces_logger_and_is_chainable() -> None:
 
 def test_log_with_extra_calls_correct_level_and_emits_telemetry() -> None:
     """Test that logging with extra data calls the correct logger method and emits telemetry."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
 
     logger = MagicMock()
     obs._logger = logger
@@ -74,7 +74,7 @@ def test_log_with_extra_calls_correct_level_and_emits_telemetry() -> None:
 
 def test_log_without_extra_calls_level_and_emits_minimal_telemetry() -> None:
     """Test that logging without extra data emits a minimal telemetry event."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
 
     logger = MagicMock()
     obs._logger = logger
@@ -91,7 +91,7 @@ def test_log_without_extra_calls_level_and_emits_minimal_telemetry() -> None:
 
 def test_log_with_nulltelemetry_skips_telemetry_event() -> None:
     """Test that no telemetry event is emitted when using NoopTelemetry."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
     logger = MagicMock()
     obs._logger = logger
 
@@ -102,7 +102,7 @@ def test_log_with_nulltelemetry_skips_telemetry_event() -> None:
 
 def test_log_invalid_level_raises_service_error() -> None:
     """Tests that logging with an invalid level raises a ServiceError."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
 
     class DummyLogger:
         def bind(self, **kwargs: Any) -> DummyLogger:
@@ -116,7 +116,7 @@ def test_log_invalid_level_raises_service_error() -> None:
 
 def test_close_calls_debug_shutdown() -> None:
     """Test that the close method logs a shutdown message."""
-    obs = Observability.setup()
+    obs = Observability.setup(telemetry=NoopTelemetry())
     logger = MagicMock()
     obs._logger = logger
 

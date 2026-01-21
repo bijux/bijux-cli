@@ -25,7 +25,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.utilities import ascii_safe, new_run_command, parse_global_flags
-from bijux_cli.core.contracts import ConfigProtocol
+from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
