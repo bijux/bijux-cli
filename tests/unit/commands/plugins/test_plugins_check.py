@@ -14,10 +14,10 @@ from unittest.mock import patch
 
 import pytest
 
-import bijux_cli.commands.plugins.check as plugin_check
-from bijux_cli.commands.plugins.check import check_plugin
+import bijux_cli.cli.commands.plugins.check as plugin_check
+from bijux_cli.cli.commands.plugins.check import check_plugin
 from bijux_cli.core.async_exec import run_command
-from bijux_cli.services.plugins.catalog import PluginMetadata, PluginMetadataError
+from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
 class DummyExitError(Exception):
@@ -91,11 +91,11 @@ def run_check(
         path=tmp_path / name,
     )
     with patch(
-        "bijux_cli.commands.plugins.check.get_plugin_metadata", lambda _: meta
+        "bijux_cli.cli.commands.plugins.check.get_plugin_metadata", lambda _: meta
     ):
         captured: dict[str, Any] = {}
         with patch(
-            "bijux_cli.commands.plugins.check.new_run_command",
+            "bijux_cli.cli.commands.plugins.check.new_run_command",
             lambda **kw: captured.update(kw),
         ):
             run_command(
@@ -160,8 +160,8 @@ def test_health_various_returns(
         path=root / "foo",
     )
     with (
-        patch("bijux_cli.commands.plugins.check.get_plugin_metadata", lambda _: meta),
-        patch("bijux_cli.commands.plugins.check.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.plugins.check.get_plugin_metadata", lambda _: meta),
+        patch("bijux_cli.cli.commands.plugins.check.new_run_command") as mock_new_run,
     ):
         run_command(
             check_plugin,

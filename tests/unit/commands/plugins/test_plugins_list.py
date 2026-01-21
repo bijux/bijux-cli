@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.cli import app as cli_app
-import bijux_cli.commands.plugins.list as list_mod
+from bijux_cli.cli.root import app as cli_app
+import bijux_cli.cli.commands.plugins.list as list_mod
 
 
 @pytest.fixture

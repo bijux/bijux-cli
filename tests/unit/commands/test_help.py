@@ -17,8 +17,8 @@ import click
 import pytest
 import typer
 
-import bijux_cli.commands.help as help_mod
-from bijux_cli.commands.help import _HUMAN, _build_help_payload, _find_target_command
+import bijux_cli.cli.commands.help as help_mod
+from bijux_cli.cli.commands.help import _HUMAN, _build_help_payload, _find_target_command
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
@@ -110,7 +110,7 @@ def test_build_help_payload_without_runtime() -> None:
 def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test building a help payload with runtime info."""
     monkeypatch.setattr(
-        "bijux_cli.commands.help.time.perf_counter",
+        "bijux_cli.cli.commands.help.time.perf_counter",
         lambda: 1000.0,
         raising=True,
     )

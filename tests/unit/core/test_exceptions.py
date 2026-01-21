@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from bijux_cli.core.exceptions import (
+from bijux_cli.core.errors import (
     BijuxError,
     CliTimeoutError,
     CommandError,

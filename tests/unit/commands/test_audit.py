@@ -17,7 +17,7 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from bijux_cli.commands.audit import (
+from bijux_cli.cli.commands.audit import (
     _build_payload,
     _write_output_file,
     audit,
@@ -91,7 +91,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         calls.append(name)
         return f"{name}-{val}"
 
-    monkeypatch.setattr("bijux_cli.commands.audit.ascii_safe", fake_ascii_safe)
+    monkeypatch.setattr("bijux_cli.cli.commands.audit.ascii_safe", fake_ascii_safe)
 
     payload = _build_payload(include_runtime=True, dry_run=False)
     assert payload["status"] == "completed"
@@ -120,7 +120,7 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
 
 def test_audit_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables trigger a structured error."""
-    monkeypatch.setattr("bijux_cli.commands.audit.contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr("bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True)
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
 
@@ -139,7 +139,7 @@ def test_audit_env_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
         raise ValueError("bad config")
 
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.validate_env_file_if_present", bad_validate
+        "bijux_cli.cli.commands.audit.validate_env_file_if_present", bad_validate
     )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
@@ -161,10 +161,10 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(DIContainer, "current", staticmethod(lambda: Bad()))
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.contains_non_ascii_env", lambda: False
+        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: False
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.validate_env_file_if_present", lambda v: None
+        "bijux_cli.cli.commands.audit.validate_env_file_if_present", lambda v: None
     )
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
@@ -182,7 +182,7 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
     capture: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", lambda **kw: capture.update(kw)
+        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: capture.update(kw)
     )
 
     out_file = tmp_path / "report.json"
@@ -230,7 +230,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
         called.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
     )
 
     result = runner.invoke(
@@ -327,7 +327,7 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
 
 def test_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables are correctly detected."""
-    monkeypatch.setattr("bijux_cli.commands.audit.contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr("bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True)
     result = runner.invoke(audit_app, ["--dry-run"], catch_exceptions=False)
     assert result.exit_code == 3
     err = json.loads((result.stdout or result.stderr).strip())
@@ -337,7 +337,7 @@ def test_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_env_file_validation_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a validation error for an environment file is handled."""
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.validate_env_file_if_present",
+        "bijux_cli.cli.commands.audit.validate_env_file_if_present",
         lambda path: (_ for _ in ()).throw(ValueError("bad env")),
     )
     result = runner.invoke(audit_app, ["--dry-run"], catch_exceptions=False)
@@ -356,7 +356,7 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_nrc(**kw: Any) -> None:
         captured.update(kw)
 
-    monkeypatch.setattr("bijux_cli.commands.audit.new_run_command", fake_nrc)
+    monkeypatch.setattr("bijux_cli.cli.commands.audit.new_run_command", fake_nrc)
 
     runner.invoke(audit_app, ["--dry-run", "--verbose"], catch_exceptions=False)
     builder = captured["payload_builder"]
@@ -372,7 +372,7 @@ def test_debug_implies_pretty_and_verbose(monkeypatch: pytest.MonkeyPatch) -> No
     _fake_configure_emitter(monkeypatch, emitter)
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
+        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
     )
 
     runner.invoke(audit_app, ["--dry-run", "--debug"], catch_exceptions=False)
@@ -390,7 +390,7 @@ def test_audit_stray_argument() -> None:
 
 def test_audit_invoked_subcommand_returns(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure audit callback exits early when a subcommand is invoked."""
-    with patch("bijux_cli.commands.audit.validate_common_flags") as mock_vcf:
+    with patch("bijux_cli.cli.commands.audit.validate_common_flags") as mock_vcf:
 
         @audit_app.command("sub")
         def sub_command() -> None:
@@ -409,7 +409,7 @@ def test_audit_catches_value_error_from_env_validation(
     """Test the specific ValueError handler for env file validation."""
     error_message = "Invalid characters in .env file"
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.validate_env_file_if_present",
+        "bijux_cli.cli.commands.audit.validate_env_file_if_present",
         lambda path: (_ for _ in ()).throw(ValueError(error_message)),
     )
 
@@ -431,7 +431,7 @@ def test_audit_catches_value_error_from_main_logic(
 
     error_message = "ASCII conversion failed"
     monkeypatch.setattr(
-        "bijux_cli.commands.audit._build_payload",
+        "bijux_cli.cli.commands.audit._build_payload",
         lambda include_runtime, dry_run: (_ for _ in ()).throw(
             ValueError(error_message)
         ),
@@ -455,7 +455,7 @@ def test_audit_catches_generic_exception_from_main_logic(
 
     error_message = "Something broke unexpectedly"
     monkeypatch.setattr(
-        "bijux_cli.commands.audit._build_payload",
+        "bijux_cli.cli.commands.audit._build_payload",
         lambda include_runtime, dry_run: (_ for _ in ()).throw(KeyError(error_message)),
     )
 
@@ -482,7 +482,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
         captured_kwargs.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
     )
 
     out_file = tmp_path / "report.json"
@@ -542,7 +542,7 @@ def test_audit_output_to_file_with_verbose(
 def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the stray argument handling logic."""
     mock_emit_error = MagicMock(side_effect=SystemExit(2))
-    monkeypatch.setattr("bijux_cli.commands.audit.emit_error_and_exit", mock_emit_error)
+    monkeypatch.setattr("bijux_cli.cli.commands.audit.emit_error_and_exit", mock_emit_error)
 
     mock_ctx = MagicMock(spec=typer.Context)
     mock_ctx.invoked_subcommand = False
@@ -582,7 +582,7 @@ def test_verbose_file_output_constructs_correct_final_payload(
         captured_kwargs.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
     )
 
     out_file = tmp_path / "report.json"
@@ -606,7 +606,7 @@ def test_audit_written_without_runtime_when_not_verbose(
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
+        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
     )
 
     out_file = tmp_path / "audit.json"

@@ -14,7 +14,7 @@ from unittest.mock import Mock
 import pytest
 import typer
 
-import bijux_cli.cli as cli_mod
+import bijux_cli.cli.root as cli_mod
 
 
 def test_collect_names() -> None:

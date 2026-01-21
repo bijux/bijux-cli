@@ -26,37 +26,37 @@ def test_register_default_services_100pct(
     sentinel_audit_obj = object()
     with (
         patch(
-            "bijux_cli.services.audit.get_audit_service",
+            "bijux_cli.services.diagnostics.audit.get_audit_service",
             return_value=sentinel_audit_obj,
         ) as mock_get_audit,
         patch(
-            "bijux_cli.infra.observability.Observability.__init__", return_value=None
+            "bijux_cli.services.logging.observability.Observability.__init__", return_value=None
         ) as mock_obs_init,
         patch(
-            "bijux_cli.infra.observability.Observability.log",
+            "bijux_cli.services.logging.observability.Observability.log",
             autospec=True,
             side_effect=lambda self, *a, **k: self,
         ) as mock_obs_log,
         patch(
-            "bijux_cli.infra.telemetry.LoggingTelemetry.__init__", return_value=None
+            "bijux_cli.services.logging.telemetry.LoggingTelemetry.__init__", return_value=None
         ) as mock_tel_init,
         patch(
-            "bijux_cli.infra.emitter.Emitter.__init__", return_value=None
+            "bijux_cli.services.logging.emitter.Emitter.__init__", return_value=None
         ) as mock_emitter_init,
         patch(
-            "bijux_cli.infra.serializer.OrjsonSerializer.__init__", return_value=None
+            "bijux_cli.services.logging.serializer.OrjsonSerializer.__init__", return_value=None
         ) as mock_orjson_init,
         patch(
-            "bijux_cli.infra.serializer.PyYAMLSerializer.__init__", return_value=None
+            "bijux_cli.services.logging.serializer.PyYAMLSerializer.__init__", return_value=None
         ) as mock_yaml_init,
         patch(
-            "bijux_cli.infra.process.ProcessPool.__init__", return_value=None
+            "bijux_cli.services.diagnostics.process.ProcessPool.__init__", return_value=None
         ) as mock_process_init,
         patch(
-            "bijux_cli.infra.retry.TimeoutRetryPolicy.__init__", return_value=None
+            "bijux_cli.services.diagnostics.retry.TimeoutRetryPolicy.__init__", return_value=None
         ) as mock_timeout_init,
         patch(
-            "bijux_cli.infra.retry.ExponentialBackoffRetryPolicy.__init__",
+            "bijux_cli.services.diagnostics.retry.ExponentialBackoffRetryPolicy.__init__",
             return_value=None,
         ) as mock_exp_init,
         patch(
@@ -66,28 +66,28 @@ def test_register_default_services_100pct(
             "bijux_cli.services.config.Config.__init__", return_value=None
         ) as mock_config_init,
         patch(
-            "bijux_cli.services.plugins.registry.Registry.__init__", return_value=None
+            "bijux_cli.plugins.registry.Registry.__init__", return_value=None
         ) as mock_registry_init,
         patch(
-            "bijux_cli.services.audit.DryRunAudit.__init__", return_value=None
+            "bijux_cli.services.diagnostics.audit.DryRunAudit.__init__", return_value=None
         ) as mock_dry_audit_init,
         patch(
-            "bijux_cli.services.audit.RealAudit.__init__", return_value=None
+            "bijux_cli.services.diagnostics.audit.RealAudit.__init__", return_value=None
         ) as mock_real_audit_init,
         patch(
-            "bijux_cli.services.docs.Docs.__init__", return_value=None
+            "bijux_cli.services.diagnostics.docs.Docs.__init__", return_value=None
         ) as mock_docs_init,
         patch(
-            "bijux_cli.services.doctor.Doctor.__init__", return_value=None
+            "bijux_cli.services.diagnostics.doctor.Doctor.__init__", return_value=None
         ) as mock_doctor_init,
         patch(
             "bijux_cli.services.history.History.__init__", return_value=None
         ) as mock_history_init,
         patch(
-            "bijux_cli.services.memory.Memory.__init__", return_value=None
+            "bijux_cli.services.diagnostics.memory.Memory.__init__", return_value=None
         ) as mock_memory_init,
     ):
-        from bijux_cli.contracts import (
+        from bijux_cli.core.contracts import (
             AuditProtocol,
             ConfigProtocol,
             ContextProtocol,
@@ -104,19 +104,19 @@ def test_register_default_services_100pct(
             TelemetryProtocol,
         )
         import bijux_cli.core.context as core_context
-        import bijux_cli.infra.emitter as infra_emitter
-        import bijux_cli.infra.observability as infra_obs
-        import bijux_cli.infra.process as infra_process
-        import bijux_cli.infra.retry as infra_retry
-        import bijux_cli.infra.serializer as infra_serializer
-        import bijux_cli.infra.telemetry as infra_tel
-        import bijux_cli.services.audit as svc_audit
+        import bijux_cli.services.logging.emitter as infra_emitter
+        import bijux_cli.services.logging.observability as infra_obs
+        import bijux_cli.services.diagnostics.process as infra_process
+        import bijux_cli.services.diagnostics.retry as infra_retry
+        import bijux_cli.services.logging.serializer as infra_serializer
+        import bijux_cli.services.logging.telemetry as infra_tel
+        import bijux_cli.services.diagnostics.audit as svc_audit
         import bijux_cli.services.config as svc_config
-        import bijux_cli.services.docs as svc_docs
-        import bijux_cli.services.doctor as svc_doctor
+        import bijux_cli.services.diagnostics.docs as svc_docs
+        import bijux_cli.services.diagnostics.doctor as svc_doctor
         import bijux_cli.services.history as svc_history
-        import bijux_cli.services.memory as svc_memory
-        import bijux_cli.services.plugins.registry as svc_registry
+        import bijux_cli.services.diagnostics.memory as svc_memory
+        import bijux_cli.plugins.registry as svc_registry
 
         register_default_services(
             di, debug=debug, output_format=output_format, quiet=quiet
@@ -135,7 +135,7 @@ def test_register_default_services_100pct(
         mock_emitter_init.assert_called_once()
         assert mock_emitter_init.call_args.kwargs == {
             "telemetry": tel_inst,
-            "format": output_format,
+            "output_format": output_format,
             "debug": debug,
             "quiet": quiet,
         }

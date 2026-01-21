@@ -17,7 +17,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
-from bijux_cli.commands.utilities import (
+from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
     emit_and_exit,
@@ -30,7 +30,7 @@ from bijux_cli.commands.utilities import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.contracts import HistoryProtocol
+from bijux_cli.core.contracts import HistoryProtocol
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
@@ -157,7 +157,7 @@ def test_validate_common_flags_valid_yaml() -> None:
 
 def test_validate_common_flags_invalid() -> None:
     """Test common flag validation with an invalid format."""
-    with patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         validate_common_flags("invalid", "cmd", False)
         mock_exit.assert_called_with(
             "Unsupported format: invalid",
@@ -174,9 +174,9 @@ def test_validate_common_flags_invalid() -> None:
 def test_validate_common_flags_non_ascii(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test common flag validation when non-ASCII environment is detected."""
     monkeypatch.setattr(
-        "bijux_cli.commands.utilities.contains_non_ascii_env", lambda: True
+        "bijux_cli.cli.commands.utilities.contains_non_ascii_env", lambda: True
     )
-    with patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         validate_common_flags("json", "cmd", False)
         mock_exit.assert_called_with(
             "Non-ASCII in configuration or environment",
@@ -192,7 +192,7 @@ def test_validate_common_flags_non_ascii(monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_validate_common_flags_quiet() -> None:
     """Test that validation errors are suppressed in quiet mode."""
-    with patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         validate_common_flags("json", "cmd", True)
         mock_exit.assert_not_called()
 
@@ -200,8 +200,8 @@ def test_validate_common_flags_quiet() -> None:
 def test_validate_common_flags_include_runtime() -> None:
     """Test that runtime info is included in error payload when requested."""
     with (
-        patch("bijux_cli.commands.utilities.contains_non_ascii_env", lambda: True),
-        patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit,
+        patch("bijux_cli.cli.commands.utilities.contains_non_ascii_env", lambda: True),
+        patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit,
     ):
         validate_common_flags("json", "cmd", False, include_runtime=True)
         mock_exit.assert_called_with(
@@ -264,9 +264,9 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
     """Test a successful command execution via new_run_command."""
     with (
         patch(
-            "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
         ),
-        patch("bijux_cli.commands.utilities.emit_and_exit") as mock_emit_exit,
+        patch("bijux_cli.cli.commands.utilities.emit_and_exit") as mock_emit_exit,
     ):
 
         def builder(include: bool) -> dict[str, str]:
@@ -293,12 +293,12 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
         )
 
 
-@patch("bijux_cli.commands.utilities.validate_common_flags", return_value="yaml")
+@patch("bijux_cli.cli.commands.utilities.validate_common_flags", return_value="yaml")
 def test_new_run_command_yaml(
     mock_validate: MagicMock, mock_di: types.SimpleNamespace
 ) -> None:
     """Test command execution with YAML output format."""
-    with patch("bijux_cli.commands.utilities.emit_and_exit") as mock_emit_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_and_exit") as mock_emit_exit:
 
         def builder(include: bool) -> dict[str, str]:
             return {"test": "value"}
@@ -328,9 +328,9 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
     """Test command execution where the payload builder fails."""
     with (
         patch(
-            "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
         ),
-        patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_error_exit,
+        patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_error_exit,
     ):
 
         def builder(include: bool) -> dict[str, Any]:
@@ -360,7 +360,7 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
 def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> None:
     """Test that history is skipped in quiet mode."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
 
         def builder(include: bool) -> dict[str, Any]:
@@ -386,7 +386,7 @@ def test_new_run_command_history_skip_history_cmd(
 ) -> None:
     """Test that the history command itself is not recorded in history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
 
         def builder(include: bool) -> dict[str, Any]:
@@ -410,7 +410,7 @@ def test_new_run_command_history_skip_history_cmd(
 def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None:
     """Test successful command recording in history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock(spec=HistoryProtocol)
 
@@ -440,7 +440,7 @@ def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None
 def test_new_run_command_history_fail(mock_di: types.SimpleNamespace) -> None:
     """Test failed command recording in history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock(spec=HistoryProtocol)
 
@@ -473,7 +473,7 @@ def test_new_run_command_history_permission_error(
 ) -> None:
     """Test handling of PermissionError when writing history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = PermissionError("perm error")
@@ -505,7 +505,7 @@ def test_new_run_command_history_permission_error(
 def test_new_run_command_history_os_error_perm(mock_di: types.SimpleNamespace) -> None:
     """Test handling of OSError EACCES/EPERM when writing history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(13, "perm")
@@ -539,7 +539,7 @@ def test_new_run_command_history_os_error_space(
 ) -> None:
     """Test handling of OSError ENOSPC when writing history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(28, "no space")
@@ -574,7 +574,7 @@ def test_new_run_command_history_os_error_other(
 ) -> None:
     """Test handling of other OSErrors when writing history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(5, "io error")
@@ -606,7 +606,7 @@ def test_new_run_command_history_os_error_other(
 def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> None:
     """Test handling of generic exceptions when writing history."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = Exception("other error")
@@ -847,7 +847,7 @@ def test_parse_global_flags_format() -> None:
 def test_parse_global_flags_format_missing() -> None:
     """Test parsing a format flag with a missing argument."""
     sys.argv = ["bijux", "-f"]
-    with patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         parse_global_flags()
         mock_exit.assert_called_with(
             ANY,
@@ -864,7 +864,7 @@ def test_parse_global_flags_format_missing() -> None:
 def test_parse_global_flags_format_invalid_no_help() -> None:
     """Test parsing an invalid format flag when --help is not present."""
     sys.argv = ["bijux", "-f", "invalid"]
-    with patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_exit:
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         parse_global_flags()
         mock_exit.assert_called_with(
             ANY,
@@ -916,7 +916,7 @@ def test_parse_global_flags_unknown_help() -> None:
 def test_list_installed_plugins_non_exist() -> None:
     """Test listing plugins when the plugins directory does not exist."""
     with patch(
-        "bijux_cli.commands.utilities.get_plugins_dir", return_value=Path("/non_exist")
+        "bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=Path("/non_exist")
     ):
         assert list_installed_plugins() == []
 
@@ -926,7 +926,7 @@ def test_list_installed_plugins_symlink_loop() -> None:
     mock_path = MagicMock()
     mock_path.resolve.side_effect = RuntimeError
     with (
-        patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=mock_path),
+        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=mock_path),
         pytest.raises(RuntimeError, match="Symlink loop"),
     ):
         list_installed_plugins()
@@ -937,7 +937,7 @@ def test_list_installed_plugins_not_dir(tmp_path: Path) -> None:
     file_path = tmp_path / "file"
     file_path.touch()
     with (
-        patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=file_path),
+        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=file_path),
         pytest.raises(RuntimeError, match="not a directory"),
     ):
         list_installed_plugins()
@@ -946,7 +946,7 @@ def test_list_installed_plugins_not_dir(tmp_path: Path) -> None:
 def test_list_installed_plugins_invalid_access(tmp_path: Path) -> None:
     """Test that an error is raised if the plugins directory is inaccessible."""
     with (
-        patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path),
         patch.object(Path, "resolve", side_effect=OSError("access denied")),
         pytest.raises(RuntimeError, match="invalid or inaccessible"),
     ):
@@ -963,7 +963,7 @@ def test_list_installed_plugins_success(tmp_path: Path) -> None:
     (plugin2 / "plugin.py").touch()
     invalid = tmp_path / "invalid"
     invalid.mkdir()
-    with patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
         plugins = list_installed_plugins()
         assert plugins == ["plugin1", "plugin2"]
 
@@ -975,7 +975,7 @@ def test_list_installed_plugins_symlink_dir(tmp_path: Path) -> None:
     (real / "plugin.py").touch()
     sym = tmp_path / "sym"
     sym.symlink_to(real)
-    with patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
         plugins = list_installed_plugins()
         assert "sym" in plugins
 
@@ -987,7 +987,7 @@ def test_list_installed_plugins_ignore_errors(tmp_path: Path) -> None:
     (plugin / "plugin.py").touch()
     invalid = tmp_path / "invalid"
     invalid.touch()
-    with patch("bijux_cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
+    with patch("bijux_cli.cli.commands.utilities.get_plugins_dir", return_value=tmp_path):
         plugins = list_installed_plugins()
         assert plugins == ["plugin"]
 
@@ -998,13 +998,13 @@ def test_handle_list_plugins_success(
     """Test the successful execution of the list-plugins handler."""
     with (
         patch(
-            "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
         ),
         patch(
-            "bijux_cli.services.plugins.catalog.list_plugins",
+            "bijux_cli.plugins.metadata.list_plugins",
             return_value=[{"name": "p1", "version": "0.1.0", "enabled": True}, {"name": "p2", "version": "0.2.0", "enabled": True}],
         ),
-        patch("bijux_cli.commands.utilities.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.utilities.new_run_command") as mock_run,
     ):
         handle_list_plugins("list-plugins", False, False, "json", True, False)
         mock_run.assert_called_with(
@@ -1034,13 +1034,13 @@ def test_handle_list_plugins_fail(
     """Test the failure path of the list-plugins handler."""
     with (
         patch(
-            "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+            "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
         ),
         patch(
-            "bijux_cli.services.plugins.catalog.list_plugins",
+            "bijux_cli.plugins.metadata.list_plugins",
             side_effect=RuntimeError("dir error"),
         ),
-        patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_error,
+        patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_error,
     ):
         handle_list_plugins("list-plugins", False, False, "json", True, False)
         mock_error.assert_called_with(
@@ -1081,7 +1081,7 @@ def test_parse_global_flags_multiple() -> None:
 
 def test_all_exported() -> None:
     """Test that the __all__ variable contains all expected utilities."""
-    from bijux_cli.commands.utilities import __all__
+    from bijux_cli.cli.commands.utilities import __all__
 
     assert sorted(__all__) == sorted(
         [
@@ -1185,7 +1185,7 @@ def test_emit_and_exit_history_permission_denied(
 ) -> None:
     """Test history recording failure due to EACCES permission error."""
     with patch(
-        "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
+        "bijux_cli.cli.commands.utilities.validate_common_flags", return_value="json"
     ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(errno.EACCES, "denied")

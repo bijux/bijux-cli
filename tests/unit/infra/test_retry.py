@@ -16,9 +16,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from bijux_cli.core.async_exec import run_awaitable
-from bijux_cli.core.exceptions import BijuxError
-import bijux_cli.infra.retry as mod
-from bijux_cli.infra.retry import (
+from bijux_cli.core.errors import BijuxError
+import bijux_cli.services.diagnostics.retry as mod
+from bijux_cli.services.diagnostics.retry import (
     ExponentialBackoffRetryPolicy,
     TimeoutRetryPolicy,
     _backoff_loop,

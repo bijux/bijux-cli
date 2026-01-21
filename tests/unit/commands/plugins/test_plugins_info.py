@@ -9,9 +9,9 @@ from typing import Any
 
 import pytest
 
-import bijux_cli.commands.plugins.info as plugins_info
-from bijux_cli.commands.plugins.info import info_plugin
-from bijux_cli.services.plugins.catalog import PluginMetadata, PluginMetadataError
+import bijux_cli.cli.commands.plugins.info as plugins_info
+from bijux_cli.cli.commands.plugins.info import info_plugin
+from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
 class DummyExitError(Exception):

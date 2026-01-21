@@ -12,7 +12,7 @@ import httpx
 import pytest
 from starlette.testclient import TestClient
 
-from bijux_cli.httpapi import app
+from bijux_cli.http.api import app
 
 BASE_URL = "http://testserver/v1"
 

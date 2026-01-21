@@ -20,7 +20,7 @@ from typing import Any, TypeVar
 
 from injector import inject
 
-from bijux_cli.contracts import ContextProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ContextProtocol, ObservabilityProtocol
 from bijux_cli.core.di import DIContainer
 
 T = TypeVar("T")

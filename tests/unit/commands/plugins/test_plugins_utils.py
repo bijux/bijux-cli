@@ -11,12 +11,12 @@ from typing import Any
 
 import pytest
 
-from bijux_cli.commands.plugins.utils import (
+from bijux_cli.cli.commands.plugins.validation import (
     ignore_hidden_and_broken_symlinks,
     parse_required_cli_version,
     refuse_on_symlink,
 )
-import bijux_cli.commands.utilities as utilities_mod
+import bijux_cli.cli.commands.utilities as utilities_mod
 
 
 def test_ignore_hidden_and_broken_symlinks(

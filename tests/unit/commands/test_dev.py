@@ -17,10 +17,10 @@ import typer
 from typer import Context
 import yaml
 
-import bijux_cli.commands.dev as dev_pkg
-from bijux_cli.commands.dev.di import _build_dev_di_payload, _key_to_name, dev_di_graph
-from bijux_cli.commands.dev.list_plugins import dev_list_plugins
-from bijux_cli.commands.dev.service import dev
+import bijux_cli.cli.commands.dev as dev_pkg
+from bijux_cli.cli.commands.dev.di import _build_dev_di_payload, _key_to_name, dev_di_graph
+from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
+from bijux_cli.cli.commands.dev.service import dev
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def test_build_dev_di_payload_without_runtime(monkeypatch: pytest.MonkeyPatch) -
     mock_di.factories.return_value = [(str, "E"), ("X", "Y")]
     mock_di.services.return_value = [(int, "I"), ("S", "T")]
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.DIContainer.current",
+        "bijux_cli.cli.commands.dev.di.DIContainer.current",
         lambda: mock_di,
     )
 
@@ -87,7 +87,7 @@ def test_build_dev_di_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> N
     mock_di.factories.return_value = []
     mock_di.services.return_value = []
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.DIContainer.current",
+        "bijux_cli.cli.commands.dev.di.DIContainer.current",
         lambda: mock_di,
     )
 
@@ -103,13 +103,13 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
 ) -> None:
     """Test that the di-graph command calls new_run_command with the correct payload."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
     base_payload = {"factories": [{"protocol": "A", "alias": "a"}], "services": []}
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: dict(base_payload),
     )
 
@@ -121,7 +121,7 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
         captured["built"] = built
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.new_run_command",
+        "bijux_cli.cli.commands.dev.di.new_run_command",
         fake_new_run_command,
     )
 
@@ -143,7 +143,7 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("BIJUXCLI_DI_LIMIT", "1")
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
@@ -155,7 +155,7 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
         ],
     }
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: dict(payload_in),
     )
 
@@ -166,7 +166,7 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
         out["payload"] = payload
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.new_run_command", _fake_new_run_command
+        "bijux_cli.cli.commands.dev.di.new_run_command", _fake_new_run_command
     )
 
     dev_di_graph(
@@ -188,7 +188,7 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
 ) -> None:
     """Test that JSON output is written to a file and new_run_command is called."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
@@ -197,13 +197,13 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
         "services": [{"protocol": "X", "alias": "x", "implementation": None}],
     }
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: dict(payload_in),
     )
 
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.new_run_command",
+        "bijux_cli.cli.commands.dev.di.new_run_command",
         lambda **kw: called.update({"built": kw["payload_builder"](False)}),
     )
 
@@ -227,16 +227,16 @@ def test_dev_di_graph_output_yaml_writes_file(
 ) -> None:
     """Test that YAML output is correctly written to a file."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "yaml",
     )
     payload_in = {"factories": [{"protocol": "K", "alias": "k"}], "services": []}
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: dict(payload_in),
     )
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.new_run_command", lambda **_: None)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.new_run_command", lambda **_: None)
 
     out_path = tmp_path / "di.yaml"
     dev_di_graph(
@@ -258,11 +258,11 @@ def test_dev_di_graph_quiet_after_writing_exits(
 ) -> None:
     """Test that quiet mode exits after writing files without calling new_run_command."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
     out_path = tmp_path / "di.json"
@@ -278,11 +278,11 @@ def test_dev_di_graph_force_serialize_failure_env(
     """Test that a forced serialization failure is handled correctly."""
     monkeypatch.setenv("BIJUXCLI_TEST_FORCE_SERIALIZE_FAIL", "1")
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
 
@@ -312,7 +312,7 @@ def test_dev_di_graph_force_serialize_failure_env(
         )
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
 
     with pytest.raises(SystemExit):
         dev_di_graph(
@@ -335,11 +335,11 @@ def test_dev_di_graph_invalid_limit_emits_error(
     """Test that an invalid BIJUXCLI_DI_LIMIT value results in an error."""
     monkeypatch.setenv("BIJUXCLI_DI_LIMIT", value)
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
 
@@ -359,7 +359,7 @@ def test_dev_di_graph_invalid_limit_emits_error(
         called.update(msg=msg, code=code, failure=failure, fmt=fmt)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -380,7 +380,7 @@ def test_dev_di_graph_config_env_non_ascii_emits_error(
     """Test that a non-ASCII config path in the environment results in an error."""
     monkeypatch.setenv("BIJUXCLI_CONFIG", "not-ascii-ü")
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
@@ -400,7 +400,7 @@ def test_dev_di_graph_config_env_non_ascii_emits_error(
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -422,7 +422,7 @@ def test_dev_di_graph_config_env_unreadable_path(
     cfg.write_text("x", encoding="utf-8")
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr("os.access", lambda p, mode: False)
@@ -443,7 +443,7 @@ def test_dev_di_graph_config_env_unreadable_path(
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -462,11 +462,11 @@ def test_dev_di_graph_payload_builder_raises_value_error(
 ) -> None:
     """Test that a ValueError from the payload builder is handled correctly."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: (_ for _ in ()).throw(ValueError("boom")),
     )
 
@@ -486,7 +486,7 @@ def test_dev_di_graph_payload_builder_raises_value_error(
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -505,11 +505,11 @@ def test_dev_di_graph_output_path_is_directory(
 ) -> None:
     """Test that providing a directory as an output file results in an error."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
 
@@ -529,7 +529,7 @@ def test_dev_di_graph_output_path_is_directory(
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(output=[tmp_path])
 
@@ -541,11 +541,11 @@ def test_dev_di_graph_output_write_raises(
 ) -> None:
     """Test that an OSError during output file writing is handled."""
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
 
@@ -572,7 +572,7 @@ def test_dev_di_graph_output_write_raises(
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
 
     with pytest.raises(SystemExit):
         dev_di_graph(
@@ -603,10 +603,10 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
         called["handled"] = (command, quiet, verbose, fmt, pretty, debug)
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.list_plugins.validate_common_flags", fake_validate
+        "bijux_cli.cli.commands.dev.list_plugins.validate_common_flags", fake_validate
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.list_plugins.handle_list_plugins", fake_handle
+        "bijux_cli.cli.commands.dev.list_plugins.handle_list_plugins", fake_handle
     )
 
     dev_list_plugins(quiet=True, verbose=False, fmt="json", pretty=True, debug=False)
@@ -621,7 +621,7 @@ def test_dev_callback_returns_when_subcommand(
     """Test that the main dev callback returns early if a subcommand is invoked."""
     ctx.invoked_subcommand = "di"
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.service.new_run_command",
+        "bijux_cli.cli.commands.dev.service.new_run_command",
         lambda **_: (_ for _ in ()).throw(AssertionError("should not be called")),
     )
     dev(ctx)
@@ -634,7 +634,7 @@ def test_dev_payload_basic_and_runtime_inclusion(
     ctx.invoked_subcommand = None
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.service.validate_common_flags",
+        "bijux_cli.cli.commands.dev.service.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
@@ -648,7 +648,7 @@ def test_dev_payload_basic_and_runtime_inclusion(
             captured["built_rt"] = kwargs["payload_builder"](True)
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.service.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.dev.service.new_run_command", fake_new_run_command
     )
 
     dev(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
@@ -670,13 +670,13 @@ def test_dev_payload_includes_mode_env(
     ctx.invoked_subcommand = None
     monkeypatch.setenv("BIJUXCLI_DEV_MODE", "diagnostic")
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.service.validate_common_flags",
+        "bijux_cli.cli.commands.dev.service.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
     built_payload: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.service.new_run_command",
+        "bijux_cli.cli.commands.dev.service.new_run_command",
         lambda **kw: built_payload.update(kw["payload_builder"](True)),
     )
 
@@ -696,17 +696,17 @@ def test_dev_di_graph_config_env_readable_path(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.validate_common_flags",
+        "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di._build_dev_di_payload",
+        "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
         lambda include_runtime: {"factories": [], "services": []},
     )
 
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.dev.di.new_run_command",
+        "bijux_cli.cli.commands.dev.di.new_run_command",
         lambda **kwargs: called.update(kwargs),
     )
 

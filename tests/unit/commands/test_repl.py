@@ -21,7 +21,7 @@ from prompt_toolkit.document import Document
 import pytest
 import typer
 
-import bijux_cli.commands.repl as mod
+import bijux_cli.cli.commands.repl as mod
 
 
 
@@ -135,10 +135,10 @@ def build_fake_root_app() -> Any:
 
 
 def _install_fake_cli_module(app: Any) -> None:
-    """Install a module named bijux_cli.cli exposing `app`."""
-    fake = types.ModuleType("bijux_cli.cli")
+    """Install a module named bijux_cli.cli.root exposing `app`."""
+    fake = types.ModuleType("bijux_cli.cli.root")
     fake.app = app  # type: ignore[attr-defined]
-    sys.modules["bijux_cli.cli"] = fake
+    sys.modules["bijux_cli.cli.root"] = fake
 
 
 def _run_piped_lines(lines: list[str], *, quiet: bool = False) -> None:
@@ -609,7 +609,7 @@ def test_completer_subcommands_params_help_placeholder_and_dummy(
 ) -> None:
     """Complete group subcommands, params, help, and placeholders."""
     comp = make_fake_completer()
-    monkeypatch.setattr(sys.modules["bijux_cli.commands.repl"].typer, "Typer", FakeApp)
+    monkeypatch.setattr(sys.modules["bijux_cli.cli.commands.repl"].typer, "Typer", FakeApp)
     assert "set" in complete_text(comp, "config ")
     opts = complete_text(comp, "status --")
     assert "--no-pretty" in opts
@@ -1027,12 +1027,12 @@ def test_main_guard_invokes_repl_app_without_side_effects(
     import bijux_cli.core.async_exec as async_exec
     monkeypatch.setattr(async_exec, "run_command", lambda *a, **k: None)
     monkeypatch.setattr(_sys.stdin, "isatty", lambda: True)
-    _sys.modules.pop("bijux_cli.commands.repl", None)
+    _sys.modules.pop("bijux_cli.cli.commands.repl", None)
     old_argv = _sys.argv[:]
-    _sys.argv = ["bijux_cli.commands.repl"]
+    _sys.argv = ["bijux_cli.cli.commands.repl"]
     try:
         try:
-            runpy.run_module("bijux_cli.commands.repl", run_name="__main__", alter_sys=True)
+            runpy.run_module("bijux_cli.cli.commands.repl", run_name="__main__", alter_sys=True)
         except SystemExit as exc:
             assert exc.code in (0, None)
     finally:

@@ -15,8 +15,8 @@ import pytest
 from typer import Context, Exit
 import yaml
 
-import bijux_cli.commands.docs as docs_mod
-from bijux_cli.commands.docs import (
+import bijux_cli.cli.commands.docs as docs_mod
+from bijux_cli.cli.commands.docs import (
     _build_spec_payload,
     _default_output_path,
     _resolve_output_target,
@@ -57,8 +57,8 @@ def test_resolve_output_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert p == f
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
 def test_docs_stray_args_option(mock_validate: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray option causes a structured error and exit."""
     mock_emit.side_effect = SystemExit()
@@ -87,8 +87,8 @@ def test_docs_stray_args_option(mock_validate: MagicMock, mock_emit: MagicMock) 
     )
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
 def test_docs_stray_args_word(mock_validate: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray argument causes a structured error and exit."""
     mock_emit.side_effect = SystemExit()
@@ -117,9 +117,9 @@ def test_docs_stray_args_word(mock_validate: MagicMock, mock_emit: MagicMock) ->
     )
 
 
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
 def test_docs_ascii_env_failure(
     mock_validate: MagicMock, mock_emit: MagicMock, mock_nonascii: MagicMock
 ) -> None:
@@ -151,10 +151,10 @@ def test_docs_ascii_env_failure(
     )
 
 
-@patch("bijux_cli.commands.docs._build_spec_payload", autospec=True)
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs._build_spec_payload", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_ascii_payload_failure(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -223,7 +223,7 @@ def test_default_output_and_resolve_targets(
 def test_build_spec_payload_basic(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the basic structure of the specification payload."""
     monkeypatch.setattr(docs_mod, "CLI_VERSION", "vX.Y.Z")
-    import bijux_cli.commands as cmd_pkg
+    import bijux_cli.cli.commands as cmd_pkg
 
     monkeypatch.setattr(
         cmd_pkg, "list_registered_command_names", lambda: ["one", "two"]
@@ -244,10 +244,10 @@ def test_build_spec_payload_ascii_failure(monkeypatch: pytest.MonkeyPatch) -> No
     """Test that an ASCII safety check failure raises an error."""
     monkeypatch.setenv("DUMMY", "")
     monkeypatch.setattr(
-        "bijux_cli.commands.utilities.ascii_safe",
+        "bijux_cli.cli.commands.utilities.ascii_safe",
         lambda v, k: (_ for _ in ()).throw(ValueError("bad ascii")),
     )
-    import bijux_cli.commands as cmd_pkg
+    import bijux_cli.cli.commands as cmd_pkg
 
     monkeypatch.setattr(cmd_pkg, "list_registered_command_names", lambda: [])
     with pytest.raises(ValueError, match=r"bad ascii"):
@@ -264,7 +264,7 @@ def test_docs_stdout_branch(
         docs_mod, "validate_common_flags", lambda f, c, q, include_runtime=None: f
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"val": 3})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod,
@@ -301,7 +301,7 @@ def test_docs_file_written_and_emit_and_exit(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod,
@@ -314,7 +314,7 @@ def test_docs_file_written_and_emit_and_exit(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with patch("bijux_cli.commands.docs.emit_and_exit") as mock_emit:
+    with patch("bijux_cli.cli.commands.docs.emit_and_exit") as mock_emit:
         docs(
             ctx,
             out=None,
@@ -338,9 +338,9 @@ def test_docs_file_written_and_emit_and_exit(
     )
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_write_failure(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -354,7 +354,7 @@ def test_docs_write_failure(
 
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"b": 2})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
@@ -391,9 +391,9 @@ def test_docs_write_failure(
     )
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_missing_output_dir(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -409,7 +409,7 @@ def test_docs_missing_output_dir(
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(bad_dir))
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
@@ -442,9 +442,9 @@ def test_docs_missing_output_dir(
     )
 
 
-@patch("bijux_cli.commands.docs.emit_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_writes_yaml_and_emit(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -457,7 +457,7 @@ def test_docs_writes_yaml_and_emit(
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     class FakeYAML:
         def __init__(self, tel: Any) -> None:
@@ -487,9 +487,9 @@ def test_docs_writes_yaml_and_emit(
     )
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_io_fail_flag(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -505,7 +505,7 @@ def test_docs_io_fail_flag(
     monkeypatch.setenv("BIJUXCLI_TEST_IO_FAIL", "1")
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"x": 42})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
@@ -537,9 +537,9 @@ def test_docs_io_fail_flag(
     )
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_internal_error_path_none(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -552,7 +552,7 @@ def test_docs_internal_error_path_none(
     mock_emit.side_effect = SystemExit()
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"k": "v"})
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "{}")
@@ -599,7 +599,7 @@ def test_docs_stdout_debug_no_diagnostics(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"num": 7})
 
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "DUMP")
@@ -636,7 +636,7 @@ def test_docs_stdout_quiet_skips_echo(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
 
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "X")
@@ -676,7 +676,7 @@ def test_docs_stdout_yaml(
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     class FakeYAMLSer:
         def __init__(self, tel: Any) -> None:
@@ -710,9 +710,9 @@ def test_docs_stdout_yaml(
     assert err == ""
 
 
-@patch("bijux_cli.commands.docs.emit_error_and_exit", autospec=True)
-@patch("bijux_cli.commands.docs.validate_common_flags", autospec=True)
-@patch("bijux_cli.commands.docs.contains_non_ascii_env", autospec=True)
+@patch("bijux_cli.cli.commands.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.docs.validate_common_flags", autospec=True)
+@patch("bijux_cli.cli.commands.docs.contains_non_ascii_env", autospec=True)
 def test_docs_yaml_serialization_failure(
     mock_nonascii: MagicMock,
     mock_validate: MagicMock,
@@ -725,7 +725,7 @@ def test_docs_yaml_serialization_failure(
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
 
-    import bijux_cli.infra.serializer as ser_mod
+    import bijux_cli.services.logging.serializer as ser_mod
 
     monkeypatch.setattr(
         ser_mod, "OrjsonSerializer", lambda tel: MagicMock(dumps=lambda *a, **k: "")

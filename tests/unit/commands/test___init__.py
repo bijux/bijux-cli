@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from typer import Typer
 
-from bijux_cli.commands import (
+from bijux_cli.cli.commands import (
     _CORE_COMMANDS,
     _REGISTERED_COMMANDS,
     list_registered_command_names,
@@ -90,7 +90,7 @@ def test_register_dynamic_plugins_via_entry_points(
     added: list[str] = []
     monkeypatch.setattr(root, "add_typer", lambda app, name: added.append(name))
 
-    from bijux_cli.services.plugins.catalog import PluginMetadata
+    from bijux_cli.plugins.metadata import PluginMetadata
 
     good = PluginMetadata(
         name="good_ep",
@@ -108,10 +108,10 @@ def test_register_dynamic_plugins_via_entry_points(
     )
 
     monkeypatch.setattr(
-        "bijux_cli.services.plugins.catalog.discover_plugins", lambda: [good, bad]
+        "bijux_cli.plugins.metadata.discover_plugins", lambda: [good, bad]
     )
     monkeypatch.setattr(
-        "bijux_cli.services.plugins.lazy.lazy_command_for",
+        "bijux_cli.plugins.loader.lazy_command_for",
         lambda meta: DummyTyper()
         if meta.name == "good_ep"
         else (_ for _ in ()).throw(RuntimeError("fail_load")),
@@ -134,7 +134,7 @@ def test_dynamic_plugins_entry_point_loading_fails_entire_metadata(
     root = Typer()
     monkeypatch.setattr(root, "add_typer", lambda *a, **k: None)
     monkeypatch.setattr(
-        "bijux_cli.services.plugins.catalog.discover_plugins",
+        "bijux_cli.plugins.metadata.discover_plugins",
         lambda: (_ for _ in ()).throw(RuntimeError("broken")),
     )
 
@@ -151,7 +151,7 @@ def test_dynamic_plugins_discovery_bails_on_getdir_exception(
     root = Typer()
     monkeypatch.setattr(root, "add_typer", lambda *a, **k: None)
     monkeypatch.setattr(
-        "bijux_cli.services.plugins.catalog.discover_plugins",
+        "bijux_cli.plugins.metadata.discover_plugins",
         lambda: (_ for _ in ()).throw(ValueError("no dirs")),
     )
 
