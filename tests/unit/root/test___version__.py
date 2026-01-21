@@ -14,8 +14,8 @@ from typing import IO, Any
 from packaging.version import Version
 import pytest
 
-import bijux_cli.__version__ as version_mod
-import bijux_cli.services.plugins as plugins
+import bijux_cli.core.version as version_mod
+import bijux_cli.plugins as plugins
 
 
 def _reload_with(
@@ -25,7 +25,7 @@ def _reload_with(
     __file__: str | None = None,
     pyproject_bytes: bytes | None = None,
 ) -> None:
-    """Reload ``bijux_cli.__version__`` under controlled conditions.
+    """Reload ``bijux_cli.core.version`` under controlled conditions.
 
     Args:
         monkeypatch: Pytest monkeypatch fixture.
@@ -83,7 +83,7 @@ def test_api_version_from_pyproject(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """API version is read from ``[tool.bijux]`` section in pyproject.toml."""
-    fake_file = str(tmp_path / "src" / "bijux_cli" / "__version__.py")
+    fake_file = str(tmp_path / "src" / "bijux_cli" / "core" / "version.py")
     pyproject = b"""
 [tool.bijux]
 api_version = "2.5.0"
@@ -141,11 +141,11 @@ def test_all_exports_are_present() -> None:
 
 
 def test_getattr_raises_attribute_error() -> None:
-    """``services.plugins.__getattr__`` produces a clear AttributeError."""
+    """``plugins.__getattr__`` produces a clear AttributeError."""
     attr = "non_existent_attribute"
     with pytest.raises(AttributeError) as exc:
         getattr(plugins, attr)
 
     msg = str(exc.value)
-    assert "module bijux_cli.services.plugins has no attribute" in msg
+    assert "module bijux_cli.plugins has no attribute" in msg
     assert attr in msg

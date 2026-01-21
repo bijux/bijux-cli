@@ -26,13 +26,13 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from bijux_cli.core.di import DIContainer
 
-from bijux_cli.contracts import ConfigProtocol, RegistryProtocol
+from bijux_cli.core.contracts import ConfigProtocol, RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.exceptions import CommandError
-from bijux_cli.infra.observability import Observability
+from bijux_cli.core.errors import CommandError
+from bijux_cli.services.logging.observability import Observability
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
-from bijux_cli.services.plugins import get_plugins_dir, load_plugin
+from bijux_cli.plugins import get_plugins_dir, load_plugin
 
 
 class Engine:

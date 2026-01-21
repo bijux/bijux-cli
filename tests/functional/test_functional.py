@@ -998,7 +998,7 @@ def test_plugins_check() -> None:
 def test_plugins_list(tmp_path: Path) -> None:
     """Plugins list should return a JSON list (names or objects) without crashing."""
     plugins_dir = tmp_path / "plugins"
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=plugins_dir):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
         r = cli("plugins", "list", json_output=True)
 
         raw = r.json_out or r.json_err
@@ -1037,7 +1037,7 @@ def test_plugins_list(tmp_path: Path) -> None:
 def test_plugins_uninstall(tmp_path: Path) -> None:
     """Test that uninstalling a non-existent plugin fails cleanly."""
     plugins_dir = tmp_path / "plugins"
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=plugins_dir):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
         r = cli("plugins", "uninstall", "myplug", expect_exit_code=None)
         assert r.returncode in (1, 2)
         if r.stdout.strip().startswith("{") or r.stderr.strip().startswith("{"):
@@ -1100,14 +1100,14 @@ def test_plugins_check_verbose() -> None:
 def test_plugins_list_verbose(tmp_path: Path) -> None:
     """Test the plugins list command with verbose output."""
     plugins_dir = tmp_path / "plugins"
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=plugins_dir):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
         cli("plugins", "list", "--verbose")
 
 
 def test_plugins_uninstall_verbose(tmp_path: Path) -> None:
     """Test the plugins uninstall command with verbose output."""
     plugins_dir = tmp_path / "plugins"
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=plugins_dir):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
         r = cli("plugins", "uninstall", "myplug", "--verbose", expect_exit_code=None)
         assert r.returncode in (1, 2)
         if r.stdout.strip().startswith("{") or r.stderr.strip().startswith("{"):
@@ -1211,7 +1211,7 @@ def test_plugins_info_invalid() -> None:
 def test_plugins_uninstall_quiet(tmp_path: Path) -> None:
     """Test that the quiet flag suppresses plugin uninstall output."""
     plugins_dir = tmp_path / "plugins"
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=plugins_dir):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
         r = cli("plugins", "uninstall", "myplug", "--quiet", expect_exit_code=None)
         assert r.returncode in (1, 2)
         assert (r.stdout or "").strip() == ""

@@ -12,12 +12,12 @@ from typing import Any
 
 import pytest
 
-from bijux_cli.contracts import ConfigProtocol, RegistryProtocol
+from bijux_cli.core.contracts import ConfigProtocol, RegistryProtocol
 from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.core.engine import Engine
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.exceptions import CommandError
-from bijux_cli.infra.observability import Observability
+from bijux_cli.core.errors import CommandError
+from bijux_cli.services.logging.observability import Observability
 from bijux_cli.services.history import History
 
 

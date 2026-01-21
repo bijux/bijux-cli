@@ -46,11 +46,6 @@ PYTEST_FLAGS = \
   -o cache_dir="$(CACHE_DIR_ABS)" \
   $(PYTEST_ADDOPTS_EXTRA)
 
-PYTEST_FLAGS_NOCOV = \
-  --junitxml "$(JUNIT_XML_ABS)" \
-  --basetemp "$(TMP_DIR_ABS)" \
-  -o cache_dir="$(CACHE_DIR_ABS)" \
-  $(PYTEST_ADDOPTS_EXTRA)
 
 .PHONY: test test-unit test-e2e test-night test-clean
 
@@ -94,13 +89,13 @@ test-unit:
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" -o addopts= "$(TEST_PATHS_UNIT_ABS)" -m "unit and not slow" --maxfail=1 -q -p no:cov $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_UNIT_ABS)" -m "unit and not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	else \
 	  echo "   • no $(TEST_PATHS_UNIT); excluding e2e/integration/functional/slow"; \
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" -o addopts= "$(TEST_PATHS_ABS)" -k "not e2e and not integration and not functional" -m "not slow" --maxfail=1 -q -p no:cov $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_ABS)" -k "not e2e and not integration and not functional" -m "not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 

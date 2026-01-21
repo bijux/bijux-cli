@@ -13,9 +13,9 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 from typer import Context
 
-from bijux_cli.commands.history.clear import clear_history
-from bijux_cli.commands.history.clear import resolve_history_service as clear_resolve
-from bijux_cli.commands.history.service import history, resolve_history_service
+from bijux_cli.cli.commands.history.clear import clear_history
+from bijux_cli.cli.commands.history.clear import resolve_history_service as clear_resolve
+from bijux_cli.cli.commands.history.service import history, resolve_history_service
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def mock_history_svc() -> MagicMock:
 def test_resolve_history_service_success(mock_flags: dict[str, Any]) -> None:
     """Test successful resolution of the history service."""
     with patch(
-        "bijux_cli.commands.history.service.DIContainer.current"
+        "bijux_cli.cli.commands.history.service.DIContainer.current"
     ) as mock_current:
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
@@ -53,13 +53,13 @@ def test_resolve_history_service_success(mock_flags: dict[str, Any]) -> None:
 def test_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
     """Test exception handling during history service resolution."""
     with patch(
-        "bijux_cli.commands.history.service.DIContainer.current"
+        "bijux_cli.cli.commands.history.service.DIContainer.current"
     ) as mock_current:
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
         mock_di_instance.resolve.side_effect = Exception("error")
         with patch(
-            "bijux_cli.commands.history.service.emit_error_and_exit"
+            "bijux_cli.cli.commands.history.service.emit_error_and_exit"
         ) as mock_emit:
             mock_emit.side_effect = SystemExit
             with pytest.raises(SystemExit):
@@ -80,13 +80,13 @@ def test_history_no_subcommand(mock_flags: dict[str, Any]) -> None:
     """Test the history command with no subcommand provided."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -106,13 +106,13 @@ def test_history_limit_zero(mock_flags: dict[str, Any]) -> None:
     """Test the history command with a limit of zero."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -130,13 +130,13 @@ def test_history_filter_cmd(mock_flags: dict[str, Any]) -> None:
     """Test the history command with a command filter."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -157,13 +157,13 @@ def test_history_sort_timestamp(mock_flags: dict[str, Any]) -> None:
     """Test the history command with sorting by timestamp."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -188,13 +188,13 @@ def test_history_group_by_command(mock_flags: dict[str, Any]) -> None:
     """Test the history command with grouping by command."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -226,14 +226,14 @@ def test_history_export_path(mock_flags: dict[str, Any]) -> None:
     """Test the history command with the export option."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -266,14 +266,14 @@ def test_history_import_path(mock_flags: dict[str, Any]) -> None:
     """Test the history command with the import option."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -321,14 +321,14 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
     """Error when --limit is negative."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -363,14 +363,14 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
     """Error when --sort uses an unsupported key."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -405,14 +405,14 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
     """Error when --group-by uses an unsupported key."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
 
@@ -447,15 +447,15 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
     """Error when importing a file with invalid JSON content."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -493,15 +493,15 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
     """Error when imported JSON root is not a list."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch("bijux_cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -532,14 +532,14 @@ def test_history_import_non_dict(mock_flags: dict[str, Any]) -> None:
     """Test importing a list containing non-dictionary items."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.Path") as mock_path,
-        patch("bijux_cli.commands.history.service.new_run_command") as _,
+        patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as _,
         patch("typer.Exit") as _,
     ):
         mock_history_svc = MagicMock()
@@ -567,13 +567,13 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
     """Test exception handling during history export."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -604,13 +604,13 @@ def test_clear_history_success(mock_flags: dict[str, Any]) -> None:
     """Test successful clearing of the history."""
     with (
         patch(
-            "bijux_cli.commands.history.clear.validate_common_flags",
+            "bijux_cli.cli.commands.history.clear.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.clear.resolve_history_service"
+            "bijux_cli.cli.commands.history.clear.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.clear.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.clear.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -625,13 +625,13 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
     """Test exception handling when clearing history fails."""
     with (
         patch(
-            "bijux_cli.commands.history.clear.validate_common_flags",
+            "bijux_cli.cli.commands.history.clear.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.clear.resolve_history_service"
+            "bijux_cli.cli.commands.history.clear.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.clear.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.clear.emit_error_and_exit") as mock_emit,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -654,8 +654,8 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
 def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
     """Test exception handling during history service resolution for the clear command."""
     with (
-        patch("bijux_cli.commands.history.clear.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.history.clear.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.clear.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.history.clear.emit_error_and_exit") as mock_emit,
     ):
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
@@ -680,13 +680,13 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
     flags = {**mock_flags, "debug": True}
     with (
         patch(
-            "bijux_cli.commands.history.clear.validate_common_flags",
+            "bijux_cli.cli.commands.history.clear.validate_common_flags",
             return_value="json",
         ) as _,
         patch(
-            "bijux_cli.commands.history.clear.resolve_history_service"
+            "bijux_cli.cli.commands.history.clear.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.clear.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.clear.new_run_command") as mock_new_run,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -709,9 +709,9 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
     fake.resolve.side_effect = RuntimeError("boom")
     with (
         patch(
-            "bijux_cli.commands.history.service.DIContainer.current", return_value=fake
+            "bijux_cli.cli.commands.history.service.DIContainer.current", return_value=fake
         ) as _,
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as err,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as err,
     ):
         err.side_effect = SystemExit()
         with pytest.raises(SystemExit):
@@ -737,14 +737,14 @@ def test_history_list_positive_limit_and_failure(
     svc.list.return_value = entries
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         history(
             Context(MagicMock()),
@@ -767,14 +767,14 @@ def test_history_list_positive_limit_and_failure(
     svc2.list.side_effect = ValueError("nope")
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc2,
         ),
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as err,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as err,
     ):
         err.side_effect = SystemExit()
         with pytest.raises(SystemExit):
@@ -811,15 +811,15 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     svc.list.return_value = [{"a": 1}]
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
         patch.object(Path, "write_text") as write_text,
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -852,12 +852,12 @@ def test_history_debug_flag_overrides() -> None:
     """Test that debug=True forces verbose=True and pretty=True."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags"
+            "bijux_cli.cli.commands.history.service.validate_common_flags"
         ) as mock_validate,
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         mock_validate.return_value = "json"
         mock_resolve.return_value = MagicMock()
@@ -891,7 +891,7 @@ def test_history_debug_flag_overrides() -> None:
 
 def test_history_invoked_subcommand_skips() -> None:
     """Test that history() returns early if a subcommand was invoked."""
-    with patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run:
+    with patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run:
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = "some_sub"
         history(
@@ -915,13 +915,13 @@ def test_history_list_failure() -> None:
     """Test the structured exit on history list failure."""
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service"
+            "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch("bijux_cli.commands.history.service.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as mock_emit,
     ):
         svc = MagicMock()
         svc.list.side_effect = Exception("boom")
@@ -977,15 +977,15 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
         patch.object(Path, "read_text", return_value=p.read_text()),
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1025,15 +1025,15 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
         patch.object(Path, "read_text", return_value=p.read_text()),
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1068,15 +1068,15 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
         patch.object(Path, "write_text") as write_text,
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1110,15 +1110,15 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
         patch.object(Path, "write_text") as write_text,
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1152,14 +1152,14 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
     svc = MagicMock(list=MagicMock(return_value=[{"id": 1}, {"id": 2}, {"id": 3}]))
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1191,14 +1191,14 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc,
         ),
-        patch("bijux_cli.commands.history.service.new_run_command") as new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1242,17 +1242,17 @@ def test_history_positive_limit_branch_and_payload_builder(
 
     monkeypatch.setenv("BIJUXCLI_HISTORY_LIMIT", "")
     monkeypatch.setattr(
-        "bijux_cli.commands.history.service.validate_common_flags",
+        "bijux_cli.cli.commands.history.service.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.history.service.resolve_history_service",
+        "bijux_cli.cli.commands.history.service.resolve_history_service",
         lambda *args, **kwargs: fake_svc,
     )
 
     captured = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.history.service.new_run_command",
+        "bijux_cli.cli.commands.history.service.new_run_command",
         lambda **kwargs: captured.update(kwargs),
     )
 
@@ -1303,14 +1303,14 @@ def test_history_list_slicing_for_positive_limit(
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=mock_history_svc,
         ),
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
@@ -1349,14 +1349,14 @@ def test_history_positive_limit_slicing_and_successful_completion(
 
     with (
         patch(
-            "bijux_cli.commands.history.service.validate_common_flags",
+            "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
         patch(
-            "bijux_cli.commands.history.service.resolve_history_service",
+            "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=mock_history_svc,
         ),
-        patch("bijux_cli.commands.history.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.history.service.new_run_command") as mock_new_run,
     ):
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None

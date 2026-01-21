@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bijux_cli.core.exceptions import BijuxError
-from bijux_cli.services.utils import validate_command
+from bijux_cli.core.errors import BijuxError
+from bijux_cli.services.diagnostics.process import validate_command
 
 
 def test_validate_command_empty() -> None:

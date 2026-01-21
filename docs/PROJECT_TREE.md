@@ -150,7 +150,7 @@ Concrete implementations behind commands. Orchestrate work, depend on `contracts
 src/bijux_cli/services/
 ├── audit.py  config.py  docs.py  doctor.py
 ├── history.py  memory.py  utils.py
-└── plugins/ (entrypoints.py, groups.py, hooks.py, registry.py)
+└── plugins/ (cache.py, loader.py, metadata.py, registry.py)
 ```
 
 [Back to top](#top)

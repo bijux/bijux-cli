@@ -18,17 +18,17 @@ import click
 import pytest
 from typer import Context
 
-from bijux_cli.commands.config import import_config
-from bijux_cli.commands.config.clear import clear_config
-from bijux_cli.commands.config.export import export_config
-from bijux_cli.commands.config.get import get_config
-from bijux_cli.commands.config.list_cmd import list_config
-from bijux_cli.commands.config.load import load_config
-from bijux_cli.commands.config.reload import reload_config
-from bijux_cli.commands.config.service import config
-from bijux_cli.commands.config.set import set_config
-from bijux_cli.commands.config.unset import unset_config
-from bijux_cli.core.exceptions import CommandError
+from bijux_cli.cli.commands.config import import_config
+from bijux_cli.cli.commands.config.clear import clear_config
+from bijux_cli.cli.commands.config.export import export_config
+from bijux_cli.cli.commands.config.get import get_config
+from bijux_cli.cli.commands.config.list_cmd import list_config
+from bijux_cli.cli.commands.config.load import load_config
+from bijux_cli.cli.commands.config.reload import reload_config
+from bijux_cli.cli.commands.config.service import config
+from bijux_cli.cli.commands.config.set import set_config
+from bijux_cli.cli.commands.config.unset import unset_config
+from bijux_cli.core.errors import CommandError
 
 
 @pytest.fixture
@@ -56,11 +56,11 @@ def test_config_callback_no_subcommand(
     """Test the main config command callback when no subcommand is invoked."""
     with (
         patch(
-            "bijux_cli.commands.config.service.parse_global_flags",
+            "bijux_cli.cli.commands.config.service.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.service.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.service.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.service.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.service.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -78,11 +78,11 @@ def test_clear_config_success(
     """Test the successful clearing of the configuration."""
     with (
         patch(
-            "bijux_cli.commands.config.clear.parse_global_flags",
+            "bijux_cli.cli.commands.config.clear.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.clear.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.clear.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.clear.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.clear.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -99,11 +99,11 @@ def test_clear_config_fail(
     """Test the failure path when clearing the configuration."""
     with (
         patch(
-            "bijux_cli.commands.config.clear.parse_global_flags",
+            "bijux_cli.cli.commands.config.clear.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.clear.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.clear.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.clear.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.clear.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -119,10 +119,10 @@ def test_export_config_stdout(
     """Test exporting the configuration to stdout."""
     with (
         patch(
-            "bijux_cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.commands.config.export.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.export.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.export.DIContainer.current") as mock_current,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -136,11 +136,11 @@ def test_export_config_file(
     """Test exporting the configuration to a file."""
     with (
         patch(
-            "bijux_cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.commands.config.export.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.export.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.export.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.export.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.export.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -157,10 +157,10 @@ def test_get_config_success(
     """Test successfully getting a configuration value."""
     with (
         patch(
-            "bijux_cli.commands.config.get.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.get.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.get.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.get.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -178,11 +178,11 @@ def test_list_config_success(
     """Test successfully listing all configuration keys."""
     with (
         patch(
-            "bijux_cli.commands.config.list_cmd.parse_global_flags",
+            "bijux_cli.cli.commands.config.list_cmd.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.list_cmd.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.list_cmd.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.list_cmd.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.list_cmd.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -200,10 +200,10 @@ def test_load_config_success(
     """Test successfully loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.commands.config.load.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.load.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.load.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.load.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.load.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -220,10 +220,10 @@ def test_load_config_exception(
     """Test the failure path when loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.commands.config.load.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.load.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.load.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.load.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.load.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -239,11 +239,11 @@ def test_reload_config_success(
     """Test the successful reloading of the configuration."""
     with (
         patch(
-            "bijux_cli.commands.config.reload.parse_global_flags",
+            "bijux_cli.cli.commands.config.reload.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.reload.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.reload.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.reload.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.reload.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -260,11 +260,11 @@ def test_reload_config_exception(
     """Test the failure path when reloading the configuration."""
     with (
         patch(
-            "bijux_cli.commands.config.reload.parse_global_flags",
+            "bijux_cli.cli.commands.config.reload.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.reload.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.reload.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.reload.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.reload.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -278,10 +278,10 @@ def test_set_config_arg(mock_flags: dict[str, Any], mock_config_svc: MagicMock) 
     """Test setting a configuration value from a command-line argument."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -300,10 +300,10 @@ def test_set_config_stdin(
     """Test setting a configuration value from stdin."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.new_run_command"),
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.new_run_command"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -319,10 +319,10 @@ def test_set_config_empty_key(
     """Test that setting a value with an empty key fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -337,10 +337,10 @@ def test_set_config_non_ascii(
     """Test that setting a value with non-ASCII characters fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -355,10 +355,10 @@ def test_set_config_control_char(
     """Test that setting a value with a control character fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -373,10 +373,10 @@ def test_set_config_invalid_key(
     """Test that setting a value with an invalid key format fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -391,10 +391,10 @@ def test_set_config_exception(
     """Test the failure path when the config service 'set' method raises an exception."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -410,11 +410,11 @@ def test_unset_config_success(
     """Test the successful unsetting of a configuration key."""
     with (
         patch(
-            "bijux_cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.commands.config.unset.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.unset.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.unset.new_run_command") as mock_new_run,
+        patch("bijux_cli.cli.commands.config.unset.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.unset.new_run_command") as mock_new_run,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -431,11 +431,11 @@ def test_unset_config_key_error(
     """Test that unsetting a non-existent key is handled correctly."""
     with (
         patch(
-            "bijux_cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.commands.config.unset.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.unset.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.unset.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.unset.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.unset.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -451,11 +451,11 @@ def test_unset_config_exception(
     """Test the failure path when the config service 'unset' raises an exception."""
     with (
         patch(
-            "bijux_cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.commands.config.unset.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.unset.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.unset.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.unset.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.unset.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -467,7 +467,7 @@ def test_unset_config_exception(
 
 def test_import_config(mock_flags: dict[str, Any]) -> None:
     """Test that the 'import' command correctly calls the 'load_config' function."""
-    with patch("bijux_cli.commands.config.load_config") as mock_load:
+    with patch("bijux_cli.cli.commands.config.load_config") as mock_load:
         ctx = Context(MagicMock())
         import_config(ctx, "path")
         mock_load.assert_called_with(ctx, "path")
@@ -479,11 +479,11 @@ def test_export_config_command_error(
     """Test that a CommandError during export is handled correctly."""
     with (
         patch(
-            "bijux_cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.commands.config.export.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.export.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.export.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.export.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.export.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -500,11 +500,11 @@ def test_export_config_exception(
     """Test that a generic Exception during export is propagated."""
     with (
         patch(
-            "bijux_cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.commands.config.export.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.export.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.export.emit_error_and_exit"),
+        patch("bijux_cli.cli.commands.config.export.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.export.emit_error_and_exit"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -519,10 +519,10 @@ def test_get_config_not_found(
     """Test that a CommandError when getting a non-existent key is handled."""
     with (
         patch(
-            "bijux_cli.commands.config.get.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.get.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.get.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -539,10 +539,10 @@ def test_get_config_exception(
     """Test that a generic exception when getting a config value is propagated."""
     with (
         patch(
-            "bijux_cli.commands.config.get.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.get.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.get.emit_error_and_exit"),
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -557,11 +557,11 @@ def test_list_config_exception(
     """Test the failure path when listing configuration keys."""
     with (
         patch(
-            "bijux_cli.commands.config.list_cmd.parse_global_flags",
+            "bijux_cli.cli.commands.config.list_cmd.parse_global_flags",
             return_value=mock_flags,
         ),
-        patch("bijux_cli.commands.config.list_cmd.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.list_cmd.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.list_cmd.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.list_cmd.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -580,10 +580,10 @@ def test_set_config_no_arg_tty(
     """Test that setting a value with no argument on a TTY fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -600,10 +600,10 @@ def test_set_config_invalid_pair(
     """Test that setting a value with an invalid pair format fails."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -621,10 +621,10 @@ def test_set_config_stdin_escaped(
     """Test that escaped characters from stdin are correctly handled."""
     with (
         patch(
-            "bijux_cli.commands.config.set.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.set.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.set.new_run_command"),
+        patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.set.new_run_command"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -638,14 +638,14 @@ def test_get_config_other_command_error(
     mock_flags: dict[str, Any], mock_config_svc: MagicMock
 ) -> None:
     """Test that a generic CommandError during get is handled correctly."""
-    from bijux_cli.commands.config.get import get_config
+    from bijux_cli.cli.commands.config.get import get_config
 
     with (
         patch(
-            "bijux_cli.commands.config.get.parse_global_flags", return_value=mock_flags
+            "bijux_cli.cli.commands.config.get.parse_global_flags", return_value=mock_flags
         ),
-        patch("bijux_cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.commands.config.get.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
+        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         mock_config_svc.get.side_effect = CommandError("boom!")
@@ -687,19 +687,19 @@ def test_config_root_with_subcommand_skips_execution(
     fake_ctx.invoked_subcommand = "something"
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.service.parse_global_flags",
+        "bijux_cli.cli.commands.config.service.parse_global_flags",
         lambda: (_ for _ in ()).throw(
             AssertionError("parse_global_flags should not run")
         ),
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.config.service.DIContainer.current",
+        "bijux_cli.cli.commands.config.service.DIContainer.current",
         lambda: (_ for _ in ()).throw(
             AssertionError("DIContainer.current should not run")
         ),
     )
     monkeypatch.setattr(
-        "bijux_cli.commands.config.service.new_run_command",
+        "bijux_cli.cli.commands.config.service.new_run_command",
         lambda *args, **kwargs: (_ for _ in ()).throw(
             AssertionError("new_run_command should not run")
         ),
@@ -733,7 +733,7 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(bad_path))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": False,
@@ -749,7 +749,7 @@ def test_non_ascii_config_path_triggers_error(
         called["msg"] = msg
         raise SystemExit(3)
 
-    monkeypatch.setattr("bijux_cli.commands.config.set.emit_error_and_exit", fake_emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.config.set.emit_error_and_exit", fake_emit)
 
     with pytest.raises(SystemExit) as exc:
         set_config(make_ctx(), "key=value")
@@ -764,7 +764,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": False,
@@ -779,7 +779,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
             return DummySvc()
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.DIContainer.current", FakeContainer
+        "bijux_cli.cli.commands.config.set.DIContainer.current", FakeContainer
     )
 
     monkeypatch.setattr(
@@ -787,7 +787,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     )
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.emit_error_and_exit",
+        "bijux_cli.cli.commands.config.set.emit_error_and_exit",
         lambda msg, **kwargs: (_ for _ in ()).throw(SystemExit(1)),
     )
 
@@ -805,7 +805,7 @@ def test_posix_lock_success_and_run(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": True,
@@ -826,12 +826,12 @@ def test_posix_lock_success_and_run(
             return DummySvc()
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.DIContainer.current", FakeContainer
+        "bijux_cli.cli.commands.config.set.DIContainer.current", FakeContainer
     )
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.new_run_command",
+        "bijux_cli.cli.commands.config.set.new_run_command",
         lambda **kw: captured.update(kw),
     )
 
@@ -855,7 +855,7 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": False,
@@ -870,7 +870,7 @@ def test_posix_lock_import_failure_skips_lock(
             return DummySvc()
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.DIContainer.current",
+        "bijux_cli.cli.commands.config.set.DIContainer.current",
         staticmethod(lambda: FakeContainer()),
     )
 
@@ -891,7 +891,7 @@ def test_posix_lock_import_failure_skips_lock(
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.new_run_command",
+        "bijux_cli.cli.commands.config.set.new_run_command",
         lambda **kwargs: captured.update(kwargs),
     )
 
@@ -918,7 +918,7 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": True,
@@ -933,7 +933,7 @@ def test_posix_unlock_failure_is_ignored(
             return DummySvc()
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.DIContainer.current",
+        "bijux_cli.cli.commands.config.set.DIContainer.current",
         staticmethod(lambda: FakeContainer()),
     )
 
@@ -949,7 +949,7 @@ def test_posix_unlock_failure_is_ignored(
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.new_run_command",
+        "bijux_cli.cli.commands.config.set.new_run_command",
         lambda **kw: captured.update(kw),
     )
 
@@ -976,7 +976,7 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.parse_global_flags",
+        "bijux_cli.cli.commands.config.set.parse_global_flags",
         lambda: {
             "quiet": False,
             "verbose": True,
@@ -991,7 +991,7 @@ def test_non_posix_skips_file_lock_block(
             return DummySvc()
 
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.DIContainer.current",
+        "bijux_cli.cli.commands.config.set.DIContainer.current",
         staticmethod(lambda: FakeContainer()),
     )
 
@@ -1001,7 +1001,7 @@ def test_non_posix_skips_file_lock_block(
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.commands.config.set.new_run_command",
+        "bijux_cli.cli.commands.config.set.new_run_command",
         lambda **kw: captured.update(kw),
     )
 

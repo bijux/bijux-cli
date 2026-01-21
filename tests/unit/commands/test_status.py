@@ -13,8 +13,8 @@ from typing import Any
 import pytest
 import typer
 
-import bijux_cli.commands.status as mod
-from bijux_cli.contracts import EmitterProtocol, TelemetryProtocol
+import bijux_cli.cli.commands.status as mod
+from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 

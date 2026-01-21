@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer import Context
 
-from bijux_cli.commands.doctor import _build_payload, doctor
+from bijux_cli.cli.commands.doctor import _build_payload, doctor
 
 
 def test_build_payload_path_empty(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -100,7 +100,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PATH", "/usr/bin")
 
     monkeypatch.setattr(
-        "bijux_cli.commands.doctor.validate_common_flags",
+        "bijux_cli.cli.commands.doctor.validate_common_flags",
         lambda f, c, q: f,
         raising=False,
     )
@@ -108,7 +108,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_di = MagicMock()
     fake_di.resolve.side_effect = Exception("boom")
     monkeypatch.setattr(
-        "bijux_cli.commands.doctor.DIContainer.current",
+        "bijux_cli.cli.commands.doctor.DIContainer.current",
         lambda: fake_di,
         raising=False,
     )
@@ -117,7 +117,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx.invoked_subcommand = None
     ctx.args = []
 
-    with patch("bijux_cli.commands.doctor.emit_error_and_exit") as mock_emit:
+    with patch("bijux_cli.cli.commands.doctor.emit_error_and_exit") as mock_emit:
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
             doctor(
@@ -141,7 +141,7 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PATH", "/usr/bin")
     monkeypatch.delenv("BIJUXCLI_TEST_FORCE_UNHEALTHY", raising=False)
     monkeypatch.setattr(
-        "bijux_cli.commands.doctor.validate_common_flags",
+        "bijux_cli.cli.commands.doctor.validate_common_flags",
         lambda fmt, c, q: fmt,
         raising=False,
     )
@@ -149,7 +149,7 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_di = MagicMock()
     fake_di.resolve.return_value = None
     monkeypatch.setattr(
-        "bijux_cli.commands.doctor.DIContainer.current",
+        "bijux_cli.cli.commands.doctor.DIContainer.current",
         lambda: fake_di,
         raising=False,
     )
@@ -158,7 +158,7 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx.invoked_subcommand = None
     ctx.args = []
 
-    with patch("bijux_cli.commands.doctor.new_run_command") as mock_new:
+    with patch("bijux_cli.cli.commands.doctor.new_run_command") as mock_new:
         doctor(ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, debug=True)
 
     mock_new.assert_called_once()
@@ -173,8 +173,8 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "platform" in p1
 
 
-@patch("bijux_cli.commands.doctor.emit_error_and_exit")
-@patch("bijux_cli.commands.doctor.validate_common_flags", lambda fmt, cmd, q: fmt)
+@patch("bijux_cli.cli.commands.doctor.emit_error_and_exit")
+@patch("bijux_cli.cli.commands.doctor.validate_common_flags", lambda fmt, cmd, q: fmt)
 def test_doctor_stray_option_calls_emit_and_exits(mock_emit: MagicMock) -> None:
     """Test that a stray unknown option results in a structured error."""
     mock_emit.side_effect = SystemExit()
@@ -198,8 +198,8 @@ def test_doctor_stray_option_calls_emit_and_exits(mock_emit: MagicMock) -> None:
     )
 
 
-@patch("bijux_cli.commands.doctor.emit_error_and_exit")
-@patch("bijux_cli.commands.doctor.validate_common_flags", lambda fmt, cmd, q: fmt)
+@patch("bijux_cli.cli.commands.doctor.emit_error_and_exit")
+@patch("bijux_cli.cli.commands.doctor.validate_common_flags", lambda fmt, cmd, q: fmt)
 def test_doctor_stray_argument_calls_emit_and_exits(mock_emit: MagicMock) -> None:
     """Test that a stray argument results in a structured error."""
     mock_emit.side_effect = SystemExit()

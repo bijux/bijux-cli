@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from bijux_cli.contracts import DoctorProtocol
-from bijux_cli.services.doctor import Doctor
+from bijux_cli.core.contracts import DoctorProtocol
+from bijux_cli.services.diagnostics.doctor import Doctor
 
 
 def test_doctor_implements_protocol() -> None:
@@ -39,7 +39,7 @@ def test_check_health_multiple_calls(call_count: int) -> None:
 
 def test_doctor_in_all() -> None:
     """Test that 'Doctor' is in the module's __all__ export list."""
-    from bijux_cli.services.doctor import __all__
+    from bijux_cli.services.diagnostics.doctor import __all__
 
     assert "Doctor" in __all__
 

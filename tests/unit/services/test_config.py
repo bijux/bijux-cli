@@ -16,8 +16,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.contracts import ObservabilityProtocol
-from bijux_cli.core.exceptions import CommandError
+from bijux_cli.core.contracts import ObservabilityProtocol
+from bijux_cli.core.errors import CommandError
 from bijux_cli.services.config import Config, _detect_symlink_loop, _escape, _unescape
 
 

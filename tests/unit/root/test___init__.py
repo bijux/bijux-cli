@@ -36,7 +36,7 @@ def test_version_and_api_version_are_strings_or_versions() -> None:
 
 def test_bijux_api_class_exported() -> None:
     """Test that BijuxAPI is correctly exported from the top-level package."""
-    from bijux_cli.api import BijuxAPI as ImplBijuxAPI
+    from bijux_cli.app.api import BijuxAPI as ImplBijuxAPI
 
     assert bijux_cli.BijuxAPI is ImplBijuxAPI
 

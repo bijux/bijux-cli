@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import bijux_cli.httpapi as api
+import bijux_cli.http.api as api
 
 
 

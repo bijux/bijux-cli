@@ -18,8 +18,8 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from bijux_cli.infra.observability import Observability
-from bijux_cli.infra.telemetry import LoggingTelemetry
+from bijux_cli.services.logging.observability import Observability
+from bijux_cli.services.logging.telemetry import LoggingTelemetry
 from bijux_cli.services.history import (
     _MAX_IN_MEMORY,
     _TRIM_THRESHOLD,

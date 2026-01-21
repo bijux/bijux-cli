@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bijux_cli.infra.telemetry import LoggingTelemetry, NullTelemetry, TelemetryEvent
+from bijux_cli.services.logging.telemetry import LoggingTelemetry, NullTelemetry, TelemetryEvent
 
 
 class DummyObs:
@@ -36,7 +36,7 @@ def test_loggingtelemetry_event_string_and_enum() -> None:
     """Test that LoggingTelemetry correctly logs events with string and enum names."""
     from typing import cast
 
-    from bijux_cli.contracts.observability import ObservabilityProtocol
+    from bijux_cli.core.contracts import ObservabilityProtocol
 
     obs = DummyObs()
     tel = LoggingTelemetry(cast(ObservabilityProtocol, obs))
@@ -58,7 +58,7 @@ def test_loggingtelemetry_flush_clears_buffer() -> None:
     """Test that flushing LoggingTelemetry clears its internal event buffer."""
     from typing import cast
 
-    from bijux_cli.contracts.observability import ObservabilityProtocol
+    from bijux_cli.core.contracts import ObservabilityProtocol
 
     obs = DummyObs()
     tel = LoggingTelemetry(cast(ObservabilityProtocol, obs))
@@ -73,7 +73,7 @@ def test_loggingtelemetry_enable_is_noop() -> None:
     """Test that the enable method on LoggingTelemetry is a no-op."""
     from typing import cast
 
-    from bijux_cli.contracts.observability import ObservabilityProtocol
+    from bijux_cli.core.contracts import ObservabilityProtocol
 
     obs = DummyObs()
     tel = LoggingTelemetry(cast(ObservabilityProtocol, obs))
@@ -86,7 +86,7 @@ def test_loggingtelemetry_inject_constructor() -> None:
     """Test the constructor of LoggingTelemetry, simulating DI injection."""
     from typing import cast
 
-    from bijux_cli.contracts.observability import ObservabilityProtocol
+    from bijux_cli.core.contracts import ObservabilityProtocol
 
     obs = DummyObs()
     tel = (

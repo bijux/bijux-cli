@@ -19,14 +19,14 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, create_autospec
 import pytest
 from typer.models import ParameterInfo
 
-from bijux_cli.contracts import (
+from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
 from bijux_cli.core import DIContainer
-from bijux_cli.core.exceptions import BijuxError, ServiceError
-from bijux_cli.services.plugins import (
+from bijux_cli.core.errors import BijuxError, ServiceError
+from bijux_cli.plugins import (
     get_plugins_dir,
     install_plugin,
     load_plugin,
@@ -34,14 +34,14 @@ from bijux_cli.services.plugins import (
     uninstall_plugin,
     verify_plugin_signature,
 )
-from bijux_cli.services.plugins.entrypoints import (
+from bijux_cli.plugins.registry import (
     _compatible,
     _iter_plugin_eps,
     load_entrypoints,
 )
-from bijux_cli.services.plugins.groups import command_group, dynamic_choices
-from bijux_cli.services.plugins.hooks import CoreSpec
-from bijux_cli.services.plugins.registry import Registry
+from bijux_cli.plugins.registry import command_group, dynamic_choices
+from bijux_cli.plugins.registry import CoreSpec
+from bijux_cli.plugins.registry import Registry
 
 
 @pytest.fixture
@@ -75,7 +75,7 @@ def mock_di() -> Any:
 
 def test_di_none() -> None:
     """Test that _di returns None when the DI container is unavailable."""
-    from bijux_cli.services.plugins import _di
+    from bijux_cli.plugins import _di
 
     with patch("bijux_cli.core.di.DIContainer.current", side_effect=Exception):
         assert _di() is None
@@ -83,7 +83,7 @@ def test_di_none() -> None:
 
 def test_di_success(mock_di: Any) -> None:
     """Test that _di successfully returns the current DI container."""
-    from bijux_cli.services.plugins import _di
+    from bijux_cli.plugins import _di
 
     with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
         assert _di() == mock_di
@@ -91,53 +91,53 @@ def test_di_success(mock_di: Any) -> None:
 
 def test_obs_none(mock_di: Any) -> None:
     """Test that _obs returns None when the observability service cannot be resolved."""
-    from bijux_cli.services.plugins import _obs
+    from bijux_cli.plugins import _obs
 
     mock_di.resolve.side_effect = KeyError
-    with patch("bijux_cli.services.plugins._di", return_value=mock_di):
+    with patch("bijux_cli.plugins._di", return_value=mock_di):
         assert _obs() is None
 
 
 def test_obs_none_no_di() -> None:
     """Test that _obs returns None when the DI container is unavailable."""
-    from bijux_cli.services.plugins import _obs
+    from bijux_cli.plugins import _obs
 
-    with patch("bijux_cli.services.plugins._di", return_value=None):
+    with patch("bijux_cli.plugins._di", return_value=None):
         assert _obs() is None
 
 
 def test_obs_success(mock_di: Any, mock_obs: Mock) -> None:
     """Test that _obs successfully resolves the observability service."""
-    from bijux_cli.services.plugins import _obs
+    from bijux_cli.plugins import _obs
 
     mock_di.resolve.return_value = mock_obs
-    with patch("bijux_cli.services.plugins._di", return_value=mock_di):
+    with patch("bijux_cli.plugins._di", return_value=mock_di):
         assert _obs() == mock_obs
 
 
 def test_tel_none(mock_di: Any) -> None:
     """Test that _tel returns None when the telemetry service cannot be resolved."""
-    from bijux_cli.services.plugins import _tel
+    from bijux_cli.plugins import _tel
 
     mock_di.resolve.side_effect = KeyError
-    with patch("bijux_cli.services.plugins._di", return_value=mock_di):
+    with patch("bijux_cli.plugins._di", return_value=mock_di):
         assert _tel() is None
 
 
 def test_tel_none_no_di() -> None:
     """Test that _tel returns None when the DI container is unavailable."""
-    from bijux_cli.services.plugins import _tel
+    from bijux_cli.plugins import _tel
 
-    with patch("bijux_cli.services.plugins._di", return_value=None):
+    with patch("bijux_cli.plugins._di", return_value=None):
         assert _tel() is None
 
 
 def test_tel_success(mock_di: Any, mock_tel: Mock) -> None:
     """Test that _tel successfully resolves the telemetry service."""
-    from bijux_cli.services.plugins import _tel
+    from bijux_cli.plugins import _tel
 
     mock_di.resolve.return_value = mock_tel
-    with patch("bijux_cli.services.plugins._di", return_value=mock_di):
+    with patch("bijux_cli.plugins._di", return_value=mock_di):
         assert _tel() == mock_tel
 
 
@@ -213,7 +213,7 @@ def test_load_plugin_config_no_yaml() -> None:
 
 def test_load_plugin_config_missing(tmp_path: Path) -> None:
     """Test that loading a missing plugin config returns an empty dictionary."""
-    with patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path):
+    with patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path):
         assert not load_plugin_config("missing")
 
 
@@ -223,7 +223,7 @@ def test_load_plugin_config_empty(tmp_path: Path) -> None:
     cfg.parent.mkdir()
     cfg.write_text("")
     with (
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", return_value=None),
     ):
         assert not load_plugin_config("test")
@@ -235,9 +235,9 @@ def test_load_plugin_config_parse_fail(tmp_path: Path, mock_tel: Mock) -> None:
     cfg.parent.mkdir()
     cfg.touch()
     with (  # noqa: SIM117
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", side_effect=Exception("parse fail")),
-        patch("bijux_cli.services.plugins._tel", return_value=mock_tel),
+        patch("bijux_cli.plugins._tel", return_value=mock_tel),
     ):
         with pytest.raises(BijuxError, match="parse fail"):  # noqa: SIM117
             load_plugin_config("test")
@@ -251,9 +251,9 @@ def test_load_plugin_config_parse_fail_no_tel(tmp_path: Path) -> None:
     cfg.parent.mkdir()
     cfg.touch()
     with (
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", side_effect=Exception("parse fail")),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._tel", return_value=None),
         pytest.raises(BijuxError, match="parse fail"),
     ):
         load_plugin_config("test")
@@ -267,10 +267,10 @@ def test_load_plugin_config_success(
     cfg.parent.mkdir()
     cfg.write_text("key: val")
     with (
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", return_value={"key": "val"}),
-        patch("bijux_cli.services.plugins._tel", return_value=mock_tel),
-        patch("bijux_cli.services.plugins._obs", return_value=mock_obs),
+        patch("bijux_cli.plugins._tel", return_value=mock_tel),
+        patch("bijux_cli.plugins._obs", return_value=mock_obs),
     ):
         assert load_plugin_config("test") == {"key": "val"}
         mock_obs.log.assert_called_with(
@@ -285,10 +285,10 @@ def test_load_plugin_config_success_no_obs(tmp_path: Path, mock_tel: Mock) -> No
     cfg.parent.mkdir()
     cfg.write_text("key: val")
     with (
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", return_value={"key": "val"}),
-        patch("bijux_cli.services.plugins._tel", return_value=mock_tel),
-        patch("bijux_cli.services.plugins._obs", return_value=None),
+        patch("bijux_cli.plugins._tel", return_value=mock_tel),
+        patch("bijux_cli.plugins._obs", return_value=None),
     ):
         assert load_plugin_config("test") == {"key": "val"}
         mock_tel.event.assert_called_with("plugin_config_loaded", {"name": "test"})
@@ -300,10 +300,10 @@ def test_load_plugin_config_success_no_tel(tmp_path: Path, mock_obs: Mock) -> No
     cfg.parent.mkdir()
     cfg.write_text("key: val")
     with (
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
         patch("yaml.safe_load", return_value={"key": "val"}),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
-        patch("bijux_cli.services.plugins._obs", return_value=mock_obs),
+        patch("bijux_cli.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._obs", return_value=mock_obs),
     ):
         assert load_plugin_config("test") == {"key": "val"}
         mock_obs.log.assert_called_with(
@@ -315,7 +315,7 @@ def test_verify_plugin_signature_no_sig(tmp_path: Path, mock_tel: Mock) -> None:
     """Test that signature verification returns False for an unsigned plugin."""
     path = tmp_path / "plugin.py"
     path.touch()
-    with patch("bijux_cli.services.plugins._tel", return_value=mock_tel):
+    with patch("bijux_cli.plugins._tel", return_value=mock_tel):
         assert not verify_plugin_signature(path, "key")
         mock_tel.event.assert_called_with("plugin_unsigned", {"path": str(path)})
 
@@ -324,7 +324,7 @@ def test_verify_plugin_signature_no_sig_no_tel(tmp_path: Path) -> None:
     """Test signature verification for an unsigned plugin with no telemetry."""
     path = tmp_path / "plugin.py"
     path.touch()
-    with patch("bijux_cli.services.plugins._tel", return_value=None):
+    with patch("bijux_cli.plugins._tel", return_value=None):
         assert not verify_plugin_signature(path, "key")
 
 
@@ -344,7 +344,7 @@ def test_verify_plugin_signature_success(tmp_path: Path, mock_tel: Mock) -> None
     path.touch()
     sig = path.with_suffix(".py.sig")
     sig.touch()
-    with patch("bijux_cli.services.plugins._tel", return_value=mock_tel):
+    with patch("bijux_cli.plugins._tel", return_value=mock_tel):
         assert verify_plugin_signature(path, "key")
         mock_tel.event.assert_called_with(
             "plugin_signature_verified", {"path": str(path)}
@@ -357,7 +357,7 @@ def test_verify_plugin_signature_success_no_tel(tmp_path: Path) -> None:
     path.touch()
     sig = path.with_suffix(".py.sig")
     sig.touch()
-    with patch("bijux_cli.services.plugins._tel", return_value=None):
+    with patch("bijux_cli.plugins._tel", return_value=None):
         assert verify_plugin_signature(path, "key")
 
 
@@ -396,7 +396,7 @@ def test_load_plugin_verify_called(tmp_path: Path) -> None:
     path = tmp_path / "plugin.py"
     path.touch()
 
-    with patch("bijux_cli.services.plugins.verify_plugin_signature") as mock_verify:
+    with patch("bijux_cli.plugins.verify_plugin_signature") as mock_verify:
         with pytest.raises(BijuxError):
             load_plugin(path, "mod", public_key="key")
 
@@ -408,7 +408,7 @@ def test_load_plugin_verify_not_called(tmp_path: Path) -> None:
     path = tmp_path / "plugin.py"
     path.touch()
 
-    with patch("bijux_cli.services.plugins.verify_plugin_signature") as mock_verify:
+    with patch("bijux_cli.plugins.verify_plugin_signature") as mock_verify:
         with pytest.raises(BijuxError):
             load_plugin(path, "mod")
 
@@ -461,8 +461,8 @@ def test_load_plugin_obs_warn(tmp_path: Path, mock_di: Any, mock_obs: Mock) -> N
     path.write_text("class Plugin: pass")
     mock_di.resolve.return_value = mock_obs
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._tel", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_obs.log.assert_called_with("warning", ANY, extra=ANY)
@@ -474,8 +474,8 @@ def test_load_plugin_no_obs_warn(tmp_path: Path, mock_di: Any) -> None:
     path.write_text("class Plugin: pass")
     mock_di.resolve.side_effect = KeyError
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._tel", return_value=None),
     ):
         load_plugin(path, "mod")
 
@@ -486,8 +486,8 @@ def test_load_plugin_tel_loaded(tmp_path: Path, mock_di: Any, mock_tel: Mock) ->
     path.write_text("class Plugin: name = 'test'")
     mock_di.resolve.return_value = mock_tel
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._obs", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._obs", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_tel.event.assert_called_with("plugin_loaded", {"name": "test"})
@@ -501,8 +501,8 @@ def test_load_plugin_tel_loaded_no_name(
     path.write_text("class Plugin: pass")
     mock_di.resolve.return_value = mock_tel
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._obs", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._obs", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_tel.event.assert_called_with("plugin_loaded", {"name": "mod"})
@@ -514,8 +514,8 @@ def test_load_plugin_no_tel_loaded(tmp_path: Path, mock_di: Any) -> None:
     path.write_text("class Plugin: name = 'test'")
     mock_di.resolve.side_effect = KeyError
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._obs", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._obs", return_value=None),
     ):
         load_plugin(path, "mod")
 
@@ -526,8 +526,8 @@ def test_load_plugin_no_cli_attr(tmp_path: Path, mock_di: Any, mock_obs: Mock) -
     path.write_text("class Plugin: pass")
     mock_di.resolve.return_value = mock_obs
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._tel", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_obs.log.assert_called_with("warning", ANY, extra=ANY)
@@ -541,8 +541,8 @@ def test_load_plugin_cli_attr_not_callable(
     path.write_text("class Plugin: cli = 1")
     mock_di.resolve.return_value = mock_obs
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._tel", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_obs.log.assert_called_with("warning", ANY, extra=ANY)
@@ -556,8 +556,8 @@ def test_load_plugin_cli_attr_callable(
     path.write_text("class Plugin:\n    def cli(self):\n        pass")
     mock_di.resolve.return_value = mock_obs
     with (
-        patch("bijux_cli.services.plugins._di", return_value=mock_di),
-        patch("bijux_cli.services.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins._di", return_value=mock_di),
+        patch("bijux_cli.plugins._tel", return_value=None),
     ):
         load_plugin(path, "mod")
         mock_obs.log.assert_not_called()
@@ -584,7 +584,7 @@ def test_load_plugin_module_removed_on_fail(tmp_path: Path) -> None:
 def test_uninstall_plugin_not_found(mock_reg: Mock, mock_tel: Mock) -> None:
     """Test that uninstalling a non-existent plugin returns False."""
     mock_reg.has.return_value = False
-    with patch("bijux_cli.services.plugins._tel", return_value=mock_tel):
+    with patch("bijux_cli.plugins._tel", return_value=mock_tel):
         assert not uninstall_plugin("missing", mock_reg)
         mock_tel.event.assert_called_with(
             "plugin_uninstall_not_found", {"name": "missing"}
@@ -594,7 +594,7 @@ def test_uninstall_plugin_not_found(mock_reg: Mock, mock_tel: Mock) -> None:
 def test_uninstall_plugin_not_found_no_tel(mock_reg: Mock) -> None:
     """Test uninstalling a non-existent plugin with no telemetry service."""
     mock_reg.has.return_value = False
-    with patch("bijux_cli.services.plugins._tel", return_value=None):
+    with patch("bijux_cli.plugins._tel", return_value=None):
         assert not uninstall_plugin("missing", mock_reg)
 
 
@@ -606,8 +606,8 @@ def test_uninstall_plugin_success(
     plug_dir.mkdir()
     mock_reg.has.return_value = True
     with (
-        patch("bijux_cli.services.plugins._tel", return_value=mock_tel),
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins._tel", return_value=mock_tel),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
     ):
         assert uninstall_plugin("test", mock_reg)
         assert not plug_dir.exists()
@@ -621,8 +621,8 @@ def test_uninstall_plugin_success_no_tel(tmp_path: Path, mock_reg: Mock) -> None
     plug_dir.mkdir()
     mock_reg.has.return_value = True
     with (
-        patch("bijux_cli.services.plugins._tel", return_value=None),
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins._tel", return_value=None),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
     ):
         assert uninstall_plugin("test", mock_reg)
         assert not plug_dir.exists()
@@ -638,8 +638,8 @@ def test_uninstall_plugin_rmtree_ignore_errors(
     mock_reg.has.return_value = True
     with (
         patch("shutil.rmtree") as mock_rmtree,
-        patch("bijux_cli.services.plugins._tel", return_value=mock_tel),
-        patch("bijux_cli.services.plugins.get_plugins_dir", return_value=tmp_path),
+        patch("bijux_cli.plugins._tel", return_value=mock_tel),
+        patch("bijux_cli.plugins.get_plugins_dir", return_value=tmp_path),
     ):
         mock_rmtree.side_effect = Exception("error")
         uninstall_plugin("test", mock_reg)
@@ -683,11 +683,11 @@ def test_install_plugin_pip(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_lazy_import() -> None:
     """Test the lazy loading of submodules via __getattr__."""
-    import bijux_cli.services.plugins as plugins
+    import bijux_cli.plugins as plugins
 
-    _ = plugins.hooks
-    _ = plugins.entrypoints
-    _ = plugins.groups
+    _ = plugins.cache
+    _ = plugins.loader
+    _ = plugins.metadata
     _ = plugins.registry
     _ = plugins.command_group
     _ = plugins.dynamic_choices
@@ -775,11 +775,11 @@ async def test_load_entrypoints_success(mock_di: Any, mock_reg: Mock) -> None:
     mock_tel = Mock(spec=TelemetryProtocol)
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with patch(  # noqa: SIM117
-        "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+        "bijux_cli.plugins.registry._iter_plugin_eps",
         return_value=[mock_ep],
     ):
         with patch(
-            "bijux_cli.services.plugins.entrypoints._compatible", return_value=True
+            "bijux_cli.plugins.registry._compatible", return_value=True
         ):
             await load_entrypoints(di=mock_di, registry=mock_reg)
             assert mock_plugin_class.version == "1"
@@ -812,10 +812,10 @@ async def test_load_entrypoints_success_sync_startup(
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_plugin.startup.assert_called_with(mock_di)
@@ -840,10 +840,10 @@ async def test_load_entrypoints_success_no_startup(
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
 
@@ -865,10 +865,10 @@ async def test_load_entrypoints_success_no_obs(mock_di: Any, mock_reg: Mock) -> 
     mock_di.resolve.side_effect = [None, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_tel.event.assert_called_with("entrypoint_plugin_loaded", {"name": "test"})
@@ -891,10 +891,10 @@ async def test_load_entrypoints_success_no_tel(mock_di: Any, mock_reg: Mock) -> 
     mock_di.resolve.side_effect = [mock_obs, None]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_obs.log.assert_called_with("info", "Loaded plugin 'test'")
@@ -917,10 +917,10 @@ async def test_load_entrypoints_incompatible(mock_di: Any, mock_reg: Mock) -> No
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=False),
+        patch("bijux_cli.plugins.registry._compatible", return_value=False),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         assert mock_plugin_class.version == 1
@@ -948,10 +948,10 @@ async def test_load_entrypoints_incompatible_no_obs(
     mock_di.resolve.side_effect = [None, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=False),
+        patch("bijux_cli.plugins.registry._compatible", return_value=False),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_tel.event.assert_called_with("entrypoint_plugin_failed", ANY)
@@ -975,10 +975,10 @@ async def test_load_entrypoints_incompatible_no_tel(
     mock_di.resolve.side_effect = [mock_obs, None]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=False),
+        patch("bijux_cli.plugins.registry._compatible", return_value=False),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_obs.log.assert_called_with("error", ANY, extra=ANY)
@@ -995,10 +995,10 @@ async def test_load_entrypoints_fail(mock_di: Any, mock_reg: Mock) -> None:
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_reg.deregister.assert_called_with("test")
@@ -1016,10 +1016,10 @@ async def test_load_entrypoints_fail_no_obs(mock_di: Any, mock_reg: Mock) -> Non
     mock_di.resolve.side_effect = [None, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_tel.event.assert_called_with("entrypoint_plugin_failed", ANY)
@@ -1035,10 +1035,10 @@ async def test_load_entrypoints_fail_no_tel(mock_di: Any, mock_reg: Mock) -> Non
     mock_di.resolve.side_effect = [mock_obs, None]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_obs.log.assert_called_with("error", ANY, extra=ANY)
@@ -1058,10 +1058,10 @@ async def test_load_entrypoints_deregister_suppress(
     mock_di.resolve.side_effect = [mock_obs, mock_tel]
     with (
         patch(
-            "bijux_cli.services.plugins.entrypoints._iter_plugin_eps",
+            "bijux_cli.plugins.registry._iter_plugin_eps",
             return_value=[mock_ep],
         ),
-        patch("bijux_cli.services.plugins.entrypoints._compatible", return_value=True),
+        patch("bijux_cli.plugins.registry._compatible", return_value=True),
     ):
         await load_entrypoints(di=mock_di, registry=mock_reg)
         mock_reg.deregister.assert_called_with("test")
@@ -1649,11 +1649,11 @@ async def test_entrypoints_pkgversion_and_sync_startup(
 
 def test_plugins_dunder_getattr_imports_submodule() -> None:
     """Test that __getattr__ correctly lazy-loads submodules."""
-    import bijux_cli.services.plugins as plugins
+    import bijux_cli.plugins as plugins
 
     importlib.reload(plugins)
-    hooks_mod = plugins.hooks
-    assert hasattr(hooks_mod, "CoreSpec")
+    metadata_mod = plugins.metadata
+    assert hasattr(metadata_mod, "discover_plugins")
 
 
 class _EP:
@@ -1719,48 +1719,48 @@ async def test_entrypoints_startup_not_callable(
     await load_entrypoints(di=cast(DIContainer, di), registry=registry)
 
 
-def test_dunder_getattr_submodule_hooks(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'hooks' submodule."""
-    import bijux_cli.services.plugins as plugins
+def test_dunder_getattr_submodule_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test lazy loading of the 'metadata' submodule."""
+    import bijux_cli.plugins as plugins
 
     mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "hooks"):
-        delattr(mod, "hooks")
+    if hasattr(mod, "metadata"):
+        delattr(mod, "metadata")
 
-    hooks_mod = plugins.hooks
-    assert hooks_mod.__name__.endswith("hooks")
-    assert plugins.hooks is hooks_mod
-
-
-def test_dunder_getattr_submodule_entrypoints(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'entrypoints' submodule."""
-    import bijux_cli.services.plugins as plugins
-
-    mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "entrypoints"):
-        delattr(mod, "entrypoints")
-
-    entrypoints_mod = plugins.entrypoints
-    assert entrypoints_mod.__name__.endswith("entrypoints")
-    assert plugins.entrypoints is entrypoints_mod
+    metadata_mod = plugins.metadata
+    assert metadata_mod.__name__.endswith("metadata")
+    assert plugins.metadata is metadata_mod
 
 
-def test_dunder_getattr_submodule_groups(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'groups' submodule."""
-    import bijux_cli.services.plugins as plugins
+def test_dunder_getattr_submodule_loader(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test lazy loading of the 'loader' submodule."""
+    import bijux_cli.plugins as plugins
 
     mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "groups"):
-        delattr(mod, "groups")
+    if hasattr(mod, "loader"):
+        delattr(mod, "loader")
 
-    groups_mod = plugins.groups
-    assert groups_mod.__name__.endswith("groups")
-    assert plugins.groups is groups_mod
+    loader_mod = plugins.loader
+    assert loader_mod.__name__.endswith("loader")
+    assert plugins.loader is loader_mod
+
+
+def test_dunder_getattr_submodule_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test lazy loading of the 'cache' submodule."""
+    import bijux_cli.plugins as plugins
+
+    mod = cast(Any, sys.modules[plugins.__name__])
+    if hasattr(mod, "cache"):
+        delattr(mod, "cache")
+
+    cache_mod = plugins.cache
+    assert cache_mod.__name__.endswith("cache")
+    assert plugins.cache is cache_mod
 
 
 def test_dunder_getattr_submodule_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test lazy loading of the 'registry' submodule."""
-    import bijux_cli.services.plugins as plugins
+    import bijux_cli.plugins as plugins
 
     mod = cast(Any, sys.modules[plugins.__name__])
 
@@ -1789,7 +1789,7 @@ def test_load_entrypoints_all_cases(
     """Tests loading entry points without importing plugin bodies."""
     mock_registry = create_autospec(RegistryProtocol, instance=True)
 
-    from bijux_cli.services.plugins.catalog import PluginMetadata
+    from bijux_cli.plugins.metadata import PluginMetadata
 
     plugins = [
         PluginMetadata(
@@ -1809,11 +1809,11 @@ def test_load_entrypoints_all_cases(
     ]
 
     monkeypatch.setattr(
-        "bijux_cli.services.plugins.catalog.discover_plugins",
+        "bijux_cli.plugins.metadata.discover_plugins",
         lambda **_kw: plugins,
     )
 
-    from bijux_cli.services.plugins import load_entrypoints
+    from bijux_cli.plugins import load_entrypoints
 
     loaded_with_registry = load_entrypoints(registry=mock_registry)
     assert sorted(loaded_with_registry) == ["legacy_plugin", "new_plugin"]

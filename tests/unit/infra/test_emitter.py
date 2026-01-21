@@ -12,10 +12,10 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
-from bijux_cli.contracts import TelemetryProtocol
+from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.exceptions import CommandError
-from bijux_cli.infra.emitter import Emitter
+from bijux_cli.core.errors import CommandError
+from bijux_cli.services.logging.emitter import Emitter
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def test_init(mock_telemetry: MagicMock) -> None:
     assert em._quiet is True
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_stdout_success(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -71,7 +71,7 @@ def test_emit_stdout_success(
     )
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_default_format(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -87,7 +87,7 @@ def test_emit_default_format(
     mock_serializer_for.assert_called_with(OutputFormat.YAML, emitter._telemetry)
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 def test_emit_serialization_fail(
     mock_serializer_for: MagicMock, emitter: Emitter
 ) -> None:
@@ -102,7 +102,7 @@ def test_emit_serialization_fail(
     mock_log.assert_called_with("Serialization failed", error="fail")
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_debug_print(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -119,7 +119,7 @@ def test_emit_debug_print(
     mock_log.assert_called_with("test_msg", output="output")
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 def test_emit_quiet_skip(mock_serializer_for: MagicMock, emitter: Emitter) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
     emitter._quiet = True
@@ -127,7 +127,7 @@ def test_emit_quiet_skip(mock_serializer_for: MagicMock, emitter: Emitter) -> No
     mock_serializer_for.assert_not_called()
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_quiet_error_proceed(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -143,7 +143,7 @@ def test_emit_quiet_error_proceed(
     mock_print.assert_called_with("error", file=sys.stdout, flush=True)
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_quiet_critical_proceed(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -159,7 +159,7 @@ def test_emit_quiet_critical_proceed(
     mock_print.assert_called_with("critical", file=sys.stdout, flush=True)
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_telemetry_fail_debug(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -176,7 +176,7 @@ def test_emit_telemetry_fail_debug(
     mock_log.assert_called_with("Telemetry failed", error="tel fail")
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.print")
 def test_emit_telemetry_fail_no_debug(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter
@@ -193,7 +193,7 @@ def test_emit_telemetry_fail_no_debug(
     mock_log.assert_not_called()
 
 
-@patch("bijux_cli.infra.emitter.serializer_for")
+@patch("bijux_cli.services.logging.emitter.serializer_for")
 @patch("builtins.open", new_callable=mock_open)
 def test_emit_file_success(
     mock_file_open: MagicMock, mock_serializer_for: MagicMock, emitter: Emitter

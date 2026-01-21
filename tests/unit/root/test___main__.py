@@ -20,8 +20,8 @@ import pytest
 import structlog
 import typer
 
-import bijux_cli.__main__ as main_mod
-from bijux_cli.__main__ import (
+import bijux_cli.app.bootstrap as main_mod
+from bijux_cli.app.bootstrap import (
     _strip_format_help,
     check_missing_format_argument,
     disable_cli_colors_for_test,
@@ -68,17 +68,17 @@ def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
     hist = DummyHistory()
     cont = DummyContainer(hist)
 
-    monkeypatch.setattr("bijux_cli.__main__.DIContainer.current", lambda: cont)
+    monkeypatch.setattr("bijux_cli.app.bootstrap.DIContainer.current", lambda: cont)
     monkeypatch.setattr(
-        "bijux_cli.__main__.register_default_services", lambda *a, **k: None
+        "bijux_cli.app.bootstrap.register_default_services", lambda *a, **k: None
     )
-    monkeypatch.setattr("bijux_cli.__main__.Engine", lambda *a, **k: None)
+    monkeypatch.setattr("bijux_cli.app.bootstrap.Engine", lambda *a, **k: None)
 
     class FakeApp:
         def __call__(self, args: list[str], standalone_mode: bool = False) -> int:
             return 0
 
-    monkeypatch.setattr("bijux_cli.__main__.build_app", FakeApp)
+    monkeypatch.setattr("bijux_cli.app.bootstrap.build_app", FakeApp)
 
 
 def test_strip_format_help_various() -> None:
@@ -198,14 +198,14 @@ def test_main_history_add_failure(
 
     monkeypatch.setattr(fake_hist, "add", bad_add)
     monkeypatch.setattr(
-        "bijux_cli.__main__.DIContainer.current", lambda: DummyContainer(fake_hist)
+        "bijux_cli.app.bootstrap.DIContainer.current", lambda: DummyContainer(fake_hist)
     )
 
     class App:
         def __call__(self, args: list[str], standalone_mode: bool = False) -> int:
             return 0
 
-    monkeypatch.setattr("bijux_cli.__main__.build_app", App)
+    monkeypatch.setattr("bijux_cli.app.bootstrap.build_app", App)
     monkeypatch.setattr(sys, "argv", ["bijux", "foo"])
     rc = main()
     _, err = capfd.readouterr()
@@ -268,7 +268,7 @@ def test_main_catches_command_and_keyboard_and_generic(
     capfd: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that the main entry point catches CommandError, KeyboardInterrupt, and generic exceptions."""
-    from bijux_cli.core.exceptions import CommandError
+    from bijux_cli.core.errors import CommandError
 
     class CmdErrApp:
         def __call__(self, args: list[str], standalone_mode: bool = False) -> None:

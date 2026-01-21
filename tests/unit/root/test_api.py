@@ -16,15 +16,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bijux_cli.api import BijuxAPI, _consume_task
-from bijux_cli.contracts import (
+from bijux_cli.app.api import BijuxAPI, _consume_task
+from bijux_cli.core.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
     TelemetryProtocol,
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.engine import Engine
-from bijux_cli.core.exceptions import BijuxError, CommandError, ServiceError
+from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:coroutine .* was never awaited:RuntimeWarning"
@@ -77,7 +77,7 @@ def bijux_api(
     with (
         patch.object(DIContainer, "reset"),
         patch.object(DIContainer, "current", return_value=mock_di),
-        patch("bijux_cli.api.Engine", return_value=mock_engine),
+        patch("bijux_cli.app.api.Engine", return_value=mock_engine),
     ):
         mock_di.resolve.side_effect = lambda proto: {
             RegistryProtocol: mock_registry,
@@ -134,7 +134,7 @@ def test_schedule_event_coro_no_loop(
     mock_event = MagicMock(return_value=coro)
     monkeypatch.setattr(bijux_api._tel, "event", mock_event, raising=False)
 
-    with patch("bijux_cli.api.run_awaitable") as mock_run:
+    with patch("bijux_cli.app.api.run_awaitable") as mock_run:
         mock_run.side_effect = lambda c: (c.close(), None)[1]
         bijux_api._schedule_event("test", {})
 
@@ -302,14 +302,14 @@ async def test_run_async_generic_error(
 
 def test_run_sync_no_loop(bijux_api: BijuxAPI) -> None:
     """Test synchronous command execution when no event loop is running."""
-    with patch("bijux_cli.api.run_command") as mock_run:
+    with patch("bijux_cli.app.api.run_command") as mock_run:
         bijux_api.run_sync("cmd")
     mock_run.assert_called_once()
 
 
 def test_run_sync_with_loop(bijux_api: BijuxAPI) -> None:
     """run_sync should delegate through the shared command runner."""
-    with patch("bijux_cli.api.run_command", return_value="ok") as mock_run:
+    with patch("bijux_cli.app.api.run_command", return_value="ok") as mock_run:
         res = bijux_api.run_sync("anything")
     assert res == "ok"
     mock_run.assert_called_once()
@@ -322,8 +322,8 @@ def test_load_plugin(bijux_api: BijuxAPI, tmp_path: Path) -> None:
     mock_plugin = MagicMock()
     mock_plugin.startup = MagicMock()
     with (
-        patch("bijux_cli.services.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.__version__", "1.0"),
+        patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
+        patch("bijux_cli.core.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_plugin.startup.assert_called_once_with(bijux_api._engine.di)
@@ -342,8 +342,8 @@ def test_load_plugin_reload(
     mock_plugin.startup = MagicMock()
     with (
         patch("importlib.reload") as mock_reload,
-        patch("bijux_cli.services.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.__version__", "1.0"),
+        patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
+        patch("bijux_cli.core.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_reload.assert_called_once_with(mock_module)
@@ -352,7 +352,7 @@ def test_load_plugin_reload(
 def test_load_plugin_error(bijux_api: BijuxAPI, tmp_path: Path) -> None:
     """Test that an error during plugin loading is wrapped in a BijuxError."""
     with (
-        patch("bijux_cli.services.plugins.load_plugin", side_effect=Exception("fail")),
+        patch("bijux_cli.plugins.load_plugin", side_effect=Exception("fail")),
         pytest.raises(BijuxError, match="Failed to load"),
     ):
         bijux_api.load_plugin(tmp_path / "bad.py")
@@ -416,7 +416,7 @@ def test_load_plugin_with_existing_registration(
     mock_plugin.startup = MagicMock()
     mock_registry.has.return_value = True
     with (
-        patch("bijux_cli.services.plugins.load_plugin", return_value=mock_plugin),
+        patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
         patch("importlib.reload"),
     ):
         bijux_api.load_plugin(plugin_file)
@@ -435,7 +435,7 @@ def test_load_plugin_deregisters_if_plugin_exists_v2(
     mock_plugin.startup = MagicMock()
     mock_registry.has.return_value = True
 
-    with patch("bijux_cli.services.plugins.load_plugin", return_value=mock_plugin):
+    with patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin):
         bijux_api.load_plugin(plugin_file)
 
     mock_registry.has.assert_called_once_with(plugin_file.stem)
@@ -455,7 +455,7 @@ def test_load_plugin_deregisters_existing_plugin_v3(
     mock_plugin_object.startup = MagicMock()
 
     with patch(
-        "bijux_cli.services.plugins.load_plugin", return_value=mock_plugin_object
+        "bijux_cli.plugins.load_plugin", return_value=mock_plugin_object
     ):
         bijux_api.load_plugin(plugin_file)
 
@@ -475,8 +475,8 @@ def test_load_plugin_no_deregister_if_not_has(
     mock_plugin.startup = MagicMock()
     mock_registry.has.return_value = False
     with (
-        patch("bijux_cli.services.plugins.load_plugin", return_value=mock_plugin),
-        patch("bijux_cli.__version__", "1.0"),
+        patch("bijux_cli.plugins.load_plugin", return_value=mock_plugin),
+        patch("bijux_cli.core.version", "1.0"),
     ):
         bijux_api.load_plugin(plugin_file)
     mock_registry.deregister.assert_not_called()
@@ -533,7 +533,7 @@ def test_schedule_event_loop_no_create_task(monkeypatch: pytest.MonkeyPatch) -> 
             c.close()
 
     run_spy = MagicMock(side_effect=_run_side_effect)
-    with patch("bijux_cli.api.run_awaitable", run_spy):
+    with patch("bijux_cli.app.api.run_awaitable", run_spy):
         api._schedule_event("x", {})
 
     run_spy.assert_called_once_with(coro)
@@ -667,18 +667,18 @@ def _install_fake_module(
 
 
 def _make_fake_loader(monkeypatch: pytest.MonkeyPatch, plugin_obj: Any) -> ModuleType:
-    mod = ModuleType("bijux_cli.services.plugins")
+    mod = ModuleType("bijux_cli.plugins")
 
     def load_plugin(path: Path, module_name: str) -> Any:
         return plugin_obj
 
     mod.load_plugin = load_plugin  # type: ignore[attr-defined]
-    monkeypatch.setitem(sys.modules, "bijux_cli.services.plugins", mod)
+    monkeypatch.setitem(sys.modules, "bijux_cli.plugins", mod)
     return mod
 
 
 def _install_version(monkeypatch: pytest.MonkeyPatch, v: str = "1.2.3") -> None:
-    _install_fake_module(monkeypatch, "bijux_cli.__version__", __version__=v)
+    _install_fake_module(monkeypatch, "bijux_cli.core.version", __version__=v)
 
 
 def test_load_plugin_reload_and_register(

@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.commands.sleep import (
+from bijux_cli.cli.commands.sleep import (
     _build_payload,
     sleep_app,
 )
@@ -41,7 +41,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         return "TestOS-1.0"
 
     monkeypatch.setattr(
-        "bijux_cli.commands.sleep.ascii_safe", fake_ascii_safe, raising=True
+        "bijux_cli.cli.commands.sleep.ascii_safe", fake_ascii_safe, raising=True
     )
     monkeypatch.setattr("platform.python_version", fake_pyver, raising=True)
     monkeypatch.setattr("platform.platform", fake_platform, raising=True)

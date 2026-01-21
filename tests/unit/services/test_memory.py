@@ -13,8 +13,8 @@ from typing import Any
 
 import pytest
 
-from bijux_cli.contracts import MemoryProtocol
-from bijux_cli.services.memory import Memory
+from bijux_cli.core.contracts import MemoryProtocol
+from bijux_cli.services.diagnostics.memory import Memory
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def memory_file(tmp_path: Path) -> Path:
 @pytest.fixture
 def memory(monkeypatch: pytest.MonkeyPatch, memory_file: Path) -> Memory:
     """Provide a Memory instance with a patched file path."""
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     return Memory()
 
 
@@ -40,7 +40,7 @@ def test_init_with_valid_file(
 ) -> None:
     """Test that initialization with a valid JSON file loads the data."""
     memory_file.write_text('{"key": "value"}')
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     m = Memory()
     assert m.get("key") == "value"
 
@@ -50,7 +50,7 @@ def test_init_with_invalid_json(
 ) -> None:
     """Test that initialization with invalid JSON results in an empty store."""
     memory_file.write_text("invalid json")
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     m = Memory()
     assert not m.keys()
 
@@ -60,7 +60,7 @@ def test_init_with_non_dict_json(
 ) -> None:
     """Test that initialization with a non-dictionary JSON object raises an error."""
     memory_file.write_text("[1,2,3]")
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     m = Memory()
     with pytest.raises(AttributeError):
         m.keys()
@@ -298,7 +298,7 @@ def test_init_with_empty_file(
 ) -> None:
     """Test that initializing from an empty JSON file results in an empty store."""
     memory_file.write_text("{}")
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     m = Memory()
     assert not m.keys()
 
@@ -470,7 +470,7 @@ def test_init_with_large_file(
     """Test initialization from a large data file."""
     large_data = {f"key{i}": i for i in range(1000)}
     memory_file.write_text(json.dumps(large_data))
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", memory_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", memory_file)
     m = Memory()
     assert len(m.keys()) == 1000
 
@@ -571,7 +571,7 @@ def test_memory_file_creation(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     """Test that the memory file is created on the first persistence operation."""
     mem_file = tmp_path / "mem.json"
     assert not mem_file.exists()
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", mem_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", mem_file)
     m = Memory()
     m.set("key", "value")
     assert mem_file.exists()
@@ -580,7 +580,7 @@ def test_memory_file_creation(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
 def test_parent_dir_creation(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test that the parent directory for the memory file is created if it doesn't exist."""
     mem_file = tmp_path / "subdir" / "mem.json"
-    monkeypatch.setattr("bijux_cli.services.memory.MEMORY_FILE", mem_file)
+    monkeypatch.setattr("bijux_cli.services.diagnostics.memory.MEMORY_FILE", mem_file)
     m = Memory()
     m.set("key", "value")
     assert mem_file.exists()

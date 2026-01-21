@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
+# Root package invariant: only __init__.py and py.typed live at this level.
+
 """The top-level package for the Bijux CLI application.
 
 This module serves as the main public entry point for the `bijux-cli` package.
@@ -16,9 +18,9 @@ The primary exports are:
 
 from __future__ import annotations
 
-from bijux_cli.__main__ import main
-from bijux_cli.__version__ import api_version, version
-from bijux_cli.api import BijuxAPI
+from bijux_cli.app.bootstrap import main
+from bijux_cli.core.version import api_version, version
+from bijux_cli.app.api import BijuxAPI
 
 
 def entry_point() -> int | None:

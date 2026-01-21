@@ -11,10 +11,10 @@ from unittest.mock import MagicMock
 import pytest
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.contracts import TelemetryProtocol
-from bijux_cli.core.exceptions import ServiceError
-from bijux_cli.infra.observability import Observability
-from bijux_cli.infra.telemetry import NullTelemetry
+from bijux_cli.core.contracts import TelemetryProtocol
+from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.logging.observability import Observability
+from bijux_cli.services.logging.telemetry import NullTelemetry
 
 
 

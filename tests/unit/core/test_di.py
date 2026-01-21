@@ -17,9 +17,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.contracts import ConfigProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ConfigProtocol, ObservabilityProtocol
 from bijux_cli.core.di import DIContainer, _key_name
-from bijux_cli.core.exceptions import BijuxError
+from bijux_cli.core.errors import BijuxError
 
 
 class DummyObs(ObservabilityProtocol):

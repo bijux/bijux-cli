@@ -13,8 +13,8 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from bijux_cli.__version__ import __version__ as cli_version
-from bijux_cli.commands.version import (
+from bijux_cli.core.version import __version__ as cli_version
+from bijux_cli.cli.commands.version import (
     _build_payload,
     version_app,
 )
@@ -37,7 +37,7 @@ def mock_di() -> MagicMock:
 @pytest.fixture
 def mock_di_class(mock_di: MagicMock) -> Generator[MagicMock, None, None]:
     """Patch the DIContainer class and yield the mock."""
-    with patch("bijux_cli.commands.version.DIContainer") as mock_class:
+    with patch("bijux_cli.cli.commands.version.DIContainer") as mock_class:
         mock_class.current.return_value = mock_di
         yield mock_class
 
@@ -108,8 +108,8 @@ def test_build_payload_verbose(
 def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
     """Test the version command with YAML format."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "yaml"
         result = runner.invoke(version_app, ["--format", "yaml"])
@@ -142,8 +142,8 @@ def test_version_callback_subcommand(mock_di_class: MagicMock) -> None:
 def test_payload_builder_lambda(mock_di_class: MagicMock) -> None:
     """Test that the payload builder lambda works as expected."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags"),
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags"),
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         runner.invoke(version_app)
         builder = mock_run.call_args.kwargs["payload_builder"]
@@ -161,7 +161,7 @@ def test_build_payload_ascii_safe_fail() -> None:
     """Test payload build failure when ascii_safe fails on version."""
     with (
         patch(
-            "bijux_cli.commands.version.ascii_safe",
+            "bijux_cli.cli.commands.version.ascii_safe",
             side_effect=ValueError("ascii fail"),
         ),
         pytest.raises(ValueError, match="ascii fail"),
@@ -171,7 +171,7 @@ def test_build_payload_ascii_safe_fail() -> None:
 
 def test_build_payload_verbose_ascii_safe_fail_python() -> None:
     """Test payload build failure when ascii_safe fails on python version."""
-    with patch("bijux_cli.commands.version.ascii_safe") as mock_ascii:
+    with patch("bijux_cli.cli.commands.version.ascii_safe") as mock_ascii:
         mock_ascii.side_effect = [cli_version, ValueError("ascii fail")]
         with pytest.raises(ValueError, match="ascii fail"):
             _build_payload(True)
@@ -179,7 +179,7 @@ def test_build_payload_verbose_ascii_safe_fail_python() -> None:
 
 def test_build_payload_verbose_ascii_safe_fail_platform() -> None:
     """Test payload build failure when ascii_safe fails on platform."""
-    with patch("bijux_cli.commands.version.ascii_safe") as mock_ascii:
+    with patch("bijux_cli.cli.commands.version.ascii_safe") as mock_ascii:
         mock_ascii.side_effect = [cli_version, "python", ValueError("ascii fail")]
         with pytest.raises(ValueError, match="ascii fail"):
             _build_payload(True)
@@ -188,8 +188,8 @@ def test_build_payload_verbose_ascii_safe_fail_platform() -> None:
 def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
     """Test the version command default behavior without a subcommand."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
         result = runner.invoke(version_app)
@@ -209,8 +209,8 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
 def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
     """Test the version command with the --quiet flag."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
         result = runner.invoke(version_app, ["--quiet"])
@@ -230,8 +230,8 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
 def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
     """Test the version command with the --verbose flag."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
         result = runner.invoke(version_app, ["--verbose"])
@@ -250,8 +250,8 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
 def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
     """Test the version command with the --no-pretty flag."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
         result = runner.invoke(version_app, ["--no-pretty"])
@@ -270,8 +270,8 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
 def test_version_callback_debug(mock_di_class: MagicMock) -> None:
     """Test the version command with the --debug flag."""
     with (
-        patch("bijux_cli.commands.version.validate_common_flags") as mock_validate,
-        patch("bijux_cli.commands.version.new_run_command") as mock_run,
+        patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
+        patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
         result = runner.invoke(version_app, ["--debug"])

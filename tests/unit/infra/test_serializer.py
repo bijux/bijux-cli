@@ -18,9 +18,9 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.exceptions import BijuxError
-import bijux_cli.infra.serializer as infra_serializer
-from bijux_cli.infra.serializer import OrjsonSerializer, PyYAMLSerializer, Redacted
+from bijux_cli.core.errors import BijuxError
+import bijux_cli.services.logging.serializer as infra_serializer
+from bijux_cli.services.logging.serializer import OrjsonSerializer, PyYAMLSerializer, Redacted
 
 
 class FakeStdout(io.StringIO):
@@ -81,7 +81,7 @@ def test_base_emit_writes_and_newline(monkeypatch: pytest.MonkeyPatch) -> None:
     tel = MagicMock()
     s = OrjsonSerializer(tel)
     fake = FakeStdout()
-    monkeypatch.setattr("bijux_cli.infra.serializer.sys.stdout", fake)
+    monkeypatch.setattr("bijux_cli.services.logging.serializer.sys.stdout", fake)
     s.emit({"k": "v"})
     text = fake.getvalue().strip()
     assert text in ('{"k":"v"}', '{"k": "v"}')
@@ -279,7 +279,7 @@ def test_serializer_for_json_and_yaml() -> None:
 
 def test_import_fallback_branches(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the import logic for optional dependencies (orjson, yaml)."""
-    modname = "bijux_cli.infra.serializer"
+    modname = "bijux_cli.services.logging.serializer"
     if modname in sys.modules:
         sys.modules.pop(modname)
     real_import = builtins.__import__

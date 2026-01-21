@@ -21,7 +21,7 @@ from hypothesis.strategies import DrawFn, composite, data, lists, sampled_from, 
 import pytest
 import yaml
 
-from bijux_cli.__version__ import __version__ as bijux_version
+from bijux_cli.core.version import __version__ as bijux_version
 from tests.e2e.conftest import run_cli
 
 ALPHABET = string.ascii_letters + string.digits + "_-."

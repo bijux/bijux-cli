@@ -33,9 +33,9 @@ from typing import Any, Literal, TypeVar, cast, overload
 
 from injector import Binder, Injector, Module, singleton
 
-from bijux_cli.contracts import ConfigProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ConfigProtocol, ObservabilityProtocol
 from bijux_cli.core.async_exec import run_awaitable
-from bijux_cli.core.exceptions import BijuxError
+from bijux_cli.core.errors import BijuxError
 from bijux_cli.services.config import Config
 
 T = TypeVar("T")

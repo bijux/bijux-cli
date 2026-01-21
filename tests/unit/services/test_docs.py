@@ -13,10 +13,10 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.contracts import DocsProtocol, ObservabilityProtocol, TelemetryProtocol
+from bijux_cli.core.contracts import DocsProtocol, ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.exceptions import ServiceError
-from bijux_cli.services.docs import Docs
+from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.diagnostics.docs import Docs
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ def test_serializer_cache(docs: Docs, mock_telemetry: TelemetryProtocol) -> None
     assert isinstance(Docs._serializers[mock_telemetry], dict)
 
 
-@patch("bijux_cli.services.docs.serializer_for")
+@patch("bijux_cli.services.diagnostics.docs.serializer_for")
 def test_render_caches_serializer(mock_serializer_for: MagicMock, docs: Docs) -> None:
     """Test that the render method caches the serializer instance."""
     mock_serializer = Mock()
@@ -114,7 +114,7 @@ def test_render_caches_serializer(mock_serializer_for: MagicMock, docs: Docs) ->
 
 def test_render_non_string(docs: Docs) -> None:
     """Test that the render method raises a TypeError if the serializer returns bytes."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_serializer_for:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_serializer_for:
         mock_serializer = Mock()
         mock_serializer.dumps.return_value = b"bytes"
         mock_serializer_for.return_value = mock_serializer
@@ -243,7 +243,7 @@ def test_serializer_cache_multiple_telemetry(
 
 def test_render_pretty_false(docs: Docs) -> None:
     """Test that the render method calls the serializer with pretty=False."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
         mock_serializer = Mock()
         mock_ser.return_value = mock_serializer
         mock_serializer.dumps.return_value = "{}"
@@ -270,7 +270,7 @@ def test_write_sync_unresolved_path(docs: Docs, tmp_path: Path) -> None:
 
 def test_docs_in_all() -> None:
     """Test that 'Docs' is in the module's __all__ export list."""
-    from bijux_cli.services.docs import __all__
+    from bijux_cli.services.diagnostics.docs import __all__
 
     assert "Docs" in __all__
 
@@ -312,7 +312,7 @@ def test_init_root_type(
 ) -> None:
     """Test that the root can be initialized with a str or Path."""
     actual_root = tmp_path / "root"
-    with patch("bijux_cli.services.docs.Path", return_value=actual_root):
+    with patch("bijux_cli.services.diagnostics.docs.Path", return_value=actual_root):
         d = Docs(mock_observability, mock_telemetry, root=root)
     assert isinstance(d._root, Path)
 
@@ -378,7 +378,7 @@ def test_various_names(docs: Docs, name: str | Path, temp_root: Path) -> None:
 
 def test_render_yaml(docs: Docs) -> None:
     """Test rendering a spec to YAML format."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
         mock_serializer = Mock()
         mock_ser.return_value = mock_serializer
         mock_serializer.dumps.return_value = "---\nkey: value\n"
@@ -423,7 +423,7 @@ def test_no_telemetry_on_success(
 ) -> None:
     """Test that a 'docs_written' event is sent on a successful write."""
     file_path = tmp_path / "test"
-    with patch("bijux_cli.services.docs.serializer_for") as mock_serializer_factory:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_serializer_factory:
         mock_serializer_instance = MagicMock()
         mock_serializer_instance.dumps.return_value = "{}"
         mock_serializer_factory.return_value = mock_serializer_instance
@@ -465,7 +465,7 @@ def test_write_sync_mkdir_fail(docs: Docs, tmp_path: Path) -> None:
 
 def test_render_pretty_param_not_used(docs: Docs) -> None:
     """Test that render's pretty parameter defaults to False."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
         mock_serializer = Mock()
         mock_ser.return_value = mock_serializer
         mock_serializer.dumps.return_value = "{}"
@@ -495,7 +495,7 @@ def test_init_no_root_env(
 
 def test_serializer_cache_hit(docs: Docs) -> None:
     """Test that the serializer is cached and not created on every render call."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = "data"
         mock_ser.return_value = mock_serializer
@@ -506,7 +506,7 @@ def test_serializer_cache_hit(docs: Docs) -> None:
 
 def test_different_fmt_new_serializer(docs: Docs) -> None:
     """Test that different formats use different serializer instances."""
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
         mock_json = MagicMock()
         mock_json.dumps.return_value = "json"
         mock_yaml = MagicMock()
@@ -530,7 +530,7 @@ def test_docs_serializer_cache_miss(
     assert mock_telemetry in Docs._serializers
     Docs._serializers.pop(mock_telemetry)
 
-    with patch("bijux_cli.services.docs.serializer_for") as mock_ser:
+    with patch("bijux_cli.services.diagnostics.docs.serializer_for") as mock_ser:
 
         class DummySerializer:
             """A mock serializer for tests that always returns a fixed JSON string."""
