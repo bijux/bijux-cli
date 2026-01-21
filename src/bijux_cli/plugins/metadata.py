@@ -15,7 +15,7 @@ from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.utils import canonicalize_name
 
-from bijux_cli.core.version import __version__ as cli_version
+from bijux_cli.version import __version__ as cli_version
 from bijux_cli.cli.commands.plugins.validation import PLUGIN_NAME_RE
 from bijux_cli.core.errors import BijuxError
 from bijux_cli.plugins import get_plugins_dir

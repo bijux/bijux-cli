@@ -53,7 +53,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 if len(_sys.argv) > 1 and _sys.argv[1] == "help" and "--quiet" in _sys.argv:

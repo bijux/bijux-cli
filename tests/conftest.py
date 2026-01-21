@@ -42,7 +42,7 @@ def _reset_di_between_tests() -> (
     Yields:
         None: Yields control to the test function.
     """
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
 
     yield
     DIContainer._reset_for_tests()

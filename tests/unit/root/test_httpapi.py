@@ -36,7 +36,7 @@ async def _reset_async_stub(*_a: Any, **_k: Any) -> None:
 def test_lifespan_prepopulates_and_shutdown_resets() -> None:
     """Lifespan should seed items on startup and clear them on shutdown."""
     with (
-        patch("bijux_cli.core.di.DIContainer.reset_async", new=_reset_async_stub),
+        patch("bijux_cli.app.di.DIContainer.reset_async", new=_reset_async_stub),
         _client() as client,
     ):
         r = client.get("/v1/items")

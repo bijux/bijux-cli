@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from typing import Protocol, TypeVar, runtime_checkable
 
-from bijux_cli.core.enums import OutputFormat
-
 T = TypeVar("T")
 
 
@@ -29,7 +27,7 @@ class SerializerProtocol(Protocol[T]):
         self,
         obj: T,
         *,
-        fmt: OutputFormat = OutputFormat.JSON,
+        fmt: str = "json",
         pretty: bool = False,
     ) -> str:
         """Serializes an object to a string.
@@ -48,7 +46,7 @@ class SerializerProtocol(Protocol[T]):
         self,
         obj: T,
         *,
-        fmt: OutputFormat = OutputFormat.JSON,
+        fmt: str = "json",
         pretty: bool = False,
     ) -> bytes:
         """Serializes an object to bytes.
@@ -67,7 +65,7 @@ class SerializerProtocol(Protocol[T]):
         self,
         data: str | bytes,
         *,
-        fmt: OutputFormat = OutputFormat.JSON,
+        fmt: str = "json",
         pretty: bool = False,
     ) -> T:
         """Deserializes data from a string or bytes into an object.
@@ -85,7 +83,7 @@ class SerializerProtocol(Protocol[T]):
         ...
 
     def emit(
-        self, payload: T, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
+        self, payload: T, *, fmt: str = "json", pretty: bool = False
     ) -> None:
         """Serializes and emits a payload to standard output.
 

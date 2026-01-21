@@ -31,7 +31,7 @@ from bijux_cli.cli.commands.utilities import (
     validate_env_file_if_present,
 )
 from bijux_cli.services.history.contracts import HistoryProtocol
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 
 

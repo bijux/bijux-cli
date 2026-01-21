@@ -19,7 +19,7 @@ from structlog.typing import FilteringBoundLogger
 
 from bijux_cli.core.contracts import ObservabilityProtocol
 from bijux_cli.services.config.contracts import ConfigProtocol
-from bijux_cli.core.di import DIContainer, _key_name
+from bijux_cli.app.di import DIContainer, _key_name
 from bijux_cli.core.errors import BijuxError
 
 

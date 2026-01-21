@@ -34,7 +34,7 @@ import typer
 from bijux_cli.core.async_exec import AsyncTyper
 import typer.core
 
-from bijux_cli.core.version import __version__
+from bijux_cli.version import __version__
 from bijux_cli.cli.commands.utilities import (
     contains_non_ascii_env,
     emit_and_exit,
@@ -343,6 +343,6 @@ def docs(
 
 def _resolve_docs_service() -> DocsProtocol:
     """Resolve the docs service from the DI container."""
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
 
     return DIContainer.current().resolve(DocsProtocol)

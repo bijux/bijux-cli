@@ -24,7 +24,7 @@ from bijux_cli.core.contracts import (
     RegistryProtocol,
     TelemetryProtocol,
 )
-from bijux_cli.core import DIContainer
+from bijux_cli.app.di import DIContainer
 from bijux_cli.core.errors import BijuxError, ServiceError
 from bijux_cli.plugins import (
     get_plugins_dir,
@@ -77,7 +77,7 @@ def test_di_none() -> None:
     """Test that _di returns None when the DI container is unavailable."""
     from bijux_cli.plugins import _di
 
-    with patch("bijux_cli.core.di.DIContainer.current", side_effect=Exception):
+    with patch("bijux_cli.app.di.DIContainer.current", side_effect=Exception):
         assert _di() is None
 
 
@@ -85,7 +85,7 @@ def test_di_success(mock_di: Any) -> None:
     """Test that _di successfully returns the current DI container."""
     from bijux_cli.plugins import _di
 
-    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
         assert _di() == mock_di
 
 
@@ -152,7 +152,7 @@ def test_get_plugins_dir_default(
 ) -> None:
     """Test that a default plugins directory is used when the env var is not set."""
     monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
-    with patch("bijux_cli.core.paths.PLUGINS_DIR", tmp_path / "plugins"):
+    with patch("bijux_cli.infra.paths.PLUGINS_DIR", tmp_path / "plugins"):
         assert get_plugins_dir() == (tmp_path / "plugins").resolve()
 
 
@@ -162,7 +162,7 @@ def test_get_plugins_dir_create(
     """Test that the plugins directory is created if it does not exist."""
     dir_path = tmp_path / "plugins"
     monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
-    with patch("bijux_cli.core.paths.PLUGINS_DIR", dir_path):
+    with patch("bijux_cli.infra.paths.PLUGINS_DIR", dir_path):
         assert get_plugins_dir() == dir_path.resolve()
         assert dir_path.is_dir()
 
@@ -174,7 +174,7 @@ def test_get_plugins_dir_exists(
     dir_path = tmp_path / "plugins"
     dir_path.mkdir()
     monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
-    with patch("bijux_cli.core.paths.PLUGINS_DIR", dir_path):
+    with patch("bijux_cli.infra.paths.PLUGINS_DIR", dir_path):
         assert get_plugins_dir() == dir_path.resolve()
 
 
@@ -187,7 +187,7 @@ def test_get_plugins_dir_symlink(
     sym = tmp_path / "sym"
     sym.symlink_to(real_dir)
     monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
-    with patch("bijux_cli.core.paths.PLUGINS_DIR", sym):
+    with patch("bijux_cli.infra.paths.PLUGINS_DIR", sym):
         assert get_plugins_dir() == sym
 
 
@@ -198,7 +198,7 @@ def test_get_plugins_dir_existing_file(
     file_path = tmp_path / "file"
     file_path.touch()
     monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
-    with patch("bijux_cli.core.paths.PLUGINS_DIR", file_path):
+    with patch("bijux_cli.infra.paths.PLUGINS_DIR", file_path):
         assert get_plugins_dir() == file_path.resolve()
 
 
@@ -1078,7 +1078,7 @@ def test_command_group_register(
 ) -> None:
     """Test the successful registration of a command group and subcommand."""
     mock_di.resolve.side_effect = [mock_reg, mock_obs, mock_tel]
-    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test", version="1.0")
         sub = grp("sub")
 
@@ -1094,7 +1094,7 @@ def test_command_group_register(
 def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> None:
     """Test command group registration with no observability service."""
     mock_di.resolve.side_effect = [mock_reg, KeyError, mock_tel]
-    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test")
         sub = grp("sub")
 
@@ -1109,7 +1109,7 @@ def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> N
 def test_command_group_no_tel(mock_di: Any, mock_reg: Mock, mock_obs: Mock) -> None:
     """Test command group registration with no telemetry service."""
     mock_di.resolve.side_effect = [mock_reg, mock_obs, KeyError]
-    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test")
         sub = grp("sub")
 
@@ -1123,7 +1123,7 @@ def test_command_group_no_tel(mock_di: Any, mock_reg: Mock, mock_obs: Mock) -> N
 
 def test_command_group_no_di() -> None:
     """Test that command group registration fails if the DI container is unavailable."""
-    with patch("bijux_cli.core.di.DIContainer.current", side_effect=KeyError):
+    with patch("bijux_cli.app.di.DIContainer.current", side_effect=KeyError):
         grp = command_group("test")
         sub = grp("sub")
         with pytest.raises(RuntimeError):

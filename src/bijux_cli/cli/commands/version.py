@@ -32,7 +32,7 @@ import typer
 
 from bijux_cli.core.async_exec import AsyncTyper
 
-from bijux_cli.core.version import __version__ as cli_version
+from bijux_cli.version import __version__ as cli_version
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     new_run_command,
@@ -46,7 +46,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 

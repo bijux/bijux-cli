@@ -33,7 +33,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 
 
 def config(

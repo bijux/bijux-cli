@@ -15,13 +15,12 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
-import os
 from typing import Any, TypeVar
 
 from injector import inject
 
 from bijux_cli.core.contracts import ContextProtocol, ObservabilityProtocol
-from bijux_cli.core.di import DIContainer
+from bijux_cli.app.di import DIContainer
 
 T = TypeVar("T")
 _current_context: ContextVar[dict[str, Any] | None] = ContextVar(
@@ -55,7 +54,7 @@ class Context(ContextProtocol):
         self._log: ObservabilityProtocol = di.resolve(ObservabilityProtocol)
         self._data: dict[str, Any] = {}
         self._token: Token[dict[str, Any] | None] | None = None
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Context initialized", extra={})
 
     def set(self, key: str, value: Any) -> None:
@@ -69,7 +68,7 @@ class Context(ContextProtocol):
             None:
         """
         self._data[key] = value
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log(
                 "debug", "Context set", extra={"key": key, "value": str(value)}
             )
@@ -87,10 +86,10 @@ class Context(ContextProtocol):
             KeyError: If the key is not found in the context.
         """
         if key not in self._data:
-            if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+            if self._di.is_verbose():
                 self._log.log("warning", "Context key not found", extra={"key": key})
             raise KeyError(f"Key '{key}' not found in context")
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log(
                 "debug",
                 "Context get",
@@ -101,7 +100,7 @@ class Context(ContextProtocol):
     def clear(self) -> None:
         """Removes all values from the context's data."""
         self._data.clear()
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Context cleared", extra={})
 
     def __enter__(self) -> Context:
@@ -113,7 +112,7 @@ class Context(ContextProtocol):
             Context: The context instance itself.
         """
         self._token = _current_context.set(self._data)
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Context entered", extra={})
         return self
 
@@ -133,7 +132,7 @@ class Context(ContextProtocol):
         if self._token:
             _current_context.reset(self._token)
             self._token = None
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Context exited", extra={})
 
     async def __aenter__(self) -> Context:
@@ -145,7 +144,7 @@ class Context(ContextProtocol):
             Context: The context instance itself.
         """
         self._token = _current_context.set(self._data)
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Async context entered", extra={})
         return self
 
@@ -165,7 +164,7 @@ class Context(ContextProtocol):
         if self._token:
             _current_context.reset(self._token)
             self._token = None
-        if os.getenv("VERBOSE_DI") and not os.getenv("BIJUXCLI_TEST_MODE"):
+        if self._di.is_verbose():
             self._log.log("debug", "Async context exited", extra={})
 
     @classmethod

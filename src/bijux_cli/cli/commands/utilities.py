@@ -62,7 +62,7 @@ KNOWN = {
 def resolve_serializer() -> SerializerProtocol:
     """Resolve the serializer adapter from the DI container or fallback."""
     try:
-        from bijux_cli.core.di import DIContainer
+        from bijux_cli.app.di import DIContainer
 
         serializer = DIContainer.current().resolve(SerializerProtocol)
         if hasattr(serializer, "dumps"):
@@ -280,7 +280,7 @@ def new_run_command(
             appropriate error code on failure.
     """
     from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
-    from bijux_cli.core.di import DIContainer
+    from bijux_cli.app.di import DIContainer
 
     DIContainer.current().resolve(EmitterProtocol)
     DIContainer.current().resolve(TelemetryProtocol)
@@ -360,7 +360,7 @@ def emit_and_exit(
     if (not quiet) and (not command.startswith("history")):
         try:
             from bijux_cli.services.history.contracts import HistoryProtocol
-            from bijux_cli.core.di import DIContainer
+            from bijux_cli.app.di import DIContainer
 
             hist = DIContainer.current().resolve(HistoryProtocol)
             hist.add(
