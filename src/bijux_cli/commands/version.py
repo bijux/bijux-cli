@@ -30,6 +30,8 @@ import time
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.__version__ import __version__ as cli_version
 from bijux_cli.commands.utilities import (
     ascii_safe,
@@ -48,7 +50,7 @@ from bijux_cli.core.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-version_app = typer.Typer(
+version_app = AsyncTyper(
     name="version",
     help="Show the CLI version.",
     rich_markup_mode=None,

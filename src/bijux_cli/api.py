@@ -16,7 +16,7 @@ within another Python application.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 import importlib
 import inspect
@@ -26,6 +26,7 @@ import sys
 from typing import Any, cast
 
 from bijux_cli.commands.utilities import validate_common_flags
+from bijux_cli.core.async_exec import run_awaitable, run_command
 from bijux_cli.contracts import (
     ObservabilityProtocol,
     RegistryProtocol,
@@ -94,17 +95,8 @@ class BijuxAPI:
             payload (dict[str, Any]): The data associated with the event.
         """
         maybe = self._tel.event(name, payload)
-        if not inspect.isawaitable(maybe):
-            return
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            asyncio.run(maybe)
-        else:
-            if hasattr(loop, "create_task"):
-                loop.create_task(maybe)
-            else:
-                asyncio.run(maybe)
+        if inspect.isawaitable(maybe):
+            run_awaitable(cast(Awaitable[Any], maybe))
 
     def register(self, name: str, callback: Callable[..., Any]) -> None:
         """Registers or replaces a Python callable as a CLI command.
@@ -195,40 +187,17 @@ class BijuxAPI:
         Returns:
             Any: The result of the command's execution.
         """
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            return asyncio.run(
-                self.run_async(
-                    name,
-                    *args,
-                    quiet=quiet,
-                    verbose=verbose,
-                    fmt=fmt,
-                    pretty=pretty,
-                    debug=debug,
-                    **kwargs,
-                )
-            )
-        else:
-            if not hasattr(loop, "run_until_complete"):
-                raise RuntimeError("Cannot call run_sync from a running event loop")
-            coro = self.run_async(
-                name,
-                *args,
-                quiet=quiet,
-                verbose=verbose,
-                fmt=fmt,
-                pretty=pretty,
-                debug=debug,
-                **kwargs,
-            )
-            try:
-                return loop.run_until_complete(coro)
-            finally:
-                with suppress(Exception):
-                    if hasattr(coro, "close"):
-                        coro.close()
+        return run_command(
+            self.run_async,
+            name,
+            *args,
+            quiet=quiet,
+            verbose=verbose,
+            fmt=fmt,
+            pretty=pretty,
+            debug=debug,
+            **kwargs,
+        )
 
     async def run_async(
         self,
@@ -406,32 +375,8 @@ class BijuxAPI:
                     close()
 
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            try:
-                return asyncio.run(coro)
-            finally:
-                _close_if_possible(value)
+            return run_awaitable(coro, want_result=want_result)
+        finally:
+            _close_if_possible(value)
+            with suppress(Exception):
                 coro.close()
-        else:
-            if hasattr(loop, "create_task"):
-                task = loop.create_task(coro)
-                _consume_task(task)
-                return False if want_result else None
-
-            run_uc = getattr(loop, "run_until_complete", None)
-            if callable(run_uc):
-                try:
-                    return run_uc(coro)
-                finally:
-                    _close_if_possible(value)
-                    coro.close()
-
-            try:
-                task = asyncio.ensure_future(coro, loop=loop)
-                _consume_task(task)
-                return False if want_result else None
-            except Exception:
-                _close_if_possible(value)
-                coro.close()
-                return False if want_result else None

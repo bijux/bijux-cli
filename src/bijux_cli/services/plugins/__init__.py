@@ -324,30 +324,13 @@ def install_plugin(name: str, force: bool = False, **kwargs: Any) -> None:
 
 
 def load_entrypoints(registry: RegistryProtocol | None = None) -> list[str]:
-    """Loads plugins from entry points and registers them if registry provided.
+    """Returns discovered plugin entry point names without importing code."""
+    from bijux_cli.services.plugins.catalog import discover_plugins
 
-    Returns:
-        list[str]: List of loaded plugin names.
-    """
-    loaded_names = []
-    for group in ["bijux_cli.plugins", "bijux.commands"]:
-        for ep in md.entry_points().select(group=group):
-            try:
-                loaded = ep.load()
-                if group == "bijux_cli.plugins":
-                    plugin = loaded()
-                    name = getattr(plugin, "name", ep.name)
-                    if registry:
-                        registry.register(name, plugin)
-                    loaded_names.append(name)
-                    logger.debug(f"Loaded legacy entry point: {name}")
-                else:
-                    name = ep.name
-                    loaded_names.append(name)
-                    logger.debug(f"Loaded new entry point: {name}")
-            except Exception as e:
-                logger.error(f"Failed to load entry point {ep.name}: {e}")
-    return loaded_names
+    names = [meta.name for meta in discover_plugins(strict=False)]
+    if registry:
+        logger.debug("Registry provided; discovery is lazy and not registered here")
+    return names
 
 
 _SUBMODULES: dict[str, str] = {

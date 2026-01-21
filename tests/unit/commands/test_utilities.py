@@ -1001,8 +1001,8 @@ def test_handle_list_plugins_success(
             "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
         ),
         patch(
-            "bijux_cli.commands.utilities.list_installed_plugins",
-            return_value=["p1", "p2"],
+            "bijux_cli.services.plugins.catalog.list_plugins",
+            return_value=[{"name": "p1", "version": "0.1.0", "enabled": True}, {"name": "p2", "version": "0.2.0", "enabled": True}],
         ),
         patch("bijux_cli.commands.utilities.new_run_command") as mock_run,
     ):
@@ -1019,7 +1019,12 @@ def test_handle_list_plugins_success(
         builder: Callable[[bool], dict[str, Any]] = mock_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"plugins": ["p1", "p2"]}
+        assert builder(False) == {
+            "plugins": [
+                {"name": "p1", "version": "0.1.0", "enabled": True},
+                {"name": "p2", "version": "0.2.0", "enabled": True},
+            ]
+        }
         assert "python" in builder(True)
 
 
@@ -1032,7 +1037,7 @@ def test_handle_list_plugins_fail(
             "bijux_cli.commands.utilities.validate_common_flags", return_value="json"
         ),
         patch(
-            "bijux_cli.commands.utilities.list_installed_plugins",
+            "bijux_cli.services.plugins.catalog.list_plugins",
             side_effect=RuntimeError("dir error"),
         ),
         patch("bijux_cli.commands.utilities.emit_error_and_exit") as mock_error,

@@ -43,6 +43,8 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from rapidfuzz import process as rf_process
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper, run_command
+
 from bijux_cli.commands.utilities import emit_error_and_exit, validate_common_flags
 from bijux_cli.core.constants import (
     HELP_DEBUG,
@@ -67,7 +69,7 @@ GLOBAL_OPTS = [
     "--help",
 ]
 
-repl_app = typer.Typer(
+repl_app = AsyncTyper(
     name="repl",
     help="Starts an interactive shell with history and tab-completion.",
     add_completion=False,
@@ -381,11 +383,11 @@ _BUILTINS = ("exit", "quit")
 class CommandCompleter(Completer):
     """Provides context-aware tab-completion for the REPL."""
 
-    def __init__(self, main_app: typer.Typer) -> None:
+    def __init__(self, main_app: AsyncTyper) -> None:
         """Initializes the completer.
 
         Args:
-            main_app (typer.Typer): The root Typer application whose commands
+            main_app (AsyncTyper): The root Typer application whose commands
                 and options will be used for completion suggestions.
         """
         self.main_app = main_app
@@ -394,13 +396,13 @@ class CommandCompleter(Completer):
 
     def _collect(
         self,
-        app: typer.Typer,
+        app: AsyncTyper,
         path: list[str] | None = None,
     ) -> dict[tuple[str, ...], Any]:
         """Recursively collects all commands from a Typer application.
 
         Args:
-            app (typer.Typer): The Typer application to scan.
+            app (AsyncTyper): The Typer application to scan.
             path (list[str] | None): The accumulated command path for recursion.
 
         Returns:
@@ -700,12 +702,7 @@ def main(
     if quiet or not sys.stdin.isatty():
         _run_piped(quiet)
     else:
-        try:
-            asyncio.get_event_loop()
-        except RuntimeError:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-
-        asyncio.run(_run_interactive())
+        run_command(_run_interactive)
 
 
 if __name__ == "__main__":

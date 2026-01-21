@@ -28,7 +28,6 @@ import asyncio
 from collections.abc import Mapping
 import importlib.util
 import inspect
-import json
 import platform
 import sys
 import traceback
@@ -50,7 +49,9 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.services.plugins import get_plugins_dir
+import anyio
+
+from bijux_cli.services.plugins.catalog import get_plugin_metadata
 
 
 async def check_plugin(
@@ -86,10 +87,34 @@ async def check_plugin(
 
     fmt_lower = validate_common_flags(fmt, command, quiet)
 
-    plug_dir = get_plugins_dir() / name
-    plug_py = plug_dir / "plugin.py"
-    meta_json = plug_dir / "plugin.json"
+    try:
+        meta = await anyio.to_thread.run_sync(get_plugin_metadata, name)
+    except Exception as exc:
+        emit_error_and_exit(
+            str(exc),
+            code=1,
+            failure="metadata_error",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=verbose,
+            debug=debug,
+        )
 
+    if not meta.path:
+        emit_error_and_exit(
+            f'Plugin "{name}" has no local health hook',
+            code=1,
+            failure="health_unavailable",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=verbose,
+            debug=debug,
+        )
+
+    plug_dir = meta.path
+    plug_py = plug_dir / "plugin.py"
     if not plug_py.is_file():
         emit_error_and_exit(
             f'Plugin "{name}" not found',
@@ -101,34 +126,6 @@ async def check_plugin(
             include_runtime=verbose,
             debug=debug,
             extra={"plugin": name},
-        )
-
-    if not meta_json.is_file():
-        emit_error_and_exit(
-            f'Plugin "{name}" metadata (plugin.json) is missing',
-            code=1,
-            failure="metadata_missing",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=verbose,
-            debug=debug,
-        )
-
-    try:
-        meta = json.loads(meta_json.read_text("utf-8"))
-        if not (isinstance(meta, dict) and meta.get("name") and meta.get("desc")):
-            raise ValueError("Incomplete metadata")
-    except Exception as exc:
-        emit_error_and_exit(
-            f'Plugin "{name}" metadata is corrupt: {exc}',
-            code=1,
-            failure="metadata_corrupt",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=verbose,
-            debug=debug,
         )
 
     mod_name = f"_bijux_cli_plugin_{name}"

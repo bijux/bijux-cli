@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.config.clear import clear_config
 from bijux_cli.commands.config.export import export_config
 from bijux_cli.commands.config.get import get_config
@@ -43,7 +45,7 @@ from bijux_cli.commands.config.unset import unset_config
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-config_app = typer.Typer(
+config_app = AsyncTyper(
     name="config",
     help="Manage CLI configuration.",
     rich_markup_mode=None,

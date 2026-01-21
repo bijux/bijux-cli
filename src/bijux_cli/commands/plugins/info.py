@@ -42,7 +42,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.services.plugins import get_plugins_dir
+from bijux_cli.services.plugins.catalog import get_plugin_metadata
 
 
 def info_plugin(
@@ -78,12 +78,13 @@ def info_plugin(
 
     fmt_lower = validate_common_flags(fmt, command, quiet)
 
-    plug_dir = get_plugins_dir() / name
-    if not (plug_dir.is_dir() and (plug_dir / "plugin.py").is_file()):
+    try:
+        meta = get_plugin_metadata(name)
+    except Exception as exc:
         emit_error_and_exit(
-            f'Plugin "{name}" not found',
+            str(exc),
             code=1,
-            failure="not_found",
+            failure="metadata_error",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
@@ -91,13 +92,22 @@ def info_plugin(
             debug=debug,
         )
 
-    meta_file = plug_dir / "plugin.json"
-    meta: dict[str, Any] = {}
-    if meta_file.is_file():
+    payload: dict[str, Any] = {
+        "name": meta.name,
+        "version": meta.version,
+        "enabled": meta.enabled,
+        "source": meta.source,
+        "requires_cli": meta.requires_cli,
+    }
+    if meta.dist_name:
+        payload["package"] = meta.dist_name
+    if meta.path:
+        payload["path"] = str(meta.path)
+        meta_file = meta.path / "plugin.json"
         try:
-            meta = json.loads(meta_file.read_text("utf-8"))
-            if not meta.get("name"):
-                raise ValueError("Missing required fields")
+            extra = json.loads(meta_file.read_text("utf-8"))
+            if isinstance(extra, dict):
+                payload.update(extra)
         except Exception as exc:
             emit_error_and_exit(
                 f'Plugin "{name}" metadata is corrupt: {exc}',
@@ -109,8 +119,6 @@ def info_plugin(
                 include_runtime=verbose,
                 debug=debug,
             )
-
-    payload = {"name": name, "path": str(plug_dir), **meta}
 
     new_run_command(
         command_name=command,

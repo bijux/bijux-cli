@@ -28,6 +28,7 @@
 * [Platform Support](#platform-support)
 * [Quick Start](#quick-start)
 * [Plugins in 60 Seconds](#plugins-in-60-seconds)
+* [Plugin Non-Goals](#plugin-non-goals)
 * [Structured Output](#structured-output)
 * [Developer Introspection](#developer-introspection)
 * [Global Flags: Strict Precedence](#global-flags-strict-precedence)
@@ -165,6 +166,14 @@ bijux plugins uninstall my_plugin
 ```
 
 Plugins dynamically add top-level commands.
+
+[Back to top](#top)
+
+---
+
+## Plugin Non-Goals
+
+No sandboxing. No security guarantees. Use trusted plugins only.
 
 [Back to top](#top)
 

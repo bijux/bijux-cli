@@ -24,12 +24,14 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.history.clear import clear_history
 from bijux_cli.commands.history.service import history
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-history_app = typer.Typer(
+history_app = AsyncTyper(
     name="history",
     help="Inspect or manage command history.",
     rich_markup_mode=None,

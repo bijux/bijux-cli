@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.core.exceptions import BijuxError
 import bijux_cli.infra.retry as mod
 from bijux_cli.infra.retry import (
@@ -217,7 +218,7 @@ def test_timeout_policy_invalid_seconds(tel: MagicMock) -> None:
     """Test that the timeout policy rejects non-positive second values."""
     pol = TimeoutRetryPolicy(tel)
     with pytest.raises(ValueError, match="seconds must be > 0"):
-        asyncio.run(pol.run(lambda: asyncio.sleep(0), seconds=0))
+        run_awaitable(pol.run(lambda: asyncio.sleep(0), seconds=0))
 
 
 def test_timeout_policy_reset_emits(tel: MagicMock) -> None:
@@ -298,7 +299,7 @@ def test_backoff_policy_invalid_seconds(tel: MagicMock) -> None:
     """Test that the backoff policy rejects non-positive second values."""
     pol = ExponentialBackoffRetryPolicy(tel)
     with pytest.raises(ValueError, match="seconds must be > 0"):
-        asyncio.run(pol.run(lambda: asyncio.sleep(0), seconds=0))
+        run_awaitable(pol.run(lambda: asyncio.sleep(0), seconds=0))
 
 
 @pytest.mark.asyncio

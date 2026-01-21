@@ -9,7 +9,7 @@ core logic to the shared `handle_list_plugins` utility, which scans the
 filesystem and returns a structured list.
 
 Output Contract:
-    * Success: `{"plugins": [str, ...]}`
+    * Success: `{"plugins": [{"name": str, "version": str, "enabled": bool}, ...]}`
     * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 

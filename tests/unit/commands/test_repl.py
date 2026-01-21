@@ -1016,14 +1016,27 @@ def test_main_guard_invokes_repl_app_without_side_effects(
 
             return deco
 
+    import click
     fake_typer = _types.SimpleNamespace(
         Typer=_DummyTyper,
         Option=lambda default=False, *a, **k: default,
+        Context=click.Context,
         testing=_types.SimpleNamespace(CliRunner=lambda: _RecordingFakeRunner()),
     )
     monkeypatch.setitem(_sys.modules, "typer", fake_typer)
+    import bijux_cli.core.async_exec as async_exec
+    monkeypatch.setattr(async_exec, "run_command", lambda *a, **k: None)
+    monkeypatch.setattr(_sys.stdin, "isatty", lambda: True)
     _sys.modules.pop("bijux_cli.commands.repl", None)
-    runpy.run_module("bijux_cli.commands.repl", run_name="__main__", alter_sys=True)
+    old_argv = _sys.argv[:]
+    _sys.argv = ["bijux_cli.commands.repl"]
+    try:
+        try:
+            runpy.run_module("bijux_cli.commands.repl", run_name="__main__", alter_sys=True)
+        except SystemExit as exc:
+            assert exc.code in (0, None)
+    finally:
+        _sys.argv = old_argv
 
 
 @pytest.mark.asyncio

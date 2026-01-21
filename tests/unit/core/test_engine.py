@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -14,6 +13,7 @@ from typing import Any
 import pytest
 
 from bijux_cli.contracts import ConfigProtocol, RegistryProtocol
+from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.core.engine import Engine
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.exceptions import CommandError
@@ -238,7 +238,7 @@ def test_shutdown_flushes_history_and_calls_di_shutdown() -> None:
     """Test that the engine shutdown process flushes history and shuts down the DI container."""
     di = FakeDI()
     eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
-    asyncio.run(eng.shutdown())
+    run_awaitable(eng.shutdown())
     assert di._history.flushed is True
     assert di._shutdown_called is True
 

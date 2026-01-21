@@ -33,6 +33,8 @@ from types import FrameType
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
@@ -52,7 +54,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-status_app = typer.Typer(
+status_app = AsyncTyper(
     name="status",
     help="Show the CLI Status (Lean probe).",
     rich_markup_mode=None,

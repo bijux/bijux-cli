@@ -579,8 +579,10 @@ def handle_list_plugins(
     format_lower = validate_common_flags(fmt, command, quiet)
 
     try:
-        plugins = list_installed_plugins()
-    except RuntimeError as exc:
+        from bijux_cli.services.plugins.catalog import list_plugins
+
+        plugins = list_plugins()
+    except Exception as exc:
         emit_error_and_exit(
             str(exc),
             code=1,

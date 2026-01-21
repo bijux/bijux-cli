@@ -93,63 +93,24 @@ def register_dynamic_plugins(app: Typer) -> None:
     Returns:
         None:
     """
-    import importlib.util
-    import sys
+    from bijux_cli.services.plugins.catalog import discover_plugins
+    from bijux_cli.services.plugins.lazy import lazy_command_for
 
     try:
-        import importlib.metadata
+        plugins = discover_plugins()
+    except Exception as exc:
+        logger.warning("Plugin discovery failed: %s", exc)
+        return
 
-        eps = importlib.metadata.entry_points()
-        for ep in eps.select(group="bijux_cli.plugins"):
-            try:
-                plugin_app = ep.load()
-                app.add_typer(plugin_app, name=ep.name)
-                _REGISTERED_COMMANDS.add(ep.name)
-            except Exception as exc:
-                logger.debug("Failed to load entry-point plugin %r: %s", ep.name, exc)
-    except Exception as e:
-        logger.debug("Entry points loading failed: %s", e)
-
-    try:
-        from bijux_cli.services.plugins import get_plugins_dir
-
-        plugins_dir = get_plugins_dir()
-        for pdir in plugins_dir.iterdir():
-            plug_py = pdir / "plugin.py"
-            if not plug_py.is_file():
-                continue
-            mod_name = f"_bijux_cli_plugin_{pdir.name}"
-            spec = importlib.util.spec_from_file_location(mod_name, plug_py)
-            if not spec or not spec.loader:
-                continue
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[mod_name] = module
-            try:
-                spec.loader.exec_module(module)
-                plugin_app = None
-                if hasattr(module, "cli") and callable(module.cli):
-                    plugin_app = module.cli()
-                elif hasattr(module, "app"):
-                    plugin_app = module.app
-                else:
-                    logger.debug(
-                        "Plugin %r has no CLI entrypoint (no cli()/app).", pdir.name
-                    )
-                    continue
-                if isinstance(plugin_app, Typer):
-                    app.add_typer(plugin_app, name=pdir.name)
-                    _REGISTERED_COMMANDS.add(pdir.name)
-                else:
-                    logger.debug(
-                        "Plugin %r loaded but did not return a Typer app instance.",
-                        pdir.name,
-                    )
-            except Exception as exc:
-                logger.debug("Failed to load local plugin %r: %s", pdir.name, exc)
-            finally:
-                sys.modules.pop(mod_name, None)
-    except Exception as e:
-        logger.debug("Dynamic plugin discovery failed: %s", e)
+    for meta in plugins:
+        if meta.name in _REGISTERED_COMMANDS:
+            raise RuntimeError(f"Plugin name collision: {meta.name!r}")
+        try:
+            app.add_typer(lazy_command_for(meta), name=meta.name)
+        except Exception as exc:
+            logger.warning("Plugin %s failed to register: %s", meta.name, exc)
+            continue
+        _REGISTERED_COMMANDS.add(meta.name)
 
 
 def list_registered_command_names() -> list[str]:

@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.plugins.check import check_plugin
 from bijux_cli.commands.plugins.info import info_plugin
 from bijux_cli.commands.plugins.install import install_plugin
@@ -38,7 +40,7 @@ from bijux_cli.commands.plugins.uninstall import uninstall_plugin
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-plugins_app = typer.Typer(
+plugins_app = AsyncTyper(
     name="plugins",
     help="Manage Bijux CLI plugins",
     rich_markup_mode=None,

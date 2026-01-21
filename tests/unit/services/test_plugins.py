@@ -156,36 +156,48 @@ def test_get_plugins_dir_default(
         assert get_plugins_dir() == (tmp_path / "plugins").resolve()
 
 
-def test_get_plugins_dir_create(tmp_path: Path) -> None:
+def test_get_plugins_dir_create(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Test that the plugins directory is created if it does not exist."""
     dir_path = tmp_path / "plugins"
+    monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
     with patch("bijux_cli.core.paths.PLUGINS_DIR", dir_path):
         assert get_plugins_dir() == dir_path.resolve()
         assert dir_path.is_dir()
 
 
-def test_get_plugins_dir_exists(tmp_path: Path) -> None:
+def test_get_plugins_dir_exists(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Test that an existing plugins directory is correctly identified."""
     dir_path = tmp_path / "plugins"
     dir_path.mkdir()
+    monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
     with patch("bijux_cli.core.paths.PLUGINS_DIR", dir_path):
         assert get_plugins_dir() == dir_path.resolve()
 
 
-def test_get_plugins_dir_symlink(tmp_path: Path) -> None:
+def test_get_plugins_dir_symlink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Test that a symlinked plugins directory path is correctly resolved."""
     real_dir = tmp_path / "real"
     real_dir.mkdir()
     sym = tmp_path / "sym"
     sym.symlink_to(real_dir)
+    monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
     with patch("bijux_cli.core.paths.PLUGINS_DIR", sym):
         assert get_plugins_dir() == sym
 
 
-def test_get_plugins_dir_existing_file(tmp_path: Path) -> None:
+def test_get_plugins_dir_existing_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Test that a path pointing to a file instead of a directory is handled."""
     file_path = tmp_path / "file"
     file_path.touch()
+    monkeypatch.delenv("BIJUXCLI_PLUGINS_DIR", raising=False)
     with patch("bijux_cli.core.paths.PLUGINS_DIR", file_path):
         assert get_plugins_dir() == file_path.resolve()
 
@@ -1774,39 +1786,38 @@ def test_install_plugin_pip_fails(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_load_entrypoints_all_cases(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """Tests loading entry points, including success, failure, and registry interaction."""
+    """Tests loading entry points without importing plugin bodies."""
     mock_registry = create_autospec(RegistryProtocol, instance=True)
 
-    class MockLegacyPlugin:
-        name = "legacy_plugin"
+    from bijux_cli.services.plugins.catalog import PluginMetadata
 
-    mock_ep_legacy = MagicMock(spec=importlib.metadata.EntryPoint)
-    mock_ep_legacy.name = "legacy"
-    mock_ep_legacy.load.return_value = MockLegacyPlugin
+    plugins = [
+        PluginMetadata(
+            name="legacy_plugin",
+            version="0.1.0",
+            enabled=True,
+            source="entrypoint",
+            requires_cli=">=0.1.0",
+        ),
+        PluginMetadata(
+            name="new_plugin",
+            version="0.1.0",
+            enabled=True,
+            source="entrypoint",
+            requires_cli=">=0.1.0",
+        ),
+    ]
 
-    mock_ep_new = MagicMock(spec=importlib.metadata.EntryPoint)
-    mock_ep_new.name = "new_plugin"
-    mock_ep_new.load.return_value = Mock()
-
-    mock_ep_fail = MagicMock(spec=importlib.metadata.EntryPoint)
-    mock_ep_fail.name = "fail_plugin"
-    mock_ep_fail.load.side_effect = ImportError("cannot load")
-
-    mock_eps_map = {
-        "bijux_cli.plugins": [mock_ep_legacy],
-        "bijux.commands": [mock_ep_new, mock_ep_fail],
-    }
-
-    mock_entry_points = Mock()
-    mock_entry_points.select.side_effect = lambda group: mock_eps_map.get(group, [])
-    monkeypatch.setattr(importlib.metadata, "entry_points", lambda: mock_entry_points)
+    monkeypatch.setattr(
+        "bijux_cli.services.plugins.catalog.discover_plugins",
+        lambda **_kw: plugins,
+    )
 
     from bijux_cli.services.plugins import load_entrypoints
 
     loaded_with_registry = load_entrypoints(registry=mock_registry)
     assert sorted(loaded_with_registry) == ["legacy_plugin", "new_plugin"]
-    mock_registry.register.assert_called_once_with("legacy_plugin", ANY)
-    assert "Failed to load entry point fail_plugin" in caplog.text
+    mock_registry.register.assert_not_called()
 
     mock_registry.reset_mock()
     loaded_without_registry = load_entrypoints(registry=None)

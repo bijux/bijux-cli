@@ -190,10 +190,10 @@ def test_logging_via_observability_and_keyerror_fallback_v1(
         )
 
 
-def test_resolve_coroutine_sync_via_asyncio_run_v1(
+def test_resolve_coroutine_sync_via_run_awaitable_v1(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test synchronous resolution of a coroutine factory via asyncio.run (v1)."""
+    """Test synchronous resolution of a coroutine factory via run_awaitable (v1)."""
     c = DIContainer.current()
 
     async def maker() -> str:

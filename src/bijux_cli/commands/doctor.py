@@ -27,6 +27,8 @@ import platform
 
 import typer
 
+from bijux_cli.core.async_exec import AsyncTyper
+
 from bijux_cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
@@ -45,7 +47,7 @@ from bijux_cli.core.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-doctor_app = typer.Typer(
+doctor_app = AsyncTyper(
     name="doctor",
     help="Run CLI health diagnostics and environment checks.",
     rich_markup_mode=None,

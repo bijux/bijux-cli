@@ -34,6 +34,7 @@ from typing import Any, Literal, TypeVar, cast, overload
 from injector import Binder, Injector, Module, singleton
 
 from bijux_cli.contracts import ConfigProtocol, ObservabilityProtocol
+from bijux_cli.core.async_exec import run_awaitable
 from bijux_cli.core.exceptions import BijuxError
 from bijux_cli.services.config import Config
 
@@ -131,7 +132,7 @@ class DIContainer:
             cls._log_static(logging.DEBUG, "DIContainer reset (no instance)")
             return
         try:
-            asyncio.run(inst.shutdown())
+            run_awaitable(inst.shutdown())
         except Exception as exc:
             cls._log_static(logging.ERROR, f"Error during shutdown: {exc}")
         inst._services.clear()
@@ -393,7 +394,7 @@ class DIContainer:
                 if asyncio.iscoroutine(raw):
                     coro = cast(Coroutine[Any, Any, T], raw)
                     try:
-                        result = asyncio.run(coro)
+                        result = run_awaitable(coro, want_result=True)
                     finally:
                         with suppress(Exception):
                             if hasattr(coro, "close"):
@@ -403,7 +404,9 @@ class DIContainer:
                     async def _await(a: Awaitable[T]) -> T:
                         return await a
 
-                    result = asyncio.run(_await(cast(Awaitable[T], raw)))
+                    result = run_awaitable(
+                        _await(cast(Awaitable[T], raw)), want_result=True
+                    )
             else:
                 result = cast(T, raw)
             if result is None:
@@ -719,7 +722,7 @@ class DIContainer:
         """
         if cls._instance:
             try:
-                asyncio.run(cls._instance.shutdown())
+                run_awaitable(cls._instance.shutdown())
             except Exception as exc:
                 cls._log_static(logging.ERROR, f"Error during test shutdown: {exc}")
         cls._instance = None
