@@ -12,7 +12,6 @@ from pathlib import Path
 import signal
 import stat
 from subprocess import PIPE, Popen
-import sys
 import threading
 import time
 from typing import Any, cast
@@ -289,7 +288,6 @@ def test_docs_out_file_dir_symlink_dotfile(tmp_path: Path) -> None:
     assert dotfile.exists()
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX perms only")
 def test_docs_out_dir_permission_denied(tmp_path: Path) -> None:
     """Writing into a read-only directory should fail with structured error."""
     ro_dir = tmp_path / "ro"

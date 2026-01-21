@@ -3,7 +3,7 @@
 
 """Unit tests for the help command."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -41,7 +41,7 @@ class DummyCmd(click.Command):
 
 
 @pytest.fixture(autouse=True)
-def _cleanup_help_module_patches() -> Iterator[None]:  # pyright: ignore[reportUnusedFunction]
+def _cleanup_help_module_patches() -> Iterator[None]:
     """A fixture to automatically clean up the global patches made by help_mod."""
     yield
 

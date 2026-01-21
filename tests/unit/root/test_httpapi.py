@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 import bijux_cli.httpapi as api
 
-# pyright: reportPrivateUsage=false
+
 
 
 def _client() -> TestClient:

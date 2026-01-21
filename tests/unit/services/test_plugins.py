@@ -3,7 +3,7 @@
 
 """Unit tests for the services plugins module."""
 
-# pyright: reportPrivateUsage=false
+
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import asyncio
 import importlib
 import importlib.metadata
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, cast
 from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, create_autospec, patch
@@ -633,10 +634,39 @@ def test_uninstall_plugin_rmtree_ignore_errors(
         mock_rmtree.assert_called_with(plug_dir, ignore_errors=True)
 
 
-def test_install_plugin() -> None:
-    """Test that the install_plugin function is not implemented."""
-    with pytest.raises(NotImplementedError):
-        install_plugin()
+def test_install_plugin_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Installs a local plugin into the plugins dir and handles force overwrite."""
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path / "plugins"))
+    src = tmp_path / "a_local_plugin"
+    src.mkdir()
+    (src / "plugin.py").write_text("class Plugin: ...\n", encoding="utf-8")
+    install_plugin(str(src))
+    assert (tmp_path / "plugins" / "a_local_plugin").is_dir()
+    with pytest.raises(FileExistsError):
+        install_plugin(str(src), force=False)
+    install_plugin(str(src), force=True)
+    assert (tmp_path / "plugins" / "a_local_plugin").is_dir()
+
+
+def test_install_plugin_pip(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Invokes pip install for distribution names."""
+    called: dict[str, Any] = {}
+
+    def fake_check_call(args: list[str], **kwargs: Any) -> int:
+        """Captures pip args and returns success."""
+        called["args"] = args
+        return 0
+
+    monkeypatch.setattr(subprocess, "check_call", fake_check_call)
+    install_plugin("some-distribution-name")
+    expected_command = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "some-distribution-name",
+    ]
+    assert called["args"] == expected_command
 
 
 def test_lazy_import() -> None:
@@ -1057,7 +1087,7 @@ def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> N
         sub = grp("sub")
 
         @sub
-        def func() -> None:  # pyright: ignore[reportUnusedFunction]
+        def func() -> None:
             pass
 
         mock_reg.register.assert_called()
@@ -1072,7 +1102,7 @@ def test_command_group_no_tel(mock_di: Any, mock_reg: Mock, mock_obs: Mock) -> N
         sub = grp("sub")
 
         @sub
-        def func() -> None:  # pyright: ignore[reportUnusedFunction]
+        def func() -> None:
             pass
 
         mock_reg.register.assert_called()
@@ -1087,7 +1117,7 @@ def test_command_group_no_di() -> None:
         with pytest.raises(RuntimeError):
 
             @sub
-            def func() -> None:  # pyright: ignore[reportUnusedFunction]
+            def func() -> None:
                 pass
 
 
@@ -1728,3 +1758,57 @@ def test_dunder_getattr_submodule_registry(monkeypatch: pytest.MonkeyPatch) -> N
     registry_mod = plugins.registry
     assert registry_mod.__name__.endswith("registry")
     assert plugins.registry is registry_mod
+
+
+def test_install_plugin_pip_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests that pip install failures are caught and wrapped in BijuxError."""
+    monkeypatch.setattr(
+        subprocess,
+        "check_call",
+        Mock(side_effect=subprocess.CalledProcessError(1, "cmd")),
+    )
+    with pytest.raises(BijuxError, match="Failed to pip install"):
+        install_plugin("some-failing-package")
+
+
+def test_load_entrypoints_all_cases(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Tests loading entry points, including success, failure, and registry interaction."""
+    mock_registry = create_autospec(RegistryProtocol, instance=True)
+
+    class MockLegacyPlugin:
+        name = "legacy_plugin"
+
+    mock_ep_legacy = MagicMock(spec=importlib.metadata.EntryPoint)
+    mock_ep_legacy.name = "legacy"
+    mock_ep_legacy.load.return_value = MockLegacyPlugin
+
+    mock_ep_new = MagicMock(spec=importlib.metadata.EntryPoint)
+    mock_ep_new.name = "new_plugin"
+    mock_ep_new.load.return_value = Mock()
+
+    mock_ep_fail = MagicMock(spec=importlib.metadata.EntryPoint)
+    mock_ep_fail.name = "fail_plugin"
+    mock_ep_fail.load.side_effect = ImportError("cannot load")
+
+    mock_eps_map = {
+        "bijux_cli.plugins": [mock_ep_legacy],
+        "bijux.commands": [mock_ep_new, mock_ep_fail],
+    }
+
+    mock_entry_points = Mock()
+    mock_entry_points.select.side_effect = lambda group: mock_eps_map.get(group, [])
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda: mock_entry_points)
+
+    from bijux_cli.services.plugins import load_entrypoints
+
+    loaded_with_registry = load_entrypoints(registry=mock_registry)
+    assert sorted(loaded_with_registry) == ["legacy_plugin", "new_plugin"]
+    mock_registry.register.assert_called_once_with("legacy_plugin", ANY)
+    assert "Failed to load entry point fail_plugin" in caplog.text
+
+    mock_registry.reset_mock()
+    loaded_without_registry = load_entrypoints(registry=None)
+    assert sorted(loaded_without_registry) == ["legacy_plugin", "new_plugin"]
+    mock_registry.register.assert_not_called()

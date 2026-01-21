@@ -80,7 +80,7 @@ def golden_dir() -> Path:
 
 
 @pytest.fixture(autouse=True)
-def _clean_env(  # pyright: ignore[reportUnusedFunction]
+def _clean_env(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Set up a clean, isolated environment for each test.

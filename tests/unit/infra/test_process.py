@@ -3,7 +3,7 @@
 
 """Unit tests for the infra process module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import sys
@@ -205,7 +205,7 @@ def test_lru_eviction_via_max_cache_override(
     pool = ProcessPool(
         cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
     )
-    pool._MAX_CACHE = 2  # pyright: ignore[reportAttributeAccessIssue]
+    pool._MAX_CACHE = 2
 
     pool.run(["c1"], executor="unit")
     pool.run(["c2"], executor="unit")

@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import fcntl
 import json
 import os
 from pathlib import Path
 import resource
 import string
 from subprocess import PIPE, Popen
-import sys
 import tempfile
 import time
 from typing import Any
@@ -23,11 +23,6 @@ import pytest
 import yaml
 
 from tests.e2e.conftest import BIN, assert_log_has, assert_text, run_cli
-
-if sys.platform != "win32":
-    import fcntl
-
-is_windows = os.name == "nt"
 
 
 def test_e2e_config_set_get(tmp_path: Path) -> None:
@@ -306,9 +301,6 @@ def test_e2e_config_invalid_format(tmp_path: Path) -> None:
     assert_text(res, "Unsupported format")
 
 
-@pytest.mark.skipif(
-    is_windows, reason="Symlinks/permissions behave differently on Windows"
-)
 def test_e2e_config_export_symlink(tmp_path: Path) -> None:
     """Exporting to a symlink should succeed; content must end up either in the
     target file (followed) or at the symlink path (replaced)."""
@@ -345,9 +337,6 @@ def test_e2e_config_set_atomicity(tmp_path: Path) -> None:
 
 def test_e2e_config_file_locked(tmp_path: Path) -> None:
     """Test that setting a value fails if the config file is locked."""
-    if sys.platform.startswith("win"):
-        pytest.skip("File locking not easily portable on Windows")
-
     env = {"BIJUXCLI_CONFIG": str(tmp_path / ".env")}
     config_path = tmp_path / ".env"
     config_path.write_text("")
@@ -650,7 +639,6 @@ def test_e2e_config_simulate_crash_during_write(tmp_path: Path) -> None:
     assert_log_has(res.stdout, "value", "qux")
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="requires the 'resource' module")
 def test_e2e_config_file_descriptor_exhaustion(tmp_path: Path) -> None:
     """Test graceful failure when file descriptors are exhausted."""
     soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)

@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 
 from bijux_cli.__version__ import __version__ as cli_version
 from bijux_cli.commands.version import (
-    _build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload,
     version_app,
 )
 
@@ -130,7 +130,7 @@ def test_version_callback_subcommand(mock_di_class: MagicMock) -> None:
     """Test that subcommands can be invoked."""
 
     @version_app.command()
-    def sub() -> None:  # pyright: ignore[reportUnusedFunction]
+    def sub() -> None:
         """A dummy subcommand."""
         print("sub called")
 

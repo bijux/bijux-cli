@@ -53,12 +53,10 @@ clean-soft:
 	@echo "→ Cleaning (no .venv) ..."
 	@$(RM) \
 	  .pytest_cache htmlcov coverage.xml dist build *.egg-info .tox demo .tmp_home \
-	  .ruff_cache .mypy_cache .pytype .hypothesis .coverage.* .coverage .benchmarks \
+	  .ruff_cache .mypy_cache .hypothesis .coverage.* .coverage .benchmarks \
 	  spec.json openapitools.json node_modules .mutmut-cache session.sqlite site \
 	  docs/reference artifacts usage_test usage_test_artifacts citation.bib .cache || true
-	@if [ "$(OS)" != "Windows_NT" ]; then \
-	  find . -type d -name '__pycache__' -exec $(RM) {} +; \
-	fi
+	@find . -type d -name '__pycache__' -exec $(RM) {} +
 
 # Pipelines
 all: clean install test lint quality security api docs build sbom citation
@@ -73,7 +71,7 @@ all-parallel: clean install
 	@$(MAKE) build sbom citation
 	@echo "✔ All targets completed (parallel mode)"
 
-# Pre-push Gate - Pre-Commit!
+# Pre-push Gate
 pre-push:
 	@$(PYTEST) -q -m "not e2e and not slow"
 	@$(MAKE) quality

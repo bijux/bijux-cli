@@ -435,7 +435,7 @@ class CommandCompleter(Completer):
                 return self._cmd_map[key], words[i:]
         return None, words
 
-    def get_completions(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_completions(
         self,
         document: Document,
         _complete_event: CompleteEvent,

@@ -50,7 +50,7 @@ from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-docs_app = typer.Typer(  # pytype: skip-file
+docs_app = typer.Typer(
     name="docs",
     help="(-h, --help) Generate API specifications (OpenAPI-like) for Bijux CLI.",
     rich_markup_mode=None,

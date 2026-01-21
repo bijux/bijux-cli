@@ -3,7 +3,7 @@
 
 """Unit tests for the core engine module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import asyncio

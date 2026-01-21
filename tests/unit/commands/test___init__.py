@@ -3,7 +3,7 @@
 
 """Unit tests for the commands' module init."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import importlib

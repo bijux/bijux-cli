@@ -36,7 +36,7 @@ TEMPLATE_DIR: Path | None = _template_dir_path if _template_dir_path.exists() el
 
 def find_bijux_binary() -> Path:
     """Locate the `bijux` executable in common dev/test locations."""
-    exe_name = "bijux.exe" if os.name == "nt" else "bijux"
+    exe_name = "bijux"
 
     override = os.getenv("BIJUX_BIN")
     if override:
@@ -56,7 +56,7 @@ def find_bijux_binary() -> Path:
     if which:
         return Path(which).resolve()
 
-    local = ROOT / ("Scripts" if os.name == "nt" else "bin") / exe_name
+    local = ROOT / "bin" / exe_name
     if local.exists():
         return local.resolve()
 
@@ -1604,20 +1604,10 @@ def test_invalid_global_format() -> None:
         if not isinstance(data, dict):
             data = {}
         err = str(data.get("error", "")).lower()
-        assert (
-            ("unsupported" in err)
-            or ("invalid" in err)
-            or ("unknown" in err)
-            or ("no such command" in err)
-        )
+        assert "no such option" in err
     else:
         msg = _decolorise((r.stderr or r.stdout).lower())
-        assert (
-            ("unsupported" in msg)
-            or ("invalid" in msg)
-            or ("unknown" in msg)
-            or ("no such command" in msg)
-        )
+        assert "no such option" in msg
 
 
 def test_quiet_with_error() -> None:

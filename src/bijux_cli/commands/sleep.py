@@ -46,7 +46,7 @@ from bijux_cli.core.di import DIContainer
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-sleep_app = typer.Typer(  # pytype: skip-file
+sleep_app = typer.Typer(
     name="sleep",
     help="Pause execution for a specified duration.",
     rich_markup_mode=None,

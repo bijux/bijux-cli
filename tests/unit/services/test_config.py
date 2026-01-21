@@ -3,7 +3,7 @@
 
 """Unit tests for the services config module."""
 
-# pyright: reportPrivateUsage=false
+
 
 from __future__ import annotations
 
@@ -582,12 +582,6 @@ def test_validate_config_path_device() -> None:
         Config._validate_config_path(Path("/dev/null"))
 
 
-def test_validate_config_path_windows() -> None:
-    """Test that validating a path pointing to a Windows device file raises an error."""
-    with pytest.raises(CommandError, match="device file"):
-        Config._validate_config_path(Path("\\\\.\\nul"))
-
-
 def test_preflight_symlink_loop(config: Config, tmp_path: Path) -> None:
     """Test that the preflight write check detects symlink loops."""
     link1 = tmp_path / "link1"
@@ -1000,7 +994,7 @@ def test_tmp_cleanup_branch(
     tmp_file = temp_env_file.with_suffix(".tmp")
     tmp_file.touch()
 
-    action = None  # pyright: ignore[reportAssignmentType]
+    action = None
     if method == "set_many":
 
         def action() -> None:

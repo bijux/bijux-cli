@@ -13,7 +13,7 @@ import pytest
 from typer.testing import CliRunner
 
 from bijux_cli.commands.sleep import (
-    _build_payload,  # pyright: ignore[reportPrivateUsage]
+    _build_payload,
     sleep_app,
 )
 

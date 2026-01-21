@@ -3,7 +3,7 @@
 
 **Predictable quality at scale.** Bijux CLI ships with a deep, layered test suite (≈ **2,664 tests**) covering units, integrations, functional scenarios, and full **E2E** flows.  
 **Current status:** **98%+ line coverage** (coverage.py), enforced in CI across Python 3.11–3.13.
-**Proof:** [Test Artifacts](artifacts/test.md) • <a href="artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">Coverage HTML report</a>.
+**Proof:** [Test Artifacts](artifacts/test.md) • <a href="https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">Coverage HTML report</a>.
 
 [Back to top](#top)
 
@@ -222,9 +222,9 @@ pytest -k "plugins and not uninstall" -q
   pytest --cov=bijux_cli --cov-report=html && open htmlcov/index.html
   ```
 
-* Evidence: [Test Artifacts](artifacts/test.md) · <a href="artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">HTML coverage report</a>
+* Evidence: [Test Artifacts](artifacts/test.md) · <a href="https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">HTML coverage report</a>
 * **Docs/Style:** `ruff` (lint+format), `pydocstyle`, `interrogate`.
-* **Types:** `mypy`, `pyright` (strict).
+* **Types:** `mypy` (strict).
 * **Security/Hygiene:** `bandit`, `pip-audit`, `reuse`, `codespell`, `deptry`, `radon`.
 
 [Back to top](#top)

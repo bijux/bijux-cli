@@ -30,7 +30,7 @@ class Bullet:
         good: An optional line describing a "good" state or a success metric,
             e.g., "0 violations (Google convention) — violations: 0".
         usage: An optional line providing usage instructions or a call to action,
-            e.g., "Run `ruff format`; enforce via pre-commit."
+            e.g., "Run `ruff format`; enforce via CI."
     """
     title: str
     good: str | None = None

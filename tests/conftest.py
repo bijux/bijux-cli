@@ -24,7 +24,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _reset_di_between_tests() -> (  # pyright: ignore[reportUnusedFunction]
+def _reset_di_between_tests() -> (
     Generator[None, None, None]
 ):
     """Resets the `DIContainer` singleton after each test.
@@ -39,7 +39,7 @@ def _reset_di_between_tests() -> (  # pyright: ignore[reportUnusedFunction]
     from bijux_cli.core.di import DIContainer
 
     yield
-    DIContainer._reset_for_tests()  # pyright: ignore[reportPrivateUsage]
+    DIContainer._reset_for_tests()
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +84,7 @@ def helpers(monkeypatch: pytest.MonkeyPatch) -> Any:
 
 
 @pytest.fixture(autouse=True)
-def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:  # pyright: ignore[reportUnusedFunction]
+def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Removes potentially interfering environment variables before each test.
 
     This auto-use fixture ensures test isolation by unsetting specific
@@ -105,3 +105,15 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:  # pyright: ignore[repo
     ]
     for var in vars_to_remove:
         monkeypatch.delenv(var, raising=False)
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Apply unit/integration/night markers based on test location."""
+    for item in items:
+        path_str = str(item.fspath)
+        if "/tests/unit/" in path_str:
+            item.add_marker("unit")
+        elif "/tests/integration/" in path_str:
+            item.add_marker("integration")
+        elif "/tests/night/" in path_str:
+            item.add_marker("night")

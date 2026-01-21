@@ -4,8 +4,8 @@
 """Unit tests for the plugins install module."""
 
 # mypy: disable-error-code="union-attr"
-# pyright: reportPrivateImportUsage=false
-# pyright: reportOptionalMemberAccess=false
+
+
 
 from __future__ import annotations
 

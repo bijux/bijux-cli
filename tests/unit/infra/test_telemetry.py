@@ -3,7 +3,7 @@
 
 """Unit tests for the infra telemetry module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 from typing import Any
@@ -90,7 +90,7 @@ def test_loggingtelemetry_inject_constructor() -> None:
 
     obs = DummyObs()
     tel = (
-        LoggingTelemetry.__wrapped__(LoggingTelemetry, obs)  # pyright: ignore[reportAttributeAccessIssue]
+        LoggingTelemetry.__wrapped__(LoggingTelemetry, obs)
         if hasattr(LoggingTelemetry, "__wrapped__")
         else LoggingTelemetry(cast(ObservabilityProtocol, obs))
     )

@@ -24,6 +24,7 @@ Exit Codes:
 from __future__ import annotations
 
 from contextlib import suppress
+import fcntl
 import os
 import platform
 import re
@@ -110,10 +111,8 @@ def set_config(
     include_runtime = verbose
     fmt_lower = fmt.lower()
     command = "config set"
-    if os.name == "posix":
+    if cfg_path:
         with suppress(Exception):
-            import fcntl
-
             with open(cfg_path, "a+") as fh:
                 try:
                     fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)

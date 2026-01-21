@@ -33,7 +33,7 @@ from bijux_cli.__main__ import (
     should_record_command_history,
 )
 
-# pyright: reportPrivateUsage=false
+
 
 
 class DummyHistory:
@@ -63,7 +63,7 @@ class DummyContainer:
 
 
 @pytest.fixture(autouse=True)
-def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:  # pyright: ignore[reportUnusedFunction]
+def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Isolate the test environment by patching core CLI components."""
     hist = DummyHistory()
     cont = DummyContainer(hist)
@@ -138,7 +138,7 @@ def test_get_usage_for_args_simple(monkeypatch: pytest.MonkeyPatch) -> None:
     app = typer.Typer()
 
     @app.command()
-    def foo() -> None:  # pyright: ignore[reportUnusedFunction]
+    def foo() -> None:
         """Provide foo help."""
 
     txt = get_usage_for_args(["foo", "--help"], app)
@@ -339,7 +339,7 @@ def test_get_usage_for_args_stops_before_extra(monkeypatch: pytest.MonkeyPatch) 
     app = typer.Typer()
 
     @app.command()
-    def foo() -> None:  # pyright: ignore[reportUnusedFunction]
+    def foo() -> None:
         """Provide foo help."""
 
     help_text = get_usage_for_args(["foo", "bar", "--help", "baz"], app)
@@ -440,7 +440,7 @@ def test_get_usage_for_args_truncates_after_help_v2(
     app = typer.Typer()
 
     @app.command()
-    def foo() -> None:  # pyright: ignore[reportUnusedFunction]
+    def foo() -> None:
         """Provide Foo command help."""
 
     help_text = get_usage_for_args(["foo", "--help", "bar"], app)
@@ -488,7 +488,7 @@ def test_get_usage_for_args_no_help_token_v2(
     app = typer.Typer()
 
     @app.command()
-    def bar() -> None:  # pyright: ignore[reportUnusedFunction]
+    def bar() -> None:
         """Provide Bar command help."""
 
     help_text = get_usage_for_args(["bar"], app)

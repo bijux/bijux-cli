@@ -52,7 +52,6 @@ oserror
 outdir
 pipefail
 pymdownx
-pyrightconfig
 pytestmark
 pythondontwritebytecode
 pythonpath

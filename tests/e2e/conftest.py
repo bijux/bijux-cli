@@ -42,7 +42,7 @@ def find_bijux_binary() -> Path:
         FileNotFoundError: If the bijux binary cannot be found in any of the
             searched locations.
     """
-    exe_name = "bijux.exe" if os.name == "nt" else "bijux"
+    exe_name = "bijux"
 
     if (override := os.getenv("BIJUX_BIN")) and Path(override).is_file():
         return Path(override).resolve()
@@ -58,7 +58,7 @@ def find_bijux_binary() -> Path:
     if which := shutil.which("bijux"):
         return Path(which).resolve()
 
-    local = ROOT / ("Scripts" if os.name == "nt" else "bin") / exe_name
+    local = ROOT / "bin" / exe_name
     if local.exists():
         return local.resolve()
 
@@ -404,7 +404,7 @@ def spawn_repl(
     return pexpect.spawn(
         cmd[0],
         cmd[1:],
-        env=cast(os._Environ[str], env),  # pyright: ignore[reportPrivateUsage]
+        env=cast(os._Environ[str], env),
         encoding="utf-8",
         timeout=timeout,
     )

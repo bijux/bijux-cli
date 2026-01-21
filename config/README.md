@@ -18,6 +18,4 @@ Centralizing these configurations ensures:
 | **`cosmic-ray.toml`**             | Cosmic Ray — mutation testing configuration                        |
 | **`coveragerc.ini`**              | Coverage.py — coverage measurement rules                           |
 | **`mypy.ini`**                    | Mypy — strict static type checking                                 |
-| **`pyrightconfig.json`**          | Pyright — fast static type analysis                                |
 | **`ruff.toml`**                   | Ruff — linting, formatting, and isort rules                        |
-

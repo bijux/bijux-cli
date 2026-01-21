@@ -3,7 +3,7 @@
 
 """Unit tests for the services docs module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import os

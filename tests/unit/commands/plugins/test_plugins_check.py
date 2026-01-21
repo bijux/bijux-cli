@@ -3,7 +3,7 @@
 
 """Unit tests for the plugins check module."""
 
-# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import importlib.util
@@ -90,7 +90,7 @@ def run_check(
 
 
 @pytest.fixture(autouse=True)
-def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:  # pyright: ignore[reportUnusedFunction]
+def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
     """Intercept error emissions and raise a custom exception."""
 
     def fake_emit(

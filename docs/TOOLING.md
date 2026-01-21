@@ -47,7 +47,7 @@ tox -av        # list CI-mirrored environments
 
 ## Prereqs & Versions
 
-* Python **3.11–3.13** (recommend `pyenv`)
+* Python **>= 3.11** (3.11–3.13 tested; recommend `pyenv`)
 * Node.js (API validation / docs assets)
 * Java 17 (OpenAPI Generator CLI)
 * GNU Make, git
@@ -63,7 +63,7 @@ tox -av        # list CI-mirrored environments
 Run both locally and in CI:
 
 ```bash
-make lint         # ruff format+lint, mypy, pyright, codespell, radon, pydocstyle (+ pytype ≤ 3.12)
+make lint         # ruff format+lint, mypy, codespell, radon, pydocstyle
 make quality      # vulture, deptry, reuse, interrogate, codespell, radon
 ```
 
@@ -75,10 +75,8 @@ make quality      # vulture, deptry, reuse, interrogate, codespell, radon
   * `ruff check --fix` (lint autofix, config at `config/ruff.toml`)
   * `mypy --strict` (config at `config/mypy.ini`)
   * `codespell -I config/bijux.dic`
-  * `pyright --project config/pyrightconfig.json`
   * `radon cc -s -a` (complexity)
   * `pydocstyle --convention=google` (docstring style)
-* Then runs **Pytype** once per directory **only on Python ≤ 3.12**; it is **skipped on 3.13+**.
 
 <details>
 <summary>Make: Lint (<code>makefiles/lint.mk</code>)</summary>
@@ -135,10 +133,10 @@ make quality      # vulture, deptry, reuse, interrogate, codespell, radon
 
 ## Typing
 
-Strict static typing with **mypy** and **pyright**; **pytype** runs when supported (≤3.12), skipped on 3.13+.
+Strict static typing with **mypy**.
 
 ```bash
-make lint   # includes mypy + pyright + pytype
+make lint   # includes mypy
 ```
 
 <details>
@@ -150,17 +148,8 @@ make lint   # includes mypy + pyright + pytype
 
 </details>
 
-<details>
-<summary>Pyright config (<code>config/pyrightconfig.json</code>)</summary>
-
-```
---8<-- "config/pyrightconfig.json"
-```
-
-</details>
-
-**Artifacts:** Logs live under [Lint Artifacts](artifacts/lint.md) — direct sections:
-[`mypy.log`](artifacts/lint.md#mypy-log) · [`pyright.log`](artifacts/lint.md#pyright-log) · [`pytype.log`](artifacts/lint.md#pytype-log)
+**Artifacts:** Logs live under [Lint Artifacts](artifacts/lint.md) — direct section:
+[`mypy.log`](artifacts/lint.md#mypy-log)
 
 [Back to top](#top)
 
@@ -198,7 +187,7 @@ pytest --cov=bijux_cli --cov-report=html && open htmlcov/index.html
 </details>
 
 **Artifacts:** [Test Artifacts](artifacts/test.md) ·
-<a href="artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">HTML coverage report</a> ·
+<a href="https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html" target="_blank" rel="noopener">HTML coverage report</a> ·
 [JUnit report](artifacts/test.md#junit-xml)
 
 [Back to top](#top)
@@ -379,24 +368,13 @@ make build
 
 ## Git Hooks & Commit Hygiene
 
-* **pre-commit** hooks (see `.pre-commit-config.yaml`)
 * Conventional Commits enforced (Commitizen)
 * Auto-fragment creator: `scripts/git-hooks/prepare-commit-msg`
 * Guard requiring a fragment: `scripts/check-towncrier-fragment.sh`
 
 ```bash
-pre-commit install
 ln -sf ../../scripts/git-hooks/prepare-commit-msg .git/hooks/prepare-commit-msg
 ```
-
-<details>
-<summary>pre-commit config (<code>.pre-commit-config.yaml</code>)</summary>
-
-```yaml
---8<-- ".pre-commit-config.yaml"
-```
-
-</details>
 
 <details>
 <summary>prepare-commit-msg hook (<code>scripts/git-hooks/prepare-commit-msg</code>)</summary>
@@ -488,7 +466,7 @@ tox -q -p auto
 ## Config Files (Map)
 
 * Lint: `config/ruff.toml`
-* Types: `config/mypy.ini`, `config/pyrightconfig.json`
+* Types: `config/mypy.ini`
 * Coverage: `config/coveragerc.ini`
 * Mutation: `config/cosmic-ray.toml`
 * Dictionary (codespell): `config/bijux.dic`

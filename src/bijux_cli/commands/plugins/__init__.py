@@ -38,7 +38,7 @@ from bijux_cli.commands.plugins.uninstall import uninstall_plugin
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-plugins_app = typer.Typer(  # pytype: skip-file
+plugins_app = typer.Typer(
     name="plugins",
     help="Manage Bijux CLI plugins",
     rich_markup_mode=None,

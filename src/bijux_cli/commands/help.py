@@ -228,7 +228,7 @@ def _build_help_payload(
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
-help_app = typer.Typer(  # pytype: skip-file
+help_app = typer.Typer(
     name="help",
     add_completion=False,
     help="Show help for any CLI command or subcommand.",
