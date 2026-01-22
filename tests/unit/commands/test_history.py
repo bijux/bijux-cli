@@ -28,7 +28,7 @@ def mock_flags() -> dict[str, Any]:
         "verbose": False,
         "fmt": "json",
         "pretty": True,
-        "debug": False,
+        "log_level": "info",
     }
 
 
@@ -692,8 +692,8 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
 
 
 def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None:
-    """Test that the debug flag correctly overrides other flags."""
-    flags = {**mock_flags, "debug": True}
+    """Test that log_level=debug overrides other flags."""
+    flags = {**mock_flags, "log_level": "debug"}
     with (
         patch(
             "bijux_cli.cli.commands.history.clear.validate_common_flags",
@@ -775,7 +775,7 @@ def test_history_list_positive_limit_and_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
         builder = new_run.call_args.kwargs["payload_builder"]
         assert builder(False)["entries"] == entries[-2:]
@@ -807,7 +807,7 @@ def test_history_list_positive_limit_and_failure(
                 verbose=False,
                 fmt="json",
                 pretty=False,
-                debug=False,
+                log_level="info",
             )
         err.assert_called_once_with(
             "Failed to list history: nope",
@@ -852,7 +852,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     write_text.assert_called()
@@ -866,7 +866,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
 
 
 def test_history_debug_flag_overrides() -> None:
-    """Test that debug=True forces verbose=True and pretty=True."""
+    """Test that log_level="debug" forces verbose=True and pretty=True."""
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags"
@@ -893,7 +893,7 @@ def test_history_debug_flag_overrides() -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=True,
+            log_level="debug",
         )
 
         mock_validate.assert_called_once_with(
@@ -903,7 +903,7 @@ def test_history_debug_flag_overrides() -> None:
         _, kwargs = mock_new_run.call_args
         assert kwargs["verbose"] is True
         assert kwargs["pretty"] is True
-        assert kwargs["debug"] is True
+        assert kwargs["log_level"] == "debug"
 
 
 def test_history_invoked_subcommand_skips() -> None:
@@ -925,7 +925,7 @@ def test_history_invoked_subcommand_skips() -> None:
             False,
             "json",
             True,
-            False,
+            "info",
         )
         mock_new_run.assert_not_called()
 
@@ -965,7 +965,7 @@ def test_history_list_failure() -> None:
                 False,
                 "json",
                 True,
-                False,
+                "info",
             )
 
         mock_emit.assert_called_once_with(
@@ -1022,7 +1022,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     svc.clear.assert_called_once()
@@ -1070,7 +1070,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     first_kwargs = new_run.call_args_list[0].kwargs
@@ -1113,7 +1113,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     write_text.assert_called_once()
@@ -1155,7 +1155,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     write_text.assert_called_once()
@@ -1196,7 +1196,7 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     last_kwargs = new_run.call_args_list[-1].kwargs
@@ -1236,7 +1236,7 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     builder = new_run.call_args.kwargs["payload_builder"]
@@ -1292,7 +1292,7 @@ def test_history_positive_limit_branch_and_payload_builder(
         verbose=False,
         fmt="json",
         pretty=False,
-        debug=False,
+        log_level="info",
     )
 
     assert "payload_builder" in captured

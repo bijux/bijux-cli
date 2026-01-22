@@ -44,14 +44,11 @@ import typer
 
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
+from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
-from bijux_cli.core.precedence import (
-    EffectiveConfig,
-    parse_global_flags,
-    resolve_effective_config,
-)
+from bijux_cli.core.precedence import EffectiveConfig, resolve_effective_config
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -299,23 +296,19 @@ def check_missing_format_argument(args: list[str]) -> str | None:
     return None
 
 
-def setup_structlog(debug: bool = False, log_level: str | None = None) -> None:
+def setup_structlog(log_level: str | None = None) -> None:
     """Configures `structlog` for the application.
 
     Args:
-        debug (bool): If True, configures human-readable console output at the
-            DEBUG level. If False, configures JSON output at the CRITICAL level.
         log_level (str | None): Optional explicit log level override.
     """
-    if debug:
-        level = logging.DEBUG
-    elif log_level:
+    if log_level:
         level = getattr(logging, log_level.upper(), logging.CRITICAL)
     else:
         level = logging.CRITICAL
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
-    use_console = debug or os.environ.get("BIJUXCLI_TEST_MODE") == "1"
+    use_console = (log_level == "debug") or os.environ.get("BIJUXCLI_TEST_MODE") == "1"
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -358,12 +351,11 @@ def main() -> int:
     flags, _ = parse_global_flags(args, _bail)
     resolved = resolve_effective_config(
         cli=flags,
-        env={"debug": os.environ.get("BIJUXCLI_DEBUG") == "1"},
+        env={"log_level": os.environ.get("BIJUXCLI_LOG_LEVEL")},
         file={},
         defaults={
             "quiet": False,
             "verbose": False,
-            "debug": False,
             "pretty": True,
             "log_level": "info",
             "color": "auto",
@@ -375,14 +367,15 @@ def main() -> int:
     if resolved.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
+    debug_enabled = resolved.log_level == "debug"
     logging_config = LoggingConfig(
-        debug=resolved.debug,
+        debug=debug_enabled,
         quiet=resolved.quiet,
         verbose=resolved.verbose_level > 0,
         log_level=resolved.log_level,
         color=resolved.color,
     )
-    setup_structlog(resolved.debug, resolved.log_level)
+    setup_structlog(resolved.log_level)
     disable_cli_colors_for_test()
 
     if any(a in ("--version", "-V") for a in args):

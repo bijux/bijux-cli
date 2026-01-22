@@ -42,8 +42,8 @@ GLOBAL_FLAGS_MATRIX: list[tuple[list[str], int]] = [
     (["-f", "JSON"], 0),
     (["--pretty"], 0),
     (["--no-pretty"], 0),
-    (["-d"], 0),
-    (["--debug"], 0),
+    ([], 0),
+    (["--log-level", "debug"], 0),
 ]
 
 FUZZABLE_FLAGS = [
@@ -56,8 +56,8 @@ FUZZABLE_FLAGS = [
     "--format",
     "--pretty",
     "--no-pretty",
-    "-d",
-    "--debug",
+    "--log-level",
+    "debug",
 ]
 
 
@@ -211,12 +211,14 @@ def test_docs_flag_precedence(tmp_path: Path) -> None:
     """Quiet wins over other noisy flags; debug forces pretty."""
     out_file = tmp_path / "spec.json"
 
-    res = run_cli(["docs", "--out", str(out_file), "--quiet", "--debug"])
+    res = run_cli(["docs", "--out", str(out_file), "--quiet", "--log-level", "debug"])
     assert res.returncode == 0
     assert not res.stdout.strip()
     assert not res.stderr.strip()
 
-    res2 = run_cli(["docs", "--out", str(out_file), "--debug", "--no-pretty"])
+    res2 = run_cli(
+        ["docs", "--out", str(out_file), "--log-level", "debug", "--no-pretty"]
+    )
     assert res2.returncode == 0
     assert len(out_file.read_text().splitlines()) > 1
 

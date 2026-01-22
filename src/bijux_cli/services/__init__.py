@@ -18,17 +18,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from bijux_cli.core.contracts import (
-    ContextProtocol,
-    EmitterProtocol,
-    ObservabilityProtocol,
-    ProcessPoolProtocol,
-    RegistryProtocol,
-    RetryPolicyProtocol,
-    SerializerProtocol,
-    TelemetryProtocol,
+    Emitter,
+    ExecutionContext,
+    ProcessRunner,
+    RetryPolicy,
+    Serializer,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services.config.contracts import ConfigProtocol
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import (
     AuditProtocol,
     DiagnosticsConfig,
@@ -94,7 +93,7 @@ def register_default_services(
 
     noop_telemetry = bijux_cli.infra.telemetry.NoopTelemetry()
     obs_service = bijux_cli.services.logging.observability.Observability(
-        debug=logging_config.debug,
+        log_level=logging_config.log_level,
         telemetry=noop_telemetry,
     )
 
@@ -129,9 +128,7 @@ def register_default_services(
             quiet=logging_config.quiet,
         ),
     )
-    di.register(
-        EmitterProtocol, lambda: di.resolve(bijux_cli.infra.emitter.ConsoleEmitter)
-    )
+    di.register(Emitter, lambda: di.resolve(bijux_cli.infra.emitter.ConsoleEmitter))
 
     di.register(
         bijux_cli.infra.serializer.OrjsonSerializer,
@@ -146,7 +143,7 @@ def register_default_services(
         ),
     )
     di.register(
-        SerializerProtocol,
+        Serializer,
         lambda: (
             di.resolve(bijux_cli.infra.serializer.OrjsonSerializer)
             if output_format is OutputFormat.JSON
@@ -163,9 +160,7 @@ def register_default_services(
             telemetry=di.resolve(TelemetryProtocol),
         ),
     )
-    di.register(
-        ProcessPoolProtocol, lambda: di.resolve(bijux_cli.infra.process.ProcessPool)
-    )
+    di.register(ProcessRunner, lambda: di.resolve(bijux_cli.infra.process.ProcessPool))
 
     di.register(
         bijux_cli.infra.retry.TimeoutRetryPolicy,
@@ -180,9 +175,9 @@ def register_default_services(
         ),
     )
     di.register(
-        RetryPolicyProtocol,
+        RetryPolicy,
         lambda: cast(
-            RetryPolicyProtocol,
+            RetryPolicy,
             di.resolve(bijux_cli.infra.retry.TimeoutRetryPolicy),
         ),
     )
@@ -193,7 +188,7 @@ def register_default_services(
         bijux_cli.app.context.Context,
         lambda: bijux_cli.app.context.Context(di),
     )
-    di.register(ContextProtocol, lambda: di.resolve(bijux_cli.app.context.Context))
+    di.register(ExecutionContext, lambda: di.resolve(bijux_cli.app.context.Context))
 
     di.register(
         bijux_cli.services.config.Config,
@@ -241,7 +236,7 @@ def register_default_services(
             observability=di.resolve(
                 bijux_cli.services.logging.observability.Observability
             ),
-            serializer=di.resolve(SerializerProtocol),
+            serializer=di.resolve(Serializer),
             telemetry=di.resolve(TelemetryProtocol),
         ),
     )

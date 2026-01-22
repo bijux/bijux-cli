@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from bijux_cli.core.contracts import TelemetryProtocol
+from bijux_cli.services.contracts import TelemetryProtocol
 from bijux_cli.services.history import (
     _MAX_IN_MEMORY,
     _TRIM_THRESHOLD,

@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.infra.serializer import (
     OrjsonSerializer,
@@ -18,6 +17,7 @@ from bijux_cli.infra.serializer import (
     SerializationError,
     serializer_for,
 )
+from bijux_cli.services.contracts import TelemetryProtocol
 
 
 def test_orjson_serializer_json_roundtrip() -> None:

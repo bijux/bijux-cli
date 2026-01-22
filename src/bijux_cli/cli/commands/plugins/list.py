@@ -33,9 +33,9 @@ from bijux_cli.cli.commands.utilities import (
 from bijux_cli.cli.commands.utilities import (
     validate_common_flags as validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -48,7 +48,7 @@ def list_plugin(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Lists all installed CLI plugins.
 
@@ -62,7 +62,7 @@ def list_plugin(
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The requested logging level.
 
     Returns:
         None:
@@ -78,7 +78,7 @@ def list_plugin(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
@@ -89,7 +89,7 @@ def list_plugin(
         effective.fmt,
         effective.quiet,
         effective.verbose_level > 0,
-        effective.debug,
+        (effective.log_level == "debug"),
     )
     handle_list_plugins(
         command,
@@ -97,5 +97,5 @@ def list_plugin(
         effective.verbose_level > 0,
         effective.fmt,
         effective.pretty,
-        effective.debug,
+        effective.log_level,
     )

@@ -27,11 +27,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from bijux_cli.app.di import DIContainer
 
-from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.precedence import resolve_output_flags
 from bijux_cli.plugins import get_plugins_dir, load_plugin
+from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -43,7 +43,6 @@ class Engine:
 
     Attributes:
         _di (DIContainer): The dependency injection container.
-        _debug (bool): The debug mode flag.
         _format (OutputFormat): The default output format.
         _quiet (bool): The quiet mode flag.
         _registry (RegistryProtocol): The plugin registry service.
@@ -53,7 +52,7 @@ class Engine:
         self,
         di: Any = None,
         *,
-        debug: bool = False,
+        log_level: str = "info",
         fmt: OutputFormat = OutputFormat.JSON,
         quiet: bool = False,
         logging_config: LoggingConfig | None = None,
@@ -66,7 +65,7 @@ class Engine:
         Args:
             di (Any, optional): An existing dependency injection container. If
                 None, the global singleton instance is used. Defaults to None.
-            debug (bool): If True, enables debug mode for services.
+            log_level (str): The default log level name for services.
             fmt (OutputFormat): The default output format for services.
             quiet (bool): If True, suppresses output from services.
             logging_config (LoggingConfig | None): Optional logging configuration
@@ -75,20 +74,18 @@ class Engine:
         from bijux_cli.app.di import DIContainer
 
         self._di = di or DIContainer.current()
-        self._debug = debug
         self._format = fmt
         self._quiet = quiet
         if logging_config is None:
             resolved = resolve_output_flags(
                 quiet=quiet,
                 verbose=False,
-                debug=debug,
                 pretty=True,
-                log_level="info",
+                log_level=log_level,
                 color="auto",
             )
             logging_config = LoggingConfig(
-                debug=debug,
+                debug=(resolved["log_level"] == "debug"),
                 quiet=quiet,
                 verbose=False,
                 log_level=resolved["log_level"],

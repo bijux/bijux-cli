@@ -78,7 +78,7 @@ CASES: list[SuggestCase] = [
     SuggestCase("config;;set", any_of=("set", "Did you mean", "No such command")),
     SuggestCase("--f", any_of=("No such command", "Did you mean")),
     SuggestCase("--for", any_of=("format", "Did you mean", "No such command")),
-    SuggestCase("-d", any_of=(), must_not=("traceback",)),
+    SuggestCase(".", any_of=(), must_not=("traceback",)),
     SuggestCase("nonsense_command", any_of=("No such command", "Did you mean")),
     SuggestCase("konfig", any_of=("No such command", "Did you mean")),
     SuggestCase("cnofgi srt foo=bar", any_of=("No such command", "Did you mean")),

@@ -92,23 +92,25 @@ def test_register_default_services_100pct(
     ):
         import bijux_cli.app.context as core_context
         from bijux_cli.core.contracts import (
-            ContextProtocol,
-            EmitterProtocol,
-            ObservabilityProtocol,
-            ProcessPoolProtocol,
-            RegistryProtocol,
-            RetryPolicyProtocol,
-            SerializerProtocol,
-            TelemetryProtocol,
+            Emitter,
+            ExecutionContext,
+            ProcessRunner,
+            RetryPolicy,
+            Serializer,
         )
         import bijux_cli.infra.emitter as infra_emitter
         import bijux_cli.infra.process as infra_process
         import bijux_cli.infra.retry as infra_retry
         import bijux_cli.infra.serializer as infra_serializer
         import bijux_cli.infra.telemetry as infra_tel
+        from bijux_cli.plugins.contracts import RegistryProtocol
         import bijux_cli.plugins.registry as svc_registry
         import bijux_cli.services.config as svc_config
         from bijux_cli.services.config.contracts import ConfigProtocol
+        from bijux_cli.services.contracts import (
+            ObservabilityProtocol,
+            TelemetryProtocol,
+        )
         import bijux_cli.services.diagnostics.audit as svc_audit
         from bijux_cli.services.diagnostics.contracts import (
             AuditProtocol,
@@ -139,7 +141,7 @@ def test_register_default_services_100pct(
         )
 
         mock_obs_init.assert_called_once()
-        assert mock_obs_init.call_args.kwargs["debug"] == logging_config.debug
+        assert mock_obs_init.call_args.kwargs["log_level"] == logging_config.log_level
         assert isinstance(
             mock_obs_init.call_args.kwargs["telemetry"], infra_tel.NoopTelemetry
         )
@@ -154,7 +156,7 @@ def test_register_default_services_100pct(
         assert isinstance(di.resolve(PluginConfig), PluginConfig)
         assert isinstance(di.resolve(DiagnosticsConfig), DiagnosticsConfig)
 
-        emitter_inst = di.resolve(EmitterProtocol)
+        emitter_inst = di.resolve(Emitter)
         mock_emitter_init.assert_called_once()
         assert mock_emitter_init.call_args.kwargs == {
             "telemetry": tel_inst,
@@ -163,7 +165,7 @@ def test_register_default_services_100pct(
             "quiet": logging_config.quiet,
         }
 
-        serializer_inst = di.resolve(SerializerProtocol)
+        serializer_inst = di.resolve(Serializer)
         if output_format is OutputFormat.JSON:
             assert isinstance(serializer_inst, infra_serializer.OrjsonSerializer)
             mock_orjson_init.assert_called_once()
@@ -173,14 +175,14 @@ def test_register_default_services_100pct(
             mock_yaml_init.assert_called_once()
             assert mock_yaml_init.call_args.kwargs == {"telemetry": tel_inst}
 
-        proc_inst = di.resolve(ProcessPoolProtocol)
+        proc_inst = di.resolve(ProcessRunner)
         mock_process_init.assert_called_once()
         assert mock_process_init.call_args.kwargs == {
             "observability": obs_inst,
             "telemetry": tel_inst,
         }
 
-        retry_inst = di.resolve(RetryPolicyProtocol)
+        retry_inst = di.resolve(RetryPolicy)
         mock_timeout_init.assert_called_once()
         assert mock_timeout_init.call_args.kwargs == {"telemetry": tel_inst}
         exp_inst = di.resolve(infra_retry.ExponentialBackoffRetryPolicy)
@@ -189,7 +191,7 @@ def test_register_default_services_100pct(
         assert isinstance(retry_inst, infra_retry.TimeoutRetryPolicy)
         assert isinstance(exp_inst, infra_retry.ExponentialBackoffRetryPolicy)
 
-        ctx_inst = di.resolve(ContextProtocol)
+        ctx_inst = di.resolve(ExecutionContext)
         mock_context_init.assert_called_once_with(di)
         cfg_inst = di.resolve(ConfigProtocol)
         mock_config_init.assert_called_once_with(di)

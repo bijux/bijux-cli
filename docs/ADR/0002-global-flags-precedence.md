@@ -8,7 +8,7 @@
 
 ## Context
 
-Our Bijux CLI requires a deterministic and testable handling of global flags (`--help`, `--quiet`, `--debug`, `--format`, `--pretty`/`--no-pretty`, `--verbose`) across all commands to ensure consistency. This prevents ambiguous behaviors in hypothesis-driven fuzz tests, provides a clear "short-circuit" model for scripting and human users, and maintains synchronization between documentation, ADRs, and implementations. Without a formal contract, variations in flag-resolution rules could lead to edge cases and debugging challenges.
+Our Bijux CLI requires a deterministic and testable handling of global flags (`--help`, `--quiet`, `--log-level debug`, `--format`, `--pretty`/`--no-pretty`, `--verbose`) across all commands to ensure consistency. This prevents ambiguous behaviors in hypothesis-driven fuzz tests, provides a clear "short-circuit" model for scripting and human users, and maintains synchronization between documentation, ADRs, and implementations. Without a formal contract, variations in flag-resolution rules could lead to edge cases and debugging challenges.
 
 ## Decision
 
@@ -25,7 +25,7 @@ All Bijux CLI commands must enforce global flags in the following strict precede
    * Still performs full validation of flags and arguments, exiting with 0 on success or non-zero on errors.
    * Overrides **debug**, **format**, **pretty/no-pretty**, and **verbose** for output suppression, but not for exit codes.
 
-3. **Debug** (`--debug`)
+3. **Debug** (`--log-level debug`)
    * Applies only if neither **help** nor **quiet** is present.
    * Emits diagnostics and full trace information to stderr.
    * Implicitly enables **verbose** output (e.g., runtime metadata).

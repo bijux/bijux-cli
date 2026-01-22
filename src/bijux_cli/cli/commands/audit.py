@@ -31,6 +31,7 @@ import platform
 
 import typer
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
@@ -43,15 +44,14 @@ from bijux_cli.cli.commands.utilities import (
 from bijux_cli.cli.commands.utilities import (
     validate_common_flags as validate_common_flags,
 )
-from bijux_cli.core.async_exec import AsyncTyper
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.contracts import EmitterProtocol
+from bijux_cli.core.contracts import Emitter
 from bijux_cli.core.enums import OutputFormat
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -99,7 +99,7 @@ def _build_payload(include_runtime: bool, dry_run: bool) -> Mapping[str, object]
 def _write_output_file(
     output_path: Path,
     payload: Mapping[str, object],
-    emitter: EmitterProtocol,
+    emitter: Emitter,
     fmt: OutputFormat,
     pretty: bool,
     debug: bool,
@@ -113,7 +113,7 @@ def _write_output_file(
     Args:
         output_path (Path): The file path where the payload will be written.
         payload (Mapping[str, object]): The data to serialize and write.
-        emitter (EmitterProtocol): The service responsible for serialization and
+        emitter (Emitter): The service responsible for serialization and
             output.
         fmt (OutputFormat): The desired output format (JSON or YAML).
         pretty (bool): If True, the output is formatted for human readability.
@@ -148,7 +148,7 @@ def audit(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux audit` command.
 
@@ -193,7 +193,7 @@ def audit(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
@@ -241,7 +241,7 @@ def audit(
         )
 
     try:
-        emitter = DIContainer.current().resolve(EmitterProtocol)
+        emitter = DIContainer.current().resolve(Emitter)
         payload = _build_payload(include_runtime, dry_run)
 
         if output is not None:
@@ -251,7 +251,7 @@ def audit(
                 emitter=emitter,
                 fmt=out_format,
                 pretty=effective_pretty,
-                debug=effective.debug,
+                debug=(effective.log_level == "debug"),
                 dry_run=dry_run,
             )
             payload = {"status": "written", "file": str(output)}
@@ -268,7 +268,7 @@ def audit(
             verbose=include_runtime,
             fmt=fmt_lower,
             pretty=effective_pretty,
-            debug=effective.debug,
+            log_level=effective.log_level,
         )
 
     except ValueError as exc:

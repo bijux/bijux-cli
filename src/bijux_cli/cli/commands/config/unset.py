@@ -32,9 +32,9 @@ from bijux_cli.cli.commands.utilities import (
     parse_global_flags,
     resolve_command_config,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -49,7 +49,7 @@ def unset_config(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Removes a key from the active configuration store.
 
@@ -80,13 +80,13 @@ def unset_config(
         command=command,
         quiet=flags["quiet"],
         verbose=flags["verbose"],
-        debug=flags["debug"],
+        log_level=flags["log_level"],
         fmt=flags["format"],
         pretty=flags["pretty"],
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.debug
+    debug = effective.log_level == "debug"
     pretty = effective.pretty
     include_runtime = effective.include_runtime
 
@@ -140,5 +140,5 @@ def unset_config(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
-        debug=debug,
+        log_level=log_level,
     )

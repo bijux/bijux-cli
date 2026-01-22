@@ -32,6 +32,7 @@ import platform
 import typer
 import typer.core
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.cli.commands.utilities import (
     contains_non_ascii_env,
     effective_defaults,
@@ -40,10 +41,9 @@ from bijux_cli.cli.commands.utilities import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.async_exec import AsyncTyper
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -151,7 +151,7 @@ def docs(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux docs` command.
 
@@ -185,7 +185,7 @@ def docs(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -195,7 +195,7 @@ def docs(
     )
     quiet = resolved.quiet
     verbose = resolved.verbose_level > 0
-    debug = resolved.debug
+    debug = resolved.log_level == "debug"
     effective_include_runtime = resolved.include_runtime
     effective_pretty = resolved.pretty
     fmt_lower = normalize_format(resolved.fmt) or "json"

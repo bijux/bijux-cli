@@ -13,8 +13,8 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.infra.process import ProcessPool
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 
 class FakeExecutor:

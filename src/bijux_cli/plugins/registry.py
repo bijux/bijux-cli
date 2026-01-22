@@ -27,12 +27,9 @@ from packaging.version import Version as PkgVersion
 import pluggy
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    RegistryProtocol,
-    TelemetryProtocol,
-)
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 PRE_EXECUTE = "pre_execute"
 POST_EXECUTE = "post_execute"

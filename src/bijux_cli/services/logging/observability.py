@@ -18,8 +18,8 @@ from injector import inject
 import structlog
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.core.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 
 class Observability(ObservabilityProtocol):
@@ -35,16 +35,18 @@ class Observability(ObservabilityProtocol):
     """
 
     @inject
-    def __init__(self, *, debug: bool = False, telemetry: TelemetryProtocol) -> None:
+    def __init__(
+        self, *, log_level: str = "info", telemetry: TelemetryProtocol
+    ) -> None:
         """Initializes the observability service.
 
         Args:
-            debug (bool): If True, configures the service for debug-level
-                logging.
+            log_level (str): The log level used for this instance.
             telemetry (TelemetryProtocol): The telemetry sink used for events.
         """
         self._logger: FilteringBoundLogger = structlog.get_logger("bijux_cli")
         self._telemetry = telemetry
+        _ = log_level
 
     def set_telemetry(self, telemetry: TelemetryProtocol) -> Self:
         """Attaches a telemetry backend for forwarding log events.
@@ -62,17 +64,17 @@ class Observability(ObservabilityProtocol):
         return self
 
     @classmethod
-    def setup(cls, *, debug: bool = False, telemetry: TelemetryProtocol) -> Self:
+    def setup(cls, *, log_level: str = "info", telemetry: TelemetryProtocol) -> Self:
         """Instantiates and configures an `Observability` service.
 
         Args:
-            debug (bool): If True, enables debug-level logging.
+            log_level (str): The configured log level.
             telemetry (TelemetryProtocol): The telemetry sink for events.
 
         Returns:
             Self: A new, configured `Observability` instance.
         """
-        return cls(debug=debug, telemetry=telemetry)
+        return cls(log_level=log_level, telemetry=telemetry)
 
     def get_logger(self) -> FilteringBoundLogger:
         """Retrieves the underlying `structlog` logger instance.

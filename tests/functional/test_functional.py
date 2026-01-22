@@ -248,8 +248,8 @@ def test_root_verbose() -> None:
 
 
 def test_root_debug() -> None:
-    """Test that --debug provides debug output."""
-    r = cli("version", "--debug")
+    """Test that --log-level debug provides debug output."""
+    r = cli("version", "--log-level", "debug")
     assert ("debug" in r.stdout.lower()) or ("debug" in r.stderr.lower())
 
 
@@ -1443,7 +1443,7 @@ def test_version_invalid_format() -> None:
 
 def test_version_debug() -> None:
     """Test the version command with debug output."""
-    r = cli("version", "--debug")
+    r = cli("version", "--log-level", "debug")
     assert ("debug" in r.stdout.lower()) or ("debug" in r.stderr.lower())
 
 
@@ -1623,7 +1623,7 @@ def test_verbose_error() -> None:
 
 def test_debug_with_success() -> None:
     """Test that the debug flag works with a successful command."""
-    r = cli("version", "--debug")
+    r = cli("version", "--log-level", "debug")
     assert r.returncode in (0, -signal.SIGTERM)
 
 

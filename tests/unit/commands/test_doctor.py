@@ -89,7 +89,7 @@ def test_doctor_short_circuits_if_subcommand_set() -> None:
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = "anything"
     result = doctor(
-        ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False
+        ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
     )
     assert result is None
 
@@ -120,19 +120,24 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
             doctor(
-                ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False
+                ctx,
+                quiet=False,
+                verbose=False,
+                fmt="json",
+                pretty=True,
+                log_level="info",
             )
 
-        mock_emit.assert_called_once_with(
-            "boom",
-            code=1,
-            failure="internal",
-            command="doctor",
-            fmt="json",
-            quiet=False,
-            include_runtime=False,
-            debug=False,
-        )
+    mock_emit.assert_called_once_with(
+        "boom",
+        code=1,
+        failure="internal",
+        command="doctor",
+        fmt="json",
+        quiet=False,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,7 +163,9 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx.args = []
 
     with patch("bijux_cli.cli.commands.doctor.new_run_command") as mock_new:
-        doctor(ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, debug=True)
+        doctor(
+            ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, log_level="debug"
+        )
 
     mock_new.assert_called_once()
     kw = mock_new.call_args.kwargs
@@ -183,7 +190,9 @@ def test_doctor_stray_option_calls_emit_and_exits(mock_emit: MagicMock) -> None:
     ctx.args = ["-x"]
 
     with pytest.raises(SystemExit):
-        doctor(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        doctor(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
 
     mock_emit.assert_called_once_with(
         "No such option: -x",
@@ -208,7 +217,9 @@ def test_doctor_stray_argument_calls_emit_and_exits(mock_emit: MagicMock) -> Non
     ctx.args = ["foo"]
 
     with pytest.raises(SystemExit):
-        doctor(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        doctor(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
 
     mock_emit.assert_called_once_with(
         "Too many arguments: foo",

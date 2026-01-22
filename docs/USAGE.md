@@ -125,10 +125,10 @@ Flags are evaluated in strict order; higher priority short-circuits lower ones.
 | -------: | ------------------------------- | ------------------------------------------------------------ |
 |        1 | `-h`, `--help`                  | Exit 0 with usage; ignore all other flags.                   |
 |        2 | `-q`, `--quiet`                 | Suppress stdout/stderr; exit code still reflects result.     |
-|        3 | `-d`, `--debug`                 | Full diagnostics; implies `--verbose` and forces `--pretty`. |
+|        3 | `--log-level debug`            | Full diagnostics; implies `--verbose` and forces `--pretty`. |
 |        4 | `-f`, `--format` `<json\|yaml>` | Structured output; invalid value → exit code 2.              |
 |        5 | `--pretty` / `--no-pretty`      | Indentation control (default: `--pretty`).                   |
-|        6 | `-v`, `--verbose`               | Include runtime metadata; implied by `--debug`.              |
+|        6 | `-v`, `--verbose`               | Include runtime metadata; implied by `--log-level debug`.     |
 
 Details: ADR-0002 (Global Flags Precedence) — [https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
 
@@ -281,7 +281,7 @@ Plugins appear as additional top-level commands after install.
 * Diagnostics pipeline:
 
   ```bash
-  bijux doctor --debug > diag.log
+  bijux doctor --log-level debug > diag.log
   bijux status -d >> diag.log
   ```
 
@@ -450,7 +450,7 @@ Commands may define additional non-conflicting codes.
 ## Troubleshooting & FAQs
 
 * Start with `bijux doctor`.
-* Need more detail? Use `--verbose` or `--debug` (adds pretty printing and diagnostics).
+* Need more detail? Use `--verbose` or `--log-level debug` (adds pretty printing and diagnostics).
 * Scripting? Prefer `-f json --no-pretty` and read from **stdout**; errors go to **stderr**.
 * Completion not working? Re-run `--install-completion` and restart the shell; ensure Zsh `compinit` and `fpath` are correct.
 * Permission denied? Ensure paths are writable; avoid `sudo` unless absolutely required.
@@ -459,6 +459,6 @@ Commands may define additional non-conflicting codes.
   * `no_template`: pass a real `--template` (path or Git URL) to `plugins scaffold`.
   * `not_found` / `not_installed`: confirm plugin name; check `bijux plugins list`.
   * Use `bijux plugins check <name>` after installing.
-* Bug reports: include `--debug` output, version (`bijux --version`), OS, and repro steps.
+* Bug reports: include `--log-level debug` output, version (`bijux --version`), OS, and repro steps.
 
 [Back to top](#top)

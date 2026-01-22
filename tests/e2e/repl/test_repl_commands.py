@@ -232,11 +232,23 @@ def test_e2e_repl_command_chaining(
 
 FLAG_COMBINATIONS: list[tuple[str, str | None, str | None, int, str]] = [
     ("version -q\nexit\n", None, None, 0, "quiet: suppress output"),
-    ("version -d\nexit\n", "version", None, 0, "debug: should print version"),
+    (
+        "version --log-level debug\nexit\n",
+        "version",
+        None,
+        0,
+        "debug: should print version",
+    ),
     ("version -f json\nexit\n", "version", None, 0, "json output"),
     ("version -f yaml\nexit\n", "version", None, 0, "yaml output"),
     ("config set f=1 -q\nexit\n", None, None, 0, "config set quiet, no output"),
-    ("config set f=1 -d\nexit\n", "status", "updated", 0, "config set debug output"),
+    (
+        "config set f=1 --log-level debug\nexit\n",
+        "status",
+        "updated",
+        0,
+        "config set debug output",
+    ),
     (
         "config set f=1 -f yaml\nexit\n",
         "status",
@@ -266,7 +278,7 @@ FLAG_COMBINATIONS: list[tuple[str, str | None, str | None, int, str]] = [
         "get present key, json",
     ),
     (
-        "config set f=42\nconfig get f -d\nexit\n",
+        "config set f=42\nconfig get f --log-level debug\nexit\n",
         "value",
         "42",
         0,
@@ -287,14 +299,14 @@ FLAG_COMBINATIONS: list[tuple[str, str | None, str | None, int, str]] = [
         "get missing key, json",
     ),
     (
-        "config get missing_key -d\nexit\n",
+        "config get missing_key --log-level debug\nexit\n",
         "error",
         "not found",
         0,
         "get missing key, debug",
     ),
     ("status -q\nexit\n", None, None, 0, "status quiet"),
-    ("status -d\nexit\n", "status", None, 0, "status debug"),
+    ("status --log-level debug\nexit\n", "status", None, 0, "status debug"),
     ("status -f json\nexit\n", "status", None, 0, "status json"),
     ("status -f yaml\nexit\n", "status", None, 0, "status yaml"),
 ]

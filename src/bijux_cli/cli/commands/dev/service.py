@@ -36,9 +36,9 @@ from bijux_cli.cli.commands.utilities import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -52,7 +52,7 @@ def dev(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux dev` command group.
 
@@ -83,7 +83,7 @@ def dev(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -93,7 +93,6 @@ def dev(
     )
     quiet = resolved.quiet
     verbose = resolved.verbose_level > 0
-    debug = resolved.debug
     effective_include_runtime = resolved.include_runtime
     effective_pretty = resolved.pretty
     fmt_lower = normalize_format(resolved.fmt) or "json"
@@ -135,5 +134,5 @@ def dev(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=effective_pretty,
-        debug=debug,
+        log_level=log_level,
     )

@@ -161,8 +161,8 @@ def test_check_missing_format_argument() -> None:
 
 def test_setup_structlog_switching() -> None:
     """Test that structlog can be set up in both dev and prod modes."""
-    setup_structlog(False)
-    setup_structlog(True)
+    setup_structlog()
+    setup_structlog("debug")
     assert hasattr(structlog, "get_config")
 
 
@@ -370,10 +370,11 @@ def test_strip_format_help_only_pairs_v2() -> None:
     """Test stripping of adjacent format and help flags (v2)."""
     assert _strip_format_help(["a", "--format", "--help", "b"]) == ["a", "b"]
     assert _strip_format_help(["-f", "-h", "x"]) == ["x"]
-    assert _strip_format_help(["--format", "json", "--debug"]) == [
+    assert _strip_format_help(["--format", "json", "--log-level", "debug"]) == [
         "--format",
         "json",
-        "--debug",
+        "--log-level",
+        "debug",
     ]
 
 
@@ -406,8 +407,8 @@ def test_print_json_error_and_missing_format_v2(
 
 def test_setup_structlog_branches_v2() -> None:
     """Test both branches of structlog setup (v2)."""
-    setup_structlog(False)
-    setup_structlog(True)
+    setup_structlog()
+    setup_structlog("debug")
 
 
 def test_main_quiet_and_missing_format_v2(

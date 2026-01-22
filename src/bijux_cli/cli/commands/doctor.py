@@ -27,6 +27,7 @@ import platform
 
 import typer
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
@@ -36,16 +37,16 @@ from bijux_cli.cli.commands.utilities import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.async_exec import AsyncTyper
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+from bijux_cli.core.contracts import Emitter
 from bijux_cli.core.precedence import resolve_effective_config
+from bijux_cli.services.contracts import TelemetryProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -107,7 +108,7 @@ def doctor(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux doctor` command.
 
@@ -142,7 +143,7 @@ def doctor(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -152,7 +153,7 @@ def doctor(
     )
     quiet = resolved.quiet
     verbose = resolved.verbose_level > 0
-    debug = resolved.debug
+    debug = resolved.log_level == "debug"
     pretty = resolved.pretty
     include_runtime = resolved.include_runtime
     fmt_lower = normalize_format(resolved.fmt) or "json"
@@ -178,7 +179,7 @@ def doctor(
         )
 
     try:
-        DIContainer.current().resolve(EmitterProtocol)
+        DIContainer.current().resolve(Emitter)
         DIContainer.current().resolve(TelemetryProtocol)
     except Exception as exc:
         emit_error_and_exit(
@@ -199,5 +200,5 @@ def doctor(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
-        debug=debug,
+        log_level=log_level,
     )

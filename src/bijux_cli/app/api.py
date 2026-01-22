@@ -25,17 +25,14 @@ from pathlib import Path
 import sys
 from typing import Any, cast
 
+from bijux_cli.app.async_exec import run_awaitable, run_command
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
-from bijux_cli.core.async_exec import run_awaitable, run_command
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    RegistryProtocol,
-    TelemetryProtocol,
-)
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
 from bijux_cli.core.precedence import resolve_effective_config
+from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 IGNORE = {"PS1", "LS_COLORS", "PROMPT_COMMAND", "GIT_PS1_FORMAT"}
 
@@ -66,18 +63,18 @@ class BijuxAPI:
         _tel (TelemetryProtocol): The telemetry service.
     """
 
-    def __init__(self, *, debug: bool = False) -> None:
+    def __init__(self, *, log_level: str = "info") -> None:
         """Initializes the `BijuxAPI` and the underlying CLI engine.
 
         Args:
-            debug (bool): If True, enables debug mode for all underlying
-                services. Defaults to False.
+            log_level (str): The default log level name for all underlying
+                services.
         """
         DIContainer.reset()
         self._di = DIContainer.current()
         self._engine = Engine(
             self._di,
-            debug=debug,
+            log_level=log_level,
             fmt=OutputFormat.JSON,
         )
         self._registry: RegistryProtocol = self._di.resolve(RegistryProtocol)

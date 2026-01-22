@@ -15,10 +15,11 @@ import typer
 
 from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.status as mod
-from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+from bijux_cli.core.contracts import Emitter
+from bijux_cli.services.contracts import TelemetryProtocol
 
 
-class FakeEmitter(EmitterProtocol):
+class FakeEmitter(Emitter):
     """Fake emitter."""
 
     def __init__(self, raise_on_stop: bool = False) -> None:
@@ -94,14 +95,14 @@ class FakeTelemetry(TelemetryProtocol):
 class FakeDI:
     """A fake Dependency Injection container for testing."""
 
-    def __init__(self, emitter: EmitterProtocol, telemetry: TelemetryProtocol) -> None:
+    def __init__(self, emitter: Emitter, telemetry: TelemetryProtocol) -> None:
         """Initialize the fake DI container with specific fakes."""
         self._e = emitter
         self._t = telemetry
 
-    def resolve(self, key: Any) -> EmitterProtocol | TelemetryProtocol:
+    def resolve(self, key: Any) -> Emitter | TelemetryProtocol:
         """Resolve a dependency to its fake implementation."""
-        if key is EmitterProtocol:
+        if key is Emitter:
             return self._e
         if key is TelemetryProtocol:
             return self._t
@@ -161,7 +162,7 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
             fmt="yaml",
             quiet=False,
             verbose=False,
-            debug=False,
+            log_level="info",
             effective_pretty=True,
             include_runtime=False,
             telemetry=tel,
@@ -192,7 +193,7 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
             fmt="json",
             quiet=False,
             verbose=True,
-            debug=False,
+            log_level="info",
             effective_pretty=True,
             include_runtime=True,
             telemetry=tel,
@@ -222,7 +223,7 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
             fmt="json",
             quiet=False,
             verbose=False,
-            debug=False,
+            log_level="info",
             effective_pretty=True,
             include_runtime=False,
             telemetry=tel,
@@ -258,7 +259,7 @@ def test_status_returns_early_on_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
         verbose=False,
         fmt="json",
         pretty=True,
-        debug=False,
+        log_level="info",
     )
     assert called["new_run"] == 0
     assert called["watch"] == 0
@@ -291,7 +292,7 @@ def test_status_calls_new_run_command_when_not_watching(
         verbose=True,
         fmt="JSON",
         pretty=False,
-        debug=False,
+        log_level="info",
     )
     assert seen["command_name"] == "status"
     assert seen["quiet"] is True
@@ -332,7 +333,7 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert e1.value.code == 2
 
@@ -344,7 +345,7 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert e2.value.code == 2
 
@@ -376,14 +377,14 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
         verbose=False,
         fmt="JSON",
         pretty=True,
-        debug=True,
+        log_level="debug",
     )
     assert seen["command"] == "status"
     assert seen["watch_interval"] == pytest.approx(0.5)
     assert seen["fmt"] == "json"
     assert seen["quiet"] is True
     assert seen["verbose"] is False
-    assert seen["debug"] is True
+    assert seen["log_level"] == "debug"
     assert seen["effective_pretty"] is True
     assert seen["telemetry"] is tel
     assert seen["emitter"] is em
@@ -406,7 +407,7 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
         fmt="json",
         quiet=True,
         verbose=False,
-        debug=False,
+        log_level="info",
         effective_pretty=True,
         include_runtime=False,
         telemetry=tel,
@@ -435,7 +436,7 @@ def test_run_watch_mode_one_iteration_and_stop(
         fmt="json",
         quiet=False,
         verbose=True,
-        debug=True,
+        log_level="debug",
         effective_pretty=True,
         include_runtime=True,
         telemetry=tel,
@@ -495,7 +496,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         fmt="json",
         quiet=False,
         verbose=False,
-        debug=False,
+        log_level="info",
         effective_pretty=False,
         include_runtime=False,
         telemetry=tel,

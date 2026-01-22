@@ -35,7 +35,7 @@ def _fake_configure_emitter(monkeypatch: pytest.MonkeyPatch, emitter: Any) -> No
 
 
 class DummyEmitter:
-    """Test emitter: matches EmitterProtocol, keeps legacy `emitted`."""
+    """Test emitter: matches Emitter, keeps legacy `emitted`."""
 
     def __init__(self) -> None:
         self._records: list[dict[str, Any]] = []
@@ -378,7 +378,9 @@ def test_debug_implies_pretty_and_verbose(monkeypatch: pytest.MonkeyPatch) -> No
         "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
     )
 
-    runner.invoke(audit_app, ["--dry-run", "--debug"], catch_exceptions=False)
+    runner.invoke(
+        audit_app, ["--dry-run", "--log-level", "debug"], catch_exceptions=False
+    )
     assert captured["verbose"] is True
     assert captured["pretty"] is True
 
@@ -562,7 +564,7 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     assert excinfo.value.code == 2

@@ -73,7 +73,7 @@ def test_plugin_scaffold_yaml_output(tmp_path: Path) -> None:
 
 
 def test_plugin_scaffold_debug(tmp_path: Path) -> None:
-    """Test the scaffold command with the --debug flag."""
+    """Test the scaffold command with the --log-level debug flag."""
     res = run_cli(
         [
             "plugins",
@@ -81,7 +81,8 @@ def test_plugin_scaffold_debug(tmp_path: Path) -> None:
             "dbg",
             "--output-dir",
             str(tmp_path),
-            "--debug",
+            "--log-level",
+            "debug",
             "--template",
             TEST_TEMPLATE,
         ]

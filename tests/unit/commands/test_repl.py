@@ -719,7 +719,9 @@ def test_main_returns_early_when_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
     ctx = Context(command=dummy_command)
     ctx.invoked_subcommand = "anything"
 
-    mod.main(ctx, quiet=False, verbose=False, fmt="human", pretty=True, debug=False)
+    mod.main(
+        ctx, quiet=False, verbose=False, fmt="human", pretty=True, log_level="info"
+    )
 
     assert "piped" not in flags
     assert "ran" not in flags
@@ -752,7 +754,9 @@ def test_main_interactive_path_calls_async_loop(
     ctx = Context(command=dummy_command)
     ctx.invoked_subcommand = None
 
-    mod.main(ctx, quiet=False, verbose=False, fmt="human", pretty=True, debug=False)
+    mod.main(
+        ctx, quiet=False, verbose=False, fmt="human", pretty=True, log_level="info"
+    )
 
 
 def test_invoke_history_empty_quiet_skips_pretty(
@@ -1014,7 +1018,7 @@ def test_main_guard_invokes_repl_app_without_side_effects(
         testing=_types.SimpleNamespace(CliRunner=lambda: _RecordingFakeRunner()),
     )
     monkeypatch.setitem(_sys.modules, "typer", fake_typer)
-    import bijux_cli.core.async_exec as async_exec
+    import bijux_cli.app.async_exec as async_exec
 
     monkeypatch.setattr(async_exec, "run_command", lambda *a, **k: None)
     monkeypatch.setattr(_sys.stdin, "isatty", lambda: True)

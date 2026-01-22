@@ -39,7 +39,7 @@ def mock_flags() -> dict[str, Any]:
         "verbose": False,
         "format": "json",
         "pretty": True,
-        "debug": False,
+        "log_level": "info",
     }
 
 
@@ -785,7 +785,7 @@ def test_non_ascii_config_path_triggers_error(
             "verbose": False,
             "format": "json",
             "pretty": True,
-            "debug": False,
+            "log_level": "info",
         },
     )
 
@@ -818,7 +818,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
             "verbose": False,
             "format": "json",
             "pretty": True,
-            "debug": False,
+            "log_level": "info",
         },
     )
 
@@ -859,7 +859,7 @@ def test_posix_lock_success_and_run(
             "verbose": True,
             "format": "json",
             "pretty": False,
-            "debug": False,
+            "log_level": "info",
         },
     )
 
@@ -909,7 +909,7 @@ def test_posix_lock_import_failure_skips_lock(
             "verbose": False,
             "format": "json",
             "pretty": True,
-            "debug": False,
+            "log_level": "info",
         },
     )
 
@@ -972,7 +972,7 @@ def test_posix_unlock_failure_is_ignored(
             "verbose": True,
             "format": "json",
             "pretty": False,
-            "debug": False,
+            "log_level": "info",
         },
     )
 
@@ -1030,7 +1030,7 @@ def test_non_posix_skips_file_lock_block(
             "verbose": True,
             "format": "json",
             "pretty": False,
-            "debug": False,
+            "log_level": "info",
         },
     )
 

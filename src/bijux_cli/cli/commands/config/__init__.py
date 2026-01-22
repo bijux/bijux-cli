@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import typer
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.cli.commands.config.clear import clear_config
 from bijux_cli.cli.commands.config.export import export_config
 from bijux_cli.cli.commands.config.get import get_config
@@ -40,7 +41,6 @@ from bijux_cli.cli.commands.config.reload import reload_config
 from bijux_cli.cli.commands.config.service import config
 from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
-from bijux_cli.core.async_exec import AsyncTyper
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 

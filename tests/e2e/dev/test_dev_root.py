@@ -33,8 +33,8 @@ REQUIRED_FLAGS = [
     "--format",
     "--pretty",
     "--no-pretty",
-    "-d",
-    "--debug",
+    "--log-level",
+    "debug",
 ]
 
 
@@ -59,7 +59,7 @@ def test_format_with_whitespace(fmt: str) -> None:
 @given(
     st.lists(
         st.sampled_from(
-            ["--pretty", "--no-pretty", "-v", "--verbose", "-d", "--debug"]
+            ["--pretty", "--no-pretty", "-v", "--verbose", "--log-level", "debug"]
         ),
         unique=True,
     )
@@ -140,14 +140,14 @@ def test_quiet_precedence() -> None:
 
 
 def test_debug_stderr() -> None:
-    """Check that --debug prints diagnostic information to stderr."""
-    r = run_cli(["dev", "--debug", "--format", "json"])
+    """Check that --log-level debug prints diagnostic information to stderr."""
+    r = run_cli(["dev", "--log-level", "debug", "--format", "json"])
     assert "Diagnostics: emitted payload" in r.stderr
 
 
 def test_quiet_debug_stderr() -> None:
-    """Ensure --quiet also suppresses the --debug stderr output."""
-    r = run_cli(["dev", "--quiet", "--debug", "--format", "json"])
+    """Ensure --quiet also suppresses the --log-level debug stderr output."""
+    r = run_cli(["dev", "--quiet", "--log-level", "debug", "--format", "json"])
     assert r.returncode == 0
     assert not r.stdout.strip()
     assert not r.stderr.strip()

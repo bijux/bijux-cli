@@ -40,7 +40,7 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         verbose: bool,
         fmt: str,
         pretty: bool,
-        debug: bool,
+        log_level: str,
     ) -> None:
         data["payload"] = payload_builder(include=True)
 
@@ -55,6 +55,7 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         quiet: bool,
         include_runtime: bool,
         debug: bool,
+        log_level: str | None = None,
     ) -> None:
         raise RuntimeError({"message": message, "code": code, "failure": failure})
 
@@ -86,7 +87,7 @@ def stub_plugins_dir_and_capture(
         verbose: bool,
         fmt: str,
         pretty: bool,
-        debug: bool,
+        log_level: str,
     ) -> None:
         data.update(payload_builder(include=True))
 

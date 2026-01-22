@@ -48,9 +48,9 @@ from bijux_cli.cli.commands.utilities import (
     resolve_command_config,
     validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -68,7 +68,7 @@ def resolve_history_service(
         fmt_lower (str): The chosen output format, lowercased.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The requested logging level.
 
     Returns:
         HistoryProtocol: An instance of the history service.
@@ -116,7 +116,7 @@ def history(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Lists, imports, or exports the command history.
 
@@ -153,13 +153,13 @@ def history(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0 or effective.debug
-    debug = effective.debug
+    verbose = effective.verbose_level > 0 or (effective.log_level == "debug")
+    debug = effective.log_level == "debug"
     pretty = effective.pretty
     include_runtime = effective.include_runtime
     validate_common_flags(fmt, command, quiet, include_runtime=include_runtime)
@@ -261,7 +261,7 @@ def history(
             verbose=verbose,
             fmt=fmt_lower,
             pretty=pretty,
-            debug=debug,
+            log_level=log_level,
         )
 
     if export_path:
@@ -310,7 +310,7 @@ def history(
             verbose=verbose,
             fmt=fmt_lower,
             pretty=pretty,
-            debug=debug,
+            log_level=log_level,
         )
 
     try:
@@ -365,5 +365,5 @@ def history(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
-        debug=debug,
+        log_level=log_level,
     )
