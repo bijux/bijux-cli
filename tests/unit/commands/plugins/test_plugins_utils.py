@@ -11,12 +11,12 @@ from typing import Any
 
 import pytest
 
+import bijux_cli.cli.commands.plugins.validation as validation_mod
 from bijux_cli.cli.commands.plugins.validation import (
     ignore_hidden_and_broken_symlinks,
     parse_required_cli_version,
     refuse_on_symlink,
 )
-import bijux_cli.cli.commands.utilities as utilities_mod
 
 
 def test_ignore_hidden_and_broken_symlinks(
@@ -107,7 +107,7 @@ def test_refuse_on_symlink_calls_emit(
         )
         raise SystemExit(code)
 
-    monkeypatch.setattr(utilities_mod, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(validation_mod, "emit_error_and_exit", fake_emit)
 
     with pytest.raises(SystemExit) as exc:
         refuse_on_symlink(link, "plugins uninstall", "yaml", True, True, True)

@@ -31,20 +31,19 @@ from typing import Any
 import typer
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.cli.commands.utilities import (
-    ascii_safe,
-    effective_defaults,
-    emit_error_and_exit,
-    new_run_command,
-    normalize_format,
-    validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+)
+from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.output import effective_defaults, new_run_command
+from bijux_cli.cli.validation import (
+    ascii_safe,
+    normalize_format,
+    validate_common_flags,
 )
 from bijux_cli.core.precedence import resolve_effective_config
 
@@ -248,7 +247,7 @@ def dev_di_graph(
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
-                from bijux_cli.cli.commands.utilities import resolve_serializer
+                from bijux_cli.cli.emit import resolve_serializer
 
                 rendered = resolve_serializer().dumps(
                     payload, fmt=fmt_lower, pretty=effective_pretty

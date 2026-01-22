@@ -44,11 +44,15 @@ import typer
 
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
-from bijux_cli.cli.flags import parse_global_flags
+from bijux_cli.cli.flags import apply_parsed_flags, parse_global_flags
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
-from bijux_cli.core.precedence import EffectiveConfig, resolve_effective_config
+from bijux_cli.core.precedence import (
+    EffectiveConfig,
+    resolve_effective_config,
+    validate_cli_flags,
+)
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -340,15 +344,17 @@ def main() -> int:
     """
     args = _strip_format_help(sys.argv[1:])
 
-    def _bail(msg: str, failure: str, flags: dict[str, Any]) -> None:
+    flags, retained, parse_errors = parse_global_flags(args)
+    apply_parsed_flags(flags, retained)
+    for err in validate_cli_flags(flags, parse_errors):
+        msg = err["message"]
+        failure = err["failure"]
         if (
             failure in ("missing_argument", "invalid_format")
             and "format" in msg.lower()
         ):
-            return
+            continue
         print_json_error(msg, 2, flags.get("quiet", False))
-
-    flags, _ = parse_global_flags(args, _bail)
     resolved = resolve_effective_config(
         cli=flags,
         env={"log_level": os.environ.get("BIJUXCLI_LOG_LEVEL")},

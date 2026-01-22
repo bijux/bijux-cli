@@ -23,6 +23,40 @@ class EffectiveConfig:
     json: bool
 
 
+def validate_cli_flags(
+    flags: dict[str, Any], parse_errors: list[dict[str, Any]] | None = None
+) -> list[dict[str, Any]]:
+    """Validate raw CLI flags without applying behavior."""
+    errors: list[dict[str, Any]] = list(parse_errors or [])
+    fmt = str(flags.get("format", "") or "")
+    if fmt and fmt not in ("json", "yaml"):
+        errors.append(
+            {
+                "message": "Invalid output format.",
+                "failure": "invalid_format",
+                "flag": "--format",
+            }
+        )
+    color = str(flags.get("color", "") or "")
+    if color and color not in ("auto", "always", "never"):
+        errors.append(
+            {
+                "message": "Invalid color mode.",
+                "failure": "invalid_color",
+                "flag": "--color",
+            }
+        )
+    if flags.get("debug"):
+        errors.append(
+            {
+                "message": "No such option: --debug",
+                "failure": "invalid_flag",
+                "flag": "--debug",
+            }
+        )
+    return errors
+
+
 def resolve_effective_config(
     cli: dict[str, Any],
     env: dict[str, Any],

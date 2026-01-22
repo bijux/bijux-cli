@@ -43,7 +43,6 @@ from rapidfuzz import process as rf_process
 import typer
 
 from bijux_cli.app.async_exec import AsyncTyper, run_command
-from bijux_cli.cli.commands.utilities import emit_error_and_exit, validate_common_flags
 from bijux_cli.cli.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
@@ -51,6 +50,8 @@ from bijux_cli.cli.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.validation import validate_common_flags
 
 GLOBAL_OPTS = [
     "-q",
@@ -228,7 +229,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
             data = json.loads(result.stdout or "{}")
             if data.get("entries", []) == []:
                 if should_print:
-                    from bijux_cli.cli.commands.utilities import resolve_serializer
+                    from bijux_cli.cli.emit import resolve_serializer
 
                     pretty = (
                         resolve_serializer()
@@ -336,7 +337,7 @@ def _run_piped(repl_quiet: bool) -> None:
                         "command": f"config {subcommand[0] if subcommand else ''}".strip(),
                         "format": "json",
                     }
-                    from bijux_cli.cli.commands.utilities import resolve_serializer
+                    from bijux_cli.cli.emit import resolve_serializer
 
                     print(
                         resolve_serializer().dumps(error_obj, fmt="json", pretty=False)
@@ -679,7 +680,7 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.commands.utilities import effective_defaults
+    from bijux_cli.cli.output import effective_defaults
     from bijux_cli.core.precedence import resolve_effective_config
 
     resolved = resolve_effective_config(

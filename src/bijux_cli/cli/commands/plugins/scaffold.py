@@ -30,15 +30,6 @@ import unicodedata
 
 import typer
 
-from bijux_cli.cli.commands.plugins.validation import PLUGIN_NAME_RE
-from bijux_cli.cli.commands.utilities import (
-    emit_error_and_exit,
-    new_run_command,
-    resolve_command_config,
-)
-from bijux_cli.cli.commands.utilities import (
-    validate_common_flags as validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -46,6 +37,10 @@ from bijux_cli.cli.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.plugins.validation import PLUGIN_NAME_RE
 
 
 def scaffold_plugin(

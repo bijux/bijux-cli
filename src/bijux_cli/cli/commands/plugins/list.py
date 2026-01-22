@@ -23,16 +23,11 @@ Exit Codes:
 
 from __future__ import annotations
 
+import platform
+
 import typer
 
 from bijux_cli.cli.commands.plugins.validation import refuse_on_symlink
-from bijux_cli.cli.commands.utilities import (
-    handle_list_plugins,
-    resolve_command_config,
-)
-from bijux_cli.cli.commands.utilities import (
-    validate_common_flags as validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -40,7 +35,10 @@ from bijux_cli.cli.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.validation import validate_common_flags
 from bijux_cli.plugins import get_plugins_dir
+from bijux_cli.services.plugins.listing import list_installed_plugins
 
 
 def list_plugin(
@@ -91,11 +89,21 @@ def list_plugin(
         effective.verbose_level > 0,
         (effective.log_level == "debug"),
     )
-    handle_list_plugins(
-        command,
-        effective.quiet,
-        effective.verbose_level > 0,
-        effective.fmt,
-        effective.pretty,
-        effective.log_level,
+    plugins = list_installed_plugins()
+
+    def payload_builder(include_runtime: bool) -> dict[str, object]:
+        payload: dict[str, object] = {"plugins": plugins}
+        if include_runtime:
+            payload["python"] = platform.python_version()
+            payload["platform"] = platform.platform()
+        return payload
+
+    new_run_command(
+        command_name=command,
+        payload_builder=payload_builder,
+        quiet=effective.quiet,
+        verbose=effective.verbose_level > 0,
+        fmt=effective.fmt,
+        pretty=effective.pretty,
+        log_level=effective.log_level,
     )

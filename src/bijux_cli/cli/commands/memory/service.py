@@ -28,21 +28,20 @@ import sys
 import typer
 
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
-from bijux_cli.cli.commands.utilities import (
-    ascii_safe,
-    contains_non_ascii_env,
-    effective_defaults,
-    emit_and_exit,
-    emit_error_and_exit,
-    normalize_format,
-    validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+)
+from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.output import effective_defaults
+from bijux_cli.cli.validation import (
+    ascii_safe,
+    contains_non_ascii_env,
+    normalize_format,
+    validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import resolve_effective_config

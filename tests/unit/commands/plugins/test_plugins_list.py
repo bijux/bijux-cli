@@ -37,12 +37,15 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
 
     monkeypatch.setattr(list_mod, "refuse_on_symlink", fake_refuse)
 
-    def fake_handle(
-        command: str, quiet: bool, verbose: bool, fmt: str, pretty: bool, log_level: str
-    ) -> None:
-        calls["handle"] = (command, quiet, verbose, fmt, pretty, log_level)
+    def fake_list() -> list[dict[str, Any]]:
+        return [{"name": "p1"}]
 
-    monkeypatch.setattr(list_mod, "handle_list_plugins", fake_handle)
+    monkeypatch.setattr(list_mod, "list_installed_plugins", fake_list)
+
+    def fake_run(**kwargs: Any) -> None:
+        calls["run"] = kwargs
+
+    monkeypatch.setattr(list_mod, "new_run_command", fake_run)
 
     return calls
 
@@ -67,7 +70,12 @@ def test_default_list(caps: dict[str, Any], runner: CliRunner) -> None:
         False,
         False,
     )
-    assert caps["handle"] == ("plugins list", False, False, "json", True, "info")
+    assert caps["run"]["command_name"] == "plugins list"
+    assert caps["run"]["quiet"] is False
+    assert caps["run"]["verbose"] is False
+    assert caps["run"]["fmt"] == "json"
+    assert caps["run"]["pretty"] is True
+    assert caps["run"]["log_level"] == "info"
 
 
 def test_all_flags(caps: dict[str, Any], runner: CliRunner) -> None:
@@ -97,7 +105,12 @@ def test_all_flags(caps: dict[str, Any], runner: CliRunner) -> None:
         True,
         False,
     )
-    assert caps["handle"] == ("plugins list", True, True, "yaml", False, "error")
+    assert caps["run"]["command_name"] == "plugins list"
+    assert caps["run"]["quiet"] is True
+    assert caps["run"]["verbose"] is True
+    assert caps["run"]["fmt"] == "yaml"
+    assert caps["run"]["pretty"] is False
+    assert caps["run"]["log_level"] == "error"
 
 
 def test_validate_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:

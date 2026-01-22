@@ -5,15 +5,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import sys
 from typing import Any
 
 
 def parse_global_flags(
     argv: list[str],
-    on_error: Callable[[str, str, dict[str, Any]], None],
-) -> tuple[dict[str, Any], list[str]]:
+) -> tuple[dict[str, Any], list[str], list[dict[str, Any]]]:
     """Parse global CLI flags from argv and return flags + remaining args."""
     help_present = any(flag in ("-h", "--help") for flag in argv)
     flags: dict[str, Any] = {
@@ -24,7 +22,9 @@ def parse_global_flags(
         "pretty": True,
         "log_level": "info",
         "color": "auto",
+        "debug": False,
     }
+    errors: list[dict[str, Any]] = []
     retained: list[str] = []
     it = iter(argv)
     for flag in it:
@@ -36,8 +36,8 @@ def parse_global_flags(
             retained.append(flag.lstrip("-"))
             continue
         if flag in ("-d", "--debug"):
-            on_error("No such option: --debug", "invalid_flag", flags)
-            break
+            flags["debug"] = True
+            continue
         if flag in ("-q", "--quiet"):
             flags["quiet"] = True
         elif flag in ("-v", "--verbose"):
@@ -46,33 +46,42 @@ def parse_global_flags(
             try:
                 flags["format"] = next(it)
             except StopIteration:
-                on_error("Missing value for --format.", "missing_argument", flags)
-                break
-            if flags["format"] not in ("json", "yaml"):
-                on_error("Invalid output format.", "invalid_format", flags)
-                break
+                errors.append(
+                    {
+                        "message": "Missing value for --format.",
+                        "failure": "missing_argument",
+                        "flag": "--format",
+                    }
+                )
         elif flag == "--log-level":
             try:
                 flags["log_level"] = next(it)
             except StopIteration:
-                on_error("Missing value for --log-level.", "missing_argument", flags)
-                break
+                errors.append(
+                    {
+                        "message": "Missing value for --log-level.",
+                        "failure": "missing_argument",
+                        "flag": "--log-level",
+                    }
+                )
         elif flag == "--color":
             try:
                 flags["color"] = next(it)
             except StopIteration:
-                on_error("Missing value for --color.", "missing_argument", flags)
-                break
-            if flags["color"] not in ("auto", "always", "never"):
-                on_error("Invalid color mode.", "invalid_color", flags)
-                break
+                errors.append(
+                    {
+                        "message": "Missing value for --color.",
+                        "failure": "missing_argument",
+                        "flag": "--color",
+                    }
+                )
         elif flag == "--pretty":
             flags["pretty"] = True
         elif flag == "--no-pretty":
             flags["pretty"] = False
         else:
             retained.append(flag)
-    return flags, retained
+    return flags, retained, errors
 
 
 def apply_parsed_flags(flags: dict[str, Any], retained: list[str]) -> None:
@@ -80,4 +89,13 @@ def apply_parsed_flags(flags: dict[str, Any], retained: list[str]) -> None:
     sys.argv = [sys.argv[0], *retained]
 
 
-__all__ = ["apply_parsed_flags", "parse_global_flags"]
+def parse_and_apply_global_flags(
+    argv: list[str],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Parse and apply global CLI flags to sys.argv."""
+    flags, retained, errors = parse_global_flags(argv)
+    apply_parsed_flags(flags, retained)
+    return flags, errors
+
+
+__all__ = ["apply_parsed_flags", "parse_and_apply_global_flags", "parse_global_flags"]

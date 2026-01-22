@@ -272,7 +272,7 @@ def test_build_spec_payload_ascii_failure(monkeypatch: pytest.MonkeyPatch) -> No
     """Test that an ASCII safety check failure raises an error."""
     monkeypatch.setenv("DUMMY", "")
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.utilities.ascii_safe",
+        "bijux_cli.cli.validation.ascii_safe",
         lambda v, k: (_ for _ in ()).throw(ValueError("bad ascii")),
     )
     import bijux_cli.cli.commands as cmd_pkg
