@@ -680,25 +680,14 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.output import effective_defaults
-    from bijux_cli.core.precedence import resolve_effective_config
+    from bijux_cli.cli.output import get_execution_policy
 
-    resolved = resolve_effective_config(
-        cli={
-            "quiet": quiet,
-            "verbose": verbose,
-            "log_level": log_level,
-            "pretty": pretty,
-            "format": fmt,
-        },
-        env={},
-        file={},
-        defaults=effective_defaults(),
-    )
-    effective_include_runtime = resolved.include_runtime
-    quiet = resolved.quiet
-    verbose = resolved.verbose_level > 0
-    pretty = resolved.pretty
+    _ = (quiet, verbose, log_level, pretty, fmt)
+    policy = get_execution_policy()
+    effective_include_runtime = policy.include_runtime
+    quiet = policy.quiet
+    verbose = policy.verbose
+    pretty = policy.pretty
 
     fmt_lower = fmt.strip().lower()
 
@@ -706,7 +695,7 @@ def main(
         validate_common_flags(
             fmt_lower,
             command,
-            resolved.quiet,
+            policy.quiet,
             include_runtime=effective_include_runtime,
         )
         emit_error_and_exit(
@@ -715,9 +704,9 @@ def main(
             failure="format",
             command=command,
             fmt=fmt_lower,
-            quiet=resolved.quiet,
+            quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(resolved.log_level == "debug"),
+            debug=(policy.log_level == "debug"),
         )
 
     for sig in (

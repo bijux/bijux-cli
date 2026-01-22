@@ -29,18 +29,23 @@ from bijux_cli.cli.commands.config.service import config
 from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
 from bijux_cli.core.errors import CommandError
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
-def mock_flags() -> dict[str, Any]:
-    """Provide a dictionary of mock global flags."""
-    return {
-        "quiet": False,
-        "verbose": False,
-        "format": "json",
-        "pretty": True,
-        "log_level": "info",
-    }
+def mock_flags() -> ExecutionPolicy:
+    """Provide a mock execution policy."""
+    return ExecutionPolicy(
+        output_format="json",
+        color="auto",
+        quiet=False,
+        verbose=False,
+        verbose_level=0,
+        log_level="info",
+        pretty=True,
+        include_runtime=False,
+        json=False,
+    )
 
 
 @pytest.fixture
@@ -51,12 +56,12 @@ def mock_config_svc() -> MagicMock:
 
 
 def test_config_callback_no_subcommand(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the main config command callback when no subcommand is invoked."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.service.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -75,12 +80,12 @@ def test_config_callback_no_subcommand(
 
 
 def test_clear_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the successful clearing of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.clear.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -98,12 +103,12 @@ def test_clear_config_success(
 
 
 def test_clear_config_fail(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when clearing the configuration."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.clear.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -120,12 +125,12 @@ def test_clear_config_fail(
 
 
 def test_export_config_stdout(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test exporting the configuration to stdout."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -139,12 +144,12 @@ def test_export_config_stdout(
 
 
 def test_export_config_file(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test exporting the configuration to a file."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -162,12 +167,12 @@ def test_export_config_file(
 
 
 def test_get_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test successfully getting a configuration value."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.get.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -184,12 +189,12 @@ def test_get_config_success(
 
 
 def test_list_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test successfully listing all configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.list_cmd.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -208,12 +213,12 @@ def test_list_config_success(
 
 
 def test_load_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test successfully loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.load.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -229,12 +234,12 @@ def test_load_config_success(
 
 
 def test_load_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.load.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -249,12 +254,12 @@ def test_load_config_exception(
 
 
 def test_reload_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the successful reloading of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.reload.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -272,12 +277,12 @@ def test_reload_config_success(
 
 
 def test_reload_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when reloading the configuration."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.reload.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -293,11 +298,13 @@ def test_reload_config_exception(
         mock_emit.assert_called()
 
 
-def test_set_config_arg(mock_flags: dict[str, Any], mock_config_svc: MagicMock) -> None:
+def test_set_config_arg(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
     """Test setting a configuration value from a command-line argument."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -313,14 +320,14 @@ def test_set_config_arg(mock_flags: dict[str, Any], mock_config_svc: MagicMock) 
 
 
 def test_set_config_stdin(
-    mock_flags: dict[str, Any],
+    mock_flags: ExecutionPolicy,
     mock_config_svc: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test setting a configuration value from stdin."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -335,12 +342,12 @@ def test_set_config_stdin(
 
 
 def test_set_config_empty_key(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that setting a value with an empty key fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -354,12 +361,12 @@ def test_set_config_empty_key(
 
 
 def test_set_config_non_ascii(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that setting a value with non-ASCII characters fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -373,12 +380,12 @@ def test_set_config_non_ascii(
 
 
 def test_set_config_control_char(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that setting a value with a control character fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -392,12 +399,12 @@ def test_set_config_control_char(
 
 
 def test_set_config_invalid_key(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that setting a value with an invalid key format fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -411,12 +418,12 @@ def test_set_config_invalid_key(
 
 
 def test_set_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when the config service 'set' method raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -431,12 +438,12 @@ def test_set_config_exception(
 
 
 def test_unset_config_success(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the successful unsetting of a configuration key."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -454,12 +461,12 @@ def test_unset_config_success(
 
 
 def test_unset_config_key_error(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that unsetting a non-existent key is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -476,12 +483,12 @@ def test_unset_config_key_error(
 
 
 def test_unset_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when the config service 'unset' raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.unset.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -497,7 +504,7 @@ def test_unset_config_exception(
         mock_emit.assert_called()
 
 
-def test_import_config(mock_flags: dict[str, Any]) -> None:
+def test_import_config(mock_flags: ExecutionPolicy) -> None:
     """Test that the 'import' command correctly calls the 'load_config' function."""
     with patch("bijux_cli.cli.commands.config.load_config") as mock_load:
         ctx = Context(MagicMock())
@@ -506,12 +513,12 @@ def test_import_config(mock_flags: dict[str, Any]) -> None:
 
 
 def test_export_config_command_error(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that a CommandError during export is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -529,12 +536,12 @@ def test_export_config_command_error(
 
 
 def test_export_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that a generic Exception during export is propagated."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.export.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -550,12 +557,12 @@ def test_export_config_exception(
 
 
 def test_get_config_not_found(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that a CommandError when getting a non-existent key is handled."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.get.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -571,12 +578,12 @@ def test_get_config_not_found(
 
 
 def test_get_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that a generic exception when getting a config value is propagated."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.get.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -590,12 +597,12 @@ def test_get_config_exception(
 
 
 def test_list_config_exception(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test the failure path when listing configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.list_cmd.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -615,14 +622,14 @@ def test_list_config_exception(
 
 
 def test_set_config_no_arg_tty(
-    mock_flags: dict[str, Any],
+    mock_flags: ExecutionPolicy,
     mock_config_svc: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that setting a value with no argument on a TTY fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -638,12 +645,12 @@ def test_set_config_no_arg_tty(
 
 
 def test_set_config_invalid_pair(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that setting a value with an invalid pair format fails."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -658,14 +665,14 @@ def test_set_config_invalid_pair(
 
 
 def test_set_config_stdin_escaped(
-    mock_flags: dict[str, Any],
+    mock_flags: ExecutionPolicy,
     mock_config_svc: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that escaped characters from stdin are correctly handled."""
     with (
         patch(
-            "bijux_cli.cli.commands.config.set.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -680,14 +687,14 @@ def test_set_config_stdin_escaped(
 
 
 def test_get_config_other_command_error(
-    mock_flags: dict[str, Any], mock_config_svc: MagicMock
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
     """Test that a generic CommandError during get is handled correctly."""
     from bijux_cli.cli.commands.config.get import get_config
 
     with (
         patch(
-            "bijux_cli.cli.commands.config.get.parse_global_flags",
+            "bijux_cli.cli.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -733,9 +740,9 @@ def test_config_root_with_subcommand_skips_execution(
     fake_ctx.invoked_subcommand = "something"
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.service.parse_global_flags",
+        "bijux_cli.cli.output.get_execution_policy",
         lambda: (_ for _ in ()).throw(
-            AssertionError("parse_global_flags should not run")
+            AssertionError("get_execution_policy should not run")
         ),
     )
     monkeypatch.setattr(
@@ -779,14 +786,18 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(bad_path))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": False,
-            "format": "json",
-            "pretty": True,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
     )
 
     called: dict[str, Any] = {}
@@ -812,14 +823,18 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": False,
-            "format": "json",
-            "pretty": True,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
     )
 
     class FakeContainer:
@@ -853,14 +868,18 @@ def test_posix_lock_success_and_run(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": True,
-            "format": "json",
-            "pretty": False,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
     )
 
     class DummySvc:
@@ -903,14 +922,18 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": False,
-            "format": "json",
-            "pretty": True,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
     )
 
     class FakeContainer:
@@ -966,14 +989,18 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": True,
-            "format": "json",
-            "pretty": False,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
     )
 
     class FakeContainer:
@@ -1024,14 +1051,18 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.parse_global_flags",
-        lambda: {
-            "quiet": False,
-            "verbose": True,
-            "format": "json",
-            "pretty": False,
-            "log_level": "info",
-        },
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
     )
 
     class FakeContainer:

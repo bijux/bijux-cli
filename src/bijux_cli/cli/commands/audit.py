@@ -133,6 +133,8 @@ def _write_output_file(
         level="info",
         message="Audit dry-run completed" if dry_run else "Audit completed",
         output=str(output_path),
+        emit_output=True,
+        emit_diagnostics=debug,
     )
 
 

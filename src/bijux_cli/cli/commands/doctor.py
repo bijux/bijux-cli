@@ -37,14 +37,13 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import effective_defaults, new_run_command
+from bijux_cli.cli.output import get_execution_policy, new_run_command
 from bijux_cli.cli.validation import (
     ascii_safe,
     normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.contracts import Emitter
-from bijux_cli.core.precedence import resolve_effective_config
 from bijux_cli.services.contracts import TelemetryProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -138,26 +137,16 @@ def doctor(
         return
 
     command = "doctor"
-    resolved = resolve_effective_config(
-        cli={
-            "quiet": quiet,
-            "verbose": verbose,
-            "log_level": log_level,
-            "pretty": pretty,
-            "format": fmt,
-        },
-        env={},
-        file={},
-        defaults=effective_defaults(),
-    )
-    quiet = resolved.quiet
-    verbose = resolved.verbose_level > 0
-    debug = resolved.log_level == "debug"
-    pretty = resolved.pretty
-    include_runtime = resolved.include_runtime
-    fmt_lower = normalize_format(resolved.fmt) or "json"
+    _ = (quiet, verbose, log_level, pretty, fmt)
+    policy = get_execution_policy()
+    quiet = policy.quiet
+    verbose = policy.verbose
+    debug = policy.log_level == "debug"
+    pretty = policy.pretty
+    include_runtime = policy.include_runtime
+    fmt_lower = normalize_format(fmt) or "json"
 
-    validate_common_flags(resolved.fmt, command, quiet)
+    validate_common_flags(fmt, command, quiet)
 
     if ctx.args:
         stray = ctx.args[0]

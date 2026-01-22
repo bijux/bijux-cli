@@ -44,13 +44,15 @@ import typer
 
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
-from bijux_cli.cli.flags import apply_parsed_flags, parse_global_flags
+from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.precedence import (
     EffectiveConfig,
+    ExecutionPolicy,
     resolve_effective_config,
+    resolve_execution_policy,
     validate_cli_flags,
 )
 from bijux_cli.services import register_default_services
@@ -344,19 +346,16 @@ def main() -> int:
     """
     args = _strip_format_help(sys.argv[1:])
 
-    flags, retained, parse_errors = parse_global_flags(args)
-    apply_parsed_flags(flags, retained)
-    for err in validate_cli_flags(flags, parse_errors):
+    parsed = parse_global_flags(args)
+    for err in validate_cli_flags(parsed):
         msg = err["message"]
         failure = err["failure"]
-        if (
-            failure in ("missing_argument", "invalid_format")
-            and "format" in msg.lower()
-        ):
+        if failure == "missing_argument" and "format" in msg.lower():
             continue
-        print_json_error(msg, 2, flags.get("quiet", False))
+        print_json_error(msg, 2, parsed.quiet)
+        return 2
     resolved = resolve_effective_config(
-        cli=flags,
+        cli=parsed,
         env={"log_level": os.environ.get("BIJUXCLI_LOG_LEVEL")},
         file={},
         defaults={
@@ -381,6 +380,7 @@ def main() -> int:
         log_level=resolved.log_level,
         color=resolved.color,
     )
+    policy = resolve_execution_policy(resolved)
     setup_structlog(resolved.log_level)
     disable_cli_colors_for_test()
 
@@ -394,16 +394,19 @@ def main() -> int:
 
     container = DIContainer.current()
     container.register(EffectiveConfig, resolved)
+    container.register(ExecutionPolicy, policy)
     register_default_services(
         container,
         logging_config=logging_config,
-        output_format=OutputFormat.JSON,
+        output_format=OutputFormat.YAML
+        if policy.output_format == "yaml"
+        else OutputFormat.JSON,
     )
 
     Engine()
     app = build_app()
 
-    if any(a in ("-h", "--help") for a in args):
+    if parsed.help:
         print(get_usage_for_args(args, app))
         return 0
 
@@ -412,7 +415,7 @@ def main() -> int:
         print_json_error(missing_format_msg, 2, resolved.quiet)
         return 2
 
-    command_line = args
+    command_line = list(parsed.args)
     start = time.time()
     exit_code = 0
 

@@ -28,6 +28,7 @@ from bijux_cli.cli.validation import (
     validate_env_file_if_present,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.plugins.listing import list_installed_plugins
 
@@ -356,7 +357,23 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
 
 def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> None:
     """Test that history is skipped in quiet mode."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=True,
+                verbose=False,
+                verbose_level=0,
+                log_level="error",
+                pretty=True,
+                include_runtime=False,
+                json=False,
+            ),
+        ),
+        patch("bijux_cli.cli.output.validate_common_flags", return_value="json"),
+    ):
 
         def builder(include: bool) -> dict[str, Any]:
             return {}
@@ -817,102 +834,102 @@ def test_emit_error_and_exit_debug() -> None:
 
 def test_parse_global_flags_empty() -> None:
     """Parse global flags with no arguments."""
-    flags, retained, errors = parse_global_flags([])
-    assert flags["help"] is False
-    assert flags["quiet"] is False
-    assert flags["verbose"] is False
-    assert flags["format"] == "json"
-    assert flags["pretty"] is True
-    assert retained == []
-    assert errors == []
+    config = parse_global_flags([])
+    assert config.help is False
+    assert config.quiet is False
+    assert config.verbose_level == 0
+    assert config.fmt == "json"
+    assert config.pretty is True
+    assert config.args == ()
+    assert config.errors == ()
 
 
 def test_parse_global_flags_help() -> None:
     """Parse the --help flag."""
-    flags, retained, errors = parse_global_flags(["--help"])
-    assert flags["help"] is True
-    assert retained == ["--help"]
-    assert errors == []
+    config = parse_global_flags(["--help"])
+    assert config.help is True
+    assert config.args == ("--help",)
+    assert config.errors == ()
 
 
 def test_parse_global_flags_quiet() -> None:
     """Parse the --quiet (-q) flag."""
-    flags, retained, errors = parse_global_flags(["-q"])
-    assert flags["quiet"] is True
-    assert retained == []
-    assert errors == []
+    config = parse_global_flags(["-q"])
+    assert config.quiet is True
+    assert config.args == ()
+    assert config.errors == ()
 
 
 def test_parse_global_flags_debug() -> None:
-    """Parse the --debug flag as a raw flag."""
-    flags, retained, errors = parse_global_flags(["--debug"])
-    assert flags["debug"] is True
-    assert retained == []
-    assert errors == []
+    """Reject the deprecated --debug flag."""
+    config = parse_global_flags(["--debug"])
+    assert config.args == ()
+    assert config.errors
+    assert config.errors[0]["flag"] == "--debug"
 
 
 def test_parse_global_flags_verbose() -> None:
     """Parse the --verbose (-v) flag."""
-    flags, retained, errors = parse_global_flags(["-v"])
-    assert flags["verbose"] is True
-    assert retained == []
-    assert errors == []
+    config = parse_global_flags(["-v"])
+    assert config.verbose_level == 1
+    assert config.args == ()
+    assert config.errors == ()
 
 
 def test_parse_global_flags_format() -> None:
-    """Parse the --format (-f) flag."""
-    flags, retained, errors = parse_global_flags(["-f", "yaml"])
-    assert flags["format"] == "yaml"
-    assert retained == []
-    assert errors == []
+    """Global parser leaves --format (-f) for commands."""
+    config = parse_global_flags(["-f", "yaml"])
+    assert config.fmt == "json"
+    assert config.args == ("-f", "yaml")
+    assert config.errors == ()
 
 
 def test_parse_global_flags_format_missing() -> None:
-    """Parse a format flag with a missing argument."""
-    flags, retained, errors = parse_global_flags(["-f"])
-    assert flags["format"] == "json"
-    assert retained == []
-    assert errors[0]["failure"] == "missing_argument"
+    """Global parser leaves missing --format value for commands."""
+    config = parse_global_flags(["-f"])
+    assert config.fmt == "json"
+    assert config.args == ("-f",)
+    assert config.errors == ()
 
 
 def test_parse_global_flags_format_invalid_help() -> None:
     """Parse invalid format when --help is present."""
-    flags, retained, errors = parse_global_flags(["--help", "-f", "invalid"])
-    assert flags["help"] is True
-    assert retained == ["--help", "f", "invalid"]
-    assert errors == []
+    config = parse_global_flags(["--help", "-f", "invalid"])
+    assert config.help is True
+    assert config.args == ("--help", "f", "invalid")
+    assert config.errors == ()
 
 
 def test_parse_global_flags_pretty() -> None:
     """Parse the --pretty flag."""
-    flags, retained, errors = parse_global_flags(["--pretty"])
-    assert flags["pretty"] is True
-    assert retained == []
-    assert errors == []
+    config = parse_global_flags(["--pretty"])
+    assert config.pretty is True
+    assert config.args == ()
+    assert config.errors == ()
 
 
 def test_parse_global_flags_no_pretty() -> None:
     """Parse the --no-pretty flag."""
-    flags, retained, errors = parse_global_flags(["--no-pretty"])
-    assert flags["pretty"] is False
-    assert retained == []
-    assert errors == []
+    config = parse_global_flags(["--no-pretty"])
+    assert config.pretty is False
+    assert config.args == ()
+    assert config.errors == ()
 
 
 def test_parse_global_flags_unknown() -> None:
     """Unknown flags are retained."""
-    flags, retained, errors = parse_global_flags(["--unknown"])
-    assert flags["help"] is False
-    assert retained == ["--unknown"]
-    assert errors == []
+    config = parse_global_flags(["--unknown"])
+    assert config.help is False
+    assert config.args == ("--unknown",)
+    assert config.errors == ()
 
 
 def test_parse_global_flags_unknown_help() -> None:
     """Unknown flags are retained with help."""
-    flags, retained, errors = parse_global_flags(["--help", "--unknown"])
-    assert flags["help"] is True
-    assert retained == ["--help", "unknown"]
-    assert errors == []
+    config = parse_global_flags(["--help", "--unknown"])
+    assert config.help is True
+    assert config.args == ("--help", "unknown")
+    assert config.errors == ()
 
 
 def test_list_installed_plugins_delegates() -> None:
@@ -925,8 +942,8 @@ def test_list_installed_plugins_delegates() -> None:
 
 
 def test_parse_global_flags_multiple() -> None:
-    """Parse multiple global flags including --debug."""
-    flags, retained, errors = parse_global_flags(
+    """Parse multiple global flags with invalid ones rejected."""
+    config = parse_global_flags(
         [
             "-q",
             "--debug",
@@ -937,13 +954,12 @@ def test_parse_global_flags_multiple() -> None:
             "--unknown",
         ]
     )
-    assert flags["quiet"] is True
-    assert flags["debug"] is True
-    assert flags["format"] == "yaml"
-    assert flags["pretty"] is False
-    assert flags["verbose"] is True
-    assert retained == ["--unknown"]
-    assert errors == []
+    assert config.quiet is True
+    assert config.fmt == "json"
+    assert config.pretty is False
+    assert config.verbose_level == 1
+    assert config.args == ("-f", "yaml", "--unknown")
+    assert any(err.get("flag") == "--debug" for err in config.errors)
 
 
 @patch.dict(os.environ, {"BIJUXCLI_CONFIG": "/path/to/config"})

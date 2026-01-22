@@ -20,14 +20,10 @@ class ConsoleEmitter:
         self,
         telemetry: Any,
         output_format: Any = "json",
-        debug: bool = False,
-        quiet: bool = False,
     ) -> None:
         """Initialize the console emitter."""
         self._telemetry = telemetry
         self._default_format = output_format
-        self._debug = debug
-        self._quiet = quiet
         self._logger = structlog.get_logger(__name__)
 
     def emit(
@@ -39,10 +35,12 @@ class ConsoleEmitter:
         level: str = "info",
         message: str = "Emitting output",
         output: str | None = None,
+        emit_output: bool = True,
+        emit_diagnostics: bool = False,
         **context: Any,
     ) -> None:
         """Serialize and emit a payload."""
-        if self._quiet and level not in ["error", "critical"]:
+        if not emit_output:
             return
 
         output_format = fmt or self._default_format
@@ -60,7 +58,7 @@ class ConsoleEmitter:
         else:
             print(stripped, file=sys.stdout, flush=True)
 
-        if self._debug:
+        if emit_diagnostics:
             print("Diagnostics: emitted payload", file=sys.stderr)
             log = getattr(self._logger, level)
             log(message, output=stripped, **context)
@@ -75,7 +73,7 @@ class ConsoleEmitter:
                 "output_emitted", {"format": format_name, "size_chars": len(stripped)}
             )
         except Exception as tel_err:
-            if self._debug:
+            if emit_diagnostics:
                 self._logger.error("Telemetry failed", error=str(tel_err), **context)
 
     def flush(self) -> None:
@@ -95,9 +93,22 @@ class NullEmitter:
         level: str = "info",
         message: str = "Emitting output",
         output: str | None = None,
+        emit_output: bool = True,
+        emit_diagnostics: bool = False,
         **context: Any,
     ) -> None:
         """Drop emitted payloads."""
+        _ = (
+            payload,
+            fmt,
+            pretty,
+            level,
+            message,
+            output,
+            emit_output,
+            emit_diagnostics,
+        )
+        _ = context
         return None
 
     def flush(self) -> None:

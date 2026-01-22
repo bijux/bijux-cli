@@ -23,6 +23,7 @@ from bijux_cli.cli.commands.dev.di import (
 )
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
@@ -261,6 +262,20 @@ def test_dev_di_graph_quiet_after_writing_exits(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Test that quiet mode exits after writing files without calling new_run_command."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.di.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",
@@ -594,6 +609,20 @@ def test_dev_di_graph_output_write_raises(
 def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the list-plugins command correctly calls its handlers."""
     called: dict[str, Any] = {}
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="error",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
 
     def fake_validate(
         fmt: str, cmd: str, quiet: bool, include_runtime: bool | None = None
@@ -643,6 +672,21 @@ def test_dev_payload_basic_and_runtime_inclusion(
 ) -> None:
     """Test that the dev payload is built correctly with and without runtime info."""
     ctx.invoked_subcommand = None
+    policy = ExecutionPolicy(
+        output_format="json",
+        color="auto",
+        quiet=False,
+        verbose=False,
+        verbose_level=0,
+        log_level="info",
+        pretty=True,
+        include_runtime=False,
+        json=False,
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.service.get_execution_policy",
+        lambda: policy,
+    )
 
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.validate_common_flags",
@@ -668,6 +712,17 @@ def test_dev_payload_basic_and_runtime_inclusion(
     assert captured["built"]["status"] == "ok"
     assert "python" not in captured["built"]
 
+    policy = ExecutionPolicy(
+        output_format="json",
+        color="auto",
+        quiet=False,
+        verbose=True,
+        verbose_level=1,
+        log_level="info",
+        pretty=False,
+        include_runtime=True,
+        json=False,
+    )
     dev(ctx, quiet=False, verbose=True, fmt="json", pretty=False, log_level="info")
     assert captured["kwargs"]["verbose"]
     assert "python" in captured["built_rt"]
@@ -680,6 +735,20 @@ def test_dev_payload_includes_mode_env(
     """Test that the BIJUXCLI_DEV_MODE environment variable is included in the payload."""
     ctx.invoked_subcommand = None
     monkeypatch.setenv("BIJUXCLI_DEV_MODE", "diagnostic")
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.service.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=True,
+            include_runtime=True,
+            json=False,
+        ),
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "json",

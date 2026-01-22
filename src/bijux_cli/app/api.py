@@ -167,7 +167,7 @@ class BijuxAPI:
         verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
-        debug: bool = False,
+        log_level: str = "info",
         **kwargs: Any,
     ) -> Any:
         """Runs a command synchronously.
@@ -183,7 +183,7 @@ class BijuxAPI:
             verbose (bool): If True, enables verbose logging.
             fmt (str): The output format ("json" or "yaml").
             pretty (bool): If True, formats the output for readability.
-            debug (bool): If True, enables debug mode.
+            log_level (str): The requested log level.
             **kwargs (Any): Additional keyword arguments to pass to the command.
 
         Returns:
@@ -197,7 +197,7 @@ class BijuxAPI:
             verbose=verbose,
             fmt=fmt,
             pretty=pretty,
-            debug=debug,
+            log_level=log_level,
             **kwargs,
         )
 
@@ -209,7 +209,7 @@ class BijuxAPI:
         verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
-        debug: bool = False,
+        log_level: str = "info",
         **kwargs: Any,
     ) -> Any:
         """Runs a command asynchronously with validation.
@@ -224,7 +224,7 @@ class BijuxAPI:
             verbose (bool): If True, enables verbose output.
             fmt (str): The output format ("json" or "yaml").
             pretty (bool): If True, formats the output for readability.
-            debug (bool): If True, enables debug mode.
+            log_level (str): The requested log level.
             **kwargs (Any): Additional keyword arguments to pass to the command.
 
         Returns:
@@ -243,7 +243,7 @@ class BijuxAPI:
                 cli={
                     "quiet": quiet,
                     "verbose": verbose,
-                    "debug": debug,
+                    "log_level": log_level,
                     "format": fmt,
                     "pretty": pretty,
                 },
@@ -252,7 +252,6 @@ class BijuxAPI:
                 defaults={
                     "quiet": False,
                     "verbose": False,
-                    "debug": False,
                     "pretty": True,
                     "log_level": "info",
                     "color": "auto",

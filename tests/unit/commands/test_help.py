@@ -24,6 +24,7 @@ from bijux_cli.cli.commands.help import (
     _find_target_command,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 class DummyCmd(click.Command):
@@ -163,6 +164,21 @@ def test_help_flag_triggers_help_and_exit(
 def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with an invalid format exits with code 2."""
     ctx = make_ctx_for_callback()
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="badfmt",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="error",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
             ctx,
@@ -263,6 +279,21 @@ def test_nonquiet_invalid_format_calls_emit_error(
         called.update(locals())
         raise SystemExit(code)
 
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="bad",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
@@ -398,6 +429,21 @@ def test_nonquiet_human_format_prints_and_exits(
     monkeypatch.setattr(
         help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="human",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=False,
+            include_runtime=False,
+            json=False,
+        ),
+    )
 
     class DummyContainer:
         def resolve(self, proto: type) -> None:
@@ -437,6 +483,36 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         DIContainer,
         "current",
         classmethod(lambda cls: MagicMock(resolve=lambda p: None)),
+    )
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="yaml",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
     )
     called: dict[str, Any] = {}
 
@@ -487,6 +563,21 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         "current",
         classmethod(lambda cls: MagicMock(resolve=lambda p: None)),
     )
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="yaml",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     called: dict[str, Any] = {}
 
     def fake_emit(payload: dict[str, Any], fmt: OutputFormat, **kwargs: Any) -> None:
@@ -523,6 +614,21 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(
         help_mod, "_find_target_command", lambda c, p: (object(), object())
+    )
+    monkeypatch.setattr(
+        help_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="human",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="error",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
     )
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
