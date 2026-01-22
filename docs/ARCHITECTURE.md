@@ -36,17 +36,18 @@ Until v0.2.0 ships:
 - no new cross-dependencies
 - only bug fixes and plugin hardening
 
-## Logging Semantics (Truth Table)
+## Output Precedence (Truth Table)
 
-Flags resolve in this order: `quiet` → `debug` → `verbose` → `log_level`.
-Color defaults to `auto` and is only overridden by `--color`.
+Flags resolve in this order: `quiet` → `log_level` → `verbose` → defaults.
+`--json` forces JSON output; color settings do not affect JSON payloads.
 
-| quiet | debug | verbose | log_level flag | effective log_level | include runtime | pretty |
-|------:|------:|--------:|---------------:|--------------------:|----------------:|-------:|
-| false | false | false   | info           | info                | false           | flag   |
-| false | false | true    | info           | info                | true            | flag   |
-| false | true  | any     | any            | debug               | true            | true   |
-| true  | any   | any     | any            | error               | false           | flag   |
+| quiet | log-level flag | -v/-vv | --json | --color | effective log_level | include runtime | format | color |
+|------:|----------------|-------:|-------:|--------:|--------------------:|----------------:|-------:|------:|
+| false | info           | 0      | false  | auto    | info                | false           | json   | auto  |
+| false | info           | 1      | false  | auto    | info                | true            | json   | auto  |
+| false | warning        | 2      | false  | always  | warning             | true            | json   | always|
+| false | error          | 0      | true   | never   | error               | false           | json   | never |
+| true  | any            | any    | any    | any     | error               | false           | json   | any   |
 
 ## Serializer Rules
 

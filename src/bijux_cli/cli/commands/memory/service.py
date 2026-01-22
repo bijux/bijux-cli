@@ -31,8 +31,10 @@ from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
+    effective_defaults,
     emit_and_exit,
     emit_error_and_exit,
+    normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.constants import (
@@ -43,6 +45,7 @@ from bijux_cli.core.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import resolve_effective_config
 
 
 def _build_payload(
@@ -115,7 +118,6 @@ def _run_one_shot_mode(
             quiet=quiet,
             include_runtime=include_runtime,
         )
-
     try:
         payload = _build_payload(include_runtime, keys_count)
     except ValueError as exc:
@@ -171,20 +173,33 @@ def memory_summary(
             payload upon completion or error.
     """
     command = "memory"
-    from bijux_cli.core.precedence import resolve_output_flags
-
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    include_runtime = resolved["include_runtime"]
+    quiet = resolved.quiet
+    verbose = resolved.verbose_level > 0
+    debug = resolved.debug
+    include_runtime = resolved.include_runtime
+    effective_pretty = resolved.pretty
+    fmt_lower = normalize_format(resolved.fmt) or "json"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    validate_common_flags(
+        resolved.fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+    )
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
-    effective_pretty = resolved["pretty"]
 
     svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, debug)
 

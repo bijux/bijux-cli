@@ -33,7 +33,7 @@ from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
-    validate_common_flags,
+    resolve_command_config,
 )
 from bijux_cli.core.constants import (
     HELP_DEBUG,
@@ -76,7 +76,18 @@ def info_plugin(
     """
     command = "plugins info"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.debug
+    pretty = effective.pretty
 
     try:
         meta = get_plugin_metadata(name)
@@ -88,7 +99,7 @@ def info_plugin(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=effective.include_runtime,
             debug=debug,
         )
 
@@ -116,7 +127,7 @@ def info_plugin(
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=verbose,
+                include_runtime=effective.include_runtime,
                 debug=debug,
             )
 

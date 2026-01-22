@@ -33,8 +33,10 @@ import typer
 from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
+    effective_defaults,
     emit_error_and_exit,
     new_run_command,
+    normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.constants import (
@@ -44,6 +46,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.core.precedence import resolve_effective_config
 
 QUIET_OPTION = typer.Option(False, "-q", "--quiet", help=HELP_QUIET)
 VERBOSE_OPTION = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE)
@@ -132,23 +135,23 @@ def dev_di_graph(
             payload, indicating success or detailing an error.
     """
     command = "dev di"
-    from bijux_cli.core.precedence import resolve_output_flags
-
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    effective_include_runtime = resolved["include_runtime"]
-    effective_pretty = resolved["pretty"]
-
-    fmt_lower = validate_common_flags(
-        fmt,
-        command,
-        quiet,
-        include_runtime=effective_include_runtime,
-    )
+    quiet = resolved.quiet
+    debug = resolved.debug
+    effective_include_runtime = resolved.include_runtime
+    effective_pretty = resolved.pretty
+    fmt_lower = normalize_format(resolved.fmt) or "json"
 
     limit_env = os.environ.get("BIJUXCLI_DI_LIMIT")
     limit: int | None = None
@@ -204,6 +207,13 @@ def dev_di_graph(
                 include_runtime=effective_include_runtime,
                 debug=debug,
             )
+
+    validate_common_flags(
+        resolved.fmt,
+        command,
+        quiet,
+        include_runtime=effective_include_runtime,
+    )
 
     try:
         payload = _build_dev_di_payload(effective_include_runtime)

@@ -47,7 +47,11 @@ from bijux_cli.app.engine import Engine
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
-from bijux_cli.core.precedence import resolve_output_flags
+from bijux_cli.core.precedence import (
+    EffectiveConfig,
+    parse_global_flags,
+    resolve_effective_config,
+)
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -343,38 +347,42 @@ def main() -> int:
     """
     args = _strip_format_help(sys.argv[1:])
 
-    quiet = is_quiet_mode(args)
-    if quiet:
+    def _bail(msg: str, failure: str, flags: dict[str, Any]) -> None:
+        if (
+            failure in ("missing_argument", "invalid_format")
+            and "format" in msg.lower()
+        ):
+            return
+        print_json_error(msg, 2, flags.get("quiet", False))
+
+    flags, _ = parse_global_flags(args, _bail)
+    resolved = resolve_effective_config(
+        cli=flags,
+        env={"debug": os.environ.get("BIJUXCLI_DEBUG") == "1"},
+        file={},
+        defaults={
+            "quiet": False,
+            "verbose": False,
+            "debug": False,
+            "pretty": True,
+            "log_level": "info",
+            "color": "auto",
+            "format": "json",
+            "json": False,
+        },
+    )
+
+    if resolved.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
-    debug = "--debug" in sys.argv or os.environ.get("BIJUXCLI_DEBUG") == "1"
-    verbose = any(a in ("-v", "--verbose") for a in args)
-    log_level = "info"
-    color = "auto"
-    if "--log-level" in args:
-        idx = args.index("--log-level")
-        if idx + 1 < len(args):
-            log_level = args[idx + 1]
-    if "--color" in args:
-        idx = args.index("--color")
-        if idx + 1 < len(args):
-            color = args[idx + 1]
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=True,
-        log_level=log_level,
-        color=color,
-    )
     logging_config = LoggingConfig(
-        debug=debug,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=resolved["log_level"],
-        color=resolved["color"],
+        debug=resolved.debug,
+        quiet=resolved.quiet,
+        verbose=resolved.verbose_level > 0,
+        log_level=resolved.log_level,
+        color=resolved.color,
     )
-    setup_structlog(debug, resolved["log_level"])
+    setup_structlog(resolved.debug, resolved.log_level)
     disable_cli_colors_for_test()
 
     if any(a in ("--version", "-V") for a in args):
@@ -386,6 +394,7 @@ def main() -> int:
         return 0
 
     container = DIContainer.current()
+    container.register(EffectiveConfig, resolved)
     register_default_services(
         container,
         logging_config=logging_config,
@@ -401,7 +410,7 @@ def main() -> int:
 
     missing_format_msg = check_missing_format_argument(args)
     if missing_format_msg:
-        print_json_error(missing_format_msg, 2, quiet)
+        print_json_error(missing_format_msg, 2, resolved.quiet)
         return 2
 
     command_line = args
@@ -414,19 +423,19 @@ def main() -> int:
     except typer.Exit as exc:
         exit_code = exc.exit_code
     except NoSuchOption as exc:
-        print_json_error(f"No such option: {exc.option_name}", 2, quiet)
+        print_json_error(f"No such option: {exc.option_name}", 2, resolved.quiet)
         exit_code = 2
     except UsageError as exc:
-        print_json_error(str(exc), 2, quiet)
+        print_json_error(str(exc), 2, resolved.quiet)
         exit_code = 2
     except CommandError as exc:
-        print_json_error(str(exc), 1, quiet)
+        print_json_error(str(exc), 1, resolved.quiet)
         exit_code = 1
     except KeyboardInterrupt:
-        print_json_error("Aborted by user", 130, quiet)
+        print_json_error("Aborted by user", 130, resolved.quiet)
         exit_code = 130
     except Exception as exc:
-        print_json_error(f"Unexpected error: {exc}", 1, quiet)
+        print_json_error(f"Unexpected error: {exc}", 1, resolved.quiet)
         exit_code = 1
 
     if should_record_command_history(command_line):

@@ -27,7 +27,6 @@ from typing import Any, cast
 
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
-from bijux_cli.cli.commands.utilities import validate_common_flags
 from bijux_cli.core.async_exec import run_awaitable, run_command
 from bijux_cli.core.contracts import (
     ObservabilityProtocol,
@@ -36,6 +35,7 @@ from bijux_cli.core.contracts import (
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
+from bijux_cli.core.precedence import resolve_effective_config
 
 IGNORE = {"PS1", "LS_COLORS", "PROMPT_COMMAND", "GIT_PS1_FORMAT"}
 
@@ -238,16 +238,34 @@ class BijuxAPI:
                 execution errors.
         """
         try:
-            fmt = fmt.lower()
-            if fmt not in ("json", "yaml"):
-                raise BijuxError("Unsupported format", http_status=400)
-
-            if quiet and (verbose or debug):
+            if quiet and verbose:
                 raise BijuxError(
-                    "--quiet cannot be combined with --verbose/--debug", http_status=400
+                    "--quiet cannot be combined with --verbose", http_status=400
                 )
-
-            validate_common_flags(fmt, name, quiet, verbose or debug)
+            resolved = resolve_effective_config(
+                cli={
+                    "quiet": quiet,
+                    "verbose": verbose,
+                    "debug": debug,
+                    "format": fmt,
+                    "pretty": pretty,
+                },
+                env={},
+                file={},
+                defaults={
+                    "quiet": False,
+                    "verbose": False,
+                    "debug": False,
+                    "pretty": True,
+                    "log_level": "info",
+                    "color": "auto",
+                    "format": "json",
+                    "json": False,
+                },
+            )
+            fmt = resolved.fmt
+            if fmt not in ("json", "yaml"):
+                raise BijuxError(f"Unsupported format: {fmt}", http_status=400)
 
             for k, v in os.environ.items():
                 if k in IGNORE:

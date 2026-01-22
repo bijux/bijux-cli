@@ -40,6 +40,7 @@ from typing import Any, NoReturn
 
 from bijux_cli.core.contracts import SerializerProtocol
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import EffectiveConfig
 from bijux_cli.plugins import get_plugins_dir
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
@@ -57,6 +58,38 @@ KNOWN = {
     "--pretty",
     "--no-pretty",
 }
+
+
+def effective_defaults() -> dict[str, Any]:
+    """Fetch defaults from the bootstrapped EffectiveConfig when available."""
+    try:
+        from bijux_cli.app.di import DIContainer
+        from bijux_cli.core.precedence import EffectiveConfig
+
+        effective = DIContainer.current().resolve(EffectiveConfig)
+        if not isinstance(effective, EffectiveConfig):
+            raise TypeError("EffectiveConfig not available")
+    except Exception:
+        return {
+            "quiet": False,
+            "verbose": False,
+            "debug": False,
+            "pretty": True,
+            "log_level": "info",
+            "color": "auto",
+            "format": "json",
+            "json": False,
+        }
+    return {
+        "quiet": effective.quiet,
+        "verbose": effective.verbose_level > 0,
+        "debug": effective.debug,
+        "pretty": effective.pretty,
+        "log_level": effective.log_level,
+        "color": effective.color,
+        "format": effective.fmt,
+        "json": effective.json,
+    }
 
 
 def resolve_serializer() -> SerializerProtocol:
@@ -158,7 +191,10 @@ def contains_non_ascii_env() -> bool:
     if config_path_str:
         if not config_path_str.isascii():
             return True
-        config_path = Path(config_path_str)
+        try:
+            config_path = Path(config_path_str)
+        except NotImplementedError:
+            return False
         if config_path.exists():
             try:
                 config_path.read_text(encoding="ascii")
@@ -197,7 +233,15 @@ def validate_common_flags(
         SystemExit: Exits with code 2 for an unsupported format or 3 for
             a non-ASCII environment.
     """
-    format_lower = (fmt or "").lower()
+    from bijux_cli.core.precedence import resolve_effective_config
+
+    resolved = resolve_effective_config(
+        cli={"format": fmt},
+        env={},
+        file={},
+        defaults=effective_defaults(),
+    )
+    format_lower = resolved.fmt
     if format_lower not in ("json", "yaml"):
         emit_error_and_exit(
             f"Unsupported format: {fmt}",
@@ -287,25 +331,31 @@ def new_run_command(
     DIContainer.current().resolve(EmitterProtocol)
     DIContainer.current().resolve(TelemetryProtocol)
 
-    from bijux_cli.core.precedence import resolve_output_flags
+    from bijux_cli.core.precedence import resolve_effective_config
 
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    include_runtime = resolved["include_runtime"]
+    include_runtime = resolved.include_runtime
 
     format_lower = validate_common_flags(
-        fmt,
+        resolved.fmt,
         command_name,
-        quiet,
+        resolved.quiet,
         include_runtime=include_runtime,
     )
 
     output_format = OutputFormat.YAML if format_lower == "yaml" else OutputFormat.JSON
-    effective_pretty = resolved["pretty"]
+    effective_pretty = resolved.pretty
 
     try:
         payload = payload_builder(include_runtime)
@@ -316,18 +366,18 @@ def new_run_command(
             failure="ascii",
             command=command_name,
             fmt=output_format,
-            quiet=quiet,
+            quiet=resolved.quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            debug=resolved.debug,
         )
     else:
         emit_and_exit(
             payload=payload,
             fmt=output_format,
             effective_pretty=effective_pretty,
-            verbose=verbose,
-            debug=debug,
-            quiet=quiet,
+            verbose=resolved.verbose_level > 0,
+            debug=resolved.debug,
+            quiet=resolved.quiet,
             command=command_name,
             exit_code=exit_code,
         )
@@ -555,7 +605,14 @@ def handle_list_plugins(
     Returns:
         None:
     """
-    format_lower = validate_common_flags(fmt, command, quiet)
+    effective, output_format, format_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
 
     try:
         from bijux_cli.plugins.metadata import list_plugins
@@ -567,10 +624,10 @@ def handle_list_plugins(
             code=1,
             failure="dir_error",
             command=command,
-            fmt=format_lower,
-            quiet=quiet,
-            include_runtime=verbose,
-            debug=debug,
+            fmt=output_format,
+            quiet=effective.quiet,
+            include_runtime=effective.include_runtime,
+            debug=effective.debug,
         )
     else:
 
@@ -595,12 +652,55 @@ def handle_list_plugins(
         new_run_command(
             command_name=command,
             payload_builder=_build_payload,
-            quiet=quiet,
-            verbose=verbose,
+            quiet=effective.quiet,
+            verbose=effective.verbose_level > 0,
             fmt=format_lower,
-            pretty=pretty,
-            debug=debug,
+            pretty=effective.pretty,
+            debug=effective.debug,
         )
+
+
+def resolve_command_config(
+    *,
+    command: str,
+    quiet: bool,
+    verbose: bool,
+    debug: bool,
+    fmt: str,
+    pretty: bool,
+) -> tuple[EffectiveConfig, OutputFormat, str]:
+    """Resolve CLI flags into an effective config and validated output format."""
+    from bijux_cli.core.precedence import resolve_effective_config
+
+    effective = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults={
+            "quiet": False,
+            "verbose": False,
+            "debug": False,
+            "pretty": True,
+            "log_level": "info",
+            "color": "auto",
+            "format": "json",
+            "json": False,
+        },
+    )
+    format_lower = validate_common_flags(
+        effective.fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+    )
+    output_format = OutputFormat.YAML if format_lower == "yaml" else OutputFormat.JSON
+    return effective, output_format, format_lower
 
 
 __all__ = [

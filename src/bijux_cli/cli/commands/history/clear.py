@@ -31,6 +31,7 @@ from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
+    resolve_command_config,
     validate_common_flags,
 )
 from bijux_cli.core.constants import (
@@ -104,17 +105,20 @@ def clear_history(
             payload, indicating success or detailing an error.
     """
     command = "history clear"
-    if debug:
-        verbose = True
-        pretty = True
-    include_runtime = verbose
-
-    fmt_lower = validate_common_flags(
-        fmt,
-        command,
-        quiet,
-        include_runtime=include_runtime,
+    validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
     )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0 or effective.debug
+    debug = effective.debug
+    pretty = effective.pretty
+    include_runtime = effective.include_runtime
 
     history_svc = resolve_history_service(
         command, fmt_lower, quiet, include_runtime, debug

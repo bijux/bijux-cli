@@ -26,7 +26,13 @@ from __future__ import annotations
 import typer
 
 from bijux_cli.cli.commands.plugins.validation import refuse_on_symlink
-from bijux_cli.cli.commands.utilities import handle_list_plugins, validate_common_flags
+from bijux_cli.cli.commands.utilities import (
+    handle_list_plugins,
+    resolve_command_config,
+)
+from bijux_cli.cli.commands.utilities import (
+    validate_common_flags as validate_common_flags,
+)
 from bijux_cli.core.constants import (
     HELP_DEBUG,
     HELP_FORMAT,
@@ -67,7 +73,29 @@ def list_plugin(
     """
     command = "plugins list"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    validate_common_flags(fmt, command, quiet)
+    effective, _, _ = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
     plugins_dir = get_plugins_dir()
-    refuse_on_symlink(plugins_dir, command, fmt_lower, quiet, verbose, debug)
-    handle_list_plugins(command, quiet, verbose, fmt, pretty, debug)
+    refuse_on_symlink(
+        plugins_dir,
+        command,
+        effective.fmt,
+        effective.quiet,
+        effective.verbose_level > 0,
+        effective.debug,
+    )
+    handle_list_plugins(
+        command,
+        effective.quiet,
+        effective.verbose_level > 0,
+        effective.fmt,
+        effective.pretty,
+        effective.debug,
+    )

@@ -29,6 +29,7 @@ from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
+    resolve_command_config,
     validate_common_flags,
 )
 from bijux_cli.core.constants import (
@@ -84,8 +85,20 @@ def clear_memory(
             payload, indicating success or detailing an error.
     """
     command = "memory clear"
+    validate_common_flags(fmt, command, quiet)
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.debug
+    pretty = effective.pretty
 
     memory_svc = resolve_memory_service(command, fmt_lower, quiet, verbose, debug)
 
@@ -99,7 +112,7 @@ def clear_memory(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=effective.include_runtime,
             debug=debug,
         )
 
