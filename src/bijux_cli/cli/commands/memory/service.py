@@ -36,7 +36,7 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import effective_defaults
+from bijux_cli.cli.output import get_execution_policy
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -44,7 +44,6 @@ from bijux_cli.cli.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.precedence import resolve_effective_config
 
 
 def _build_payload(
@@ -172,27 +171,17 @@ def memory_summary(
             payload upon completion or error.
     """
     command = "memory"
-    resolved = resolve_effective_config(
-        cli={
-            "quiet": quiet,
-            "verbose": verbose,
-            "log_level": log_level,
-            "pretty": pretty,
-            "format": fmt,
-        },
-        env={},
-        file={},
-        defaults=effective_defaults(),
-    )
-    quiet = resolved.quiet
-    verbose = resolved.verbose_level > 0
-    debug = resolved.log_level == "debug"
-    include_runtime = resolved.include_runtime
-    effective_pretty = resolved.pretty
-    fmt_lower = normalize_format(resolved.fmt) or "json"
+    _ = (quiet, verbose, log_level, pretty, fmt)
+    policy = get_execution_policy()
+    quiet = policy.quiet
+    verbose = policy.verbose
+    debug = policy.log_level == "debug"
+    include_runtime = policy.include_runtime
+    effective_pretty = policy.pretty
+    fmt_lower = normalize_format(fmt) or "json"
 
     validate_common_flags(
-        resolved.fmt,
+        fmt,
         command,
         quiet,
         include_runtime=include_runtime,

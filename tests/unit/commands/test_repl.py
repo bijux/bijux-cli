@@ -22,6 +22,7 @@ import pytest
 import typer
 
 import bijux_cli.cli.commands.repl as mod
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 class _FakeResult:
@@ -344,6 +345,20 @@ class FakePromptSession:
 
 def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Route human quiet mode to piped path."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="human",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="error",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     monkeypatch.setattr(
         signal,
         "signal",

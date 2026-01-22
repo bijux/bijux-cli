@@ -17,6 +17,7 @@ from bijux_cli.cli.commands.version import (
     _build_payload,
     version_app,
 )
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.version import __version__ as cli_version
 
 runner = CliRunner()
@@ -108,6 +109,20 @@ def test_build_payload_verbose(
 def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
     """Test the version command with YAML format."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="yaml",
+                color="auto",
+                quiet=False,
+                verbose=False,
+                verbose_level=0,
+                log_level="info",
+                pretty=True,
+                include_runtime=False,
+                json=False,
+            ),
+        ),
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
@@ -209,6 +224,20 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
 def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
     """Test the version command with the --quiet flag."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=True,
+                verbose=False,
+                verbose_level=0,
+                log_level="error",
+                pretty=True,
+                include_runtime=False,
+                json=False,
+            ),
+        ),
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
@@ -230,6 +259,20 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
 def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
     """Test the version command with the --verbose flag."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=True,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
@@ -250,6 +293,20 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
 def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
     """Test the version command with the --no-pretty flag."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=False,
+                verbose_level=0,
+                log_level="info",
+                pretty=False,
+                include_runtime=False,
+                json=False,
+            ),
+        ),
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
@@ -270,6 +327,20 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
 def test_version_callback_debug(mock_di_class: MagicMock) -> None:
     """Test the version command with the --log-level flag."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="debug",
+                pretty=True,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
@@ -280,7 +351,7 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=False,
+            verbose=True,
             fmt="json",
             pretty=True,
             log_level="debug",

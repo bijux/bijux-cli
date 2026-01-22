@@ -24,6 +24,8 @@ def ascii_safe(text: Any, _field: str = "") -> str:
 
 def normalize_format(fmt: str | None) -> str:
     """Normalize a format string."""
+    if not isinstance(fmt, str):
+        return ""
     return (fmt or "").strip().lower()
 
 
@@ -58,16 +60,7 @@ def validate_common_flags(
     include_runtime: bool = False,
 ) -> str:
     """Validate output format and ASCII environment."""
-    from bijux_cli.cli.output import effective_defaults
-    from bijux_cli.core.precedence import resolve_effective_config
-
-    resolved = resolve_effective_config(
-        cli={"format": fmt},
-        env={},
-        file={},
-        defaults=effective_defaults(),
-    )
-    format_lower = resolved.fmt
+    format_lower = normalize_format(fmt) or "json"
     if format_lower not in ("json", "yaml"):
         from bijux_cli.cli.emit import emit_error_and_exit
 

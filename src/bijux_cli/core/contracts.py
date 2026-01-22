@@ -88,6 +88,8 @@ class Emitter(Protocol):
         level: str,
         message: str,
         output: str | None,
+        emit_output: bool = True,
+        emit_diagnostics: bool = False,
         **context: Any,
     ) -> None:
         """Serialize and emit a structured payload."""

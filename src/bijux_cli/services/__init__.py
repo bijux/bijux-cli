@@ -124,8 +124,6 @@ def register_default_services(
         lambda: bijux_cli.infra.emitter.ConsoleEmitter(
             telemetry=di.resolve(TelemetryProtocol),
             output_format=output_format,
-            debug=logging_config.debug,
-            quiet=logging_config.quiet,
         ),
     )
     di.register(Emitter, lambda: di.resolve(bijux_cli.infra.emitter.ConsoleEmitter))

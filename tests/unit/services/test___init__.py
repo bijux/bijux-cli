@@ -161,8 +161,6 @@ def test_register_default_services_100pct(
         assert mock_emitter_init.call_args.kwargs == {
             "telemetry": tel_inst,
             "output_format": output_format,
-            "debug": logging_config.debug,
-            "quiet": logging_config.quiet,
         }
 
         serializer_inst = di.resolve(Serializer)

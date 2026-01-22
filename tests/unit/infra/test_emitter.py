@@ -30,13 +30,9 @@ def emitter(mock_telemetry: MagicMock) -> ConsoleEmitter:
 
 def test_init(mock_telemetry: MagicMock) -> None:
     """Test the ConsoleEmitter's constructor with all parameters."""
-    em = ConsoleEmitter(
-        mock_telemetry, output_format=OutputFormat.YAML, debug=True, quiet=True
-    )
+    em = ConsoleEmitter(mock_telemetry, output_format=OutputFormat.YAML)
     assert em._telemetry is mock_telemetry
     assert em._default_format == OutputFormat.YAML
-    assert em._debug is True
-    assert em._quiet is True
 
 
 @patch("bijux_cli.infra.emitter.serializer_for")
@@ -106,13 +102,12 @@ def test_emit_debug_print(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that diagnostic information is printed when debug mode is enabled."""
-    emitter._debug = True
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "output"
     mock_serializer_for.return_value = mock_serializer
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error", message="test_msg")
+        emitter.emit({}, level="error", message="test_msg", emit_diagnostics=True)
     mock_print.assert_any_call("Diagnostics: emitted payload", file=sys.stderr)
     mock_log.assert_called_with("test_msg", output="output")
 
@@ -122,8 +117,7 @@ def test_emit_quiet_skip(
     mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
-    emitter._quiet = True
-    emitter.emit({}, level="info")
+    emitter.emit({}, level="info", emit_output=False)
     mock_serializer_for.assert_not_called()
 
 
@@ -133,12 +127,11 @@ def test_emit_quiet_error_proceed(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission proceeds for error level even in quiet mode."""
-    emitter._quiet = True
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "error"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level="error")
+    emitter.emit({}, level="error", emit_output=True)
 
     mock_print.assert_called_with("error", file=sys.stdout, flush=True)
 
@@ -149,12 +142,11 @@ def test_emit_quiet_critical_proceed(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission proceeds for critical level even in quiet mode."""
-    emitter._quiet = True
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "critical"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level="critical")
+    emitter.emit({}, level="critical", emit_output=True)
 
     mock_print.assert_called_with("critical", file=sys.stdout, flush=True)
 
@@ -165,14 +157,13 @@ def test_emit_telemetry_fail_debug(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that a telemetry failure is logged when debug mode is enabled."""
-    emitter._debug = True
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "output"
     cast(Mock, mock_serializer_for).return_value = mock_serializer
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error")
+        emitter.emit({}, level="error", emit_diagnostics=True)
     mock_log.assert_called_with("Telemetry failed", error="tel fail")
 
 
@@ -182,14 +173,13 @@ def test_emit_telemetry_fail_no_debug(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that a telemetry failure is silently ignored when debug is disabled."""
-    emitter._debug = False
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "output"
     mock_serializer_for.return_value = mock_serializer
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error")
+        emitter.emit({}, level="error", emit_diagnostics=False)
     mock_log.assert_not_called()
 
 

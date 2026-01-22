@@ -16,6 +16,7 @@ from bijux_cli.cli.commands.sleep import (
     _build_payload,
     sleep_app,
 )
+from bijux_cli.core.precedence import ExecutionPolicy
 
 runner: CliRunner = CliRunner()
 
@@ -127,6 +128,20 @@ def test_sleep_timeout_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Succeeds and returns payload with runtime when verbose."""
     _install_fake_container(monkeypatch, get_returns="10")
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=True,
+            include_runtime=True,
+            json=False,
+        ),
+    )
 
     def _sleep(_s: float) -> None:
         return None

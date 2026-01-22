@@ -163,6 +163,8 @@ def _run_watch_mode(
                         level="info",
                         message="Status update",
                         output=None,
+                        emit_output=True,
+                        emit_diagnostics=debug,
                     )
                 telemetry.event(
                     "COMMAND_SUCCESS",
@@ -205,6 +207,8 @@ def _run_watch_mode(
                     level="info",
                     message="Status watch stopped",
                     output=None,
+                    emit_output=True,
+                    emit_diagnostics=debug,
                 )
             telemetry.event(
                 "COMMAND_STOPPED",

@@ -121,11 +121,3 @@ def clear_config(
         pretty=pretty,
         log_level=log_level,
     )
-
-
-def parse_global_flags() -> dict[str, object]:
-    """Legacy shim for tests; do not use in command logic."""
-    from bijux_cli.cli.flags import parse_and_apply_global_flags
-
-    flags, _ = parse_and_apply_global_flags([])
-    return flags

@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 
 import bijux_cli.cli.commands.plugins.list as list_mod
 from bijux_cli.cli.root import app as cli_app
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
@@ -56,8 +57,24 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def test_default_list(caps: dict[str, Any], runner: CliRunner) -> None:
+def test_default_list(
+    caps: dict[str, Any], runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test the 'plugins list' command with default flags."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     result = runner.invoke(cli_app, ["plugins", "list"])
     assert result.exit_code == 0
 
@@ -78,8 +95,24 @@ def test_default_list(caps: dict[str, Any], runner: CliRunner) -> None:
     assert caps["run"]["log_level"] == "info"
 
 
-def test_all_flags(caps: dict[str, Any], runner: CliRunner) -> None:
+def test_all_flags(
+    caps: dict[str, Any], runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test the 'plugins list' command with all flags specified."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="yaml",
+            color="auto",
+            quiet=True,
+            verbose=True,
+            verbose_level=1,
+            log_level="error",
+            pretty=False,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     result = runner.invoke(
         cli_app,
         [

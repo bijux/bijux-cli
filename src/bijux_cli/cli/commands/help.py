@@ -46,7 +46,7 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import effective_defaults
+from bijux_cli.cli.output import get_execution_policy
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -306,26 +306,14 @@ def help_callback(
 
     tokens = command_path or []
     command = "help"
-    from bijux_cli.core.precedence import resolve_effective_config
-
-    resolved = resolve_effective_config(
-        cli={
-            "quiet": quiet,
-            "verbose": verbose,
-            "log_level": log_level,
-            "pretty": pretty,
-            "format": fmt,
-        },
-        env={},
-        file={},
-        defaults=effective_defaults(),
-    )
-    effective_include_runtime = resolved.include_runtime
-    effective_pretty = resolved.pretty
+    _ = (quiet, verbose, log_level, pretty, fmt)
+    policy = get_execution_policy()
+    effective_include_runtime = policy.include_runtime
+    effective_pretty = policy.pretty
     fmt_lower = fmt.strip().lower()
     error_fmt = fmt_lower if fmt_lower in ("json", "yaml") else "json"
 
-    if resolved.quiet:
+    if policy.quiet:
         if fmt_lower not in _VALID_FORMATS:
             raise SystemExit(2)
 
@@ -349,7 +337,7 @@ def help_callback(
         validate_common_flags(
             fmt,
             command,
-            resolved.quiet,
+            policy.quiet,
             include_runtime=effective_include_runtime,
         )
 
@@ -360,9 +348,9 @@ def help_callback(
             failure="format",
             command=command,
             fmt=error_fmt,
-            quiet=resolved.quiet,
+            quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(resolved.log_level == "debug"),
+            debug=(policy.log_level == "debug"),
         )
 
     for token in tokens:
@@ -373,9 +361,9 @@ def help_callback(
                 failure="null_byte",
                 command=command,
                 fmt=error_fmt,
-                quiet=resolved.quiet,
+                quiet=policy.quiet,
                 include_runtime=effective_include_runtime,
-                debug=(resolved.log_level == "debug"),
+                debug=(policy.log_level == "debug"),
             )
         try:
             token.encode("ascii")
@@ -386,9 +374,9 @@ def help_callback(
                 failure="ascii",
                 command=command,
                 fmt=error_fmt,
-                quiet=resolved.quiet,
+                quiet=policy.quiet,
                 include_runtime=effective_include_runtime,
-                debug=(resolved.log_level == "debug"),
+                debug=(policy.log_level == "debug"),
             )
 
     if contains_non_ascii_env():
@@ -398,9 +386,9 @@ def help_callback(
             failure="ascii",
             command=command,
             fmt=error_fmt,
-            quiet=resolved.quiet,
+            quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(resolved.log_level == "debug"),
+            debug=(policy.log_level == "debug"),
         )
 
     target = _find_target_command(ctx, tokens)
@@ -411,9 +399,9 @@ def help_callback(
             failure="not_found",
             command=command,
             fmt=error_fmt,
-            quiet=resolved.quiet,
+            quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(resolved.log_level == "debug"),
+            debug=(policy.log_level == "debug"),
         )
 
     DIContainer.current().resolve(Emitter)
@@ -433,9 +421,9 @@ def help_callback(
             failure="ascii",
             command=command,
             fmt=fmt_lower,
-            quiet=resolved.quiet,
+            quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(resolved.log_level == "debug"),
+            debug=(policy.log_level == "debug"),
         )
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
@@ -443,9 +431,9 @@ def help_callback(
         payload=payload,
         fmt=output_format,
         effective_pretty=effective_pretty,
-        verbose=resolved.verbose_level > 0,
-        debug=(resolved.log_level == "debug"),
-        quiet=resolved.quiet,
+        verbose=policy.verbose,
+        debug=(policy.log_level == "debug"),
+        quiet=policy.quiet,
         command=command,
         exit_code=0,
     )

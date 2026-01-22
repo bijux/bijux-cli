@@ -18,6 +18,7 @@ from bijux_cli.cli.commands.history.clear import (
     resolve_history_service as clear_resolve,
 )
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
@@ -696,6 +697,20 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
     flags = {**mock_flags, "log_level": "debug"}
     with (
         patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="debug",
+                pretty=True,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
+        patch(
             "bijux_cli.cli.commands.history.clear.validate_common_flags",
             return_value="json",
         ) as _,
@@ -828,6 +843,20 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     svc.list.return_value = [{"a": 1}]
     with (
         patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=False,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
+        patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
@@ -868,6 +897,20 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
 def test_history_debug_flag_overrides() -> None:
     """Test that log_level="debug" forces verbose=True and pretty=True."""
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="debug",
+                pretty=True,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags"
         ) as mock_validate,
@@ -998,6 +1041,20 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
 
     with (
         patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=False,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
+        patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
@@ -1046,6 +1103,20 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=False,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
+        patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
@@ -1089,6 +1160,20 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
 
     with (
         patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=False,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
+        patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",
         ),
@@ -1130,6 +1215,20 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
     svc = MagicMock(list=MagicMock(return_value=[{"foo": "bar"}]))
 
     with (
+        patch(
+            "bijux_cli.cli.output.get_execution_policy",
+            return_value=ExecutionPolicy(
+                output_format="json",
+                color="auto",
+                quiet=False,
+                verbose=True,
+                verbose_level=1,
+                log_level="info",
+                pretty=False,
+                include_runtime=True,
+                json=False,
+            ),
+        ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
             return_value="json",

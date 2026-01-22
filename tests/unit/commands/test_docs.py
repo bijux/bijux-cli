@@ -22,6 +22,7 @@ from bijux_cli.cli.commands.docs import (
     docs,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 class FakeDocsService:
@@ -332,6 +333,21 @@ def test_docs_file_written_and_emit_and_exit(
         "_resolve_docs_service",
         lambda: FakeDocsService(render_value='{"hello":"world"}'),
     )
+    monkeypatch.setattr(
+        docs_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=False,
+            verbose=True,
+            verbose_level=1,
+            log_level="info",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
+    )
 
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
 
@@ -486,6 +502,21 @@ def test_docs_writes_yaml_and_emit(
         "_resolve_docs_service",
         lambda: FakeDocsService(
             render_value=yaml.safe_dump({"foo": "bar"}, sort_keys=False)
+        ),
+    )
+    monkeypatch.setattr(
+        docs_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="yaml",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=False,
+            include_runtime=False,
+            json=False,
         ),
     )
     ctx: Context = MagicMock()
@@ -668,6 +699,21 @@ def test_docs_stdout_quiet_skips_echo(
         "_resolve_docs_service",
         lambda: FakeDocsService(render_value="X"),
     )
+    monkeypatch.setattr(
+        docs_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="error",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
 
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
@@ -745,6 +791,21 @@ def test_docs_yaml_serialization_failure(
         docs_mod,
         "_resolve_docs_service",
         lambda: FakeDocsService(render_exc=RuntimeError("yaml‐oops")),
+    )
+    monkeypatch.setattr(
+        docs_mod,
+        "get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="yaml",
+            color="auto",
+            quiet=False,
+            verbose=False,
+            verbose_level=0,
+            log_level="info",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
     )
 
     ctx: Context = MagicMock()

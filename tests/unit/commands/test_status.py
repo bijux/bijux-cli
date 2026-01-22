@@ -16,6 +16,7 @@ import typer
 from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.contracts import Emitter
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.services.contracts import TelemetryProtocol
 
 
@@ -273,6 +274,20 @@ def test_status_calls_new_run_command_when_not_watching(
 
     em, tel = FakeEmitter(), FakeTelemetry()
     monkeypatch.setattr(DIContainer, "current", lambda: FakeDI(em, tel))
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=True,
+            verbose=True,
+            verbose_level=1,
+            log_level="error",
+            pretty=False,
+            include_runtime=True,
+            json=False,
+        ),
+    )
     seen: dict[str, Any] = {}
 
     def fake_new_run_command(**kw: Any) -> None:
@@ -363,6 +378,20 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
         return fmt.lower()
 
     monkeypatch.setattr(mod, "validate_common_flags", _validate)
+    monkeypatch.setattr(
+        "bijux_cli.cli.output.get_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format="json",
+            color="auto",
+            quiet=True,
+            verbose=False,
+            verbose_level=0,
+            log_level="debug",
+            pretty=True,
+            include_runtime=False,
+            json=False,
+        ),
+    )
     seen: dict[str, Any] = {}
 
     def fake_run_watch_mode(**kw: Any) -> None:
