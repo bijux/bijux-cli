@@ -20,7 +20,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import platform
 
 import typer
@@ -35,10 +34,11 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import MemoryItemPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
 
 
-def _build_payload(include_runtime: bool, key: str, value: str) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool, key: str, value: str) -> MemoryItemPayload:
     """Constructs the payload confirming a key-value pair was set.
 
     Args:
@@ -50,10 +50,15 @@ def _build_payload(include_runtime: bool, key: str, value: str) -> Mapping[str, 
         Mapping[str, object]: A dictionary containing the status, key, value,
             and optional runtime metadata.
     """
-    payload: dict[str, object] = {"status": "updated", "key": key, "value": value}
+    payload = MemoryItemPayload(status="updated", key=key, value=value)
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return MemoryItemPayload(
+            status=payload.status,
+            key=key,
+            value=value,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 

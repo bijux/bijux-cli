@@ -19,7 +19,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import platform
 
 import typer
@@ -34,10 +33,11 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import MemoryClearPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
 
 
-def _build_payload(include_runtime: bool) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool) -> MemoryClearPayload:
     """Builds the payload confirming that the in-memory store was cleared.
 
     Args:
@@ -47,10 +47,14 @@ def _build_payload(include_runtime: bool) -> Mapping[str, object]:
         Mapping[str, object]: A dictionary containing the status, a count of 0,
             and optional runtime metadata.
     """
-    payload: dict[str, object] = {"status": "cleared", "count": 0}
+    payload = MemoryClearPayload(status="cleared", count=0)
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return MemoryClearPayload(
+            status=payload.status,
+            count=payload.count,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 

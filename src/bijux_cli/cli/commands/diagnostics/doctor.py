@@ -21,7 +21,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import os
 import platform
 
@@ -37,11 +36,10 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import get_execution_policy, new_run_command
+from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import DoctorPayload
 from bijux_cli.cli.validation import (
     ascii_safe,
-    normalize_format,
-    validate_common_flags,
 )
 from bijux_cli.core.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -57,7 +55,7 @@ doctor_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool) -> DoctorPayload:
     """Builds the payload summarizing CLI environment health.
 
     This function performs a series of checks on the environment and aggregates
@@ -87,14 +85,18 @@ def _build_payload(include_runtime: bool) -> Mapping[str, object]:
             "All core checks passed" if healthy else "Unknown issue detected"
         )
 
-    payload: dict[str, object] = {
-        "status": "healthy" if healthy else "unhealthy",
-        "summary": summary,
-    }
+    payload = DoctorPayload(
+        status="healthy" if healthy else "unhealthy",
+        summary=summary,
+    )
 
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return DoctorPayload(
+            status=payload.status,
+            summary=payload.summary,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
 
     return payload
 
@@ -138,15 +140,19 @@ def doctor(
 
     command = "doctor"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
-    quiet = policy.quiet
-    verbose = policy.verbose
-    debug = policy.log_level == "debug"
-    pretty = policy.pretty
-    include_runtime = policy.include_runtime
-    fmt_lower = normalize_format(fmt) or "json"
-
-    validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        log_level=log_level,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.log_level == "debug"
+    pretty = effective.pretty
+    include_runtime = effective.include_runtime
 
     if ctx.args:
         stray = ctx.args[0]

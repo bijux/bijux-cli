@@ -38,6 +38,7 @@ import typer as _typer
 
 from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.app.di import DIContainer
+from bijux_cli.cli.color import apply_color_mode
 from bijux_cli.cli.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
@@ -132,6 +133,7 @@ if len(_sys.argv) > 1 and _sys.argv[1] == "help" and "--quiet" in _sys.argv:
             and "does not expose a Typer app" in text
         ):
             return
+        color = apply_color_mode(color)
         if styles:
             _orig_click_secho(message, file=file, nl=nl, err=err, color=color, **styles)
         else:

@@ -49,4 +49,12 @@ class OutputFormat(str, Enum):
         raise ValueError(f"{value} is not a valid {cls.__name__}")
 
 
-__all__ = ["OutputFormat"]
+class ColorMode(str, Enum):
+    """Specifies terminal color handling for CLI output."""
+
+    AUTO = "auto"
+    ALWAYS = "always"
+    NEVER = "never"
+
+
+__all__ = ["ColorMode", "OutputFormat"]

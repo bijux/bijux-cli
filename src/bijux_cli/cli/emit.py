@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from dataclasses import fields, is_dataclass
+from enum import Enum
 import json
 import logging
 import sys
@@ -30,6 +31,7 @@ def resolve_serializer() -> Serializer:
 
     class _FallbackSerializer:
         def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
+            obj = _normalize_payload(obj)
             if str(fmt).lower() == "yaml":
                 try:
                     import yaml
@@ -66,8 +68,27 @@ def resolve_serializer() -> Serializer:
     return _FallbackSerializer()
 
 
+def _normalize_payload(obj: Any) -> Any:
+    """Normalize dataclasses and enums into plain serializable structures."""
+    if is_dataclass(obj):
+        payload: dict[str, Any] = {}
+        for field in fields(obj):
+            value = getattr(obj, field.name)
+            if value is None:
+                continue
+            payload[field.name] = _normalize_payload(value)
+        return payload
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, dict):
+        return {key: _normalize_payload(value) for key, value in obj.items()}
+    if isinstance(obj, list | tuple | set):
+        return [_normalize_payload(value) for value in obj]
+    return obj
+
+
 def emit_and_exit(
-    payload: Mapping[str, Any],
+    payload: object,
     fmt: OutputFormat,
     effective_pretty: bool,
     verbose: bool,

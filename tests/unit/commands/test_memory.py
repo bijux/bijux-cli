@@ -270,9 +270,9 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
 def test_summary_build_payload() -> None:
     """Build summary payload."""
     payload = summary_build_payload(False, 5)
-    assert payload["count"] == 5
+    assert payload.count == 5
     payload_verbose = summary_build_payload(True, 5)
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -291,11 +291,13 @@ def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
         mock_resolve.return_value = mock_memory_svc
         clear_memory(**mock_flags)
         mock_memory_svc.clear.assert_called_once()
-        builder: Callable[[bool], dict[str, Any]] = mock_new_run.call_args.kwargs[
+        builder: Callable[[bool], Any] = mock_new_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"status": "cleared", "count": 0}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert payload.status == "cleared"
+        assert payload.count == 0
+        assert builder(True).python
 
 
 def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
@@ -331,9 +333,10 @@ def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
 def test_clear_build_payload() -> None:
     """Build clear payload."""
     payload = clear_build_payload(False)
-    assert payload == {"status": "cleared", "count": 0}
+    assert payload.status == "cleared"
+    assert payload.count == 0
     payload_verbose = clear_build_payload(True)
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -352,11 +355,13 @@ def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
         mock_resolve.return_value = mock_memory_svc
         delete_memory("key", **mock_flags)
         mock_memory_svc.delete.assert_called_with("key")
-        builder: Callable[[bool], dict[str, Any]] = mock_new_run.call_args.kwargs[
+        builder: Callable[[bool], Any] = mock_new_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"status": "deleted", "key": "key"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert payload.status == "deleted"
+        assert payload.key == "key"
+        assert builder(True).python
 
 
 def test_delete_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -437,9 +442,10 @@ def test_delete_memory_exception(mock_flags: dict[str, Any]) -> None:
 def test_delete_build_payload() -> None:
     """Build delete payload."""
     payload = delete_build_payload(False, "key")
-    assert payload == {"status": "deleted", "key": "key"}
+    assert payload.status == "deleted"
+    assert payload.key == "key"
     payload_verbose = delete_build_payload(True, "key")
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -459,11 +465,14 @@ def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
         mock_memory_svc.get.return_value = "value"
         get_memory("key", **mock_flags)
         mock_memory_svc.get.assert_called_with("key")
-        builder: Callable[[bool], dict[str, Any]] = mock_new_run.call_args.kwargs[
+        builder: Callable[[bool], Any] = mock_new_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"status": "ok", "key": "key", "value": "value"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert payload.status == "ok"
+        assert payload.key == "key"
+        assert payload.value == "value"
+        assert builder(True).python
 
 
 def test_get_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -544,9 +553,11 @@ def test_get_memory_exception(mock_flags: dict[str, Any]) -> None:
 def test_get_build_payload() -> None:
     """Build get payload."""
     payload = get_build_payload(False, "key", "value")
-    assert payload == {"status": "ok", "key": "key", "value": "value"}
+    assert payload.status == "ok"
+    assert payload.key == "key"
+    assert payload.value == "value"
     payload_verbose = get_build_payload(True, "key", "value")
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -566,11 +577,14 @@ def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
         mock_memory_svc.keys.return_value = ["key1", "key2"]
         list_memory(**mock_flags)
         mock_memory_svc.keys.assert_called_once()
-        builder: Callable[[bool], dict[str, Any]] = mock_new_run.call_args.kwargs[
+        builder: Callable[[bool], Any] = mock_new_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"status": "ok", "keys": ["key1", "key2"], "count": 2}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert payload.status == "ok"
+        assert payload.keys == ["key1", "key2"]
+        assert payload.count == 2
+        assert builder(True).python
 
 
 def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
@@ -606,9 +620,11 @@ def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
 def test_list_build_payload() -> None:
     """Build list payload."""
     payload = list_build_payload(False, ["key1", "key2"])
-    assert payload == {"status": "ok", "keys": ["key1", "key2"], "count": 2}
+    assert payload.status == "ok"
+    assert payload.keys == ["key1", "key2"]
+    assert payload.count == 2
     payload_verbose = list_build_payload(True, ["key1", "key2"])
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -627,11 +643,14 @@ def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
         mock_resolve.return_value = mock_memory_svc
         set_memory("key", "value", **mock_flags)
         mock_memory_svc.set.assert_called_with("key", "value")
-        builder: Callable[[bool], dict[str, Any]] = mock_new_run.call_args.kwargs[
+        builder: Callable[[bool], Any] = mock_new_run.call_args.kwargs[
             "payload_builder"
         ]
-        assert builder(False) == {"status": "updated", "key": "key", "value": "value"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert payload.status == "updated"
+        assert payload.key == "key"
+        assert payload.value == "value"
+        assert builder(True).python
 
 
 def test_set_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -682,9 +701,11 @@ def test_set_memory_exception(mock_flags: dict[str, Any]) -> None:
 def test_set_build_payload() -> None:
     """Build set payload."""
     payload = set_build_payload(False, "key", "value")
-    assert payload == {"status": "updated", "key": "key", "value": "value"}
+    assert payload.status == "updated"
+    assert payload.key == "key"
+    assert payload.value == "value"
     payload_verbose = set_build_payload(True, "key", "value")
-    assert "python" in payload_verbose
+    assert payload_verbose.python
 
 
 class _DummyCmd(Command):

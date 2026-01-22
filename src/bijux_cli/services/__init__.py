@@ -25,7 +25,7 @@ from bijux_cli.core.contracts import (
     Serializer,
 )
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.plugins.contracts import PluginConfig, RegistryProtocol
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import (
@@ -37,7 +37,6 @@ from bijux_cli.services.diagnostics.contracts import (
 )
 from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.contracts import LoggingConfig
-from bijux_cli.services.plugins.contracts import PluginConfig
 
 if TYPE_CHECKING:
     from bijux_cli.app.di import DIContainer

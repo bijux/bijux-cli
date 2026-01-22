@@ -16,6 +16,7 @@ from bijux_cli.cli.commands.sleep import (
     _build_payload,
     sleep_app,
 )
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 
 runner: CliRunner = CliRunner()
@@ -24,7 +25,9 @@ runner: CliRunner = CliRunner()
 def test_build_payload_no_runtime() -> None:
     """Builds payload without runtime fields."""
     payload = _build_payload(include_runtime=False, slept=1.25)
-    assert payload == {"slept": 1.25}
+    assert payload.slept == 1.25
+    assert payload.python is None
+    assert payload.platform is None
 
 
 def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -48,9 +51,9 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("platform.platform", fake_platform, raising=True)
 
     payload = _build_payload(include_runtime=True, slept=0.5)
-    assert payload["slept"] == 0.5
-    assert payload["python"] == "SAFE(python_version)"
-    assert payload["platform"] == "SAFE(platform)"
+    assert payload.slept == 0.5
+    assert payload.python == "SAFE(python_version)"
+    assert payload.platform == "SAFE(platform)"
     assert {field for _, field in calls} == {"python_version", "platform"}
 
 
@@ -132,7 +135,7 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,

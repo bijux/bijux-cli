@@ -28,6 +28,7 @@ from bijux_cli.cli.commands.config.reload import reload_config
 from bijux_cli.cli.commands.config.service import config
 from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.errors import CommandError
 from bijux_cli.core.precedence import ExecutionPolicy
 
@@ -37,7 +38,7 @@ def mock_flags() -> ExecutionPolicy:
     """Provide a mock execution policy."""
     return ExecutionPolicy(
         output_format="json",
-        color="auto",
+        color=ColorMode.AUTO,
         quiet=False,
         verbose=False,
         verbose_level=0,
@@ -789,7 +790,7 @@ def test_non_ascii_config_path_triggers_error(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -826,7 +827,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -871,7 +872,7 @@ def test_posix_lock_success_and_run(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -925,7 +926,7 @@ def test_posix_lock_import_failure_skips_lock(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -992,7 +993,7 @@ def test_posix_unlock_failure_is_ignored(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -1054,7 +1055,7 @@ def test_non_posix_skips_file_lock_block(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,

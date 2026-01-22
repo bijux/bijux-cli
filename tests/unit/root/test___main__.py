@@ -24,7 +24,6 @@ import bijux_cli.app.bootstrap as main_mod
 from bijux_cli.app.bootstrap import (
     _strip_format_help,
     check_missing_format_argument,
-    disable_cli_colors_for_test,
     get_usage_for_args,
     is_quiet_mode,
     main,
@@ -164,15 +163,6 @@ def test_setup_structlog_switching() -> None:
     setup_structlog()
     setup_structlog("debug")
     assert hasattr(structlog, "get_config")
-
-
-def test_disable_cli_colors_for_test(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that CLI colors are disabled when in test mode."""
-    os.environ.pop("BIJUXCLI_TEST_MODE", None)
-    disable_cli_colors_for_test()
-    os.environ["BIJUXCLI_TEST_MODE"] = "1"
-    disable_cli_colors_for_test()
-    assert os.environ.get("NO_COLOR") == "1"
 
 
 def test_main_success_records_history() -> None:
@@ -322,21 +312,6 @@ def test_filtered_echo_suppresses_and_passes_through(
     assert not out2
 
 
-@pytest.mark.parametrize(
-    "module_name", ["rich.console", "colorama", "prompt_toolkit.shortcuts"]
-)
-def test_disable_cli_colors_handles_missing_modules(
-    monkeypatch: pytest.MonkeyPatch, module_name: str
-) -> None:
-    """Test that disabling colors works even if optional color libraries are missing."""
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "1")
-    if module_name in sys.modules:
-        monkeypatch.delitem(sys.modules, module_name)
-    monkeypatch.setitem(sys.modules, module_name, None)
-    disable_cli_colors_for_test()
-    assert os.environ.get("NO_COLOR") == "1"
-
-
 def test_get_usage_for_args_stops_before_extra(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that get_usage_for_args truncates arguments after --help."""
     app = typer.Typer()
@@ -425,16 +400,6 @@ def test_main_quiet_and_missing_format_v2(
     out2, _ = capfd.readouterr()
     assert rc2 == 2
     assert "requires an argument" in out2
-
-
-def test_disable_cli_colors_for_test_no_mode_v2(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Test that colors are not disabled if not in test mode (v2)."""
-    monkeypatch.delenv("BIJUXCLI_TEST_MODE", raising=False)
-    monkeypatch.delenv("NO_COLOR", raising=False)
-    disable_cli_colors_for_test()
-    assert "NO_COLOR" not in os.environ
 
 
 def test_get_usage_for_args_truncates_after_help_v2(

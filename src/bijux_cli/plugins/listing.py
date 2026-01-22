@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Plugin listing service."""
+"""Plugin listing helpers."""
 
 from __future__ import annotations
 

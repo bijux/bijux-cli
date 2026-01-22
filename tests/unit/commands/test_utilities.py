@@ -27,10 +27,10 @@ from bijux_cli.cli.validation import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ColorMode, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.plugins.listing import list_installed_plugins
 from bijux_cli.services.history.contracts import HistoryProtocol
-from bijux_cli.services.plugins.listing import list_installed_plugins
 
 
 @pytest.fixture
@@ -362,7 +362,7 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=True,
                 verbose=False,
                 verbose_level=0,
@@ -935,7 +935,7 @@ def test_parse_global_flags_unknown_help() -> None:
 def test_list_installed_plugins_delegates() -> None:
     """Test that plugin listing delegates to metadata."""
     with patch(
-        "bijux_cli.services.plugins.listing.list_plugins",
+        "bijux_cli.plugins.listing.list_plugins",
         return_value=[{"name": "p1"}, {"name": "p2"}],
     ):
         assert list_installed_plugins() == [{"name": "p1"}, {"name": "p2"}]

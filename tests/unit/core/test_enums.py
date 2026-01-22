@@ -47,10 +47,10 @@ def test_member_passthrough() -> None:
 
 
 def test_all_exported() -> None:
-    """Test that the module's __all__ contains only the OutputFormat enum."""
+    """Test that the module's __all__ contains the core enums."""
     from bijux_cli.core.enums import __all__
 
-    assert __all__ == ["OutputFormat"]
+    assert __all__ == ["ColorMode", "OutputFormat"]
 
 
 def parse_output_format(value: Any) -> OutputFormat:

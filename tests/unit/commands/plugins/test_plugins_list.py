@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 
 import bijux_cli.cli.commands.plugins.list as list_mod
 from bijux_cli.cli.root import app as cli_app
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -65,7 +66,7 @@ def test_default_list(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -103,7 +104,7 @@ def test_all_flags(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="yaml",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=True,
             verbose_level=1,

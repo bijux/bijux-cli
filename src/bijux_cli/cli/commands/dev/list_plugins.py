@@ -34,7 +34,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.validation import validate_common_flags
-from bijux_cli.services.plugins.listing import list_installed_plugins
+from bijux_cli.plugins.listing import list_installed_plugins
 
 
 def dev_list_plugins(

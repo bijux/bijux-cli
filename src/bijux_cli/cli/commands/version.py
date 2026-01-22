@@ -22,7 +22,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import os
 import platform
 import re
@@ -40,6 +39,7 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import VersionPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -56,7 +56,7 @@ version_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool) -> VersionPayload:
     """Builds the structured payload for the version command.
 
     The version can be overridden by the `BIJUXCLI_VERSION` environment
@@ -86,14 +86,15 @@ def _build_payload(include_runtime: bool) -> Mapping[str, object]:
     else:
         version_ = cli_version
 
-    payload: dict[str, object] = {
-        "version": ascii_safe(version_, "BIJUXCLI_VERSION"),
-    }
+    payload = VersionPayload(version=ascii_safe(version_, "BIJUXCLI_VERSION"))
 
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
-        payload["timestamp"] = time.time()
+        return VersionPayload(
+            version=payload.version,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+            timestamp=time.time(),
+        )
 
     return payload
 

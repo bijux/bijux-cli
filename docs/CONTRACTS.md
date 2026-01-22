@@ -23,7 +23,7 @@ them. It is intentionally short and stable to prevent drift.
   `DiagnosticsConfig` (`src/bijux_cli/services/diagnostics/contracts.py`)
 - History: `HistoryProtocol` (`src/bijux_cli/services/history/contracts.py`)
 - Logging: `LoggingConfig` (`src/bijux_cli/services/logging/contracts.py`)
-- Plugins: `PluginConfig` (`src/bijux_cli/services/plugins/contracts.py`)
+- Plugins: `PluginConfig` (`src/bijux_cli/plugins/contracts.py`)
 
 ## Infra adapters (concrete implementations only)
 

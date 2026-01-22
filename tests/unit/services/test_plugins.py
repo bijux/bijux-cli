@@ -677,19 +677,15 @@ def test_install_plugin_pip(monkeypatch: pytest.MonkeyPatch) -> None:
     assert called["args"] == expected_command
 
 
-def test_lazy_import() -> None:
-    """Test the lazy loading of submodules via __getattr__."""
+def test_explicit_plugin_imports() -> None:
+    """Test that plugin submodules and helpers are explicitly importable."""
     import bijux_cli.plugins as plugins
 
-    _ = plugins.cache
-    _ = plugins.loader
-    _ = plugins.metadata
-    _ = plugins.registry
-    _ = plugins.command_group
-    _ = plugins.dynamic_choices
-    _ = plugins.load_entrypoints
+    assert callable(plugins.command_group)
+    assert callable(plugins.dynamic_choices)
+    assert callable(plugins.load_entrypoints)
     with pytest.raises(AttributeError):
-        _ = plugins.invalid
+        _ = getattr(plugins, "invalid")  # noqa: B009
 
 
 def test_iter_plugin_eps_success() -> None:
@@ -1643,12 +1639,10 @@ async def test_entrypoints_pkgversion_and_sync_startup(
     )
 
 
-def test_plugins_dunder_getattr_imports_submodule() -> None:
-    """Test that __getattr__ correctly lazy-loads submodules."""
-    import bijux_cli.plugins as plugins
+def test_plugins_metadata_importable() -> None:
+    """Test that plugin metadata helpers are importable."""
+    import bijux_cli.plugins.metadata as metadata_mod
 
-    importlib.reload(plugins)
-    metadata_mod = plugins.metadata
     assert hasattr(metadata_mod, "discover_plugins")
 
 
@@ -1715,57 +1709,32 @@ async def test_entrypoints_startup_not_callable(
     await load_entrypoints(di=cast(DIContainer, di), registry=registry)
 
 
-def test_dunder_getattr_submodule_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'metadata' submodule."""
-    import bijux_cli.plugins as plugins
+def test_plugin_submodule_metadata_importable() -> None:
+    """Test the metadata submodule is importable."""
+    import bijux_cli.plugins.metadata as metadata_mod
 
-    mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "metadata"):
-        delattr(mod, "metadata")
-
-    metadata_mod = plugins.metadata
     assert metadata_mod.__name__.endswith("metadata")
-    assert plugins.metadata is metadata_mod
 
 
-def test_dunder_getattr_submodule_loader(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'loader' submodule."""
-    import bijux_cli.plugins as plugins
+def test_plugin_submodule_loader_importable() -> None:
+    """Test the loader submodule is importable."""
+    import bijux_cli.plugins.loader as loader_mod
 
-    mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "loader"):
-        delattr(mod, "loader")
-
-    loader_mod = plugins.loader
     assert loader_mod.__name__.endswith("loader")
-    assert plugins.loader is loader_mod
 
 
-def test_dunder_getattr_submodule_cache(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'cache' submodule."""
-    import bijux_cli.plugins as plugins
+def test_plugin_submodule_cache_importable() -> None:
+    """Test the cache submodule is importable."""
+    import bijux_cli.plugins.cache as cache_mod
 
-    mod = cast(Any, sys.modules[plugins.__name__])
-    if hasattr(mod, "cache"):
-        delattr(mod, "cache")
-
-    cache_mod = plugins.cache
     assert cache_mod.__name__.endswith("cache")
-    assert plugins.cache is cache_mod
 
 
-def test_dunder_getattr_submodule_registry(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test lazy loading of the 'registry' submodule."""
-    import bijux_cli.plugins as plugins
+def test_plugin_submodule_registry_importable() -> None:
+    """Test the registry submodule is importable."""
+    import bijux_cli.plugins.registry as registry_mod
 
-    mod = cast(Any, sys.modules[plugins.__name__])
-
-    if hasattr(mod, "registry"):
-        delattr(mod, "registry")
-
-    registry_mod = plugins.registry
     assert registry_mod.__name__.endswith("registry")
-    assert plugins.registry is registry_mod
 
 
 def test_install_plugin_pip_fails(monkeypatch: pytest.MonkeyPatch) -> None:

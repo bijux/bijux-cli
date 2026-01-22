@@ -18,6 +18,7 @@ from bijux_cli.cli.commands.history.clear import (
     resolve_history_service as clear_resolve,
 )
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -700,7 +701,7 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -846,7 +847,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -894,20 +895,20 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     assert "platform" in payload
 
 
-def test_history_debug_flag_overrides() -> None:
-    """Test that log_level="debug" forces verbose=True and pretty=True."""
+def test_history_debug_flag_respects_verbose_and_pretty() -> None:
+    """Test that debug does not override verbose or pretty flags."""
     with (
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
+                verbose=False,
+                verbose_level=0,
                 log_level="debug",
-                pretty=True,
-                include_runtime=True,
+                pretty=False,
+                include_runtime=False,
                 json=False,
             ),
         ),
@@ -940,12 +941,12 @@ def test_history_debug_flag_overrides() -> None:
         )
 
         mock_validate.assert_called_once_with(
-            "json", "history", False, include_runtime=True
+            "json", "history", False, include_runtime=False
         )
 
         _, kwargs = mock_new_run.call_args
-        assert kwargs["verbose"] is True
-        assert kwargs["pretty"] is True
+        assert kwargs["verbose"] is False
+        assert kwargs["pretty"] is False
         assert kwargs["log_level"] == "debug"
 
 
@@ -1044,7 +1045,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -1106,7 +1107,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -1163,7 +1164,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -1219,7 +1220,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,

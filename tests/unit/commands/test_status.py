@@ -16,6 +16,7 @@ import typer
 from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.contracts import Emitter
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -119,22 +120,21 @@ def test_build_payload_minimal(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(mod, "ascii_safe", _fake_ascii)
     p = mod._build_payload(include_runtime=False)
-    assert p == {"status": "ok"}
+    assert p.status == "ok"
     assert called["ascii"] == 0
 
 
 def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     """Build payload with runtime info."""
-    from collections.abc import Mapping
 
     def fake_ascii_safe(v: str, n: str) -> str:
         return v
 
     monkeypatch.setattr(mod, "ascii_safe", fake_ascii_safe)
-    p: Mapping[str, object] = mod._build_payload(include_runtime=True)
-    assert p["status"] == "ok"
-    assert isinstance(p["python"], str)
-    assert isinstance(p["platform"], str)
+    p = mod._build_payload(include_runtime=True)
+    assert p.status == "ok"
+    assert isinstance(p.python, str)
+    assert isinstance(p.platform, str)
 
 
 def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -278,7 +278,7 @@ def test_status_calls_new_run_command_when_not_watching(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=True,
             verbose_level=1,
@@ -316,9 +316,9 @@ def test_status_calls_new_run_command_when_not_watching(
     assert seen["pretty"] is False
     pb = seen["payload_builder"]
     payload = pb(True)
-    assert payload["status"] == "ok"
-    assert "python" in payload
-    assert "platform" in payload
+    assert payload.status == "ok"
+    assert payload.python
+    assert payload.platform
 
 
 def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -382,7 +382,7 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
@@ -473,7 +473,8 @@ def test_run_watch_mode_one_iteration_and_stop(
     )
     assert any(call[1]["level"] == "info" for call in em.calls)
     assert any(
-        call[1]["level"] == "info" and call[0].get("status") == "watch-stopped"
+        call[1]["level"] == "info"
+        and getattr(call[0], "status", None) == "watch-stopped"
         for call in em.calls
     )
     names = [n for n, _ in tel.events]
@@ -504,7 +505,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         output: str | None = None,
         **context: Any,
     ) -> None:
-        if isinstance(payload, dict) and payload.get("status") == "watch-stopped":
+        if getattr(payload, "status", None) == "watch-stopped":
             raise ValueError("stop emit fail")
         return FakeEmitter.emit(
             em,

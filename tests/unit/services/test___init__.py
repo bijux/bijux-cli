@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ColorMode, OutputFormat
 from bijux_cli.services import register_default_services
 from bijux_cli.services.logging.contracts import LoggingConfig
 
@@ -103,7 +103,7 @@ def test_register_default_services_100pct(
         import bijux_cli.infra.retry as infra_retry
         import bijux_cli.infra.serializer as infra_serializer
         import bijux_cli.infra.telemetry as infra_tel
-        from bijux_cli.plugins.contracts import RegistryProtocol
+        from bijux_cli.plugins.contracts import PluginConfig, RegistryProtocol
         import bijux_cli.plugins.registry as svc_registry
         import bijux_cli.services.config as svc_config
         from bijux_cli.services.config.contracts import ConfigProtocol
@@ -125,14 +125,13 @@ def test_register_default_services_100pct(
         import bijux_cli.services.history as svc_history
         from bijux_cli.services.history.contracts import HistoryProtocol
         import bijux_cli.services.logging.observability as infra_obs
-        from bijux_cli.services.plugins.contracts import PluginConfig
 
         logging_config = LoggingConfig(
             debug=debug,
             quiet=quiet,
             verbose=False,
             log_level="debug" if debug else "info",
-            color="auto",
+            color=ColorMode.AUTO,
         )
         register_default_services(
             di,
