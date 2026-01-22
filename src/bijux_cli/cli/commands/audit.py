@@ -33,23 +33,20 @@ import typer
 
 from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.app.di import DIContainer
-from bijux_cli.cli.commands.utilities import (
-    ascii_safe,
-    contains_non_ascii_env,
-    emit_error_and_exit,
-    new_run_command,
-    resolve_command_config,
-    validate_env_file_if_present,
-)
-from bijux_cli.cli.commands.utilities import (
-    validate_common_flags as validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+)
+from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.validation import (
+    ascii_safe,
+    contains_non_ascii_env,
+    validate_common_flags,
+    validate_env_file_if_present,
 )
 from bijux_cli.core.contracts import Emitter
 from bijux_cli.core.enums import OutputFormat
@@ -188,6 +185,7 @@ def audit(
         return
 
     command = "audit"
+    validate_common_flags(fmt, command, quiet)
 
     effective, _, fmt_lower = resolve_command_config(
         command=command,

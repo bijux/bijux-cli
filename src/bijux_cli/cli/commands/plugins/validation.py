@@ -17,9 +17,8 @@ helper functions for tasks such as:
 from __future__ import annotations
 
 from pathlib import Path
-import re
 
-PLUGIN_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+from bijux_cli.cli.emit import emit_error_and_exit
 
 
 def ignore_hidden_and_broken_symlinks(dirpath: str, names: list[str]) -> list[str]:
@@ -143,8 +142,6 @@ def refuse_on_symlink(
             a symbolic link.
     """
     if directory.is_symlink():
-        from bijux_cli.cli.commands.utilities import emit_error_and_exit
-
         verb = command.split()[-1]
         emit_error_and_exit(
             f"Refusing to {verb}: plugins dir {directory.name!r} is a symlink.",

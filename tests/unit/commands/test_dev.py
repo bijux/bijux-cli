@@ -601,21 +601,16 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
         called["validated"] = (fmt, cmd, quiet)
         return "json"
 
-    def fake_handle(
-        command: str,
-        quiet: bool,
-        verbose: bool,
-        fmt: str,
-        pretty: bool,
-        log_level: str,
-    ) -> None:
-        called["handled"] = (command, quiet, verbose, fmt, pretty, log_level)
-
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.list_plugins.validate_common_flags", fake_validate
     )
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.dev.list_plugins.handle_list_plugins", fake_handle
+        "bijux_cli.cli.commands.dev.list_plugins.list_installed_plugins",
+        lambda: [{"name": "p1"}],
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_plugins.new_run_command",
+        lambda **kw: called.update(run=kw),
     )
 
     dev_list_plugins(
@@ -623,7 +618,12 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
     assert called["validated"] == ("json", "dev list-plugins", True)
-    assert called["handled"] == ("dev list-plugins", True, False, "json", True, "info")
+    assert called["run"]["command_name"] == "dev list-plugins"
+    assert called["run"]["quiet"] is True
+    assert called["run"]["verbose"] is False
+    assert called["run"]["fmt"] == "json"
+    assert called["run"]["pretty"] is True
+    assert called["run"]["log_level"] == "error"
 
 
 def test_dev_callback_returns_when_subcommand(

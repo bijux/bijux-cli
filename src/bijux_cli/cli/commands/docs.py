@@ -33,20 +33,19 @@ import typer
 import typer.core
 
 from bijux_cli.app.async_exec import AsyncTyper
-from bijux_cli.cli.commands.utilities import (
-    contains_non_ascii_env,
-    effective_defaults,
-    emit_and_exit,
-    emit_error_and_exit,
-    normalize_format,
-    validate_common_flags,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+)
+from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.output import effective_defaults
+from bijux_cli.cli.validation import (
+    contains_non_ascii_env,
+    normalize_format,
+    validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import resolve_effective_config
@@ -122,7 +121,7 @@ def _build_spec_payload(include_runtime: bool) -> Mapping[str, object]:
             non-ASCII characters.
     """
     from bijux_cli.cli.commands import list_registered_command_names
-    from bijux_cli.cli.commands.utilities import ascii_safe
+    from bijux_cli.cli.validation import ascii_safe
 
     version_str = ascii_safe(CLI_VERSION, "version")
     payload: dict[str, object] = {

@@ -34,13 +34,6 @@ import sys
 import typer
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.cli.commands.utilities import (
-    ascii_safe,
-    emit_error_and_exit,
-    new_run_command,
-    parse_global_flags,
-    resolve_command_config,
-)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -48,6 +41,9 @@ from bijux_cli.cli.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.validation import ascii_safe
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -103,15 +99,14 @@ def set_config(
                 debug=False,
                 extra={"path": "[non-ascii path provided]"},
             )
-    flags = parse_global_flags()
     command = "config set"
     effective, _, fmt_lower = resolve_command_config(
         command=command,
-        quiet=flags["quiet"],
-        verbose=flags["verbose"],
-        log_level=flags["log_level"],
-        fmt=flags["format"],
-        pretty=flags["pretty"],
+        quiet=quiet,
+        verbose=verbose,
+        log_level=log_level,
+        fmt=fmt,
+        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
@@ -263,3 +258,11 @@ def set_config(
         pretty=pretty,
         log_level=log_level,
     )
+
+
+def parse_global_flags() -> dict[str, object]:
+    """Legacy shim for tests; do not use in command logic."""
+    from bijux_cli.cli.flags import parse_and_apply_global_flags
+
+    flags, _ = parse_and_apply_global_flags([])
+    return flags
