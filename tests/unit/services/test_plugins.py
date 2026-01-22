@@ -18,11 +18,6 @@ import pytest
 from typer.models import ParameterInfo
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    RegistryProtocol,
-    TelemetryProtocol,
-)
 from bijux_cli.core.errors import BijuxError, ServiceError
 from bijux_cli.plugins import (
     get_plugins_dir,
@@ -32,6 +27,7 @@ from bijux_cli.plugins import (
     uninstall_plugin,
     verify_plugin_signature,
 )
+from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.plugins.registry import (
     CoreSpec,
     Registry,
@@ -41,6 +37,7 @@ from bijux_cli.plugins.registry import (
     dynamic_choices,
     load_entrypoints,
 )
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 
 @pytest.fixture

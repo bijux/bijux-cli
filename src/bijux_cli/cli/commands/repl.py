@@ -42,11 +42,11 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from rapidfuzz import process as rf_process
 import typer
 
+from bijux_cli.app.async_exec import AsyncTyper, run_command
 from bijux_cli.cli.commands.utilities import emit_error_and_exit, validate_common_flags
-from bijux_cli.core.async_exec import AsyncTyper, run_command
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT_HELP,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -59,10 +59,9 @@ GLOBAL_OPTS = [
     "--verbose",
     "-f",
     "--format",
+    "--log-level",
     "--pretty",
     "--no-pretty",
-    "-d",
-    "--debug",
     "-h",
     "--help",
 ]
@@ -655,7 +654,7 @@ def main(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("human", "-f", "--format", help=HELP_FORMAT_HELP),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux repl` command.
 
@@ -671,7 +670,7 @@ def main(
         fmt (str): The desired output format. Only "human" is supported for
             the REPL itself.
         pretty (bool): If True, enables pretty-printing for subcommands.
-        debug (bool): If True, enables debug diagnostics for subcommands.
+        log_level (str): The requested logging level for subcommands.
 
     Returns:
         None:
@@ -687,7 +686,7 @@ def main(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -698,7 +697,6 @@ def main(
     effective_include_runtime = resolved.include_runtime
     quiet = resolved.quiet
     verbose = resolved.verbose_level > 0
-    debug = resolved.debug
     pretty = resolved.pretty
 
     fmt_lower = fmt.strip().lower()
@@ -718,7 +716,7 @@ def main(
             fmt=fmt_lower,
             quiet=resolved.quiet,
             include_runtime=effective_include_runtime,
-            debug=resolved.debug,
+            debug=(resolved.log_level == "debug"),
         )
 
     for sig in (

@@ -280,7 +280,7 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
         mock_emit_exit.assert_called_with(
             payload={"test": "value"},
@@ -311,7 +311,7 @@ def test_new_run_command_yaml(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
         mock_emit_exit.assert_called_with(
             payload={"test": "value"},
@@ -347,14 +347,14 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
         mock_error_exit.assert_called_with(
             "build fail",
             code=3,
             failure="ascii",
             command="cmd",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -378,7 +378,7 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                debug=False,
+                log_level="info",
             )
         assert not any(
             call.args[0] == HistoryProtocol for call in mock_di.resolve.call_args_list
@@ -404,7 +404,7 @@ def test_new_run_command_history_skip_history_cmd(
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                debug=False,
+                log_level="info",
             )
         assert not any(
             call.args[0] == HistoryProtocol for call in mock_di.resolve.call_args_list
@@ -434,7 +434,7 @@ def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                debug=False,
+                log_level="info",
             )
         mock_hist.add.assert_called_with(
             command="cmd", params=[], success=True, return_code=0, duration_ms=0.0
@@ -464,7 +464,7 @@ def test_new_run_command_history_fail(mock_di: types.SimpleNamespace) -> None:
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                debug=False,
+                log_level="info",
                 exit_code=1,
             )
         mock_hist.add.assert_called_with(
@@ -499,7 +499,7 @@ def test_new_run_command_history_permission_error(
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: perm error", file=sys.stderr
@@ -531,7 +531,7 @@ def test_new_run_command_history_os_error_perm(mock_di: types.SimpleNamespace) -
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: [Errno 13] perm", file=sys.stderr
@@ -565,7 +565,7 @@ def test_new_run_command_history_os_error_space(
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "No space left on device while writing history: [Errno 28] no space",
@@ -600,7 +600,7 @@ def test_new_run_command_history_os_error_other(
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "Error writing history: [Errno 5] io error", file=sys.stderr
@@ -632,7 +632,7 @@ def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> No
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "Error writing history: other error", file=sys.stderr
@@ -847,7 +847,6 @@ def test_parse_global_flags_empty() -> None:
     assert flags == {
         "help": False,
         "quiet": False,
-        "debug": False,
         "verbose": False,
         "format": "json",
         "pretty": True,
@@ -873,12 +872,20 @@ def test_parse_global_flags_quiet() -> None:
 
 
 def test_parse_global_flags_debug() -> None:
-    """Test parsing the --debug flag."""
+    """Test rejecting the --debug flag."""
     sys.argv = ["bijux", "--debug"]
-    flags = parse_global_flags()
-    assert flags["debug"] is True
-    assert flags["verbose"] is True
-    assert flags["pretty"] is True
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
+        parse_global_flags()
+    mock_exit.assert_called_with(
+        "No such option: --debug",
+        code=2,
+        failure="invalid_flag",
+        command="global",
+        fmt="json",
+        quiet=False,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_parse_global_flags_verbose() -> None:
@@ -900,16 +907,16 @@ def test_parse_global_flags_format_missing() -> None:
     sys.argv = ["bijux", "-f"]
     with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         parse_global_flags()
-        mock_exit.assert_called_with(
-            ANY,
-            code=2,
-            failure="missing_argument",
-            command="global",
-            fmt="json",
-            quiet=False,
-            include_runtime=False,
-            debug=False,
-        )
+    mock_exit.assert_called_with(
+        ANY,
+        code=2,
+        failure="missing_argument",
+        command="global",
+        fmt="json",
+        quiet=False,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_parse_global_flags_format_invalid_no_help() -> None:
@@ -917,16 +924,16 @@ def test_parse_global_flags_format_invalid_no_help() -> None:
     sys.argv = ["bijux", "-f", "invalid"]
     with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
         parse_global_flags()
-        mock_exit.assert_called_with(
-            ANY,
-            code=2,
-            failure="invalid_format",
-            command="global",
-            fmt="invalid",
-            quiet=False,
-            include_runtime=False,
-            debug=False,
-        )
+    mock_exit.assert_called_with(
+        ANY,
+        code=2,
+        failure="invalid_format",
+        command="global",
+        fmt="invalid",
+        quiet=False,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_parse_global_flags_format_invalid_help() -> None:
@@ -1074,7 +1081,7 @@ def test_handle_list_plugins_success(
         ),
         patch("bijux_cli.cli.commands.utilities.new_run_command") as mock_run,
     ):
-        handle_list_plugins("list-plugins", False, False, "json", True, False)
+        handle_list_plugins("list-plugins", False, False, "json", True, "info")
         mock_run.assert_called_with(
             command_name="list-plugins",
             payload_builder=ANY,
@@ -1082,7 +1089,7 @@ def test_handle_list_plugins_success(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
         builder: Callable[[bool], dict[str, Any]] = mock_run.call_args.kwargs[
             "payload_builder"
@@ -1111,21 +1118,21 @@ def test_handle_list_plugins_fail(
         ),
         patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_error,
     ):
-        handle_list_plugins("list-plugins", False, False, "json", True, False)
-        mock_error.assert_called_with(
-            "dir error",
-            code=1,
-            failure="dir_error",
-            command="list-plugins",
-            fmt="json",
-            quiet=False,
-            include_runtime=False,
-            debug=False,
-        )
+        handle_list_plugins("list-plugins", False, False, "json", True, "info")
+    mock_error.assert_called_with(
+        "dir error",
+        code=1,
+        failure="dir_error",
+        command="list-plugins",
+        fmt=OutputFormat.JSON,
+        quiet=False,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_parse_global_flags_multiple() -> None:
-    """Test parsing multiple global flags at once."""
+    """Test rejecting --debug among multiple global flags."""
     sys.argv = [
         "bijux",
         "-q",
@@ -1136,18 +1143,18 @@ def test_parse_global_flags_multiple() -> None:
         "-v",
         "--unknown",
     ]
-    flags = parse_global_flags()
-    assert flags == {
-        "help": False,
-        "quiet": True,
-        "debug": True,
-        "verbose": True,
-        "format": "yaml",
-        "pretty": False,
-        "log_level": "info",
-        "color": "auto",
-    }
-    assert sys.argv == ["bijux", "--unknown"]
+    with patch("bijux_cli.cli.commands.utilities.emit_error_and_exit") as mock_exit:
+        parse_global_flags()
+    mock_exit.assert_called_with(
+        "No such option: --debug",
+        code=2,
+        failure="invalid_flag",
+        command="global",
+        fmt="json",
+        quiet=True,
+        include_runtime=False,
+        debug=False,
+    )
 
 
 def test_all_exported() -> None:
@@ -1295,7 +1302,7 @@ def test_emit_and_exit_history_permission_denied(
                     verbose=False,
                     fmt="json",
                     pretty=True,
-                    debug=False,
+                    log_level="info",
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: [Errno 13] denied", file=sys.stderr

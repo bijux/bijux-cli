@@ -13,12 +13,12 @@ from unittest.mock import patch
 
 import pytest
 
+from bijux_cli.app.async_exec import run_awaitable
 from bijux_cli.app.engine import Engine
-from bijux_cli.core.async_exec import run_awaitable
-from bijux_cli.core.contracts import RegistryProtocol
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import CommandError
 from bijux_cli.infra.telemetry import NoopTelemetry
+from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.observability import Observability
 
@@ -99,7 +99,7 @@ class FakeDI:
     def resolve(self, key: Any) -> Any:
         """Resolve a dependency from the container."""
         if key is Observability:
-            return Observability(debug=False, telemetry=NoopTelemetry())
+            return Observability(log_level="info", telemetry=NoopTelemetry())
         if key is RegistryProtocol:
             return self._registry
         if key is History:
@@ -126,7 +126,7 @@ def make_plugin_dir(base: Path, name: str) -> Path:
 def test_timeout_valid_values(value: str, expected: float) -> None:
     """Test that valid timeout configuration values are parsed correctly."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
     with patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": value}):
         assert eng._timeout() == expected
 
@@ -134,7 +134,7 @@ def test_timeout_valid_values(value: str, expected: float) -> None:
 def test_timeout_keyerror_uses_default() -> None:
     """Test that the default timeout is used when the env var is missing."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
     with patch.dict(os.environ, {}, clear=True):
         assert eng._timeout() == 30.0
 
@@ -142,7 +142,7 @@ def test_timeout_keyerror_uses_default() -> None:
 def test_timeout_invalid_raises_valueerror() -> None:
     """Test that an invalid timeout configuration raises a ValueError."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
     with (
         patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": "oops"}),
         pytest.raises(ValueError, match="Invalid timeout configuration"),
@@ -154,7 +154,7 @@ def test_timeout_invalid_raises_valueerror() -> None:
 async def test_run_command_success_and_exceptions() -> None:
     """Test the command execution logic for success and various failure modes."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
 
     async def exec_ok(x: int, y: int = 1) -> int:
         return x + y
@@ -185,7 +185,7 @@ async def test_run_command_success_and_exceptions() -> None:
 def test_shutdown_flushes_history_and_calls_di_shutdown() -> None:
     """Test that the engine shutdown process flushes history and shuts down the DI container."""
     di = FakeDI()
-    eng = Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
     run_awaitable(eng.shutdown())
     assert di._history.flushed is True
     assert di._shutdown_called is True
@@ -219,7 +219,7 @@ def test_register_plugins_discovers_and_registers(
     make_plugin_dir(tmp_path, "beta")
     (tmp_path / "ignore.txt").write_text("nope")
 
-    Engine(di=di, debug=False, fmt=OutputFormat.JSON)
+    Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
 
     assert len(calls) == 2
     assert len(di._registry.register_calls) == 2

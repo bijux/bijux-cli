@@ -16,7 +16,15 @@ import yaml
 
 from tests.e2e.conftest import run_cli
 
-KNOWN_FLAGS = ["--help", "--format", "--pretty", "--no-pretty", "--quiet", "-v", "-d"]
+KNOWN_FLAGS = [
+    "--help",
+    "--format",
+    "--pretty",
+    "--no-pretty",
+    "--quiet",
+    "--log-level",
+    "-v",
+]
 
 
 def _normalize(text: str) -> str:
@@ -118,7 +126,7 @@ def test_help_pretty_and_nopretty_flags() -> None:
     assert len(res2.stdout.strip().splitlines()) == 1
 
 
-@pytest.mark.parametrize("flag", ["-v", "-d"])
+@pytest.mark.parametrize("flag", ["-v"])
 def test_help_verbose_and_debug_flags(flag: str) -> None:
     """Test that verbose and debug flags add extra context."""
     res = run_cli(["help", "--format", "json", flag])
@@ -187,7 +195,7 @@ def test_adr_help_wins_over_errors(error_flags: list[str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "output_flags", [["--debug"], ["--verbose"], ["--format", "json"]]
+    "output_flags", [["--log-level", "debug"], ["--verbose"], ["--format", "json"]]
 )
 def test_adr_quiet_wins_over_output_flags(output_flags: list[str]) -> None:
     """ADR: --quiet must suppress all output from other flags."""
@@ -213,8 +221,8 @@ def test_adr_quiet_preserves_error_code_with_no_output(monkeypatch: Any) -> None
 
 
 def test_adr_debug_overrides_no_pretty() -> None:
-    """ADR: --debug must force pretty-printing, overriding --no-pretty."""
-    res = run_cli(["help", "--debug", "--no-pretty", "--format", "json"])
+    """ADR: --log-level debug must force pretty-printing, overriding --no-pretty."""
+    res = run_cli(["help", "--log-level", "debug", "--no-pretty", "--format", "json"])
     assert res.returncode == 0
     assert "\n" in res.stdout
     payload = assert_json_obj(res.stdout)
@@ -222,8 +230,18 @@ def test_adr_debug_overrides_no_pretty() -> None:
 
 
 def test_adr_debug_with_error_is_verbose_and_pretty() -> None:
-    """ADR: An error under --debug must be verbose and pretty-printed."""
-    res = run_cli(["help", "nonexistent", "--debug", "--no-pretty", "--format", "json"])
+    """ADR: An error under --log-level debug must be verbose and pretty-printed."""
+    res = run_cli(
+        [
+            "help",
+            "nonexistent",
+            "--log-level",
+            "debug",
+            "--no-pretty",
+            "--format",
+            "json",
+        ]
+    )
     assert res.returncode == 2
 
     output = res.stderr or res.stdout

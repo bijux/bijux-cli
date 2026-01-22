@@ -101,7 +101,7 @@ def test_docs_stray_args_option(mock_validate: MagicMock, mock_emit: MagicMock) 
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     mock_emit.assert_called_once_with(
         "No such option: -x",
@@ -131,7 +131,7 @@ def test_docs_stray_args_word(mock_validate: MagicMock, mock_emit: MagicMock) ->
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     mock_emit.assert_called_once_with(
         "Too many arguments: foo",
@@ -165,7 +165,7 @@ def test_docs_ascii_env_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     mock_emit.assert_called_once_with(
         "Non-ASCII characters in environment variables",
@@ -204,7 +204,7 @@ def test_docs_ascii_payload_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     mock_emit.assert_called_once_with(
         "bad payload",
@@ -309,7 +309,7 @@ def test_docs_stdout_branch(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     assert ei.value.exit_code == 0
@@ -346,7 +346,7 @@ def test_docs_file_written_and_emit_and_exit(
             verbose=True,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     spec_file = tmp_path / "spec.json"
@@ -400,7 +400,7 @@ def test_docs_write_failure(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     mock_emit.assert_called_once_with(
@@ -450,7 +450,7 @@ def test_docs_missing_output_dir(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     bad_parent = bad_dir.parent
@@ -492,7 +492,13 @@ def test_docs_writes_yaml_and_emit(
     ctx.invoked_subcommand = None
     ctx.args = []
     docs(
-        ctx, out=None, quiet=False, verbose=False, fmt="yaml", pretty=False, debug=False
+        ctx,
+        out=None,
+        quiet=False,
+        verbose=False,
+        fmt="yaml",
+        pretty=False,
+        log_level="info",
     )
     spec_file = tmp_path / "spec.yaml"
     text = spec_file.read_text(encoding="utf-8")
@@ -543,7 +549,7 @@ def test_docs_io_fail_flag(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     mock_emit.assert_called_once_with(
@@ -594,7 +600,7 @@ def test_docs_internal_error_path_none(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     mock_emit.assert_called_once_with(
@@ -637,7 +643,7 @@ def test_docs_stdout_debug_no_diagnostics(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=True,
+            log_level="debug",
         )
 
     out, err = capsys.readouterr()
@@ -674,7 +680,7 @@ def test_docs_stdout_quiet_skips_echo(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     assert exc.value.exit_code == 0
@@ -711,7 +717,7 @@ def test_docs_stdout_yaml(
             verbose=False,
             fmt="yaml",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     assert exc.value.exit_code == 0
@@ -754,7 +760,7 @@ def test_docs_yaml_serialization_failure(
             verbose=False,
             fmt="yaml",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
     mock_emit.assert_called_once_with(

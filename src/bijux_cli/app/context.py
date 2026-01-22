@@ -3,7 +3,7 @@
 
 """Provides a concrete implementation for request-scoped context management.
 
-This module defines the `Context` class, which implements the `ContextProtocol`.
+This module defines the `Context` class, which implements the `ExecutionContext`.
 It uses Python's `contextvars` to provide a thread-safe and async-safe
 mechanism for storing and retrieving key-value data associated with a specific
 command execution or request. This allows state to be passed through the
@@ -20,7 +20,8 @@ from typing import Any, TypeVar
 from injector import inject
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.core.contracts import ContextProtocol, ObservabilityProtocol
+from bijux_cli.core.contracts import ExecutionContext
+from bijux_cli.services.contracts import ObservabilityProtocol
 
 T = TypeVar("T")
 _current_context: ContextVar[dict[str, Any] | None] = ContextVar(
@@ -28,7 +29,7 @@ _current_context: ContextVar[dict[str, Any] | None] = ContextVar(
 )
 
 
-class Context(ContextProtocol):
+class Context(ExecutionContext):
     """Provides thread-safe, request-scoped storage for CLI commands.
 
     This class uses `contextvars` to manage a dictionary of data that is

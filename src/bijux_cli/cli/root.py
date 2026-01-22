@@ -26,8 +26,8 @@ from typing import Any
 import typer
 from typer import Context
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
-from bijux_cli.core.async_exec import AsyncTyper
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:

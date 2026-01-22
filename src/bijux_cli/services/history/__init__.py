@@ -41,8 +41,8 @@ import unicodedata
 
 from injector import inject
 
-from bijux_cli.core.contracts import TelemetryProtocol
 from bijux_cli.infra.paths import HISTORY_FILE
+from bijux_cli.services.contracts import TelemetryProtocol
 from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.observability import Observability
 

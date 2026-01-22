@@ -32,8 +32,7 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--debug",
-    "-d",
+    "--log-level",
     "--no-pretty",
     "--format",
     "-f",
@@ -57,7 +56,7 @@ def flags_verbose(flags: list[str]) -> bool:
 
 def flags_debug(flags: list[str]) -> bool:
     """Check if debug flags are present."""
-    return "--debug" in flags or "-d" in flags
+    return "--log-level" in flags and "debug" in flags
 
 
 @composite
@@ -65,6 +64,9 @@ def flag_permutations(draw: DrawFn) -> list[str]:
     """Generate permutations of command-line flags."""
     base = draw(lists(sampled_from(ALL_FLAGS), min_size=0, max_size=5, unique=False))
     assert isinstance(base, list)
+    if "--log-level" in base:
+        level = draw(sampled_from(["debug", "info", "warning", "error"]))
+        base = [f for f in base if f != "--log-level"] + ["--log-level", level]
     if any(f in base for f in ("--format", "-f")):
         fmt_flag = draw(sampled_from(["--format", "-f"]))
         fmt_value = draw(sampled_from(FORMATS))
@@ -117,9 +119,9 @@ def parse_output(fmt: str, out: str) -> dict[str, Any]:
         (["-f", "yaml"], "yaml", False, False),
         (["-v"], "json", True, False),
         (["--verbose", "--format", "yaml"], "yaml", True, False),
-        (["--debug"], "json", False, True),
-        (["--debug", "--format", "yaml"], "yaml", False, True),
-        (["--debug", "--no-pretty"], "json", False, True),
+        (["--log-level", "debug"], "json", False, True),
+        (["--log-level", "debug", "--format", "yaml"], "yaml", False, True),
+        (["--log-level", "debug", "--no-pretty"], "json", False, True),
     ],
 )
 def test_version_contract(
@@ -162,7 +164,7 @@ def test_version_quiet(flag: str) -> None:
         (["-q", "-v"], False),
         (["--format", "yaml", "-q"], False),
         (["--verbose", "-f", "yaml"], True),
-        (["--debug", "--no-pretty"], True),
+        (["--log-level", "debug", "--no-pretty"], True),
     ],
 )
 def test_version_flag_output_precedence(flags: list[str], expect: bool) -> None:
@@ -193,20 +195,18 @@ def test_version_no_pretty_flag(fmt: str) -> None:
     assert res.stdout.count("\n") <= 1
 
 
-@pytest.mark.parametrize("flag", ["--debug", "-d"])
-def test_version_debug_output(flag: str) -> None:
-    """Test the debug flag produces debug information."""
-    res = run_cli(["version", flag])
+def test_version_debug_output() -> None:
+    """Test the log-level debug flag produces debug information."""
+    res = run_cli(["version", "--log-level", "debug"])
     assert res.returncode == 0
     out = json.loads(res.stdout)
     assert_version_output(out, debug=True)
     assert res.stderr.strip()
 
 
-@pytest.mark.parametrize("flag", ["--debug", "-d"])
-def test_version_debug_pretty_overrides_no_pretty(flag: str) -> None:
-    """Test that debug flag's pretty printing overrides --no-pretty."""
-    res = run_cli(["version", flag, "--no-pretty"])
+def test_version_debug_pretty_overrides_no_pretty() -> None:
+    """Test that log-level debug pretty printing overrides --no-pretty."""
+    res = run_cli(["version", "--log-level", "debug", "--no-pretty"])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 2
 

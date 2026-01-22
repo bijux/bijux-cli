@@ -34,6 +34,7 @@ from types import FrameType
 
 import typer
 
+from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
@@ -42,15 +43,15 @@ from bijux_cli.cli.commands.utilities import (
     resolve_command_config,
     validate_common_flags,
 )
-from bijux_cli.core.async_exec import AsyncTyper
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
 )
-from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+from bijux_cli.core.contracts import Emitter
+from bijux_cli.services.contracts import TelemetryProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -88,11 +89,11 @@ def _run_watch_mode(
     fmt: str,
     quiet: bool,
     verbose: bool,
-    debug: bool,
+    log_level: str,
     effective_pretty: bool,
     include_runtime: bool,
     telemetry: TelemetryProtocol,
-    emitter: EmitterProtocol,
+    emitter: Emitter,
 ) -> None:
     """Emits CLI status in a continuous watch mode.
 
@@ -105,11 +106,11 @@ def _run_watch_mode(
         fmt (str): The output format, which must be "json" for streaming.
         quiet (bool): If True, suppresses all output except errors.
         verbose (bool): If True, includes verbose fields in the payload.
-        debug (bool): If True, enables diagnostic output to stderr.
+        log_level (str): The resolved log level name.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python and platform fields.
         telemetry (TelemetryProtocol): The telemetry sink for reporting events.
-        emitter (EmitterProtocol): The output emitter instance.
+        emitter (Emitter): The output emitter instance.
 
     Returns:
         None:
@@ -129,6 +130,7 @@ def _run_watch_mode(
             include_runtime=include_runtime,
         )
 
+    debug = log_level == "debug"
     stop = False
 
     def _sigint_handler(_sig: int, _frame: FrameType | None) -> None:
@@ -224,7 +226,7 @@ def status(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux status` command.
 
@@ -242,8 +244,7 @@ def status(
         fmt (str): The output format, either "json" or "yaml". Watch mode only
             supports "json".
         pretty (bool): If True, pretty-prints the output for human readability.
-        debug (bool): If True, enables debug diagnostics, implying `verbose`
-            and `pretty`.
+        log_level (str): The resolved log level name.
 
     Returns:
         None:
@@ -255,7 +256,7 @@ def status(
     if ctx.invoked_subcommand:
         return
 
-    emitter = DIContainer.current().resolve(EmitterProtocol)
+    emitter = DIContainer.current().resolve(Emitter)
     telemetry = DIContainer.current().resolve(TelemetryProtocol)
     command = "status"
 
@@ -263,13 +264,13 @@ def status(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.debug
+    debug = effective.log_level == "debug"
     pretty = effective.pretty
     validate_common_flags(
         fmt, command, quiet, include_runtime=effective.include_runtime
@@ -298,7 +299,7 @@ def status(
             fmt=fmt_lower,
             quiet=quiet,
             verbose=verbose,
-            debug=debug,
+            log_level=log_level,
             effective_pretty=pretty,
             include_runtime=effective.include_runtime,
             telemetry=telemetry,
@@ -312,5 +313,5 @@ def status(
             verbose=verbose,
             fmt=fmt_lower,
             pretty=pretty,
-            debug=debug,
+            log_level=log_level,
         )

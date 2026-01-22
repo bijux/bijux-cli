@@ -38,9 +38,9 @@ from bijux_cli.cli.commands.utilities import (
 from bijux_cli.cli.commands.utilities import (
     validate_common_flags as validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -60,7 +60,7 @@ def install_plugin(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(False, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Installs a plugin from PyPI by package name.
 
@@ -87,13 +87,13 @@ def install_plugin(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.debug
+    debug = effective.log_level == "debug"
     pretty = effective.pretty
     if Path(name).exists():
         emit_error_and_exit(
@@ -188,5 +188,5 @@ def install_plugin(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
-        debug=debug,
+        log_level=log_level,
     )

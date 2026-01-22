@@ -34,9 +34,9 @@ from bijux_cli.cli.commands.utilities import (
     resolve_command_config,
     validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -83,7 +83,7 @@ def clear_history(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Erases all stored command history.
 
@@ -110,13 +110,13 @@ def clear_history(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0 or effective.debug
-    debug = effective.debug
+    verbose = effective.verbose_level > 0 or (effective.log_level == "debug")
+    debug = effective.log_level == "debug"
     pretty = effective.pretty
     include_runtime = effective.include_runtime
 
@@ -160,5 +160,5 @@ def clear_history(
         verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
-        debug=debug,
+        log_level=log_level,
     )

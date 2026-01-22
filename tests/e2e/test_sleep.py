@@ -29,7 +29,7 @@ SUPPORTED_FORMATS = ["json", "yaml"]
 VALID_FLAGS = {
     "help": ["--help", "-h"],
     "quiet": ["--quiet", "-q"],
-    "debug": ["--debug", "-d"],
+    "debug": ["--log-level", "debug"],
     "verbose": ["--verbose", "-v"],
 }
 ALL_FLAGS = [
@@ -37,8 +37,8 @@ ALL_FLAGS = [
     "-h",
     "--quiet",
     "-q",
-    "--debug",
-    "-d",
+    "--log-level",
+    "debug",
     "--verbose",
     "-v",
     "--format",
@@ -214,9 +214,9 @@ def test_sleep_interrupt_signal() -> None:
 def test_sleep_flag_combinations() -> None:
     """Test various legal flag combinations."""
     combos = [
-        ["--seconds", "0.01", "--quiet", "--debug"],
+        ["--seconds", "0.01", "--quiet", "--log-level", "debug"],
         ["--seconds", "0.01", "--quiet", "--verbose"],
-        ["--seconds", "0.01", "--debug", "--no-pretty"],
+        ["--seconds", "0.01", "--log-level", "debug", "--no-pretty"],
         ["--seconds", "0.01", "--format", "yaml", "--no-pretty"],
     ]
     for args in combos:
@@ -324,13 +324,20 @@ def test_sleep_help_flag(flag: str) -> None:
     output = res.stdout
     assert res.returncode == 0
     assert output.lstrip().startswith("Usage:") or "Pause execution" in output
-    for opt in ["--seconds", "--quiet", "--debug", "--format", "--no-pretty"]:
+    for opt in [
+        "--seconds",
+        "--quiet",
+        "--log-level",
+        "debug",
+        "--format",
+        "--no-pretty",
+    ]:
         assert opt in output
 
 
 @pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 def test_sleep_debug_flag(flag: str) -> None:
-    """Test --debug emits pretty-printed JSON and diagnostics."""
+    """Test --log-level debug emits pretty-printed JSON and diagnostics."""
     res = run_cli(["sleep", "--seconds", "0.01", flag])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 1
@@ -340,7 +347,7 @@ def test_sleep_debug_flag(flag: str) -> None:
 
 @pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 def test_sleep_debug_forces_pretty(flag: str) -> None:
-    """Test --debug overrides --no-pretty (still pretty-printed)."""
+    """Test --log-level debug overrides --no-pretty (still pretty-printed)."""
     res = run_cli(["sleep", "--seconds", "0.01", flag, "--no-pretty"])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 1
@@ -397,7 +404,9 @@ def test_sleep_invalid_format(flag: str, value: str) -> None:
     assert "format" in data["error"].lower()
 
 
-@pytest.mark.parametrize("flag", [["--format", "json"], ["--debug"], ["--pretty"]])
+@pytest.mark.parametrize(
+    "flag", [["--format", "json"], ["--log-level", "debug"], ["--pretty"]]
+)
 def test_sleep_duplicate_flags(flag: list[str]) -> None:
     """Last value for duplicate flag is honored."""
     res = run_cli(["sleep", "--seconds", "0.01", *flag, *flag])
@@ -407,10 +416,10 @@ def test_sleep_duplicate_flags(flag: list[str]) -> None:
 @pytest.mark.parametrize(
     ("args", "expect_output"),
     [
-        (["--seconds", "0.01", "--quiet", "--debug"], False),
+        (["--seconds", "0.01", "--quiet", "--log-level", "debug"], False),
         (["--seconds", "0.01", "--quiet", "--verbose"], False),
         (["--seconds", "0.01", "--format", "yaml", "--no-pretty"], True),
-        (["--seconds", "0.01", "--debug", "--no-pretty"], True),
+        (["--seconds", "0.01", "--log-level", "debug", "--no-pretty"], True),
     ],
 )
 def test_sleep_flag_output_precedence(args: list[str], expect_output: bool) -> None:
@@ -429,8 +438,8 @@ def test_sleep_flag_output_precedence(args: list[str], expect_output: bool) -> N
         ["--seconds", "0.01", "--format", "yaml"],
         ["--seconds", "0.01", "--quiet"],
         ["--seconds", "0.01", "-q"],
-        ["--seconds", "0.01", "-d"],
-        ["--seconds", "0.01", "--debug"],
+        ["--seconds", "0.01"],
+        ["--seconds", "0.01", "--log-level", "debug"],
         ["--seconds", "0.01", "--pretty"],
         ["--seconds", "0.01", "-f", "json"],
         ["--seconds", "0.01", "-f", "yaml"],

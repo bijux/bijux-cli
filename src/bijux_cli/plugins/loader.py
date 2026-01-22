@@ -13,7 +13,7 @@ from typing import Any
 import click
 import typer
 
-from bijux_cli.core.async_exec import AsyncTyper, adapt_typer
+from bijux_cli.app.async_exec import AsyncTyper, adapt_typer
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 

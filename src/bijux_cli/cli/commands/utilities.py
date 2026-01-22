@@ -18,7 +18,7 @@ functions for handling standard CLI tasks, such as:
     encapsulates the standard lifecycle of a command: validation, payload
     construction, and emission.
 * **Parsing & Sanitization:** Helpers for sanitizing strings to be ASCII-safe
-    and a pre-parser for global flags (`--quiet`, `--debug`, etc.) that
+    and a pre-parser for global flags (`--quiet`, `--log-level`, etc.) that
     operates before Typer's main dispatch.
 * **Plugin Management:** Utilities for discovering and listing installed
     plugins from the filesystem.
@@ -38,7 +38,7 @@ import sys
 import time
 from typing import Any, NoReturn
 
-from bijux_cli.core.contracts import SerializerProtocol
+from bijux_cli.core.contracts import Serializer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import EffectiveConfig
 from bijux_cli.plugins import get_plugins_dir
@@ -50,11 +50,11 @@ KNOWN = {
     "--help",
     "-q",
     "--quiet",
-    "--debug",
     "-v",
     "--verbose",
     "-f",
     "--format",
+    "--log-level",
     "--pretty",
     "--no-pretty",
 }
@@ -73,7 +73,6 @@ def effective_defaults() -> dict[str, Any]:
         return {
             "quiet": False,
             "verbose": False,
-            "debug": False,
             "pretty": True,
             "log_level": "info",
             "color": "auto",
@@ -83,7 +82,6 @@ def effective_defaults() -> dict[str, Any]:
     return {
         "quiet": effective.quiet,
         "verbose": effective.verbose_level > 0,
-        "debug": effective.debug,
         "pretty": effective.pretty,
         "log_level": effective.log_level,
         "color": effective.color,
@@ -92,12 +90,12 @@ def effective_defaults() -> dict[str, Any]:
     }
 
 
-def resolve_serializer() -> SerializerProtocol:
+def resolve_serializer() -> Serializer:
     """Resolve the serializer adapter from the DI container or fallback."""
     try:
         from bijux_cli.app.di import DIContainer
 
-        serializer = DIContainer.current().resolve(SerializerProtocol)
+        serializer = DIContainer.current().resolve(Serializer)
         if hasattr(serializer, "dumps"):
             return serializer
     except Exception as exc:
@@ -301,7 +299,7 @@ def new_run_command(
     verbose: bool,
     fmt: str,
     pretty: bool,
-    debug: bool,
+    log_level: str,
     exit_code: int = 0,
 ) -> None:
     """Orchestrates the standard execution flow of a CLI command.
@@ -318,7 +316,7 @@ def new_run_command(
         verbose (bool): If True, includes runtime metadata in the output.
         fmt (str): The output format ("json" or "yaml").
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug-level output.
+        log_level (str): The requested log level.
         exit_code (int): The exit code to use on successful execution.
 
     Raises:
@@ -326,9 +324,10 @@ def new_run_command(
             appropriate error code on failure.
     """
     from bijux_cli.app.di import DIContainer
-    from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+    from bijux_cli.core.contracts import Emitter
+    from bijux_cli.services.contracts import TelemetryProtocol
 
-    DIContainer.current().resolve(EmitterProtocol)
+    DIContainer.current().resolve(Emitter)
     DIContainer.current().resolve(TelemetryProtocol)
 
     from bijux_cli.core.precedence import resolve_effective_config
@@ -337,9 +336,9 @@ def new_run_command(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
             "pretty": pretty,
             "format": fmt,
+            "log_level": log_level,
         },
         env={},
         file={},
@@ -368,7 +367,7 @@ def new_run_command(
             fmt=output_format,
             quiet=resolved.quiet,
             include_runtime=include_runtime,
-            debug=resolved.debug,
+            debug=(resolved.log_level == "debug"),
         )
     else:
         emit_and_exit(
@@ -376,7 +375,7 @@ def new_run_command(
             fmt=output_format,
             effective_pretty=effective_pretty,
             verbose=resolved.verbose_level > 0,
-            debug=resolved.debug,
+            debug=(resolved.log_level == "debug"),
             quiet=resolved.quiet,
             command=command_name,
             exit_code=exit_code,
@@ -516,12 +515,8 @@ def emit_error_and_exit(
 
 def parse_global_flags() -> dict[str, Any]:
     """Parses global CLI flags from `sys.argv` before Typer dispatch."""
-    from bijux_cli.core.precedence import (
-        apply_parsed_flags,
-    )
-    from bijux_cli.core.precedence import (
-        parse_global_flags as _parse,
-    )
+    from bijux_cli.cli.flags import apply_parsed_flags
+    from bijux_cli.cli.flags import parse_global_flags as _parse
 
     def _bail(msg: str, failure: str, flags: dict[str, Any]) -> None:
         emit_error_and_exit(
@@ -532,7 +527,7 @@ def parse_global_flags() -> dict[str, Any]:
             fmt=flags["format"],
             quiet=flags["quiet"],
             include_runtime=flags["verbose"],
-            debug=flags["debug"],
+            debug=str(flags["log_level"]).lower() == "debug",
         )
 
     flags, retained = _parse(sys.argv[1:], _bail)
@@ -586,7 +581,7 @@ def handle_list_plugins(
     verbose: bool,
     fmt: str,
     pretty: bool,
-    debug: bool,
+    log_level: str,
 ) -> None:
     """Handles the logic for commands that list installed plugins.
 
@@ -600,7 +595,7 @@ def handle_list_plugins(
         verbose (bool): If True, includes runtime metadata in the payload.
         fmt (str): The requested output format ("json" or "yaml").
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug mode.
+        log_level (str): The requested logging level.
 
     Returns:
         None:
@@ -609,7 +604,7 @@ def handle_list_plugins(
         command=command,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         fmt=fmt,
         pretty=pretty,
     )
@@ -627,7 +622,7 @@ def handle_list_plugins(
             fmt=output_format,
             quiet=effective.quiet,
             include_runtime=effective.include_runtime,
-            debug=effective.debug,
+            debug=effective.log_level == "debug",
         )
     else:
 
@@ -656,7 +651,7 @@ def handle_list_plugins(
             verbose=effective.verbose_level > 0,
             fmt=format_lower,
             pretty=effective.pretty,
-            debug=effective.debug,
+            log_level=effective.log_level,
         )
 
 
@@ -665,7 +660,7 @@ def resolve_command_config(
     command: str,
     quiet: bool,
     verbose: bool,
-    debug: bool,
+    log_level: str,
     fmt: str,
     pretty: bool,
 ) -> tuple[EffectiveConfig, OutputFormat, str]:
@@ -676,16 +671,15 @@ def resolve_command_config(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
             "pretty": pretty,
             "format": fmt,
+            "log_level": log_level,
         },
         env={},
         file={},
         defaults={
             "quiet": False,
             "verbose": False,
-            "debug": False,
             "pretty": True,
             "log_level": "info",
             "color": "auto",

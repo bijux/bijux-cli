@@ -42,8 +42,8 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--debug",
-    "-d",
+    "--log-level",
+    "debug",
     "--format",
     "-f",
     "--pretty",
@@ -250,7 +250,7 @@ def test_doctor_unknown_flag_structured_error() -> None:
 
 def test_doctor_no_leaks_common_paths() -> None:
     """Common successful paths should not leak warnings/tracebacks."""
-    for flags in (["--format", "json"], ["--format", "yaml"], ["-v"], ["-d"]):
+    for flags in (["--format", "json"], ["--format", "yaml"], ["-v"], []):
         res = run_cli(["doctor", *flags])
         _no_stacktrace_leak(res.stdout + res.stderr)
 

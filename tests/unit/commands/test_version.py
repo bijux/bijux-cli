@@ -122,7 +122,7 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="yaml",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
 
@@ -202,7 +202,7 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
 
@@ -223,7 +223,7 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="error",
         )
 
 
@@ -243,7 +243,7 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
             verbose=True,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
 
 
@@ -263,18 +263,18 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
 
 def test_version_callback_debug(mock_di_class: MagicMock) -> None:
-    """Test the version command with the --debug flag."""
+    """Test the version command with the --log-level flag."""
     with (
         patch("bijux_cli.cli.commands.version.validate_common_flags") as mock_validate,
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
-        result = runner.invoke(version_app, ["--debug"])
+        result = runner.invoke(version_app, ["--log-level", "debug"])
         assert result.exit_code == 0
         mock_run.assert_called_with(
             command_name="version",
@@ -283,7 +283,7 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=True,
+            log_level="debug",
         )
 
 
@@ -297,4 +297,4 @@ def test_version_callback_help(mock_di_class: MagicMock) -> None:
     assert "-v, --verbose" in out
     assert "-f, --format" in out
     assert re.search(r"--pretty\s*/\s*--no-pretty", out)
-    assert "-d, --debug" in out
+    assert "--log-level" in out

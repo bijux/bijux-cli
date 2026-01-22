@@ -451,7 +451,7 @@ def _stub_out(monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]) -> None
             "verbose": kwargs["verbose"],
             "fmt": kwargs["fmt"],
             "pretty": kwargs["pretty"],
-            "debug": kwargs["debug"],
+            "log_level": kwargs["log_level"],
         }
 
     monkeypatch.setattr(scaffold_mod, "new_run_command", fake_new_run_command)

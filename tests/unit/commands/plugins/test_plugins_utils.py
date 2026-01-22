@@ -103,7 +103,7 @@ def test_refuse_on_symlink_calls_emit(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            log_level=debug,
         )
         raise SystemExit(code)
 

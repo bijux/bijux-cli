@@ -33,7 +33,7 @@ VALID_FLAGS = {
     "help": ["--help", "-h"],
     "quiet": ["--quiet", "-q"],
     "verbose": ["--verbose", "-v"],
-    "debug": ["--debug", "-d"],
+    "debug": ["--log-level", "debug"],
 }
 ALL_FLAGS = [
     "--help",
@@ -42,8 +42,8 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--debug",
-    "-d",
+    "--log-level",
+    "debug",
     "--format",
     "-f",
     "--no-pretty",
@@ -215,7 +215,7 @@ def test_status_no_pretty_flag(fmt: str) -> None:
 
 @pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 def test_status_debug_flag(flag: str) -> None:
-    """Test that the --debug flag produces verbose, pretty-printed output and diagnostics."""
+    """Test that the --log-level debug flag produces verbose, pretty-printed output and diagnostics."""
     res = run_cli(["status", flag])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 2
@@ -226,7 +226,7 @@ def test_status_debug_flag(flag: str) -> None:
 
 @pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 def test_status_debug_forces_pretty(flag: str) -> None:
-    """Test that --debug forces pretty-printing, ignoring --no-pretty."""
+    """Test that --log-level debug forces pretty-printing, ignoring --no-pretty."""
     res = run_cli(["status", flag, "--no-pretty"])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 2
@@ -253,7 +253,7 @@ def test_status_help_flag_strict(flag: str) -> None:
         ["-q", "-v"],
         ["--format", "yaml", "-q"],
         ["--verbose", "-f", "yaml"],
-        ["--debug", "--no-pretty"],
+        ["--log-level", "debug", "--no-pretty"],
     ],
 )
 def test_status_flag_combinations_success(args: list[str]) -> None:
@@ -269,7 +269,7 @@ def test_status_flag_combinations_success(args: list[str]) -> None:
         (["-q", "-v"], False),
         (["--format", "yaml", "-q"], False),
         (["--verbose", "-f", "yaml"], True),
-        (["--debug", "--no-pretty"], True),
+        (["--log-level", "debug", "--no-pretty"], True),
     ],
 )
 def test_status_flag_combinations_output_precedence(
@@ -346,7 +346,9 @@ def test_status_idempotent_fields() -> None:
     assert nondet <= {"timestamp", "uptime"}
 
 
-@pytest.mark.parametrize("flag", [["--format", "json"], ["--verbose"], ["--debug"]])
+@pytest.mark.parametrize(
+    "flag", [["--format", "json"], ["--verbose"], ["--log-level", "debug"]]
+)
 def test_status_no_stacktrace_warning_leakage(flag: list[str]) -> None:
     """Test that no internal warnings or tracebacks leak into output."""
     res = run_cli(["status", *flag])

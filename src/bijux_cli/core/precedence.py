@@ -5,81 +5,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
-import sys
 from typing import Any
-
-
-def parse_global_flags(
-    argv: list[str],
-    on_error: Callable[[str, str, dict[str, Any]], None],
-) -> tuple[dict[str, Any], list[str]]:
-    """Parse global CLI flags from argv and return flags + remaining args."""
-    help_present = any(flag in ("-h", "--help") for flag in argv)
-    flags: dict[str, Any] = {
-        "help": False,
-        "quiet": False,
-        "debug": False,
-        "verbose": False,
-        "format": "json",
-        "pretty": True,
-        "log_level": "info",
-        "color": "auto",
-    }
-    retained: list[str] = []
-    it = iter(argv)
-    for flag in it:
-        if flag in ("-h", "--help"):
-            flags["help"] = True
-            retained.append(flag)
-            continue
-        if help_present:
-            retained.append(flag.lstrip("-"))
-            continue
-        elif flag in ("-q", "--quiet"):
-            flags["quiet"] = True
-        elif flag in ("-d", "--debug"):
-            flags["debug"] = True
-            flags["verbose"] = True
-        elif flag in ("-v", "--verbose"):
-            flags["verbose"] = True
-        elif flag in ("-f", "--format"):
-            try:
-                flags["format"] = next(it)
-            except StopIteration:
-                on_error("Missing value for --format.", "missing_argument", flags)
-                break
-            if flags["format"] not in ("json", "yaml"):
-                on_error("Invalid output format.", "invalid_format", flags)
-                break
-        elif flag == "--log-level":
-            try:
-                flags["log_level"] = next(it)
-            except StopIteration:
-                on_error("Missing value for --log-level.", "missing_argument", flags)
-                break
-        elif flag == "--color":
-            try:
-                flags["color"] = next(it)
-            except StopIteration:
-                on_error("Missing value for --color.", "missing_argument", flags)
-                break
-            if flags["color"] not in ("auto", "always", "never"):
-                on_error("Invalid color mode.", "invalid_color", flags)
-                break
-        elif flag == "--pretty":
-            flags["pretty"] = True
-        elif flag == "--no-pretty":
-            flags["pretty"] = False
-        else:
-            retained.append(flag)
-    return flags, retained
-
-
-def apply_parsed_flags(flags: dict[str, Any], retained: list[str]) -> None:
-    """Rewrite sys.argv with parsed global flags removed."""
-    sys.argv = [sys.argv[0], *retained]
 
 
 @dataclass(frozen=True)
@@ -88,7 +15,6 @@ class EffectiveConfig:
 
     quiet: bool
     verbose_level: int
-    debug: bool
     log_level: str
     color: str
     fmt: str
@@ -115,7 +41,6 @@ def resolve_effective_config(
         return fallback
 
     quiet = bool(_pick("quiet", False))
-    debug = bool(_pick("debug", False))
     json_flag = bool(_pick("json", False))
 
     verbose_raw = _pick("verbose", 0)
@@ -138,19 +63,17 @@ def resolve_effective_config(
     if color not in ("auto", "always", "never"):
         color = "auto"
 
-    if quiet:
-        effective_log_level = "error"
-    elif debug:
-        effective_log_level = "debug"
-    else:
-        effective_log_level = log_level
+    effective_log_level = "error" if quiet else log_level
 
-    include_runtime = (verbose_level > 0 or debug) and not quiet
-    effective_pretty = True if (debug and not quiet) else pretty
+    include_runtime = (
+        verbose_level > 0 or effective_log_level == "debug"
+    ) and not quiet
+    effective_pretty = (
+        True if (effective_log_level == "debug" and not quiet) else pretty
+    )
     return EffectiveConfig(
         quiet=quiet,
         verbose_level=verbose_level,
-        debug=debug,
         log_level=effective_log_level,
         color=color,
         fmt=fmt,
@@ -164,7 +87,6 @@ def resolve_output_flags(
     *,
     quiet: bool,
     verbose: bool,
-    debug: bool,
     pretty: bool,
     log_level: str = "info",
     color: str = "auto",
@@ -174,7 +96,6 @@ def resolve_output_flags(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
             "pretty": pretty,
             "log_level": log_level,
             "color": color,
@@ -184,7 +105,6 @@ def resolve_output_flags(
         defaults={
             "quiet": False,
             "verbose": False,
-            "debug": False,
             "pretty": True,
             "log_level": "info",
             "color": "auto",

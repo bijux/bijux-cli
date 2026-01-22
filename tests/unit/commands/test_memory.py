@@ -56,7 +56,7 @@ def mock_flags() -> dict[str, Any]:
         "verbose": False,
         "fmt": "json",
         "pretty": True,
-        "debug": False,
+        "log_level": "info",
     }
 
 
@@ -127,7 +127,7 @@ def test_memory_summary_no_subcommand(mock_flags: dict[str, Any]) -> None:
             mock_flags["verbose"],
             mock_flags["fmt"],
             mock_flags["pretty"],
-            mock_flags["debug"],
+            mock_flags["log_level"],
         )
         mock_run.assert_called()
 
@@ -155,7 +155,7 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
             mock_flags["verbose"],
             mock_flags["fmt"],
             mock_flags["pretty"],
-            mock_flags["debug"],
+            mock_flags["log_level"],
         )
         mock_run.assert_called_with(
             command="memory",
@@ -163,7 +163,7 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
             output_format=OutputFormat.JSON,
             quiet=False,
             verbose=False,
-            debug=False,
+            log_level="info",
             effective_pretty=True,
             include_runtime=False,
             keys_count=None,
@@ -189,7 +189,7 @@ def test_run_one_shot_mode(mock_flags: dict[str, Any]) -> None:
             output_format=OutputFormat.JSON,
             quiet=False,
             verbose=False,
-            debug=False,
+            log_level="info",
             effective_pretty=True,
             include_runtime=False,
             keys_count=0,
@@ -214,7 +214,7 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
                 output_format=OutputFormat.JSON,
                 quiet=False,
                 verbose=False,
-                debug=False,
+                log_level="info",
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -251,7 +251,7 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
                 output_format=OutputFormat.JSON,
                 quiet=False,
                 verbose=False,
-                debug=False,
+                log_level="info",
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -734,7 +734,9 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits(
     ctx = Context(command=FakeCommandNoSub())
     ctx.invoked_subcommand = None
     with pytest.raises(typer.Exit):
-        memory(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        memory(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
     out, err = capsys.readouterr()
     assert "TOP HELP TEXT" in out
     assert err == ""
@@ -751,7 +753,9 @@ def test_memory_help_with_subcommand_prints_sub_help_and_exits(
     ctx = Context(command=FakeCommandWithSub())
     ctx.invoked_subcommand = "anything"
     with pytest.raises(typer.Exit):
-        memory(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        memory(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
     out, err = capsys.readouterr()
     assert "SUBCOMMAND HELP TEXT" in out
     assert err == ""
@@ -774,7 +778,9 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits_alt(
     ctx = Context(command=FakeCmd())
     ctx.invoked_subcommand = None
     with pytest.raises(typer.Exit):
-        memory(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        memory(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
     out = capsys.readouterr().out
     assert "TOP HELP TEXT" in out
 
@@ -789,7 +795,9 @@ def test_memory_help_with_subcommand_else_branch(
     ctx = Context(command=FakeCmd())
     ctx.invoked_subcommand = "does_not_exist"
     with pytest.raises(typer.Exit):
-        memory(ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False)
+        memory(
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        )
     out = capsys.readouterr().out
     assert "SUBCMD BRANCH HELP" in out
 
@@ -801,13 +809,13 @@ def test_memory_no_help_falls_through_to_summary(
     monkeypatch.setattr(sys, "argv", ["prog"])
     ctx = Context(command=FakeCmd())
     ctx.invoked_subcommand = None
-    called: list[tuple[Context, bool, bool, str, bool, bool]] = []
+    called: list[tuple[Context, bool, bool, str, bool, str]] = []
     monkeypatch.setattr(
         "bijux_cli.cli.commands.memory.service.memory_summary",
         lambda c, q, v, f, p, d: called.append((c, q, v, f, p, d)),
     )
-    memory(ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, debug=True)
-    assert called == [(ctx, True, True, "yaml", False, True)]
+    memory(ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, log_level="debug")
+    assert called == [(ctx, True, True, "yaml", False, "debug")]
 
 
 def test_memory_fall_through_to_summary_and_exit(
@@ -826,7 +834,7 @@ def test_memory_fall_through_to_summary_and_exit(
     monkeypatch.setattr(svc, "memory_summary", fake_summary)
     with pytest.raises(typer.Exit) as exc:
         svc.memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False
+            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
         )
     assert exc.value.exit_code == 42
 
@@ -844,6 +852,11 @@ def test_memory_with_subcommand_does_not_call_summary() -> None:
         ctx.invoked_subcommand = "set"
         with patch.object(sys, "argv", ["prog", "memory", "set"]):
             memory(
-                ctx, quiet=False, verbose=False, fmt="json", pretty=True, debug=False
+                ctx,
+                quiet=False,
+                verbose=False,
+                fmt="json",
+                pretty=True,
+                log_level="info",
             )
     mock_summary.assert_not_called()

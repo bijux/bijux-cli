@@ -45,7 +45,12 @@ def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     with pytest.raises(DummyExitError) as exc:
         info_plugin(
-            "foo", fmt="json", quiet=False, verbose=False, pretty=False, debug=False
+            "foo",
+            fmt="json",
+            quiet=False,
+            verbose=False,
+            pretty=False,
+            log_level="info",
         )
     assert exc.value.code == 1
     assert exc.value.payload["failure"] == "metadata_error"
@@ -67,7 +72,9 @@ def test_info_success(monkeypatch: pytest.MonkeyPatch) -> None:
         plugins_info, "new_run_command", lambda **kw: captured.update(kw)
     )
 
-    info_plugin("foo", fmt="json", quiet=False, verbose=False, pretty=True, debug=False)
+    info_plugin(
+        "foo", fmt="json", quiet=False, verbose=False, pretty=True, log_level="info"
+    )
 
     payload = captured["payload_builder"](False)
     assert payload["name"] == "foo"

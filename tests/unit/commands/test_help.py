@@ -147,7 +147,13 @@ def test_help_flag_triggers_help_and_exit(
     ctx = typer.Context(foo_cmd, info_name="foo", parent=parent_ctx)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
-            ctx, None, quiet=False, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            None,
+            quiet=False,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     captured = capsys.readouterr()
     assert "FOO HELP" in captured.out
@@ -159,7 +165,13 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = make_ctx_for_callback()
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=True, verbose=False, fmt="badfmt", pretty=True, debug=False
+            ctx,
+            [],
+            quiet=True,
+            verbose=False,
+            fmt="badfmt",
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 2
 
@@ -175,7 +187,7 @@ def test_quiet_null_byte(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 3
 
@@ -191,7 +203,7 @@ def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 3
 
@@ -202,7 +214,13 @@ def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: True)
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=True, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            [],
+            quiet=True,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 3
 
@@ -213,7 +231,13 @@ def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=True, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            [],
+            quiet=True,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 2
 
@@ -242,7 +266,13 @@ def test_nonquiet_invalid_format_calls_emit_error(
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=False, verbose=False, fmt="BAD", pretty=True, debug=False
+            ctx,
+            [],
+            quiet=False,
+            verbose=False,
+            fmt="BAD",
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 2
     assert "Unsupported format" in called["msg"]
@@ -270,7 +300,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 3
     assert called["failure"] == "null_byte"
@@ -297,7 +327,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 3
     assert called["failure"] == "ascii"
@@ -317,7 +347,13 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=False, verbose=False, fmt="json", pretty=True, debug=False
+            ctx,
+            [],
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 3
     assert called["failure"] == "ascii"
@@ -344,7 +380,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=False,
             fmt="json",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 2
     assert called["failure"] == "not_found"
@@ -379,7 +415,7 @@ def test_nonquiet_human_format_prints_and_exits(
             verbose=False,
             fmt="human",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
 
     out = capsys.readouterr().out
@@ -426,7 +462,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=True,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 0
     assert called["payload"]["help"] == "HELPTXT"
@@ -466,7 +502,7 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=False,
             fmt="yaml",
             pretty=True,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 99
     assert called["payload"]["help"] == "YAMLHELP"
@@ -490,7 +526,13 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     with pytest.raises(SystemExit) as ex:
         help_mod.help_callback(
-            ctx, [], quiet=True, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            [],
+            quiet=True,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.code == 0
 
@@ -530,7 +572,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
             verbose=False,
             fmt="json",
             pretty=False,
-            debug=False,
+            log_level="info",
         )
     assert ex.value.code == 3
     assert "broken" in called["msg"]
@@ -594,7 +636,13 @@ def test_help_flag_no_target(
     monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
-            ctx, None, quiet=False, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            None,
+            quiet=False,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     assert ex.value.exit_code == 0
     assert capsys.readouterr().out == ""
@@ -620,7 +668,13 @@ def test_help_flag_fallback_to_root(
     )
     with pytest.raises(typer.Exit) as exc:
         help_mod.help_callback(
-            ctx, None, quiet=False, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            None,
+            quiet=False,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     out = capsys.readouterr().out
     assert "ROOT HELP" in out
@@ -642,7 +696,13 @@ def test_help_flag_with_format_flag(
     )
     with pytest.raises(typer.Exit) as exc:
         help_mod.help_callback(
-            ctx, None, quiet=False, verbose=False, fmt=_HUMAN, pretty=True, debug=False
+            ctx,
+            None,
+            quiet=False,
+            verbose=False,
+            fmt=_HUMAN,
+            pretty=True,
+            log_level="info",
         )
     out = capsys.readouterr().out
     assert "FOO HELP" in out

@@ -38,8 +38,8 @@ def test_e2e_memory_status_yaml() -> None:
 
 
 def test_e2e_memory_status_debug() -> None:
-    """Test the root 'memory' command with the --debug flag."""
-    res = run_cli(["memory", "--debug"])
+    """Test the root 'memory' command with the --log-level debug flag."""
+    res = run_cli(["memory", "--log-level", "debug"])
     assert res.returncode == 0
     assert "ok" in res.stdout
 
@@ -82,8 +82,8 @@ def test_e2e_memory_clear_and_get() -> None:
 
 
 def test_e2e_memory_set_debug_mode() -> None:
-    """Test setting a value with the --debug flag."""
-    res = run_cli(["memory", "set", "dkey", "dval", "--debug"])
+    """Test setting a value with the --log-level debug flag."""
+    res = run_cli(["memory", "set", "dkey", "dval", "--log-level", "debug"])
     assert res.returncode == 0
     assert "dkey" in res.stdout
     assert "dval" in res.stdout
@@ -330,9 +330,9 @@ def test_e2e_memory_get_with_quiet_returns_nothing() -> None:
 
 
 def test_e2e_memory_list_with_debug_prints_keys() -> None:
-    """Test the list command with the --debug flag."""
+    """Test the list command with the --log-level debug flag."""
     run_cli(["memory", "set", "debugkey", "debugval"])
-    res = run_cli(["memory", "list", "--debug"])
+    res = run_cli(["memory", "list", "--log-level", "debug"])
     assert "debugkey" in res.stdout
 
 
@@ -465,8 +465,8 @@ def test_e2e_memory_subcommand_help_contract(sub: str) -> None:
         "--format",
         "--pretty",
         "--no-pretty",
-        "-d",
-        "--debug",
+        "--log-level",
+        "debug",
     ):
         assert flag in out
 

@@ -39,9 +39,9 @@ from bijux_cli.cli.commands.utilities import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -52,7 +52,7 @@ QUIET_OPTION = typer.Option(False, "-q", "--quiet", help=HELP_QUIET)
 VERBOSE_OPTION = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE)
 FORMAT_OPTION = typer.Option("json", "-f", "--format", help=HELP_FORMAT)
 PRETTY_OPTION = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY)
-DEBUG_OPTION = typer.Option(False, "-d", "--debug", help=HELP_DEBUG)
+LOG_LEVEL_OPTION = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL)
 OUTPUT_OPTION = typer.Option(
     None,
     "-o",
@@ -110,7 +110,7 @@ def dev_di_graph(
     verbose: bool = VERBOSE_OPTION,
     fmt: str = FORMAT_OPTION,
     pretty: bool = PRETTY_OPTION,
-    debug: bool = DEBUG_OPTION,
+    log_level: str = LOG_LEVEL_OPTION,
     output: list[Path] = OUTPUT_OPTION,
 ) -> None:
     """Generates and outputs the Dependency Injection (DI) container graph.
@@ -124,7 +124,7 @@ def dev_di_graph(
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The requested logging level.
         output (list[Path]): A list of file paths to write the output to.
 
     Returns:
@@ -139,7 +139,7 @@ def dev_di_graph(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -148,7 +148,7 @@ def dev_di_graph(
         defaults=effective_defaults(),
     )
     quiet = resolved.quiet
-    debug = resolved.debug
+    debug = resolved.log_level == "debug"
     effective_include_runtime = resolved.include_runtime
     effective_pretty = resolved.pretty
     fmt_lower = normalize_format(resolved.fmt) or "json"
@@ -288,5 +288,5 @@ def dev_di_graph(
         verbose=effective_include_runtime,
         fmt=fmt_lower,
         pretty=effective_pretty,
-        debug=debug,
+        log_level=log_level,
     )

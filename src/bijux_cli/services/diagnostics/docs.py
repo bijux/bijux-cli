@@ -18,13 +18,10 @@ from typing import Any
 
 from injector import inject
 
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    SerializerProtocol,
-    TelemetryProtocol,
-)
+from bijux_cli.core.contracts import Serializer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
 
 
@@ -36,7 +33,7 @@ class Docs(DocsProtocol):
 
     Attributes:
         _observability (ObservabilityProtocol): The logging service.
-        _serializer (SerializerProtocol): The serializer adapter for output.
+        _serializer (Serializer): The serializer adapter for output.
         _telemetry (TelemetryProtocol): The telemetry service for event tracking.
         _root (Path): The root directory where documents will be written.
     """
@@ -45,7 +42,7 @@ class Docs(DocsProtocol):
     def __init__(
         self,
         observability: ObservabilityProtocol,
-        serializer: SerializerProtocol,
+        serializer: Serializer,
         telemetry: TelemetryProtocol,
         root: str | Path | None = None,
     ) -> None:
@@ -53,7 +50,7 @@ class Docs(DocsProtocol):
 
         Args:
             observability (ObservabilityProtocol): The service for logging.
-            serializer (SerializerProtocol): The serializer adapter for output.
+            serializer (Serializer): The serializer adapter for output.
             telemetry (TelemetryProtocol): The service for event tracking.
             root (str | Path | None): The root directory for writing documents.
                 It defaults to the `BIJUXCLI_DOCS_DIR` environment variable,

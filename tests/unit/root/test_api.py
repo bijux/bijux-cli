@@ -19,12 +19,9 @@ import pytest
 from bijux_cli.app.api import BijuxAPI, _consume_task
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    RegistryProtocol,
-    TelemetryProtocol,
-)
 from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
+from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:coroutine .* was never awaited:RuntimeWarning"
@@ -82,7 +79,7 @@ def bijux_api(
             ObservabilityProtocol: mock_obs,
             TelemetryProtocol: mock_tel,
         }.get(proto)
-        api = BijuxAPI(debug=False)
+        api = BijuxAPI(log_level="info")
         return api
 
 

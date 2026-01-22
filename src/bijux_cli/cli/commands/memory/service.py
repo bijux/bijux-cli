@@ -37,9 +37,9 @@ from bijux_cli.cli.commands.utilities import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.constants import (
-    HELP_DEBUG,
+from bijux_cli.cli.constants import (
     HELP_FORMAT,
+    HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
@@ -80,7 +80,7 @@ def _run_one_shot_mode(
     output_format: OutputFormat,
     quiet: bool,
     verbose: bool,
-    debug: bool,
+    log_level: str,
     effective_pretty: bool,
     include_runtime: bool,
     keys_count: int | None,
@@ -96,7 +96,7 @@ def _run_one_shot_mode(
         output_format (OutputFormat): The output format enum for serialization.
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes runtime metadata in the payload.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The resolved log level name.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python/platform info.
         keys_count (int | None): The number of keys in the memory store.
@@ -136,7 +136,7 @@ def _run_one_shot_mode(
         fmt=output_format,
         effective_pretty=effective_pretty,
         verbose=verbose,
-        debug=debug,
+        debug=(log_level == "debug"),
         quiet=quiet,
         command=command,
         exit_code=0,
@@ -149,7 +149,7 @@ def memory_summary(
     verbose: bool,
     fmt: str,
     pretty: bool,
-    debug: bool,
+    log_level: str,
 ) -> None:
     """Handles the logic for the default `bijux memory` command action.
 
@@ -163,7 +163,7 @@ def memory_summary(
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The requested logging level.
 
     Returns:
         None:
@@ -177,7 +177,7 @@ def memory_summary(
         cli={
             "quiet": quiet,
             "verbose": verbose,
-            "debug": debug,
+            "log_level": log_level,
             "pretty": pretty,
             "format": fmt,
         },
@@ -187,7 +187,7 @@ def memory_summary(
     )
     quiet = resolved.quiet
     verbose = resolved.verbose_level > 0
-    debug = resolved.debug
+    debug = resolved.log_level == "debug"
     include_runtime = resolved.include_runtime
     effective_pretty = resolved.pretty
     fmt_lower = normalize_format(resolved.fmt) or "json"
@@ -213,7 +213,7 @@ def memory_summary(
         output_format=output_format,
         quiet=quiet,
         verbose=verbose,
-        debug=debug,
+        log_level=log_level,
         effective_pretty=effective_pretty,
         include_runtime=include_runtime,
         keys_count=keys_count,
@@ -226,7 +226,7 @@ def memory(
     verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
     fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
     pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    debug: bool = typer.Option(False, "-d", "--debug", help=HELP_DEBUG),
+    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux memory` command group.
 
@@ -240,7 +240,7 @@ def memory(
         verbose (bool): If True, includes runtime metadata in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): The resolved log level name.
 
     Returns:
         None:
@@ -260,4 +260,4 @@ def memory(
             typer.echo(ctx.get_help())
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
-        memory_summary(ctx, quiet, verbose, fmt, pretty, debug)
+        memory_summary(ctx, quiet, verbose, fmt, pretty, log_level)

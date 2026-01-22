@@ -13,13 +13,10 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.core.contracts import (
-    ObservabilityProtocol,
-    SerializerProtocol,
-    TelemetryProtocol,
-)
+from bijux_cli.core.contracts import Serializer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import ServiceError
+from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.services.diagnostics.docs import Docs
 
@@ -39,11 +36,11 @@ def mock_telemetry() -> TelemetryProtocol:
 
 
 @pytest.fixture
-def mock_serializer() -> SerializerProtocol:
-    """Provide a mock SerializerProtocol instance."""
-    mock_instance = Mock(spec=SerializerProtocol)
+def mock_serializer() -> Serializer:
+    """Provide a mock Serializer instance."""
+    mock_instance = Mock(spec=Serializer)
     mock_instance.dumps.return_value = "{}"
-    return cast(SerializerProtocol, mock_instance)
+    return cast(Serializer, mock_instance)
 
 
 @pytest.fixture
@@ -55,7 +52,7 @@ def temp_root(tmp_path: Path) -> Path:
 @pytest.fixture
 def docs(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
     temp_root: Path,
 ) -> Docs:
@@ -80,7 +77,7 @@ def test_init_creates_root(docs: Docs, temp_root: Path) -> None:
 
 def test_init_env_root(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
     tmp_path: Path,
 ) -> None:
@@ -93,7 +90,7 @@ def test_init_env_root(
 
 def test_init_default_root(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
 ) -> None:
     """Test that the Docs constructor uses a default root directory."""
@@ -104,7 +101,7 @@ def test_init_default_root(
 
 def test_init_none_root(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
 ) -> None:
     """Test that providing a None root to the constructor uses the default."""
@@ -113,9 +110,7 @@ def test_init_none_root(
         assert d._root.name == "docs"
 
 
-def test_render_uses_serializer(
-    docs: Docs, mock_serializer: SerializerProtocol
-) -> None:
+def test_render_uses_serializer(docs: Docs, mock_serializer: Serializer) -> None:
     """Test that the render method calls the serializer adapter."""
     cast(Mock, mock_serializer).dumps.return_value = "serialized"
     spec = {"key": "value"}
@@ -128,7 +123,7 @@ def test_render_uses_serializer(
 
 def test_render_non_string(docs: Docs) -> None:
     """Test that the render method raises a TypeError if the serializer returns bytes."""
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = b"bytes"
     with pytest.raises(TypeError):
         docs.render({}, fmt=OutputFormat.JSON)
@@ -242,7 +237,7 @@ def test_multiple_formats(docs: Docs, fmt: OutputFormat, tmp_path: Path) -> None
 
 def test_render_pretty_false(docs: Docs) -> None:
     """Test that the render method calls the serializer with pretty=False."""
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = "{}"
     docs.render({}, fmt=OutputFormat.JSON)
     cast(Mock, docs._serializer).dumps.assert_called_with(ANY, fmt=ANY, pretty=False)
@@ -303,7 +298,7 @@ def test_close_docstring() -> None:
 )
 def test_init_root_type(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
     root: str | Path,
     tmp_path: Path,
@@ -317,7 +312,7 @@ def test_init_root_type(
 
 def test_init_mkdir_exists(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
     temp_root: Path,
 ) -> None:
@@ -358,7 +353,7 @@ def test_write_name_dir_append_fmt(docs: Docs, temp_root: Path) -> None:
 def test_export_large_spec(docs: Docs, temp_root: Path) -> None:
     """Test writing a large specification to a file."""
     large = {str(i): i for i in range(1000)}
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = json.dumps(large)
     path = docs.write_sync(large, OutputFormat.JSON, temp_root / "large")
     assert len(path.read_text()) > 1000
@@ -379,7 +374,7 @@ def test_various_names(docs: Docs, name: str | Path, temp_root: Path) -> None:
 
 def test_render_yaml(docs: Docs) -> None:
     """Test rendering a spec to YAML format."""
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = "---\nkey: value\n"
     result = docs.render({"key": "value"}, fmt=OutputFormat.YAML)
     assert "key: value" in result
@@ -387,7 +382,7 @@ def test_render_yaml(docs: Docs) -> None:
 
 def test_write_yaml(docs: Docs, temp_root: Path) -> None:
     """Test writing a spec to a YAML file."""
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = "key: value\n"
     path_str = docs.write(
         {"key": "value"}, fmt=OutputFormat.YAML, name=str(temp_root / "spec.yaml")
@@ -415,7 +410,7 @@ def test_no_telemetry_on_success(
 ) -> None:
     """Test that a 'docs_written' event is sent on a successful write."""
     file_path = tmp_path / "test"
-    docs._serializer = cast(SerializerProtocol, MagicMock())
+    docs._serializer = cast(Serializer, MagicMock())
     cast(MagicMock, docs._serializer).dumps.return_value = "{}"
     docs.write_sync({}, OutputFormat.JSON, file_path)
 
@@ -426,7 +421,7 @@ def test_no_telemetry_on_success(
 
 def test_init_mkdir_fail(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
 ) -> None:
     """Propagate OSError if directory creation fails during init."""
@@ -456,7 +451,7 @@ def test_write_sync_mkdir_fail(docs: Docs, tmp_path: Path) -> None:
 
 def test_render_pretty_param_not_used(docs: Docs) -> None:
     """Test that render's pretty parameter defaults to False."""
-    docs._serializer = cast(SerializerProtocol, Mock())
+    docs._serializer = cast(Serializer, Mock())
     cast(Mock, docs._serializer).dumps.return_value = "{}"
     docs.render({}, fmt=OutputFormat.JSON)
     cast(Mock, docs._serializer).dumps.assert_called_with(ANY, fmt=ANY, pretty=False)
@@ -475,7 +470,7 @@ def test_service_error_from_oserror(docs: Docs, tmp_path: Path) -> None:
 
 def test_init_no_root_env(
     mock_observability: ObservabilityProtocol,
-    mock_serializer: SerializerProtocol,
+    mock_serializer: Serializer,
     mock_telemetry: TelemetryProtocol,
 ) -> None:
     """Test that the default root is used if the environment variable is empty."""
