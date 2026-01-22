@@ -17,13 +17,13 @@ import typer
 from typer.testing import CliRunner
 
 from bijux_cli.app.di import DIContainer
-from bijux_cli.cli.commands.audit import (
+from bijux_cli.cli.commands.diagnostics.audit import (
     _build_payload,
     _write_output_file,
     audit,
     audit_app,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ColorMode, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 runner = CliRunner()
@@ -74,10 +74,10 @@ class DummyEmitter:
 def test_build_payload_without_runtime() -> None:
     """Test building the basic audit payload without runtime info."""
     payload = _build_payload(include_runtime=False, dry_run=False)
-    assert payload == {"status": "completed"}
+    assert payload.status == "completed"
 
     payload = _build_payload(include_runtime=False, dry_run=True)
-    assert payload == {"status": "dry-run"}
+    assert payload.status == "dry-run"
 
 
 def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -91,12 +91,14 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         calls.append(name)
         return f"{name}-{val}"
 
-    monkeypatch.setattr("bijux_cli.cli.commands.audit.ascii_safe", fake_ascii_safe)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.ascii_safe", fake_ascii_safe
+    )
 
     payload = _build_payload(include_runtime=True, dry_run=False)
-    assert payload["status"] == "completed"
-    assert payload["python"] == "python_version-3.11.9"
-    assert payload["platform"] == "platform-TestOS-99"
+    assert payload.status == "completed"
+    assert payload.python == "python_version-3.11.9"
+    assert payload.platform == "platform-TestOS-99"
     assert set(calls) == {"python_version", "platform"}
 
 
@@ -121,7 +123,7 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
 def test_audit_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables trigger a structured error."""
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True
+        "bijux_cli.cli.commands.diagnostics.audit.contains_non_ascii_env", lambda: True
     )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
@@ -141,7 +143,8 @@ def test_audit_env_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
         raise ValueError("bad config")
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.validate_env_file_if_present", bad_validate
+        "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
+        bad_validate,
     )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
@@ -163,10 +166,11 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(DIContainer, "current", staticmethod(lambda: Bad()))
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: False
+        "bijux_cli.cli.commands.diagnostics.audit.contains_non_ascii_env", lambda: False
     )
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.validate_env_file_if_present", lambda v: None
+        "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
+        lambda v: None,
     )
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
@@ -185,7 +189,7 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -198,7 +202,8 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
     capture: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: capture.update(kw)
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command",
+        lambda **kw: capture.update(kw),
     )
 
     out_file = tmp_path / "report.json"
@@ -214,10 +219,10 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
     builder = capture["payload_builder"]
     out_payload = builder(False)
-    assert out_payload["status"] == "written"
-    assert out_payload["file"] == str(out_file)
-    assert "python" in out_payload
-    assert "platform" in out_payload
+    assert out_payload.status == "written"
+    assert out_payload.file == str(out_file)
+    assert out_payload.python is not None
+    assert out_payload.platform is not None
 
 
 def test_audit_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -243,7 +248,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="yaml",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -260,7 +265,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
         called.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command", fake_new_run_command
     )
 
     result = runner.invoke(
@@ -270,7 +275,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
 
     builder = called["payload_builder"]
     payload = builder(False)
-    assert payload == {"status": "dry-run"}
+    assert payload.status == "dry-run"
 
     assert called["command_name"] == "audit"
     assert called["fmt"] == "yaml"
@@ -280,14 +285,14 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_build_payload_variants() -> None:
     """Test the different variants of the audit payload."""
     p1 = _build_payload(False, False)
-    assert p1 == {"status": "completed"}
+    assert p1.status == "completed"
     p2 = _build_payload(False, True)
-    assert p2 == {"status": "dry-run"}
+    assert p2.status == "dry-run"
     p3 = _build_payload(True, False)
-    assert p3["status"] == "completed"
-    assert "python" in p3
-    assert "platform" in p3
-    assert p3["python"] == p3["python"].encode("ascii", "ignore").decode()  # type: ignore[attr-defined]
+    assert p3.status == "completed"
+    assert p3.python
+    assert p3.platform
+    assert p3.python == p3.python.encode("ascii", "ignore").decode()
 
 
 def test_write_output_file_success(
@@ -358,7 +363,7 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
 def test_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-ASCII environment variables are correctly detected."""
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.contains_non_ascii_env", lambda: True
+        "bijux_cli.cli.commands.diagnostics.audit.contains_non_ascii_env", lambda: True
     )
     result = runner.invoke(audit_app, ["--dry-run"], catch_exceptions=False)
     assert result.exit_code == 3
@@ -369,7 +374,7 @@ def test_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_env_file_validation_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that a validation error for an environment file is handled."""
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.validate_env_file_if_present",
+        "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
         lambda path: (_ for _ in ()).throw(ValueError("bad env")),
     )
     result = runner.invoke(audit_app, ["--dry-run"], catch_exceptions=False)
@@ -387,7 +392,7 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -402,44 +407,49 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_nrc(**kw: Any) -> None:
         captured.update(kw)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.audit.new_run_command", fake_nrc)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command", fake_nrc
+    )
 
     runner.invoke(audit_app, ["--dry-run", "--verbose"], catch_exceptions=False)
     builder = captured["payload_builder"]
     payload = builder(True)
-    assert payload["status"] == "dry-run"
-    assert "python" in payload
-    assert "platform" in payload
+    assert payload.status == "dry-run"
+    assert payload.python
+    assert payload.platform
 
 
-def test_debug_implies_pretty_and_verbose(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that the debug flag implies verbose and pretty flags."""
+def test_debug_does_not_force_verbose_or_pretty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that debug does not override verbose or pretty flags."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
+            verbose=False,
+            verbose_level=0,
             log_level="debug",
-            pretty=True,
-            include_runtime=True,
+            pretty=False,
+            include_runtime=False,
             json=False,
         ),
     )
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command",
+        lambda **kw: captured.update(kw),
     )
 
     runner.invoke(
         audit_app, ["--dry-run", "--log-level", "debug"], catch_exceptions=False
     )
-    assert captured["verbose"] is True
-    assert captured["pretty"] is True
+    assert captured["verbose"] is False
+    assert captured["pretty"] is False
 
 
 def test_audit_stray_argument() -> None:
@@ -452,7 +462,9 @@ def test_audit_stray_argument() -> None:
 
 def test_audit_invoked_subcommand_returns(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure audit callback exits early when a subcommand is invoked."""
-    with patch("bijux_cli.cli.commands.audit.validate_common_flags") as mock_vcf:
+    with patch(
+        "bijux_cli.cli.commands.diagnostics.audit.validate_common_flags"
+    ) as mock_vcf:
 
         @audit_app.command("sub")
         def sub_command() -> None:
@@ -471,7 +483,7 @@ def test_audit_catches_value_error_from_env_validation(
     """Test the specific ValueError handler for env file validation."""
     error_message = "Invalid characters in .env file"
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.validate_env_file_if_present",
+        "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
         lambda path: (_ for _ in ()).throw(ValueError(error_message)),
     )
 
@@ -493,7 +505,7 @@ def test_audit_catches_value_error_from_main_logic(
 
     error_message = "ASCII conversion failed"
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit._build_payload",
+        "bijux_cli.cli.commands.diagnostics.audit._build_payload",
         lambda include_runtime, dry_run: (_ for _ in ()).throw(
             ValueError(error_message)
         ),
@@ -517,7 +529,7 @@ def test_audit_catches_generic_exception_from_main_logic(
 
     error_message = "Something broke unexpectedly"
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit._build_payload",
+        "bijux_cli.cli.commands.diagnostics.audit._build_payload",
         lambda include_runtime, dry_run: (_ for _ in ()).throw(KeyError(error_message)),
     )
 
@@ -541,7 +553,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -558,7 +570,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
         captured_kwargs.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command", fake_new_run_command
     )
 
     out_file = tmp_path / "report.json"
@@ -569,9 +581,9 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     assert final_payload_builder is not None
     final_payload = final_payload_builder(True)
 
-    assert final_payload.get("status") == "written"
-    assert "python" in final_payload
-    assert "platform" in final_payload
+    assert final_payload.status == "written"
+    assert final_payload.python is not None
+    assert final_payload.platform is not None
 
 
 def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
@@ -584,7 +596,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -604,9 +616,9 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     file_emit_call = emitter.emitted[0]
     payload_written_to_file = file_emit_call["payload"]
 
-    assert payload_written_to_file.get("status") == "completed"
-    assert "python" in payload_written_to_file
-    assert "platform" in payload_written_to_file
+    assert payload_written_to_file.status == "completed"
+    assert payload_written_to_file.python
+    assert payload_written_to_file.platform
 
 
 def test_audit_output_to_file_with_verbose(
@@ -619,7 +631,7 @@ def test_audit_output_to_file_with_verbose(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -638,16 +650,16 @@ def test_audit_output_to_file_with_verbose(
 
     payload_written_to_file = emitter.emitted[0]["payload"]
 
-    assert payload_written_to_file.get("status") == "completed"
-    assert "python" in payload_written_to_file
-    assert "platform" in payload_written_to_file
+    assert payload_written_to_file.status == "completed"
+    assert payload_written_to_file.python
+    assert payload_written_to_file.platform
 
 
 def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the stray argument handling logic."""
     mock_emit_error = MagicMock(side_effect=SystemExit(2))
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.emit_error_and_exit", mock_emit_error
+        "bijux_cli.cli.commands.diagnostics.audit.emit_error_and_exit", mock_emit_error
     )
 
     mock_ctx = MagicMock(spec=typer.Context)
@@ -685,7 +697,7 @@ def test_verbose_file_output_constructs_correct_final_payload(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -702,7 +714,7 @@ def test_verbose_file_output_constructs_correct_final_payload(
         captured_kwargs.update(kwargs)
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", fake_new_run_command
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command", fake_new_run_command
     )
 
     out_file = tmp_path / "report.json"
@@ -712,9 +724,9 @@ def test_verbose_file_output_constructs_correct_final_payload(
     assert "payload_builder" in captured_kwargs
     final_payload = captured_kwargs["payload_builder"](True)
 
-    assert final_payload.get("status") == "written"
-    assert "python" in final_payload
-    assert "platform" in final_payload
+    assert final_payload.status == "written"
+    assert final_payload.python is not None
+    assert final_payload.platform is not None
 
 
 def test_audit_written_without_runtime_when_not_verbose(
@@ -726,7 +738,8 @@ def test_audit_written_without_runtime_when_not_verbose(
 
     captured: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.audit.new_run_command", lambda **kw: captured.update(kw)
+        "bijux_cli.cli.commands.diagnostics.audit.new_run_command",
+        lambda **kw: captured.update(kw),
     )
 
     out_file = tmp_path / "audit.json"
@@ -738,7 +751,7 @@ def test_audit_written_without_runtime_when_not_verbose(
     assert "payload_builder" in captured
     builder = captured["payload_builder"]
     payload = builder(False)
-    assert payload["status"] == "written"
-    assert payload["file"] == str(out_file)
-    assert "python" not in payload
-    assert "platform" not in payload
+    assert payload.status == "written"
+    assert payload.file == str(out_file)
+    assert payload.python is None
+    assert payload.platform is None

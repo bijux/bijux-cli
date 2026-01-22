@@ -23,6 +23,7 @@ from bijux_cli.cli.commands.dev.di import (
 )
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -266,7 +267,7 @@ def test_dev_di_graph_quiet_after_writing_exits(
         "bijux_cli.cli.commands.dev.di.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
@@ -613,7 +614,7 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
@@ -674,7 +675,7 @@ def test_dev_payload_basic_and_runtime_inclusion(
     ctx.invoked_subcommand = None
     policy = ExecutionPolicy(
         output_format="json",
-        color="auto",
+        color=ColorMode.AUTO,
         quiet=False,
         verbose=False,
         verbose_level=0,
@@ -714,7 +715,7 @@ def test_dev_payload_basic_and_runtime_inclusion(
 
     policy = ExecutionPolicy(
         output_format="json",
-        color="auto",
+        color=ColorMode.AUTO,
         quiet=False,
         verbose=True,
         verbose_level=1,
@@ -739,7 +740,7 @@ def test_dev_payload_includes_mode_env(
         "bijux_cli.cli.commands.dev.service.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,

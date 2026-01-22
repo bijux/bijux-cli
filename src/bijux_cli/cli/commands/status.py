@@ -24,7 +24,7 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from dataclasses import replace
 import platform
 import signal
 import sys
@@ -45,6 +45,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import StatusPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -60,7 +61,7 @@ status_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool) -> StatusPayload:
     """Constructs the status payload.
 
     Args:
@@ -71,10 +72,13 @@ def _build_payload(include_runtime: bool) -> Mapping[str, object]:
         Mapping[str, object]: A dictionary containing the status and optional
             runtime details.
     """
-    payload: dict[str, object] = {"status": "ok"}
+    payload = StatusPayload(status="ok")
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return replace(
+            payload,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 
@@ -148,11 +152,10 @@ def _run_watch_mode(
     try:
         while not stop:
             try:
-                payload = dict(_build_payload(include_runtime))
-                payload["ts"] = time.time()
+                payload = replace(_build_payload(include_runtime), ts=time.time())
                 if debug and not quiet:
                     print(
-                        f"Debug: Emitting payload at ts={payload['ts']}",
+                        f"Debug: Emitting payload at ts={payload.ts}",
                         file=sys.stderr,
                     )
                 if not quiet:
@@ -195,8 +198,9 @@ def _run_watch_mode(
         if old_handler is not None:
             signal.signal(signal.SIGINT, old_handler)
         try:
-            stop_payload = dict(_build_payload(include_runtime))
-            stop_payload["status"] = "watch-stopped"
+            stop_payload = replace(
+                _build_payload(include_runtime), status="watch-stopped"
+            )
             if debug and not quiet:
                 print("Debug: Emitting watch-stopped payload", file=sys.stderr)
             if not quiet:

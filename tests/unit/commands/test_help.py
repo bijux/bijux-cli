@@ -23,7 +23,7 @@ from bijux_cli.cli.commands.help import (
     _build_help_payload,
     _find_target_command,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ColorMode, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -169,7 +169,7 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="badfmt",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
@@ -284,7 +284,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="bad",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -434,7 +434,7 @@ def test_nonquiet_human_format_prints_and_exits(
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="human",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -489,7 +489,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="yaml",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -504,7 +504,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="json",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
@@ -568,7 +568,7 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="yaml",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
@@ -620,7 +620,7 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
         "get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="human",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,

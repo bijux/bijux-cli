@@ -94,7 +94,7 @@ class DIContainer:
             if cls._instance is None:
                 cls._instance = cls()
                 cls._log_static(
-                    logging.WARNING, "DIContainer.current auto-initialized singleton"
+                    logging.DEBUG, "DIContainer.current auto-initialized singleton"
                 )
             return cls._instance
 
@@ -166,7 +166,7 @@ class DIContainer:
         self._obs: ObservabilityProtocol | None = None
         self._verbose = False
         self._initialised = True
-        self._log_static(logging.INFO, "DIContainer initialised")
+        self._log_static(logging.DEBUG, "DIContainer initialised")
 
     def set_verbose(self, enabled: bool) -> None:
         """Enable or disable verbose DI logging."""
@@ -617,7 +617,7 @@ class DIContainer:
         if obs_ref and hasattr(obs_ref, "close"):
             with suppress(Exception):
                 obs_ref.close()
-        self._log(logging.INFO, "DIContainer shutdown", extra={})
+        self._log(logging.DEBUG, "DIContainer shutdown", extra={})
 
     def services(self) -> Sequence[tuple[type[Any] | str, str | None]]:
         """Returns a list of all resolved and cached service keys.

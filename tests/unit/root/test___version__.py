@@ -142,11 +142,12 @@ def test_all_exports_are_present() -> None:
 
 
 def test_getattr_raises_attribute_error() -> None:
-    """``plugins.__getattr__`` produces a clear AttributeError."""
+    """Missing plugin attribute raises a clear AttributeError."""
     attr = "non_existent_attribute"
     with pytest.raises(AttributeError) as exc:
         getattr(plugins, attr)
 
     msg = str(exc.value)
-    assert "module bijux_cli.plugins has no attribute" in msg
+    assert "bijux_cli.plugins" in msg
+    assert "has no attribute" in msg
     assert attr in msg

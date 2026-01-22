@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import resolve_effective_config, resolve_output_flags
 
 _TRUTH_TABLE = """| quiet | log-level flag | -v/-vv | --json | --color | effective log_level | include runtime | format | color |
@@ -25,12 +26,12 @@ def test_resolve_output_flags_default() -> None:
         verbose=False,
         pretty=False,
         log_level="info",
-        color="auto",
+        color=ColorMode.AUTO,
     )
     assert result["log_level"] == "info"
     assert result["include_runtime"] is False
     assert result["pretty"] is False
-    assert result["color"] == "auto"
+    assert result["color"] is ColorMode.AUTO
 
 
 def test_resolve_output_flags_verbose() -> None:
@@ -39,7 +40,7 @@ def test_resolve_output_flags_verbose() -> None:
         verbose=True,
         pretty=False,
         log_level="info",
-        color="auto",
+        color=ColorMode.AUTO,
     )
     assert result["log_level"] == "info"
     assert result["include_runtime"] is True
@@ -52,12 +53,12 @@ def test_resolve_output_flags_debug_overrides() -> None:
         verbose=False,
         pretty=False,
         log_level="debug",
-        color="always",
+        color=ColorMode.ALWAYS,
     )
     assert result["log_level"] == "debug"
-    assert result["include_runtime"] is True
-    assert result["pretty"] is True
-    assert result["color"] == "always"
+    assert result["include_runtime"] is False
+    assert result["pretty"] is False
+    assert result["color"] is ColorMode.ALWAYS
 
 
 def test_resolve_output_flags_quiet_wins() -> None:
@@ -66,7 +67,7 @@ def test_resolve_output_flags_quiet_wins() -> None:
         verbose=True,
         pretty=True,
         log_level="debug",
-        color="auto",
+        color=ColorMode.AUTO,
     )
     assert result["log_level"] == "error"
     assert result["include_runtime"] is False
@@ -81,7 +82,7 @@ def test_resolve_effective_config_json_forces_format() -> None:
         defaults={"format": "yaml", "color": "auto"},
     )
     assert effective.fmt == "json"
-    assert effective.color == "always"
+    assert effective.color is ColorMode.ALWAYS
 
 
 def test_architecture_truth_table_matches_doc() -> None:

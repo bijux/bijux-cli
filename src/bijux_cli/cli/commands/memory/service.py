@@ -20,7 +20,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import contextlib
 import platform
 import sys
@@ -37,6 +36,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
 from bijux_cli.cli.output import get_execution_policy
+from bijux_cli.cli.payloads import MemorySummaryPayload
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -48,7 +48,7 @@ from bijux_cli.core.enums import OutputFormat
 
 def _build_payload(
     include_runtime: bool, keys_count: int | None
-) -> Mapping[str, object]:
+) -> MemorySummaryPayload:
     """Constructs the payload for the memory summary command.
 
     Args:
@@ -60,14 +60,19 @@ def _build_payload(
         Mapping[str, object]: A dictionary containing the status, key count,
             a confirmation message, and optional runtime metadata.
     """
-    payload: dict[str, object] = {
-        "status": "ok",
-        "count": keys_count,
-        "message": "Memory command executed",
-    }
+    payload = MemorySummaryPayload(
+        status="ok",
+        count=keys_count,
+        message="Memory command executed",
+    )
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return MemorySummaryPayload(
+            status=payload.status,
+            count=payload.count,
+            message=payload.message,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 

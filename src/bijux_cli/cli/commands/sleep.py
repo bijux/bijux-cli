@@ -21,7 +21,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import platform
 import time
 
@@ -39,6 +38,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import SleepPayload
 from bijux_cli.cli.validation import ascii_safe
 from bijux_cli.services.config.contracts import ConfigProtocol
 
@@ -53,7 +53,7 @@ sleep_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool, slept: float) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool, slept: float) -> SleepPayload:
     """Constructs the structured payload for the sleep command.
 
     Args:
@@ -65,10 +65,13 @@ def _build_payload(include_runtime: bool, slept: float) -> Mapping[str, object]:
         Mapping[str, object]: A dictionary containing the sleep duration and
             optional runtime details.
     """
-    payload: dict[str, object] = {"slept": slept}
+    payload = SleepPayload(slept=slept)
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return SleepPayload(
+            slept=slept,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 

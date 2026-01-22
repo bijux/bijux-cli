@@ -19,7 +19,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import platform
 
 import typer
@@ -34,10 +33,11 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import MemoryListPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
 
 
-def _build_payload(include_runtime: bool, keys: list[str]) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool, keys: list[str]) -> MemoryListPayload:
     """Builds the payload for the memory keys list response.
 
     Args:
@@ -48,10 +48,15 @@ def _build_payload(include_runtime: bool, keys: list[str]) -> Mapping[str, objec
         Mapping[str, object]: A dictionary containing the status, a sorted list
             of keys, the key count, and optional runtime metadata.
     """
-    payload: dict[str, object] = {"status": "ok", "keys": keys, "count": len(keys)}
+    payload = MemoryListPayload(status="ok", keys=keys, count=len(keys))
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return MemoryListPayload(
+            status=payload.status,
+            keys=keys,
+            count=len(keys),
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 

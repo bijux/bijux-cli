@@ -22,6 +22,7 @@ import pytest
 import typer
 
 import bijux_cli.cli.commands.repl as mod
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -349,7 +350,7 @@ def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> No
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format="human",
-            color="auto",
+            color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,

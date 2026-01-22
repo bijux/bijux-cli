@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
 from bijux_cli.cli.validation import validate_common_flags
@@ -73,7 +73,7 @@ def resolve_command_config(
 
 def new_run_command(
     command_name: str,
-    payload_builder: Callable[[bool], Mapping[str, object]],
+    payload_builder: Callable[[bool], object],
     quiet: bool,
     verbose: bool,
     fmt: str,

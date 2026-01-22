@@ -17,6 +17,7 @@ from bijux_cli.cli.commands.version import (
     _build_payload,
     version_app,
 )
+from bijux_cli.core.enums import ColorMode
 from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.version import __version__ as cli_version
 
@@ -46,7 +47,7 @@ def mock_di_class(mock_di: MagicMock) -> Generator[MagicMock, None, None]:
 def test_build_payload_default() -> None:
     """Test building the default version payload."""
     payload = _build_payload(False)
-    assert payload == {"version": cli_version}
+    assert payload.version == cli_version
 
 
 @patch("os.environ.get")
@@ -54,7 +55,7 @@ def test_build_payload_env_valid(mock_getenv: MagicMock) -> None:
     """Test building the payload with a valid version from environment variables."""
     mock_getenv.return_value = "1.2.3"
     payload = _build_payload(False)
-    assert payload == {"version": "1.2.3"}
+    assert payload.version == "1.2.3"
 
 
 @patch("os.environ.get")
@@ -100,10 +101,10 @@ def test_build_payload_verbose(
     mock_platform.return_value = "Darwin"
     mock_time.return_value = 1234567890.0
     payload = _build_payload(True)
-    assert payload["version"] == cli_version
-    assert payload["python"] == "3.11.0"
-    assert payload["platform"] == "Darwin"
-    assert payload["timestamp"] == 1234567890.0
+    assert payload.version == cli_version
+    assert payload.python == "3.11.0"
+    assert payload.platform == "Darwin"
+    assert payload.timestamp == 1234567890.0
 
 
 def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
@@ -113,7 +114,7 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="yaml",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=False,
                 verbose_level=0,
@@ -164,12 +165,12 @@ def test_payload_builder_lambda(mock_di_class: MagicMock) -> None:
         builder = mock_run.call_args.kwargs["payload_builder"]
         payload_false = builder(False)
         payload_true = builder(True)
-        assert "version" in payload_false
-        assert len(payload_false) == 1
-        assert "version" in payload_true
-        assert "python" in payload_true
-        assert "platform" in payload_true
-        assert "timestamp" in payload_true
+        assert payload_false.version
+        assert payload_false.python is None
+        assert payload_true.version
+        assert payload_true.python
+        assert payload_true.platform
+        assert payload_true.timestamp
 
 
 def test_build_payload_ascii_safe_fail() -> None:
@@ -228,7 +229,7 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=True,
                 verbose=False,
                 verbose_level=0,
@@ -263,7 +264,7 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
@@ -297,7 +298,7 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=False,
                 verbose_level=0,
@@ -331,7 +332,7 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format="json",
-                color="auto",
+                color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,

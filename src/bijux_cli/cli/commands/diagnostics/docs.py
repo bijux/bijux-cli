@@ -41,11 +41,9 @@ from bijux_cli.cli.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import get_execution_policy
+from bijux_cli.cli.output import resolve_command_config
 from bijux_cli.cli.validation import (
     contains_non_ascii_env,
-    normalize_format,
-    validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
@@ -180,13 +178,19 @@ def docs(
     """
     command = "docs"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
-    quiet = policy.quiet
-    verbose = policy.verbose
-    debug = policy.log_level == "debug"
-    effective_include_runtime = policy.include_runtime
-    effective_pretty = policy.pretty
-    fmt_lower = normalize_format(fmt) or "json"
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        log_level=log_level,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.log_level == "debug"
+    effective_include_runtime = effective.include_runtime
+    effective_pretty = effective.pretty
 
     if contains_non_ascii_env():
         emit_error_and_exit(
@@ -199,13 +203,6 @@ def docs(
             include_runtime=effective_include_runtime,
             debug=debug,
         )
-
-    validate_common_flags(
-        fmt,
-        command,
-        quiet,
-        include_runtime=effective_include_runtime,
-    )
 
     if ctx.args:
         stray = ctx.args[0]

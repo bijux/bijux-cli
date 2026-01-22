@@ -111,7 +111,7 @@ def clear_history(
         pretty=pretty,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0 or (effective.log_level == "debug")
+    verbose = effective.verbose_level > 0
     debug = effective.log_level == "debug"
     pretty = effective.pretty
     include_runtime = effective.include_runtime

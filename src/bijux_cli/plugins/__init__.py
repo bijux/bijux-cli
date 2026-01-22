@@ -7,14 +7,12 @@ This module acts as the public facade for the plugin management service layer.
 It exposes a curated set of high-level functions for core plugin operations,
 ensuring a stable and convenient API for the rest of the application.
 
-To optimize CLI startup performance, this module's own submodules (such as
-`registry`, `loader`, and `metadata`) are loaded lazily upon first access.
+This module exposes explicit imports for commonly used registry helpers.
 """
 
 from __future__ import annotations
 
 from contextlib import suppress
-import importlib
 import importlib.metadata as md
 import importlib.util
 import logging
@@ -330,43 +328,18 @@ def load_entrypoints(registry: RegistryProtocol | None = None) -> list[str]:
     return names
 
 
-_SUBMODULES: dict[str, str] = {
-    "cache": "bijux_cli.plugins.cache",
-    "loader": "bijux_cli.plugins.loader",
-    "metadata": "bijux_cli.plugins.metadata",
-    "registry": "bijux_cli.plugins.registry",
-}
+def command_group(*args: Any, **kwargs: Any) -> Any:
+    """Proxy to the registry command group factory."""
+    from bijux_cli.plugins.registry import command_group as _command_group
+
+    return _command_group(*args, **kwargs)
 
 
-def __getattr__(name: str) -> Any:
-    """Lazily imports submodules to optimize startup time.
+def dynamic_choices(*args: Any, **kwargs: Any) -> Any:
+    """Proxy to the registry dynamic choices helper."""
+    from bijux_cli.plugins.registry import dynamic_choices as _dynamic_choices
 
-    This function is a module-level implementation of `__getattr__` (PEP 562),
-    which allows submodules of the `plugins` service to be imported only when
-    they are first accessed.
-
-    Args:
-        name (str): The name of the submodule or attribute to access.
-
-    Returns:
-        Any: The imported submodule or attribute.
-
-    Raises:
-        AttributeError: If the requested name is not a valid submodule or
-            attribute that can be lazily loaded.
-    """
-    if name in _SUBMODULES:
-        mod = importlib.import_module(_SUBMODULES[name])
-        setattr(sys.modules[__name__], name, mod)
-        return mod
-    if name in ("command_group", "dynamic_choices"):
-        mod = importlib.import_module("bijux_cli.plugins.registry")
-        attr = getattr(mod, name)
-        setattr(sys.modules[__name__], name, attr)
-        return attr
-    if name == "load_entrypoints":
-        return load_entrypoints
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    return _dynamic_choices(*args, **kwargs)
 
 
 __all__ = [

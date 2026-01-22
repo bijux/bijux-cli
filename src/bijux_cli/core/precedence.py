@@ -9,6 +9,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from bijux_cli.core.enums import ColorMode
+
 
 @dataclass(frozen=True)
 class GlobalCLIConfig:
@@ -33,7 +35,7 @@ class EffectiveConfig:
     quiet: bool
     verbose_level: int
     log_level: str
-    color: str
+    color: ColorMode
     fmt: str
     pretty: bool
     include_runtime: bool
@@ -45,7 +47,7 @@ class ExecutionPolicy:
     """Resolved execution policy shared across CLI/service boundaries."""
 
     output_format: str
-    color: str
+    color: ColorMode
     quiet: bool
     verbose: bool
     verbose_level: int
@@ -71,6 +73,8 @@ def _coerce_verbose(value: Any) -> int:
 
 
 def _normalize_str(value: Any, default: str) -> str:
+    if isinstance(value, ColorMode):
+        return value.value
     return str(value or default).strip().lower()
 
 
@@ -167,28 +171,40 @@ def _resolve_base(
     }
 
 
-def _normalize_effective(base: Mapping[str, Any]) -> EffectiveConfig:
+def resolve_color_mode(value: Any, env: Mapping[str, Any] | None = None) -> ColorMode:
+    """Resolve the effective color mode from a raw value and environment."""
+    if isinstance(value, ColorMode):
+        return value
+    mode = _normalize_str(value, "auto")
+    if mode not in ("auto", "always", "never"):
+        mode = "auto"
+    if mode == "never":
+        return ColorMode.NEVER
+    if mode == "always":
+        return ColorMode.ALWAYS
+    env = env or {}
+    if env.get("NO_COLOR"):
+        return ColorMode.NEVER
+    return ColorMode.AUTO
+
+
+def _normalize_effective(
+    base: Mapping[str, Any], env: Mapping[str, Any] | None = None
+) -> EffectiveConfig:
     quiet = bool(base["quiet"])
     log_level = str(base["log_level"])
-    color = str(base["color"])
-    if color not in ("auto", "always", "never"):
-        color = "auto"
+    color = resolve_color_mode(base["color"], env)
     effective_log_level = "error" if quiet else log_level
     verbose_level = int(base["verbose_level"])
-    include_runtime = (
-        verbose_level > 0 or effective_log_level == "debug"
-    ) and not quiet
+    include_runtime = (verbose_level > 0) and not quiet
     pretty = bool(base["pretty"])
-    effective_pretty = (
-        True if (effective_log_level == "debug" and not quiet) else pretty
-    )
     return EffectiveConfig(
         quiet=quiet,
         verbose_level=verbose_level,
         log_level=effective_log_level,
         color=color,
         fmt=str(base["fmt"]),
-        pretty=effective_pretty,
+        pretty=pretty,
         include_runtime=include_runtime,
         json=bool(base["json"]),
     )
@@ -202,7 +218,7 @@ def resolve_effective_config(
 ) -> EffectiveConfig:
     """Resolve flag/env/config precedence into a single effective config."""
     base = _resolve_base(_cli_to_dict(cli), env, file, defaults)
-    return _normalize_effective(base)
+    return _normalize_effective(base, env)
 
 
 def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:

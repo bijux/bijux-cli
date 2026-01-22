@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
 T = TypeVar("T")
@@ -50,4 +51,12 @@ class RegistryProtocol(Protocol):
         ...
 
 
-__all__ = ["RegistryProtocol"]
+@dataclass(frozen=True)
+class PluginConfig:
+    """Configuration for plugin discovery and activation."""
+
+    enabled: bool
+    allow_entrypoints: bool
+
+
+__all__ = ["PluginConfig", "RegistryProtocol"]

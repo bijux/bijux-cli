@@ -44,6 +44,7 @@ import typer
 
 from bijux_cli.app.di import DIContainer
 from bijux_cli.app.engine import Engine
+from bijux_cli.cli.color import apply_color_mode, set_color_mode
 from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.enums import OutputFormat
@@ -133,6 +134,7 @@ def _filtered_echo(
     ):
         return
 
+    color = apply_color_mode(color)
     if styles:
         _orig_click_secho(message, file=file, nl=nl, err=err, color=color, **styles)
     else:
@@ -143,36 +145,6 @@ click.echo = _filtered_echo
 click.secho = _filtered_echo
 typer.echo = _filtered_echo
 typer.secho = _filtered_echo
-
-
-def disable_cli_colors_for_test() -> None:
-    """Disables color output from various libraries for test environments.
-
-    This function checks for the `BIJUXCLI_TEST_MODE` environment variable and,
-    if set, attempts to disable color output to ensure clean, predictable
-    test results.
-    """
-    if os.environ.get("BIJUXCLI_TEST_MODE") != "1":
-        return
-    os.environ["NO_COLOR"] = "1"
-    try:
-        from rich.console import Console
-
-        Console().no_color = True
-    except ImportError:
-        pass
-    try:
-        import colorama
-
-        colorama.deinit()
-    except ImportError:
-        pass
-    try:
-        import prompt_toolkit
-
-        prompt_toolkit.shortcuts.set_title = lambda text: None
-    except ImportError:  # pragma: no cover
-        pass
 
 
 def should_record_command_history(command_line: list[str]) -> bool:
@@ -356,7 +328,10 @@ def main() -> int:
         return 2
     resolved = resolve_effective_config(
         cli=parsed,
-        env={"log_level": os.environ.get("BIJUXCLI_LOG_LEVEL")},
+        env={
+            "log_level": os.environ.get("BIJUXCLI_LOG_LEVEL"),
+            "NO_COLOR": os.environ.get("NO_COLOR"),
+        },
         file={},
         defaults={
             "quiet": False,
@@ -382,7 +357,7 @@ def main() -> int:
     )
     policy = resolve_execution_policy(resolved)
     setup_structlog(resolved.log_level)
-    disable_cli_colors_for_test()
+    set_color_mode(policy.color)
 
     if any(a in ("--version", "-V") for a in args):
         try:

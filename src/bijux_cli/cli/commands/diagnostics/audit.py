@@ -24,7 +24,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import os
 from pathlib import Path
 import platform
@@ -42,6 +41,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
+from bijux_cli.cli.payloads import AuditPayload
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -74,7 +74,7 @@ DRY_RUN_OPTION = typer.Option(
 )
 
 
-def _build_payload(include_runtime: bool, dry_run: bool) -> Mapping[str, object]:
+def _build_payload(include_runtime: bool, dry_run: bool) -> AuditPayload:
     """Builds the structured result payload for the audit command.
 
     Args:
@@ -86,16 +86,19 @@ def _build_payload(include_runtime: bool, dry_run: bool) -> Mapping[str, object]
     Returns:
         Mapping[str, object]: A dictionary containing the structured audit results.
     """
-    payload: dict[str, object] = {"status": "dry-run" if dry_run else "completed"}
+    payload = AuditPayload(status="dry-run" if dry_run else "completed")
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return AuditPayload(
+            status=payload.status,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 
 def _write_output_file(
     output_path: Path,
-    payload: Mapping[str, object],
+    payload: object,
     emitter: Emitter,
     fmt: OutputFormat,
     pretty: bool,
@@ -254,12 +257,14 @@ def audit(
                 debug=(effective.log_level == "debug"),
                 dry_run=dry_run,
             )
-            payload = {"status": "written", "file": str(output)}
+            payload = AuditPayload(status="written", file=str(output))
             if include_runtime:
-                payload["python"] = ascii_safe(
-                    platform.python_version(), "python_version"
+                payload = AuditPayload(
+                    status=payload.status,
+                    file=payload.file,
+                    python=ascii_safe(platform.python_version(), "python_version"),
+                    platform=ascii_safe(platform.platform(), "platform"),
                 )
-                payload["platform"] = ascii_safe(platform.platform(), "platform")
 
         new_run_command(
             command_name=command,
