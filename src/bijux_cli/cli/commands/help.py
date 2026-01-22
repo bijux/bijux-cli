@@ -40,6 +40,7 @@ from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     contains_non_ascii_env,
+    effective_defaults,
     emit_and_exit,
     emit_error_and_exit,
     validate_common_flags,
@@ -306,20 +307,26 @@ def help_callback(
 
     tokens = command_path or []
     command = "help"
-    from bijux_cli.core.precedence import resolve_output_flags
+    from bijux_cli.core.precedence import resolve_effective_config
 
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    effective_include_runtime = resolved["include_runtime"]
-    effective_pretty = resolved["pretty"]
+    effective_include_runtime = resolved.include_runtime
+    effective_pretty = resolved.pretty
     fmt_lower = fmt.strip().lower()
     error_fmt = fmt_lower if fmt_lower in ("json", "yaml") else "json"
 
-    if quiet:
+    if resolved.quiet:
         if fmt_lower not in _VALID_FORMATS:
             raise SystemExit(2)
 
@@ -343,7 +350,7 @@ def help_callback(
         validate_common_flags(
             fmt,
             command,
-            quiet,
+            resolved.quiet,
             include_runtime=effective_include_runtime,
         )
 
@@ -354,9 +361,9 @@ def help_callback(
             failure="format",
             command=command,
             fmt=error_fmt,
-            quiet=quiet,
+            quiet=resolved.quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            debug=resolved.debug,
         )
 
     for token in tokens:
@@ -367,9 +374,9 @@ def help_callback(
                 failure="null_byte",
                 command=command,
                 fmt=error_fmt,
-                quiet=quiet,
+                quiet=resolved.quiet,
                 include_runtime=effective_include_runtime,
-                debug=debug,
+                debug=resolved.debug,
             )
         try:
             token.encode("ascii")
@@ -380,9 +387,9 @@ def help_callback(
                 failure="ascii",
                 command=command,
                 fmt=error_fmt,
-                quiet=quiet,
+                quiet=resolved.quiet,
                 include_runtime=effective_include_runtime,
-                debug=debug,
+                debug=resolved.debug,
             )
 
     if contains_non_ascii_env():
@@ -392,9 +399,9 @@ def help_callback(
             failure="ascii",
             command=command,
             fmt=error_fmt,
-            quiet=quiet,
+            quiet=resolved.quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            debug=resolved.debug,
         )
 
     target = _find_target_command(ctx, tokens)
@@ -405,9 +412,9 @@ def help_callback(
             failure="not_found",
             command=command,
             fmt=error_fmt,
-            quiet=quiet,
+            quiet=resolved.quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            debug=resolved.debug,
         )
 
     DIContainer.current().resolve(EmitterProtocol)
@@ -427,9 +434,9 @@ def help_callback(
             failure="ascii",
             command=command,
             fmt=fmt_lower,
-            quiet=quiet,
+            quiet=resolved.quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            debug=resolved.debug,
         )
 
     output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
@@ -437,9 +444,9 @@ def help_callback(
         payload=payload,
         fmt=output_format,
         effective_pretty=effective_pretty,
-        verbose=verbose,
-        debug=debug,
-        quiet=quiet,
+        verbose=resolved.verbose_level > 0,
+        debug=resolved.debug,
+        quiet=resolved.quiet,
         command=command,
         exit_code=0,
     )

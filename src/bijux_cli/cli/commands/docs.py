@@ -34,8 +34,10 @@ import typer.core
 
 from bijux_cli.cli.commands.utilities import (
     contains_non_ascii_env,
+    effective_defaults,
     emit_and_exit,
     emit_error_and_exit,
+    normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.async_exec import AsyncTyper
@@ -47,6 +49,7 @@ from bijux_cli.core.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import resolve_effective_config
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.version import __version__
 
@@ -177,21 +180,44 @@ def docs(
             and payload upon any error, including argument validation, ASCII
             violations, serialization failures, or I/O issues.
     """
-    from bijux_cli.cli.commands.utilities import normalize_format
-
     command = "docs"
-    from bijux_cli.core.precedence import resolve_output_flags
-
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    effective_include_runtime = resolved["include_runtime"]
-    effective_pretty = resolved["pretty"]
+    quiet = resolved.quiet
+    verbose = resolved.verbose_level > 0
+    debug = resolved.debug
+    effective_include_runtime = resolved.include_runtime
+    effective_pretty = resolved.pretty
+    fmt_lower = normalize_format(resolved.fmt) or "json"
 
-    fmt_lower = normalize_format(fmt)
+    if contains_non_ascii_env():
+        emit_error_and_exit(
+            "Non-ASCII characters in environment variables",
+            code=3,
+            failure="ascii_env",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=effective_include_runtime,
+            debug=debug,
+        )
+
+    validate_common_flags(
+        resolved.fmt,
+        command,
+        quiet,
+        include_runtime=effective_include_runtime,
+    )
 
     if ctx.args:
         stray = ctx.args[0]
@@ -204,25 +230,6 @@ def docs(
             msg,
             code=2,
             failure="args",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective_include_runtime,
-            debug=debug,
-        )
-
-    validate_common_flags(
-        fmt,
-        command,
-        quiet,
-        include_runtime=effective_include_runtime,
-    )
-
-    if contains_non_ascii_env():
-        emit_error_and_exit(
-            "Non-ASCII characters in environment variables",
-            code=3,
-            failure="ascii_env",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,

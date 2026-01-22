@@ -39,6 +39,7 @@ from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     emit_error_and_exit,
     new_run_command,
+    resolve_command_config,
     validate_common_flags,
 )
 from bijux_cli.core.async_exec import AsyncTyper
@@ -258,7 +259,21 @@ def status(
     telemetry = DIContainer.current().resolve(TelemetryProtocol)
     command = "status"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.debug
+    pretty = effective.pretty
+    validate_common_flags(
+        fmt, command, quiet, include_runtime=effective.include_runtime
+    )
 
     if watch is not None:
         try:
@@ -273,7 +288,7 @@ def status(
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=verbose,
+                include_runtime=effective.include_runtime,
                 debug=debug,
             )
 
@@ -285,7 +300,7 @@ def status(
             verbose=verbose,
             debug=debug,
             effective_pretty=pretty,
-            include_runtime=verbose,
+            include_runtime=effective.include_runtime,
             telemetry=telemetry,
             emitter=emitter,
         )

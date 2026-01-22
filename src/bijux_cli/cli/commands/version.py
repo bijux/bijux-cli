@@ -34,6 +34,7 @@ from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
     new_run_command,
+    resolve_command_config,
     validate_common_flags,
 )
 from bijux_cli.core.async_exec import AsyncTyper
@@ -139,15 +140,23 @@ def version(
     DIContainer.current().resolve(EmitterProtocol)
     DIContainer.current().resolve(TelemetryProtocol)
     command = "version"
+    validate_common_flags(fmt, command, quiet)
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
 
     new_run_command(
         command_name=command,
         payload_builder=lambda include: _build_payload(include),
-        quiet=quiet,
-        verbose=verbose,
+        quiet=effective.quiet,
+        verbose=effective.verbose_level > 0,
         fmt=fmt_lower,
-        pretty=pretty,
-        debug=debug,
+        pretty=effective.pretty,
+        debug=effective.debug,
     )

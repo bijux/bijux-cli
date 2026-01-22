@@ -31,7 +31,9 @@ import typer
 
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
+    effective_defaults,
     new_run_command,
+    normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.constants import (
@@ -41,6 +43,7 @@ from bijux_cli.core.constants import (
     HELP_QUIET,
     HELP_VERBOSE,
 )
+from bijux_cli.core.precedence import resolve_effective_config
 
 
 def dev(
@@ -76,19 +79,27 @@ def dev(
         return
 
     command = "dev"
-    from bijux_cli.core.precedence import resolve_output_flags
-
-    resolved = resolve_output_flags(
-        quiet=quiet,
-        verbose=verbose,
-        debug=debug,
-        pretty=pretty,
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
     )
-    effective_include_runtime = resolved["include_runtime"]
-    effective_pretty = resolved["pretty"]
+    quiet = resolved.quiet
+    verbose = resolved.verbose_level > 0
+    debug = resolved.debug
+    effective_include_runtime = resolved.include_runtime
+    effective_pretty = resolved.pretty
+    fmt_lower = normalize_format(resolved.fmt) or "json"
 
-    fmt_lower = validate_common_flags(
-        fmt,
+    validate_common_flags(
+        resolved.fmt,
         command,
         quiet,
         include_runtime=effective_include_runtime,
@@ -121,8 +132,8 @@ def dev(
         command_name=command,
         payload_builder=payload_builder,
         quiet=quiet,
-        verbose=effective_include_runtime,
+        verbose=verbose,
         fmt=fmt_lower,
         pretty=effective_pretty,
-        debug=(debug and not quiet),
+        debug=debug,
     )

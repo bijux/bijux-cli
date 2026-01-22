@@ -37,8 +37,11 @@ from bijux_cli.cli.commands.utilities import (
     contains_non_ascii_env,
     emit_error_and_exit,
     new_run_command,
-    validate_common_flags,
+    resolve_command_config,
     validate_env_file_if_present,
+)
+from bijux_cli.cli.commands.utilities import (
+    validate_common_flags as validate_common_flags,
 )
 from bijux_cli.core.async_exec import AsyncTyper
 from bijux_cli.core.constants import (
@@ -186,24 +189,22 @@ def audit(
 
     command = "audit"
 
-    from bijux_cli.core.precedence import resolve_output_flags
-
-    resolved = resolve_output_flags(
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
         quiet=quiet,
         verbose=verbose,
         debug=debug,
+        fmt=fmt,
         pretty=pretty,
     )
-    include_runtime = resolved["include_runtime"]
-    effective_pretty = resolved["pretty"]
+    include_runtime = effective.include_runtime
+    effective_pretty = effective.pretty
 
     try:
         stray_args = [a for a in ctx.args if not a.startswith("-")]
         if stray_args:
             raise typer.BadParameter(f"No such argument: {stray_args[0]}")
-        fmt_lower = validate_common_flags(fmt, command, quiet)
         out_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
-
         if contains_non_ascii_env():
             emit_error_and_exit(
                 "Non-ASCII environment variables detected",
@@ -211,7 +212,7 @@ def audit(
                 failure="ascii_env",
                 command=command,
                 fmt=fmt_lower,
-                quiet=quiet,
+                quiet=effective.quiet,
                 include_runtime=include_runtime,
             )
         try:
@@ -223,7 +224,7 @@ def audit(
                 failure="ascii",
                 command=command,
                 fmt=fmt_lower,
-                quiet=quiet,
+                quiet=effective.quiet,
                 include_runtime=include_runtime,
             )
 
@@ -235,7 +236,7 @@ def audit(
             failure="args",
             command=command,
             fmt=error_fmt,
-            quiet=quiet,
+            quiet=effective.quiet,
             include_runtime=include_runtime,
         )
 
@@ -250,7 +251,7 @@ def audit(
                 emitter=emitter,
                 fmt=out_format,
                 pretty=effective_pretty,
-                debug=debug,
+                debug=effective.debug,
                 dry_run=dry_run,
             )
             payload = {"status": "written", "file": str(output)}
@@ -263,11 +264,11 @@ def audit(
         new_run_command(
             command_name=command,
             payload_builder=lambda _: payload,
-            quiet=quiet,
+            quiet=effective.quiet,
             verbose=include_runtime,
             fmt=fmt_lower,
             pretty=effective_pretty,
-            debug=debug,
+            debug=effective.debug,
         )
 
     except ValueError as exc:
@@ -277,7 +278,7 @@ def audit(
             failure="ascii",
             command=command,
             fmt=fmt_lower,
-            quiet=quiet,
+            quiet=effective.quiet,
             include_runtime=include_runtime,
         )
     except OSError as exc:
@@ -287,7 +288,7 @@ def audit(
             failure="output_file",
             command=command,
             fmt=fmt_lower,
-            quiet=quiet,
+            quiet=effective.quiet,
             include_runtime=include_runtime,
         )
     except Exception as exc:
@@ -297,6 +298,6 @@ def audit(
             failure="unexpected",
             command=command,
             fmt=fmt_lower,
-            quiet=quiet,
+            quiet=effective.quiet,
             include_runtime=include_runtime,
         )

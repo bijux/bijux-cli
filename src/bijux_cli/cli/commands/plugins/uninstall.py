@@ -37,7 +37,10 @@ from bijux_cli.cli.commands.plugins.validation import refuse_on_symlink
 from bijux_cli.cli.commands.utilities import (
     emit_error_and_exit,
     new_run_command,
-    validate_common_flags,
+    resolve_command_config,
+)
+from bijux_cli.cli.commands.utilities import (
+    validate_common_flags as validate_common_flags,
 )
 from bijux_cli.core.constants import (
     HELP_DEBUG,
@@ -85,7 +88,19 @@ def uninstall_plugin(
     """
     command = "plugins uninstall"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    validate_common_flags(fmt, command, quiet)
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=quiet,
+        verbose=verbose,
+        debug=debug,
+        fmt=fmt,
+        pretty=pretty,
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.debug
+    pretty = effective.pretty
     try:
         meta = get_plugin_metadata(name)
     except Exception:
@@ -103,7 +118,7 @@ def uninstall_plugin(
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=verbose,
+                include_runtime=effective.include_runtime,
                 debug=debug,
             )
         invalidate_plugin_cache()
@@ -141,7 +156,7 @@ def uninstall_plugin(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=effective.include_runtime,
             debug=debug,
         )
 
@@ -153,7 +168,7 @@ def uninstall_plugin(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=effective.include_runtime,
             debug=debug,
         )
 
@@ -192,7 +207,7 @@ def uninstall_plugin(
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=verbose,
+                include_runtime=effective.include_runtime,
                 debug=debug,
             )
         elif not plug_path.is_dir():
@@ -203,7 +218,7 @@ def uninstall_plugin(
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=verbose,
+                include_runtime=effective.include_runtime,
                 debug=debug,
             )
         else:
@@ -217,7 +232,7 @@ def uninstall_plugin(
                     command=command,
                     fmt=fmt_lower,
                     quiet=quiet,
-                    include_runtime=verbose,
+                    include_runtime=effective.include_runtime,
                     debug=debug,
                 )
             except Exception as exc:
@@ -228,7 +243,7 @@ def uninstall_plugin(
                     command=command,
                     fmt=fmt_lower,
                     quiet=quiet,
-                    include_runtime=verbose,
+                    include_runtime=effective.include_runtime,
                     debug=debug,
                 )
 

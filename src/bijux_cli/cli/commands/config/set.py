@@ -39,6 +39,7 @@ from bijux_cli.cli.commands.utilities import (
     emit_error_and_exit,
     new_run_command,
     parse_global_flags,
+    resolve_command_config,
 )
 from bijux_cli.core.constants import (
     HELP_DEBUG,
@@ -103,14 +104,20 @@ def set_config(
                 extra={"path": "[non-ascii path provided]"},
             )
     flags = parse_global_flags()
-    quiet = flags["quiet"]
-    verbose = flags["verbose"]
-    fmt = flags["format"]
-    pretty = flags["pretty"]
-    debug = flags["debug"]
-    include_runtime = verbose
-    fmt_lower = fmt.lower()
     command = "config set"
+    effective, _, fmt_lower = resolve_command_config(
+        command=command,
+        quiet=flags["quiet"],
+        verbose=flags["verbose"],
+        debug=flags["debug"],
+        fmt=flags["format"],
+        pretty=flags["pretty"],
+    )
+    quiet = effective.quiet
+    verbose = effective.verbose_level > 0
+    debug = effective.debug
+    pretty = effective.pretty
+    include_runtime = effective.include_runtime
     if cfg_path:
         with suppress(Exception), open(cfg_path, "a+") as fh:
             try:

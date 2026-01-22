@@ -59,6 +59,10 @@ class DummyContainer:
             return self._hist
         raise RuntimeError("unexpected resolve")
 
+    def register(self, _cls: Any, _value: Any) -> None:
+        """Accept registrations used by bootstrap without storing them."""
+        return None
+
 
 @pytest.fixture(autouse=True)
 def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -218,6 +222,7 @@ def test_main_help_and_missing_format(
     monkeypatch.setattr(sys, "argv", ["bijux", "--help"])
     code = main()
     assert code == 0
+    capfd.readouterr()
 
     monkeypatch.setenv("BIJUXCLI_DEBUG", "")
     monkeypatch.setattr(sys, "argv", ["bijux", "--format"])

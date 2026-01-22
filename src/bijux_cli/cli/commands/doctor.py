@@ -30,8 +30,10 @@ import typer
 from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.utilities import (
     ascii_safe,
+    effective_defaults,
     emit_error_and_exit,
     new_run_command,
+    normalize_format,
     validate_common_flags,
 )
 from bijux_cli.core.async_exec import AsyncTyper
@@ -43,6 +45,7 @@ from bijux_cli.core.constants import (
     HELP_VERBOSE,
 )
 from bijux_cli.core.contracts import EmitterProtocol, TelemetryProtocol
+from bijux_cli.core.precedence import resolve_effective_config
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -135,8 +138,26 @@ def doctor(
         return
 
     command = "doctor"
+    resolved = resolve_effective_config(
+        cli={
+            "quiet": quiet,
+            "verbose": verbose,
+            "debug": debug,
+            "pretty": pretty,
+            "format": fmt,
+        },
+        env={},
+        file={},
+        defaults=effective_defaults(),
+    )
+    quiet = resolved.quiet
+    verbose = resolved.verbose_level > 0
+    debug = resolved.debug
+    pretty = resolved.pretty
+    include_runtime = resolved.include_runtime
+    fmt_lower = normalize_format(resolved.fmt) or "json"
 
-    fmt_lower = validate_common_flags(fmt, command, quiet)
+    validate_common_flags(resolved.fmt, command, quiet)
 
     if ctx.args:
         stray = ctx.args[0]
@@ -152,7 +173,7 @@ def doctor(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=include_runtime,
             debug=debug,
         )
 
@@ -167,7 +188,7 @@ def doctor(
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=verbose,
+            include_runtime=include_runtime,
             debug=debug,
         )
 

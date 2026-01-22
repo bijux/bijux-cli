@@ -61,6 +61,12 @@ def dev_list_plugins(
     """
     command = "dev list-plugins"
 
-    validate_common_flags(fmt, command, quiet)
-
-    handle_list_plugins(command, quiet, verbose, fmt, pretty, debug)
+    fmt_lower = validate_common_flags(fmt, command, quiet)
+    handle_list_plugins(
+        command,
+        quiet,
+        verbose,
+        fmt_lower,
+        pretty,
+        debug,
+    )
