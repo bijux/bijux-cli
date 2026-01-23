@@ -30,7 +30,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DevDiPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     ENV_DI_LIMIT,
     ENV_TEST_FORCE_SERIALIZE_FAIL,
@@ -53,7 +53,7 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import OutputFormat
 
 QUIET_OPTION = typer.Option(False, *OPT_QUIET, help=HELP_QUIET)
 VERBOSE_OPTION = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE)
@@ -149,7 +149,7 @@ def dev_di_graph(
     _ = (quiet, verbose, log_level, pretty, fmt)
     policy = get_execution_policy()
     quiet = policy.quiet
-    debug = policy.log_level == LogLevel.DEBUG
+    debug = policy.log_policy.show_internal
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON

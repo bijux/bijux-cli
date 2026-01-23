@@ -35,7 +35,7 @@ from types import FrameType
 import typer
 
 from bijux_cli.cli.commands.payloads import StatusPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -137,7 +137,9 @@ def _run_watch_mode(
             include_runtime=include_runtime,
         )
 
-    debug = log_level == LogLevel.DEBUG
+    from bijux_cli.core.precedence import resolve_log_policy
+
+    debug = resolve_log_policy(log_level).show_internal
     stop = False
 
     def _sigint_handler(_sig: int, _frame: FrameType | None) -> None:
@@ -281,7 +283,7 @@ def status(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     pretty = effective.pretty
     validate_common_flags(
         fmt, command, quiet, include_runtime=effective.include_runtime

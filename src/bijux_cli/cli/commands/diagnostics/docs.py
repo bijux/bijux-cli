@@ -35,7 +35,7 @@ import typer.core
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.payloads import DocsSpecPayload, DocsWritePayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_DOCS_OUT,
     ENV_TEST_IO_FAIL,
     HELP_FORMAT,
@@ -54,7 +54,7 @@ from bijux_cli.cli.core.output import resolve_command_config
 from bijux_cli.cli.core.validation import (
     contains_non_ascii_env,
 )
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.core.version import __version__
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
@@ -215,7 +215,7 @@ def docs(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     effective_include_runtime = effective.include_runtime
     effective_pretty = effective.pretty
 

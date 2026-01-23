@@ -19,6 +19,7 @@ from structlog.typing import FilteringBoundLogger
 from bijux_cli.core.di import DIContainer, _key_name
 from bijux_cli.core.enums import LogLevel
 from bijux_cli.core.errors import BijuxError
+from bijux_cli.core.precedence import resolve_log_policy
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol
 
@@ -174,14 +175,19 @@ def test_logging_via_observability_and_keyerror_fallback_v1(
 ) -> None:
     """Test logging through the observability service and its fallback (v1)."""
     c = DIContainer.current()
+    DIContainer.set_log_policy(resolve_log_policy(LogLevel.DEBUG))
     obs = DummyObs()
     c.register("obs", obs)
-    c._log(logging.INFO, "hello", extra={"name": "svc"})
     assert obs.calls
-    assert obs.calls[-1][0] == "info"
+    assert any(call[0] == "debug" for call in obs.calls)
 
-    DIContainer._log_static(logging.WARNING, "world", extra={"name": "svc2"})
-    assert any(m for m in obs.calls if m[0] == "warning")
+    with caplog.at_level(logging.INFO, logger="bijux_cli.di"):
+        c._log(logging.INFO, "hello", extra={"name": "svc"})
+        assert any("hello" in rec.message for rec in caplog.records)
+
+    with caplog.at_level(logging.WARNING, logger="bijux_cli.di"):
+        DIContainer._log_static(logging.WARNING, "world", extra={"name": "svc2"})
+        assert any("world" in rec.message for rec in caplog.records)
 
     c._obs = None
     with caplog.at_level(logging.WARNING, logger="bijux_cli.di"):
@@ -453,7 +459,7 @@ def test_reset_with_no_instance(caplog: pytest.LogCaptureFixture) -> None:
     """Test the reset method's path when no instance exists."""
     with caplog.at_level(logging.DEBUG, logger="bijux_cli.di"):
         DIContainer.reset()
-    assert "DIContainer reset" in caplog.text
+    assert caplog.text == ""
 
 
 @pytest.mark.asyncio

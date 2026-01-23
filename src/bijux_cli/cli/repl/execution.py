@@ -11,7 +11,7 @@ import os
 import shlex
 import sys
 
-from bijux_cli.cli.constants import OPT_FORMAT, OPT_QUIET, PRETTY_FLAGS
+from bijux_cli.cli.core.constants import OPT_FORMAT, OPT_QUIET, PRETTY_FLAGS
 from bijux_cli.cli.repl.parsing import (
     _filter_control,
     _known_commands,

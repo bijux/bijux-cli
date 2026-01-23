@@ -9,43 +9,23 @@ from collections.abc import Callable
 
 from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
 from bijux_cli.cli.core.validation import validate_common_flags
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import (
-    ExecutionPolicy,
-    FlagLayer,
-    Flags,
-    resolve_effective_config,
-    resolve_execution_policy,
-)
+from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
 
 
-def _resolve_policy() -> ExecutionPolicy:
-    """Resolve the shared execution policy from DI or defaults."""
+def get_execution_policy() -> ExecutionPolicy:
+    """Return the shared execution policy for CLI commands."""
     try:
         from bijux_cli.core.di import DIContainer
 
+        if DIContainer._instance is None:
+            return default_execution_policy()
         policy = DIContainer.current().resolve(ExecutionPolicy)
         if not isinstance(policy, ExecutionPolicy):
             raise TypeError("ExecutionPolicy not available")
         return policy
     except Exception:
-        effective = resolve_effective_config(
-            cli=FlagLayer(),
-            env=FlagLayer(),
-            file=FlagLayer(),
-            defaults=Flags(
-                quiet=False,
-                log_level=LogLevel.INFO,
-                color=ColorMode.AUTO,
-                format=OutputFormat.JSON,
-            ),
-        )
-        return resolve_execution_policy(effective)
-
-
-def get_execution_policy() -> ExecutionPolicy:
-    """Return the shared execution policy for CLI commands."""
-    return _resolve_policy()
+        return default_execution_policy()
 
 
 def resolve_command_config(
@@ -111,7 +91,7 @@ def new_run_command(
             fmt=output_format,
             quiet=resolved.quiet,
             include_runtime=include_runtime,
-            debug=(resolved.log_level == LogLevel.DEBUG),
+            debug=(resolved.log_policy.show_internal),
         )
     else:
         emit_and_exit(
@@ -119,7 +99,7 @@ def new_run_command(
             fmt=output_format,
             effective_pretty=effective_pretty,
             verbose=resolved.verbose,
-            debug=(resolved.log_level == LogLevel.DEBUG),
+            debug=(resolved.log_policy.show_internal),
             quiet=resolved.quiet,
             command=command_name,
             exit_code=exit_code,

@@ -35,7 +35,7 @@ import sys
 import typer
 
 from bijux_cli.cli.commands.payloads import ConfigSetPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -52,7 +52,8 @@ from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import ErrorType, OutputFormat
+from bijux_cli.core.precedence import LogPolicy
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -72,6 +73,7 @@ def _parse_pair(
     quiet: bool,
     include_runtime: bool,
     debug: bool,
+    log_policy: LogPolicy,
 ) -> ConfigSetIntent:
     """Parse and validate a KEY=VALUE pair for config set."""
     if pair is None:
@@ -97,6 +99,8 @@ def _parse_pair(
             quiet=quiet,
             include_runtime=include_runtime,
             debug=debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=log_policy,
         )
     raw_key, raw_value = pair.split("=", 1)
     key = raw_key.strip()
@@ -118,6 +122,8 @@ def _parse_pair(
             quiet=quiet,
             include_runtime=include_runtime,
             debug=debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=log_policy,
         )
     if not all(ord(c) < 128 for c in key + service_value_str):
         emit_error_and_exit(
@@ -142,6 +148,8 @@ def _parse_pair(
             include_runtime=include_runtime,
             debug=debug,
             extra={"key": key},
+            error_type=ErrorType.USER_INPUT,
+            log_policy=log_policy,
         )
     if not all(
         c in string.printable and c not in "\r\n\t\x0b\x0c" for c in service_value_str
@@ -223,7 +231,7 @@ def set_config(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     pretty = effective.pretty
     include_runtime = effective.include_runtime
     if cfg_path:
@@ -252,6 +260,7 @@ def set_config(
         quiet=quiet,
         include_runtime=include_runtime,
         debug=debug,
+        log_policy=effective.log_policy,
     )
     config_svc = DIContainer.current().resolve(ConfigProtocol)
     try:

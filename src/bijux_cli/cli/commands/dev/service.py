@@ -28,7 +28,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DevStatusPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_DEV_MODE,
     HELP_FORMAT,
     HELP_LOG_LEVEL,

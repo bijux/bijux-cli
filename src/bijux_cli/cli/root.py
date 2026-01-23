@@ -116,7 +116,7 @@ def _log_registered(app: typer.Typer) -> None:
     logger.debug("Core groups registered: %s", grps)
 
 
-def build_app() -> AsyncTyper:
+def build_app(*, load_plugins: bool = True) -> AsyncTyper:
     """Construct the root Typer application.
 
     Returns:
@@ -128,7 +128,8 @@ def build_app() -> AsyncTyper:
     )
     register_commands(app)
     _log_registered(app)
-    register_dynamic_plugins(app)
+    if load_plugins:
+        register_dynamic_plugins(app)
     app.callback(invoke_without_command=True)(maybe_default_to_repl)
     return app
 

@@ -29,7 +29,7 @@ import typer
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.payloads import MemorySummaryPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -50,6 +50,7 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.precedence import resolve_log_policy
 
 
 def _build_payload(
@@ -145,7 +146,7 @@ def _run_one_shot_mode(
         fmt=output_format,
         effective_pretty=effective_pretty,
         verbose=verbose,
-        debug=(LogLevel(log_level) == LogLevel.DEBUG),
+        debug=resolve_log_policy(LogLevel(log_level)).show_internal,
         quiet=quiet,
         command=command,
         exit_code=0,
@@ -186,7 +187,7 @@ def memory_summary(
     policy = get_execution_policy()
     quiet = policy.quiet
     verbose = policy.verbose
-    debug = policy.log_level == LogLevel.DEBUG
+    debug = policy.log_policy.show_internal
     include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON

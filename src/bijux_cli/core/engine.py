@@ -85,7 +85,7 @@ class Engine:
                 color=ColorMode.AUTO,
             )
             logging_config = LoggingConfig(
-                debug=(resolved.log_level == LogLevel.DEBUG),
+                debug=(resolved.log_policy.show_internal),
                 quiet=quiet,
                 verbose=False,
                 log_level=resolved.log_level,
@@ -204,7 +204,7 @@ class Engine:
         Raises:
             ValueError: If the timeout value in the configuration is malformed.
         """
-        from bijux_cli.cli.constants import ENV_COMMAND_TIMEOUT
+        from bijux_cli.cli.core.constants import ENV_COMMAND_TIMEOUT
 
         raw = os.getenv(ENV_COMMAND_TIMEOUT, "30.0")
         try:

@@ -31,7 +31,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import AuditPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -54,7 +54,7 @@ from bijux_cli.cli.core.validation import (
     validate_env_file_if_present,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 
@@ -261,7 +261,7 @@ def audit(
                 emitter=emitter,
                 fmt=out_format,
                 pretty=effective_pretty,
-                debug=(effective.log_level == LogLevel.DEBUG),
+                debug=(effective.log_policy.show_internal),
                 dry_run=dry_run,
             )
             payload = AuditPayload(status="written", file=str(output))
@@ -302,6 +302,8 @@ def audit(
             fmt=fmt_lower,
             quiet=effective.quiet,
             include_runtime=include_runtime,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=effective.log_policy,
         )
     except Exception as exc:
         emit_error_and_exit(

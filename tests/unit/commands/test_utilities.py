@@ -935,6 +935,14 @@ def test_parse_global_flags_format_missing() -> None:
     )
 
 
+def test_parse_global_flags_color() -> None:
+    """Global parser captures --color values."""
+    config = parse_global_flags(["--color", "never"])
+    assert config.flags.color is ColorMode.NEVER
+    assert config.args == ("--color", "never")
+    assert config.errors == ()
+
+
 def test_parse_global_flags_format_invalid_help() -> None:
     """Parse --format when --help is present."""
     config = parse_global_flags(["--help", "-f", "invalid"])

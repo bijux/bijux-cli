@@ -27,7 +27,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -42,7 +42,6 @@ from bijux_cli.cli.constants import (
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.plugins.commands.validation import refuse_on_symlink
-from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins import get_plugins_dir
 from bijux_cli.plugins.listing import list_installed_plugins
 
@@ -93,7 +92,7 @@ def list_plugin(
         effective.output_format,
         effective.quiet,
         effective.verbose_level > 0,
-        (effective.log_level == LogLevel.DEBUG),
+        (effective.log_policy.show_internal),
     )
     plugins = list_installed_plugins()
 

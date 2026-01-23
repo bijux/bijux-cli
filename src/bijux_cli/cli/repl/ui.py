@@ -15,7 +15,7 @@ from types import FrameType
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_BIN,
     ENV_HISTORY_FILE,
     ENV_NO_COLOR,

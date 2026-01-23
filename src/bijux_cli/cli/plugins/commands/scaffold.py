@@ -30,7 +30,7 @@ import unicodedata
 
 import typer
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -45,7 +45,6 @@ from bijux_cli.cli.constants import (
 from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import validate_common_flags
-from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins.validation import PLUGIN_NAME_RE
 
 
@@ -104,7 +103,7 @@ def scaffold_plugin(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     pretty = effective.pretty
 
     if name in keyword.kwlist:

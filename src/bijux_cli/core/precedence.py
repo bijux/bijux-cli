@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
@@ -68,8 +68,13 @@ class ExecutionPolicy:
     verbose: bool
     verbose_level: int
     log_level: LogLevel
-    pretty: bool
-    include_runtime: bool
+    log_policy: LogPolicy = field(init=False)
+    pretty: bool = True
+    include_runtime: bool = False
+
+    def __post_init__(self) -> None:
+        """Backfill log policy when constructed directly."""
+        object.__setattr__(self, "log_policy", resolve_log_policy(self.log_level))
 
 
 @dataclass(frozen=True)
@@ -80,6 +85,55 @@ class OutputConfig:
     pretty: bool
     log_level: LogLevel
     color: ColorMode
+    log_policy: LogPolicy
+
+
+@dataclass(frozen=True)
+class LogPolicy:
+    """Typed logging policy derived from a log level threshold."""
+
+    level: LogLevel
+    show_internal: bool
+    show_traceback: bool
+    pretty_default: bool
+    telemetry_verbosity: int
+
+
+_LOG_RANK: dict[LogLevel, int] = {
+    LogLevel.DEBUG: 10,
+    LogLevel.INFO: 20,
+    LogLevel.WARNING: 30,
+    LogLevel.ERROR: 40,
+    LogLevel.CRITICAL: 50,
+}
+
+
+def _log_rank(level: LogLevel) -> int:
+    """Return a comparable rank for log levels."""
+    return _LOG_RANK.get(level, _LOG_RANK[LogLevel.INFO])
+
+
+def resolve_log_policy(log_level: LogLevel) -> LogPolicy:
+    """Derive logging policy from a level threshold."""
+    rank = _log_rank(log_level)
+    debug_rank = _log_rank(LogLevel.DEBUG)
+    info_rank = _log_rank(LogLevel.INFO)
+    warn_rank = _log_rank(LogLevel.WARNING)
+    if rank <= debug_rank:
+        telemetry = 3
+    elif rank <= info_rank:
+        telemetry = 2
+    elif rank <= warn_rank:
+        telemetry = 1
+    else:
+        telemetry = 0
+    return LogPolicy(
+        level=log_level,
+        show_internal=rank <= debug_rank,
+        show_traceback=rank <= debug_rank,
+        pretty_default=rank <= info_rank,
+        telemetry_verbosity=telemetry,
+    )
 
 
 def _coerce_verbose(value: Any) -> int:
@@ -189,6 +243,7 @@ def resolve_effective_config(
 def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:
     """Create an immutable execution policy from resolved config."""
     flags = effective.flags
+    log_policy = resolve_log_policy(flags.log_level)
     return ExecutionPolicy(
         output_format=flags.format,
         color=flags.color,
@@ -196,9 +251,20 @@ def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:
         verbose=False,
         verbose_level=0,
         log_level=flags.log_level,
-        pretty=True,
-        include_runtime=False,
+        pretty=log_policy.pretty_default,
+        include_runtime=log_policy.show_internal,
     )
+
+
+def default_execution_policy() -> ExecutionPolicy:
+    """Return the default execution policy without DI."""
+    defaults = Flags(
+        quiet=False,
+        log_level=LogLevel.INFO,
+        color=ColorMode.AUTO,
+        format=OutputFormat.JSON,
+    )
+    return resolve_execution_policy(EffectiveConfig(flags=defaults))
 
 
 def resolve_output_flags(
@@ -225,9 +291,11 @@ def resolve_output_flags(
             format=OutputFormat.JSON,
         ),
     )
+    log_policy = resolve_log_policy(effective.flags.log_level)
     return OutputConfig(
         include_runtime=False,
         pretty=pretty,
         log_level=effective.flags.log_level,
         color=effective.flags.color,
+        log_policy=log_policy,
     )

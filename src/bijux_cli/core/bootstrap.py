@@ -40,7 +40,7 @@ import structlog
 import typer
 
 from bijux_cli.cli.color import resolve_color_mode, set_color_mode
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_COLOR,
     ENV_DISABLE_HISTORY,
     ENV_LOG_LEVEL,
@@ -59,8 +59,11 @@ from bijux_cli.core.precedence import (
     FlagLayer,
     Flags,
     GlobalCLIConfig,
+    LogPolicy,
+    default_execution_policy,
     resolve_effective_config,
     resolve_execution_policy,
+    resolve_log_policy,
     validate_cli_flags,
 )
 from bijux_cli.plugins.services import register_plugin_services
@@ -144,35 +147,53 @@ def setup_structlog(log_level: LogLevel | None = None) -> None:
     )
 
 
-def main() -> int:
-    """The main entry point for the Bijux CLI.
+def _emit_fast_payload(
+    payload: object,
+    *,
+    fmt: OutputFormat,
+    stream: str,
+) -> None:
+    """Serialize and emit a payload without DI initialization."""
+    from dataclasses import asdict, is_dataclass
+    from typing import Any, cast
 
-    This function orchestrates the entire lifecycle of a CLI command, from
-    argument parsing and setup to execution and history recording.
+    if is_dataclass(payload):
+        payload = asdict(cast(Any, payload))
+    if fmt is OutputFormat.YAML:
+        try:
+            import yaml
+        except ImportError:
+            text = json.dumps(payload)
+        else:
+            text = (yaml.safe_dump(payload, sort_keys=False) or "").rstrip("\n")
+    else:
+        text = json.dumps(payload)
+    out = sys.stdout if stream == "stdout" else sys.stderr
+    print(text, file=out)
 
-    Returns:
-        int: The final exit code of the command.
-            * `0`: Success.
-            * `1`: A generic command error occurred.
-            * `2`: A usage error or invalid option was provided.
-            * `130`: The process was interrupted by the user (Ctrl+C).
-    """
-    args = sys.argv[1:]
 
-    parsed = parse_global_config(args)
-    for err in validate_cli_flags(parsed):
-        behavior = resolve_exit_behavior(
-            ErrorType.USAGE,
-            quiet=bool(parsed.flags.quiet),
-            fmt=parsed.flags.format or OutputFormat.JSON,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps({"error": err.message, "code": int(behavior.code)}),
-                file=stream,
-            )
-        return int(behavior.code)
+def _emit_fast_error(
+    message: str,
+    *,
+    error_type: ErrorType,
+    quiet: bool,
+    fmt: OutputFormat,
+    log_policy: LogPolicy,
+) -> int:
+    """Emit a structured error payload without DI initialization."""
+    behavior = resolve_exit_behavior(
+        error_type, quiet=quiet, fmt=fmt, log_policy=log_policy
+    )
+    code = int(behavior.code)
+    if behavior.stream is None:
+        return code
+    payload = {"error": message, "code": code}
+    _emit_fast_payload(payload, fmt=fmt, stream=behavior.stream)
+    return code
+
+
+def _resolve_effective_flags(parsed: GlobalCLIConfig) -> EffectiveConfig:
+    """Resolve effective flags from CLI and environment sources."""
     env_log = os.environ.get(ENV_LOG_LEVEL)
     env_color = os.environ.get(ENV_COLOR)
     resolved = resolve_effective_config(
@@ -190,10 +211,6 @@ def main() -> int:
         ),
     )
 
-    if resolved.flags.quiet:
-        with contextlib.suppress(Exception):
-            sys.stderr = open(os.devnull, "w")  # noqa: SIM115
-    debug_enabled = resolved.flags.log_level == LogLevel.DEBUG
     color_config = GlobalCLIConfig(
         help=parsed.help,
         flags=FlagLayer(color=resolved.flags.color),
@@ -206,7 +223,7 @@ def main() -> int:
         no_color=os.environ.get(ENV_NO_COLOR) == "1",
     )
     if resolved_color != resolved.flags.color:
-        resolved = EffectiveConfig(
+        return EffectiveConfig(
             flags=Flags(
                 quiet=resolved.flags.quiet,
                 log_level=resolved.flags.log_level,
@@ -214,15 +231,205 @@ def main() -> int:
                 format=resolved.flags.format,
             )
         )
+    return resolved
 
-    logging_config = LoggingConfig(
-        debug=debug_enabled,
-        quiet=resolved.flags.quiet,
-        verbose=False,
-        log_level=resolved.flags.log_level,
-        color=resolved.flags.color,
+
+def _split_command_args(args: list[str]) -> tuple[str | None, list[str]]:
+    """Return the first command token and remaining args."""
+    from bijux_cli.cli.core.constants import (
+        OPT_COLOR,
+        OPT_FORMAT,
+        OPT_HELP,
+        OPT_LOG_LEVEL,
+        OPT_QUIET,
+        OPT_VERBOSE,
+        PRETTY_FLAGS,
     )
+
+    flags_with_values = {*OPT_FORMAT, *OPT_LOG_LEVEL, *OPT_COLOR}
+    flags_no_values = {*OPT_HELP, *OPT_QUIET, *OPT_VERBOSE, *PRETTY_FLAGS}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in flags_with_values:
+            i += 2
+            continue
+        if arg in flags_no_values or arg.startswith("-"):
+            i += 1
+            continue
+        return arg, args[i + 1 :]
+    return None, []
+
+
+def _maybe_fast_help(
+    args: list[str],
+    parsed: GlobalCLIConfig,
+    policy: ExecutionPolicy,
+) -> int | None:
+    """Handle --help without initializing DI or plugins."""
+    if not parsed.help:
+        return None
+    app = build_app(load_plugins=False)
+    print(get_usage_for_args(args, app))
+    return 0
+
+
+def _maybe_fast_version(
+    args: list[str],
+    policy: ExecutionPolicy,
+) -> int | None:
+    """Handle `bijux version` without initializing DI or plugins."""
+    command, sub_args = _split_command_args(args)
+    if command != "version":
+        return None
+
+    if "-h" in sub_args or "--help" in sub_args:
+        app = build_app(load_plugins=False)
+        print(get_usage_for_args(["version", "--help"], app))
+        return 0
+
+    from bijux_cli.cli.commands.version import _build_payload
+    from bijux_cli.cli.core.constants import (
+        OPT_FORMAT,
+        OPT_LOG_LEVEL,
+        OPT_QUIET,
+        OPT_VERBOSE,
+    )
+    from bijux_cli.cli.core.validation import normalize_format
+
+    quiet = policy.quiet
+    verbose = False
+    fmt_value: str | OutputFormat = OutputFormat.JSON
+    log_level = policy.log_level
+
+    i = 0
+    while i < len(sub_args):
+        arg = sub_args[i]
+        if arg in OPT_QUIET:
+            quiet = True
+            i += 1
+            continue
+        if arg in OPT_VERBOSE:
+            verbose = True
+            i += 1
+            continue
+        if arg in OPT_FORMAT:
+            try:
+                fmt_value = sub_args[i + 1]
+            except IndexError:
+                return _emit_fast_error(
+                    "Missing value for --format.",
+                    error_type=ErrorType.USAGE,
+                    quiet=quiet,
+                    fmt=OutputFormat.JSON,
+                    log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+                )
+            i += 2
+            continue
+        if arg in OPT_LOG_LEVEL:
+            try:
+                log_level = LogLevel(sub_args[i + 1])
+            except IndexError:
+                return _emit_fast_error(
+                    "Missing value for --log-level.",
+                    error_type=ErrorType.USAGE,
+                    quiet=quiet,
+                    fmt=OutputFormat.JSON,
+                    log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+                )
+            except ValueError:
+                return _emit_fast_error(
+                    "Invalid log level.",
+                    error_type=ErrorType.USAGE,
+                    quiet=quiet,
+                    fmt=OutputFormat.JSON,
+                    log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+                )
+            i += 2
+            continue
+        if arg == "--pretty":
+            i += 1
+            continue
+        if arg == "--no-pretty":
+            i += 1
+            continue
+        return _emit_fast_error(
+            f"Unsupported option: {arg}",
+            error_type=ErrorType.USAGE,
+            quiet=quiet,
+            fmt=OutputFormat.JSON,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+        )
+
+    fmt_normalized = normalize_format(fmt_value)
+    if fmt_normalized is None:
+        return _emit_fast_error(
+            f"Unsupported format: {fmt_value}",
+            error_type=ErrorType.USAGE,
+            quiet=quiet,
+            fmt=OutputFormat.JSON,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+        )
+
+    if resolve_log_policy(log_level).show_internal:
+        print("debug: fast version path", file=sys.stderr)
+
+    if quiet:
+        return 0
+
+    include_runtime = verbose or policy.include_runtime
+    try:
+        payload = _build_payload(include_runtime)
+    except ValueError as exc:
+        return _emit_fast_error(
+            str(exc),
+            error_type=ErrorType.CONFIG,
+            quiet=quiet,
+            fmt=fmt_normalized,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+        )
+    _emit_fast_payload(payload, fmt=fmt_normalized, stream="stdout")
+    return 0
+
+
+def main() -> int:
+    """The main entry point for the Bijux CLI.
+
+    This function orchestrates the entire lifecycle of a CLI command, from
+    argument parsing and setup to execution and history recording.
+
+    Returns:
+        int: The final exit code of the command.
+            * `0`: Success.
+            * `1`: A generic command error occurred.
+            * `2`: A usage error or invalid option was provided.
+            * `130`: The process was interrupted by the user (Ctrl+C).
+    """
+    args = sys.argv[1:]
+
+    parsed = parse_global_config(args)
+    errors = validate_cli_flags(parsed)
+    if errors:
+        policy = default_execution_policy()
+        for err in errors:
+            behavior = resolve_exit_behavior(
+                ErrorType.USAGE,
+                quiet=bool(parsed.flags.quiet),
+                fmt=parsed.flags.format or OutputFormat.JSON,
+                log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+            )
+            if behavior.stream is not None:
+                stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+                print(
+                    json.dumps({"error": err.message, "code": int(behavior.code)}),
+                    file=stream,
+                )
+            return int(behavior.code)
+
+    resolved = _resolve_effective_flags(parsed)
     policy = resolve_execution_policy(resolved)
+    DIContainer.set_log_policy(policy.log_policy or resolve_log_policy(LogLevel.INFO))
+
     setup_structlog(resolved.flags.log_level)
     set_color_mode(policy.color)
 
@@ -233,6 +440,26 @@ def main() -> int:
             ver = "unknown"
         print(json.dumps({"version": ver}))
         return 0
+
+    fast_help = _maybe_fast_help(args, parsed, policy)
+    if fast_help is not None:
+        return fast_help
+
+    fast_version = _maybe_fast_version(args, policy)
+    if fast_version is not None:
+        return fast_version
+
+    if resolved.flags.quiet:
+        with contextlib.suppress(Exception):
+            sys.stderr = open(os.devnull, "w")  # noqa: SIM115
+
+    logging_config = LoggingConfig(
+        debug=policy.log_policy.show_internal if policy.log_policy else False,
+        quiet=resolved.flags.quiet,
+        verbose=False,
+        log_level=resolved.flags.log_level,
+        color=resolved.flags.color,
+    )
 
     container = DIContainer.current()
     container.register(GlobalCLIConfig, parsed)
@@ -250,10 +477,6 @@ def main() -> int:
     Engine()
     app = build_app()
 
-    if parsed.help:
-        print(get_usage_for_args(args, app))
-        return 0
-
     command_line = list(parsed.args)
     start = time.time()
     exit_code = 0
@@ -268,6 +491,7 @@ def main() -> int:
             ErrorType.USAGE,
             quiet=resolved.flags.quiet,
             fmt=resolved.flags.format,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
         )
         if behavior.stream is not None:
             stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
@@ -286,6 +510,7 @@ def main() -> int:
             ErrorType.USAGE,
             quiet=resolved.flags.quiet,
             fmt=resolved.flags.format,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
         )
         if behavior.stream is not None:
             stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
@@ -299,6 +524,7 @@ def main() -> int:
             ErrorType.USER_INPUT,
             quiet=resolved.flags.quiet,
             fmt=resolved.flags.format,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
         )
         if behavior.stream is not None:
             stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
@@ -312,6 +538,7 @@ def main() -> int:
             ErrorType.ABORTED,
             quiet=resolved.flags.quiet,
             fmt=resolved.flags.format,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
         )
         if behavior.stream is not None:
             stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
@@ -325,6 +552,7 @@ def main() -> int:
             ErrorType.INTERNAL,
             quiet=resolved.flags.quiet,
             fmt=resolved.flags.format,
+            log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
         )
         if behavior.stream is not None:
             stream = sys.stdout if behavior.stream == "stdout" else sys.stderr

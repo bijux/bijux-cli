@@ -34,7 +34,7 @@ import typer
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.payloads import HelpPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -55,7 +55,7 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import ErrorType, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
@@ -95,7 +95,7 @@ def _build_help_intent(
         include_runtime=policy.include_runtime,
         pretty=policy.pretty,
         quiet=policy.quiet,
-        debug=(policy.log_level == LogLevel.DEBUG),
+        debug=(policy.log_policy.show_internal),
     )
 
 
@@ -358,6 +358,8 @@ def help_callback(
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
             debug=intent.debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=policy.log_policy,
         )
 
     DIContainer.current().resolve(Emitter)

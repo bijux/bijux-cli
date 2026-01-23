@@ -27,7 +27,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DoctorPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_TEST_FORCE_UNHEALTHY,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -46,7 +46,6 @@ from bijux_cli.cli.core.validation import (
     ascii_safe,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -157,7 +156,7 @@ def doctor(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     pretty = effective.pretty
     include_runtime = effective.include_runtime
 

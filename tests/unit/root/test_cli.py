@@ -12,7 +12,9 @@ from unittest.mock import Mock
 import pytest
 import typer
 
+from bijux_cli.cli.color import set_color_mode
 import bijux_cli.cli.root as cli_mod
+from bijux_cli.core.enums import ColorMode
 
 
 def test_collect_names() -> None:
@@ -86,6 +88,7 @@ def test_maybe_default_to_repl_shows_help_on_failed_command(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that help is shown for an unresolved command with arguments."""
+    set_color_mode(ColorMode.AUTO)
     monkeypatch.setattr(sys, "argv", ["bijux", "badcmd"])
     mock_echo = Mock()
     monkeypatch.setattr(typer, "echo", mock_echo)

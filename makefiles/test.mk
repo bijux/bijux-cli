@@ -9,6 +9,9 @@ TEST_PATHS_INTEGRATION ?= tests/integration
 
 TEST_ARTIFACTS_DIR    ?= artifacts/test
 JUNIT_XML             ?= $(TEST_ARTIFACTS_DIR)/junit.xml
+JUNIT_XML_UNIT        ?= $(TEST_ARTIFACTS_DIR)/junit-test-unit.xml
+JUNIT_XML_E2E         ?= $(TEST_ARTIFACTS_DIR)/junit-test-e2e.xml
+JUNIT_XML_REGRESSION  ?= $(TEST_ARTIFACTS_DIR)/junit-test-regression.xml
 TMP_DIR               ?= $(TEST_ARTIFACTS_DIR)/tmp
 HYPOTHESIS_DB_DIR     ?= $(TEST_ARTIFACTS_DIR)/hypothesis
 BENCHMARK_DIR         ?= $(TEST_ARTIFACTS_DIR)/benchmarks
@@ -37,7 +40,7 @@ TEST_PATHS_NIGHT_ABS  := $(abspath $(TEST_PATHS_NIGHT))
 TEST_PATHS_FUNCTIONAL_ABS := $(abspath $(TEST_PATHS_FUNCTIONAL))
 TEST_PATHS_INTEGRATION_ABS := $(abspath $(TEST_PATHS_INTEGRATION))
 SRC_ABS               := $(abspath src)
-JUNIT_XML_ABS         := $(abspath $(JUNIT_XML))
+JUNIT_XML_ABS         = $(abspath $(JUNIT_XML))
 TMP_DIR_ABS           := $(abspath $(TMP_DIR))
 HYPOTHESIS_DB_ABS     := $(abspath $(HYPOTHESIS_DB_DIR))
 BENCHMARK_DIR_ABS     := $(abspath $(BENCHMARK_DIR))
@@ -82,6 +85,7 @@ test:
 	  sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_ABS)" $(PYTEST_FLAGS) '"$$BENCH_FLAGS" )
 	@rm -rf .hypothesis .benchmarks || true
 
+test-unit: JUNIT_XML=$(JUNIT_XML_UNIT)
 test-unit:
 	@echo "→ Running unit tests only"
 	@$(PYTEST) --version
@@ -112,6 +116,7 @@ test-unit:
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
+test-e2e: JUNIT_XML=$(JUNIT_XML_E2E)
 test-e2e:
 	@echo "→ Running e2e tests only"
 	@$(PYTEST) --version
@@ -143,6 +148,7 @@ test-night:
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
 
+test-regression: JUNIT_XML=$(JUNIT_XML_REGRESSION)
 test-regression:
 	@echo "→ Running regression tests (functional + integration)"
 	@$(PYTEST) --version
