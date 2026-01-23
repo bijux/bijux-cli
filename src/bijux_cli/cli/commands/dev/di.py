@@ -45,7 +45,7 @@ from bijux_cli.cli.core.constants import (
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.emit import emit_error_and_exit, exit_if_quiet
 from bijux_cli.cli.core.output import get_execution_policy, new_run_command
 from bijux_cli.cli.core.validation import (
     ascii_safe,
@@ -271,8 +271,7 @@ def dev_di_graph(
                     debug=debug,
                 )
 
-        if quiet:
-            raise typer.Exit(0)
+        exit_if_quiet(quiet, code=0)
 
     if os.environ.get(ENV_TEST_FORCE_SERIALIZE_FAIL) == "1":
         emit_error_and_exit(

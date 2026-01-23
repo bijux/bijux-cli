@@ -39,11 +39,8 @@ from bijux_cli.cli.core.constants import (
 )
 from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.validation import validate_common_flags
-from bijux_cli.cli.repl.execution import _run_piped
-from bijux_cli.cli.repl.ui import (
-    _run_interactive,
-    register_signal_handlers,
-)
+from bijux_cli.cli.repl.execution import _run_piped as _exec_run_piped
+from bijux_cli.cli.repl.ui import register_signal_handlers
 from bijux_cli.core.runtime import AsyncTyper, run_command
 
 repl_app = AsyncTyper(
@@ -51,6 +48,26 @@ repl_app = AsyncTyper(
     help="Starts an interactive shell with history and tab-completion.",
     add_completion=False,
 )
+
+
+def _run_piped(repl_quiet: bool) -> None:
+    """Run the REPL in non-interactive mode."""
+    _exec_run_piped(repl_quiet)
+
+
+async def _run_interactive() -> None:
+    """Run the interactive REPL loop."""
+    from bijux_cli.cli.repl.ui import _run_interactive as _ui_run_interactive
+
+    await _ui_run_interactive()
+
+
+def _run_repl_session(*, quiet: bool, stdin_isatty: bool) -> None:
+    """Route to piped or interactive mode."""
+    if quiet or not stdin_isatty:
+        _run_piped(quiet)
+    else:
+        run_command(_run_interactive)
 
 
 @repl_app.callback(invoke_without_command=True)
@@ -117,10 +134,7 @@ def main(
 
     register_signal_handlers()
 
-    if quiet or not sys.stdin.isatty():
-        _run_piped(quiet)
-    else:
-        run_command(_run_interactive)
+    _run_repl_session(quiet=quiet, stdin_isatty=sys.stdin.isatty())
 
 
 if __name__ == "__main__":

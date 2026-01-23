@@ -50,6 +50,7 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         quiet: bool,
         include_runtime: bool,
         debug: bool,
+        **_kwargs: Any,
     ) -> None:
         raise RuntimeError({"failure": failure, "message": msg})
 

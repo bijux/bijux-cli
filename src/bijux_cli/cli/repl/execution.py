@@ -19,6 +19,7 @@ from bijux_cli.cli.repl.parsing import (
     _suggest,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.runtime import run_command
 
 _JSON_CMDS = {
     "audit",
@@ -188,3 +189,13 @@ def _run_piped(repl_quiet: bool) -> None:
                 _invoke(tokens, repl_quiet=repl_quiet)
 
     sys.exit(0)
+
+
+def run_repl_session(*, quiet: bool, stdin_isatty: bool) -> None:
+    """Run the REPL in piped or interactive mode."""
+    if quiet or not stdin_isatty:
+        _run_piped(quiet)
+    else:
+        from bijux_cli.cli.repl.ui import _run_interactive
+
+        run_command(_run_interactive)

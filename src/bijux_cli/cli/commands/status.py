@@ -27,7 +27,6 @@ from __future__ import annotations
 from dataclasses import replace
 import platform
 import signal
-import sys
 import threading
 import time
 from types import FrameType
@@ -47,11 +46,12 @@ from bijux_cli.cli.core.constants import (
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.emit import emit_debug_message, emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -95,9 +95,10 @@ def _run_watch_mode(
     fmt: OutputFormat,
     quiet: bool,
     verbose: bool,
-    log_level: LogLevel,
     effective_pretty: bool,
     include_runtime: bool,
+    log_policy: LogPolicy | None = None,
+    log_level: LogLevel | None = None,
     telemetry: TelemetryProtocol,
     emitter: Emitter,
 ) -> None:
@@ -112,9 +113,10 @@ def _run_watch_mode(
         fmt (str): The output format, which must be "json" for streaming.
         quiet (bool): If True, suppresses all output except errors.
         verbose (bool): If True, includes verbose fields in the payload.
-        log_level (str): The resolved log level name.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python and platform fields.
+        log_policy (LogPolicy | None): Logging behavior for debug output.
+        log_level (LogLevel | None): Legacy log level used to derive a policy.
         telemetry (TelemetryProtocol): The telemetry sink for reporting events.
         emitter (Emitter): The output emitter instance.
 
@@ -125,6 +127,9 @@ def _run_watch_mode(
         SystemExit: On an invalid format or an unrecoverable error during
             the watch loop.
     """
+    if log_policy is None:
+        log_policy = resolve_log_policy(log_level or LogLevel.INFO)
+
     format_value = fmt
     if format_value is not OutputFormat.JSON:
         emit_error_and_exit(
@@ -137,9 +142,6 @@ def _run_watch_mode(
             include_runtime=include_runtime,
         )
 
-    from bijux_cli.core.precedence import resolve_log_policy
-
-    debug = resolve_log_policy(log_level).show_internal
     stop = False
 
     def _sigint_handler(_sig: int, _frame: FrameType | None) -> None:
@@ -162,11 +164,11 @@ def _run_watch_mode(
         while not stop:
             try:
                 payload = replace(_build_payload(include_runtime), ts=time.time())
-                if debug and not quiet:
-                    print(
-                        f"Debug: Emitting payload at ts={payload.ts}",
-                        file=sys.stderr,
-                    )
+                emit_debug_message(
+                    f"Debug: Emitting payload at ts={payload.ts}",
+                    quiet=quiet,
+                    log_policy=log_policy,
+                )
                 if not quiet:
                     emitter.emit(
                         payload,
@@ -175,8 +177,8 @@ def _run_watch_mode(
                         level=LogLevel.INFO,
                         message="Status update",
                         output=None,
-                        emit_output=True,
-                        emit_diagnostics=debug,
+                        emit_output=not quiet,
+                        emit_diagnostics=log_policy.show_internal,
                     )
                 telemetry.event(
                     "COMMAND_SUCCESS",
@@ -210,8 +212,11 @@ def _run_watch_mode(
             stop_payload = replace(
                 _build_payload(include_runtime), status="watch-stopped"
             )
-            if debug and not quiet:
-                print("Debug: Emitting watch-stopped payload", file=sys.stderr)
+            emit_debug_message(
+                "Debug: Emitting watch-stopped payload",
+                quiet=quiet,
+                log_policy=log_policy,
+            )
             if not quiet:
                 emitter.emit(
                     stop_payload,
@@ -220,8 +225,8 @@ def _run_watch_mode(
                     level=LogLevel.INFO,
                     message="Status watch stopped",
                     output=None,
-                    emit_output=True,
-                    emit_diagnostics=debug,
+                    emit_output=not quiet,
+                    emit_diagnostics=log_policy.show_internal,
                 )
             telemetry.event(
                 "COMMAND_STOPPED",
@@ -312,9 +317,10 @@ def status(
             fmt=fmt_lower,
             quiet=quiet,
             verbose=verbose,
-            log_level=effective.log_level,
             effective_pretty=pretty,
             include_runtime=effective.include_runtime,
+            log_policy=effective.log_policy,
+            log_level=effective.log_policy.level,
             telemetry=telemetry,
             emitter=emitter,
         )
