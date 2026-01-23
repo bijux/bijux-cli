@@ -168,7 +168,7 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
             include_runtime=False,
         ),
     )
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -178,13 +178,13 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 2
+    assert ex.value.exit_code == 2
 
 
 def test_quiet_null_byte(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a null byte in tokens exits with code 3."""
     ctx = make_ctx_for_callback()
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["\x00foo"],
@@ -194,13 +194,13 @@ def test_quiet_null_byte(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
 
 
 def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-ASCII token exits with code 3."""
     ctx = make_ctx_for_callback()
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["föo"],
@@ -210,14 +210,14 @@ def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
 
 
 def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-ASCII env var exits with code 3."""
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: True)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -227,14 +227,14 @@ def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
 
 
 def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-existent target exits with code 2."""
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -244,7 +244,7 @@ def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 2
+    assert ex.value.exit_code == 2
 
 
 def test_nonquiet_invalid_format_calls_emit_error(
@@ -264,9 +264,10 @@ def test_nonquiet_invalid_format_calls_emit_error(
         quiet: bool,
         include_runtime: bool,
         debug: bool,
+        **_kwargs: Any,
     ) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(
         help_mod,
@@ -283,7 +284,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
         ),
     )
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -293,7 +294,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 2
+    assert ex.value.exit_code == 2
     assert "Unsupported format" in called["msg"]
     assert called["fmt"] == "json"
 
@@ -308,10 +309,10 @@ def test_nonquiet_null_byte_emits_null_byte_error(
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["\x00"],
@@ -321,7 +322,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
     assert called["failure"] == "null_byte"
 
 
@@ -335,10 +336,10 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["föo"],
@@ -348,7 +349,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
     assert called["failure"] == "ascii"
 
 
@@ -361,10 +362,10 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -374,7 +375,7 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
     assert called["failure"] == "ascii"
 
 
@@ -388,10 +389,10 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["no", "such"],
@@ -401,7 +402,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 2
+    assert ex.value.exit_code == 2
     assert called["failure"] == "not_found"
 
 
@@ -512,10 +513,10 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         exit_code: int,
     ) -> None:
         called.update(locals())
-        raise SystemExit(exit_code)
+        raise typer.Exit(exit_code)
 
     monkeypatch.setattr(help_mod, "emit_and_exit", fake_emit)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["foo"],
@@ -525,7 +526,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             pretty=False,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 0
+    assert ex.value.exit_code == 0
     payload = called["payload"]
     assert isinstance(payload, HelpPayload)
     assert payload.help == "HELPTXT"
@@ -568,10 +569,10 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
 
     def fake_emit(payload: dict[str, Any], fmt: OutputFormat, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(99)
+        raise typer.Exit(99)
 
     monkeypatch.setattr(help_mod, "emit_and_exit", fake_emit)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["foo"],
@@ -581,7 +582,7 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 99
+    assert ex.value.exit_code == 99
     payload = called["payload"]
     assert isinstance(payload, HelpPayload)
     assert payload.help == "YAMLHELP"
@@ -617,7 +618,7 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
             include_runtime=False,
         ),
     )
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             [],
@@ -627,7 +628,7 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 0
+    assert ex.value.exit_code == 0
 
 
 def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -654,10 +655,10 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
 
     def fake_emit(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise SystemExit(code)
+        raise typer.Exit(code)
 
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_emit)
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
             ["foo"],
@@ -667,7 +668,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
             pretty=False,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.code == 3
+    assert ex.value.exit_code == 3
     assert "broken" in called["msg"]
     assert called["failure"] == "ascii"
 

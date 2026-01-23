@@ -32,6 +32,7 @@ Exit Codes:
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import platform
@@ -60,7 +61,7 @@ from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ErrorType, OutputFormat
 from bijux_cli.services.history.contracts import HistoryProtocol
 
 
@@ -100,6 +101,242 @@ def resolve_history_service(
             include_runtime=include_runtime,
             debug=debug,
         )
+
+
+@dataclass(frozen=True)
+class HistoryIntent:
+    """Resolved intent for the history command."""
+
+    command: str
+    action: str
+    limit: int
+    group_by: str | None
+    filter_cmd: str | None
+    sort: str | None
+    export_path: str | None
+    import_path: str | None
+    quiet: bool
+    include_runtime: bool
+    debug: bool
+    fmt: OutputFormat
+
+
+def _build_history_intent(
+    *,
+    command: str,
+    limit: int,
+    group_by: str | None,
+    filter_cmd: str | None,
+    sort: str | None,
+    export_path: str | None,
+    import_path: str | None,
+    fmt_lower: OutputFormat,
+    quiet: bool,
+    include_runtime: bool,
+    debug: bool,
+) -> HistoryIntent:
+    """Validate inputs and build a history intent."""
+    action = "list"
+    if import_path:
+        action = "import"
+    elif export_path:
+        action = "export"
+
+    if limit < 0:
+        emit_error_and_exit(
+            "Invalid value for --limit: must be non-negative.",
+            code=2,
+            failure="limit",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    if sort and sort != "timestamp":
+        emit_error_and_exit(
+            "Invalid sort key: only 'timestamp' is supported.",
+            code=2,
+            failure="sort",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    if group_by and group_by != "command":
+        emit_error_and_exit(
+            "Invalid group_by: only 'command' is supported.",
+            code=2,
+            failure="group_by",
+            command=command,
+            fmt=fmt_lower,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    return HistoryIntent(
+        command=command,
+        action=action,
+        limit=limit,
+        group_by=group_by,
+        filter_cmd=filter_cmd,
+        sort=sort,
+        export_path=export_path,
+        import_path=import_path,
+        quiet=quiet,
+        include_runtime=include_runtime,
+        debug=debug,
+        fmt=fmt_lower,
+    )
+
+
+def _import_history(
+    intent: HistoryIntent, history_svc: HistoryProtocol
+) -> HistoryImportPayload:
+    """Import history data and return a payload."""
+    try:
+        text = Path(intent.import_path or "").read_text(encoding="utf-8").strip()
+        data = json.loads(text or "[]")
+        if not isinstance(data, list):
+            raise ValueError("Import file must contain a JSON array.")
+        history_svc.clear()
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            cmd = str(item.get("command") or item.get("cmd", ""))
+            cmd = ascii_safe(cmd, "command")
+            if not cmd:
+                continue
+            history_svc.add(
+                command=cmd,
+                params=item.get("params", []),
+                success=bool(item.get("success", True)),
+                return_code=item.get("return_code", 0),
+                duration_ms=item.get("duration_ms", 0.0),
+            )
+    except Exception as exc:
+        emit_error_and_exit(
+            f"Failed to import history: {exc}",
+            code=2,
+            failure="import_failed",
+            command=intent.command,
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    payload = HistoryImportPayload(status="imported", file=intent.import_path or "")
+    if intent.include_runtime:
+        return HistoryImportPayload(
+            status=payload.status,
+            file=payload.file,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
+    return payload
+
+
+def _export_history(
+    intent: HistoryIntent, history_svc: HistoryProtocol
+) -> HistoryExportPayload:
+    """Export history data and return a payload."""
+    try:
+        entries = history_svc.list()
+        from bijux_cli.cli.core.emit import resolve_serializer
+
+        rendered = resolve_serializer().dumps(entries, fmt=intent.fmt, pretty=True)
+        Path(intent.export_path or "").write_text(
+            rendered.rstrip("\n") + "\n",
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        emit_error_and_exit(
+            f"Failed to export history: {exc}",
+            code=2,
+            failure="export_failed",
+            command=intent.command,
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    payload = HistoryExportPayload(status="exported", file=intent.export_path or "")
+    if intent.include_runtime:
+        return HistoryExportPayload(
+            status=payload.status,
+            file=payload.file,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
+    return payload
+
+
+def _list_history(
+    intent: HistoryIntent, history_svc: HistoryProtocol
+) -> HistoryEntriesPayload:
+    """List history entries and return a payload."""
+    try:
+        entries = history_svc.list()
+        if intent.filter_cmd:
+            entries = [e for e in entries if intent.filter_cmd in e.get("command", "")]
+        if intent.sort == "timestamp":
+            entries = sorted(entries, key=lambda e: e.get("timestamp", 0))
+        if intent.group_by == "command":
+            groups: dict[str, list[dict[str, Any]]] = {}
+            for e in entries:
+                groups.setdefault(e.get("command", ""), []).append(e)
+            entries = [
+                {"group": k, "count": len(v), "entries": v} for k, v in groups.items()
+            ]
+        if intent.limit == 0:
+            entries = []
+        elif intent.limit > 0:
+            entries = entries[-intent.limit :]
+    except Exception as exc:
+        emit_error_and_exit(
+            f"Failed to list history: {exc}",
+            code=1,
+            failure="list_failed",
+            command=intent.command,
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+        )
+
+    payload = HistoryEntriesPayload(entries=entries)
+    if intent.include_runtime:
+        return HistoryEntriesPayload(
+            entries=payload.entries,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
+    return payload
+
+
+def _with_runtime(
+    payload: HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload,
+    include_runtime: bool,
+) -> HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload:
+    """Attach runtime metadata when requested."""
+    if not include_runtime:
+        return payload
+    return replace(
+        payload,
+        python=ascii_safe(platform.python_version(), "python_version"),
+        platform=ascii_safe(platform.platform(), "platform"),
+    )
 
 
 def history(
@@ -178,206 +415,31 @@ def history(
         command, fmt_lower, quiet, include_runtime, debug
     )
 
-    if limit < 0:
-        emit_error_and_exit(
-            "Invalid value for --limit: must be non-negative.",
-            code=2,
-            failure="limit",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
+    intent = _build_history_intent(
+        command=command,
+        limit=limit,
+        group_by=group_by,
+        filter_cmd=filter_cmd,
+        sort=sort,
+        export_path=export_path,
+        import_path=import_path,
+        fmt_lower=fmt_lower,
+        quiet=quiet,
+        include_runtime=include_runtime,
+        debug=debug,
+    )
 
-    if sort and sort != "timestamp":
-        emit_error_and_exit(
-            "Invalid sort key: only 'timestamp' is supported.",
-            code=2,
-            failure="sort",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
-
-    if group_by and group_by != "command":
-        emit_error_and_exit(
-            "Invalid group_by: only 'command' is supported.",
-            code=2,
-            failure="group_by",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
-
-    if import_path:
-        try:
-            text = Path(import_path).read_text(encoding="utf-8").strip()
-            data = json.loads(text or "[]")
-            if not isinstance(data, list):
-                raise ValueError("Import file must contain a JSON array.")
-            history_svc.clear()
-            for item in data:
-                if not isinstance(item, dict):
-                    continue
-                cmd = str(item.get("command") or item.get("cmd", ""))
-                cmd = ascii_safe(cmd, "command")
-                if not cmd:
-                    continue
-                history_svc.add(
-                    command=cmd,
-                    params=item.get("params", []),
-                    success=bool(item.get("success", True)),
-                    return_code=item.get("return_code", 0),
-                    duration_ms=item.get("duration_ms", 0.0),
-                )
-        except Exception as exc:
-            emit_error_and_exit(
-                f"Failed to import history: {exc}",
-                code=2,
-                failure="import_failed",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=include_runtime,
-                debug=debug,
-            )
-
-        def import_payload_builder(_: bool) -> HistoryImportPayload:
-            """Builds the payload confirming a successful import.
-
-            Args:
-                _ (bool): Unused parameter to match the expected signature.
-
-            Returns:
-                HistoryImportPayload: The structured payload.
-            """
-            payload = HistoryImportPayload(status="imported", file=import_path)
-            if include_runtime:
-                return HistoryImportPayload(
-                    status=payload.status,
-                    file=payload.file,
-                    python=ascii_safe(platform.python_version(), "python_version"),
-                    platform=ascii_safe(platform.platform(), "platform"),
-                )
-            return payload
-
-        new_run_command(
-            command_name=command,
-            payload_builder=import_payload_builder,
-            quiet=quiet,
-            verbose=verbose,
-            fmt=fmt_lower,
-            pretty=pretty,
-            log_level=log_level,
-        )
-
-    if export_path:
-        try:
-            entries = history_svc.list()
-            from bijux_cli.cli.core.emit import resolve_serializer
-
-            rendered = resolve_serializer().dumps(entries, fmt=fmt_lower, pretty=pretty)
-            Path(export_path).write_text(
-                rendered.rstrip("\n") + "\n",
-                encoding="utf-8",
-            )
-        except Exception as exc:
-            emit_error_and_exit(
-                f"Failed to export history: {exc}",
-                code=2,
-                failure="export_failed",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=include_runtime,
-                debug=debug,
-            )
-
-        def export_payload_builder(_: bool) -> HistoryExportPayload:
-            """Builds the payload confirming a successful export.
-
-            Args:
-                _ (bool): Unused parameter to match the expected signature.
-
-            Returns:
-                HistoryExportPayload: The structured payload.
-            """
-            payload = HistoryExportPayload(status="exported", file=export_path)
-            if include_runtime:
-                return HistoryExportPayload(
-                    status=payload.status,
-                    file=payload.file,
-                    python=ascii_safe(platform.python_version(), "python_version"),
-                    platform=ascii_safe(platform.platform(), "platform"),
-                )
-            return payload
-
-        new_run_command(
-            command_name=command,
-            payload_builder=export_payload_builder,
-            quiet=quiet,
-            verbose=verbose,
-            fmt=fmt_lower,
-            pretty=pretty,
-            log_level=log_level,
-        )
-
-    try:
-        entries = history_svc.list()
-        if filter_cmd:
-            entries = [e for e in entries if filter_cmd in e.get("command", "")]
-        if sort == "timestamp":
-            entries = sorted(entries, key=lambda e: e.get("timestamp", 0))
-        if group_by == "command":
-            groups: dict[str, list[dict[str, Any]]] = {}
-            for e in entries:
-                groups.setdefault(e.get("command", ""), []).append(e)
-            entries = [
-                {"group": k, "count": len(v), "entries": v} for k, v in groups.items()
-            ]
-        if limit == 0:
-            entries = []
-        elif limit > 0:
-            entries = entries[-limit:]
-
-    except Exception as exc:
-        emit_error_and_exit(
-            f"Failed to list history: {exc}",
-            code=1,
-            failure="list_failed",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
-
-    def list_payload_builder(include_runtime: bool) -> HistoryEntriesPayload:
-        """Builds the payload containing a list of history entries.
-
-        Args:
-            include_runtime (bool): If True, includes Python and platform info.
-
-        Returns:
-            HistoryEntriesPayload: The structured payload.
-        """
-        payload = HistoryEntriesPayload(entries=entries)
-        if include_runtime:
-            return HistoryEntriesPayload(
-                entries=payload.entries,
-                python=ascii_safe(platform.python_version(), "python_version"),
-                platform=ascii_safe(platform.platform(), "platform"),
-            )
-        return payload
+    payload: HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload
+    if intent.action == "import":
+        payload = _import_history(intent, history_svc)
+    elif intent.action == "export":
+        payload = _export_history(intent, history_svc)
+    else:
+        payload = _list_history(intent, history_svc)
 
     new_run_command(
         command_name=command,
-        payload_builder=list_payload_builder,
+        payload_builder=lambda include_runtime: _with_runtime(payload, include_runtime),
         quiet=quiet,
         verbose=verbose,
         fmt=fmt_lower,

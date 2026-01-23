@@ -11,6 +11,8 @@ import sys
 import time
 from typing import Any, NoReturn
 
+import typer
+
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import resolve_exit_behavior
@@ -20,12 +22,36 @@ from bijux_cli.infra.contracts import Serializer
 
 def resolve_serializer() -> Serializer:
     """Resolve the serializer adapter or fallback."""
+    import json
+
     from bijux_cli.core.di import DIContainer
 
-    serializer = DIContainer.current().resolve(Serializer)
-    if not hasattr(serializer, "dumps"):
-        raise RuntimeError("Serializer does not implement dumps()")
-    return serializer
+    class _FallbackSerializer:
+        """Minimal JSON serializer when DI is unavailable."""
+
+        def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
+            _ = fmt
+            return json.dumps(obj, indent=2 if pretty else None, default=str)
+
+        def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
+            return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
+
+        def loads(self, data: str | bytes, *, fmt: OutputFormat, pretty: bool) -> Any:
+            _ = (fmt, pretty)
+            if isinstance(data, bytes):
+                data = data.decode("utf-8")
+            return json.loads(data)
+
+        def emit(self, payload: Any, *, fmt: OutputFormat, pretty: bool) -> None:
+            print(self.dumps(payload, fmt=fmt, pretty=pretty).rstrip("\n"))
+
+    try:
+        serializer = DIContainer.current().resolve(Serializer)
+        if not hasattr(serializer, "dumps"):
+            raise RuntimeError("Serializer does not implement dumps()")
+        return serializer
+    except Exception:
+        return _FallbackSerializer()
 
 
 def _normalize_payload(obj: Any) -> Any:
@@ -99,11 +125,11 @@ def emit_and_exit(
             print(f"Error writing history: {exc}", file=sys.stderr)
 
     if quiet:
-        sys.exit(exit_code)
+        raise typer.Exit(exit_code)
 
     output = resolve_serializer().dumps(payload, fmt=fmt, pretty=effective_pretty)
     print(output.rstrip("\n"))
-    sys.exit(exit_code)
+    raise typer.Exit(exit_code)
 
 
 def emit_error_and_exit(
@@ -139,7 +165,7 @@ def emit_error_and_exit(
     )
     code = int(behavior.code)
     if behavior.stream is None:
-        sys.exit(code)
+        raise typer.Exit(code)
 
     error_payload = {"error": message, "code": code}
     if failure:
@@ -175,7 +201,52 @@ def emit_error_and_exit(
         print(output, file=stream, flush=True)
     except Exception:
         print('{"error": "Unserializable error"}', file=sys.stderr, flush=True)
-    sys.exit(code)
+    raise typer.Exit(code)
 
 
-__all__ = ["emit_and_exit", "emit_error_and_exit", "resolve_serializer"]
+def emit_text_and_exit(
+    text: str,
+    *,
+    quiet: bool,
+    color: bool | None,
+    exit_code: int = 0,
+) -> NoReturn:
+    """Emit plain text output respecting quiet mode."""
+    if quiet:
+        import typer
+
+        raise typer.Exit(exit_code)
+    import typer
+
+    typer.echo(text, color=color)
+    raise typer.Exit(exit_code)
+
+
+def emit_debug_message(
+    message: str,
+    *,
+    quiet: bool,
+    log_policy: LogPolicy,
+) -> None:
+    """Emit a debug message when internal logging is enabled."""
+    if quiet or not log_policy.show_internal:
+        return
+    print(message, file=sys.stderr)
+
+
+def exit_if_quiet(quiet: bool, code: int = 0) -> None:
+    """Exit immediately when quiet mode suppresses output."""
+    if quiet:
+        import typer
+
+        raise typer.Exit(code)
+
+
+__all__ = [
+    "emit_and_exit",
+    "emit_debug_message",
+    "emit_error_and_exit",
+    "emit_text_and_exit",
+    "exit_if_quiet",
+    "resolve_serializer",
+]

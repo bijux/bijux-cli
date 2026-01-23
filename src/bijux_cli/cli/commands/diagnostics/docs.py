@@ -49,7 +49,11 @@ from bijux_cli.cli.core.constants import (
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.emit import (
+    emit_and_exit,
+    emit_error_and_exit,
+    emit_text_and_exit,
+)
 from bijux_cli.cli.core.output import resolve_command_config
 from bijux_cli.cli.core.validation import (
     contains_non_ascii_env,
@@ -300,11 +304,12 @@ def docs(
         )
 
     if target == "-":
-        if not quiet:
-            typer.echo(
-                content, color=resolve_click_color(quiet=quiet, fmt=output_format)
-            )
-        raise typer.Exit(0)
+        emit_text_and_exit(
+            content,
+            quiet=quiet,
+            color=resolve_click_color(quiet=quiet, fmt=output_format),
+            exit_code=0,
+        )
 
     if path is None:
         emit_error_and_exit(

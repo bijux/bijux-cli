@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import click
 import pytest
+import typer
 from typer import Context
 
 from bijux_cli.cli.commands.config import import_config
@@ -134,7 +135,7 @@ def test_clear_config_fail(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.clear.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             clear_config(ctx)
         mock_emit.assert_called()
 
@@ -272,7 +273,7 @@ def test_load_config_exception(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.load.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             load_config(ctx, "path")
         mock_emit.assert_called()
 
@@ -319,7 +320,7 @@ def test_reload_config_exception(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.reload.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             reload_config(ctx)
         mock_emit.assert_called()
 
@@ -385,7 +386,7 @@ def test_set_config_empty_key(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "=value")
         mock_emit.assert_called()
 
@@ -404,7 +405,7 @@ def test_set_config_non_ascii(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "key=value©")
         mock_emit.assert_called()
 
@@ -423,7 +424,7 @@ def test_set_config_control_char(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "key=value\x07")
         mock_emit.assert_called()
 
@@ -442,7 +443,7 @@ def test_set_config_invalid_key(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "invalid-key=value")
         mock_emit.assert_called()
 
@@ -462,7 +463,7 @@ def test_set_config_exception(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.set.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "key=value")
         mock_emit.assert_called()
 
@@ -510,7 +511,7 @@ def test_unset_config_key_error(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.unset.side_effect = KeyError("key")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             unset_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -532,7 +533,7 @@ def test_unset_config_exception(
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.unset.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             unset_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -559,11 +560,11 @@ def test_export_config_command_error(
         ) as mock_current,
         patch("bijux_cli.cli.commands.config.export.emit_error_and_exit") as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.export.side_effect = ConfigError("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             export_config(ctx, "file", "json")
         mock_emit.assert_called()
 
@@ -601,11 +602,11 @@ def test_get_config_not_found(
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
         patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.get.side_effect = ConfigError("Config key not found: key")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             get_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -645,11 +646,11 @@ def test_list_config_exception(
             "bijux_cli.cli.commands.config.list_cmd.emit_error_and_exit"
         ) as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.list_keys.side_effect = Exception("error")
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             list_config(ctx)
         mock_emit.assert_called()
 
@@ -668,11 +669,11 @@ def test_set_config_no_arg_tty(
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
         patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, None)
         mock_emit.assert_called()
 
@@ -689,10 +690,10 @@ def test_set_config_invalid_pair(
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
         patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             set_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -735,9 +736,9 @@ def test_get_config_other_command_error(
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         mock_config_svc.get.side_effect = ConfigError("boom!")
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
         ctx = Context(MagicMock())
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             get_config(ctx, "anykey")
         mock_emit.assert_called_once()
         name, kwargs = mock_emit.call_args
@@ -836,15 +837,15 @@ def test_non_ascii_config_path_triggers_error(
 
     def fake_emit(msg: str, **kwargs: Any) -> None:
         called["msg"] = msg
-        raise SystemExit(3)
+        raise typer.Exit(3)
 
     monkeypatch.setattr(
         "bijux_cli.cli.commands.config.set.emit_error_and_exit", fake_emit
     )
 
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(typer.Exit) as exc:
         set_config(make_ctx(), "key=value")
-    assert exc.value.code == 3
+    assert exc.value.exit_code == 3
     assert "Non-ASCII characters in config path" in called["msg"]
 
 
@@ -882,12 +883,12 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
 
     monkeypatch.setattr(
         "bijux_cli.cli.commands.config.set.emit_error_and_exit",
-        lambda msg, **kwargs: (_ for _ in ()).throw(SystemExit(1)),
+        lambda msg, **kwargs: (_ for _ in ()).throw(typer.Exit(1)),
     )
 
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(typer.Exit) as exc:
         set_config(make_ctx(), "key=value")
-    assert exc.value.code == 1
+    assert exc.value.exit_code == 1
 
 
 def test_posix_lock_success_and_run(

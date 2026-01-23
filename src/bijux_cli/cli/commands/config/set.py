@@ -235,24 +235,27 @@ def set_config(
     pretty = effective.pretty
     include_runtime = effective.include_runtime
     if cfg_path:
-        with suppress(Exception), open(cfg_path, "a+") as fh:
-            try:
-                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except OSError:
-                emit_error_and_exit(
-                    "Config file is locked",
-                    code=1,
-                    failure="file_locked",
-                    command=command,
-                    fmt=fmt_lower,
-                    quiet=quiet,
-                    include_runtime=include_runtime,
-                    debug=debug,
-                    extra={"path": cfg_path},
-                )
-            finally:
-                with suppress(Exception):
-                    fcntl.flock(fh, fcntl.LOCK_UN)
+        try:
+            with open(cfg_path, "a+") as fh:
+                try:
+                    fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except OSError:
+                    emit_error_and_exit(
+                        "Config file is locked",
+                        code=1,
+                        failure="file_locked",
+                        command=command,
+                        fmt=fmt_lower,
+                        quiet=quiet,
+                        include_runtime=include_runtime,
+                        debug=debug,
+                        extra={"path": cfg_path},
+                    )
+                finally:
+                    with suppress(Exception):
+                        fcntl.flock(fh, fcntl.LOCK_UN)
+        except OSError:
+            pass
     intent = _parse_pair(
         pair,
         command=command,

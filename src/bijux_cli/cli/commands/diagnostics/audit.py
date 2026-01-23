@@ -305,6 +305,8 @@ def audit(
             error_type=ErrorType.USER_INPUT,
             log_policy=effective.log_policy,
         )
+    except typer.Exit:
+        raise
     except Exception as exc:
         emit_error_and_exit(
             f"An unexpected error occurred: {exc}",

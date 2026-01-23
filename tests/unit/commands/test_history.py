@@ -11,6 +11,7 @@ from typing import Any, cast
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+import typer
 from typer import Context
 
 from bijux_cli.cli.commands.history.clear import clear_history
@@ -18,7 +19,7 @@ from bijux_cli.cli.commands.history.clear import (
     resolve_history_service as clear_resolve,
 )
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -102,8 +103,8 @@ def test_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
         with patch(
             "bijux_cli.cli.commands.history.service.emit_error_and_exit"
         ) as mock_emit:
-            mock_emit.side_effect = SystemExit
-            with pytest.raises(SystemExit):
+            mock_emit.side_effect = typer.Exit
+            with pytest.raises(typer.Exit):
                 resolve_history_service(
                     "command", OutputFormat.JSON, False, False, False
                 )
@@ -379,12 +380,12 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.emit_error_and_exit"
         ) as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx,
                 -1,
@@ -401,10 +402,11 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="limit",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -423,12 +425,12 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.emit_error_and_exit"
         ) as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx,
                 20,
@@ -445,10 +447,11 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="sort",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -467,12 +470,12 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.emit_error_and_exit"
         ) as mock_emit,
     ):
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx,
                 20,
@@ -489,10 +492,11 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="group_by",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -515,12 +519,12 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
         mock_file = MagicMock()
         mock_path.return_value = mock_file
         mock_file.read_text.return_value = "invalid"
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx,
                 20,
@@ -537,10 +541,11 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="import_failed",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -563,12 +568,12 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
         mock_file = MagicMock()
         mock_path.return_value = mock_file
         mock_file.read_text.return_value = json.dumps({})
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx, 20, None, None, None, cast(str, None), "import.json", **mock_flags
             )
@@ -578,10 +583,11 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="import_failed",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -637,12 +643,12 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
         mock_history_svc.list.side_effect = Exception("error")
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx, 20, None, None, None, "export.json", cast(str, None), **mock_flags
             )
@@ -652,10 +658,11 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
             code=2,
             failure="export_failed",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
+            error_type=ErrorType.USER_INPUT,
         )
 
 
@@ -695,8 +702,8 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
         mock_history_svc.clear.side_effect = Exception("error")
-        mock_emit.side_effect = SystemExit
-        with pytest.raises(SystemExit):
+        mock_emit.side_effect = typer.Exit
+        with pytest.raises(typer.Exit):
             clear_history(**mock_flags)
         mock_emit.assert_called_with(
             "Failed to clear history: error",
@@ -721,8 +728,8 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
         mock_di_instance.resolve.side_effect = Exception("error")
-        mock_emit.side_effect = SystemExit
-        with pytest.raises(SystemExit):
+        mock_emit.side_effect = typer.Exit
+        with pytest.raises(typer.Exit):
             clear_resolve("command", OutputFormat.JSON, False, False, False)
         mock_emit.assert_called_with(
             "History service unavailable: error",
@@ -788,8 +795,8 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
         ) as _,
         patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as err,
     ):
-        err.side_effect = SystemExit()
-        with pytest.raises(SystemExit):
+        err.side_effect = typer.Exit()
+        with pytest.raises(typer.Exit):
             resolve_history_service("history", OutputFormat.JSON, False, False, False)
         err.assert_called_once_with(
             "History service unavailable: boom",
@@ -831,7 +838,7 @@ def test_history_list_positive_limit_and_failure(
             import_path=cast(str, None),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -851,8 +858,8 @@ def test_history_list_positive_limit_and_failure(
         ),
         patch("bijux_cli.cli.commands.history.service.emit_error_and_exit") as err,
     ):
-        err.side_effect = SystemExit()
-        with pytest.raises(SystemExit):
+        err.side_effect = typer.Exit()
+        with pytest.raises(typer.Exit):
             history(
                 Context(MagicMock()),
                 2,
@@ -863,7 +870,7 @@ def test_history_list_positive_limit_and_failure(
                 import_path=cast(str, None),
                 quiet=False,
                 verbose=False,
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 pretty=False,
                 log_level=LogLevel.INFO,
             )
@@ -872,7 +879,7 @@ def test_history_list_positive_limit_and_failure(
             code=1,
             failure="list_failed",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -921,7 +928,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             import_path=cast(str, None),
             quiet=False,
             verbose=True,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -975,7 +982,7 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
             import_path=cast(str, None),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.DEBUG,
         )
@@ -1031,12 +1038,12 @@ def test_history_list_failure() -> None:
         svc = MagicMock()
         svc.list.side_effect = Exception("boom")
         mock_resolve.return_value = svc
-        mock_emit.side_effect = SystemExit
+        mock_emit.side_effect = typer.Exit
 
         ctx = Context(MagicMock())
         ctx.invoked_subcommand = None
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             history(
                 ctx,
                 5,
@@ -1057,7 +1064,7 @@ def test_history_list_failure() -> None:
             code=1,
             failure="list_failed",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -1117,7 +1124,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             import_path=str(p),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1178,7 +1185,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             import_path=str(p),
             quiet=False,
             verbose=True,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1234,7 +1241,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             import_path=cast(str, None),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1289,7 +1296,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             import_path=cast(str, None),
             quiet=False,
             verbose=True,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1330,7 +1337,7 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
             import_path=cast(str, None),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1370,7 +1377,7 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
             import_path=cast(str, None),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -1426,7 +1433,7 @@ def test_history_positive_limit_branch_and_payload_builder(
         import_path=cast(str, None),
         quiet=False,
         verbose=False,
-        fmt="json",
+        fmt=OutputFormat.JSON,
         pretty=False,
         log_level=LogLevel.INFO,
     )

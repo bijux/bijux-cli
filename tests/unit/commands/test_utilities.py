@@ -15,6 +15,7 @@ from typing import Any, cast
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+import typer
 
 from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
 from bijux_cli.cli.core.flags import parse_global_flags
@@ -385,7 +386,7 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
         def builder(include: bool) -> dict[str, Any]:
             return {}
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             new_run_command(
                 "cmd",
                 builder,
@@ -412,7 +413,7 @@ def test_new_run_command_history_skip_history_cmd(
         def builder(include: bool) -> dict[str, Any]:
             return {}
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             new_run_command(
                 "history",
                 builder,
@@ -443,7 +444,7 @@ def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None
         def builder(include: bool) -> dict[str, Any]:
             return {}
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             new_run_command(
                 "cmd",
                 builder,
@@ -474,7 +475,7 @@ def test_new_run_command_history_fail(mock_di: types.SimpleNamespace) -> None:
         def builder(include: bool) -> dict[str, Any]:
             return {}
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             new_run_command(
                 "cmd",
                 builder,
@@ -510,7 +511,7 @@ def test_new_run_command_history_permission_error(
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -543,7 +544,7 @@ def test_new_run_command_history_os_error_perm(mock_di: types.SimpleNamespace) -
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -578,7 +579,7 @@ def test_new_run_command_history_os_error_space(
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -614,7 +615,7 @@ def test_new_run_command_history_os_error_other(
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -647,7 +648,7 @@ def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> No
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -664,9 +665,9 @@ def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> No
 
 def test_emit_and_exit_quiet() -> None:
     """Test that emit_and_exit produces no output in quiet mode."""
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(typer.Exit) as exc:
         emit_and_exit({}, OutputFormat.JSON, True, False, False, True, "cmd")
-    assert exc.value.code == 0
+    assert exc.value.exit_code == 0
 
 
 def test_emit_and_exit_json_pretty() -> None:
@@ -678,7 +679,7 @@ def test_emit_and_exit_json_pretty() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"key": "value"}\n'
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_and_exit(
                 {"key": "value"},
                 OutputFormat.JSON,
@@ -703,7 +704,7 @@ def test_emit_and_exit_json_compact() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"key":"value"}\n'
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_and_exit(
                 {"key": "value"},
                 OutputFormat.JSON,
@@ -728,7 +729,7 @@ def test_emit_and_exit_yaml_pretty() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = "key: value\n"
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_and_exit(
                 {"key": "value"},
                 OutputFormat.YAML,
@@ -753,7 +754,7 @@ def test_emit_and_exit_yaml_compact() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = "key: value\n"
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_and_exit(
                 {"key": "value"},
                 OutputFormat.YAML,
@@ -777,7 +778,7 @@ def test_emit_and_exit_debug_ignored() -> None:
             return_value=MagicMock(dumps=MagicMock(return_value='{"key": "value"}\n')),
         ),
         patch("builtins.print") as mock_print,
-        pytest.raises(SystemExit),
+        pytest.raises(typer.Exit),
     ):
         emit_and_exit(
             {"key": "value"}, OutputFormat.JSON, True, False, True, False, "cmd"
@@ -790,9 +791,9 @@ def test_emit_and_exit_debug_ignored() -> None:
 
 def test_emit_error_and_exit_quiet() -> None:
     """Test that error output is suppressed in quiet mode."""
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(typer.Exit) as exc:
         emit_error_and_exit("error", 1, "fail", "cmd", OutputFormat.JSON, True)
-    assert exc.value.code == 1
+    assert exc.value.exit_code == 1
 
 
 def test_emit_error_and_exit_json() -> None:
@@ -804,7 +805,7 @@ def test_emit_error_and_exit_json() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_error_and_exit("test", 1, "fail", "cmd", OutputFormat.JSON, False)
     mock_serializer.dumps.assert_called_with(ANY, fmt=OutputFormat.JSON, pretty=False)
     mock_print.assert_called_with('{"error": "test"}', file=sys.stderr, flush=True)
@@ -819,7 +820,7 @@ def test_emit_error_and_exit_include_runtime() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_error_and_exit(
                 "test", 1, "fail", "cmd", OutputFormat.JSON, False, True
             )
@@ -838,7 +839,7 @@ def test_emit_error_and_exit_extra() -> None:
         mock_serializer = MagicMock()
         mock_serializer.dumps.return_value = '{"error": "test", "extra": "data"}\n'
         mock_factory.return_value = mock_serializer
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_error_and_exit(
                 "test",
                 1,
@@ -861,7 +862,7 @@ def test_emit_error_and_exit_debug_ignored() -> None:
             return_value=MagicMock(dumps=MagicMock(return_value='{"error": "test"}\n')),
         ),
         patch("builtins.print") as mock_print,
-        pytest.raises(SystemExit),
+        pytest.raises(typer.Exit),
     ):
         emit_error_and_exit(
             "test",
@@ -941,6 +942,19 @@ def test_parse_global_flags_color() -> None:
     assert config.flags.color is ColorMode.NEVER
     assert config.args == ("--color", "never")
     assert config.errors == ()
+
+
+def test_parse_global_flags_color_variants() -> None:
+    """Global parser captures auto/always color modes."""
+    config_auto = parse_global_flags(["--color", "auto"])
+    assert config_auto.flags.color is ColorMode.AUTO
+    assert config_auto.args == ("--color", "auto")
+    assert config_auto.errors == ()
+
+    config_always = parse_global_flags(["--color", "always"])
+    assert config_always.flags.color is ColorMode.ALWAYS
+    assert config_always.args == ("--color", "always")
+    assert config_always.errors == ()
 
 
 def test_parse_global_flags_format_invalid_help() -> None:
@@ -1045,7 +1059,7 @@ def test_emit_error_and_exit_no_failure() -> None:
         stack.enter_context(patch("builtins.print"))
 
         failure: Any = None
-        with pytest.raises(SystemExit):
+        with pytest.raises(typer.Exit):
             emit_error_and_exit(
                 "test",
                 1,
@@ -1067,7 +1081,7 @@ def test_emit_error_and_exit_no_command() -> None:
             return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
         ) as mock_factory,
         patch("builtins.print"),
-        pytest.raises(SystemExit),
+        pytest.raises(typer.Exit),
     ):
         emit_error_and_exit("test", 1, "fail", None, OutputFormat.JSON, False)
     payload = mock_factory.return_value.dumps.call_args[0][0]
@@ -1082,7 +1096,7 @@ def test_emit_error_and_exit_no_fmt() -> None:
             return_value=MagicMock(dumps=MagicMock(return_value='{"error":"test"}\n')),
         ) as mock_factory,
         patch("builtins.print"),
-        pytest.raises(SystemExit),
+        pytest.raises(typer.Exit),
     ):
         emit_error_and_exit("test", 1, "fail", "cmd", None, False)
     payload = mock_factory.return_value.dumps.call_args[0][0]
@@ -1097,7 +1111,7 @@ def test_emit_error_and_exit_json_dumps_fails() -> None:
             return_value=MagicMock(dumps=MagicMock(side_effect=ValueError("fail"))),
         ),
         patch("builtins.print") as mock_print,
-        pytest.raises(SystemExit),
+        pytest.raises(typer.Exit),
     ):
         emit_error_and_exit("test", 1, "fail", "cmd", OutputFormat.JSON, False)
     mock_print.assert_any_call(
@@ -1135,7 +1149,7 @@ def test_emit_and_exit_history_permission_denied(
             def builder(include: bool) -> dict[str, Any]:
                 return {}
 
-            with pytest.raises(SystemExit):
+            with pytest.raises(typer.Exit):
                 new_run_command(
                     "cmd",
                     builder,
@@ -1194,7 +1208,7 @@ def test_emit_and_exit_plain_oserror_eacces_hits_oerror_branch(
         DIContainer, "current", classmethod(lambda cls: FakeContainer())
     )
     payload = {"result": "ok"}
-    with pytest.raises(SystemExit) as se:
+    with pytest.raises(typer.Exit) as se:
         emit_and_exit(
             payload=payload,
             fmt=OutputFormat.JSON,
@@ -1205,7 +1219,7 @@ def test_emit_and_exit_plain_oserror_eacces_hits_oerror_branch(
             command="mycmd",
             exit_code=0,
         )
-    assert se.value.code == 0
+    assert se.value.exit_code == 0
     captured = capsys.readouterr()
     assert "Permission denied writing history: no write" in captured.err
     assert json.loads(captured.out) == payload
@@ -1247,7 +1261,7 @@ def test_emit_and_exit_plain_oserror_eperm_hits_oerror_branch(
         DIContainer, "current", classmethod(lambda cls: FakeContainer())
     )
     payload = {"result": "ok"}
-    with pytest.raises(SystemExit) as se:
+    with pytest.raises(typer.Exit) as se:
         emit_and_exit(
             payload=payload,
             fmt=OutputFormat.JSON,
@@ -1258,7 +1272,7 @@ def test_emit_and_exit_plain_oserror_eperm_hits_oerror_branch(
             command="mycmd",
             exit_code=0,
         )
-    assert se.value.code == 0
+    assert se.value.exit_code == 0
     captured = capsys.readouterr()
     assert "Permission denied writing history: op not permitted" in captured.err
     assert json.loads(captured.out) == payload

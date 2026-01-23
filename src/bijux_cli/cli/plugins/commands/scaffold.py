@@ -22,6 +22,7 @@ Exit Codes:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import keyword
 from pathlib import Path
@@ -45,7 +46,242 @@ from bijux_cli.cli.core.constants import (
 from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.core.enums import ErrorType, OutputFormat
 from bijux_cli.plugins.validation import PLUGIN_NAME_RE
+
+
+@dataclass(frozen=True)
+class ScaffoldIntent:
+    """Resolved intent for plugin scaffolding."""
+
+    name: str
+    template: str
+    target: Path
+    force: bool
+    quiet: bool
+    include_runtime: bool
+    debug: bool
+    fmt: OutputFormat
+
+
+def _build_scaffold_intent(
+    *,
+    name: str,
+    output_dir: str,
+    template: str | None,
+    force: bool,
+    command: str,
+    fmt: OutputFormat,
+    quiet: bool,
+    include_runtime: bool,
+    debug: bool,
+) -> ScaffoldIntent:
+    """Validate inputs and build a scaffold intent."""
+    if name in keyword.kwlist:
+        emit_error_and_exit(
+            f"Invalid plugin name: '{name}' is a reserved Python keyword.",
+            code=1,
+            failure="reserved_keyword",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
+        emit_error_and_exit(
+            "Invalid plugin name: only ASCII letters, digits, dash and underscore are allowed.",
+            code=1,
+            failure="invalid_name",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    if not template:
+        emit_error_and_exit(
+            "No plugin template found. Please specify --template (path or URL).",
+            code=1,
+            failure="no_template",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+        )
+
+    slug = unicodedata.normalize("NFC", name)
+    parent = Path(output_dir).expanduser().resolve()
+    target = parent / slug
+
+    if not parent.exists():
+        try:
+            parent.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:
+            emit_error_and_exit(
+                f"Failed to create output directory '{parent}': {exc}",
+                code=1,
+                failure="create_dir_failed",
+                command=command,
+                fmt=fmt,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                debug=debug,
+            )
+    elif not parent.is_dir():
+        emit_error_and_exit(
+            f"Output directory '{parent}' is not a directory.",
+            code=1,
+            failure="not_dir",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+        )
+
+    normalized = name.lower()
+    for existing in parent.iterdir():
+        if (
+            (existing.is_dir() or existing.is_symlink())
+            and existing.name.lower() == normalized
+            and existing.resolve() != target.resolve()
+        ):
+            emit_error_and_exit(
+                f"Plugin name '{name}' conflicts with existing directory '{existing.name}'. "
+                "Plugin names must be unique (case-insensitive).",
+                code=1,
+                failure="name_conflict",
+                command=command,
+                fmt=fmt,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                debug=debug,
+            )
+
+    if target.exists() or target.is_symlink():
+        if not force:
+            emit_error_and_exit(
+                f"Directory '{target}' is not empty – use --force to overwrite.",
+                code=1,
+                failure="dir_not_empty",
+                command=command,
+                fmt=fmt,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                debug=debug,
+            )
+        try:
+            if target.is_symlink():
+                target.unlink()
+            elif target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        except Exception as exc:
+            emit_error_and_exit(
+                f"Failed to remove existing '{target}': {exc}",
+                code=1,
+                failure="remove_failed",
+                command=command,
+                fmt=fmt,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                debug=debug,
+            )
+
+    return ScaffoldIntent(
+        name=name,
+        template=template,
+        target=target,
+        force=force,
+        quiet=quiet,
+        include_runtime=include_runtime,
+        debug=debug,
+        fmt=fmt,
+    )
+
+
+def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
+    """Run cookiecutter and validate the output."""
+    try:
+        from cookiecutter.main import cookiecutter
+
+        cookiecutter(
+            intent.template,
+            no_input=True,
+            output_dir=str(intent.target.parent),
+            extra_context={
+                "project_name": intent.name,
+                "project_slug": intent.target.name,
+            },
+        )
+        if not intent.target.is_dir():
+            raise RuntimeError("Template copy failed")
+    except ModuleNotFoundError:
+        emit_error_and_exit(
+            "cookiecutter is required but not installed.",
+            code=1,
+            failure="cookiecutter_missing",
+            command="plugins scaffold",
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+        )
+    except Exception as exc:
+        msg = f"Scaffold failed: {exc} (template not found or invalid)"
+        emit_error_and_exit(
+            msg,
+            code=1,
+            failure="scaffold_failed",
+            command="plugins scaffold",
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+        )
+
+    plugin_json = intent.target / "plugin.json"
+    if not plugin_json.is_file():
+        emit_error_and_exit(
+            f"Scaffold failed: plugin.json not found in '{intent.target}'.",
+            code=1,
+            failure="plugin_json_missing",
+            command="plugins scaffold",
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+        )
+    try:
+        meta = json.loads(plugin_json.read_text("utf-8"))
+        if not (
+            isinstance(meta, dict)
+            and meta.get("name")
+            and (meta.get("desc") or meta.get("description"))
+            and meta.get("bijux_cli_version")
+        ):
+            raise ValueError("Missing required fields")
+    except Exception as exc:
+        emit_error_and_exit(
+            f"Scaffold failed: plugin.json invalid: {exc}",
+            code=1,
+            failure="plugin_json_invalid",
+            command="plugins scaffold",
+            fmt=intent.fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
+        )
+
+    return {"status": "created", "plugin": intent.name, "dir": str(intent.target)}
 
 
 def scaffold_plugin(
@@ -106,191 +342,18 @@ def scaffold_plugin(
     debug = effective.log_policy.show_internal
     pretty = effective.pretty
 
-    if name in keyword.kwlist:
-        emit_error_and_exit(
-            f"Invalid plugin name: '{name}' is a reserved Python keyword.",
-            code=1,
-            failure="reserved_keyword",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
-        emit_error_and_exit(
-            "Invalid plugin name: only ASCII letters, digits, dash and underscore are allowed.",
-            code=1,
-            failure="invalid_name",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    if not template:
-        emit_error_and_exit(
-            "No plugin template found. Please specify --template (path or URL).",
-            code=1,
-            failure="no_template",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    slug = unicodedata.normalize("NFC", name)
-    parent = Path(output_dir).expanduser().resolve()
-    target = parent / slug
-
-    if not parent.exists():
-        try:
-            parent.mkdir(parents=True, exist_ok=True)
-        except Exception as exc:
-            emit_error_and_exit(
-                f"Failed to create output directory '{parent}': {exc}",
-                code=1,
-                failure="create_dir_failed",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=effective.include_runtime,
-                debug=debug,
-            )
-    elif not parent.is_dir():
-        emit_error_and_exit(
-            f"Output directory '{parent}' is not a directory.",
-            code=1,
-            failure="not_dir",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    normalized = name.lower()
-    for existing in parent.iterdir():
-        if (
-            (existing.is_dir() or existing.is_symlink())
-            and existing.name.lower() == normalized
-            and existing.resolve() != target.resolve()
-        ):
-            emit_error_and_exit(
-                f"Plugin name '{name}' conflicts with existing directory '{existing.name}'. "
-                "Plugin names must be unique (case-insensitive).",
-                code=1,
-                failure="name_conflict",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=effective.include_runtime,
-                debug=debug,
-            )
-
-    if target.exists() or target.is_symlink():
-        if not force:
-            emit_error_and_exit(
-                f"Directory '{target}' is not empty – use --force to overwrite.",
-                code=1,
-                failure="dir_not_empty",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=effective.include_runtime,
-                debug=debug,
-            )
-        try:
-            if target.is_symlink():
-                target.unlink()
-            elif target.is_dir():
-                shutil.rmtree(target)
-            else:
-                target.unlink()
-        except Exception as exc:
-            emit_error_and_exit(
-                f"Failed to remove existing '{target}': {exc}",
-                code=1,
-                failure="remove_failed",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=effective.include_runtime,
-                debug=debug,
-            )
-
-    try:
-        from cookiecutter.main import cookiecutter
-
-        cookiecutter(
-            template,
-            no_input=True,
-            output_dir=str(parent),
-            extra_context={"project_name": name, "project_slug": slug},
-        )
-        if not target.is_dir():
-            raise RuntimeError("Template copy failed")
-    except ModuleNotFoundError:
-        emit_error_and_exit(
-            "cookiecutter is required but not installed.",
-            code=1,
-            failure="cookiecutter_missing",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-    except Exception as exc:
-        msg = f"Scaffold failed: {exc} (template not found or invalid)"
-        emit_error_and_exit(
-            msg,
-            code=1,
-            failure="scaffold_failed",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    plugin_json = target / "plugin.json"
-    if not plugin_json.is_file():
-        emit_error_and_exit(
-            f"Scaffold failed: plugin.json not found in '{target}'.",
-            code=1,
-            failure="plugin_json_missing",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-    try:
-        meta = json.loads(plugin_json.read_text("utf-8"))
-        if not (
-            isinstance(meta, dict)
-            and meta.get("name")
-            and (meta.get("desc") or meta.get("description"))
-            and meta.get("bijux_cli_version")
-        ):
-            raise ValueError("Missing required fields")
-    except Exception as exc:
-        emit_error_and_exit(
-            f"Scaffold failed: plugin.json invalid: {exc}",
-            code=1,
-            failure="plugin_json_invalid",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=effective.include_runtime,
-            debug=debug,
-        )
-
-    payload = {"status": "created", "plugin": name, "dir": str(target)}
+    intent = _build_scaffold_intent(
+        name=name,
+        output_dir=output_dir,
+        template=template,
+        force=force,
+        command=command,
+        fmt=fmt_lower,
+        quiet=quiet,
+        include_runtime=effective.include_runtime,
+        debug=debug,
+    )
+    payload = _scaffold_project(intent)
 
     new_run_command(
         command_name=command,

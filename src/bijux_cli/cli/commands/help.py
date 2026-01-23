@@ -24,6 +24,7 @@ Exit Codes:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import platform as _platform
 import sys
@@ -46,7 +47,11 @@ from bijux_cli.cli.core.constants import (
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.emit import (
+    emit_and_exit,
+    emit_error_and_exit,
+    emit_text_and_exit,
+)
 from bijux_cli.cli.core.output import get_execution_policy
 from bijux_cli.cli.core.validation import (
     ascii_safe,
@@ -54,11 +59,9 @@ from bijux_cli.cli.core.validation import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.core.runtime import AsyncTyper
-from bijux_cli.infra.contracts import Emitter
 
 _HUMAN = "human"
 _VALID_FORMATS = ("human", "json", "yaml")
@@ -182,6 +185,18 @@ def _build_help_payload(
     return payload
 
 
+def _emit_human_help(
+    *,
+    quiet: bool,
+    color: bool | None,
+    help_text_provider: Callable[[], str],
+) -> None:
+    """Emit human help output without building text in quiet mode."""
+    if quiet:
+        raise typer.Exit(0)
+    emit_text_and_exit(help_text_provider(), quiet=False, color=color, exit_code=0)
+
+
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
 help_app = AsyncTyper(
@@ -257,9 +272,11 @@ def help_callback(
             target_cmd, target_ctx = target
             help_text = _get_formatted_help(target_cmd, target_ctx)
             policy = get_execution_policy()
-            typer.echo(
+            emit_text_and_exit(
                 help_text,
+                quiet=policy.quiet,
                 color=resolve_click_color(quiet=policy.quiet, fmt=None),
+                exit_code=0,
             )
         raise typer.Exit(0)
 
@@ -268,26 +285,6 @@ def help_callback(
     _ = (quiet, verbose, log_level, pretty, fmt)
     policy = get_execution_policy()
     intent = _build_help_intent(tokens, fmt, policy)
-
-    if intent.quiet:
-        if intent.fmt_lower not in _VALID_FORMATS:
-            raise SystemExit(2)
-
-        for token in intent.tokens:
-            if "\x00" in token:
-                raise SystemExit(3)
-            try:
-                token.encode("ascii")
-            except UnicodeEncodeError as err:
-                raise SystemExit(3) from err
-
-        if contains_non_ascii_env():
-            raise SystemExit(3)
-
-        if not _find_target_command(ctx, intent.tokens):
-            raise SystemExit(2)
-
-        raise SystemExit(0)
 
     if intent.fmt_lower != "human":
         validate_common_flags(
@@ -307,6 +304,8 @@ def help_callback(
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
             debug=intent.debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=policy.log_policy,
         )
 
     for token in intent.tokens:
@@ -320,6 +319,8 @@ def help_callback(
                 quiet=intent.quiet,
                 include_runtime=intent.include_runtime,
                 debug=intent.debug,
+                error_type=ErrorType.ASCII,
+                log_policy=policy.log_policy,
             )
         try:
             token.encode("ascii")
@@ -333,6 +334,8 @@ def help_callback(
                 quiet=intent.quiet,
                 include_runtime=intent.include_runtime,
                 debug=intent.debug,
+                error_type=ErrorType.ASCII,
+                log_policy=policy.log_policy,
             )
 
     if contains_non_ascii_env():
@@ -345,6 +348,8 @@ def help_callback(
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
             debug=intent.debug,
+            error_type=ErrorType.ASCII,
+            log_policy=policy.log_policy,
         )
 
     target = _find_target_command(ctx, intent.tokens)
@@ -362,16 +367,16 @@ def help_callback(
             log_policy=policy.log_policy,
         )
 
-    DIContainer.current().resolve(Emitter)
     target_cmd, target_ctx = target
-    help_text = _get_formatted_help(target_cmd, target_ctx)
 
     if intent.fmt_lower == _HUMAN:
-        typer.echo(
-            help_text,
+        _emit_human_help(
+            quiet=intent.quiet,
             color=resolve_click_color(quiet=intent.quiet, fmt=None),
+            help_text_provider=lambda: _get_formatted_help(target_cmd, target_ctx),
         )
-        raise typer.Exit(0)
+
+    help_text = _get_formatted_help(target_cmd, target_ctx)
 
     try:
         payload = _build_help_payload(help_text, intent.include_runtime, started_at)
