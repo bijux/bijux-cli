@@ -13,7 +13,7 @@ from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 import typer
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_HELP,
     OPT_LOG_LEVEL,
@@ -32,6 +32,84 @@ GLOBAL_OPTS = [
 ]
 
 _BUILTINS = ("exit", "quit")
+
+
+def _split_words(text: str) -> list[str]:
+    """Split input text into shell-like words for completion."""
+    try:
+        words: list[str] = shlex.split(text)
+    except ValueError:
+        return []
+    if text.endswith(" ") or not text:
+        words.append("")
+    return words
+
+
+def _collect_completions(
+    words: list[str],
+    cmd_map: dict[tuple[str, ...], Any],
+    builtins: tuple[str, ...],
+) -> list[tuple[str, int, str | None]]:
+    """Compute completion tuples for the current buffer state."""
+    if not words:
+        return []
+
+    current = words[-1]
+    completions: list[tuple[str, int, str | None]] = []
+
+    if current.startswith("-"):
+        completions.extend(
+            (opt, -len(current), None) for opt in GLOBAL_OPTS if opt.startswith(current)
+        )
+
+    cmd_obj = None
+    for i in range(len(words) - 1, 0, -1):
+        key = tuple(words[:i])
+        if key in cmd_map:
+            cmd_obj = cmd_map[key]
+            break
+
+    if cmd_obj is None:
+        completions.extend(
+            (b, -len(current), None) for b in builtins if b.startswith(current)
+        )
+
+        completions.extend(
+            (key[0], -len(current), None)
+            for key in cmd_map
+            if len(key) == 1 and key[0].startswith(current)
+        )
+        if not completions and words[:3] == ["config", "set", ""]:
+            completions.append(("KEY=VALUE", 0, "KEY=VALUE"))
+        elif not completions and current == "":
+            completions.append(("DUMMY", 0, "DUMMY"))
+        return completions
+
+    is_group = hasattr(cmd_obj, "registered_commands") or hasattr(
+        cmd_obj, "registered_groups"
+    )
+    if is_group:
+        names = [c.name for c in getattr(cmd_obj, "registered_commands", [])]
+        names += [g.name for g in getattr(cmd_obj, "registered_groups", [])]
+        completions.extend(
+            (name, -len(current), None) for name in names if name.startswith(current)
+        )
+    elif hasattr(cmd_obj, "params"):
+        for param in cmd_obj.params:
+            completions.extend(
+                (opt, -len(current), None)
+                for opt in (*param.opts, *(getattr(param, "secondary_opts", []) or []))
+                if opt.startswith(current)
+            )
+
+    if "--help".startswith(current):
+        completions.append(("--help", -len(current), None))
+
+    if not completions and words[:3] == ["config", "set", ""]:
+        completions.append(("KEY=VALUE", 0, "KEY=VALUE"))
+    elif not completions and current == "":
+        completions.append(("DUMMY", 0, "DUMMY"))
+    return completions
 
 
 class CommandCompleter(Completer):
@@ -76,65 +154,13 @@ class CommandCompleter(Completer):
     ) -> Iterator[Completion]:
         """Yield completions for the current prompt buffer."""
         text = document.text_before_cursor
-        try:
-            words: list[str] = shlex.split(text)
-        except ValueError:
+        words = _split_words(text)
+        if not words:
             return
-        if text.endswith(" ") or not text:
-            words.append("")
-        current = words[-1]
-
-        found = False
-
-        if current.startswith("-"):
-            for opt in GLOBAL_OPTS:
-                if opt.startswith(current):
-                    found = True
-                    yield Completion(opt, start_position=-len(current))
-
-        cmd_obj, _rem = self._find(words[:-1])
-        if cmd_obj is None:
-            for b in self._BUILTINS:
-                if b.startswith(current):
-                    found = True
-                    yield Completion(b, start_position=-len(current))
-
-        if cmd_obj is None:
-            for key in self._cmd_map:
-                if len(key) == 1 and key[0].startswith(current):
-                    found = True
-                    yield Completion(key[0], start_position=-len(current))
-            return
-
-        is_group = hasattr(cmd_obj, "registered_commands") or hasattr(
-            cmd_obj, "registered_groups"
-        )
-        if is_group:
-            names = [c.name for c in getattr(cmd_obj, "registered_commands", [])]
-            names += [g.name for g in getattr(cmd_obj, "registered_groups", [])]
-            for n in names:
-                if n.startswith(current):
-                    found = True
-                    yield Completion(n, start_position=-len(current))
-
-        if (not is_group) and hasattr(cmd_obj, "params"):
-            for param in cmd_obj.params:
-                for opt in (*param.opts, *(getattr(param, "secondary_opts", []) or [])):
-                    if opt.startswith(current):
-                        found = True
-                        yield Completion(opt, start_position=-len(current))
-
-        if "--help".startswith(current):
-            found = True
-            yield Completion("--help", start_position=-len(current))
-
-        if not found:
-            if (
-                len(words) >= 3
-                and words[0] == "config"
-                and words[1] == "set"
-                and words[2] == ""
-            ):
-                yield Completion("KEY=VALUE", display="KEY=VALUE", start_position=0)
-            elif current == "":
-                yield Completion("DUMMY", display="DUMMY", start_position=0)
+        for value, start, display in _collect_completions(
+            words, self._cmd_map, self._BUILTINS
+        ):
+            if display is None:
+                yield Completion(value, start_position=start)
+            else:
+                yield Completion(value, display=display, start_position=start)

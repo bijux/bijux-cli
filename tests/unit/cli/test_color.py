@@ -44,6 +44,7 @@ def test_resolve_click_color_rules() -> None:
     set_color_mode(ColorMode.AUTO)
     assert resolve_click_color(quiet=True, fmt=None) is False
     assert resolve_click_color(quiet=False, fmt=OutputFormat.JSON) is False
+    assert resolve_click_color(quiet=False, fmt=OutputFormat.YAML) is False
 
     set_color_mode(ColorMode.NEVER)
     assert resolve_click_color(quiet=False, fmt=None) is False
@@ -54,3 +55,21 @@ def test_resolve_click_color_rules() -> None:
     set_color_mode(ColorMode.AUTO)
     assert resolve_click_color(quiet=False, fmt=None) is None
     assert get_color_mode() is ColorMode.AUTO
+
+
+def test_resolve_color_mode_explicit_flags() -> None:
+    assert resolve_color_mode(_config(ColorMode.ALWAYS), tty=True, no_color=False) is (
+        ColorMode.ALWAYS
+    )
+    assert resolve_color_mode(_config(ColorMode.NEVER), tty=True, no_color=False) is (
+        ColorMode.NEVER
+    )
+    assert resolve_color_mode(_config(ColorMode.AUTO), tty=True, no_color=False) is (
+        ColorMode.AUTO
+    )
+
+
+def test_machine_output_never_styled() -> None:
+    set_color_mode(ColorMode.ALWAYS)
+    assert resolve_click_color(quiet=False, fmt=OutputFormat.JSON) is False
+    assert resolve_click_color(quiet=False, fmt=OutputFormat.YAML) is False

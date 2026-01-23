@@ -12,7 +12,9 @@ import time
 from typing import Any, NoReturn
 
 from bijux_cli.cli.core.validation import ascii_safe
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import resolve_exit_behavior
+from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
 from bijux_cli.infra.contracts import Serializer
 
 
@@ -114,9 +116,29 @@ def emit_error_and_exit(
     include_runtime: bool = False,
     debug: bool = False,
     extra: dict[str, Any] | None = None,
+    error_type: ErrorType | None = None,
+    log_policy: LogPolicy | None = None,
 ) -> NoReturn:
     """Emit a structured error payload to stderr and exit."""
-    if quiet:
+    inferred_type = error_type
+    if inferred_type is None:
+        if code == 2:
+            inferred_type = ErrorType.USAGE
+        elif code == 3:
+            inferred_type = ErrorType.ASCII
+        elif code == 130:
+            inferred_type = ErrorType.ABORTED
+        else:
+            inferred_type = ErrorType.INTERNAL
+
+    policy = log_policy or resolve_log_policy(
+        LogLevel.DEBUG if debug else LogLevel.INFO
+    )
+    behavior = resolve_exit_behavior(
+        inferred_type, quiet=quiet, fmt=fmt or OutputFormat.JSON, log_policy=policy
+    )
+    code = int(behavior.code)
+    if behavior.stream is None:
         sys.exit(code)
 
     error_payload = {"error": message, "code": code}
@@ -128,6 +150,12 @@ def emit_error_and_exit(
         error_payload["fmt"] = fmt
     if extra:
         error_payload.update(extra)
+    if behavior.show_traceback:
+        import traceback
+
+        trace = traceback.format_exc()
+        if "NoneType: None" not in trace:
+            error_payload["traceback"] = trace
     if include_runtime:
         error_payload["python"] = ascii_safe(sys.version.split()[0], "python_version")
         error_payload["platform"] = ascii_safe(sys.platform, "platform")
@@ -141,7 +169,10 @@ def emit_error_and_exit(
             fmt=out_format,
             pretty=False,
         ).rstrip("\n")
-        print(output, file=sys.stderr, flush=True)
+        stream = sys.stderr
+        if behavior.stream == "stdout":
+            stream = sys.stdout
+        print(output, file=stream, flush=True)
     except Exception:
         print('{"error": "Unserializable error"}', file=sys.stderr, flush=True)
     sys.exit(code)

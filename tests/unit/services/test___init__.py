@@ -11,6 +11,7 @@ import pytest
 
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.precedence import resolve_log_policy
 from bijux_cli.plugins.services import register_plugin_services
 from bijux_cli.services import register_default_services
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -134,6 +135,7 @@ def test_register_default_services_100pct(
             log_level=LogLevel.DEBUG if debug else LogLevel.INFO,
             color=ColorMode.AUTO,
         )
+        DIContainer.set_log_policy(resolve_log_policy(LogLevel.DEBUG))
         register_default_services(
             di,
             logging_config=logging_config,

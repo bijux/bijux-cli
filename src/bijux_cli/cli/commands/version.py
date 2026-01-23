@@ -30,7 +30,7 @@ import time
 import typer
 
 from bijux_cli.cli.commands.payloads import VersionPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     ENV_VERSION,
     HELP_FORMAT,
     HELP_LOG_LEVEL,

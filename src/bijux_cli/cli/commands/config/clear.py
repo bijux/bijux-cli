@@ -25,7 +25,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import ConfigClearPayload
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -41,7 +41,6 @@ from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -84,7 +83,7 @@ def clear_config(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == LogLevel.DEBUG
+    debug = effective.log_policy.show_internal
     pretty = effective.pretty
     include_runtime = effective.include_runtime
 

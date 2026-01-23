@@ -33,6 +33,7 @@ from typing import Any, Literal, TypeVar, cast, overload
 from injector import Injector
 
 from bijux_cli.core.errors import BijuxError
+from bijux_cli.core.precedence import LogPolicy
 from bijux_cli.core.runtime import run_awaitable
 from bijux_cli.services.contracts import ObservabilityProtocol
 
@@ -82,6 +83,7 @@ class DIContainer:
     _lock = RLock()
     _resolving: ContextVar[set[str] | None] = ContextVar("resolving", default=None)
     _obs: ObservabilityProtocol | None = None
+    _log_policy: LogPolicy | None = None
 
     @classmethod
     def current(cls) -> DIContainer:
@@ -111,6 +113,7 @@ class DIContainer:
             inst = cls._instance
             cls._instance = None
             cls._obs = None
+            cls._log_policy = None
         if inst is None:
             cls._log_static(logging.DEBUG, "DIContainer reset (no instance)")
             return
@@ -136,6 +139,7 @@ class DIContainer:
                 instance = cls._instance
                 cls._instance = None
                 cls._obs = None
+                cls._log_policy = None
         if instance is not None:
             await instance.shutdown()
             instance._services.clear()
@@ -175,6 +179,11 @@ class DIContainer:
     def is_verbose(self) -> bool:
         """Return whether verbose DI logging is enabled."""
         return self._verbose
+
+    @classmethod
+    def set_log_policy(cls, policy: LogPolicy) -> None:
+        """Attach a log policy for DI logging."""
+        cls._log_policy = policy
 
     def register(
         self,
@@ -652,22 +661,28 @@ class DIContainer:
         Returns:
             None:
         """
-        if self._obs:
+        if level <= logging.DEBUG and not (
+            self._log_policy and self._log_policy.show_internal
+        ):
+            return
+
+        if self._obs and level <= logging.DEBUG:
             self._obs.log(logging.getLevelName(level).lower(), msg, extra=extra or {})
-        else:
-            logger = logging.getLogger("bijux_cli.di")
-            log_extra: dict[str, Any] = {}
-            if extra:
-                log_extra.update(extra)
-                if "name" in log_extra:
-                    log_extra["svc_alias"] = log_extra.pop("name")
-            try:
-                logger.log(level, msg, extra=log_extra)
-            except KeyError:
-                logger.warning(
-                    "Failed to log with extra=%s – retrying without it", log_extra
-                )
-                logger.log(level, msg)
+            return
+
+        logger = logging.getLogger("bijux_cli.di")
+        log_extra: dict[str, Any] = {}
+        if extra:
+            log_extra.update(extra)
+            if "name" in log_extra:
+                log_extra["svc_alias"] = log_extra.pop("name")
+        try:
+            logger.log(level, msg, extra=log_extra)
+        except KeyError:
+            logger.warning(
+                "Failed to log with extra=%s – retrying without it", log_extra
+            )
+            logger.log(level, msg)
 
     @classmethod
     def _log_static(
@@ -686,25 +701,31 @@ class DIContainer:
         Returns:
             None:
         """
+        if level <= logging.DEBUG and not (
+            cls._log_policy and cls._log_policy.show_internal
+        ):
+            return
+
         obs = cls._obs or (cls._instance._obs if cls._instance else None)
-        if obs:
+        if obs and level <= logging.DEBUG:
             obs.log(logging.getLevelName(level).lower(), msg, extra=extra or {})
-        else:
-            logger = logging.getLogger("bijux_cli.di")
-            log_extra: dict[str, Any] = {}
-            if extra:
-                log_extra.update(extra)
-                if "name" in log_extra:
-                    log_extra["svc_alias"] = log_extra.pop("name")
-            try:
-                logger.log(level, msg, extra=log_extra)
-            except KeyError:
-                logger.log(
-                    logging.WARNING,
-                    "Failed to log with extra=%s – retrying without it",
-                    log_extra,
-                )
-                logger.log(level, msg)
+            return
+
+        logger = logging.getLogger("bijux_cli.di")
+        log_extra: dict[str, Any] = {}
+        if extra:
+            log_extra.update(extra)
+            if "name" in log_extra:
+                log_extra["svc_alias"] = log_extra.pop("name")
+        try:
+            logger.log(level, msg, extra=log_extra)
+        except KeyError:
+            logger.log(
+                logging.WARNING,
+                "Failed to log with extra=%s – retrying without it",
+                log_extra,
+            )
+            logger.log(level, msg)
 
     @classmethod
     def _reset_for_tests(cls) -> None:

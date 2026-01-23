@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     OPT_COLOR,
     OPT_FORMAT,
     OPT_HELP,

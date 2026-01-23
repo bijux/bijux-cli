@@ -25,7 +25,7 @@ import sys
 
 import typer
 
-from bijux_cli.cli.constants import (
+from bijux_cli.cli.core.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
@@ -44,7 +44,6 @@ from bijux_cli.cli.repl.ui import (
     _run_interactive,
     register_signal_handlers,
 )
-from bijux_cli.core.enums import LogLevel
 from bijux_cli.core.runtime import AsyncTyper, run_command
 
 repl_app = AsyncTyper(
@@ -113,7 +112,7 @@ def main(
             fmt=format_value,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_level == LogLevel.DEBUG),
+            debug=(policy.log_policy.show_internal),
         )
 
     register_signal_handlers()

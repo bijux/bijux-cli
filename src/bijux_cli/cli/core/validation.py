@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 from typing import Any
 
-from bijux_cli.cli.constants import ENV_CONFIG, ENV_PREFIX
+from bijux_cli.cli.core.constants import ENV_CONFIG, ENV_PREFIX
 from bijux_cli.core.enums import OutputFormat
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
