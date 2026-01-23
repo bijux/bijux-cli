@@ -34,7 +34,7 @@ GLOBAL_FLAGS = [
     (["--pretty"], 0),
     (["--no-pretty"], 0),
     ([], 0),
-    (["--log-level", "debug"], 0),
+    (["--debug"], 0),
 ]
 
 ALL_FLAGS = [
@@ -44,12 +44,11 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--log-level",
-    "debug",
     "--format",
     "-f",
     "--no-pretty",
     "--pretty",
+    "--debug",
 ]
 
 FORMATS = ["json", "yaml", "bogus", "garbage", ""]
@@ -208,8 +207,7 @@ def test_audit_precedence_rules(tmp_path: Path) -> None:
             "--output",
             str(out_file),
             "--quiet",
-            "--log-level",
-            "debug",
+            "--debug",
         ]
     )
     assert res.returncode == 0
@@ -221,8 +219,7 @@ def test_audit_precedence_rules(tmp_path: Path) -> None:
             "--dry-run",
             "--output",
             str(out_file),
-            "--log-level",
-            "debug",
+            "--debug",
             "--no-pretty",
         ]
     )
@@ -277,8 +274,7 @@ def test_audit_debug_and_verbose_add_runtime(tmp_path: Path) -> None:
     out_file = tmp_path / "audit.json"
     for flag in (
         "-v",
-        "--log-level",
-        "debug",
+        "--debug",
     ):
         run_cli(["audit", "--dry-run", "--output", str(out_file), flag])
         payload = _assert_json(out_file.read_text())
@@ -311,8 +307,7 @@ def test_audit_help_contract() -> None:
         "-f",
         "--format",
         "--pretty",
-        "--log-level",
-        "debug",
+        "--debug",
     ]
     for flag in required_flags:
         assert flag in help_text, f"missing flag in help output: {flag}"

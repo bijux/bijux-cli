@@ -177,9 +177,9 @@ def test_e2e_config_export_invalid_path(tmp_path: Path) -> None:
 
 
 def test_e2e_config_debug_mode(tmp_path: Path) -> None:
-    """Test that the --log-level debug flag is accepted."""
+    """Test that the debug flag is accepted."""
     env = {"BIJUXCLI_CONFIG": str(tmp_path / ".env")}
-    res = run_cli(["config", "set", "foo=bar", "--log-level", "debug"], env=env)
+    res = run_cli(["config", "set", "foo=bar", "--debug"], env=env)
     assert res.returncode == 0
 
 

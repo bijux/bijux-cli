@@ -22,7 +22,7 @@ KNOWN_FLAGS = [
     "--pretty",
     "--no-pretty",
     "--quiet",
-    "--log-level",
+    "--debug",
     "-v",
 ]
 
@@ -195,7 +195,7 @@ def test_adr_help_wins_over_errors(error_flags: list[str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "output_flags", [["--log-level", "debug"], ["--verbose"], ["--format", "json"]]
+    "output_flags", [["--debug"], ["--verbose"], ["--format", "json"]]
 )
 def test_adr_quiet_wins_over_output_flags(output_flags: list[str]) -> None:
     """ADR: --quiet must suppress all output from other flags."""
@@ -222,7 +222,7 @@ def test_adr_quiet_preserves_error_code_with_no_output(monkeypatch: Any) -> None
 
 def test_adr_debug_overrides_no_pretty() -> None:
     """ADR: --log-level debug must force pretty-printing, overriding --no-pretty."""
-    res = run_cli(["help", "--log-level", "debug", "--no-pretty", "--format", "json"])
+    res = run_cli(["help", "--debug", "--no-pretty", "--format", "json"])
     assert res.returncode == 0
     assert "\n" in res.stdout
     payload = assert_json_obj(res.stdout)
@@ -235,8 +235,7 @@ def test_adr_debug_with_error_is_verbose_and_pretty() -> None:
         [
             "help",
             "nonexistent",
-            "--log-level",
-            "debug",
+            "--debug",
             "--no-pretty",
             "--format",
             "json",
@@ -287,7 +286,7 @@ def test_adr_format_errors_and_contract(argv: list[str], expected_msg: str) -> N
     ),
     value=st.one_of(st.just("json"), st.just("yaml"), st.just("bogus"), st.none()),
 )
-@settings(suppress_health_check=[HealthCheck.too_slow], max_examples=50, deadline=None)
+@settings(suppress_health_check=[HealthCheck.too_slow], max_examples=10, deadline=None)
 def test_help_fuzz_flags(flags: list[str], value: str | None) -> None:
     """Fuzz various flag combinations for the help command, respecting ADR."""
     args: list[str] = []

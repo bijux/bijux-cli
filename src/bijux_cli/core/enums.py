@@ -58,6 +58,7 @@ class ColorMode(str, Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> ColorMode:
+        """Handle case-insensitive lookup of color modes."""
         if isinstance(value, str):
             value_lower = value.lower()
             for member in cls:
@@ -77,6 +78,7 @@ class LogLevel(str, Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> LogLevel:
+        """Handle case-insensitive lookup of log levels."""
         if isinstance(value, str):
             value_lower = value.lower()
             for member in cls:

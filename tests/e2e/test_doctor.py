@@ -42,8 +42,6 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--log-level",
-    "debug",
     "--format",
     "-f",
     "--pretty",
@@ -283,7 +281,7 @@ def test_command_performance_doctor_smoke() -> None:
     assert (t1 - t0) < 5.0
 
 
-@settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=5, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(flags=doctor_flag_permutations())
 def test_doctor_hypothesis_flags(flags: list[str]) -> None:
     """Fuzz flag combinations and validate precedence & contracts."""

@@ -50,6 +50,7 @@ def invalidate_plugin_cache() -> None:
 
 
 def _require_cli_spec(spec: str, *, name: str) -> None:
+    """Validate that the current CLI version satisfies the plugin spec."""
     try:
         SpecifierSet(spec).contains(cli_version, prereleases=True)
     except Exception as exc:
@@ -66,6 +67,7 @@ def _require_cli_spec(spec: str, *, name: str) -> None:
 
 
 def _plugin_meta_from_dist(ep: im.EntryPoint) -> PluginMetadata:
+    """Build plugin metadata from an entry point distribution."""
     if not PLUGIN_NAME_RE.fullmatch(ep.name) or not ep.name.isascii():
         raise PluginMetadataError(
             f"Plugin name {ep.name!r} is invalid",
@@ -113,6 +115,7 @@ def _plugin_meta_from_dist(ep: im.EntryPoint) -> PluginMetadata:
 
 
 def _plugin_meta_from_local(plug_dir: Path) -> PluginMetadata:
+    """Build plugin metadata from a local plugin directory."""
     meta_file = plug_dir / "plugin.json"
     if not meta_file.is_file():
         raise PluginMetadataError(

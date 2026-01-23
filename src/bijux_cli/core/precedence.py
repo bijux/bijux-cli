@@ -83,6 +83,7 @@ class OutputConfig:
 
 
 def _coerce_verbose(value: Any) -> int:
+    """Normalize verbosity inputs into a non-negative integer level."""
     if isinstance(value, bool):
         return 1 if value else 0
     if isinstance(value, int):

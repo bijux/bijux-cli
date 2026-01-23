@@ -19,6 +19,7 @@ T = TypeVar("T")
 
 
 async def _execute(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Run sync or async callables in the appropriate execution context."""
     if inspect.iscoroutinefunction(func):
         return await func(*args, **kwargs)
     return await anyio.to_thread.run_sync(functools.partial(func, *args, **kwargs))

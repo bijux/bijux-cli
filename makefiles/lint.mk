@@ -17,7 +17,21 @@ MYPY_CACHE_DIR      ?= $(LINT_ARTIFACTS_DIR)/.mypy_cache
 # In case these are not defined elsewhere
 VENV_PYTHON         ?= python3
 
-.PHONY: lint lint-artifacts lint-file lint-dir lint-clean
+.PHONY: fmt fmt-check lint lint-artifacts lint-file lint-dir lint-clean
+
+fmt: | $(VENV)
+	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
+	@set -euo pipefail; { \
+	  echo "→ Ruff format"; \
+	  $(RUFF) format --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
+	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
+
+fmt-check: | $(VENV)
+	@mkdir -p "$(LINT_ARTIFACTS_DIR)" "$(RUFF_CACHE_DIR)"
+	@set -euo pipefail; { \
+	  echo "→ Ruff format (check)"; \
+	  $(RUFF) format --check --cache-dir "$(RUFF_CACHE_DIR)" $(LINT_DIRS); \
+	} 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/ruff-format.log"
 
 lint: lint-artifacts
 	@echo "✔ Linting completed (logs in '$(LINT_ARTIFACTS_DIR)')"
@@ -61,6 +75,8 @@ lint-clean:
 
 ##@ Lint
 lint: ## Run all lint checks; save logs to artifacts_pages/lint/ (ruff/mypy caches under artifacts_pages/lint)
+fmt: ## Auto-format codebase using Ruff
+fmt-check: ## Check formatting with Ruff (no changes)
 lint-artifacts: ## Same as 'lint' (explicit), generates logs
 lint-file: ## Lint a single file (requires file=<path>)
 lint-dir: ## Lint a directory (requires dir=<path>)

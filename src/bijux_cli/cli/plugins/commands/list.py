@@ -98,6 +98,7 @@ def list_plugin(
     plugins = list_installed_plugins()
 
     def payload_builder(include_runtime: bool) -> dict[str, object]:
+        """Build plugin list payload with optional runtime metadata."""
         payload: dict[str, object] = {"plugins": plugins}
         if include_runtime:
             payload["python"] = platform.python_version()
