@@ -25,13 +25,14 @@ import os
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.errors import PluginError
 from bijux_cli.core.precedence import resolve_output_flags
 from bijux_cli.plugins import get_plugins_dir, load_plugin
 from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.plugins.services import register_plugin_services
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
@@ -52,7 +53,7 @@ class Engine:
         self,
         di: Any = None,
         *,
-        log_level: str = "info",
+        log_level: LogLevel = LogLevel.INFO,
         fmt: OutputFormat = OutputFormat.JSON,
         quiet: bool = False,
         logging_config: LoggingConfig | None = None,
@@ -65,13 +66,13 @@ class Engine:
         Args:
             di (Any, optional): An existing dependency injection container. If
                 None, the global singleton instance is used. Defaults to None.
-            log_level (str): The default log level name for services.
+            log_level (LogLevel): The default log level for services.
             fmt (OutputFormat): The default output format for services.
             quiet (bool): If True, suppresses output from services.
             logging_config (LoggingConfig | None): Optional logging configuration
                 override for service registration.
         """
-        from bijux_cli.app.di import DIContainer
+        from bijux_cli.core.di import DIContainer
 
         self._di = di or DIContainer.current()
         self._format = fmt
@@ -79,23 +80,23 @@ class Engine:
         if logging_config is None:
             resolved = resolve_output_flags(
                 quiet=quiet,
-                verbose=False,
                 pretty=True,
                 log_level=log_level,
-                color="auto",
+                color=ColorMode.AUTO,
             )
             logging_config = LoggingConfig(
-                debug=(resolved["log_level"] == "debug"),
+                debug=(resolved.log_level == LogLevel.DEBUG),
                 quiet=quiet,
                 verbose=False,
-                log_level=resolved["log_level"],
-                color=resolved["color"],
+                log_level=resolved.log_level,
+                color=resolved.color,
             )
         register_default_services(
             self._di,
             logging_config=logging_config,
             output_format=fmt,
         )
+        register_plugin_services(self._di)
         self._di.register(Engine, self)
         self._registry: RegistryProtocol = self._di.resolve(RegistryProtocol)
         self._register_plugins()
@@ -114,23 +115,23 @@ class Engine:
             Any: The result of the command's execution.
 
         Raises:
-            CommandError: If the plugin is not found, its `execute` method
+            PluginError: If the plugin is not found, its `execute` method
                 is invalid, or if it fails during execution.
         """
         plugin = self._registry.get(name)
         execute = getattr(plugin, "execute", None)
         if not callable(execute):
-            raise CommandError(
+            raise PluginError(
                 f"Plugin '{name}' has no callable 'execute' method.", http_status=404
             )
         if not inspect.iscoroutinefunction(execute):
-            raise CommandError(
+            raise PluginError(
                 f"Plugin '{name}' 'execute' is not async/coroutine.", http_status=400
             )
         try:
             return await asyncio.wait_for(execute(*args, **kwargs), self._timeout())
         except Exception as exc:  # pragma: no cover
-            raise CommandError(f"Failed to run plugin '{name}': {exc}") from exc
+            raise PluginError(f"Failed to run plugin '{name}': {exc}") from exc
 
     async def run_repl(self) -> None:
         """Runs the interactive shell (REPL).

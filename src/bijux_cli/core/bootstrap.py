@@ -17,7 +17,7 @@ Key responsibilities include:
     * **Application Assembly:** Builds the main `Typer` application, including
         all commands and dynamic plugins.
     * **Execution and Error Handling:** Invokes the Typer application, catches
-        all top-level exceptions (including `Typer` errors, custom `CommandError`
+        all top-level exceptions (including `Typer` errors, custom `UserInputError`
         exceptions, and `KeyboardInterrupt`), and translates them into
         structured error messages and standardized exit codes.
     * **History Recording:** Persists the command to the history service after
@@ -29,122 +29,37 @@ from __future__ import annotations
 import contextlib
 from contextlib import suppress
 import importlib.metadata as importlib_metadata
-import io
 import json
 import logging
 import os
 import sys
 import time
-from typing import IO, Any, AnyStr
 
-import click
 from click.exceptions import NoSuchOption, UsageError
 import structlog
 import typer
 
-from bijux_cli.app.di import DIContainer
-from bijux_cli.app.engine import Engine
-from bijux_cli.cli.color import apply_color_mode, set_color_mode
+from bijux_cli.cli.color import set_color_mode
 from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.root import build_app
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.engine import Engine
+from bijux_cli.core.enums import ColorMode, ErrorType, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.errors import UserInputError
+from bijux_cli.core.exit_policy import resolve_exit_behavior
 from bijux_cli.core.precedence import (
     EffectiveConfig,
     ExecutionPolicy,
+    FlagLayer,
+    Flags,
     resolve_effective_config,
     resolve_execution_policy,
     validate_cli_flags,
 )
+from bijux_cli.plugins.services import register_plugin_services
 from bijux_cli.services import register_default_services
 from bijux_cli.services.history import History
 from bijux_cli.services.logging.contracts import LoggingConfig
-
-_orig_stderr = sys.stderr
-_orig_click_echo = click.echo
-_orig_click_secho = click.secho
-
-
-class _FilteredStderr(io.TextIOBase):
-    """A proxy for `sys.stderr` that filters a specific noisy plugin warning."""
-
-    def write(self, data: str) -> int:
-        """Writes data to stderr, suppressing a specific known warning.
-
-        Args:
-            data (str): The string to write.
-
-        Returns:
-            int: The number of characters written, or 0 if suppressed.
-        """
-        noise = "Plugin 'test-src' does not expose a Typer app via 'cli()' or 'app'"
-        if noise in data:
-            return 0
-
-        if _orig_stderr.closed:
-            return 0
-
-        return _orig_stderr.write(data)
-
-    def flush(self) -> None:
-        """Flushes the underlying stderr stream."""
-        if not _orig_stderr.closed:
-            _orig_stderr.flush()
-
-    def __getattr__(self, name: str) -> Any:
-        """Delegates attribute access to the original `sys.stderr`.
-
-        Args:
-            name (str): The name of the attribute to access.
-
-        Returns:
-            Any: The attribute from the original `sys.stderr`.
-        """
-        return getattr(_orig_stderr, name)
-
-
-sys.stderr = _FilteredStderr()
-
-
-def _filtered_echo(
-    message: Any = None,
-    file: IO[AnyStr] | None = None,
-    nl: bool = True,
-    err: bool = False,
-    color: bool | None = None,
-    **styles: Any,
-) -> None:
-    """A replacement for `click.echo` that filters a known plugin warning.
-
-    Args:
-        message (Any): The message to print.
-        file (IO[AnyStr] | None): The file to write to.
-        nl (bool): If True, appends a newline.
-        err (bool): If True, writes to stderr instead of stdout.
-        color (bool | None): If True, enables color output.
-        **styles (Any): Additional style arguments for colored output.
-
-    Returns:
-        None
-    """
-    text = "" if message is None else str(message)
-    if (
-        text.startswith("[WARN] Plugin 'test-src'")
-        and "does not expose a Typer app" in text
-    ):
-        return
-
-    color = apply_color_mode(color)
-    if styles:
-        _orig_click_secho(message, file=file, nl=nl, err=err, color=color, **styles)
-    else:
-        _orig_click_echo(message, file=file, nl=nl, err=err, color=color)
-
-
-click.echo = _filtered_echo
-click.secho = _filtered_echo
-typer.echo = _filtered_echo
-typer.secho = _filtered_echo
 
 
 def should_record_command_history(command_line: list[str]) -> bool:
@@ -180,7 +95,12 @@ def is_quiet_mode(args: list[str]) -> bool:
     return any(arg in ("--quiet", "-q") for arg in args)
 
 
-def print_json_error(msg: str, code: int = 2, quiet: bool = False) -> None:
+def print_json_error(
+    msg: str,
+    error_type: ErrorType = ErrorType.USAGE,
+    quiet: bool = False,
+    fmt: OutputFormat = OutputFormat.JSON,
+) -> ExitCode:
     """Prints a structured JSON error message.
 
     The message is printed to stdout for usage errors (code 2) and stderr for
@@ -188,14 +108,18 @@ def print_json_error(msg: str, code: int = 2, quiet: bool = False) -> None:
 
     Args:
         msg (str): The error message.
-        code (int): The error code to include in the JSON payload.
+        error_type (ErrorType): The error category for exit mapping.
         quiet (bool): If True, suppresses all output.
+        fmt (OutputFormat): The output format to record in exit mapping.
     """
-    if not quiet:
+    behavior = resolve_exit_behavior(error_type, quiet=quiet, fmt=fmt)
+    if behavior.stream is not None:
+        stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
         print(
-            json.dumps({"error": msg, "code": code}),
-            file=sys.stdout if code == 2 else sys.stderr,
+            json.dumps({"error": msg, "code": int(behavior.code)}),
+            file=stream,
         )
+    return behavior.code
 
 
 def get_usage_for_args(args: list[str], app: typer.Typer) -> str:
@@ -286,7 +210,9 @@ def setup_structlog(log_level: str | None = None) -> None:
         level = logging.CRITICAL
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
-    use_console = (log_level == "debug") or os.environ.get("BIJUXCLI_TEST_MODE") == "1"
+    use_console = (log_level == LogLevel.DEBUG) or os.environ.get(
+        "BIJUXCLI_TEST_MODE"
+    ) == "1"
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -324,39 +250,39 @@ def main() -> int:
         failure = err["failure"]
         if failure == "missing_argument" and "format" in msg.lower():
             continue
-        print_json_error(msg, 2, parsed.quiet)
-        return 2
+        return print_json_error(
+            msg, ErrorType.USAGE, bool(parsed.flags.quiet), OutputFormat.JSON
+        )
+    env_log = os.environ.get("BIJUXCLI_LOG_LEVEL")
+    env_color = os.environ.get("BIJUXCLI_COLOR")
     resolved = resolve_effective_config(
-        cli=parsed,
-        env={
-            "log_level": os.environ.get("BIJUXCLI_LOG_LEVEL"),
-            "NO_COLOR": os.environ.get("NO_COLOR"),
-        },
-        file={},
-        defaults={
-            "quiet": False,
-            "verbose": False,
-            "pretty": True,
-            "log_level": "info",
-            "color": "auto",
-            "format": "json",
-            "json": False,
-        },
+        cli=parsed.flags,
+        env=FlagLayer(
+            log_level=LogLevel(env_log) if env_log else None,
+            color=ColorMode(env_color) if env_color else None,
+        ),
+        file=FlagLayer(),
+        defaults=Flags(
+            quiet=False,
+            log_level=LogLevel.INFO,
+            color=ColorMode.AUTO,
+            format=OutputFormat.JSON,
+        ),
     )
 
-    if resolved.quiet:
+    if resolved.flags.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
-    debug_enabled = resolved.log_level == "debug"
+    debug_enabled = resolved.flags.log_level == LogLevel.DEBUG
     logging_config = LoggingConfig(
         debug=debug_enabled,
-        quiet=resolved.quiet,
-        verbose=resolved.verbose_level > 0,
-        log_level=resolved.log_level,
-        color=resolved.color,
+        quiet=resolved.flags.quiet,
+        verbose=False,
+        log_level=resolved.flags.log_level,
+        color=resolved.flags.color,
     )
     policy = resolve_execution_policy(resolved)
-    setup_structlog(resolved.log_level)
+    setup_structlog(resolved.flags.log_level.value)
     set_color_mode(policy.color)
 
     if any(a in ("--version", "-V") for a in args):
@@ -374,9 +300,10 @@ def main() -> int:
         container,
         logging_config=logging_config,
         output_format=OutputFormat.YAML
-        if policy.output_format == "yaml"
+        if policy.output_format == OutputFormat.YAML
         else OutputFormat.JSON,
     )
+    register_plugin_services(container)
 
     Engine()
     app = build_app()
@@ -387,8 +314,9 @@ def main() -> int:
 
     missing_format_msg = check_missing_format_argument(args)
     if missing_format_msg:
-        print_json_error(missing_format_msg, 2, resolved.quiet)
-        return 2
+        return print_json_error(
+            missing_format_msg, ErrorType.USAGE, resolved.flags.quiet, OutputFormat.JSON
+        )
 
     command_line = list(parsed.args)
     start = time.time()
@@ -400,20 +328,34 @@ def main() -> int:
     except typer.Exit as exc:
         exit_code = exc.exit_code
     except NoSuchOption as exc:
-        print_json_error(f"No such option: {exc.option_name}", 2, resolved.quiet)
-        exit_code = 2
+        exit_code = print_json_error(
+            f"No such option: {exc.option_name}",
+            ErrorType.USAGE,
+            resolved.flags.quiet,
+            OutputFormat.JSON,
+        )
     except UsageError as exc:
-        print_json_error(str(exc), 2, resolved.quiet)
-        exit_code = 2
-    except CommandError as exc:
-        print_json_error(str(exc), 1, resolved.quiet)
-        exit_code = 1
+        exit_code = print_json_error(
+            str(exc), ErrorType.USAGE, resolved.flags.quiet, OutputFormat.JSON
+        )
+    except UserInputError as exc:
+        exit_code = print_json_error(
+            str(exc), ErrorType.USER_INPUT, resolved.flags.quiet, OutputFormat.JSON
+        )
     except KeyboardInterrupt:
-        print_json_error("Aborted by user", 130, resolved.quiet)
-        exit_code = 130
+        exit_code = print_json_error(
+            "Aborted by user",
+            ErrorType.ABORTED,
+            resolved.flags.quiet,
+            OutputFormat.JSON,
+        )
     except Exception as exc:
-        print_json_error(f"Unexpected error: {exc}", 1, resolved.quiet)
-        exit_code = 1
+        exit_code = print_json_error(
+            f"Unexpected error: {exc}",
+            ErrorType.INTERNAL,
+            resolved.flags.quiet,
+            OutputFormat.JSON,
+        )
 
     if should_record_command_history(command_line):
         try:

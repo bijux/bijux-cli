@@ -9,11 +9,10 @@ import pytest
 
 from bijux_cli.core.errors import (
     BijuxError,
-    CliTimeoutError,
-    CommandError,
     ConfigError,
-    ServiceError,
-    ValidationError,
+    InternalError,
+    PluginError,
+    UserInputError,
 )
 
 
@@ -42,11 +41,10 @@ def test_bijux_error_initialization_with_all_attributes() -> None:
 @pytest.mark.parametrize(
     ("error_class", "default_status"),
     [
-        (ServiceError, 500),
-        (CommandError, 400),
+        (UserInputError, 400),
         (ConfigError, 400),
-        (ValidationError, 400),
-        (CliTimeoutError, 504),
+        (PluginError, 400),
+        (InternalError, 500),
     ],
 )
 def test_derived_exception_initialization(
@@ -89,17 +87,13 @@ def test_derived_exception_initialization(
 
 def test_all_exports_are_correct() -> None:
     """Verify that all custom exception classes are included in the module's __all__."""
-    from bijux_cli.core import exceptions
+    import bijux_cli.core.errors as errors
 
     expected_exports = [
         "BijuxError",
         "UserInputError",
         "PluginError",
         "InternalError",
-        "ServiceError",
-        "CommandError",
         "ConfigError",
-        "ValidationError",
-        "CliTimeoutError",
     ]
-    assert sorted(exceptions.__all__) == sorted(expected_exports)
+    assert sorted(errors.__all__) == sorted(expected_exports)

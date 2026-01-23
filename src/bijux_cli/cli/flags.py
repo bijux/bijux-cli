@@ -7,20 +7,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from bijux_cli.core.precedence import GlobalCLIConfig
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.precedence import FlagLayer, GlobalCLIConfig
 
 
 def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
     """Parse global CLI flags from argv into an immutable config."""
     help_present = any(flag in ("-h", "--help") for flag in argv)
     help_flag = False
-    quiet = False
-    verbose_level = 0
-    fmt = "json"
-    pretty = True
-    log_level = "info"
-    color = "auto"
-    json_flag = False
+    quiet: bool | None = None
+    log_level: LogLevel | None = None
+    color: ColorMode | None = None
+    fmt: OutputFormat | None = None
     errors: list[dict[str, Any]] = []
     retained: list[str] = []
     it = iter(argv)
@@ -34,11 +32,9 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
             continue
         if flag in ("-q", "--quiet"):
             quiet = True
-        elif flag in ("-v", "--verbose"):
-            verbose_level += 1
         elif flag == "--log-level":
             try:
-                log_level = next(it)
+                log_level = LogLevel(next(it))
             except StopIteration:
                 errors.append(
                     {
@@ -47,9 +43,17 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
                         "flag": "--log-level",
                     }
                 )
+            except ValueError:
+                errors.append(
+                    {
+                        "message": "Invalid log level.",
+                        "failure": "invalid_log_level",
+                        "flag": "--log-level",
+                    }
+                )
         elif flag == "--color":
             try:
-                color = next(it)
+                color = ColorMode(next(it))
             except StopIteration:
                 errors.append(
                     {
@@ -58,31 +62,26 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
                         "flag": "--color",
                     }
                 )
-        elif flag == "--pretty":
-            pretty = True
-        elif flag == "--no-pretty":
-            pretty = False
+            except ValueError:
+                errors.append(
+                    {
+                        "message": "Invalid color mode.",
+                        "failure": "invalid_color",
+                        "flag": "--color",
+                    }
+                )
         elif flag == "--json":
-            json_flag = True
-        elif flag in ("-d", "--debug"):
-            errors.append(
-                {
-                    "message": "No such option: --debug",
-                    "failure": "invalid_flag",
-                    "flag": "--debug",
-                }
-            )
+            fmt = OutputFormat.JSON
         else:
             retained.append(flag)
     return GlobalCLIConfig(
         help=help_flag,
-        quiet=quiet,
-        verbose_level=verbose_level,
-        fmt=fmt,
-        pretty=pretty,
-        log_level=log_level,
-        color=color,
-        json=json_flag,
+        flags=FlagLayer(
+            quiet=quiet,
+            log_level=log_level,
+            color=color,
+            format=fmt,
+        ),
         args=tuple(retained),
         errors=tuple(errors),
     )

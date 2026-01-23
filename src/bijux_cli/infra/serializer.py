@@ -13,6 +13,8 @@ import sys
 from types import ModuleType
 from typing import Any, Final, cast
 
+from bijux_cli.core.enums import OutputFormat
+
 _orjson_spec = _importlib_util.find_spec("orjson")
 _yaml_spec = _importlib_util.find_spec("yaml")
 
@@ -35,45 +37,9 @@ class SerializationError(RuntimeError):
     """Raised when serialization or deserialization fails."""
 
 
-class NoopSerializer:
-    """No-op serializer that stringifies payloads."""
-
-    def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
-        """Serialize by stringifying the object."""
-        return str(obj)
-
-    def dumps_bytes(
-        self, obj: Any, *, fmt: Any = "json", pretty: bool = False
-    ) -> bytes:
-        """Serialize to bytes."""
-        return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
-
-    def loads(
-        self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False
-    ) -> Any:
-        """Return the data unchanged."""
-        return data
-
-    def emit(self, payload: Any, *, fmt: Any = "json", pretty: bool = False) -> None:
-        """Serialize and print to stdout."""
-        print(self.dumps(payload, fmt=fmt, pretty=pretty), file=sys.stdout, flush=True)
-
-
-class Redacted(str):
-    """String subclass that hides its value when printed or serialized."""
-
-    def __new__(cls, value: str) -> Redacted:
-        """Create a redacted string."""
-        return str.__new__(cls, value)
-
-    def __str__(self) -> str:
-        """Return the redaction marker."""
-        return "***"
-
-    @staticmethod
-    def to_json() -> str:
-        """Return the redaction marker for JSON serializers."""
-        return "***"
+def _redact_default(_: Any) -> str:
+    """Fallback serializer for non-JSON values."""
+    return "***"
 
 
 def _format_name(fmt: Any) -> str:
@@ -125,7 +91,9 @@ class OrjsonSerializer:
         """Initialize with telemetry."""
         self._telemetry = telemetry
 
-    def dumps(self, obj: Any, *, fmt: Any = "json", pretty: bool = False) -> str:
+    def dumps(
+        self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
+    ) -> str:
         """Serialize an object to JSON or YAML."""
         obj = _normalize_payload(obj)
         name = _format_name(fmt)
@@ -136,7 +104,7 @@ class OrjsonSerializer:
                     return cast(
                         str,
                         _ORJSON.dumps(
-                            obj, default=Redacted.to_json, option=option
+                            obj, default=_redact_default, option=option
                         ).decode("utf-8"),
                     )
                 return json.dumps(obj, indent=2 if pretty else None)
@@ -147,13 +115,17 @@ class OrjsonSerializer:
         raise SerializationError(f"Unsupported format: {fmt}")
 
     def dumps_bytes(
-        self, obj: Any, *, fmt: Any = "json", pretty: bool = False
+        self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
     ) -> bytes:
         """Serialize an object to bytes."""
         return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
 
     def loads(
-        self, data: str | bytes, *, fmt: Any = "json", pretty: bool = False
+        self,
+        data: str | bytes,
+        *,
+        fmt: OutputFormat = OutputFormat.JSON,
+        pretty: bool = False,
     ) -> Any:
         """Deserialize JSON or YAML data."""
         name = _format_name(fmt)
@@ -168,7 +140,13 @@ class OrjsonSerializer:
             return _YAML.safe_load(data)
         raise SerializationError(f"Unsupported format: {fmt}")
 
-    def emit(self, payload: Any, *, fmt: Any = "json", pretty: bool = False) -> None:
+    def emit(
+        self,
+        payload: Any,
+        *,
+        fmt: OutputFormat = OutputFormat.JSON,
+        pretty: bool = False,
+    ) -> None:
         """Serialize and print to stdout."""
         text = self.dumps(payload, fmt=fmt, pretty=pretty)
         print(text.rstrip("\n"), file=sys.stdout, flush=True)
@@ -185,27 +163,39 @@ class PyYAMLSerializer:
             raise SerializationError("PyYAML is not installed")
         self._telemetry = telemetry
 
-    def dumps(self, obj: Any, *, fmt: Any = "yaml", pretty: bool = False) -> str:
+    def dumps(
+        self, obj: Any, *, fmt: OutputFormat = OutputFormat.YAML, pretty: bool = False
+    ) -> str:
         """Serialize an object to YAML."""
         if _format_name(fmt) != "yaml":
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _yaml_dump(obj, pretty)
 
     def dumps_bytes(
-        self, obj: Any, *, fmt: Any = "yaml", pretty: bool = False
+        self, obj: Any, *, fmt: OutputFormat = OutputFormat.YAML, pretty: bool = False
     ) -> bytes:
         """Serialize an object to bytes."""
         return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
 
     def loads(
-        self, data: str | bytes, *, fmt: Any = "yaml", pretty: bool = False
+        self,
+        data: str | bytes,
+        *,
+        fmt: OutputFormat = OutputFormat.YAML,
+        pretty: bool = False,
     ) -> Any:
         """Deserialize YAML data."""
         if _format_name(fmt) != "yaml":
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _YAML.safe_load(data) if _YAML is not None else None
 
-    def emit(self, payload: Any, *, fmt: Any = "yaml", pretty: bool = False) -> None:
+    def emit(
+        self,
+        payload: Any,
+        *,
+        fmt: OutputFormat = OutputFormat.YAML,
+        pretty: bool = False,
+    ) -> None:
         """Serialize and print to stdout."""
         text = self.dumps(payload, fmt=fmt, pretty=pretty)
         print(text.rstrip("\n"), file=sys.stdout, flush=True)
@@ -214,7 +204,7 @@ class PyYAMLSerializer:
 
 
 def serializer_for(
-    fmt: Any, telemetry: Any | None
+    fmt: OutputFormat, telemetry: Any | None
 ) -> OrjsonSerializer | PyYAMLSerializer:
     """Return the best serializer for the requested format."""
     name = _format_name(fmt)
@@ -227,8 +217,6 @@ def serializer_for(
 
 __all__ = [
     "SerializationError",
-    "NoopSerializer",
-    "Redacted",
     "OrjsonSerializer",
     "PyYAMLSerializer",
     "serializer_for",

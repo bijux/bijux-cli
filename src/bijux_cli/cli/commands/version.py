@@ -29,8 +29,6 @@ import time
 
 import typer
 
-from bijux_cli.app.async_exec import AsyncTyper
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -41,9 +39,11 @@ from bijux_cli.cli.constants import (
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.payloads import VersionPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
-from bijux_cli.core.contracts import Emitter
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.core.version import __version__ as cli_version
+from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
-from bijux_cli.version import __version__ as cli_version
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 

@@ -55,9 +55,8 @@ ADR_SRC_PRIMARY = REPO_ROOT / "ADR"
 ADR_SRC_FALLBACK = REPO_ROOT / "docs" / "ADR"
 ADR_DEST_DIR = Path("ADR")
 
-PAGE_META_NO_EDIT = (
-    "---\nhide:\n  - edit\n---\n\n"
-)
+PAGE_META_NO_EDIT = "---\nhide:\n  - edit\n---\n\n"
+
 
 def _pick_adr_source() -> Optional[Path]:
     """Selects the source directory for Architecture Decision Records (ADRs).
@@ -114,16 +113,20 @@ def _adr_display_name(filename: str) -> str:
 def _materialize_root_docs() -> None:
     """Copy key project files into the docs site; create fallbacks if absent."""
     pairs: List[Tuple[Path, Path, Callable[[str], str]]] = [
-        (REPO_ROOT / "README.md",         Path("index.md"),        rewrite_links_general),
-        (REPO_ROOT / "USAGE.md",          Path("usage.md"),        rewrite_links_general),
-        (REPO_ROOT / "TESTS.md",          Path("tests.md"),        rewrite_links_general),
-        (REPO_ROOT / "PROJECT_TREE.md",   Path("project_tree.md"), rewrite_links_tree),
-        (REPO_ROOT / "TOOLING.md",        Path("tooling.md"),      rewrite_links_general),
-        (REPO_ROOT / "SECURITY.md",       Path("security.md"),     rewrite_links_general),
-        (REPO_ROOT / "CODE_OF_CONDUCT.md",Path("code_of_conduct.md"), rewrite_links_general),
-        (REPO_ROOT / "CONTRIBUTING.md",   Path("contributing.md"), rewrite_links_general),
-        (REPO_ROOT / "CHANGELOG.md",      Path("changelog.md"),    rewrite_links_general),
-        (REPO_ROOT / "LICENSES" / "MIT.txt", Path("license.md"),   rewrite_links_general),
+        (REPO_ROOT / "README.md", Path("index.md"), rewrite_links_general),
+        (REPO_ROOT / "USAGE.md", Path("usage.md"), rewrite_links_general),
+        (REPO_ROOT / "TESTS.md", Path("tests.md"), rewrite_links_general),
+        (REPO_ROOT / "PROJECT_TREE.md", Path("project_tree.md"), rewrite_links_tree),
+        (REPO_ROOT / "TOOLING.md", Path("tooling.md"), rewrite_links_general),
+        (REPO_ROOT / "SECURITY.md", Path("security.md"), rewrite_links_general),
+        (
+            REPO_ROOT / "CODE_OF_CONDUCT.md",
+            Path("code_of_conduct.md"),
+            rewrite_links_general,
+        ),
+        (REPO_ROOT / "CONTRIBUTING.md", Path("contributing.md"), rewrite_links_general),
+        (REPO_ROOT / "CHANGELOG.md", Path("changelog.md"), rewrite_links_general),
+        (REPO_ROOT / "LICENSES" / "MIT.txt", Path("license.md"), rewrite_links_general),
     ]
     have_index = False
     for src, dst, fixer in pairs:
@@ -212,9 +215,21 @@ def _generate_api_pages() -> Dict[str, List[Tuple[str, str]]]:
             md_path = os.path.normpath(raw_md_path).replace("\\", "/")
             is_command = (section or "").split(os.sep, 1)[0] == "commands"
 
-            header = f"# {module_name.capitalize()} Command API Reference\n" if is_command else f"# {module_name.capitalize()} Module API Reference\n"
-            blurb = f"This section documents the internals of the `{module_name}` command in Bijux CLI.\n" if is_command else f"This section documents the internals of the `{module_name}` module in Bijux CLI.\n"
-            full_module_path = f"bijux_cli.{module_name}" if section is None else f"bijux_cli.{section.replace(os.sep, '.')}.{module_name}"
+            header = (
+                f"# {module_name.capitalize()} Command API Reference\n"
+                if is_command
+                else f"# {module_name.capitalize()} Module API Reference\n"
+            )
+            blurb = (
+                f"This section documents the internals of the `{module_name}` command in Bijux CLI.\n"
+                if is_command
+                else f"This section documents the internals of the `{module_name}` module in Bijux CLI.\n"
+            )
+            full_module_path = (
+                f"bijux_cli.{module_name}"
+                if section is None
+                else f"bijux_cli.{section.replace(os.sep, '.')}.{module_name}"
+            )
             content = (
                 PAGE_META_NO_EDIT
                 + header
@@ -236,7 +251,9 @@ def _generate_api_pages() -> Dict[str, List[Tuple[str, str]]]:
     return ref_dir_to_pages
 
 
-def _write_reference_indexes(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]]) -> set[str]:
+def _write_reference_indexes(
+    ref_dir_to_pages: Dict[str, List[Tuple[str, str]]],
+) -> set[str]:
     """Creates `index.md` files for all API reference directories.
 
     Args:
@@ -252,15 +269,22 @@ def _write_reference_indexes(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]])
             all_dirs.add("/".join(parts[:i]))
 
     for ref_dir in sorted(all_dirs):
-        title = ref_dir.replace("reference", "Reference").strip("/").replace("/", " / ") or "Reference"
+        title = (
+            ref_dir.replace("reference", "Reference").strip("/").replace("/", " / ")
+            or "Reference"
+        )
         lines = [PAGE_META_NO_EDIT, f"# {title.title()} Index\n\n"]
-        for display_name, md_link in sorted(ref_dir_to_pages.get(ref_dir, []), key=lambda x: x[0].lower()):
+        for display_name, md_link in sorted(
+            ref_dir_to_pages.get(ref_dir, []), key=lambda x: x[0].lower()
+        ):
             lines.append(f"- [{display_name}]({Path(md_link).name})\n")
         write_if_changed(Path(ref_dir) / "index.md", "".join(lines))
     return all_dirs
 
 
-def _compose_nav(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: set[str]) -> None:
+def _compose_nav(
+    ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: set[str]
+) -> None:
     """Programmatically composes the entire site navigation in `nav.md`.
 
     This function builds a Markdown list that `mkdocs-literate-nav` uses to
@@ -296,12 +320,22 @@ def _compose_nav(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: s
         nav = nav_add_bullets(nav, [f"{INDENT1}* [{name}]({p})"])
 
     SECTION_ORDER = ("commands", "contracts", "core", "infra", "services")
-    section_dirs = [f"reference/{s}" for s in SECTION_ORDER if f"reference/{s}" in all_dirs]
+    section_dirs = [
+        f"reference/{s}" for s in SECTION_ORDER if f"reference/{s}" in all_dirs
+    ]
 
     for section_dir in section_dirs:
         section_name = section_dir.split("/", 1)[1].capitalize()
-        nav = nav_add_bullets(nav, [f"{INDENT1}* {section_name}", f"{INDENT2}* [Index]({section_dir}/index.md)"])
-        pages_here = sorted(ref_dir_to_pages.get(section_dir, []), key=lambda x: x[0].lower())
+        nav = nav_add_bullets(
+            nav,
+            [
+                f"{INDENT1}* {section_name}",
+                f"{INDENT2}* [Index]({section_dir}/index.md)",
+            ],
+        )
+        pages_here = sorted(
+            ref_dir_to_pages.get(section_dir, []), key=lambda x: x[0].lower()
+        )
         if pages_here:
             bucket = "Commands" if section_dir.endswith("/commands") else "Modules"
             nav = nav_add_bullets(nav, [f"{INDENT2}* {bucket}"])
@@ -315,15 +349,27 @@ def _compose_nav(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: s
                 continue
             seen.add(sub_dir)
             subgroup_title = pretty_title(Path(sub_dir).name)
-            nav = nav_add_bullets(nav, [f"{INDENT2}* {subgroup_title}", f"{INDENT3}* [Index]({sub_dir}/index.md)"])
-            for display_name, md_link in sorted(ref_dir_to_pages.get(sub_dir, []), key=lambda x: x[0].lower()):
+            nav = nav_add_bullets(
+                nav,
+                [
+                    f"{INDENT2}* {subgroup_title}",
+                    f"{INDENT3}* [Index]({sub_dir}/index.md)",
+                ],
+            )
+            for display_name, md_link in sorted(
+                ref_dir_to_pages.get(sub_dir, []), key=lambda x: x[0].lower()
+            ):
                 nav = nav_add_bullets(nav, [f"{INDENT3}* [{display_name}]({md_link})"])
 
     src_root = _pick_adr_source()
     if src_root and (files := _iter_adr_files(src_root)):
-        nav = nav_add_bullets(nav, ["* Architecture", f"{INDENT1}* [Decision Records](ADR/index.md)"])
+        nav = nav_add_bullets(
+            nav, ["* Architecture", f"{INDENT1}* [Decision Records](ADR/index.md)"]
+        )
         for p in files:
-            nav = nav_add_bullets(nav, [f"{INDENT2}* [{_adr_display_name(p.name)}](ADR/{p.name})"])
+            nav = nav_add_bullets(
+                nav, [f"{INDENT2}* [{_adr_display_name(p.name)}](ADR/{p.name})"]
+            )
 
     nav = nav_add_bullets(nav, ["* [Changelog](changelog.md)"])
 
@@ -333,8 +379,11 @@ def _compose_nav(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: s
         ("Security Policy", "security.md"),
         ("License", "license.md"),
     ]
-    landing = [PAGE_META_NO_EDIT, "# Community {#top}\n\n",
-               "Project policies and how to get involved.\n\n"]
+    landing = [
+        PAGE_META_NO_EDIT,
+        "# Community {#top}\n\n",
+        "Project policies and how to get involved.\n\n",
+    ]
     for title, path in community_pages:
         landing.append(f"- [{title}]({path})\n")
     write_if_changed(Path("community.md"), "".join(landing))
@@ -349,10 +398,13 @@ def _compose_nav(ref_dir_to_pages: Dict[str, List[Tuple[str, str]]], all_dirs: s
         ("Security Artifacts", "artifacts/security.md"),
         ("API Artifacts", "artifacts/api.md"),
         ("SBOM Artifacts", "artifacts/sbom.md"),
-        ("Citation Artifacts", "artifacts/citation.md")
+        ("Citation Artifacts", "artifacts/citation.md"),
     ]
-    landing = [PAGE_META_NO_EDIT, "# Artifacts {#top}\n\n",
-                    "Collected CI/test reports and logs.\n\n"]
+    landing = [
+        PAGE_META_NO_EDIT,
+        "# Artifacts {#top}\n\n",
+        "Collected CI/test reports and logs.\n\n",
+    ]
     for title, path in artifacts:
         landing.append(f"- [{title}]({Path(path).name})\n")
     write_if_changed(Path("artifacts/index.md"), "".join(landing))

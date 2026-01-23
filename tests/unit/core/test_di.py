@@ -16,7 +16,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.app.di import DIContainer, _key_name
+from bijux_cli.core.di import DIContainer, _key_name
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.core.errors import BijuxError
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol
@@ -36,7 +37,7 @@ class DummyObs(ObservabilityProtocol):
     def setup(cls, *, log_level: str, telemetry: Any) -> DummyObs:
         """Construct and configure the dummy observability service."""
         inst = cls()
-        inst.debug = log_level == "debug"
+        inst.debug = log_level == LogLevel.DEBUG
         inst.bound["telemetry"] = telemetry
         return inst
 
@@ -452,7 +453,7 @@ def test_reset_with_no_instance(caplog: pytest.LogCaptureFixture) -> None:
     """Test the reset method's path when no instance exists."""
     with caplog.at_level(logging.DEBUG, logger="bijux_cli.di"):
         DIContainer.reset()
-    assert "DIContainer reset (no instance)" in caplog.text
+    assert "DIContainer reset" in caplog.text
 
 
 @pytest.mark.asyncio

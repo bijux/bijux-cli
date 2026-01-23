@@ -40,12 +40,27 @@ ORDER = [
 ]
 
 BLURBS = {
-    "ruff.log": ("Python linter (style + correctness).", "0 violations (or only nits)."),
-    "ruff-format.log": ("Formatter check (`ruff format --check`).", "No changes needed."),
-    "codespell.log": ("Spelling checker for identifiers, comments, docs.", "Empty log (no typos)."),
+    "ruff.log": (
+        "Python linter (style + correctness).",
+        "0 violations (or only nits).",
+    ),
+    "ruff-format.log": (
+        "Formatter check (`ruff format --check`).",
+        "No changes needed.",
+    ),
+    "codespell.log": (
+        "Spelling checker for identifiers, comments, docs.",
+        "Empty log (no typos).",
+    ),
     "mypy.log": ("Static type-checker (mypy).", "Success: no issues found."),
-    "pydocstyle.log": ("Google-style docstring conventions (pydocstyle).", "0 violations (Google convention)."),
-    "radon.log": ("Complexity & maintainability (CC, MI).", "Mostly A; MI ≥ 70; nothing above thresholds."),
+    "pydocstyle.log": (
+        "Google-style docstring conventions (pydocstyle).",
+        "0 violations (Google convention).",
+    ),
+    "radon.log": (
+        "Complexity & maintainability (CC, MI).",
+        "Mostly A; MI ≥ 70; nothing above thresholds.",
+    ),
     "_passed": ("Suite sentinel.", "Present with OK marker."),
 }
 
@@ -95,7 +110,9 @@ def _parse_codespell(text: str) -> int:
     Returns:
         The total number of typos found.
     """
-    line_hits = sum(1 for ln in text.splitlines() if re.search(r":\d+(?::\d+)?:.*(?:->|==>)", ln))
+    line_hits = sum(
+        1 for ln in text.splitlines() if re.search(r":\d+(?::\d+)?:.*(?:->|==>)", ln)
+    )
     m = re.search(r"(\d+)\s+errors?\s+found", text, re.I)
     return max(line_hits, int(m.group(1))) if m else line_hits
 
@@ -175,7 +192,8 @@ class LintArtifactPage(StandardArtifactPage):
         if LINT_DIR.is_dir():
             seen = set(ORDER)
             extras = sorted(
-                p for p in LINT_DIR.glob("*") if p.is_file() and p.name not in seen)
+                p for p in LINT_DIR.glob("*") if p.is_file() and p.name not in seen
+            )
             items.extend((p.name, p) for p in extras)
         return items
 
@@ -253,4 +271,6 @@ class LintArtifactPage(StandardArtifactPage):
             f"**What it is:** {desc}",
             f"**What good looks like:** {good}",
         ]
-        return '!!! info "About this report & how to act on it"\n\n' + indent("\n".join(lines) + "\n")
+        return '!!! info "About this report & how to act on it"\n\n' + indent(
+            "\n".join(lines) + "\n"
+        )

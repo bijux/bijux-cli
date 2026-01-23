@@ -5,11 +5,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 
 
 @dataclass(frozen=True)
@@ -17,49 +17,61 @@ class GlobalCLIConfig:
     """Immutable container for parsed global CLI flags."""
 
     help: bool
-    quiet: bool
-    verbose_level: int
-    log_level: str
-    fmt: str
-    pretty: bool
-    color: str
-    json: bool
+    flags: FlagLayer
     args: tuple[str, ...]
     errors: tuple[dict[str, Any], ...]
+
+
+@dataclass(frozen=True)
+class Flags:
+    """Resolved flag bundle for logging/output behavior."""
+
+    quiet: bool
+    log_level: LogLevel
+    color: ColorMode
+    format: OutputFormat
+
+
+@dataclass(frozen=True)
+class FlagLayer:
+    """Optional flag layer for precedence resolution."""
+
+    log_level: LogLevel | None = None
+    color: ColorMode | None = None
+    format: OutputFormat | None = None
+    quiet: bool | None = None
 
 
 @dataclass(frozen=True)
 class EffectiveConfig:
     """Resolved output/logging flags after precedence and normalization."""
 
-    quiet: bool
-    verbose_level: int
-    log_level: str
-    color: ColorMode
-    fmt: str
-    pretty: bool
-    include_runtime: bool
-    json: bool
+    flags: Flags
 
 
 @dataclass(frozen=True)
 class ExecutionPolicy:
     """Resolved execution policy shared across CLI/service boundaries."""
 
-    output_format: str
+    output_format: OutputFormat
     color: ColorMode
     quiet: bool
     verbose: bool
     verbose_level: int
-    log_level: str
+    log_level: LogLevel
     pretty: bool
     include_runtime: bool
     json: bool
 
-    @property
-    def fmt(self) -> str:
-        """Backward-compatible alias for output format."""
-        return self.output_format
+
+@dataclass(frozen=True)
+class OutputConfig:
+    """Resolved output/logging configuration for services."""
+
+    include_runtime: bool
+    pretty: bool
+    log_level: LogLevel
+    color: ColorMode
 
 
 def _coerce_verbose(value: Any) -> int:
@@ -72,40 +84,16 @@ def _coerce_verbose(value: Any) -> int:
     return 0
 
 
-def _normalize_str(value: Any, default: str) -> str:
-    if isinstance(value, ColorMode):
-        return value.value
-    return str(value or default).strip().lower()
-
-
-def _normalize_bool(value: Any, default: bool) -> bool:
-    if value is None:
-        return default
-    return bool(value)
-
-
-def _cli_to_dict(cli: GlobalCLIConfig | Mapping[str, Any]) -> dict[str, Any]:
-    if isinstance(cli, GlobalCLIConfig):
-        return {
-            "help": cli.help,
-            "quiet": cli.quiet,
-            "verbose": cli.verbose_level,
-            "format": cli.fmt,
-            "pretty": cli.pretty,
-            "log_level": cli.log_level,
-            "color": cli.color,
-            "json": cli.json,
-        }
-    return dict(cli)
-
-
 def validate_cli_flags(
     config: GlobalCLIConfig, parse_errors: Sequence[dict[str, Any]] | None = None
 ) -> list[dict[str, Any]]:
     """Validate raw CLI flags without applying behavior."""
     errors: list[dict[str, Any]] = list(parse_errors or config.errors)
-    fmt = _normalize_str(config.fmt, "")
-    if fmt and fmt not in ("json", "yaml"):
+    flags = config.flags
+    if flags.format is not None and flags.format not in (
+        OutputFormat.JSON,
+        OutputFormat.YAML,
+    ):
         errors.append(
             {
                 "message": "Invalid output format.",
@@ -113,8 +101,11 @@ def validate_cli_flags(
                 "flag": "--format",
             }
         )
-    color = _normalize_str(config.color, "")
-    if color and color not in ("auto", "always", "never"):
+    if flags.color is not None and flags.color not in (
+        ColorMode.AUTO,
+        ColorMode.ALWAYS,
+        ColorMode.NEVER,
+    ):
         errors.append(
             {
                 "message": "Invalid color mode.",
@@ -122,8 +113,13 @@ def validate_cli_flags(
                 "flag": "--color",
             }
         )
-    log_level = _normalize_str(config.log_level, "info")
-    if log_level and log_level not in ("debug", "info", "warning", "error", "critical"):
+    if flags.log_level is not None and flags.log_level not in (
+        LogLevel.DEBUG,
+        LogLevel.INFO,
+        LogLevel.WARNING,
+        LogLevel.ERROR,
+        LogLevel.CRITICAL,
+    ):
         errors.append(
             {
                 "message": "Invalid log level.",
@@ -134,140 +130,96 @@ def validate_cli_flags(
     return errors
 
 
-def _pick_value(key: str, sources: Sequence[Mapping[str, Any]], fallback: Any) -> Any:
-    for source in sources:
-        if key in source and source[key] is not None:
-            return source[key]
-        alt = key.replace("_", "-")
-        if alt in source and source[alt] is not None:
-            return source[alt]
-    return fallback
+def _pick_value(
+    cli: FlagLayer,
+    env: FlagLayer,
+    file: FlagLayer,
+    defaults: Flags,
+) -> Flags:
+    """Resolve precedence across four layers with first-set wins."""
 
+    def pick(attr: str, fallback: Any) -> Any:
+        for source in (cli, env, file):
+            value = getattr(source, attr)
+            if value is not None:
+                return value
+        return fallback
 
-def _resolve_base(
-    cli: Mapping[str, Any],
-    env: Mapping[str, Any],
-    file: Mapping[str, Any],
-    defaults: Mapping[str, Any],
-) -> dict[str, Any]:
-    sources = (cli, env, file, defaults)
-    quiet = _normalize_bool(_pick_value("quiet", sources, False), False)
-    json_flag = _normalize_bool(_pick_value("json", sources, False), False)
-    verbose_level = _coerce_verbose(_pick_value("verbose", sources, 0))
-    fmt = _normalize_str(_pick_value("format", sources, "json"), "json")
-    if json_flag:
-        fmt = "json"
-    pretty = _normalize_bool(_pick_value("pretty", sources, True), True)
-    log_level = _normalize_str(_pick_value("log_level", sources, "info"), "info")
-    color = _normalize_str(_pick_value("color", sources, "auto"), "auto")
-    return {
-        "quiet": quiet,
-        "json": json_flag,
-        "verbose_level": verbose_level,
-        "fmt": fmt,
-        "pretty": pretty,
-        "log_level": log_level,
-        "color": color,
-    }
-
-
-def resolve_color_mode(value: Any, env: Mapping[str, Any] | None = None) -> ColorMode:
-    """Resolve the effective color mode from a raw value and environment."""
-    if isinstance(value, ColorMode):
-        return value
-    mode = _normalize_str(value, "auto")
-    if mode not in ("auto", "always", "never"):
-        mode = "auto"
-    if mode == "never":
-        return ColorMode.NEVER
-    if mode == "always":
-        return ColorMode.ALWAYS
-    env = env or {}
-    if env.get("NO_COLOR"):
-        return ColorMode.NEVER
-    return ColorMode.AUTO
-
-
-def _normalize_effective(
-    base: Mapping[str, Any], env: Mapping[str, Any] | None = None
-) -> EffectiveConfig:
-    quiet = bool(base["quiet"])
-    log_level = str(base["log_level"])
-    color = resolve_color_mode(base["color"], env)
-    effective_log_level = "error" if quiet else log_level
-    verbose_level = int(base["verbose_level"])
-    include_runtime = (verbose_level > 0) and not quiet
-    pretty = bool(base["pretty"])
-    return EffectiveConfig(
-        quiet=quiet,
-        verbose_level=verbose_level,
-        log_level=effective_log_level,
-        color=color,
-        fmt=str(base["fmt"]),
-        pretty=pretty,
-        include_runtime=include_runtime,
-        json=bool(base["json"]),
+    return Flags(
+        quiet=bool(pick("quiet", defaults.quiet)),
+        log_level=pick("log_level", defaults.log_level),
+        color=pick("color", defaults.color),
+        format=pick("format", defaults.format),
     )
 
 
 def resolve_effective_config(
-    cli: GlobalCLIConfig | Mapping[str, Any],
-    env: Mapping[str, Any],
-    file: Mapping[str, Any],
-    defaults: Mapping[str, Any],
+    cli: FlagLayer,
+    env: FlagLayer,
+    file: FlagLayer,
+    defaults: Flags,
 ) -> EffectiveConfig:
-    """Resolve flag/env/config precedence into a single effective config."""
-    base = _resolve_base(_cli_to_dict(cli), env, file, defaults)
-    return _normalize_effective(base, env)
+    """Resolve flag/env/config precedence into a single effective config.
+
+    Algebraic laws:
+      - Left-identity: resolve(cli, env, file, defaults) equals resolve(cli, empty, empty, defaults)
+      - Right-identity: resolve(empty, empty, empty, defaults) equals defaults
+      - Idempotence: resolve(a, a, a, defaults) equals resolve(a, empty, empty, defaults)
+    """
+    flags = _pick_value(cli, env, file, defaults)
+    if flags.quiet:
+        flags = Flags(
+            quiet=True,
+            log_level=LogLevel.ERROR,
+            color=flags.color,
+            format=flags.format,
+        )
+    return EffectiveConfig(flags=flags)
 
 
 def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:
     """Create an immutable execution policy from resolved config."""
+    flags = effective.flags
     return ExecutionPolicy(
-        output_format=effective.fmt,
-        color=effective.color,
-        quiet=effective.quiet,
-        verbose=effective.verbose_level > 0,
-        verbose_level=effective.verbose_level,
-        log_level=effective.log_level,
-        pretty=effective.pretty,
-        include_runtime=effective.include_runtime,
-        json=effective.json,
+        output_format=flags.format,
+        color=flags.color,
+        quiet=flags.quiet,
+        verbose=False,
+        verbose_level=0,
+        log_level=flags.log_level,
+        pretty=True,
+        include_runtime=False,
+        json=(flags.format == OutputFormat.JSON),
     )
 
 
 def resolve_output_flags(
     *,
     quiet: bool,
-    verbose: bool,
     pretty: bool,
-    log_level: str = "info",
-    color: str = "auto",
-) -> dict[str, Any]:
+    log_level: LogLevel = LogLevel.INFO,
+    color: ColorMode = ColorMode.AUTO,
+) -> OutputConfig:
     """Resolve logging/color/pretty flags from a single source of truth."""
     effective = resolve_effective_config(
-        cli={
-            "quiet": quiet,
-            "verbose": verbose,
-            "pretty": pretty,
-            "log_level": log_level,
-            "color": color,
-        },
-        env={},
-        file={},
-        defaults={
-            "quiet": False,
-            "verbose": False,
-            "pretty": True,
-            "log_level": "info",
-            "color": "auto",
-            "format": "json",
-            "json": False,
-        },
+        cli=FlagLayer(
+            quiet=quiet,
+            log_level=log_level,
+            color=color,
+            format=OutputFormat.JSON,
+        ),
+        env=FlagLayer(),
+        file=FlagLayer(),
+        defaults=Flags(
+            quiet=False,
+            log_level=LogLevel.INFO,
+            color=ColorMode.AUTO,
+            format=OutputFormat.JSON,
+        ),
     )
-    return {
-        "include_runtime": effective.include_runtime,
-        "pretty": effective.pretty,
-        "log_level": effective.log_level,
-        "color": effective.color,
-    }
+    return OutputConfig(
+        include_runtime=False,
+        pretty=pretty,
+        log_level=effective.flags.log_level,
+        color=effective.flags.color,
+    )

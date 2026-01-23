@@ -37,6 +37,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins import get_plugins_dir
 from bijux_cli.plugins.listing import list_installed_plugins
 
@@ -84,10 +85,10 @@ def list_plugin(
     refuse_on_symlink(
         plugins_dir,
         command,
-        effective.fmt,
+        effective.output_format,
         effective.quiet,
         effective.verbose_level > 0,
-        (effective.log_level == "debug"),
+        (effective.log_level == LogLevel.DEBUG),
     )
     plugins = list_installed_plugins()
 
@@ -103,7 +104,7 @@ def list_plugin(
         payload_builder=payload_builder,
         quiet=effective.quiet,
         verbose=effective.verbose_level > 0,
-        fmt=effective.fmt,
+        fmt=effective.output_format,
         pretty=effective.pretty,
         log_level=effective.log_level,
     )

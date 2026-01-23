@@ -43,7 +43,7 @@ from fastapi.params import Depends as DependsMarker
 from fastapi.responses import JSONResponse
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
 
-logger = logging.getLogger("bijux_cli.http.api")
+logger = logging.getLogger("bijux_cli.api.http")
 
 
 class Problem(BaseModel):

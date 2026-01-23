@@ -26,9 +26,9 @@ from typing import Any, cast
 from packaging.specifiers import SpecifierSet
 
 from bijux_cli.core.errors import BijuxError
+from bijux_cli.core.version import version as cli_version
 from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
-from bijux_cli.version import version as cli_version
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def _di() -> Any | None:
         DIContainer | None: The current dependency injection container, or None
             if it is not available or an error occurs.
     """
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
     try:
         return DIContainer.current()

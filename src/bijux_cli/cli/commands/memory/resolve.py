@@ -12,14 +12,15 @@ unavailable.
 
 from __future__ import annotations
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import OutputFormat
 from bijux_cli.services.diagnostics.contracts import MemoryProtocol
 
 
 def resolve_memory_service(
     command: str,
-    fmt_lower: str,
+    fmt_lower: OutputFormat,
     quiet: bool,
     include_runtime: bool,
     debug: bool,
@@ -28,7 +29,7 @@ def resolve_memory_service(
 
     Args:
         command (str): The full command name (e.g., "memory list").
-        fmt_lower (str): The chosen output format, lowercased.
+        fmt_lower (OutputFormat): The chosen output format.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
         debug (bool): If True, enables debug diagnostics.

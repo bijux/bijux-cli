@@ -28,8 +28,8 @@ from bijux_cli.cli.commands.config.reload import reload_config
 from bijux_cli.cli.commands.config.service import config
 from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
-from bijux_cli.core.enums import ColorMode
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.errors import ConfigError
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -37,12 +37,12 @@ from bijux_cli.core.precedence import ExecutionPolicy
 def mock_flags() -> ExecutionPolicy:
     """Provide a mock execution policy."""
     return ExecutionPolicy(
-        output_format="json",
+        output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
         verbose=False,
         verbose_level=0,
-        log_level="info",
+        log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
         json=False,
@@ -516,7 +516,7 @@ def test_import_config(mock_flags: ExecutionPolicy) -> None:
 def test_export_config_command_error(
     mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
-    """Test that a CommandError during export is handled correctly."""
+    """Test that a ConfigError during export is handled correctly."""
     with (
         patch(
             "bijux_cli.cli.output.get_execution_policy",
@@ -530,7 +530,7 @@ def test_export_config_command_error(
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        mock_config_svc.export.side_effect = CommandError("error")
+        mock_config_svc.export.side_effect = ConfigError("error")
         with pytest.raises(SystemExit):
             export_config(ctx, "file", "json")
         mock_emit.assert_called()
@@ -560,7 +560,7 @@ def test_export_config_exception(
 def test_get_config_not_found(
     mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
-    """Test that a CommandError when getting a non-existent key is handled."""
+    """Test that a ConfigError when getting a non-existent key is handled."""
     with (
         patch(
             "bijux_cli.cli.output.get_execution_policy",
@@ -572,7 +572,7 @@ def test_get_config_not_found(
         mock_emit.side_effect = SystemExit
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        mock_config_svc.get.side_effect = CommandError("Config key not found: key")
+        mock_config_svc.get.side_effect = ConfigError("Config key not found: key")
         with pytest.raises(SystemExit):
             get_config(ctx, "key")
         mock_emit.assert_called()
@@ -690,7 +690,7 @@ def test_set_config_stdin_escaped(
 def test_get_config_other_command_error(
     mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
 ) -> None:
-    """Test that a generic CommandError during get is handled correctly."""
+    """Test that a generic ConfigError during get is handled correctly."""
     from bijux_cli.cli.commands.config.get import get_config
 
     with (
@@ -702,7 +702,7 @@ def test_get_config_other_command_error(
         patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
-        mock_config_svc.get.side_effect = CommandError("boom!")
+        mock_config_svc.get.side_effect = ConfigError("boom!")
         mock_emit.side_effect = SystemExit
         ctx = Context(MagicMock())
         with pytest.raises(SystemExit):
@@ -789,12 +789,12 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -826,12 +826,12 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -871,12 +871,12 @@ def test_posix_lock_success_and_run(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
             json=False,
@@ -925,12 +925,12 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -992,12 +992,12 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
             json=False,
@@ -1054,12 +1054,12 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
             json=False,

@@ -37,9 +37,18 @@ ORDER = [
 ]
 
 BLURBS = {
-    "deptry.log": ("Dependency hygiene (unused/missing/transitive).", "No missing deps; minimal unused/transitive."),
-    "interrogate.full.txt": ("Docstring coverage summary.", "≥ target coverage; PASSED."),
-    "interrogate.offenders.txt": ("Files/symbols missing required docstrings.", "Empty or tiny list."),
+    "deptry.log": (
+        "Dependency hygiene (unused/missing/transitive).",
+        "No missing deps; minimal unused/transitive.",
+    ),
+    "interrogate.full.txt": (
+        "Docstring coverage summary.",
+        "≥ target coverage; PASSED.",
+    ),
+    "interrogate.offenders.txt": (
+        "Files/symbols missing required docstrings.",
+        "Empty or tiny list.",
+    ),
     "reuse.log": ("REUSE compliance (license metadata).", "Compliant with 0 errors."),
     "vulture.log": ("Dead-code finder.", "No actionable dead code."),
     "_passed": ("Suite sentinel.", "Present with OK marker."),
@@ -155,7 +164,9 @@ class QualityArtifactPage(StandardArtifactPage):
             return []
         files = [QUALITY_DIR / n for n in ORDER if (QUALITY_DIR / n).exists()]
         seen = {p.name for p in files}
-        files += sorted(p for p in QUALITY_DIR.glob("*") if p.is_file() and p.name not in seen)
+        files += sorted(
+            p for p in QUALITY_DIR.glob("*") if p.is_file() and p.name not in seen
+        )
         return [(p.name, p) for p in files]
 
     def bullet_for(self, label: str, path: Path, content: str) -> Bullet:
@@ -230,4 +241,6 @@ class QualityArtifactPage(StandardArtifactPage):
         """
         desc, good = BLURBS.get(label, ("Report", ""))
         lines = [f"**What it is:** {desc}", f"**What good looks like:** {good}"]
-        return '!!! info "About this report & how to act on it"\n\n' + indent("\n".join(lines) + "\n")
+        return '!!! info "About this report & how to act on it"\n\n' + indent(
+            "\n".join(lines) + "\n"
+        )

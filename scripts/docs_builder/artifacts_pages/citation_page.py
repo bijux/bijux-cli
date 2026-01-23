@@ -85,7 +85,9 @@ def _parse_bibtex(fp: Path) -> dict:
     md["url"] = grab("url")
     authors = grab("author")
     if authors:
-        md["authors"] = [a.strip() for a in re.split(r"\s+and\s+", authors, flags=re.I) if a.strip()]
+        md["authors"] = [
+            a.strip() for a in re.split(r"\s+and\s+", authors, flags=re.I) if a.strip()
+        ]
     return md
 
 
@@ -253,9 +255,17 @@ class CitationArtifactPage(StandardArtifactPage):
             files.append(ROOT_CFF)
         if CITATION_DIR.is_dir():
             preferred = ["citation.bib", "citation.ris", "citation.enw"]
-            files.extend([CITATION_DIR / n for n in preferred if (CITATION_DIR / n).exists()])
+            files.extend(
+                [CITATION_DIR / n for n in preferred if (CITATION_DIR / n).exists()]
+            )
             seen = {p.name for p in files}
-            files.extend(sorted(p for p in CITATION_DIR.glob("*") if p.is_file() and p.name not in seen))
+            files.extend(
+                sorted(
+                    p
+                    for p in CITATION_DIR.glob("*")
+                    if p.is_file() and p.name not in seen
+                )
+            )
         return [(p.name, p) for p in files]
 
     def bullet_for(self, label: str, path: Path, content: str) -> Bullet:
@@ -289,7 +299,11 @@ class CitationArtifactPage(StandardArtifactPage):
         title = md.get("title")
         if title:
             parts.append(f"“{title}”")
-        auths = _summ_authors(md.get("authors")) if isinstance(md.get("authors"), list) else ""
+        auths = (
+            _summ_authors(md.get("authors"))
+            if isinstance(md.get("authors"), list)
+            else ""
+        )
         if auths:
             parts.append(auths)
         if md.get("year"):
@@ -302,7 +316,9 @@ class CitationArtifactPage(StandardArtifactPage):
             usage = "Edit this file; run `make citation` to validate & regenerate other formats."
         elif label.endswith(".bib"):
             key = md.get("key") or Path(label).stem
-            good = "Present, non-empty entry; fields (title/authors/year/doi) populated."
+            good = (
+                "Present, non-empty entry; fields (title/authors/year/doi) populated."
+            )
             usage = f"LaTeX: include & `\\cite{{{key}}}`; Pandoc: `--citeproc`. Rebuild with `make citation-bibtex`."
         elif label.endswith(".ris"):
             good = "Present, non-empty RIS with standard tags (TI/AU/PY/DO/UR)."
@@ -338,7 +354,11 @@ class CitationArtifactPage(StandardArtifactPage):
         lines: list[str] = []
         if md.get("title"):
             lines.append(f"**Title:** {md['title']}")
-        auths_full = _summ_authors(md.get("authors"), limit=99) if isinstance(md.get("authors"), list) else ""
+        auths_full = (
+            _summ_authors(md.get("authors"), limit=99)
+            if isinstance(md.get("authors"), list)
+            else ""
+        )
         if auths_full:
             lines.append(f"**Authors:** {auths_full}")
         if md.get("year"):
@@ -378,7 +398,9 @@ class CitationArtifactPage(StandardArtifactPage):
                 "```"
             )
         elif label.endswith(".ris"):
-            extra = "\n- **Reference managers:** Import this `.ris` into Zotero/Mendeley."
+            extra = (
+                "\n- **Reference managers:** Import this `.ris` into Zotero/Mendeley."
+            )
         elif label.endswith(".enw"):
             extra = "\n- **Reference manager:** Import this `.enw` into EndNote."
 

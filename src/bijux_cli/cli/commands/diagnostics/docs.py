@@ -32,7 +32,7 @@ import platform
 import typer
 import typer.core
 
-from bijux_cli.app.async_exec import AsyncTyper
+from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -45,9 +45,10 @@ from bijux_cli.cli.output import resolve_command_config
 from bijux_cli.cli.validation import (
     contains_non_ascii_env,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.core.version import __version__
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
-from bijux_cli.version import __version__
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -62,7 +63,7 @@ docs_app = AsyncTyper(
 CLI_VERSION = __version__
 
 
-def _default_output_path(base: Path, fmt: str) -> Path:
+def _default_output_path(base: Path, fmt: OutputFormat) -> Path:
     """Computes the default output file path for a CLI spec.
 
     Args:
@@ -72,10 +73,12 @@ def _default_output_path(base: Path, fmt: str) -> Path:
     Returns:
         Path: The fully resolved path to the output specification file.
     """
-    return base / f"spec.{fmt}"
+    return base / f"spec.{fmt.value}"
 
 
-def _resolve_output_target(out: Path | None, fmt: str) -> tuple[str, Path | None]:
+def _resolve_output_target(
+    out: Path | None, fmt: OutputFormat
+) -> tuple[str, Path | None]:
     """Resolves the output target and file path for the CLI spec.
 
     Determines if the output should go to stdout or a file, resolving the
@@ -84,7 +87,7 @@ def _resolve_output_target(out: Path | None, fmt: str) -> tuple[str, Path | None
     Args:
         out (Path | None): The user-provided output path, which can be a file,
             a directory, or '-' for stdout.
-        fmt (str): The output format extension ("json" or "yaml").
+        fmt (OutputFormat): The output format.
 
     Returns:
         tuple[str, Path | None]: A tuple containing the target and path. The
@@ -178,7 +181,7 @@ def docs(
     """
     command = "docs"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    effective, _, fmt_lower = resolve_command_config(
+    effective, output_format, _ = resolve_command_config(
         command=command,
         quiet=quiet,
         verbose=verbose,
@@ -188,7 +191,7 @@ def docs(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == "debug"
+    debug = effective.log_level == LogLevel.DEBUG
     effective_include_runtime = effective.include_runtime
     effective_pretty = effective.pretty
 
@@ -198,7 +201,7 @@ def docs(
             code=3,
             failure="ascii_env",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -216,7 +219,7 @@ def docs(
             code=2,
             failure="args",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -226,7 +229,7 @@ def docs(
     if out is None and out_env:
         out = Path(out_env)
 
-    target, path = _resolve_output_target(out, fmt_lower)
+    target, path = _resolve_output_target(out, output_format)
 
     try:
         spec = _build_spec_payload(effective_include_runtime)
@@ -236,13 +239,12 @@ def docs(
             code=3,
             failure="ascii",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
         )
 
-    output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
     docs_service = _resolve_docs_service()
     try:
         content = docs_service.render(spec, fmt=output_format, pretty=effective_pretty)
@@ -252,7 +254,7 @@ def docs(
             code=1,
             failure="serialize",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -264,7 +266,7 @@ def docs(
             code=1,
             failure="io_fail",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -272,7 +274,9 @@ def docs(
 
     if target == "-":
         if not quiet:
-            typer.echo(content)
+            typer.echo(
+                content, color=resolve_click_color(quiet=quiet, fmt=output_format)
+            )
         raise typer.Exit(0)
 
     if path is None:
@@ -281,7 +285,7 @@ def docs(
             code=1,
             failure="internal",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -294,7 +298,7 @@ def docs(
             code=2,
             failure="output_dir",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -313,7 +317,7 @@ def docs(
             code=2,
             failure="write",
             command=command,
-            fmt=fmt_lower,
+            fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
             debug=debug,
@@ -332,6 +336,6 @@ def docs(
 
 def _resolve_docs_service() -> DocsProtocol:
     """Resolve the docs service from the DI container."""
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
     return DIContainer.current().resolve(DocsProtocol)

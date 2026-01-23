@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.infra.emitter import ConsoleEmitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -49,7 +49,7 @@ def test_emit_stdout_success(
         {"key": "value"},
         fmt=OutputFormat.JSON,
         pretty=False,
-        level="info",
+        level=LogLevel.INFO,
         message="msg",
         output=None,
         test="context",
@@ -107,9 +107,11 @@ def test_emit_debug_print(
     mock_serializer_for.return_value = mock_serializer
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error", message="test_msg", emit_diagnostics=True)
-    mock_print.assert_any_call("Diagnostics: emitted payload", file=sys.stderr)
-    mock_log.assert_called_with("test_msg", output="output")
+        emitter.emit(
+            {}, level=LogLevel.ERROR, message="test_msg", emit_diagnostics=True
+        )
+    mock_print.assert_any_call("output", file=sys.stdout, flush=True)
+    mock_log.assert_not_called()
 
 
 @patch("bijux_cli.infra.emitter.serializer_for")
@@ -117,7 +119,7 @@ def test_emit_quiet_skip(
     mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
-    emitter.emit({}, level="info", emit_output=False)
+    emitter.emit({}, level=LogLevel.INFO, emit_output=False)
     mock_serializer_for.assert_not_called()
 
 
@@ -131,7 +133,7 @@ def test_emit_quiet_error_proceed(
     mock_serializer.dumps.return_value = "error"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level="error", emit_output=True)
+    emitter.emit({}, level=LogLevel.ERROR, emit_output=True)
 
     mock_print.assert_called_with("error", file=sys.stdout, flush=True)
 
@@ -146,7 +148,7 @@ def test_emit_quiet_critical_proceed(
     mock_serializer.dumps.return_value = "critical"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level="critical", emit_output=True)
+    emitter.emit({}, level=LogLevel.CRITICAL, emit_output=True)
 
     mock_print.assert_called_with("critical", file=sys.stdout, flush=True)
 
@@ -162,8 +164,8 @@ def test_emit_telemetry_fail_debug(
     cast(Mock, mock_serializer_for).return_value = mock_serializer
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
-    with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error", emit_diagnostics=True)
+    with patch.object(emitter._logger, "debug") as mock_log:
+        emitter.emit({}, level=LogLevel.ERROR, emit_diagnostics=True)
     mock_log.assert_called_with("Telemetry failed", error="tel fail")
 
 
@@ -179,7 +181,7 @@ def test_emit_telemetry_fail_no_debug(
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level="error", emit_diagnostics=False)
+        emitter.emit({}, level=LogLevel.ERROR, emit_diagnostics=False)
     mock_log.assert_not_called()
 
 

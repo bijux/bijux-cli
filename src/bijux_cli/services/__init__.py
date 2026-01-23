@@ -17,15 +17,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from bijux_cli.core.contracts import (
-    Emitter,
-    ExecutionContext,
-    ProcessRunner,
-    RetryPolicy,
-    Serializer,
-)
+from bijux_cli.core.contracts import ExecutionContext
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.plugins.contracts import PluginConfig, RegistryProtocol
+from bijux_cli.infra.contracts import Emitter, ProcessRunner, RetryPolicy, Serializer
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import (
@@ -39,7 +33,7 @@ from bijux_cli.services.history.contracts import HistoryProtocol
 from bijux_cli.services.logging.contracts import LoggingConfig
 
 if TYPE_CHECKING:
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
     from bijux_cli.core.enums import OutputFormat
 
 
@@ -48,7 +42,6 @@ def register_default_services(
     *,
     logging_config: LoggingConfig,
     output_format: OutputFormat,
-    plugin_config: PluginConfig | None = None,
     diagnostics_config: DiagnosticsConfig | None = None,
 ) -> None:
     """Registers all default service implementations with the DI container.
@@ -66,13 +59,12 @@ def register_default_services(
     Returns:
         None:
     """
-    import bijux_cli.app.context
+    import bijux_cli.core.context
     import bijux_cli.infra.emitter
     import bijux_cli.infra.process
     import bijux_cli.infra.retry
     import bijux_cli.infra.serializer
     import bijux_cli.infra.telemetry
-    import bijux_cli.plugins.registry
     import bijux_cli.services.config
     import bijux_cli.services.diagnostics.audit
     import bijux_cli.services.diagnostics.docs
@@ -82,12 +74,9 @@ def register_default_services(
     import bijux_cli.services.history
     import bijux_cli.services.logging.observability
 
-    if plugin_config is None:
-        plugin_config = PluginConfig(enabled=True, allow_entrypoints=True)
     if diagnostics_config is None:
         diagnostics_config = DiagnosticsConfig(enabled=True, telemetry_enabled=True)
 
-    di.register(PluginConfig, lambda: plugin_config)
     di.register(DiagnosticsConfig, lambda: diagnostics_config)
 
     noop_telemetry = bijux_cli.infra.telemetry.NoopTelemetry()
@@ -182,25 +171,16 @@ def register_default_services(
     di.register(LoggingConfig, lambda: logging_config)
 
     di.register(
-        bijux_cli.app.context.Context,
-        lambda: bijux_cli.app.context.Context(di),
+        bijux_cli.core.context.Context,
+        lambda: bijux_cli.core.context.Context(di),
     )
-    di.register(ExecutionContext, lambda: di.resolve(bijux_cli.app.context.Context))
+    di.register(ExecutionContext, lambda: di.resolve(bijux_cli.core.context.Context))
 
     di.register(
         bijux_cli.services.config.Config,
         lambda: bijux_cli.services.config.Config(di),
     )
     di.register(ConfigProtocol, lambda: di.resolve(bijux_cli.services.config.Config))
-
-    di.register(
-        bijux_cli.plugins.registry.Registry,
-        lambda: bijux_cli.plugins.registry.Registry(di.resolve(TelemetryProtocol)),
-    )
-    di.register(
-        RegistryProtocol,
-        lambda: di.resolve(bijux_cli.plugins.registry.Registry),
-    )
 
     di.register(
         bijux_cli.services.diagnostics.audit.DryRunAudit,

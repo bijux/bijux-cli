@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bijux_cli.app.context import Context, _current_context
-from bijux_cli.app.di import DIContainer
+from bijux_cli.core.context import Context, _current_context
+from bijux_cli.core.di import DIContainer
 from bijux_cli.services.contracts import ObservabilityProtocol
 
 

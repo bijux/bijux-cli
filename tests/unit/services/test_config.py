@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.errors import ConfigError
 from bijux_cli.services.config import Config, _detect_symlink_loop, _escape, _unescape
 from bijux_cli.services.contracts import ObservabilityProtocol
 
@@ -140,37 +140,37 @@ def test_load_symlink_loop(config: Config, tmp_path: Path) -> None:
     link2 = tmp_path / "link2"
     link1.symlink_to(link2)
     link2.symlink_to(link1)
-    with pytest.raises(CommandError, match="Symlink loop"):
+    with pytest.raises(ConfigError, match="Symlink loop"):
         config.load(link1)
 
 
 def test_load_malformed_line(config: Config, temp_env_file: Path) -> None:
     """Test that a malformed line in the config file raises an error."""
     temp_env_file.write_text("no_equal\n")
-    with pytest.raises(CommandError, match="Malformed line"):
+    with pytest.raises(ConfigError, match="Malformed line"):
         config.load(temp_env_file)
 
 
 def test_load_non_ascii(config: Config, temp_env_file: Path) -> None:
     """Test that a non-ASCII value in the config file raises an error."""
     temp_env_file.write_text("KEY=unicodé\n")
-    with pytest.raises(CommandError, match="Non-ASCII"):
+    with pytest.raises(ConfigError, match="Non-ASCII"):
         config.load(temp_env_file)
 
 
 def test_load_binary(config: Config, temp_env_file: Path) -> None:
     """Test that attempting to load a binary file raises an error."""
     temp_env_file.write_bytes(b"\x80binary")
-    with pytest.raises(CommandError, match="Binary or non-text"):
+    with pytest.raises(ConfigError, match="Binary or non-text"):
         config.load(temp_env_file)
 
 
 def test_load_other_error(config: Config, temp_env_file: Path) -> None:
-    """Test that a generic OSError during load is wrapped in a CommandError."""
+    """Test that a generic OSError during load is wrapped in a ConfigError."""
     temp_env_file.touch()
     with (
         patch.object(Path, "read_text", side_effect=OSError("io")),
-        pytest.raises(CommandError),
+        pytest.raises(ConfigError),
     ):
         config.load(temp_env_file)
 
@@ -251,7 +251,7 @@ def test_set_many_locked_retry(
     temp_env_file.write_text("")
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked after retries"),
+        pytest.raises(ConfigError, match="locked after retries"),
     ):
         config.set_many({"key": "val"})
 
@@ -264,7 +264,7 @@ def test_set_many_error_cleanup(
     config._path = None
     with (
         patch("builtins.open", side_effect=Exception("open fail")),
-        pytest.raises(CommandError),
+        pytest.raises(ConfigError),
     ):
         config.set_many({"key": "val"})
     assert not temp_env_file.with_suffix(".tmp").exists()
@@ -309,7 +309,7 @@ def test_clear_locked(
     config.load()
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked"),
+        pytest.raises(ConfigError, match="locked"),
     ):
         config.clear()
 
@@ -323,7 +323,7 @@ def test_clear_error(
     config.load()
     with (
         patch.object(Path, "unlink", side_effect=OSError("unlink fail")),
-        pytest.raises(CommandError),
+        pytest.raises(ConfigError),
     ):
         config.clear()
 
@@ -341,7 +341,7 @@ def test_get_default(config: Config) -> None:
 
 def test_get_not_found(config: Config, mock_log: ObservabilityProtocol) -> None:
     """Test that getting a non-existent key without a default raises an error."""
-    with pytest.raises(CommandError, match="not found"):
+    with pytest.raises(ConfigError, match="not found"):
         config.get("missing")
     (cast(Any, mock_log.log)).assert_called()
 
@@ -402,7 +402,7 @@ def test_set_locked(
     temp_env_file.write_text("")
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked after retries"),
+        pytest.raises(ConfigError, match="locked after retries"),
     ):
         config.set("key", "val")
 
@@ -415,7 +415,7 @@ def test_set_error_cleanup(
     config._path = None
     with (
         patch("builtins.open", side_effect=Exception("open fail")),
-        pytest.raises(CommandError),
+        pytest.raises(ConfigError),
     ):
         config.set("key", "val")
     assert not temp_env_file.with_suffix(".tmp").exists()
@@ -436,7 +436,7 @@ def test_reload(
 def test_reload_no_path(config: Config) -> None:
     """Test that reload() raises an error if no config path is set."""
     config._path = None
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.reload()
 
 
@@ -445,7 +445,7 @@ def test_reload_missing(config: Config, temp_env_file: Path) -> None:
     temp_env_file.touch()
     config._path = temp_env_file
     temp_env_file.unlink()
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.reload()
 
 
@@ -483,20 +483,20 @@ def test_export_stdout(config: Config, capsys: pytest.CaptureFixture[str]) -> No
 
 def test_export_invalid_fmt(config: Config) -> None:
     """Test that exporting to an invalid format raises an error."""
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.export("file", "invalid")
 
 
 def test_export_no_yaml(config: Config, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that exporting to YAML fails if PyYAML is not installed."""
     monkeypatch.setattr("bijux_cli.services.config.yaml", None)
-    with pytest.raises(CommandError, match="PyYAML"):
+    with pytest.raises(ConfigError, match="PyYAML"):
         config.export("file.yaml")
 
 
 def test_export_no_dir(config: Config) -> None:
     """Test that exporting to a non-existent directory raises an error."""
-    with pytest.raises(CommandError, match="No such"):
+    with pytest.raises(ConfigError, match="No such"):
         config.export("/nonexistent/dir/file")
 
 
@@ -505,7 +505,7 @@ def test_export_permission(config: Config) -> None:
     with (
         patch.object(Path, "exists", return_value=True),
         patch.object(os, "access", return_value=False),
-        pytest.raises(CommandError, match="Permission denied"),
+        pytest.raises(ConfigError, match="Permission denied"),
     ):
         config.export("/no/perm/file")
 
@@ -516,7 +516,7 @@ def test_export_locked(config: Config, tmp_path: Path) -> None:
     dest.write_text("")
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked"),
+        pytest.raises(ConfigError, match="locked"),
     ):
         config.export(dest)
 
@@ -530,7 +530,7 @@ def test_delete(config: Config) -> None:
 
 def test_delete_not_found(config: Config, mock_log: ObservabilityProtocol) -> None:
     """Test that deleting a non-existent key raises an error."""
-    with pytest.raises(CommandError, match="not found"):
+    with pytest.raises(ConfigError, match="not found"):
         config.delete("missing")
     (cast(Any, mock_log.log)).assert_called()
 
@@ -569,14 +569,14 @@ def test_save_error(config: Config, mock_log: ObservabilityProtocol) -> None:
     with patch.object(  # noqa: SIM117
         Config, "set_many", side_effect=Exception("save fail")
     ):
-        with pytest.raises(CommandError):
+        with pytest.raises(ConfigError):
             config.save()
     (cast(Any, mock_log.log)).assert_called()
 
 
 def test_validate_config_path_device() -> None:
     """Test that validating a path pointing to a device file raises an error."""
-    with pytest.raises(CommandError, match="device file"):
+    with pytest.raises(ConfigError, match="device file"):
         Config._validate_config_path(Path("/dev/null"))
 
 
@@ -586,7 +586,7 @@ def test_preflight_symlink_loop(config: Config, tmp_path: Path) -> None:
     link2 = tmp_path / "link2"
     link1.symlink_to(link2)
     link2.symlink_to(link1)
-    with pytest.raises(CommandError, match="Symlink loop"):
+    with pytest.raises(ConfigError, match="Symlink loop"):
         Config._preflight_write(link1)
 
 
@@ -595,7 +595,7 @@ def test_preflight_locked(config: Config, temp_env_file: Path) -> None:
     temp_env_file.write_text("")
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked"),
+        pytest.raises(ConfigError, match="locked"),
     ):
         Config._preflight_write(temp_env_file)
 
@@ -650,14 +650,14 @@ def test_export_locked_retry(config: Config, tmp_path: Path) -> None:
     dest.write_text("")
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked"),
+        pytest.raises(ConfigError, match="locked"),
     ):
         config.export(dest)
 
 
 def test_export_error_exists(config: Config) -> None:
     """Test that exporting to a non-existent directory path fails."""
-    with pytest.raises(CommandError, match="No such"):
+    with pytest.raises(ConfigError, match="No such"):
         config.export("/nonexistent/file")
 
 
@@ -666,7 +666,7 @@ def test_export_permission_dir(config: Config) -> None:
     with (
         patch.object(os, "access", return_value=False),
         patch.object(Path, "exists", return_value=True),
-        pytest.raises(CommandError, match="Permission denied"),
+        pytest.raises(ConfigError, match="Permission denied"),
     ):
         config.export("/no/perm/dir/file")
 
@@ -676,7 +676,7 @@ def test_export_permission_file(config: Config, tmp_path: Path) -> None:
     dest = tmp_path / "no_perm"
     dest.touch()
     dest.chmod(0o444)
-    with pytest.raises(CommandError, match="Permission denied"):
+    with pytest.raises(ConfigError, match="Permission denied"):
         config.export(dest)
 
 
@@ -700,7 +700,7 @@ def test_delete_locked(
     config.load()
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked after retries"),
+        pytest.raises(ConfigError, match="locked after retries"),
     ):
         config.delete("key")
 
@@ -722,7 +722,7 @@ def test_preflight_depth_exceed(config: Config, tmp_path: Path) -> None:
         next_link = tmp_path / f"link{i}"
         curr.symlink_to(next_link)
         curr = next_link
-    with pytest.raises(CommandError, match="depth exceeded"):
+    with pytest.raises(ConfigError, match="depth exceeded"):
         Config._preflight_write(tmp_path / "start")
 
 
@@ -730,7 +730,7 @@ def test_set_many_validate(config: Config, monkeypatch: pytest.MonkeyPatch) -> N
     """Test that set_many() validates the config path before writing."""
     monkeypatch.setenv("BIJUXCLI_CONFIG", "/dev/null")
     config._path = None
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.set_many({})
 
 
@@ -738,7 +738,7 @@ def test_set_validate(config: Config, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that set() validates the config path before writing."""
     monkeypatch.setenv("BIJUXCLI_CONFIG", "/dev/null")
     config._path = None
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.set("key", "val")
 
 
@@ -746,7 +746,7 @@ def test_save_validate(config: Config, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that save() validates the config path before writing."""
     monkeypatch.setenv("BIJUXCLI_CONFIG", "/dev/null")
     config._path = None
-    with pytest.raises(CommandError):
+    with pytest.raises(ConfigError):
         config.save()
 
 
@@ -801,11 +801,11 @@ def test_config_init_command_error_logs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test that a CommandError during initialization is logged."""
+    """Test that a ConfigError during initialization is logged."""
 
     class DummyConfig(Config):
         def load(self, path: str | Path | None = None) -> None:
-            raise CommandError("fail")
+            raise ConfigError("fail")
 
     dummy_di = Mock()
     dummy_di.resolve.return_value = mock_log
@@ -825,7 +825,7 @@ def test_set_many_error_cleanup_exists(
     tmp_file.touch()
     with (
         patch("builtins.open", side_effect=Exception("fail")),
-        pytest.raises(CommandError),
+        pytest.raises(ConfigError),
     ):
         config.set_many({"key": "val"})
     assert not tmp_file.exists()
@@ -841,7 +841,7 @@ def test_set_many_locked_retry_cleanup(
     tmp_file.touch()
     with (
         patch("fcntl.flock", side_effect=BlockingIOError),
-        pytest.raises(CommandError, match="locked after retries"),
+        pytest.raises(ConfigError, match="locked after retries"),
     ):
         config.set_many({"key": "val"})
     assert not tmp_file.exists()
@@ -874,7 +874,7 @@ def test_export_parent_dir_permission_denied(config: Config, tmp_path: Path) -> 
             Path, "exists", autospec=True, side_effect=lambda p: p == dest.parent
         ),
         patch("os.access", side_effect=lambda p, m: Path(p) != dest.parent),
-        pytest.raises(CommandError, match="Permission denied"),
+        pytest.raises(ConfigError, match="Permission denied"),
     ):
         config.export(dest)
 
@@ -886,7 +886,7 @@ def test_detect_symlink_loop_os_error(tmp_path: Path, mock_di: Any) -> None:
     link.symlink_to(target)
     with (
         patch("os.readlink", side_effect=OSError("boom")),
-        pytest.raises(CommandError, match="Symlink loop detected"),
+        pytest.raises(ConfigError, match="Symlink loop detected"),
     ):
         _detect_symlink_loop(link)
 
@@ -905,7 +905,7 @@ def test_delete_inner_write_error_cleans_tmp(
 
     with (
         patch("builtins.open", side_effect=Exception("oops")),
-        pytest.raises(CommandError, match="oops"),
+        pytest.raises(ConfigError, match="oops"),
     ):
         cfg.delete("key")
     assert not tmpfile.exists()
@@ -929,7 +929,7 @@ def test_set_replace_failure_cleans_tmp(
     with (
         patch("fcntl.flock", lambda fd, flags: None),
         patch("pathlib.Path.replace", side_effect=ValueError("replace fail")),
-        pytest.raises(CommandError, match="replace fail"),
+        pytest.raises(ConfigError, match="replace fail"),
     ):
         cfg.set("key", "value")
 
@@ -955,7 +955,7 @@ def test_delete_replace_failure_cleans_tmp(
     with (
         patch("fcntl.flock", lambda fd, flags: None),
         patch("pathlib.Path.replace", side_effect=ValueError("replace fail")),
-        pytest.raises(CommandError, match="replace fail"),
+        pytest.raises(ConfigError, match="replace fail"),
     ):
         cfg.delete("a")
 
@@ -1027,7 +1027,7 @@ def test_tmp_cleanup_branch(
             patch("pathlib.Path.exists", fake_exists),
             patch("pathlib.Path.unlink") as mock_unlink,
         ):
-            with pytest.raises(CommandError, match="locked after retries"):
+            with pytest.raises(ConfigError, match="locked after retries"):
                 action()
             mock_unlink.assert_called_once()
 
@@ -1062,7 +1062,7 @@ def test_config_retry_exhaustion_cleans_tmp(tmp_path: Path, method: str) -> None
             "delete": _delete,
         }
 
-        with pytest.raises(CommandError) as exc_info:
+        with pytest.raises(ConfigError) as exc_info:
             method_map[method]()  # typed callable
 
         assert mock_unlink.called
@@ -1091,7 +1091,7 @@ def test_config_cleanup_tmp_on_retry_exhaustion(
     ):
         method_func = getattr(config, method)
 
-        with pytest.raises(CommandError) as exc_info:
+        with pytest.raises(ConfigError) as exc_info:
             method_func(*args)
 
         mock_unlink.assert_called_once_with()
@@ -1118,7 +1118,7 @@ def test_set_many_exhausts_retries_and_unlinks_tmp(tmp_path: Path) -> None:
         tmp_file = cfg._path.with_suffix(".tmp")
         tmp_file.touch()
 
-        with pytest.raises(CommandError) as exc:
+        with pytest.raises(ConfigError) as exc:
             cfg.set_many({"foo": "baz"})
 
     assert "File locked after retries" in str(exc.value)
@@ -1137,7 +1137,7 @@ def test_set_retry_exhaustion_unlinks_tmp(tmp_path: Path) -> None:
         tmp_file = cfg._path.with_suffix(".tmp")
         tmp_file.touch()
 
-        with pytest.raises(CommandError) as exc:
+        with pytest.raises(ConfigError) as exc:
             cfg.set("foo", "baz")
 
     assert "File locked after retries" in str(exc.value)
@@ -1157,7 +1157,7 @@ def test_delete_generic_exception_unlinks_tmp(tmp_path: Path) -> None:
     with patch(  # noqa: SIM117
         "pathlib.Path.replace", autospec=True, side_effect=fail_replace
     ):
-        with pytest.raises(CommandError) as exc:
+        with pytest.raises(ConfigError) as exc:
             cfg.delete("foo")
 
     assert "Failed to persist config after deleting" in str(exc.value)
@@ -1177,7 +1177,7 @@ def test_delete_retry_exhaustion_unlinks_tmp(tmp_path: Path) -> None:
         tmp_file = cfg._path.with_suffix(".tmp")
         tmp_file.touch()
 
-        with pytest.raises(CommandError) as exc:
+        with pytest.raises(ConfigError) as exc:
             cfg.delete("foo")
 
     assert "File locked after retries" in str(exc.value)
@@ -1200,7 +1200,7 @@ def test_set_many_exhausts_retries_and_unlinks_tmp_v2(cfg: Config) -> None:
         mock_file.__enter__.return_value = mock_file
         mock_open.return_value = mock_file
 
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             cfg.set_many({"a": "b"})
 
         mock_unlink.assert_called_once()
@@ -1222,7 +1222,7 @@ def test_set_exhausts_retries_and_unlinks_tmp_v2(cfg: Config) -> None:
         mock_file.__enter__.return_value = mock_file
         mock_open.return_value = mock_file
 
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             cfg.set("a", "b")
 
         mock_unlink.assert_called_once()
@@ -1245,7 +1245,7 @@ def test_delete_generic_replace_error_cleans_tmp_v2(cfg: Config) -> None:
         mock_file.__enter__.return_value = mock_file
         mock_open.return_value = mock_file
 
-        with pytest.raises(CommandError, match="boom"):
+        with pytest.raises(ConfigError, match="boom"):
             cfg.delete("a")
 
         mock_unlink.assert_called_once()
@@ -1269,7 +1269,7 @@ def test_delete_exhausts_retries_and_unlinks_tmp_v2(cfg: Config) -> None:
         mock_file.__enter__.return_value = mock_file
         mock_open.return_value = mock_file
 
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             cfg.delete("a")
 
         mock_unlink.assert_called_once()
@@ -1287,7 +1287,7 @@ def test_set_many_cleans_up_after_retry_exhaustion_v2(tmp_path: Path) -> None:
         patch("fcntl.flock", side_effect=BlockingIOError),
         patch("time.sleep"),
     ):
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             config.set_many({"key": "value"})
 
     assert not tmp_file.exists()
@@ -1305,7 +1305,7 @@ def test_set_cleans_up_after_retry_exhaustion_v2(tmp_path: Path) -> None:
         patch("fcntl.flock", side_effect=BlockingIOError),
         patch("time.sleep"),
     ):
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             config.set("key", "value")
 
     assert not tmp_file.exists()
@@ -1323,7 +1323,7 @@ def test_delete_cleans_up_after_generic_exception_v2(tmp_path: Path) -> None:
         patch("builtins.open"),
         patch("pathlib.Path.replace", side_effect=ValueError("generic error")),
     ):
-        with pytest.raises(CommandError, match="Failed to persist config"):
+        with pytest.raises(ConfigError, match="Failed to persist config"):
             config.delete("key")
 
     assert not tmp_file.exists()
@@ -1342,7 +1342,7 @@ def test_delete_cleans_up_after_retry_exhaustion_v2(tmp_path: Path) -> None:
         patch("fcntl.flock", side_effect=BlockingIOError),
         patch("time.sleep"),
     ):
-        with pytest.raises(CommandError, match="File locked after retries"):
+        with pytest.raises(ConfigError, match="File locked after retries"):
             config.delete("key")
 
     assert not tmp_file.exists()

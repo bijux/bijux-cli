@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from typer.testing import CliRunner
@@ -16,10 +16,19 @@ from bijux_cli.cli.commands.sleep import (
     _build_payload,
     sleep_app,
 )
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.infra.contracts import Emitter, Serializer
+from bijux_cli.services.config.contracts import ConfigProtocol
+from bijux_cli.services.contracts import TelemetryProtocol
 
 runner: CliRunner = CliRunner()
+
+
+def _load_payload(result: Any) -> dict[str, Any]:
+    """Load a JSON payload from stdout or stderr."""
+    raw = (result.output or result.stderr or "").strip()
+    return cast(dict[str, Any], json.loads(raw))
 
 
 def test_build_payload_no_runtime() -> None:
@@ -73,9 +82,32 @@ def _install_fake_container(
                 raise get_raises
             return get_returns if get_returns is not None else default
 
-    fake_container = SimpleNamespace(resolve=lambda _proto: FakeCfg())
+    class _TestSerializer:
+        def dumps(self, payload: Any, fmt: OutputFormat, pretty: bool = False) -> str:
+            from bijux_cli.cli.emit import _normalize_payload
+
+            return json.dumps(_normalize_payload(payload))
+
+    class _TestEmitter:
+        pass
+
+    class _TestTelemetry:
+        pass
+
+    def _resolve(proto: Any) -> Any:
+        if proto is ConfigProtocol:
+            return FakeCfg()
+        if proto is Serializer:
+            return _TestSerializer()
+        if proto is Emitter:
+            return _TestEmitter()
+        if proto is TelemetryProtocol:
+            return _TestTelemetry()
+        raise KeyError(f"Unexpected resolve: {proto}")
+
+    fake_container = SimpleNamespace(resolve=_resolve)
     monkeypatch.setattr(
-        "bijux_cli.app.di.DIContainer.current",
+        "bijux_cli.core.di.DIContainer.current",
         staticmethod(lambda: fake_container),
         raising=True,
     )
@@ -91,7 +123,7 @@ def test_sleep_negative_seconds(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = runner.invoke(sleep_app, ["--seconds", "-1", "--format", "json"])
     assert result.exit_code != 0
-    payload = json.loads(result.output.strip())
+    payload = _load_payload(result)
     assert payload["failure"] == "negative"
     assert payload["code"] == 2
 
@@ -107,7 +139,7 @@ def test_sleep_config_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = runner.invoke(sleep_app, ["--seconds", "0", "--format", "json"])
     assert result.exit_code != 0
-    payload = json.loads(result.output.strip())
+    payload = _load_payload(result)
     assert payload["failure"] == "config"
     assert "Failed to read timeout" in payload["error"]
 
@@ -123,7 +155,7 @@ def test_sleep_timeout_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = runner.invoke(sleep_app, ["--seconds", "1.0", "--format", "json"])
     assert result.exit_code != 0
-    payload = json.loads(result.output.strip())
+    payload = _load_payload(result)
     assert payload["failure"] == "timeout"
     assert payload["code"] == 2
 
@@ -134,12 +166,12 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,

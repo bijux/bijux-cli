@@ -18,8 +18,9 @@ from injector import inject
 import structlog
 from structlog.typing import FilteringBoundLogger
 
-from bijux_cli.core.errors import ServiceError
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
+from bijux_cli.services.errors import ServiceError
 
 
 class Observability(ObservabilityProtocol):
@@ -36,7 +37,7 @@ class Observability(ObservabilityProtocol):
 
     @inject
     def __init__(
-        self, *, log_level: str = "info", telemetry: TelemetryProtocol
+        self, *, log_level: LogLevel = LogLevel.INFO, telemetry: TelemetryProtocol
     ) -> None:
         """Initializes the observability service.
 
@@ -64,7 +65,9 @@ class Observability(ObservabilityProtocol):
         return self
 
     @classmethod
-    def setup(cls, *, log_level: str = "info", telemetry: TelemetryProtocol) -> Self:
+    def setup(
+        cls, *, log_level: LogLevel = LogLevel.INFO, telemetry: TelemetryProtocol
+    ) -> Self:
         """Instantiates and configures an `Observability` service.
 
         Args:

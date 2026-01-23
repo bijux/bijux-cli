@@ -147,7 +147,9 @@ def fs_read_text(path: Path) -> str:
         return f.read()
 
 
-def write_if_changed(rel_path: Path | str, content: str | bytes, mode: str = "w") -> None:
+def write_if_changed(
+    rel_path: Path | str, content: str | bytes, mode: str = "w"
+) -> None:
     """Write content to a file, prioritizing the MkDocs virtual filesystem.
 
     This function provides a robust way to write generated files. It first checks
@@ -171,9 +173,13 @@ def write_if_changed(rel_path: Path | str, content: str | bytes, mode: str = "w"
     if _use_disk_fallback():
         out = _disk_base_dir() / rel_path
         out.parent.mkdir(parents=True, exist_ok=True)
-        existing = out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
+        existing = (
+            out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
+        )
         if existing != content:
-            out.write_text(content, encoding="utf-8") if not is_bytes else out.write_bytes(content)
+            out.write_text(
+                content, encoding="utf-8"
+            ) if not is_bytes else out.write_bytes(content)
         return
 
     opener = _mkdocs_open()
@@ -193,9 +199,13 @@ def write_if_changed(rel_path: Path | str, content: str | bytes, mode: str = "w"
 
     out = _disk_base_dir() / rel_path
     out.parent.mkdir(parents=True, exist_ok=True)
-    existing = out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
+    existing = (
+        out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
+    )
     if existing != content:
-        out.write_text(content, encoding="utf-8") if not is_bytes else out.write_bytes(content)
+        out.write_text(content, encoding="utf-8") if not is_bytes else out.write_bytes(
+            content
+        )
 
 
 def copy_bytes(src: Path, dst: str) -> None:
@@ -254,7 +264,9 @@ def indent(text: str, n: int = 4) -> str:
         The indented string.
     """
     pad = " " * n
-    return "".join(pad + line if line.strip() else pad + "\n" for line in text.splitlines(True))
+    return "".join(
+        pad + line if line.strip() else pad + "\n" for line in text.splitlines(True)
+    )
 
 
 def pretty_title(stem: str) -> str:
@@ -357,12 +369,12 @@ def rewrite_links_general(md: str) -> str:
     }
     md = _INLINE_LINK.sub(
         lambda m: f"{m.group(1)}({_rewrite_url(m.group(2).strip(), target_map)}"
-                  f"{(' ' + m.group(3)) if m.group(3) else ''})",
+        f"{(' ' + m.group(3)) if m.group(3) else ''})",
         md,
     )
     md = _REF_DEF.sub(
         lambda m: f"{m.group('indent')}[{m.group('label')}]: "
-                  f"{_rewrite_url(m.group('url'), target_map)}{m.group('trail')}",
+        f"{_rewrite_url(m.group('url'), target_map)}{m.group('trail')}",
         md,
     )
     md = _AUTOLINK.sub(lambda m: f"<{_rewrite_url(m.group(1), target_map)}>", md)
@@ -476,15 +488,15 @@ def artifacts_group_once(nav: str) -> str:
 def try_json_pretty(text: str) -> str:
     """Attempt to format a string as pretty-printed JSON.
 
-    If the string is valid JSON, it is parsed and returned as an indented
-    string. If it is not valid JSON, the original string is returned, making
-ax the function safe to use on arbitrary text.
+        If the string is valid JSON, it is parsed and returned as an indented
+        string. If it is not valid JSON, the original string is returned, making
+    ax the function safe to use on arbitrary text.
 
-    Args:
-        text: The input string, which may or may not be JSON.
+        Args:
+            text: The input string, which may or may not be JSON.
 
-    Returns:
-        A pretty-printed JSON string or the original string.
+        Returns:
+            A pretty-printed JSON string or the original string.
     """
     try:
         obj = json.loads(text) if text else None

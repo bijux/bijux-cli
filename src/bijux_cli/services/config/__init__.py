@@ -31,7 +31,7 @@ from typing import Any
 
 from injector import inject
 
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.errors import ConfigError
 from bijux_cli.infra.paths import CONFIG_FILE
 from bijux_cli.services.config.contracts import ConfigProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol
@@ -86,7 +86,7 @@ def _detect_symlink_loop(path: Path, max_depth: int = 10) -> None:
         max_depth (int): The maximum number of symbolic links to follow.
 
     Raises:
-        CommandError: If a loop is detected or the traversal depth exceeds `max_depth`.
+        ConfigError: If a loop is detected or the traversal depth exceeds `max_depth`.
     """
     seen: set[Path] = set()
     curr = path
@@ -96,17 +96,17 @@ def _detect_symlink_loop(path: Path, max_depth: int = 10) -> None:
         try:
             raw = os.readlink(curr)
         except OSError as exc:
-            raise CommandError(
+            raise ConfigError(
                 f"Symlink loop detected: {curr}", http_status=400
             ) from exc
         target = Path(raw)
         if not target.is_absolute():
             target = curr.parent / target
         if target in seen:
-            raise CommandError(f"Symlink loop detected: {curr}", http_status=400)
+            raise ConfigError(f"Symlink loop detected: {curr}", http_status=400)
         seen.add(target)
         curr = target
-    raise CommandError(f"Symlink depth exceeded: {path}", http_status=400)
+    raise ConfigError(f"Symlink depth exceeded: {path}", http_status=400)
 
 
 class Config(ConfigProtocol):
@@ -140,7 +140,7 @@ class Config(ConfigProtocol):
             self.load()
         except FileNotFoundError:
             pass
-        except CommandError as e:
+        except ConfigError as e:
             self._log.log(
                 "error", f"Auto-load of config failed during init: {e}", extra={}
             )
@@ -159,7 +159,7 @@ class Config(ConfigProtocol):
         Raises:
             FileNotFoundError: If a specified config file does not exist.
             ValueError: If a line is malformed or contains non-ASCII characters.
-            CommandError: If the file is binary or another parsing error occurs.
+            ConfigError: If the file is binary or another parsing error occurs.
         """
         import_path = Path(path) if path is not None else None
         current_path = Path(os.getenv("BIJUXCLI_CONFIG", str(CONFIG_FILE)))
@@ -197,7 +197,7 @@ class Config(ConfigProtocol):
                 f"Failed to parse config file {read_path}: Binary or non-text content",
                 extra={"path": str(read_path)},
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Failed to parse config file {read_path}: Binary or non-text content",
                 http_status=400,
             ) from exc
@@ -207,7 +207,7 @@ class Config(ConfigProtocol):
                 f"Failed to parse config file {read_path}: {exc}",
                 extra={"path": str(read_path)},
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Failed to parse config file {read_path}: {exc}", http_status=400
             ) from exc
         self._data = new_data
@@ -266,12 +266,12 @@ class Config(ConfigProtocol):
                     f"Failed to persist config to {self._path}: {exc}",
                     extra={"path": str(self._path)},
                 )
-                raise CommandError(
+                raise ConfigError(
                     f"Failed to persist config to {self._path}: {exc}", http_status=500
                 ) from exc
         if tmp_path.exists():
             tmp_path.unlink()
-        raise CommandError(
+        raise ConfigError(
             f"Failed to persist config to {self._path}: File locked after retries",
             http_status=400,
         )
@@ -296,7 +296,7 @@ class Config(ConfigProtocol):
         """Deletes all configuration entries and removes the config file.
 
         Raises:
-            CommandError: If the config file cannot be deleted due to a lock
+            ConfigError: If the config file cannot be deleted due to a lock
                 or other filesystem error.
         """
         self._data = {}
@@ -313,7 +313,7 @@ class Config(ConfigProtocol):
                     except BlockingIOError as err:
                         retry -= 1
                         if retry == 0:
-                            raise CommandError(
+                            raise ConfigError(
                                 f"Failed to clear config file {self._path}: File locked",
                                 http_status=400,
                             ) from err
@@ -324,7 +324,7 @@ class Config(ConfigProtocol):
                     f"Failed to clear config file {self._path}: {exc}",
                     extra={"path": str(self._path)},
                 )
-                raise CommandError(
+                raise ConfigError(
                     f"Failed to clear config file {self._path}: {exc}", http_status=500
                 ) from exc
         self._log.log(
@@ -347,7 +347,7 @@ class Config(ConfigProtocol):
             Any: The value associated with the key, or the default value.
 
         Raises:
-            CommandError: If the key is not found and no default is provided.
+            ConfigError: If the key is not found and no default is provided.
         """
         normalized_key = key.strip().removeprefix("BIJUXCLI_").lower()
         env_key = f"BIJUXCLI_{normalized_key.upper()}"
@@ -362,7 +362,7 @@ class Config(ConfigProtocol):
             self._log.log(
                 "error", f"Config key not found: {key}", extra={"key": normalized_key}
             )
-            raise CommandError(f"Config key not found: {key}", http_status=400)
+            raise ConfigError(f"Config key not found: {key}", http_status=400)
         self._log.log(
             "debug",
             f"Retrieved config key: {normalized_key}",
@@ -381,7 +381,7 @@ class Config(ConfigProtocol):
             None:
 
         Raises:
-            CommandError: If the configuration cannot be persisted.
+            ConfigError: If the configuration cannot be persisted.
         """
         normalized_key = key.strip().removeprefix("BIJUXCLI_").lower()
         self._data[normalized_key] = str(value)
@@ -421,12 +421,12 @@ class Config(ConfigProtocol):
                     f"Failed to persist config to {self._path}: {exc}",
                     extra={"path": str(self._path)},
                 )
-                raise CommandError(
+                raise ConfigError(
                     f"Failed to persist config to {self._path}: {exc}", http_status=500
                 ) from exc
         if tmp_path.exists():
             tmp_path.unlink()
-        raise CommandError(
+        raise ConfigError(
             f"Failed to persist config to {self._path}: File locked after retries",
             http_status=400,
         )
@@ -435,16 +435,16 @@ class Config(ConfigProtocol):
         """Reloads configuration from the last-loaded file path.
 
         Raises:
-            CommandError: If no file path has been previously loaded.
+            ConfigError: If no file path has been previously loaded.
         """
         if self._path is None:
             self._log.log("error", "Config.reload() called before load()", extra={})
-            raise CommandError("Config.reload() called before load()", http_status=400)
+            raise ConfigError("Config.reload() called before load()", http_status=400)
         if not self._path.exists():
             self._log.log(
                 "error", f"Config file missing for reload: {self._path}", extra={}
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Config file missing for reload: {self._path}", http_status=400
             )
         self.load(self._path)
@@ -458,7 +458,7 @@ class Config(ConfigProtocol):
                 If None, the format is auto-detected from the file extension.
 
         Raises:
-            CommandError: If the format is unsupported or the export fails.
+            ConfigError: If the format is unsupported or the export fails.
         """
         export_path = Path(path) if path != "-" else path
         output_fmt = (
@@ -483,14 +483,14 @@ class Config(ConfigProtocol):
                 )
             elif output_fmt == "yaml":
                 if yaml is None:
-                    raise CommandError(
+                    raise ConfigError(
                         "PyYAML not installed for YAML support", http_status=400
                     )
                 text = yaml.safe_dump(
                     {k.upper(): v for k, v in self._data.items()}, sort_keys=False
                 )
             else:
-                raise CommandError(f"Unsupported format: {output_fmt}", http_status=400)
+                raise ConfigError(f"Unsupported format: {output_fmt}", http_status=400)
             if path == "-":
                 print(text, end="")
                 self._log.log(
@@ -502,7 +502,7 @@ class Config(ConfigProtocol):
             export_path = Path(path)
             export_path.resolve(strict=False)
             if not export_path.parent.exists():
-                raise CommandError(
+                raise ConfigError(
                     f"No such file or directory: {export_path.parent}", http_status=400
                 )
             if export_path.exists() and not os.access(export_path, os.W_OK):
@@ -530,7 +530,7 @@ class Config(ConfigProtocol):
                 f"Failed to export config to {export_path}: File locked",
                 extra={"path": str(export_path), "format": output_fmt},
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Failed to export config to {export_path}: File locked",
                 http_status=400,
             ) from exc
@@ -540,7 +540,7 @@ class Config(ConfigProtocol):
                 f"Failed to export config to {export_path}: {exc}",
                 extra={"path": str(export_path), "format": output_fmt},
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Failed to export config to {export_path}: {exc}", http_status=400
             ) from exc
 
@@ -551,14 +551,14 @@ class Config(ConfigProtocol):
             key (str): The key to delete (case-insensitive, `BIJUXCLI_` prefix optional).
 
         Raises:
-            CommandError: If the key does not exist or the change cannot be persisted.
+            ConfigError: If the key does not exist or the change cannot be persisted.
         """
         normalized_key = key.strip().removeprefix("BIJUXCLI_").lower()
         if normalized_key not in self._data:
             self._log.log(
                 "error", f"Config key not found: {key}", extra={"key": normalized_key}
             )
-            raise CommandError(f"Config key not found: {key}", http_status=400)
+            raise ConfigError(f"Config key not found: {key}", http_status=400)
         del self._data[normalized_key]
         if not self._path:
             self._path = Path(os.getenv("BIJUXCLI_CONFIG", str(CONFIG_FILE)))
@@ -596,13 +596,13 @@ class Config(ConfigProtocol):
                     f"Failed to persist config after deleting {normalized_key}: {exc}",
                     extra={"path": str(self._path), "key": normalized_key},
                 )
-                raise CommandError(
+                raise ConfigError(
                     f"Failed to persist config after deleting {normalized_key}: {exc}",
                     http_status=500,
                 ) from exc
         if tmp_path.exists():
             tmp_path.unlink()
-        raise CommandError(
+        raise ConfigError(
             f"Failed to persist config to {self._path}: File locked after retries",
             http_status=400,
         )
@@ -628,7 +628,7 @@ class Config(ConfigProtocol):
                 f"Failed to save config to {self._path}: {exc}",
                 extra={"path": str(self._path)},
             )
-            raise CommandError(
+            raise ConfigError(
                 f"Failed to save config to {self._path}: {exc}", http_status=500
             ) from exc
 
@@ -640,7 +640,7 @@ class Config(ConfigProtocol):
             path (Path): The path to validate.
 
         Raises:
-            CommandError: If the path is determined to be unsafe.
+            ConfigError: If the path is determined to be unsafe.
         """
         pstr = path.as_posix()
         if (
@@ -648,7 +648,7 @@ class Config(ConfigProtocol):
             or pstr == "/dev/null"
             or pstr.startswith("\\\\.\\")
         ):
-            raise CommandError(
+            raise ConfigError(
                 f"Invalid config path: {path} is a device file or not allowed"
             )
 
@@ -662,7 +662,7 @@ class Config(ConfigProtocol):
             path (Path): The path to check.
 
         Raises:
-            CommandError: If the path is invalid or the file is locked.
+            ConfigError: If the path is invalid or the file is locked.
         """
         _detect_symlink_loop(path)
         if path.exists():
@@ -671,7 +671,7 @@ class Config(ConfigProtocol):
                     fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                     fcntl.flock(f.fileno(), fcntl.LOCK_UN)
             except BlockingIOError as exc:
-                raise CommandError(
+                raise ConfigError(
                     f"Failed to persist config to {path}: File locked", http_status=400
                 ) from exc
 

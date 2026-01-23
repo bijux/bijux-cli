@@ -10,6 +10,8 @@ from typing import Any, Protocol, Self, runtime_checkable
 
 from structlog.typing import FilteringBoundLogger
 
+from bijux_cli.core.enums import LogLevel
+
 
 @runtime_checkable
 class TelemetryProtocol(Protocol):
@@ -35,7 +37,7 @@ class ObservabilityProtocol(Protocol):
     """Structured logging facade."""
 
     @classmethod
-    def setup(cls, *, log_level: str, telemetry: TelemetryProtocol) -> Self:
+    def setup(cls, *, log_level: LogLevel, telemetry: TelemetryProtocol) -> Self:
         """Configure and return a logging instance."""
         ...
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.core.enums import OutputFormat
 
 
 def ignore_hidden_and_broken_symlinks(dirpath: str, names: list[str]) -> list[str]:
@@ -116,7 +117,7 @@ def parse_required_cli_version(plugin_py: Path) -> str | None:
 def refuse_on_symlink(
     directory: Path,
     command: str,
-    fmt: str,
+    fmt: OutputFormat,
     quiet: bool,
     verbose: bool,
     debug: bool,
@@ -129,7 +130,7 @@ def refuse_on_symlink(
     Args:
         directory (Path): The path to check.
         command (str): The invoking command name for the error payload.
-        fmt (str): The requested output format for the error payload.
+        fmt (OutputFormat): The requested output format for the error payload.
         quiet (bool): If True, suppresses output before exiting.
         verbose (bool): If True, includes runtime info in the error payload.
         debug (bool): If True, enables debug diagnostics.

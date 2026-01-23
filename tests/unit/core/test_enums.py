@@ -50,7 +50,14 @@ def test_all_exported() -> None:
     """Test that the module's __all__ contains the core enums."""
     from bijux_cli.core.enums import __all__
 
-    assert __all__ == ["ColorMode", "OutputFormat"]
+    assert __all__ == [
+        "ColorMode",
+        "OutputFormat",
+        "LogLevel",
+        "ExecutionMode",
+        "ExitCode",
+        "ErrorType",
+    ]
 
 
 def parse_output_format(value: Any) -> OutputFormat:

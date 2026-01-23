@@ -5,25 +5,24 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 import importlib
 import sys
 import time
-from typing import Any, cast
+from typing import Any
 from unittest.mock import MagicMock
 
 import click
 import pytest
 import typer
 
-from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.help as help_mod
 from bijux_cli.cli.commands.help import (
     _HUMAN,
     _build_help_payload,
     _find_target_command,
 )
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -42,18 +41,6 @@ class DummyCmd(click.Command):
     def get_help(self, ctx: click.Context) -> str:
         """Return the injectable help text."""
         return self._help_text
-
-
-@pytest.fixture(autouse=True)
-def _cleanup_help_module_patches() -> Iterator[None]:
-    """A fixture to automatically clean up the global patches made by help_mod."""
-    yield
-
-    click.echo = _real_click_echo
-    click.secho = _real_click_secho
-    typer.echo = _real_typer_echo
-    typer.secho = _real_typer_secho
-    cast(Any, sys.stderr).write = _real_stderr_write
 
 
 def test_find_target_command_no_parent() -> None:
@@ -154,7 +141,7 @@ def test_help_flag_triggers_help_and_exit(
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     captured = capsys.readouterr()
     assert "FOO HELP" in captured.out
@@ -168,12 +155,12 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="badfmt",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -187,7 +174,7 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt="badfmt",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 2
 
@@ -203,7 +190,7 @@ def test_quiet_null_byte(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
 
@@ -219,7 +206,7 @@ def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
 
@@ -236,7 +223,7 @@ def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
 
@@ -253,7 +240,7 @@ def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 2
 
@@ -283,12 +270,12 @@ def test_nonquiet_invalid_format_calls_emit_error(
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="bad",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -303,7 +290,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
             verbose=False,
             fmt="BAD",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 2
     assert "Unsupported format" in called["msg"]
@@ -331,7 +318,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
     assert called["failure"] == "null_byte"
@@ -358,7 +345,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
     assert called["failure"] == "ascii"
@@ -384,7 +371,7 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
     assert called["failure"] == "ascii"
@@ -411,7 +398,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 2
     assert called["failure"] == "not_found"
@@ -433,12 +420,12 @@ def test_nonquiet_human_format_prints_and_exits(
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="human",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=False,
             json=False,
@@ -461,7 +448,7 @@ def test_nonquiet_human_format_prints_and_exits(
             verbose=False,
             fmt="human",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     out = capsys.readouterr().out
@@ -488,12 +475,12 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -503,12 +490,12 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
             json=False,
@@ -538,7 +525,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=True,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 0
     assert called["payload"]["help"] == "HELPTXT"
@@ -567,12 +554,12 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -593,7 +580,7 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             verbose=False,
             fmt="yaml",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 99
     assert called["payload"]["help"] == "YAMLHELP"
@@ -619,12 +606,12 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
         help_mod,
         "get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="human",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -638,7 +625,7 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 0
 
@@ -678,7 +665,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.code == 3
     assert "broken" in called["msg"]
@@ -688,7 +675,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
 def test_import_level_overrides(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Test the module-level filtering of stderr and echo functions."""
+    """Test that stderr and echo behave normally for help output."""
     import sys as real_sys
 
     import click as real_click
@@ -711,10 +698,10 @@ def test_import_level_overrides(
     importlib.reload(help_mod)
 
     assert real_sys.stderr.write("") == 0
-    assert real_sys.stderr.write("   ") == 0
+    assert real_sys.stderr.write("   ") == 3
 
     plugin_msg = "Plugin 'test-src' does not expose a Typer app via 'cli()' or 'app'"
-    assert real_sys.stderr.write(plugin_msg) == 0
+    assert real_sys.stderr.write(plugin_msg) == len(plugin_msg)
 
     assert real_sys.stderr.write("hello") == dummy_write("hello")
 
@@ -724,6 +711,7 @@ def test_import_level_overrides(
     real_click.echo("hi")
     out = capsys.readouterr().out
     assert "hi" in out
+    assert "does not expose a Typer app" in out
 
     real_click.echo = orig_click_echo
     real_click.secho = orig_click_secho
@@ -748,7 +736,7 @@ def test_help_flag_no_target(
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert ex.value.exit_code == 0
     assert capsys.readouterr().out == ""
@@ -780,7 +768,7 @@ def test_help_flag_fallback_to_root(
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "ROOT HELP" in out
@@ -808,62 +796,8 @@ def test_help_flag_with_format_flag(
             verbose=False,
             fmt=_HUMAN,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "FOO HELP" in out
     assert exc.value.exit_code == 0
-
-
-_real_click_echo = click.echo
-_real_click_secho = click.secho
-_real_typer_echo = typer.echo
-_real_typer_secho = typer.secho
-_real_stderr_write = sys.stderr.write
-
-
-def test_help_module_level_filter_and_restore(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test the import-time patching and subsequent restoration of echo/write."""
-    monkeypatch.setattr(sys, "argv", ["prog", "help", "--quiet"])
-    filtered = importlib.reload(help_mod)
-
-    assert click.echo is filtered._filtered_echo
-    assert click.secho is filtered._filtered_echo
-    assert typer.echo is filtered._filtered_echo
-    assert typer.secho is filtered._filtered_echo
-
-    monkeypatch.setattr(click, "echo", _real_click_echo)
-    monkeypatch.setattr(click, "secho", _real_click_secho)
-    monkeypatch.setattr(typer, "echo", _real_typer_echo)
-    monkeypatch.setattr(typer, "secho", _real_typer_secho)
-    monkeypatch.setattr(sys.stderr, "write", _real_stderr_write)
-
-    assert click.echo is _real_click_echo
-    assert click.secho is _real_click_secho
-    assert typer.echo is _real_typer_echo
-    assert typer.secho is _real_typer_secho
-    assert sys.stderr.write is _real_stderr_write
-
-
-def test_filtered_echo_non_str_message(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that the filtered echo function correctly handles non-string messages."""
-    monkeypatch.setattr(sys, "argv", ["prog", "help", "--quiet"])
-    filtered = importlib.reload(help_mod)
-    orig_echo = filtered._orig_click_echo
-    called = False
-
-    def fake_orig(message: Any, **kwargs: Any) -> None:
-        nonlocal called
-        called = True
-        assert message == b"bytes"
-
-    monkeypatch.setattr(filtered, "_orig_click_echo", fake_orig)
-    filtered._filtered_echo(b"bytes")
-    assert called
-
-    click.echo = orig_echo
-    click.secho = orig_echo
-    typer.echo = orig_echo
-    typer.secho = orig_echo
-    if hasattr(filtered, "_orig_stderr_write"):
-        monkeypatch.setattr(sys.stderr, "write", filtered._orig_stderr_write)

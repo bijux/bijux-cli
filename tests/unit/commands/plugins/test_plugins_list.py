@@ -13,7 +13,7 @@ from typer.testing import CliRunner
 
 import bijux_cli.cli.commands.plugins.list as list_mod
 from bijux_cli.cli.root import app as cli_app
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -26,14 +26,19 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(list_mod, "get_plugins_dir", lambda: fake_dir)
     calls["plugins_dir"] = fake_dir
 
-    def fake_validate(fmt: str, cmd: str, quiet: bool) -> str:
+    def fake_validate(fmt: str, cmd: str, quiet: bool) -> OutputFormat:
         calls["validate"] = (fmt, cmd, quiet)
-        return fmt.lower()
+        return OutputFormat(fmt)
 
     monkeypatch.setattr(list_mod, "validate_common_flags", fake_validate)
 
     def fake_refuse(
-        dir_: Path, command: str, fmt: str, quiet: bool, verbose: bool, debug: bool
+        dir_: Path,
+        command: str,
+        fmt: OutputFormat,
+        quiet: bool,
+        verbose: bool,
+        debug: bool,
     ) -> None:
         calls["refuse"] = (dir_, command, fmt, quiet, verbose, debug)
 
@@ -65,12 +70,12 @@ def test_default_list(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -103,12 +108,12 @@ def test_all_flags(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=True,
             verbose_level=1,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=False,
             json=False,
@@ -160,7 +165,9 @@ def test_validate_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> N
 
 def test_refuse_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:
     """Test that a SystemExit from the symlink check is propagated."""
-    monkeypatch.setattr(list_mod, "validate_common_flags", lambda f, c, q: f)
+    monkeypatch.setattr(
+        list_mod, "validate_common_flags", lambda f, c, q: OutputFormat(f)
+    )
     monkeypatch.setattr(list_mod, "get_plugins_dir", lambda: Path("/x"))
     monkeypatch.setattr(
         list_mod,

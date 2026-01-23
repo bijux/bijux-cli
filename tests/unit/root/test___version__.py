@@ -16,7 +16,7 @@ import pytest
 
 import bijux_cli.plugins as plugins
 
-version_mod = importlib.import_module("bijux_cli.version")
+version_mod = importlib.import_module("bijux_cli.core.version")
 
 
 def _reload_with(
@@ -26,7 +26,7 @@ def _reload_with(
     __file__: str | None = None,
     pyproject_bytes: bytes | None = None,
 ) -> None:
-    """Reload ``bijux_cli.version`` under controlled conditions.
+    """Reload ``bijux_cli.core.version`` under controlled conditions.
 
     Args:
         monkeypatch: Pytest monkeypatch fixture.

@@ -26,7 +26,6 @@ import platform
 
 import typer
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -37,7 +36,9 @@ from bijux_cli.cli.constants import (
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.validation import ascii_safe
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel
+from bijux_cli.core.errors import ConfigError
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -92,7 +93,7 @@ def export_config(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == "debug"
+    debug = effective.log_level == LogLevel.DEBUG
     pretty = effective.pretty
     include_runtime = effective.include_runtime
 
@@ -100,7 +101,7 @@ def export_config(
 
     try:
         config_svc.export(path, out_fmt)
-    except CommandError as exc:
+    except ConfigError as exc:
         code = 2 if getattr(exc, "http_status", 0) == 400 else 1
         emit_error_and_exit(
             f"Failed to export config: {exc}",

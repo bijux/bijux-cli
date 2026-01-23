@@ -652,7 +652,7 @@ def test_audit_help_precedes_di_failure(monkeypatch: pytest.MonkeyPatch) -> None
         """Simulate a DI container crash."""
         raise RuntimeError("Simulated DI Container Crash")
 
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
     monkeypatch.setattr(DIContainer, "resolve", mock_resolve_fails)
 

@@ -53,7 +53,11 @@ def _is_cdx_json(p: Path) -> bool:
         False otherwise.
     """
     n = p.name.lower()
-    return n.endswith(".cdx.json") or n.endswith(".cyclonedx.json") or ("cyclonedx" in n and n.endswith(".json"))
+    return (
+        n.endswith(".cdx.json")
+        or n.endswith(".cyclonedx.json")
+        or ("cyclonedx" in n and n.endswith(".json"))
+    )
 
 
 def _parse_cyclonedx(fp: Path) -> dict:
@@ -162,7 +166,9 @@ class SBOMArtifactPage(StandardArtifactPage):
             if env:
                 parts.append(env)
             if md.get("app_name"):
-                app = md["app_name"] + (f" {md['app_version']}" if md.get("app_version") else "")
+                app = md["app_name"] + (
+                    f" {md['app_version']}" if md.get("app_version") else ""
+                )
                 parts.append(app)
             if md.get("components_count") is not None:
                 parts.append(f"{md['components_count']} components")
@@ -170,7 +176,9 @@ class SBOMArtifactPage(StandardArtifactPage):
                 parts.append(f"spec {md['specVersion']}")
             title = f"[{label}](#{anchor_for(label)}) — " + " • ".join(parts)
 
-            good_template = "Valid CycloneDX; includes app metadata; reasonable component count."
+            good_template = (
+                "Valid CycloneDX; includes app metadata; reasonable component count."
+            )
             extra = []
             if md.get("components_count") is not None:
                 extra.append(f"components={md['components_count']}")
@@ -191,7 +199,11 @@ class SBOMArtifactPage(StandardArtifactPage):
             return Bullet(title=title, good=good_line, usage=usage)
 
         title = f"[{label}](#{anchor_for(label)}) — {path.stat().st_size} bytes"
-        return Bullet(title=title, good="Parsable artifact present.", usage="Inspect contents below.")
+        return Bullet(
+            title=title,
+            good="Parsable artifact present.",
+            usage="Inspect contents below.",
+        )
 
     def detail_for(self, label: str, path: Path, content: str) -> str:
         """Creates the detailed description for a given SBOM artifact.
@@ -217,7 +229,9 @@ class SBOMArtifactPage(StandardArtifactPage):
             if env:
                 lines.append(f"**Type:** {env.capitalize()} CycloneDX SBOM")
             if md.get("app_name"):
-                app = md["app_name"] + (f" {md['app_version']}" if md.get("app_version") else "")
+                app = md["app_name"] + (
+                    f" {md['app_version']}" if md.get("app_version") else ""
+                )
                 lines.append(f"**Application:** {app}")
             if md.get("components_count") is not None:
                 lines.append(f"**Components:** {md['components_count']}")
@@ -243,4 +257,6 @@ class SBOMArtifactPage(StandardArtifactPage):
                 "A short components count per SBOM file, created by `make sbom-summary`.\n"
             )
 
-        return '!!! info "About this artifact"\n\n' + indent("Additional SBOM-related file.\n")
+        return '!!! info "About this artifact"\n\n' + indent(
+            "Additional SBOM-related file.\n"
+        )

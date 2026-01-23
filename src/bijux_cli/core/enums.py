@@ -56,5 +56,70 @@ class ColorMode(str, Enum):
     ALWAYS = "always"
     NEVER = "never"
 
+    @classmethod
+    def _missing_(cls, value: object) -> ColorMode:
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        raise ValueError(f"{value} is not a valid {cls.__name__}")
 
-__all__ = ["ColorMode", "OutputFormat"]
+
+class LogLevel(str, Enum):
+    """Logging level names for structured logging."""
+
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+    @classmethod
+    def _missing_(cls, value: object) -> LogLevel:
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        raise ValueError(f"{value} is not a valid {cls.__name__}")
+
+
+class ExecutionMode(str, Enum):
+    """Execution mode for the runtime kernel."""
+
+    CLI = "cli"
+    API = "api"
+    REPL = "repl"
+
+
+class ExitCode(int, Enum):
+    """Standardized exit codes for command execution."""
+
+    SUCCESS = 0
+    ERROR = 1
+    USAGE = 2
+    ASCII = 3
+    ABORTED = 130
+
+
+class ErrorType(str, Enum):
+    """High-level error categories for exit behavior."""
+
+    USAGE = "usage"
+    ASCII = "ascii"
+    USER_INPUT = "user_input"
+    CONFIG = "config"
+    PLUGIN = "plugin"
+    INTERNAL = "internal"
+    ABORTED = "aborted"
+
+
+__all__ = [
+    "ColorMode",
+    "OutputFormat",
+    "LogLevel",
+    "ExecutionMode",
+    "ExitCode",
+    "ErrorType",
+]

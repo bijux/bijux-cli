@@ -32,8 +32,8 @@ from typing import Any, Literal, TypeVar, cast, overload
 
 from injector import Injector
 
-from bijux_cli.app.async_exec import run_awaitable
 from bijux_cli.core.errors import BijuxError
+from bijux_cli.core.runtime import run_awaitable
 from bijux_cli.services.contracts import ObservabilityProtocol
 
 T = TypeVar("T")

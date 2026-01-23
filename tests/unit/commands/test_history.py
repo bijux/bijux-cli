@@ -18,7 +18,7 @@ from bijux_cli.cli.commands.history.clear import (
     resolve_history_service as clear_resolve,
 )
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -50,7 +50,9 @@ def test_resolve_history_service_success(mock_flags: dict[str, Any]) -> None:
         mock_current.return_value = mock_di_instance
         mock_history_svc = MagicMock()
         mock_di_instance.resolve.return_value = mock_history_svc
-        result = resolve_history_service("command", "json", False, False, False)
+        result = resolve_history_service(
+            "command", OutputFormat.JSON, False, False, False
+        )
         assert result == mock_history_svc
 
 
@@ -67,13 +69,15 @@ def test_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
         ) as mock_emit:
             mock_emit.side_effect = SystemExit
             with pytest.raises(SystemExit):
-                resolve_history_service("command", "json", False, False, False)
+                resolve_history_service(
+                    "command", OutputFormat.JSON, False, False, False
+                )
             mock_emit.assert_called_with(
                 "History service unavailable: error",
                 code=1,
                 failure="service_unavailable",
                 command="command",
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 quiet=False,
                 include_runtime=False,
                 debug=False,
@@ -85,7 +89,7 @@ def test_history_no_subcommand(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -111,7 +115,7 @@ def test_history_limit_zero(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -135,7 +139,7 @@ def test_history_filter_cmd(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -162,7 +166,7 @@ def test_history_sort_timestamp(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -193,7 +197,7 @@ def test_history_group_by_command(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -231,7 +235,7 @@ def test_history_export_path(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -271,7 +275,7 @@ def test_history_import_path(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -326,7 +330,7 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -370,7 +374,7 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -414,7 +418,7 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -458,7 +462,7 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -506,7 +510,7 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -547,7 +551,7 @@ def test_history_import_non_dict(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -582,7 +586,7 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -621,7 +625,7 @@ def test_clear_history_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.clear.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.clear.resolve_history_service"
@@ -642,7 +646,7 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.clear.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.clear.resolve_history_service"
@@ -660,7 +664,7 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
             code=1,
             failure="clear_failed",
             command="history clear",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -680,13 +684,13 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
         mock_di_instance.resolve.side_effect = Exception("error")
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
-            clear_resolve("command", "json", False, False, False)
+            clear_resolve("command", OutputFormat.JSON, False, False, False)
         mock_emit.assert_called_with(
             "History service unavailable: error",
             code=1,
             failure="service_unavailable",
             command="command",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -700,12 +704,12 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="debug",
+                log_level=LogLevel.DEBUG,
                 pretty=True,
                 include_runtime=True,
                 json=False,
@@ -713,7 +717,7 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
         ),
         patch(
             "bijux_cli.cli.commands.history.clear.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ) as _,
         patch(
             "bijux_cli.cli.commands.history.clear.resolve_history_service"
@@ -748,13 +752,13 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
     ):
         err.side_effect = SystemExit()
         with pytest.raises(SystemExit):
-            resolve_history_service("history", "json", False, False, False)
+            resolve_history_service("history", OutputFormat.JSON, False, False, False)
         err.assert_called_once_with(
             "History service unavailable: boom",
             code=1,
             failure="service_unavailable",
             command="history",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -771,7 +775,7 @@ def test_history_list_positive_limit_and_failure(
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -791,7 +795,7 @@ def test_history_list_positive_limit_and_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
         builder = new_run.call_args.kwargs["payload_builder"]
         assert builder(False)["entries"] == entries[-2:]
@@ -801,7 +805,7 @@ def test_history_list_positive_limit_and_failure(
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -823,7 +827,7 @@ def test_history_list_positive_limit_and_failure(
                 verbose=False,
                 fmt="json",
                 pretty=False,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
         err.assert_called_once_with(
             "Failed to list history: nope",
@@ -846,12 +850,12 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -859,7 +863,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
         ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -882,7 +886,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     write_text.assert_called()
@@ -901,12 +905,12 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=False,
                 verbose_level=0,
-                log_level="debug",
+                log_level=LogLevel.DEBUG,
                 pretty=False,
                 include_runtime=False,
                 json=False,
@@ -937,7 +941,7 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
         )
 
         mock_validate.assert_called_once_with(
@@ -947,7 +951,7 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
         _, kwargs = mock_new_run.call_args
         assert kwargs["verbose"] is False
         assert kwargs["pretty"] is False
-        assert kwargs["log_level"] == "debug"
+        assert kwargs["log_level"] == LogLevel.DEBUG
 
 
 def test_history_invoked_subcommand_skips() -> None:
@@ -979,7 +983,7 @@ def test_history_list_failure() -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
@@ -1044,12 +1048,12 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -1057,7 +1061,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
         ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1080,7 +1084,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     svc.clear.assert_called_once()
@@ -1106,12 +1110,12 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -1119,7 +1123,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
         ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1142,7 +1146,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     first_kwargs = new_run.call_args_list[0].kwargs
@@ -1163,12 +1167,12 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -1176,7 +1180,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
         ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1199,7 +1203,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     write_text.assert_called_once()
@@ -1219,12 +1223,12 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -1232,7 +1236,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
         ),
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1255,7 +1259,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             verbose=True,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     write_text.assert_called_once()
@@ -1274,7 +1278,7 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1296,7 +1300,7 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     last_kwargs = new_run.call_args_list[-1].kwargs
@@ -1313,7 +1317,7 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1336,7 +1340,7 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     builder = new_run.call_args.kwargs["payload_builder"]
@@ -1392,7 +1396,7 @@ def test_history_positive_limit_branch_and_payload_builder(
         verbose=False,
         fmt="json",
         pretty=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
 
     assert "payload_builder" in captured
@@ -1425,7 +1429,7 @@ def test_history_list_slicing_for_positive_limit(
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
@@ -1471,7 +1475,7 @@ def test_history_positive_limit_slicing_and_successful_completion(
     with (
         patch(
             "bijux_cli.cli.commands.history.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service",

@@ -16,22 +16,58 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.commands.diagnostics.audit import (
     _build_payload,
     _write_output_file,
     audit,
     audit_app,
 )
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.infra.contracts import Serializer
 
 runner = CliRunner()
 
 
+class _BasicSerializer:
+    def _normalize(self, obj: Any) -> Any:
+        if hasattr(obj, "__dataclass_fields__"):
+            data = {}
+            for key, value in obj.__dict__.items():
+                if value is None:
+                    continue
+                data[key] = self._normalize(value)
+            return data
+        if isinstance(obj, dict):
+            return {key: self._normalize(value) for key, value in obj.items()}
+        if isinstance(obj, list | tuple | set):
+            return [self._normalize(value) for value in obj]
+        if hasattr(obj, "value"):
+            return obj.value
+        return obj
+
+    def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
+        _ = (fmt, pretty)
+        return json.dumps(self._normalize(obj))
+
+    def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
+        return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
+
+    def loads(self, data: str | bytes, *, fmt: OutputFormat, pretty: bool) -> Any:
+        _ = (fmt, pretty)
+        return json.loads(data)
+
+    def emit(self, payload: Any, *, fmt: OutputFormat, pretty: bool) -> None:
+        _ = (payload, fmt, pretty)
+        return None
+
+
 def _fake_configure_emitter(monkeypatch: pytest.MonkeyPatch, emitter: Any) -> None:
-    """Patch DIContainer to always return a specific dummy emitter."""
-    fake = SimpleNamespace(resolve=lambda iface: emitter)
+    """Patch DIContainer to return a dummy emitter and serializer."""
+    fake = SimpleNamespace(
+        resolve=lambda iface: _BasicSerializer() if iface is Serializer else emitter
+    )
     monkeypatch.setattr(DIContainer, "current", staticmethod(lambda: fake))
 
 
@@ -172,6 +208,9 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
         lambda v: None,
     )
+    monkeypatch.setattr(
+        "bijux_cli.cli.emit.resolve_serializer", lambda: _BasicSerializer()
+    )
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
     assert result.exit_code == 1
@@ -188,12 +227,12 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -247,12 +286,12 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -391,12 +430,12 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -428,12 +467,12 @@ def test_debug_does_not_force_verbose_or_pretty(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
             pretty=False,
             include_runtime=False,
             json=False,
@@ -552,12 +591,12 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -595,12 +634,12 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -630,12 +669,12 @@ def test_audit_output_to_file_with_verbose(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -675,7 +714,7 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     assert excinfo.value.code == 2
@@ -696,12 +735,12 @@ def test_verbose_file_output_constructs_correct_final_payload(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,

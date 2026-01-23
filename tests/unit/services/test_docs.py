@@ -13,12 +13,12 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
 
-from bijux_cli.core.contracts import Serializer
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import ServiceError
+from bijux_cli.infra.contracts import Serializer
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
 from bijux_cli.services.diagnostics.docs import Docs
+from bijux_cli.services.errors import ServiceError
 
 
 @pytest.fixture

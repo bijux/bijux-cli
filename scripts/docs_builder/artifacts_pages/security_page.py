@@ -30,13 +30,22 @@ SEC_DIR = Path("artifacts/security")
 ORDER = ["bandit.txt", "bandit.json", "pip-audit.txt", "pip-audit.json"]
 
 BLURBS = {
-    "bandit.txt": ("Bandit screen output (Python security lint).", "0 issues (or all below allowed severity)."),
-    "bandit.json": ("Bandit JSON report with per-issue details.", "0 total issues; no HIGH/MED severities."),
+    "bandit.txt": (
+        "Bandit screen output (Python security lint).",
+        "0 issues (or all below allowed severity).",
+    ),
+    "bandit.json": (
+        "Bandit JSON report with per-issue details.",
+        "0 total issues; no HIGH/MED severities.",
+    ),
     "pip-audit.txt": (
         "pip-audit screen summary (dependency CVE scan; gated by helper script).",
         "0 vulnerable packages.",
     ),
-    "pip-audit.json": ("pip-audit JSON report (one run; helper script gates separately).", "0 vulnerabilities reported."),
+    "pip-audit.json": (
+        "pip-audit JSON report (one run; helper script gates separately).",
+        "0 vulnerabilities reported.",
+    ),
 }
 
 
@@ -138,7 +147,9 @@ class SecurityArtifactPage(StandardArtifactPage):
 
         if label == "bandit.json":
             total, sev = _bandit_json(path)
-            extra = f" — {total} issues (H:{sev['HIGH']} M:{sev['MEDIUM']} L:{sev['LOW']})"
+            extra = (
+                f" — {total} issues (H:{sev['HIGH']} M:{sev['MEDIUM']} L:{sev['LOW']})"
+            )
         elif label == "pip-audit.json":
             pkgs, vuln_pkgs, vulns = _pip_audit_json(path)
             extra = f" — {vulns} vulns across {vuln_pkgs}/{pkgs} packages"

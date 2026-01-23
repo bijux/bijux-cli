@@ -11,21 +11,26 @@ import pytest
 from typer import Context
 
 from bijux_cli.cli.commands.diagnostics.doctor import _build_payload, doctor
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
 def _fake_resolve_command_config(
     **kwargs: object,
-) -> tuple[ExecutionPolicy, OutputFormat, str]:
+) -> tuple[ExecutionPolicy, OutputFormat, OutputFormat]:
     fmt = str(kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
     verbose = bool(kwargs.get("verbose", False))
-    log_level = str(kwargs.get("log_level", "info")).lower()
+    log_level_raw = kwargs.get("log_level", LogLevel.INFO)
+    log_level = (
+        log_level_raw
+        if isinstance(log_level_raw, LogLevel)
+        else LogLevel(str(log_level_raw).lower())
+    )
     pretty = bool(kwargs.get("pretty", False))
     return (
         ExecutionPolicy(
-            output_format=fmt,
+            output_format=output_format,
             color=ColorMode.AUTO,
             quiet=bool(kwargs.get("quiet", False)),
             verbose=verbose,
@@ -33,10 +38,10 @@ def _fake_resolve_command_config(
             log_level=log_level,
             pretty=pretty,
             include_runtime=verbose,
-            json=False,
+            json=output_format is OutputFormat.JSON,
         ),
         output_format,
-        fmt,
+        output_format,
     )
 
 
@@ -113,7 +118,12 @@ def test_doctor_short_circuits_if_subcommand_set() -> None:
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = "anything"
     result = doctor(
-        ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+        ctx,
+        quiet=False,
+        verbose=False,
+        fmt="json",
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
     assert result is None
 
@@ -151,7 +161,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
 
     mock_emit.assert_called_once_with(
@@ -190,7 +200,12 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with patch("bijux_cli.cli.commands.diagnostics.doctor.new_run_command") as mock_new:
         doctor(
-            ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, log_level="debug"
+            ctx,
+            quiet=True,
+            verbose=True,
+            fmt="yaml",
+            pretty=False,
+            log_level=LogLevel.DEBUG,
         )
 
     mock_new.assert_called_once()
@@ -223,7 +238,12 @@ def test_doctor_stray_option_calls_emit_and_exits(
 
     with pytest.raises(SystemExit):
         doctor(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(
@@ -256,7 +276,12 @@ def test_doctor_stray_argument_calls_emit_and_exits(
 
     with pytest.raises(SystemExit):
         doctor(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(

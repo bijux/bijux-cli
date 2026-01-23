@@ -11,6 +11,7 @@ import pytest
 
 import bijux_cli.cli.commands.plugins.info as plugins_info
 from bijux_cli.cli.commands.plugins.info import info_plugin
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
@@ -50,7 +51,7 @@ def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.code == 1
     assert exc.value.payload["failure"] == "metadata_error"
@@ -73,7 +74,12 @@ def test_info_success(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     info_plugin(
-        "foo", fmt="json", quiet=False, verbose=False, pretty=True, log_level="info"
+        "foo",
+        fmt="json",
+        quiet=False,
+        verbose=False,
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
 
     payload = captured["payload_builder"](False)

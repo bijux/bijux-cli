@@ -17,9 +17,9 @@ from bijux_cli.cli.commands.version import (
     _build_payload,
     version_app,
 )
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
-from bijux_cli.version import __version__ as cli_version
+from bijux_cli.core.version import __version__ as cli_version
 
 runner = CliRunner()
 
@@ -113,12 +113,12 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="yaml",
+                output_format=OutputFormat.YAML,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=False,
                 verbose_level=0,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=True,
                 include_runtime=False,
                 json=False,
@@ -138,7 +138,7 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="yaml",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
 
@@ -218,7 +218,7 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
 
@@ -228,12 +228,12 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=True,
                 verbose=False,
                 verbose_level=0,
-                log_level="error",
+                log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
                 json=False,
@@ -253,7 +253,7 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="error",
+            log_level=LogLevel.ERROR,
         )
 
 
@@ -263,12 +263,12 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=True,
                 include_runtime=True,
                 json=False,
@@ -287,7 +287,7 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
             verbose=True,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
 
@@ -297,12 +297,12 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=False,
                 verbose_level=0,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=False,
                 json=False,
@@ -321,7 +321,7 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
 
@@ -331,12 +331,12 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="debug",
+                log_level=LogLevel.DEBUG,
                 pretty=True,
                 include_runtime=True,
                 json=False,
@@ -355,7 +355,7 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
             verbose=True,
             fmt="json",
             pretty=True,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
         )
 
 

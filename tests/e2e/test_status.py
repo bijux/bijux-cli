@@ -677,7 +677,7 @@ def test_status_help_precedes_di_failure(monkeypatch: pytest.MonkeyPatch) -> Non
         """A mock DI resolve method that raises a RuntimeError to test failure handling."""
         raise RuntimeError("Simulated DI Container Crash")
 
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
     monkeypatch.setattr(DIContainer, "resolve", mock_resolve_fails)
 

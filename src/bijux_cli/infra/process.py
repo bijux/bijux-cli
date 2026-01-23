@@ -123,17 +123,4 @@ class ProcessPool:
         return {"commands_processed": len(self._cache)}
 
 
-def get_process_pool(logger: Any, telemetry: Any) -> ProcessPool:
-    """Build a process pool instance."""
-    return ProcessPool(logger, telemetry)
-
-
-class NoopProcessExecutor:
-    """No-op executor that returns empty success."""
-
-    def run(self, cmd: list[str], *, executor: str) -> tuple[int, bytes, bytes]:
-        """Return a zero result for any command."""
-        return 0, b"", b""
-
-
-__all__ = ["NoopProcessExecutor", "ProcessPool", "get_process_pool", "validate_command"]
+__all__ = ["ProcessPool", "validate_command"]

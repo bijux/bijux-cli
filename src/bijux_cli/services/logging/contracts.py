@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel
 
 
 @dataclass(frozen=True)
@@ -17,7 +17,7 @@ class LoggingConfig:
     debug: bool
     quiet: bool
     verbose: bool
-    log_level: str
+    log_level: LogLevel
     color: ColorMode
 
 

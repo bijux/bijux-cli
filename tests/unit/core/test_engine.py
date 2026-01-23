@@ -13,10 +13,10 @@ from unittest.mock import patch
 
 import pytest
 
-from bijux_cli.app.async_exec import run_awaitable
-from bijux_cli.app.engine import Engine
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import CommandError
+from bijux_cli.core.engine import Engine
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.errors import PluginError
+from bijux_cli.core.runtime import run_awaitable
 from bijux_cli.infra.telemetry import NoopTelemetry
 from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services.history import History
@@ -99,7 +99,7 @@ class FakeDI:
     def resolve(self, key: Any) -> Any:
         """Resolve a dependency from the container."""
         if key is Observability:
-            return Observability(log_level="info", telemetry=NoopTelemetry())
+            return Observability(log_level=LogLevel.INFO, telemetry=NoopTelemetry())
         if key is RegistryProtocol:
             return self._registry
         if key is History:
@@ -126,7 +126,7 @@ def make_plugin_dir(base: Path, name: str) -> Path:
 def test_timeout_valid_values(value: str, expected: float) -> None:
     """Test that valid timeout configuration values are parsed correctly."""
     di = FakeDI()
-    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
     with patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": value}):
         assert eng._timeout() == expected
 
@@ -134,7 +134,7 @@ def test_timeout_valid_values(value: str, expected: float) -> None:
 def test_timeout_keyerror_uses_default() -> None:
     """Test that the default timeout is used when the env var is missing."""
     di = FakeDI()
-    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
     with patch.dict(os.environ, {}, clear=True):
         assert eng._timeout() == 30.0
 
@@ -142,7 +142,7 @@ def test_timeout_keyerror_uses_default() -> None:
 def test_timeout_invalid_raises_valueerror() -> None:
     """Test that an invalid timeout configuration raises a ValueError."""
     di = FakeDI()
-    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
     with (
         patch.dict(os.environ, {"BIJUXCLI_COMMAND_TIMEOUT": "oops"}),
         pytest.raises(ValueError, match="Invalid timeout configuration"),
@@ -154,7 +154,7 @@ def test_timeout_invalid_raises_valueerror() -> None:
 async def test_run_command_success_and_exceptions() -> None:
     """Test the command execution logic for success and various failure modes."""
     di = FakeDI()
-    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
 
     async def exec_ok(x: int, y: int = 1) -> int:
         return x + y
@@ -166,7 +166,7 @@ async def test_run_command_success_and_exceptions() -> None:
 
     plugin_no = SimpleNamespace()
     di._registry.register("noexec", plugin_no, version="v1")
-    with pytest.raises(CommandError) as e1:
+    with pytest.raises(PluginError) as e1:
         await eng.run_command("noexec")
     assert "has no callable 'execute' method" in str(e1.value)
     assert e1.value.http_status == 404
@@ -176,7 +176,7 @@ async def test_run_command_success_and_exceptions() -> None:
 
     plugin_bad = SimpleNamespace(execute=exec_bad)
     di._registry.register("syncexec", plugin_bad, version="v1")
-    with pytest.raises(CommandError) as e2:
+    with pytest.raises(PluginError) as e2:
         await eng.run_command("syncexec", 1)
     assert "is not async/coroutine" in str(e2.value)
     assert e2.value.http_status == 400
@@ -185,7 +185,7 @@ async def test_run_command_success_and_exceptions() -> None:
 def test_shutdown_flushes_history_and_calls_di_shutdown() -> None:
     """Test that the engine shutdown process flushes history and shuts down the DI container."""
     di = FakeDI()
-    eng = Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    eng = Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
     run_awaitable(eng.shutdown())
     assert di._history.flushed is True
     assert di._shutdown_called is True
@@ -196,7 +196,7 @@ def test_register_plugins_discovers_and_registers(
 ) -> None:
     """Test that plugins are correctly discovered and registered during engine initialization."""
     di = FakeDI()
-    import bijux_cli.app.engine as engine_mod
+    import bijux_cli.core.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path)
     calls: list[tuple[Path, str]] = []
@@ -219,7 +219,7 @@ def test_register_plugins_discovers_and_registers(
     make_plugin_dir(tmp_path, "beta")
     (tmp_path / "ignore.txt").write_text("nope")
 
-    Engine(di=di, log_level="info", fmt=OutputFormat.JSON)
+    Engine(di=di, log_level=LogLevel.INFO, fmt=OutputFormat.JSON)
 
     assert len(calls) == 2
     assert len(di._registry.register_calls) == 2
@@ -259,7 +259,7 @@ def test_register_plugins_skips_dirs_without_plugin_py(
 ) -> None:
     """Test that directories without a plugin.py are skipped during plugin registration."""
     di = FakeDI()
-    import bijux_cli.app.engine as engine_mod
+    import bijux_cli.core.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path, raising=True)
 
@@ -285,7 +285,7 @@ def test_register_plugins_registers_without_startup(
 ) -> None:
     """Test that a plugin is registered correctly even if it lacks a startup hook."""
     di = FakeDI()
-    import bijux_cli.app.engine as engine_mod
+    import bijux_cli.core.engine as engine_mod
 
     monkeypatch.setattr(engine_mod, "get_plugins_dir", lambda: tmp_path, raising=True)
     make_plugin_dir(tmp_path, "gamma")

@@ -34,8 +34,6 @@ from types import FrameType
 
 import typer
 
-from bijux_cli.app.async_exec import AsyncTyper
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -47,7 +45,10 @@ from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.payloads import StatusPayload
 from bijux_cli.cli.validation import ascii_safe, validate_common_flags
-from bijux_cli.core.contracts import Emitter
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -86,10 +87,10 @@ def _run_watch_mode(
     *,
     command: str,
     watch_interval: float,
-    fmt: str,
+    fmt: OutputFormat,
     quiet: bool,
     verbose: bool,
-    log_level: str,
+    log_level: LogLevel,
     effective_pretty: bool,
     include_runtime: bool,
     telemetry: TelemetryProtocol,
@@ -119,18 +120,19 @@ def _run_watch_mode(
         SystemExit: On an invalid format or an unrecoverable error during
             the watch loop.
     """
-    if fmt != "json":
+    format_value = fmt
+    if format_value is not OutputFormat.JSON:
         emit_error_and_exit(
             "Only JSON output is supported in watch mode.",
             code=2,
             failure="watch_fmt",
             command=command,
-            fmt=fmt,
+            fmt=format_value,
             quiet=quiet,
             include_runtime=include_runtime,
         )
 
-    debug = log_level == "debug"
+    debug = log_level == LogLevel.DEBUG
     stop = False
 
     def _sigint_handler(_sig: int, _frame: FrameType | None) -> None:
@@ -161,9 +163,9 @@ def _run_watch_mode(
                 if not quiet:
                     emitter.emit(
                         payload,
-                        fmt="json",
+                        fmt=OutputFormat.JSON,
                         pretty=effective_pretty,
-                        level="info",
+                        level=LogLevel.INFO,
                         message="Status update",
                         output=None,
                         emit_output=True,
@@ -171,7 +173,7 @@ def _run_watch_mode(
                     )
                 telemetry.event(
                     "COMMAND_SUCCESS",
-                    {"command": command, "format": fmt, "mode": "watch"},
+                    {"command": command, "format": fmt.value, "mode": "watch"},
                 )
                 time.sleep(watch_interval)
             except ValueError as exc:
@@ -206,9 +208,9 @@ def _run_watch_mode(
             if not quiet:
                 emitter.emit(
                     stop_payload,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=effective_pretty,
-                    level="info",
+                    level=LogLevel.INFO,
                     message="Status watch stopped",
                     output=None,
                     emit_output=True,
@@ -216,7 +218,7 @@ def _run_watch_mode(
                 )
             telemetry.event(
                 "COMMAND_STOPPED",
-                {"command": command, "format": fmt, "mode": "watch"},
+                {"command": command, "format": fmt.value, "mode": "watch"},
             )
         except (ValueError, Exception):
             _ = None
@@ -274,7 +276,7 @@ def status(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == "debug"
+    debug = effective.log_level == LogLevel.DEBUG
     pretty = effective.pretty
     validate_common_flags(
         fmt, command, quiet, include_runtime=effective.include_runtime
@@ -303,7 +305,7 @@ def status(
             fmt=fmt_lower,
             quiet=quiet,
             verbose=verbose,
-            log_level=log_level,
+            log_level=effective.log_level,
             effective_pretty=pretty,
             include_runtime=effective.include_runtime,
             telemetry=telemetry,
