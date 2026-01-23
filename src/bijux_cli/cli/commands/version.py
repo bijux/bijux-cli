@@ -29,16 +29,22 @@ import time
 
 import typer
 
+from bijux_cli.cli.commands.payloads import VersionPayload
 from bijux_cli.cli.constants import (
+    ENV_VERSION,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.payloads import VersionPayload
-from bijux_cli.cli.validation import ascii_safe, validate_common_flags
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.core.version import __version__ as cli_version
@@ -59,8 +65,8 @@ version_app = AsyncTyper(
 def _build_payload(include_runtime: bool) -> VersionPayload:
     """Builds the structured payload for the version command.
 
-    The version can be overridden by the `BIJUXCLI_VERSION` environment
-    variable, which is validated for correctness.
+    The version can be overridden by a dedicated environment variable,
+    which is validated for correctness.
 
     Args:
         include_runtime (bool): If True, appends Python/platform details
@@ -71,22 +77,22 @@ def _build_payload(include_runtime: bool) -> VersionPayload:
             optional runtime metadata.
 
     Raises:
-        ValueError: If `BIJUXCLI_VERSION` is set but is empty, too long,
+        ValueError: If the override env var is set but is empty, too long,
             contains non-ASCII characters, or is not a valid semantic version.
     """
-    version_env = os.environ.get("BIJUXCLI_VERSION")
+    version_env = os.environ.get(ENV_VERSION)
     if version_env is not None:
         if not (1 <= len(version_env) <= 1024):
-            raise ValueError("BIJUXCLI_VERSION is empty or too long")
+            raise ValueError(f"{ENV_VERSION} is empty or too long")
         if not all(ord(c) < 128 for c in version_env):
-            raise ValueError("BIJUXCLI_VERSION contains non-ASCII")
+            raise ValueError(f"{ENV_VERSION} contains non-ASCII")
         if not re.fullmatch(r"\d+\.\d+\.\d+", version_env):
-            raise ValueError("BIJUXCLI_VERSION is not valid semantic version (x.y.z)")
+            raise ValueError(f"{ENV_VERSION} is not valid semantic version (x.y.z)")
         version_ = version_env
     else:
         version_ = cli_version
 
-    payload = VersionPayload(version=ascii_safe(version_, "BIJUXCLI_VERSION"))
+    payload = VersionPayload(version=ascii_safe(version_, ENV_VERSION))
 
     if include_runtime:
         return VersionPayload(
@@ -102,11 +108,11 @@ def _build_payload(include_runtime: bool) -> VersionPayload:
 @version_app.callback(invoke_without_command=True)
 def version(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux version` command.
 

@@ -11,6 +11,7 @@ import os
 import shlex
 import sys
 
+from bijux_cli.cli.constants import OPT_FORMAT, OPT_QUIET, PRETTY_FLAGS
 from bijux_cli.cli.repl.parsing import (
     _filter_control,
     _known_commands,
@@ -40,17 +41,14 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
 
     head = tokens[0] if tokens else ""
 
-    if head in _JSON_CMDS and not {"--pretty", "--no-pretty", "-f", "--format"} & set(
-        tokens
-    ):
+    if head in _JSON_CMDS and not (set(PRETTY_FLAGS) | set(OPT_FORMAT)) & set(tokens):
         tokens.append("--no-pretty")
 
     if (
         head == "config"
         and len(tokens) > 1
         and tokens[1] == "list"
-        and "--no-pretty" not in tokens
-        and "--pretty" not in tokens
+        and not (set(PRETTY_FLAGS) & set(tokens))
     ):
         tokens.append("--no-pretty")
 
@@ -59,7 +57,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
     typer_app = app() if callable(app) else cli_root.app
     result = CliRunner().invoke(typer_app, tokens, env=env)
 
-    sub_quiet = any(t in ("-q", "--quiet") for t in tokens)
+    sub_quiet = any(t in OPT_QUIET for t in tokens)
     should_print = not repl_quiet and not sub_quiet
 
     if head == "history":
@@ -67,7 +65,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
             data = json.loads(result.stdout or "{}")
             if data.get("entries", []) == []:
                 if should_print:
-                    from bijux_cli.cli.emit import resolve_serializer
+                    from bijux_cli.cli.core.emit import resolve_serializer
 
                     pretty = (
                         resolve_serializer()
@@ -161,7 +159,7 @@ def _run_piped(repl_quiet: bool) -> None:
                         "command": f"config {subcommand[0] if subcommand else ''}".strip(),
                         "format": "json",
                     }
-                    from bijux_cli.cli.emit import resolve_serializer
+                    from bijux_cli.cli.core.emit import resolve_serializer
 
                     print(
                         resolve_serializer().dumps(

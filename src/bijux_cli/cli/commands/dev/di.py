@@ -26,20 +26,28 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import platform
-from typing import Any
 
 import typer
 
+from bijux_cli.cli.commands.payloads import DevDiPayload
 from bijux_cli.cli.constants import (
+    ENV_CONFIG,
+    ENV_DI_LIMIT,
+    ENV_TEST_FORCE_SERIALIZE_FAIL,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import get_execution_policy, new_run_command
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import get_execution_policy, new_run_command
+from bijux_cli.cli.core.validation import (
     ascii_safe,
     normalize_format,
     validate_common_flags,
@@ -47,11 +55,11 @@ from bijux_cli.cli.validation import (
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
 
-QUIET_OPTION = typer.Option(False, "-q", "--quiet", help=HELP_QUIET)
-VERBOSE_OPTION = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE)
-FORMAT_OPTION = typer.Option("json", "-f", "--format", help=HELP_FORMAT)
-PRETTY_OPTION = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY)
-LOG_LEVEL_OPTION = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL)
+QUIET_OPTION = typer.Option(False, *OPT_QUIET, help=HELP_QUIET)
+VERBOSE_OPTION = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE)
+FORMAT_OPTION = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT)
+PRETTY_OPTION = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY)
+LOG_LEVEL_OPTION = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL)
 OUTPUT_OPTION = typer.Option(
     None,
     "-o",
@@ -75,7 +83,7 @@ def _key_to_name(key: object) -> str:
     return str(name) if name else str(key)
 
 
-def _build_dev_di_payload(include_runtime: bool) -> dict[str, Any]:
+def _build_dev_di_payload(include_runtime: bool) -> DevDiPayload:
     """Builds the DI graph payload for structured output.
 
     Args:
@@ -97,10 +105,14 @@ def _build_dev_di_payload(include_runtime: bool) -> dict[str, Any]:
         for protocol, alias in di.services()
     ]
 
-    payload: dict[str, Any] = {"factories": factories, "services": services}
+    payload = DevDiPayload(factories=factories, services=services)
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return DevDiPayload(
+            factories=payload.factories,
+            services=payload.services,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
 
 
@@ -142,14 +154,14 @@ def dev_di_graph(
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON
 
-    limit_env = os.environ.get("BIJUXCLI_DI_LIMIT")
+    limit_env = os.environ.get(ENV_DI_LIMIT)
     limit: int | None = None
     if limit_env is not None:
         try:
             limit = int(limit_env)
             if limit < 0:
                 emit_error_and_exit(
-                    f"Invalid BIJUXCLI_DI_LIMIT value: '{limit_env}'",
+                    f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                     code=2,
                     failure="limit",
                     command=command,
@@ -160,7 +172,7 @@ def dev_di_graph(
                 )
         except (ValueError, TypeError):
             emit_error_and_exit(
-                f"Invalid BIJUXCLI_DI_LIMIT value: '{limit_env}'",
+                f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                 code=2,
                 failure="limit",
                 command=command,
@@ -170,7 +182,7 @@ def dev_di_graph(
                 debug=debug,
             )
 
-    config_env = os.environ.get("BIJUXCLI_CONFIG")
+    config_env = os.environ.get(ENV_CONFIG)
     if config_env and not config_env.isascii():
         emit_error_and_exit(
             f"Config path contains non-ASCII characters: {config_env!r}",
@@ -207,8 +219,12 @@ def dev_di_graph(
     try:
         payload = _build_dev_di_payload(effective_include_runtime)
         if limit is not None:
-            payload["factories"] = payload["factories"][:limit]
-            payload["services"] = payload["services"][:limit]
+            payload = DevDiPayload(
+                factories=payload.factories[:limit],
+                services=payload.services[:limit],
+                python=payload.python,
+                platform=payload.platform,
+            )
     except ValueError as exc:
         emit_error_and_exit(
             str(exc),
@@ -237,7 +253,7 @@ def dev_di_graph(
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
-                from bijux_cli.cli.emit import resolve_serializer
+                from bijux_cli.cli.core.emit import resolve_serializer
 
                 rendered = resolve_serializer().dumps(
                     payload, fmt=fmt_lower, pretty=effective_pretty
@@ -258,7 +274,7 @@ def dev_di_graph(
         if quiet:
             raise typer.Exit(0)
 
-    if os.environ.get("BIJUXCLI_TEST_FORCE_SERIALIZE_FAIL") == "1":
+    if os.environ.get(ENV_TEST_FORCE_SERIALIZE_FAIL) == "1":
         emit_error_and_exit(
             "Forced serialization failure",
             code=1,

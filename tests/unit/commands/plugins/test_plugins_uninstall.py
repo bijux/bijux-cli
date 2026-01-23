@@ -14,7 +14,7 @@ from typing import Any, NoReturn
 import pytest
 from typer.testing import CliRunner
 
-import bijux_cli.cli.commands.plugins.uninstall as uninstall_mod
+import bijux_cli.cli.plugins.commands.uninstall as uninstall_mod
 import bijux_cli.cli.root as cli
 from bijux_cli.cli.root import app as cli_app
 from bijux_cli.plugins.metadata import PluginMetadata
@@ -169,7 +169,7 @@ def test_remove_failed(
     (plugins_dir / "grault").mkdir(parents=True)
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.plugins.uninstall.shutil.rmtree",
+        "bijux_cli.cli.plugins.commands.uninstall.shutil.rmtree",
         lambda p: (_ for _ in ()).throw(RuntimeError("boom")),
     )
 

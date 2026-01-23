@@ -25,24 +25,30 @@ import platform
 
 import typer
 
+from bijux_cli.cli.commands.payloads import DevPluginsPayload
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.plugins.listing import list_installed_plugins
 
 
 def dev_list_plugins(
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Lists all installed CLI plugins.
 
@@ -76,11 +82,14 @@ def dev_list_plugins(
     )
     plugins = list_installed_plugins()
 
-    def payload_builder(include_runtime: bool) -> dict[str, object]:
-        payload: dict[str, object] = {"plugins": plugins}
+    def payload_builder(include_runtime: bool) -> DevPluginsPayload:
+        payload = DevPluginsPayload(plugins=plugins)
         if include_runtime:
-            payload["python"] = platform.python_version()
-            payload["platform"] = platform.platform()
+            return DevPluginsPayload(
+                plugins=payload.plugins,
+                python=platform.python_version(),
+                platform=platform.platform(),
+            )
         return payload
 
     new_run_command(

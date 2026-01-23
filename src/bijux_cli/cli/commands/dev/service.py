@@ -9,7 +9,7 @@ it provides a simple status confirmation.
 
 Output Contract:
     * Success: `{"status": "ok"}`
-    * With Env Var: Adds `{"mode": str}` if `BIJUXCLI_DEV_MODE` is set.
+    * With Env Var: Adds `{"mode": str}` if the dev-mode env var is set.
     * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
@@ -22,22 +22,27 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import os
 import platform
-from typing import Any
 
 import typer
 
+from bijux_cli.cli.commands.payloads import DevStatusPayload
 from bijux_cli.cli.constants import (
+    ENV_DEV_MODE,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.output import get_execution_policy, new_run_command
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.output import get_execution_policy, new_run_command
+from bijux_cli.cli.core.validation import (
     ascii_safe,
     normalize_format,
     validate_common_flags,
@@ -47,11 +52,11 @@ from bijux_cli.core.enums import OutputFormat
 
 def dev(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux dev` command group.
 
@@ -93,9 +98,9 @@ def dev(
         include_runtime=effective_include_runtime,
     )
 
-    mode = os.environ.get("BIJUXCLI_DEV_MODE")
+    mode = os.environ.get(ENV_DEV_MODE)
 
-    def payload_builder(_: bool) -> Mapping[str, Any]:
+    def payload_builder(_: bool) -> DevStatusPayload:
         """Builds the payload for the dev status command.
 
         The payload indicates an "ok" status and includes optional mode and
@@ -106,14 +111,23 @@ def dev(
                 the `payload_builder` in `new_run_command`.
 
         Returns:
-            Mapping[str, Any]: The structured payload.
+            DevStatusPayload: The structured payload.
         """
-        payload: dict[str, Any] = {"status": "ok"}
+        payload = DevStatusPayload(status="ok")
         if mode:
-            payload["mode"] = mode
+            payload = DevStatusPayload(
+                status=payload.status,
+                mode=mode,
+                python=payload.python,
+                platform=payload.platform,
+            )
         if effective_include_runtime:
-            payload["python"] = ascii_safe(platform.python_version(), "python_version")
-            payload["platform"] = ascii_safe(platform.platform(), "platform")
+            payload = DevStatusPayload(
+                status=payload.status,
+                mode=payload.mode,
+                python=ascii_safe(platform.python_version(), "python_version"),
+                platform=ascii_safe(platform.platform(), "platform"),
+            )
         return payload
 
     new_run_command(

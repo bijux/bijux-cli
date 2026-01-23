@@ -28,6 +28,17 @@ from bijux_cli.cli.commands.config.reload import reload_config
 from bijux_cli.cli.commands.config.service import config
 from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
+from bijux_cli.cli.commands.payloads import (
+    ConfigClearPayload,
+    ConfigDumpPayload,
+    ConfigExportPayload,
+    ConfigGetPayload,
+    ConfigListPayload,
+    ConfigLoadPayload,
+    ConfigReloadPayload,
+    ConfigSetPayload,
+    ConfigUnsetPayload,
+)
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.errors import ConfigError
 from bijux_cli.core.precedence import ExecutionPolicy
@@ -61,7 +72,7 @@ def test_config_callback_no_subcommand(
     """Test the main config command callback when no subcommand is invoked."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -75,8 +86,10 @@ def test_config_callback_no_subcommand(
         mock_config_svc.all.return_value = {"key1": "value1"}
         config(ctx)
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"key1": "value1"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigDumpPayload)
+        assert payload.entries == {"key1": "value1"}
+        assert builder(True).python is not None
 
 
 def test_clear_config_success(
@@ -85,7 +98,7 @@ def test_clear_config_success(
     """Test the successful clearing of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -98,8 +111,10 @@ def test_clear_config_success(
         clear_config(ctx)
         mock_config_svc.clear.assert_called_once()
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "cleared"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigClearPayload)
+        assert payload.status == "cleared"
+        assert builder(True).python is not None
 
 
 def test_clear_config_fail(
@@ -108,7 +123,7 @@ def test_clear_config_fail(
     """Test the failure path when clearing the configuration."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -130,7 +145,7 @@ def test_export_config_stdout(
     """Test exporting the configuration to stdout."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -149,7 +164,7 @@ def test_export_config_file(
     """Test exporting the configuration to a file."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -162,8 +177,10 @@ def test_export_config_file(
         export_config(ctx, "file", "json")
         mock_config_svc.export.assert_called_with("file", "json")
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False)["status"] == "exported"
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigExportPayload)
+        assert payload.status == "exported"
+        assert builder(True).python is not None
 
 
 def test_get_config_success(
@@ -172,7 +189,7 @@ def test_get_config_success(
     """Test successfully getting a configuration value."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -184,8 +201,10 @@ def test_get_config_success(
         get_config(ctx, "key")
         mock_config_svc.get.assert_called_with("key")
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"value": "value"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigGetPayload)
+        assert payload.value == "value"
+        assert builder(True).python is not None
 
 
 def test_list_config_success(
@@ -194,7 +213,7 @@ def test_list_config_success(
     """Test successfully listing all configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -208,8 +227,10 @@ def test_list_config_success(
         list_config(ctx)
         mock_config_svc.list_keys.assert_called_once()
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"items": [{"key": "key1"}, {"key": "key2"}]}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigListPayload)
+        assert payload.items == [{"key": "key1"}, {"key": "key2"}]
+        assert builder(True).python is not None
 
 
 def test_load_config_success(
@@ -218,7 +239,7 @@ def test_load_config_success(
     """Test successfully loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -229,8 +250,11 @@ def test_load_config_success(
         load_config(ctx, "path")
         mock_config_svc.load.assert_called_with("path")
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "loaded", "file": "path"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigLoadPayload)
+        assert payload.status == "loaded"
+        assert payload.file == "path"
+        assert builder(True).python is not None
 
 
 def test_load_config_exception(
@@ -239,7 +263,7 @@ def test_load_config_exception(
     """Test the failure path when loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -259,7 +283,7 @@ def test_reload_config_success(
     """Test the successful reloading of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -272,8 +296,10 @@ def test_reload_config_success(
         reload_config(ctx)
         mock_config_svc.reload.assert_called_once()
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "reloaded"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigReloadPayload)
+        assert payload.status == "reloaded"
+        assert builder(True).python is not None
 
 
 def test_reload_config_exception(
@@ -282,7 +308,7 @@ def test_reload_config_exception(
     """Test the failure path when reloading the configuration."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -304,7 +330,7 @@ def test_set_config_arg(
     """Test setting a configuration value from a command-line argument."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -315,8 +341,12 @@ def test_set_config_arg(
         set_config(ctx, "key=value")
         mock_config_svc.set.assert_called_with("key", "value")
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "updated", "key": "key", "value": "value"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigSetPayload)
+        assert payload.status == "updated"
+        assert payload.key == "key"
+        assert payload.value == "value"
+        assert builder(True).python is not None
 
 
 def test_set_config_stdin(
@@ -327,7 +357,7 @@ def test_set_config_stdin(
     """Test setting a configuration value from stdin."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -347,7 +377,7 @@ def test_set_config_empty_key(
     """Test that setting a value with an empty key fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -366,7 +396,7 @@ def test_set_config_non_ascii(
     """Test that setting a value with non-ASCII characters fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -385,7 +415,7 @@ def test_set_config_control_char(
     """Test that setting a value with a control character fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -404,7 +434,7 @@ def test_set_config_invalid_key(
     """Test that setting a value with an invalid key format fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -423,7 +453,7 @@ def test_set_config_exception(
     """Test the failure path when the config service 'set' method raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -443,7 +473,7 @@ def test_unset_config_success(
     """Test the successful unsetting of a configuration key."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -456,8 +486,11 @@ def test_unset_config_success(
         unset_config(ctx, "key")
         mock_config_svc.unset.assert_called_with("key")
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "deleted", "key": "key"}
-        assert "python" in builder(True)
+        payload = builder(False)
+        assert isinstance(payload, ConfigUnsetPayload)
+        assert payload.status == "deleted"
+        assert payload.key == "key"
+        assert builder(True).python is not None
 
 
 def test_unset_config_key_error(
@@ -466,7 +499,7 @@ def test_unset_config_key_error(
     """Test that unsetting a non-existent key is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -488,7 +521,7 @@ def test_unset_config_exception(
     """Test the failure path when the config service 'unset' raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -518,7 +551,7 @@ def test_export_config_command_error(
     """Test that a ConfigError during export is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -541,7 +574,7 @@ def test_export_config_exception(
     """Test that a generic Exception during export is propagated."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -562,7 +595,7 @@ def test_get_config_not_found(
     """Test that a ConfigError when getting a non-existent key is handled."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -583,7 +616,7 @@ def test_get_config_exception(
     """Test that a generic exception when getting a config value is propagated."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -602,7 +635,7 @@ def test_list_config_exception(
     """Test the failure path when listing configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -629,7 +662,7 @@ def test_set_config_no_arg_tty(
     """Test that setting a value with no argument on a TTY fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -650,7 +683,7 @@ def test_set_config_invalid_pair(
     """Test that setting a value with an invalid pair format fails."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -672,7 +705,7 @@ def test_set_config_stdin_escaped(
     """Test that escaped characters from stdin are correctly handled."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -694,7 +727,7 @@ def test_get_config_other_command_error(
 
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -740,7 +773,7 @@ def test_config_root_with_subcommand_skips_execution(
     fake_ctx.invoked_subcommand = "something"
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: (_ for _ in ()).throw(
             AssertionError("get_execution_policy should not run")
         ),
@@ -786,7 +819,7 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(bad_path))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -822,7 +855,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -866,7 +899,7 @@ def test_posix_lock_success_and_run(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -904,10 +937,13 @@ def test_posix_lock_success_and_run(
     assert "payload_builder" in captured
     builder = captured["payload_builder"]
     no_rt = builder(False)
-    assert no_rt == {"status": "updated", "key": "foo", "value": "bar"}
+    assert isinstance(no_rt, ConfigSetPayload)
+    assert no_rt.status == "updated"
+    assert no_rt.key == "foo"
+    assert no_rt.value == "bar"
     with_rt = builder(True)
-    assert "python" in with_rt
-    assert "platform" in with_rt
+    assert with_rt.python is not None
+    assert with_rt.platform is not None
 
 
 def test_posix_lock_import_failure_skips_lock(
@@ -919,7 +955,7 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -973,7 +1009,10 @@ def test_posix_lock_import_failure_skips_lock(
 
     assert "payload_builder" in captured
     payload = captured["payload_builder"](False)
-    assert payload == {"status": "updated", "key": "abc", "value": "123"}
+    assert isinstance(payload, ConfigSetPayload)
+    assert payload.status == "updated"
+    assert payload.key == "abc"
+    assert payload.value == "123"
 
 
 def test_posix_unlock_failure_is_ignored(
@@ -985,7 +1024,7 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -1034,7 +1073,10 @@ def test_posix_unlock_failure_is_ignored(
 
     assert "payload_builder" in captured
     payload = captured["payload_builder"](False)
-    assert payload == {"status": "updated", "key": "foo", "value": "bar"}
+    assert isinstance(payload, ConfigSetPayload)
+    assert payload.status == "updated"
+    assert payload.key == "foo"
+    assert payload.value == "bar"
 
 
 def test_non_posix_skips_file_lock_block(
@@ -1046,7 +1088,7 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -1089,4 +1131,7 @@ def test_non_posix_skips_file_lock_block(
 
     assert "payload_builder" in captured
     out = captured["payload_builder"](False)
-    assert out == {"status": "updated", "key": "winkey", "value": "winval"}
+    assert isinstance(out, ConfigSetPayload)
+    assert out.status == "updated"
+    assert out.key == "winkey"
+    assert out.value == "winval"

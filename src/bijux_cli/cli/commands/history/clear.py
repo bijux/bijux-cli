@@ -20,22 +20,26 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import platform
-from typing import Any
 
 import typer
 
+from bijux_cli.cli.commands.payloads import HistoryClearPayload
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import ascii_safe, validate_common_flags
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.services.history.contracts import HistoryProtocol
@@ -80,11 +84,11 @@ def resolve_history_service(
 
 
 def clear_history(
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Erases all stored command history.
 
@@ -139,19 +143,22 @@ def clear_history(
             debug=debug,
         )
 
-    def payload_builder(include_runtime: bool) -> Mapping[str, Any]:
+    def payload_builder(include_runtime: bool) -> HistoryClearPayload:
         """Builds the payload confirming the history was cleared.
 
         Args:
             include_runtime (bool): If True, includes Python and platform info.
 
         Returns:
-            Mapping[str, Any]: The structured payload.
+            HistoryClearPayload: The structured payload.
         """
-        payload: dict[str, Any] = {"status": "cleared"}
+        payload = HistoryClearPayload(status="cleared")
         if include_runtime:
-            payload["python"] = ascii_safe(platform.python_version(), "python_version")
-            payload["platform"] = ascii_safe(platform.platform(), "platform")
+            return HistoryClearPayload(
+                status=payload.status,
+                python=ascii_safe(platform.python_version(), "python_version"),
+                platform=ascii_safe(platform.platform(), "platform"),
+            )
         return payload
 
     new_run_command(

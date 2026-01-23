@@ -5,6 +5,42 @@
 
 from __future__ import annotations
 
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+
+OPT_QUIET = ("-q", "--quiet")
+OPT_VERBOSE = ("-v", "--verbose")
+OPT_FORMAT = ("-f", "--format")
+OPT_LOG_LEVEL = ("--log-level",)
+OPT_COLOR = ("--color",)
+OPT_PRETTY = "--pretty/--no-pretty"
+OPT_HELP = ("-h", "--help")
+PRETTY_FLAGS = ("--pretty", "--no-pretty")
+
+ENV_CONFIG = "BIJUXCLI_CONFIG"
+ENV_LOG_LEVEL = "BIJUXCLI_LOG_LEVEL"
+ENV_COLOR = "BIJUXCLI_COLOR"
+ENV_DISABLE_HISTORY = "BIJUXCLI_DISABLE_HISTORY"
+ENV_TEST_MODE = "BIJUXCLI_TEST_MODE"
+ENV_PREFIX = "BIJUXCLI_"
+ENV_COMMAND_TIMEOUT = "BIJUXCLI_COMMAND_TIMEOUT"
+ENV_DI_LIMIT = "BIJUXCLI_DI_LIMIT"
+ENV_DOCS_OUT = "BIJUXCLI_DOCS_OUT"
+ENV_TEST_IO_FAIL = "BIJUXCLI_TEST_IO_FAIL"
+ENV_TEST_FORCE_SERIALIZE_FAIL = "BIJUXCLI_TEST_FORCE_SERIALIZE_FAIL"
+ENV_TEST_FORCE_UNHEALTHY = "BIJUXCLI_TEST_FORCE_UNHEALTHY"
+ENV_DEV_MODE = "BIJUXCLI_DEV_MODE"
+ENV_VERSION = "BIJUXCLI_VERSION"
+ENV_HISTORY_FILE = "BIJUXCLI_HISTORY_FILE"
+ENV_BIN = "BIJUXCLI_BIN"
+ENV_NO_COLOR = "NO_COLOR"
+
+DEFAULT_LOG_LEVEL = LogLevel.INFO
+DEFAULT_COLOR = ColorMode.AUTO
+DEFAULT_FORMAT = OutputFormat.JSON
+DEFAULT_PRETTY = True
+DEFAULT_QUIET = False
+DEFAULT_VERBOSE = False
+
 HELP_VERBOSE = "Include extra runtime details."
 HELP_QUIET = "Suppress normal output; exit code still indicates success/failure."
 HELP_NO_PRETTY = "Disable pretty-printing (indentation) in JSON/YAML output."

@@ -35,10 +35,15 @@ from bijux_cli.cli.constants import (
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins.metadata import (
     discover_plugins,
@@ -52,11 +57,11 @@ def install_plugin(
     name: str = typer.Argument(..., help="PyPI package name"),
     dry_run: bool = typer.Option(False, "--dry-run"),
     force: bool = typer.Option(False, "--force", "-F"),
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(False, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(False, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Installs a plugin from PyPI by package name.
 

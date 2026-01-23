@@ -23,6 +23,7 @@ from bijux_cli.cli.commands.dev.di import (
 )
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
+from bijux_cli.cli.commands.payloads import DevDiPayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
@@ -73,16 +74,16 @@ def test_build_dev_di_payload_without_runtime(monkeypatch: pytest.MonkeyPatch) -
     )
 
     payload = _build_dev_di_payload(include_runtime=False)
-    assert payload["factories"] == [
+    assert payload.factories == [
         {"protocol": "str", "alias": "E"},
         {"protocol": "X", "alias": "Y"},
     ]
-    assert payload["services"] == [
+    assert payload.services == [
         {"protocol": "int", "alias": "I", "implementation": None},
         {"protocol": "S", "alias": "T", "implementation": None},
     ]
-    assert "python" not in payload
-    assert "platform" not in payload
+    assert payload.python is None
+    assert payload.platform is None
 
 
 def test_build_dev_di_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -96,10 +97,10 @@ def test_build_dev_di_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> N
     )
 
     payload = _build_dev_di_payload(include_runtime=True)
-    assert payload["factories"] == []
-    assert payload["services"] == []
-    assert "python" in payload
-    assert "platform" in payload
+    assert payload.factories == []
+    assert payload.services == []
+    assert payload.python is not None
+    assert payload.platform is not None
 
 
 def test_dev_di_graph_basic_json_calls_new_run_command(
@@ -111,10 +112,14 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
-    base_payload = {"factories": [{"protocol": "A", "alias": "a"}], "services": []}
+    from bijux_cli.cli.commands.payloads import DevDiPayload
+
+    base_payload = DevDiPayload(
+        factories=[{"protocol": "A", "alias": "a"}], services=[]
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
-        lambda include_runtime: dict(base_payload),
+        lambda include_runtime: base_payload,
     )
 
     captured: dict[str, Any] = {}
@@ -151,23 +156,22 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
-    payload_in: dict[str, Any] = {
-        "factories": [{"protocol": "A", "alias": "a"}, {"protocol": "B", "alias": "b"}],
-        "services": [
+    payload_in = DevDiPayload(
+        factories=[{"protocol": "A", "alias": "a"}, {"protocol": "B", "alias": "b"}],
+        services=[
             {"protocol": "C", "alias": "c", "implementation": None},
             {"protocol": "D", "alias": "d", "implementation": None},
         ],
-    }
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
-        lambda include_runtime: dict(payload_in),
+        lambda include_runtime: payload_in,
     )
 
     out: dict[str, Any] = {}
 
     def _fake_new_run_command(**kw: Any) -> None:
-        payload = cast(dict[str, Any], kw["payload_builder"](False))
-        out["payload"] = payload
+        out["payload"] = kw["payload_builder"](False)
 
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di.new_run_command", _fake_new_run_command
@@ -182,9 +186,9 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
         output=[],
     )
 
-    payload_out = cast(dict[str, Any], out["payload"])
-    assert payload_out["factories"] == [payload_in["factories"][0]]
-    assert payload_out["services"] == [payload_in["services"][0]]
+    payload_out = cast(DevDiPayload, out["payload"])
+    assert payload_out.factories == [payload_in.factories[0]]
+    assert payload_out.services == [payload_in.services[0]]
 
 
 def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
@@ -196,13 +200,13 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
-    payload_in = {
-        "factories": [],
-        "services": [{"protocol": "X", "alias": "x", "implementation": None}],
-    }
+    payload_in = DevDiPayload(
+        factories=[],
+        services=[{"protocol": "X", "alias": "x", "implementation": None}],
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
-        lambda include_runtime: dict(payload_in),
+        lambda include_runtime: payload_in,
     )
 
     called: dict[str, Any] = {}
@@ -222,7 +226,7 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
     )
 
     data = json.loads(out_path.read_text("utf-8"))
-    assert data == payload_in
+    assert data == {"factories": payload_in.factories, "services": payload_in.services}
     assert called["built"] == payload_in
 
 
@@ -234,10 +238,13 @@ def test_dev_di_graph_output_yaml_writes_file(
         "bijux_cli.cli.commands.dev.di.validate_common_flags",
         lambda fmt, cmd, quiet, include_runtime=False: "yaml",
     )
-    payload_in = {"factories": [{"protocol": "K", "alias": "k"}], "services": []}
+    payload_in = DevDiPayload(
+        factories=[{"protocol": "K", "alias": "k"}],
+        services=[],
+    )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di._build_dev_di_payload",
-        lambda include_runtime: dict(payload_in),
+        lambda include_runtime: payload_in,
     )
 
     monkeypatch.setattr(
@@ -256,7 +263,10 @@ def test_dev_di_graph_output_yaml_writes_file(
 
     text = out_path.read_text("utf-8")
     loaded = yaml.safe_load(text)
-    assert loaded == payload_in
+    assert loaded == {
+        "factories": payload_in.factories,
+        "services": payload_in.services,
+    }
 
 
 def test_dev_di_graph_quiet_after_writing_exits(
@@ -610,7 +620,7 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test that the list-plugins command correctly calls its handlers."""
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -714,8 +724,9 @@ def test_dev_payload_basic_and_runtime_inclusion(
     )
     assert captured["kwargs"]["fmt"] == "json"
     assert not captured["kwargs"]["verbose"]
-    assert captured["built"]["status"] == "ok"
-    assert "python" not in captured["built"]
+    built = captured["built"]
+    assert built.status == "ok"
+    assert built.python is None
 
     policy = ExecutionPolicy(
         output_format=OutputFormat.JSON,
@@ -736,8 +747,8 @@ def test_dev_payload_basic_and_runtime_inclusion(
         log_level=LogLevel.INFO,
     )
     assert captured["kwargs"]["verbose"]
-    assert "python" in captured["built_rt"]
-    assert "platform" in captured["built_rt"]
+    assert captured["built_rt"].python is not None
+    assert captured["built_rt"].platform is not None
 
 
 def test_dev_payload_includes_mode_env(
@@ -764,19 +775,20 @@ def test_dev_payload_includes_mode_env(
         lambda fmt, cmd, quiet, include_runtime=False: "json",
     )
 
-    built_payload: dict[str, Any] = {}
+    captured: list[Any] = []
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.new_run_command",
-        lambda **kw: built_payload.update(kw["payload_builder"](True)),
+        lambda **kw: captured.append(kw["payload_builder"](True)),
     )
 
     dev(
         ctx, quiet=False, verbose=True, fmt="json", pretty=True, log_level=LogLevel.INFO
     )
-    assert built_payload["status"] == "ok"
-    assert built_payload["mode"] == "diagnostic"
-    assert "python" in built_payload
-    assert "platform" in built_payload
+    built_payload = captured[0]
+    assert built_payload.status == "ok"
+    assert built_payload.mode == "diagnostic"
+    assert built_payload.python is not None
+    assert built_payload.platform is not None
 
 
 def test_dev_di_graph_config_env_readable_path(

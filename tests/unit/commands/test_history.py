@@ -41,6 +41,41 @@ def mock_history_svc() -> MagicMock:
     return mock
 
 
+def _entries(payload: Any) -> list[dict[str, Any]]:
+    """Return entries from either a payload dataclass or dict."""
+    if hasattr(payload, "entries"):
+        return cast(list[dict[str, Any]], payload.entries)
+    return cast(list[dict[str, Any]], payload["entries"])
+
+
+def _status(payload: Any) -> str:
+    """Return status from either a payload dataclass or dict."""
+    if hasattr(payload, "status"):
+        return cast(str, payload.status)
+    return cast(str, payload["status"])
+
+
+def _file(payload: Any) -> str:
+    """Return file from either a payload dataclass or dict."""
+    if hasattr(payload, "file"):
+        return cast(str, payload.file)
+    return cast(str, payload["file"])
+
+
+def _has_python(payload: Any) -> bool:
+    """Return True when a payload includes python runtime metadata."""
+    if hasattr(payload, "python"):
+        return payload.python is not None
+    return "python" in payload
+
+
+def _has_platform(payload: Any) -> bool:
+    """Return True when a payload includes platform runtime metadata."""
+    if hasattr(payload, "platform"):
+        return payload.platform is not None
+    return "platform" in payload
+
+
 def test_resolve_history_service_success(mock_flags: dict[str, Any]) -> None:
     """Test successful resolution of the history service."""
     with patch(
@@ -106,8 +141,8 @@ def test_history_no_subcommand(mock_flags: dict[str, Any]) -> None:
             ctx, 20, None, None, None, cast(str, None), cast(str, None), **mock_flags
         )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"entries": [{"command": "cmd1"}]}
-        assert "python" in builder(True)
+        assert _entries(builder(False)) == [{"command": "cmd1"}]
+        assert _has_python(builder(True))
 
 
 def test_history_limit_zero(mock_flags: dict[str, Any]) -> None:
@@ -131,7 +166,7 @@ def test_history_limit_zero(mock_flags: dict[str, Any]) -> None:
             ctx, 0, None, None, None, cast(str, None), cast(str, None), **mock_flags
         )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"entries": []}
+        assert _entries(builder(False)) == []
 
 
 def test_history_filter_cmd(mock_flags: dict[str, Any]) -> None:
@@ -158,7 +193,7 @@ def test_history_filter_cmd(mock_flags: dict[str, Any]) -> None:
             ctx, 20, None, "cmd1", None, cast(str, None), cast(str, None), **mock_flags
         )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"entries": [{"command": "cmd1"}]}
+        assert _entries(builder(False)) == [{"command": "cmd1"}]
 
 
 def test_history_sort_timestamp(mock_flags: dict[str, Any]) -> None:
@@ -189,7 +224,7 @@ def test_history_sort_timestamp(mock_flags: dict[str, Any]) -> None:
             **mock_flags,
         )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"entries": [{"timestamp": 1}, {"timestamp": 2}]}
+        assert _entries(builder(False)) == [{"timestamp": 1}, {"timestamp": 2}]
 
 
 def test_history_group_by_command(mock_flags: dict[str, Any]) -> None:
@@ -224,7 +259,7 @@ def test_history_group_by_command(mock_flags: dict[str, Any]) -> None:
             **mock_flags,
         )
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        entries = builder(False)["entries"]
+        entries = _entries(builder(False))
         assert len(entries) == 2
         assert any(e["group"] == "cmd1" and e["count"] == 2 for e in entries)
         assert any(e["group"] == "cmd2" and e["count"] == 1 for e in entries)
@@ -267,7 +302,9 @@ def test_history_export_path(mock_flags: dict[str, Any]) -> None:
 
         first_call_kwargs = mock_new_run.call_args_list[0].kwargs
         builder = first_call_kwargs["payload_builder"]
-        assert builder(False) == {"status": "exported", "file": "export.json"}
+        payload = builder(False)
+        assert _status(payload) == "exported"
+        assert _file(payload) == "export.json"
 
 
 def test_history_import_path(mock_flags: dict[str, Any]) -> None:
@@ -322,7 +359,9 @@ def test_history_import_path(mock_flags: dict[str, Any]) -> None:
 
         first_call_kwargs = mock_new_run.call_args_list[0].kwargs
         builder = first_call_kwargs["payload_builder"]
-        assert builder(False) == {"status": "imported", "file": "import.json"}
+        payload = builder(False)
+        assert _status(payload) == "imported"
+        assert _file(payload) == "import.json"
 
 
 def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
@@ -637,8 +676,8 @@ def test_clear_history_success(mock_flags: dict[str, Any]) -> None:
         clear_history(**mock_flags)
         mock_history_svc.clear.assert_called_once()
         builder = mock_new_run.call_args.kwargs["payload_builder"]
-        assert builder(False) == {"status": "cleared"}
-        assert "python" in builder(True)
+        assert _status(builder(False)) == "cleared"
+        assert _has_python(builder(True))
 
 
 def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
@@ -702,7 +741,7 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
     flags = {**mock_flags, "log_level": "debug"}
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -733,9 +772,9 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
 
         builder = call_kwargs["payload_builder"]
         payload = builder(True)
-        assert payload["status"] == "cleared"
-        assert "python" in payload
-        assert "platform" in payload
+        assert _status(payload) == "cleared"
+        assert _has_python(payload)
+        assert _has_platform(payload)
 
 
 def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -797,7 +836,7 @@ def test_history_list_positive_limit_and_failure(
             log_level=LogLevel.INFO,
         )
         builder = new_run.call_args.kwargs["payload_builder"]
-        assert builder(False)["entries"] == entries[-2:]
+        assert _entries(builder(False)) == entries[-2:]
 
     svc2 = MagicMock()
     svc2.list.side_effect = ValueError("nope")
@@ -847,7 +886,7 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     svc.list.return_value = [{"a": 1}]
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -891,17 +930,17 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     first_kwargs = new_run.call_args_list[0].kwargs
     builder = first_kwargs["payload_builder"]
     payload = builder(True)
-    assert payload["status"] == "exported"
-    assert payload["file"] == str(out_path)
-    assert "python" in payload
-    assert "platform" in payload
+    assert _status(payload) == "exported"
+    assert _file(payload) == str(out_path)
+    assert _has_python(payload)
+    assert _has_platform(payload)
 
 
 def test_history_debug_flag_respects_verbose_and_pretty() -> None:
     """Test that debug does not override verbose or pretty flags."""
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -1043,7 +1082,7 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -1091,8 +1130,8 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
     first_kwargs = new_run.call_args_list[0].kwargs
     builder = first_kwargs["payload_builder"]
     payload = builder(False)
-    assert payload["status"] == "imported"
-    assert payload["file"].endswith("inp.json")
+    assert _status(payload) == "imported"
+    assert _file(payload).endswith("inp.json")
 
 
 def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
@@ -1104,7 +1143,7 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -1147,10 +1186,10 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
     first_kwargs = new_run.call_args_list[0].kwargs
     builder = first_kwargs["payload_builder"]
     payload = builder(True)
-    assert payload["status"] == "imported"
-    assert payload["file"].endswith("in2.json")
-    assert "python" in payload
-    assert "platform" in payload
+    assert _status(payload) == "imported"
+    assert _file(payload).endswith("in2.json")
+    assert _has_python(payload)
+    assert _has_platform(payload)
 
 
 def test_history_export_payload_and_basic(tmp_path: Path) -> None:
@@ -1160,7 +1199,7 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -1204,8 +1243,8 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
     first_kwargs = new_run.call_args_list[0].kwargs
     builder = first_kwargs["payload_builder"]
     payload = builder(False)
-    assert payload["status"] == "exported"
-    assert payload["file"] == str(out)
+    assert _status(payload) == "exported"
+    assert _file(payload) == str(out)
 
 
 def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
@@ -1215,7 +1254,7 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.output.get_execution_policy",
+            "bijux_cli.cli.core.output.get_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -1259,10 +1298,10 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
     first_kwargs = new_run.call_args_list[0].kwargs
     builder = first_kwargs["payload_builder"]
     payload = builder(True)
-    assert payload["status"] == "exported"
-    assert payload["file"] == str(out)
-    assert "python" in payload
-    assert "platform" in payload
+    assert _status(payload) == "exported"
+    assert _file(payload) == str(out)
+    assert _has_python(payload)
+    assert _has_platform(payload)
 
 
 def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1299,7 +1338,7 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
     last_kwargs = new_run.call_args_list[-1].kwargs
     builder = last_kwargs["payload_builder"]
     payload = builder(False)
-    assert payload["entries"] == [{"id": 2}, {"id": 3}]
+    assert _entries(payload) == [{"id": 2}, {"id": 3}]
 
 
 def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1339,12 +1378,12 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
     builder = new_run.call_args.kwargs["payload_builder"]
 
     payload_no_rt = builder(False)
-    assert payload_no_rt["entries"] == entries[-2:]
+    assert _entries(payload_no_rt) == entries[-2:]
 
     payload_rt = builder(True)
-    assert payload_rt["entries"] == entries[-2:]
-    assert "python" in payload_rt
-    assert "platform" in payload_rt
+    assert _entries(payload_rt) == entries[-2:]
+    assert _has_python(payload_rt)
+    assert _has_platform(payload_rt)
 
 
 def test_history_positive_limit_branch_and_payload_builder(
@@ -1397,15 +1436,15 @@ def test_history_positive_limit_branch_and_payload_builder(
     builder = captured["payload_builder"]
 
     payload = builder(False)
-    assert payload["entries"] == [
+    assert _entries(payload) == [
         {"command": "two", "timestamp": 200},
         {"command": "three", "timestamp": 300},
     ]
 
     payload_rt = builder(True)
-    assert payload_rt["entries"] == payload["entries"]
-    assert "python" in payload_rt
-    assert "platform" in payload_rt
+    assert _entries(payload_rt) == _entries(payload)
+    assert _has_python(payload_rt)
+    assert _has_platform(payload_rt)
 
 
 def test_history_list_slicing_for_positive_limit(
@@ -1448,7 +1487,7 @@ def test_history_list_slicing_for_positive_limit(
         builder = mock_new_run.call_args.kwargs["payload_builder"]
         payload = builder(False)
 
-        assert payload["entries"] == [
+        assert _entries(payload) == [
             {"command": "cmd2", "timestamp": 2},
             {"command": "cmd3", "timestamp": 3},
         ]
@@ -1494,6 +1533,5 @@ def test_history_positive_limit_slicing_and_successful_completion(
         payload_builder = mock_new_run.call_args.kwargs["payload_builder"]
         result_payload = payload_builder(False)
 
-        assert "entries" in result_payload
-        assert len(result_payload["entries"]) == 2
-        assert result_payload["entries"] == history_entries[-2:]
+    assert len(_entries(result_payload)) == 2
+    assert _entries(result_payload) == history_entries[-2:]

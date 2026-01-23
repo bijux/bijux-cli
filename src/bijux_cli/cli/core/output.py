@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import (
     ExecutionPolicy,

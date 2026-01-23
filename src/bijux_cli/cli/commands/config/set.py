@@ -24,6 +24,7 @@ Exit Codes:
 from __future__ import annotations
 
 from contextlib import suppress
+from dataclasses import dataclass
 import fcntl
 import os
 import platform
@@ -33,19 +34,130 @@ import sys
 
 import typer
 
+from bijux_cli.cli.commands.payloads import ConfigSetPayload
 from bijux_cli.cli.constants import (
+    ENV_CONFIG,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import ascii_safe
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.services.config.contracts import ConfigProtocol
+
+
+@dataclass(frozen=True)
+class ConfigSetIntent:
+    """Parsed intent for a config set operation."""
+
+    key: str
+    value: str
+
+
+def _parse_pair(
+    pair: str | None,
+    *,
+    command: str,
+    fmt: OutputFormat,
+    quiet: bool,
+    include_runtime: bool,
+    debug: bool,
+) -> ConfigSetIntent:
+    """Parse and validate a KEY=VALUE pair for config set."""
+    if pair is None:
+        if sys.stdin.isatty():
+            emit_error_and_exit(
+                "Missing argument: KEY=VALUE required",
+                code=2,
+                failure="missing_argument",
+                command=command,
+                fmt=fmt,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                debug=debug,
+            )
+        pair = sys.stdin.read().rstrip("\n")
+    if not pair or "=" not in pair:
+        emit_error_and_exit(
+            "Invalid argument: KEY=VALUE required",
+            code=2,
+            failure="invalid_argument",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+        )
+    raw_key, raw_value = pair.split("=", 1)
+    key = raw_key.strip()
+    service_value_str = raw_value
+    if len(service_value_str) >= 2 and (
+        (service_value_str[0] == service_value_str[-1] == '"')
+        or (service_value_str[0] == service_value_str[-1] == "'")
+    ):
+        import codecs
+
+        service_value_str = codecs.decode(service_value_str[1:-1], "unicode_escape")
+    if not key:
+        emit_error_and_exit(
+            "Key cannot be empty",
+            code=2,
+            failure="empty_key",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+        )
+    if not all(ord(c) < 128 for c in key + service_value_str):
+        emit_error_and_exit(
+            "Non-ASCII characters are not allowed in keys or values.",
+            code=3,
+            failure="ascii_error",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            extra={"key": key},
+        )
+    if not re.match(r"^[A-Za-z0-9_]+$", key):
+        emit_error_and_exit(
+            "Invalid key: only alphanumerics and underscore allowed.",
+            code=2,
+            failure="invalid_key",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            extra={"key": key},
+        )
+    if not all(
+        c in string.printable and c not in "\r\n\t\x0b\x0c" for c in service_value_str
+    ):
+        emit_error_and_exit(
+            "Control characters are not allowed in config values.",
+            code=3,
+            failure="control_char_error",
+            command=command,
+            fmt=fmt,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=debug,
+            extra={"key": key},
+        )
+    return ConfigSetIntent(key=key, value=service_value_str)
 
 
 def set_config(
@@ -53,11 +165,11 @@ def set_config(
     pair: str | None = typer.Argument(
         None, help="KEY=VALUE to set; if omitted, read from stdin"
     ),
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Sets or updates a configuration key-value pair.
 
@@ -84,7 +196,7 @@ def set_config(
         SystemExit: Always exits with a contract-compliant status code and
             payload, indicating success or detailing the error.
     """
-    cfg_path = os.environ.get("BIJUXCLI_CONFIG", "") or ""
+    cfg_path = os.environ.get(ENV_CONFIG, "") or ""
     if cfg_path:
         try:
             cfg_path.encode("ascii")
@@ -133,92 +245,17 @@ def set_config(
             finally:
                 with suppress(Exception):
                     fcntl.flock(fh, fcntl.LOCK_UN)
-    if pair is None:
-        if sys.stdin.isatty():
-            emit_error_and_exit(
-                "Missing argument: KEY=VALUE required",
-                code=2,
-                failure="missing_argument",
-                command=command,
-                fmt=fmt_lower,
-                quiet=quiet,
-                include_runtime=include_runtime,
-                debug=debug,
-            )
-        pair = sys.stdin.read().rstrip("\n")
-    if not pair or "=" not in pair:
-        emit_error_and_exit(
-            "Invalid argument: KEY=VALUE required",
-            code=2,
-            failure="invalid_argument",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
-    raw_key, raw_value = pair.split("=", 1)
-    key = raw_key.strip()
-    service_value_str = raw_value
-    if len(service_value_str) >= 2 and (
-        (service_value_str[0] == service_value_str[-1] == '"')
-        or (service_value_str[0] == service_value_str[-1] == "'")
-    ):
-        import codecs
-
-        service_value_str = codecs.decode(service_value_str[1:-1], "unicode_escape")
-    if not key:
-        emit_error_and_exit(
-            "Key cannot be empty",
-            code=2,
-            failure="empty_key",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-        )
-    if not all(ord(c) < 128 for c in key + service_value_str):
-        emit_error_and_exit(
-            "Non-ASCII characters are not allowed in keys or values.",
-            code=3,
-            failure="ascii_error",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-            extra={"key": key},
-        )
-    if not re.match(r"^[A-Za-z0-9_]+$", key):
-        emit_error_and_exit(
-            "Invalid key: only alphanumerics and underscore allowed.",
-            code=2,
-            failure="invalid_key",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-            extra={"key": key},
-        )
-    if not all(
-        c in string.printable and c not in "\r\n\t\x0b\x0c" for c in service_value_str
-    ):
-        emit_error_and_exit(
-            "Control characters are not allowed in config values.",
-            code=3,
-            failure="control_char_error",
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            debug=debug,
-            extra={"key": key},
-        )
+    intent = _parse_pair(
+        pair,
+        command=command,
+        fmt=fmt_lower,
+        quiet=quiet,
+        include_runtime=include_runtime,
+        debug=debug,
+    )
     config_svc = DIContainer.current().resolve(ConfigProtocol)
     try:
-        config_svc.set(key, service_value_str)
+        config_svc.set(intent.key, intent.value)
     except Exception as exc:
         emit_error_and_exit(
             f"Failed to set config: {exc}",
@@ -231,23 +268,24 @@ def set_config(
             debug=debug,
         )
 
-    def payload_builder(include_runtime: bool) -> dict[str, object]:
+    def payload_builder(include_runtime: bool) -> ConfigSetPayload:
         """Builds the payload confirming a key was set or updated.
 
         Args:
             include_runtime (bool): If True, includes Python and platform info.
 
         Returns:
-            dict[str, object]: The structured payload.
+            ConfigSetPayload: The structured payload.
         """
-        payload: dict[str, object] = {
-            "status": "updated",
-            "key": key,
-            "value": service_value_str,
-        }
+        payload = ConfigSetPayload(status="updated", key=intent.key, value=intent.value)
         if include_runtime:
-            payload["python"] = ascii_safe(platform.python_version(), "python_version")
-            payload["platform"] = ascii_safe(platform.platform(), "platform")
+            return ConfigSetPayload(
+                status=payload.status,
+                key=payload.key,
+                value=payload.value,
+                python=ascii_safe(platform.python_version(), "python_version"),
+                platform=ascii_safe(platform.platform(), "platform"),
+            )
         return payload
 
     new_run_command(

@@ -209,7 +209,7 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda v: None,
     )
     monkeypatch.setattr(
-        "bijux_cli.cli.emit.resolve_serializer", lambda: _BasicSerializer()
+        "bijux_cli.cli.core.emit.resolve_serializer", lambda: _BasicSerializer()
     )
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
@@ -225,7 +225,7 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -283,7 +283,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -426,7 +426,7 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -462,7 +462,7 @@ def test_debug_does_not_force_verbose_or_pretty(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -585,7 +585,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -627,7 +627,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -661,7 +661,7 @@ def test_audit_output_to_file_with_verbose(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -726,7 +726,7 @@ def test_verbose_file_output_constructs_correct_final_payload(
     """Test that verbose file output executes the final payload modification."""
     _fake_configure_emitter(monkeypatch, DummyEmitter())
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

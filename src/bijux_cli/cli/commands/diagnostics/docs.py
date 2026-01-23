@@ -25,6 +25,7 @@ Exit Codes:
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import asdict, is_dataclass
 import os
 from pathlib import Path
 import platform
@@ -33,16 +34,24 @@ import typer
 import typer.core
 
 from bijux_cli.cli.color import resolve_click_color
+from bijux_cli.cli.commands.payloads import DocsSpecPayload, DocsWritePayload
 from bijux_cli.cli.constants import (
+    ENV_DOCS_OUT,
+    ENV_TEST_IO_FAIL,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import resolve_command_config
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.output import resolve_command_config
+from bijux_cli.cli.core.validation import (
     contains_non_ascii_env,
 )
 from bijux_cli.core.enums import LogLevel, OutputFormat
@@ -105,7 +114,7 @@ def _resolve_output_target(
     return str(out), out
 
 
-def _build_spec_payload(include_runtime: bool) -> Mapping[str, object]:
+def _build_spec_payload(include_runtime: bool) -> DocsSpecPayload:
     """Builds the CLI specification payload.
 
     Args:
@@ -113,25 +122,40 @@ def _build_spec_payload(include_runtime: bool) -> Mapping[str, object]:
             in the specification.
 
     Returns:
-        Mapping[str, object]: A dictionary containing the CLI version, a list
-            of registered commands, and optional runtime details.
+        DocsSpecPayload: A payload containing the CLI version, a list of
+            registered commands, and optional runtime details.
 
     Raises:
         ValueError: If the version string or platform metadata contains
             non-ASCII characters.
     """
     from bijux_cli.cli.commands import list_registered_command_names
-    from bijux_cli.cli.validation import ascii_safe
+    from bijux_cli.cli.core.validation import ascii_safe
 
     version_str = ascii_safe(CLI_VERSION, "version")
-    payload: dict[str, object] = {
-        "version": version_str,
-        "commands": list_registered_command_names(),
-    }
+    payload = DocsSpecPayload(
+        version=version_str,
+        commands=list_registered_command_names(),
+    )
     if include_runtime:
-        payload["python"] = ascii_safe(platform.python_version(), "python_version")
-        payload["platform"] = ascii_safe(platform.platform(), "platform")
+        return DocsSpecPayload(
+            version=payload.version,
+            commands=payload.commands,
+            python=ascii_safe(platform.python_version(), "python_version"),
+            platform=ascii_safe(platform.platform(), "platform"),
+        )
     return payload
+
+
+def _spec_mapping(spec: DocsSpecPayload | Mapping[str, object]) -> dict[str, object]:
+    """Convert a spec payload into a mapping for service calls."""
+    if is_dataclass(spec):
+        data = asdict(spec)
+    elif isinstance(spec, Mapping):
+        data = dict(spec)
+    else:
+        raise TypeError("Docs spec payload must be a dataclass or mapping.")
+    return {key: value for key, value in data.items() if value is not None}
 
 
 OUT_OPTION = typer.Option(
@@ -146,11 +170,11 @@ OUT_OPTION = typer.Option(
 def docs(
     ctx: typer.Context,
     out: Path | None = OUT_OPTION,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux docs` command.
 
@@ -225,7 +249,7 @@ def docs(
             debug=debug,
         )
 
-    out_env = os.environ.get("BIJUXCLI_DOCS_OUT")
+    out_env = os.environ.get(ENV_DOCS_OUT)
     if out is None and out_env:
         out = Path(out_env)
 
@@ -233,6 +257,7 @@ def docs(
 
     try:
         spec = _build_spec_payload(effective_include_runtime)
+        spec_mapping = _spec_mapping(spec)
     except ValueError as exc:
         emit_error_and_exit(
             str(exc),
@@ -247,7 +272,9 @@ def docs(
 
     docs_service = _resolve_docs_service()
     try:
-        content = docs_service.render(spec, fmt=output_format, pretty=effective_pretty)
+        content = docs_service.render(
+            spec_mapping, fmt=output_format, pretty=effective_pretty
+        )
     except Exception as exc:
         emit_error_and_exit(
             f"Serialization failed: {exc}",
@@ -260,7 +287,7 @@ def docs(
             debug=debug,
         )
 
-    if os.environ.get("BIJUXCLI_TEST_IO_FAIL") == "1":
+    if os.environ.get(ENV_TEST_IO_FAIL) == "1":
         emit_error_and_exit(
             "Simulated I/O failure for test",
             code=1,
@@ -306,7 +333,7 @@ def docs(
 
     try:
         docs_service.write(
-            spec,
+            spec_mapping,
             fmt=output_format,
             name=str(path),
             pretty=effective_pretty,
@@ -324,7 +351,7 @@ def docs(
         )
 
     emit_and_exit(
-        {"status": "written", "file": str(path)},
+        DocsWritePayload(status="written", file=str(path)),
         output_format,
         effective_pretty,
         verbose,

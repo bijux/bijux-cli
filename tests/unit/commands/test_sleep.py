@@ -84,7 +84,7 @@ def _install_fake_container(
 
     class _TestSerializer:
         def dumps(self, payload: Any, fmt: OutputFormat, pretty: bool = False) -> str:
-            from bijux_cli.cli.emit import _normalize_payload
+            from bijux_cli.cli.core.emit import _normalize_payload
 
             return json.dumps(_normalize_payload(payload))
 
@@ -164,7 +164,7 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Succeeds and returns payload with runtime when verbose."""
     _install_fake_container(monkeypatch, get_returns="10")
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

@@ -28,17 +28,22 @@ import typer
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
+from bijux_cli.cli.commands.payloads import MemorySummaryPayload
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import get_execution_policy
-from bijux_cli.cli.payloads import MemorySummaryPayload
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.output import get_execution_policy
+from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
@@ -216,11 +221,11 @@ def memory_summary(
 
 def memory(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux memory` command group.
 

@@ -11,8 +11,8 @@ from typing import Any
 
 import pytest
 
-import bijux_cli.cli.commands.plugins.validation as validation_mod
-from bijux_cli.cli.commands.plugins.validation import (
+import bijux_cli.cli.plugins.commands.validation as validation_mod
+from bijux_cli.cli.plugins.commands.validation import (
     ignore_hidden_and_broken_symlinks,
     parse_required_cli_version,
     refuse_on_symlink,

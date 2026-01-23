@@ -30,17 +30,23 @@ import platform
 
 import typer
 
+from bijux_cli.cli.commands.payloads import AuditPayload
 from bijux_cli.cli.constants import (
+    ENV_CONFIG,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.payloads import AuditPayload
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
@@ -147,11 +153,11 @@ def audit(
     ctx: typer.Context,
     dry_run: bool = DRY_RUN_OPTION,
     output: Path | None = OUTPUT_OPTION,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux audit` command.
 
@@ -220,7 +226,7 @@ def audit(
                 include_runtime=include_runtime,
             )
         try:
-            validate_env_file_if_present(os.environ.get("BIJUXCLI_CONFIG", ""))
+            validate_env_file_if_present(os.environ.get(ENV_CONFIG, ""))
         except ValueError as exc:
             emit_error_and_exit(
                 str(exc),

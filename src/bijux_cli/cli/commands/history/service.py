@@ -32,7 +32,6 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import json
 from pathlib import Path
 import platform
@@ -40,19 +39,26 @@ from typing import Any
 
 import typer
 
+from bijux_cli.cli.commands.payloads import (
+    HistoryEntriesPayload,
+    HistoryExportPayload,
+    HistoryImportPayload,
+)
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import (
-    ascii_safe,
-    validate_common_flags,
-)
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.services.history.contracts import HistoryProtocol
@@ -116,11 +122,11 @@ def history(
     import_path: str = typer.Option(
         None, "--import", help="Load history from FILE (JSON), replacing current store."
     ),
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Lists, imports, or exports the command history.
 
@@ -241,26 +247,28 @@ def history(
                 debug=debug,
             )
 
-        def payload_builder(_: bool) -> Mapping[str, Any]:
+        def import_payload_builder(_: bool) -> HistoryImportPayload:
             """Builds the payload confirming a successful import.
 
             Args:
                 _ (bool): Unused parameter to match the expected signature.
 
             Returns:
-                Mapping[str, Any]: The structured payload.
+                HistoryImportPayload: The structured payload.
             """
-            payload: dict[str, Any] = {"status": "imported", "file": import_path}
+            payload = HistoryImportPayload(status="imported", file=import_path)
             if include_runtime:
-                payload["python"] = ascii_safe(
-                    platform.python_version(), "python_version"
+                return HistoryImportPayload(
+                    status=payload.status,
+                    file=payload.file,
+                    python=ascii_safe(platform.python_version(), "python_version"),
+                    platform=ascii_safe(platform.platform(), "platform"),
                 )
-                payload["platform"] = ascii_safe(platform.platform(), "platform")
             return payload
 
         new_run_command(
             command_name=command,
-            payload_builder=payload_builder,
+            payload_builder=import_payload_builder,
             quiet=quiet,
             verbose=verbose,
             fmt=fmt_lower,
@@ -271,7 +279,7 @@ def history(
     if export_path:
         try:
             entries = history_svc.list()
-            from bijux_cli.cli.emit import resolve_serializer
+            from bijux_cli.cli.core.emit import resolve_serializer
 
             rendered = resolve_serializer().dumps(entries, fmt=fmt_lower, pretty=pretty)
             Path(export_path).write_text(
@@ -290,26 +298,28 @@ def history(
                 debug=debug,
             )
 
-        def payload_builder(_: bool) -> Mapping[str, Any]:
+        def export_payload_builder(_: bool) -> HistoryExportPayload:
             """Builds the payload confirming a successful export.
 
             Args:
                 _ (bool): Unused parameter to match the expected signature.
 
             Returns:
-                Mapping[str, Any]: The structured payload.
+                HistoryExportPayload: The structured payload.
             """
-            payload: dict[str, Any] = {"status": "exported", "file": export_path}
+            payload = HistoryExportPayload(status="exported", file=export_path)
             if include_runtime:
-                payload["python"] = ascii_safe(
-                    platform.python_version(), "python_version"
+                return HistoryExportPayload(
+                    status=payload.status,
+                    file=payload.file,
+                    python=ascii_safe(platform.python_version(), "python_version"),
+                    platform=ascii_safe(platform.platform(), "platform"),
                 )
-                payload["platform"] = ascii_safe(platform.platform(), "platform")
             return payload
 
         new_run_command(
             command_name=command,
-            payload_builder=payload_builder,
+            payload_builder=export_payload_builder,
             quiet=quiet,
             verbose=verbose,
             fmt=fmt_lower,
@@ -347,19 +357,22 @@ def history(
             debug=debug,
         )
 
-    def list_payload_builder(include_runtime: bool) -> Mapping[str, Any]:
+    def list_payload_builder(include_runtime: bool) -> HistoryEntriesPayload:
         """Builds the payload containing a list of history entries.
 
         Args:
             include_runtime (bool): If True, includes Python and platform info.
 
         Returns:
-            Mapping[str, Any]: The structured payload.
+            HistoryEntriesPayload: The structured payload.
         """
-        payload: dict[str, Any] = {"entries": entries}
+        payload = HistoryEntriesPayload(entries=entries)
         if include_runtime:
-            payload["python"] = ascii_safe(platform.python_version(), "python_version")
-            payload["platform"] = ascii_safe(platform.platform(), "platform")
+            return HistoryEntriesPayload(
+                entries=payload.entries,
+                python=ascii_safe(platform.python_version(), "python_version"),
+                platform=ascii_safe(platform.platform(), "platform"),
+            )
         return payload
 
     new_run_command(

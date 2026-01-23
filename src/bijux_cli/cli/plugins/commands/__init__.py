@@ -29,12 +29,12 @@ from __future__ import annotations
 
 import typer
 
-from bijux_cli.cli.commands.plugins.check import check_plugin
-from bijux_cli.cli.commands.plugins.info import info_plugin
-from bijux_cli.cli.commands.plugins.install import install_plugin
-from bijux_cli.cli.commands.plugins.list import list_plugin
-from bijux_cli.cli.commands.plugins.scaffold import scaffold_plugin
-from bijux_cli.cli.commands.plugins.uninstall import uninstall_plugin
+from bijux_cli.cli.plugins.commands.check import check_plugin
+from bijux_cli.cli.plugins.commands.info import info_plugin
+from bijux_cli.cli.plugins.commands.install import install_plugin
+from bijux_cli.cli.plugins.commands.list import list_plugin
+from bijux_cli.cli.plugins.commands.scaffold import scaffold_plugin
+from bijux_cli.cli.plugins.commands.uninstall import uninstall_plugin
 from bijux_cli.core.runtime import AsyncTyper
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.precedence import GlobalCLIConfig
 
 _COLOR_MODE = ColorMode.AUTO
 
@@ -35,18 +36,14 @@ def resolve_click_color(*, quiet: bool, fmt: OutputFormat | None = None) -> bool
 
 
 def resolve_color_mode(
-    cli: ColorMode | None,
-    env: ColorMode | None,
-    config: ColorMode | None,
+    config: GlobalCLIConfig,
     tty: bool,
+    no_color: bool,
 ) -> ColorMode:
     """Resolve the effective color mode for CLI rendering."""
-    for value in (cli, env, config):
-        if value is not None:
-            mode = value
-            break
-    else:
-        mode = ColorMode.AUTO
+    if no_color:
+        return ColorMode.NEVER
+    mode = config.flags.color or ColorMode.AUTO
     if mode is ColorMode.AUTO and not tty:
         return ColorMode.NEVER
     return mode

@@ -8,7 +8,7 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis import strategies as st
 
-from bijux_cli.cli.flags import parse_global_flags
+from bijux_cli.cli.core.flags import parse_global_flags
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import (
     FlagLayer,

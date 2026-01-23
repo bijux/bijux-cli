@@ -26,17 +26,23 @@ import platform
 
 import typer
 
+from bijux_cli.cli.commands.payloads import DoctorPayload
 from bijux_cli.cli.constants import (
+    ENV_TEST_FORCE_UNHEALTHY,
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.payloads import DoctorPayload
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import (
     ascii_safe,
 )
 from bijux_cli.core.di import DIContainer
@@ -77,7 +83,7 @@ def _build_payload(include_runtime: bool) -> DoctorPayload:
         healthy = False
         summary.append("Environment PATH is empty")
 
-    if os.environ.get("BIJUXCLI_TEST_FORCE_UNHEALTHY") == "1":
+    if os.environ.get(ENV_TEST_FORCE_UNHEALTHY) == "1":
         healthy = False
         summary.append("Forced unhealthy by test environment")
 
@@ -105,11 +111,11 @@ def _build_payload(include_runtime: bool) -> DoctorPayload:
 @doctor_app.callback(invoke_without_command=True)
 def doctor(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux doctor` command.
 

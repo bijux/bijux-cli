@@ -24,26 +24,31 @@ Exit Codes:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from dataclasses import dataclass
 import platform as _platform
 import sys
 import time
-from typing import Any
 
 import click
 import typer
 
 from bijux_cli.cli.color import resolve_click_color
+from bijux_cli.cli.commands.payloads import HelpPayload
 from bijux_cli.cli.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.output import get_execution_policy
-from bijux_cli.cli.validation import (
+from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
+from bijux_cli.cli.core.output import get_execution_policy
+from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
@@ -51,11 +56,46 @@ from bijux_cli.cli.validation import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 
 _HUMAN = "human"
 _VALID_FORMATS = ("human", "json", "yaml")
+
+
+@dataclass(frozen=True)
+class HelpIntent:
+    """Resolved intent for the help command."""
+
+    tokens: list[str]
+    fmt_lower: str
+    format_value: OutputFormat | None
+    error_fmt: OutputFormat
+    include_runtime: bool
+    pretty: bool
+    quiet: bool
+    debug: bool
+
+
+def _build_help_intent(
+    tokens: list[str],
+    fmt: str,
+    policy: ExecutionPolicy,
+) -> HelpIntent:
+    fmt_lower = fmt.strip().lower()
+    format_value = normalize_format(fmt)
+    error_fmt = format_value or OutputFormat.JSON
+    return HelpIntent(
+        tokens=tokens,
+        fmt_lower=fmt_lower,
+        format_value=format_value,
+        error_fmt=error_fmt,
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        quiet=policy.quiet,
+        debug=(policy.log_level == LogLevel.DEBUG),
+    )
 
 
 def _find_target_command(
@@ -117,7 +157,7 @@ def _get_formatted_help(cmd: click.Command, ctx: click.Context) -> str:
 
 def _build_help_payload(
     help_text: str, include_runtime: bool, started_at: float
-) -> Mapping[str, Any]:
+) -> HelpPayload:
     """Builds a structured help payload for JSON/YAML output.
 
     Args:
@@ -128,14 +168,16 @@ def _build_help_payload(
             for calculating the runtime duration.
 
     Returns:
-        Mapping[str, Any]: A payload containing help text and optional runtime
-            fields.
+        HelpPayload: A payload containing help text and optional runtime fields.
     """
-    payload: dict[str, Any] = {"help": help_text}
+    payload = HelpPayload(help=help_text)
     if include_runtime:
-        payload["python"] = ascii_safe(sys.version.split()[0], "python_version")
-        payload["platform"] = ascii_safe(_platform.platform(), "platform")
-        payload["runtime_ms"] = int((time.perf_counter() - started_at) * 1_000)
+        return HelpPayload(
+            help=payload.help,
+            python=ascii_safe(sys.version.split()[0], "python_version"),
+            platform=ascii_safe(_platform.platform(), "platform"),
+            runtime_ms=int((time.perf_counter() - started_at) * 1_000),
+        )
     return payload
 
 
@@ -160,11 +202,11 @@ ARGS = typer.Argument(None, help="Command path, e.g. 'config get'.")
 def help_callback(
     ctx: typer.Context,
     command_path: list[str] | None = ARGS,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option(_HUMAN, "-f", "--format", help=HELP_FORMAT_HELP),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option(_HUMAN, *OPT_FORMAT, help=HELP_FORMAT_HELP),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint and logic for the `bijux help` command.
 
@@ -196,7 +238,7 @@ def help_callback(
 
     if "-h" in sys.argv or "--help" in sys.argv:
         all_args = sys.argv[2:]
-        known_flags_with_args = {"-f", "--format"}
+        known_flags_with_args = set(OPT_FORMAT)
         path_tokens = []
         i = 0
         while i < len(all_args):
@@ -224,17 +266,13 @@ def help_callback(
     command = "help"
     _ = (quiet, verbose, log_level, pretty, fmt)
     policy = get_execution_policy()
-    effective_include_runtime = policy.include_runtime
-    effective_pretty = policy.pretty
-    fmt_lower = fmt.strip().lower()
-    format_value = normalize_format(fmt)
-    error_fmt = format_value or OutputFormat.JSON
+    intent = _build_help_intent(tokens, fmt, policy)
 
-    if policy.quiet:
-        if fmt_lower not in _VALID_FORMATS:
+    if intent.quiet:
+        if intent.fmt_lower not in _VALID_FORMATS:
             raise SystemExit(2)
 
-        for token in tokens:
+        for token in intent.tokens:
             if "\x00" in token:
                 raise SystemExit(3)
             try:
@@ -245,42 +283,42 @@ def help_callback(
         if contains_non_ascii_env():
             raise SystemExit(3)
 
-        if not _find_target_command(ctx, tokens):
+        if not _find_target_command(ctx, intent.tokens):
             raise SystemExit(2)
 
         raise SystemExit(0)
 
-    if fmt_lower != "human":
+    if intent.fmt_lower != "human":
         validate_common_flags(
-            format_value or OutputFormat.JSON,
+            intent.format_value or OutputFormat.JSON,
             command,
-            policy.quiet,
-            include_runtime=effective_include_runtime,
+            intent.quiet,
+            include_runtime=intent.include_runtime,
         )
 
-    if fmt_lower not in _VALID_FORMATS:
+    if intent.fmt_lower not in _VALID_FORMATS:
         emit_error_and_exit(
             f"Unsupported format: '{fmt}'",
             code=2,
             failure="format",
             command=command,
-            fmt=error_fmt,
-            quiet=policy.quiet,
-            include_runtime=effective_include_runtime,
-            debug=(policy.log_level == LogLevel.DEBUG),
+            fmt=intent.error_fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
         )
 
-    for token in tokens:
+    for token in intent.tokens:
         if "\x00" in token:
             emit_error_and_exit(
                 "Embedded null byte in command path",
                 code=3,
                 failure="null_byte",
                 command=command,
-                fmt=error_fmt,
-                quiet=policy.quiet,
-                include_runtime=effective_include_runtime,
-                debug=(policy.log_level == LogLevel.DEBUG),
+                fmt=intent.error_fmt,
+                quiet=intent.quiet,
+                include_runtime=intent.include_runtime,
+                debug=intent.debug,
             )
         try:
             token.encode("ascii")
@@ -290,10 +328,10 @@ def help_callback(
                 code=3,
                 failure="ascii",
                 command=command,
-                fmt=error_fmt,
-                quiet=policy.quiet,
-                include_runtime=effective_include_runtime,
-                debug=(policy.log_level == LogLevel.DEBUG),
+                fmt=intent.error_fmt,
+                quiet=intent.quiet,
+                include_runtime=intent.include_runtime,
+                debug=intent.debug,
             )
 
     if contains_non_ascii_env():
@@ -302,60 +340,62 @@ def help_callback(
             code=3,
             failure="ascii",
             command=command,
-            fmt=error_fmt,
-            quiet=policy.quiet,
-            include_runtime=effective_include_runtime,
-            debug=(policy.log_level == LogLevel.DEBUG),
+            fmt=intent.error_fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
         )
 
-    target = _find_target_command(ctx, tokens)
+    target = _find_target_command(ctx, intent.tokens)
     if not target:
         emit_error_and_exit(
-            f"No such command: {' '.join(tokens)}",
+            f"No such command: {' '.join(intent.tokens)}",
             code=2,
             failure="not_found",
             command=command,
-            fmt=error_fmt,
-            quiet=policy.quiet,
-            include_runtime=effective_include_runtime,
-            debug=(policy.log_level == LogLevel.DEBUG),
+            fmt=intent.error_fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
         )
 
     DIContainer.current().resolve(Emitter)
     target_cmd, target_ctx = target
     help_text = _get_formatted_help(target_cmd, target_ctx)
 
-    if fmt_lower == _HUMAN:
+    if intent.fmt_lower == _HUMAN:
         typer.echo(
             help_text,
-            color=resolve_click_color(quiet=policy.quiet, fmt=None),
+            color=resolve_click_color(quiet=intent.quiet, fmt=None),
         )
         raise typer.Exit(0)
 
     try:
-        payload = _build_help_payload(help_text, effective_include_runtime, started_at)
+        payload = _build_help_payload(help_text, intent.include_runtime, started_at)
     except ValueError as exc:
         emit_error_and_exit(
             str(exc),
             code=3,
             failure="ascii",
             command=command,
-            fmt=error_fmt,
-            quiet=policy.quiet,
-            include_runtime=effective_include_runtime,
-            debug=(policy.log_level == LogLevel.DEBUG),
+            fmt=intent.error_fmt,
+            quiet=intent.quiet,
+            include_runtime=intent.include_runtime,
+            debug=intent.debug,
         )
 
     output_format = (
-        OutputFormat.YAML if format_value == OutputFormat.YAML else OutputFormat.JSON
+        OutputFormat.YAML
+        if intent.format_value == OutputFormat.YAML
+        else OutputFormat.JSON
     )
     emit_and_exit(
         payload=payload,
         fmt=output_format,
-        effective_pretty=effective_pretty,
+        effective_pretty=intent.pretty,
         verbose=policy.verbose,
-        debug=(policy.log_level == LogLevel.DEBUG),
-        quiet=policy.quiet,
+        debug=intent.debug,
+        quiet=intent.quiet,
         command=command,
         exit_code=0,
     )

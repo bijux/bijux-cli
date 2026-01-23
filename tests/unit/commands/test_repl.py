@@ -350,7 +350,7 @@ class FakePromptSession:
 def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Route human quiet mode to piped path."""
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
