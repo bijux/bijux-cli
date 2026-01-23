@@ -88,7 +88,7 @@ def dev_list_plugins(
         payload_builder=payload_builder,
         quiet=effective.quiet,
         verbose=effective.verbose_level > 0,
-        fmt=effective.fmt,
+        fmt=effective.output_format,
         pretty=effective.pretty,
         log_level=effective.log_level,
     )

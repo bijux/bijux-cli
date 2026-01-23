@@ -24,7 +24,6 @@ import platform
 
 import typer
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -34,6 +33,7 @@ from bijux_cli.cli.constants import (
 )
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.validation import ascii_safe
+from bijux_cli.core.di import DIContainer
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 

@@ -42,6 +42,7 @@ from bijux_cli.cli.validation import (
     normalize_format,
     validate_common_flags,
 )
+from bijux_cli.core.enums import OutputFormat
 
 
 def dev(
@@ -83,10 +84,10 @@ def dev(
     verbose = policy.verbose
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
-    fmt_lower = normalize_format(fmt) or "json"
+    fmt_lower = normalize_format(fmt) or OutputFormat.JSON
 
     validate_common_flags(
-        fmt,
+        fmt_lower,
         command,
         quiet,
         include_runtime=effective_include_runtime,

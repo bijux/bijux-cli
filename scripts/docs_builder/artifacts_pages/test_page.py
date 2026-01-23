@@ -34,10 +34,22 @@ TEST_DIR = Path("artifacts/test")
 ORDER = ["junit.xml", "htmlcov"]
 
 BLURBS = {
-    "junit.xml": ("JUnit-style test report (pytest).", "0 failures / 0 errors; all tests passed."),
-    "htmlcov": ("HTML coverage report (coverage.py).", "Meets coverage threshold; no critical files missing."),
-    "benchmarks": ("Benchmark outputs (pytest-benchmark, file storage).", "No regressions beyond thresholds."),
-    "hypothesis": ("Hypothesis database (saved examples/health).", "No falsifying examples saved."),
+    "junit.xml": (
+        "JUnit-style test report (pytest).",
+        "0 failures / 0 errors; all tests passed.",
+    ),
+    "htmlcov": (
+        "HTML coverage report (coverage.py).",
+        "Meets coverage threshold; no critical files missing.",
+    ),
+    "benchmarks": (
+        "Benchmark outputs (pytest-benchmark, file storage).",
+        "No regressions beyond thresholds.",
+    ),
+    "hypothesis": (
+        "Hypothesis database (saved examples/health).",
+        "No falsifying examples saved.",
+    ),
 }
 
 
@@ -52,7 +64,14 @@ def _parse_junit(fp: Path) -> dict:
         'skipped', 'time', and a boolean 'ok' status. Returns a dictionary
         with zero values if parsing fails for any reason.
     """
-    out = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0, "time": 0.0, "ok": False}
+    out = {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": 0.0,
+        "ok": False,
+    }
     try:
         root = ET.parse(fp).getroot()
         suites = root.findall(".//test") if root.tag.endswith("test") else [root]
@@ -160,7 +179,11 @@ class TestArtifactPage(StandardArtifactPage):
             extra = f" — {s['tests']} tests; {s['failures']} failures; {s['errors']} errors; {s['skipped']} skipped"
         elif label == "htmlcov":
             pct = _read_cov_pct(TEST_DIR / "htmlcov")
-            extra = f" — total coverage ~{pct:.1f}%" if pct is not None else " — coverage % unavailable"
+            extra = (
+                f" — total coverage ~{pct:.1f}%"
+                if pct is not None
+                else " — coverage % unavailable"
+            )
         elif label == "benchmarks":
             n = _count_files(TEST_DIR / "benchmarks", exts=(".json",))
             if n == 0:
@@ -213,7 +236,9 @@ class TestArtifactPage(StandardArtifactPage):
         elif label == "htmlcov":
             copy_tree_into_docs(TEST_DIR / "htmlcov", "artifacts/test/htmlcov")
             if (TEST_DIR / "htmlcov" / "index.html").exists():
-                lines.append('[Open HTML coverage report](test/htmlcov/index.html){: target="_blank" rel="noopener" }')
+                lines.append(
+                    '[Open HTML coverage report](test/htmlcov/index.html){: target="_blank" rel="noopener" }'
+                )
         elif label == "benchmarks":
             lines.append(
                 "Stored by `pytest-benchmark` when available and `ENABLE_BENCH=1` "

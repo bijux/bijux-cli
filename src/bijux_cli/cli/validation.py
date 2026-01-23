@@ -10,6 +10,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from bijux_cli.core.enums import OutputFormat
+
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
 _ENV_LINE_RX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=[A-Za-z0-9_./\\-]*$")
 
@@ -22,11 +24,15 @@ def ascii_safe(text: Any, _field: str = "") -> str:
     )
 
 
-def normalize_format(fmt: str | None) -> str:
-    """Normalize a format string."""
-    if not isinstance(fmt, str):
-        return ""
-    return (fmt or "").strip().lower()
+def normalize_format(fmt: str | OutputFormat | None) -> OutputFormat | None:
+    """Normalize a format value into OutputFormat."""
+    if isinstance(fmt, OutputFormat):
+        return fmt
+    if isinstance(fmt, str):
+        value = fmt.strip().lower()
+        if value in ("json", "yaml"):
+            return OutputFormat(value)
+    return None
 
 
 def contains_non_ascii_env() -> bool:
@@ -54,14 +60,15 @@ def contains_non_ascii_env() -> bool:
 
 
 def validate_common_flags(
-    fmt: str,
+    fmt: str | OutputFormat,
     command: str,
     quiet: bool,
     include_runtime: bool = False,
-) -> str:
+) -> OutputFormat:
     """Validate output format and ASCII environment."""
-    format_lower = normalize_format(fmt) or "json"
-    if format_lower not in ("json", "yaml"):
+    format_value = normalize_format(fmt)
+    if format_value is None:
+        format_value = OutputFormat.JSON
         from bijux_cli.cli.emit import emit_error_and_exit
 
         emit_error_and_exit(
@@ -69,7 +76,20 @@ def validate_common_flags(
             code=2,
             failure="format",
             command=command,
-            fmt=format_lower or "json",
+            fmt=OutputFormat.JSON,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            debug=False,
+        )
+    if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
+        from bijux_cli.cli.emit import emit_error_and_exit
+
+        emit_error_and_exit(
+            f"Unsupported format: {fmt}",
+            code=2,
+            failure="format",
+            command=command,
+            fmt=format_value,
             quiet=quiet,
             include_runtime=include_runtime,
             debug=False,
@@ -83,13 +103,13 @@ def validate_common_flags(
             code=3,
             failure="ascii",
             command=command,
-            fmt=format_lower,
+            fmt=format_value,
             quiet=quiet,
             include_runtime=include_runtime,
             debug=False,
         )
 
-    return format_lower
+    return format_value
 
 
 def validate_env_file_if_present(path_str: str) -> None:

@@ -21,7 +21,7 @@ from bijux_cli.cli.commands.diagnostics.docs import (
     _resolve_output_target,
     docs,
 )
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -56,15 +56,20 @@ class FakeDocsService:
 
 def _fake_resolve_command_config(
     **kwargs: Any,
-) -> tuple[ExecutionPolicy, OutputFormat, str]:
+) -> tuple[ExecutionPolicy, OutputFormat, OutputFormat]:
     fmt = (kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
     verbose = bool(kwargs.get("verbose", False))
-    log_level = str(kwargs.get("log_level", "info")).lower()
+    raw_level = kwargs.get("log_level", LogLevel.INFO)
+    log_level = (
+        raw_level
+        if isinstance(raw_level, LogLevel)
+        else LogLevel(str(raw_level).lower())
+    )
     pretty = bool(kwargs.get("pretty", False))
     return (
         ExecutionPolicy(
-            output_format=fmt,
+            output_format=output_format,
             color=ColorMode.AUTO,
             quiet=bool(kwargs.get("quiet", False)),
             verbose=verbose,
@@ -75,38 +80,38 @@ def _fake_resolve_command_config(
             json=False,
         ),
         output_format,
-        fmt,
+        output_format,
     )
 
 
 def test_default_output_path() -> None:
     """Test the default output path generation for different formats."""
     base = Path("/some/base")
-    assert _default_output_path(base, "json") == base / "spec.json"
-    assert _default_output_path(base, "yaml") == base / "spec.yaml"
+    assert _default_output_path(base, OutputFormat.JSON) == base / "spec.json"
+    assert _default_output_path(base, OutputFormat.YAML) == base / "spec.yaml"
 
 
 def test_resolve_output_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the resolution of the output target path."""
     monkeypatch.setattr(Path, "cwd", classmethod(lambda cls: Path("/cwd")))
-    tgt, p = _resolve_output_target(None, "json")
+    tgt, p = _resolve_output_target(None, OutputFormat.JSON)
     assert tgt == "/cwd/spec.json"
     assert isinstance(p, Path)
     assert p.name == "spec.json"
 
     out = Path("-")
-    tgt, p = _resolve_output_target(out, "yaml")
+    tgt, p = _resolve_output_target(out, OutputFormat.YAML)
     assert tgt == "-"
     assert p is None
 
     d = tmp_path / "outdir"
     d.mkdir()
-    tgt, p = _resolve_output_target(d, "json")
+    tgt, p = _resolve_output_target(d, OutputFormat.JSON)
     assert tgt == str(d / "spec.json")
     assert p == d / "spec.json"
 
     f = tmp_path / "foo.bar"
-    tgt, p = _resolve_output_target(f, "yaml")
+    tgt, p = _resolve_output_target(f, OutputFormat.YAML)
     assert tgt == str(f)
     assert p == f
 
@@ -128,7 +133,7 @@ def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     mock_emit.assert_called_once_with(
         "No such option: -x",
@@ -159,7 +164,7 @@ def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> 
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     mock_emit.assert_called_once_with(
         "Too many arguments: foo",
@@ -194,7 +199,7 @@ def test_docs_ascii_env_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     mock_emit.assert_called_once_with(
         "Non-ASCII characters in environment variables",
@@ -234,7 +239,7 @@ def test_docs_ascii_payload_failure(
             verbose=False,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     mock_emit.assert_called_once_with(
         "bad payload",
@@ -254,26 +259,26 @@ def test_default_output_and_resolve_targets(
     """Test resolution of various output targets."""
     base = tmp_path / "base"
     base.mkdir()
-    assert _default_output_path(base, "json") == base / "spec.json"
-    assert _default_output_path(base, "yaml") == base / "spec.yaml"
+    assert _default_output_path(base, OutputFormat.JSON) == base / "spec.json"
+    assert _default_output_path(base, OutputFormat.YAML) == base / "spec.yaml"
 
     monkeypatch.chdir(tmp_path)
-    tgt, path = _resolve_output_target(None, "json")
+    tgt, path = _resolve_output_target(None, OutputFormat.JSON)
     assert tgt.endswith("spec.json")
     assert isinstance(path, Path)
 
-    tgt, path = _resolve_output_target(Path("-"), "yaml")
+    tgt, path = _resolve_output_target(Path("-"), OutputFormat.YAML)
     assert tgt == "-"
     assert path is None
 
     d = tmp_path / "d"
     d.mkdir()
-    tgt, path = _resolve_output_target(d, "yaml")
+    tgt, path = _resolve_output_target(d, OutputFormat.YAML)
     assert tgt.endswith("spec.yaml")
     assert path == d / "spec.yaml"
 
     f = tmp_path / "foo.out"
-    tgt, path = _resolve_output_target(f, "json")
+    tgt, path = _resolve_output_target(f, OutputFormat.JSON)
     assert tgt == str(f)
     assert path == f
 
@@ -339,7 +344,7 @@ def test_docs_stdout_branch(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     assert ei.value.exit_code == 0
@@ -367,12 +372,12 @@ def test_docs_file_written_and_emit_and_exit(
         "resolve_command_config",
         lambda **_kw: (
             ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
                 verbose=True,
                 verbose_level=1,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
                 json=False,
@@ -395,7 +400,7 @@ def test_docs_file_written_and_emit_and_exit(
             verbose=True,
             fmt="json",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     spec_file = tmp_path / "spec.json"
@@ -450,7 +455,7 @@ def test_docs_write_failure(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(
@@ -501,7 +506,7 @@ def test_docs_missing_output_dir(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     bad_parent = bad_dir.parent
@@ -531,12 +536,12 @@ def test_docs_writes_yaml_and_emit(
     mock_nonascii.return_value = False
     mock_resolve.side_effect = lambda **_kw: (
         ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=False,
             json=False,
@@ -564,7 +569,7 @@ def test_docs_writes_yaml_and_emit(
         verbose=False,
         fmt="yaml",
         pretty=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
     spec_file = tmp_path / "spec.yaml"
     text = spec_file.read_text(encoding="utf-8")
@@ -616,7 +621,7 @@ def test_docs_io_fail_flag(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(
@@ -668,7 +673,7 @@ def test_docs_internal_error_path_none(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(
@@ -711,7 +716,7 @@ def test_docs_stdout_debug_no_diagnostics(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
         )
 
     out, err = capsys.readouterr()
@@ -741,12 +746,12 @@ def test_docs_stdout_quiet_skips_echo(
         "resolve_command_config",
         lambda **_kw: (
             ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=True,
                 verbose=False,
                 verbose_level=0,
-                log_level="error",
+                log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
                 json=False,
@@ -767,7 +772,7 @@ def test_docs_stdout_quiet_skips_echo(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     assert exc.value.exit_code == 0
@@ -804,7 +809,7 @@ def test_docs_stdout_yaml(
             verbose=False,
             fmt="yaml",
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     assert exc.value.exit_code == 0
@@ -827,12 +832,12 @@ def test_docs_yaml_serialization_failure(
     mock_nonascii.return_value = False
     mock_resolve.side_effect = lambda **_kw: (
         ExecutionPolicy(
-            output_format="yaml",
+            output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -862,7 +867,7 @@ def test_docs_yaml_serialization_failure(
             verbose=False,
             fmt="yaml",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     mock_emit.assert_called_once_with(

@@ -99,44 +99,10 @@ class InternalError(BijuxError):
         )
 
 
-class ServiceError(InternalError):
-    """Raised for service-related failures."""
-
-
-class CommandError(UserInputError):
-    """Raised for command execution failures."""
-
-
-class ValidationError(UserInputError):
-    """Raised for validation failures (deprecated)."""
-
-
-class CliTimeoutError(InternalError):
-    """Raised for timeout errors (deprecated)."""
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        command: str | None = None,
-        http_status: int | None = None,
-    ) -> None:
-        """Initialize a timeout error."""
-        super().__init__(
-            message,
-            command=command,
-            http_status=http_status if http_status is not None else 504,
-        )
-
-
 __all__ = [
     "BijuxError",
     "UserInputError",
     "PluginError",
     "InternalError",
-    "ServiceError",
-    "CommandError",
     "ConfigError",
-    "ValidationError",
-    "CliTimeoutError",
 ]

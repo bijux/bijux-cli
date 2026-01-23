@@ -39,13 +39,34 @@ CORE = [
 ]
 
 BLURBS = {
-    "server.log": ("API mock/dev server log.", "Starts cleanly; no stack traces or repeated errors."),
-    "test/schemathesis.log": ("Schemathesis run output (property/fuzz tests).", "Run completes; no falsifying examples."),
-    "test/schemathesis.xml": ("Schemathesis JUnit report (if supported).", "0 failures / 0 errors."),
-    "node/tool-versions.txt": ("Pinned CLI versions in the sandbox.", "Exact versions recorded for reproducibility."),
-    "node/npm-install.log": ("Log of sandboxed `npm install`.", "Install succeeds; no hard errors."),
-    "node/package.json": ("Node workspace manifest (API tooling).", "Scripts usable; deps consistent."),
-    "node/package-lock.json": ("NPM lockfile for the sandbox.", "Deterministic installs."),
+    "server.log": (
+        "API mock/dev server log.",
+        "Starts cleanly; no stack traces or repeated errors.",
+    ),
+    "test/schemathesis.log": (
+        "Schemathesis run output (property/fuzz tests).",
+        "Run completes; no falsifying examples.",
+    ),
+    "test/schemathesis.xml": (
+        "Schemathesis JUnit report (if supported).",
+        "0 failures / 0 errors.",
+    ),
+    "node/tool-versions.txt": (
+        "Pinned CLI versions in the sandbox.",
+        "Exact versions recorded for reproducibility.",
+    ),
+    "node/npm-install.log": (
+        "Log of sandboxed `npm install`.",
+        "Install succeeds; no hard errors.",
+    ),
+    "node/package.json": (
+        "Node workspace manifest (API tooling).",
+        "Scripts usable; deps consistent.",
+    ),
+    "node/package-lock.json": (
+        "NPM lockfile for the sandbox.",
+        "Deterministic installs.",
+    ),
 }
 
 
@@ -64,12 +85,21 @@ def _parse_junit(fp: Path) -> dict:
         'skipped', 'time', and a boolean 'ok' status. Returns a dictionary
         with zero values if parsing fails.
     """
-    out = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0, "time": 0.0, "ok": False}
+    out = {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": 0.0,
+        "ok": False,
+    }
     try:
         import xml.etree.ElementTree as ET
 
         root = ET.parse(fp).getroot()
-        suites = root.findall(".//testsuite") if root.tag.endswith("testsuites") else [root]
+        suites = (
+            root.findall(".//testsuite") if root.tag.endswith("testsuites") else [root]
+        )
         for s in suites:
             out["tests"] += int(s.attrib.get("tests", "0"))
             out["failures"] += int(s.attrib.get("failures", "0"))
@@ -247,7 +277,9 @@ class APIArtifactPage(StandardArtifactPage):
                 "**What good looks like:** No errors; only informational/warn-level notes at most.",
                 "**Re-run:** `make api-lint`.",
             ]
-            return '!!! info "About this artifact"\n\n' + indent("\n".join(lines) + "\n")
+            return '!!! info "About this artifact"\n\n' + indent(
+                "\n".join(lines) + "\n"
+            )
 
         desc, good = BLURBS.get(label, ("API artifact.", "Present and well-formed."))
         lines = [f"**What it is:** {desc}", f"**What good looks like:** {good}"]
@@ -272,10 +304,15 @@ class APIArtifactPage(StandardArtifactPage):
         elif label == "node/package.json":
             deps, dev, scripts = _pkg_json_stats(path)
             lines.append(f"**Counts:** deps={deps}, devDeps={dev}, scripts={scripts}")
-            lines.append("**Sandbox dir:** `artifacts/api/node/` (no repository root pollution).")
+            lines.append(
+                "**Sandbox dir:** `artifacts/api/node/` (no repository root pollution)."
+            )
         elif label == "node/tool-versions.txt":
             tv = _tool_versions(path)
             if tv:
-                lines.append("**Resolved versions:** " + ", ".join(f"`{k}={v}`" for k, v in tv.items()))
+                lines.append(
+                    "**Resolved versions:** "
+                    + ", ".join(f"`{k}={v}`" for k, v in tv.items())
+                )
 
         return '!!! info "About this artifact"\n\n' + indent("\n".join(lines) + "\n")

@@ -13,7 +13,7 @@ can remain decoupled from the internal structure of the `core` package.
 
 The exposed components include:
 * **Enumerations:** `OutputFormat`.
-* **Custom Exceptions:** `BijuxError`, `CommandError`, `ConfigError`, etc.
+* **Custom Exceptions:** `BijuxError`, `ConfigError`, `PluginError`, etc.
 """
 
 from __future__ import annotations
@@ -21,17 +21,17 @@ from __future__ import annotations
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.errors import (
     BijuxError,
-    CliTimeoutError,
-    CommandError,
     ConfigError,
-    ValidationError,
+    InternalError,
+    PluginError,
+    UserInputError,
 )
 
 __all__ = [
     "OutputFormat",
     "BijuxError",
-    "CliTimeoutError",
-    "CommandError",
     "ConfigError",
-    "ValidationError",
+    "InternalError",
+    "PluginError",
+    "UserInputError",
 ]

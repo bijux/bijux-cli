@@ -121,7 +121,7 @@ dev = [
 ]
 
 [project.scripts]
-bijux = "bijux_cli.__main__:main"
+bijux = "bijux_cli.core.bootstrap:main"
 
 [project.urls]
 "Homepage" = "https://github.com/bijux/bijux-cli"

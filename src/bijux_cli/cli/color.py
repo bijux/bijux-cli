@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, OutputFormat
 
 _COLOR_MODE = ColorMode.AUTO
 
@@ -21,13 +21,17 @@ def get_color_mode() -> ColorMode:
     return _COLOR_MODE
 
 
-def apply_color_mode(color: bool | None) -> bool | None:
-    """Apply the current color mode to a Click/Typer color flag."""
+def resolve_click_color(*, quiet: bool, fmt: OutputFormat | None = None) -> bool | None:
+    """Resolve Click/Typer color usage for the current mode and output."""
+    if quiet:
+        return False
+    if fmt in (OutputFormat.JSON, OutputFormat.YAML):
+        return False
     if _COLOR_MODE is ColorMode.NEVER:
         return False
     if _COLOR_MODE is ColorMode.ALWAYS:
         return True
-    return color
+    return None
 
 
-__all__ = ["apply_color_mode", "get_color_mode", "set_color_mode"]
+__all__ = ["get_color_mode", "resolve_click_color", "set_color_mode"]

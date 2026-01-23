@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 
-from bijux_cli.app.di import DIContainer
+from bijux_cli.core.di import DIContainer
 from bijux_cli.infra.telemetry import LoggingTelemetry, NoopTelemetry
 from bijux_cli.services.contracts import TelemetryProtocol
 

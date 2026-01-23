@@ -16,7 +16,6 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.emit import emit_and_exit, emit_error_and_exit
 from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.output import new_run_command
@@ -27,8 +26,10 @@ from bijux_cli.cli.validation import (
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.infra.contracts import Serializer
 from bijux_cli.plugins.listing import list_installed_plugins
 from bijux_cli.services.history.contracts import HistoryProtocol
 
@@ -78,22 +79,22 @@ def test_ascii_safe_empty() -> None:
 
 def test_normalize_format_none() -> None:
     """Test normalize_format with None input."""
-    assert normalize_format(None) == ""
+    assert normalize_format(None) is None
 
 
 def test_normalize_format_empty() -> None:
     """Test normalize_format with an empty string."""
-    assert normalize_format("") == ""
+    assert normalize_format("") is None
 
 
 def test_normalize_format_whitespace() -> None:
     """Test normalize_format with leading/trailing whitespace."""
-    assert normalize_format(" json ") == "json"
+    assert normalize_format(" json ") == OutputFormat.JSON
 
 
 def test_normalize_format_upper() -> None:
     """Test normalize_format with an uppercase string."""
-    assert normalize_format("YAML") == "yaml"
+    assert normalize_format("YAML") == OutputFormat.YAML
 
 
 def test_contains_non_ascii_env_no_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -145,12 +146,12 @@ def test_contains_non_ascii_env_non_bijux() -> None:
 
 def test_validate_common_flags_valid_json() -> None:
     """Test common flag validation with 'json' format."""
-    assert validate_common_flags("json", "cmd", False) == "json"
+    assert validate_common_flags("json", "cmd", False) is OutputFormat.JSON
 
 
 def test_validate_common_flags_valid_yaml() -> None:
     """Test common flag validation with 'YAML' format."""
-    assert validate_common_flags("YAML", "cmd", False) == "yaml"
+    assert validate_common_flags("YAML", "cmd", False) is OutputFormat.YAML
 
 
 def test_validate_common_flags_invalid() -> None:
@@ -162,7 +163,7 @@ def test_validate_common_flags_invalid() -> None:
             code=2,
             failure="format",
             command="cmd",
-            fmt="invalid",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -179,7 +180,7 @@ def test_validate_common_flags_non_ascii(monkeypatch: pytest.MonkeyPatch) -> Non
             code=3,
             failure="ascii",
             command="cmd",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
             debug=False,
@@ -261,7 +262,7 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
     with (
         patch(
             "bijux_cli.cli.output.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch("bijux_cli.cli.output.emit_and_exit") as mock_emit_exit,
     ):
@@ -274,9 +275,9 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
             builder,
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
         mock_emit_exit.assert_called_with(
             payload={"test": "value"},
@@ -290,7 +291,7 @@ def test_new_run_command_success(mock_di: types.SimpleNamespace) -> None:
         )
 
 
-@patch("bijux_cli.cli.output.validate_common_flags", return_value="yaml")
+@patch("bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.YAML)
 def test_new_run_command_yaml(
     mock_validate: MagicMock, mock_di: types.SimpleNamespace
 ) -> None:
@@ -305,9 +306,9 @@ def test_new_run_command_yaml(
             builder,
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
         mock_emit_exit.assert_called_with(
             payload={"test": "value"},
@@ -326,7 +327,7 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
     with (
         patch(
             "bijux_cli.cli.output.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch("bijux_cli.cli.output.emit_error_and_exit") as mock_error_exit,
     ):
@@ -339,9 +340,9 @@ def test_new_run_command_build_fail(mock_di: types.SimpleNamespace) -> None:
             builder,
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
         mock_error_exit.assert_called_with(
             "build fail",
@@ -361,18 +362,20 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
         patch(
             "bijux_cli.cli.output.get_execution_policy",
             return_value=ExecutionPolicy(
-                output_format="json",
+                output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=True,
                 verbose=False,
                 verbose_level=0,
-                log_level="error",
+                log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
                 json=False,
             ),
         ),
-        patch("bijux_cli.cli.output.validate_common_flags", return_value="json"),
+        patch(
+            "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+        ),
     ):
 
         def builder(include: bool) -> dict[str, Any]:
@@ -384,9 +387,9 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
                 builder,
                 quiet=True,
                 verbose=False,
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
         assert not any(
             call.args[0] == HistoryProtocol for call in mock_di.resolve.call_args_list
@@ -397,7 +400,9 @@ def test_new_run_command_history_skip_history_cmd(
     mock_di: types.SimpleNamespace,
 ) -> None:
     """Test that the history command itself is not recorded in history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
 
         def builder(include: bool) -> dict[str, Any]:
             return {}
@@ -408,9 +413,9 @@ def test_new_run_command_history_skip_history_cmd(
                 builder,
                 quiet=False,
                 verbose=False,
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
         assert not any(
             call.args[0] == HistoryProtocol for call in mock_di.resolve.call_args_list
@@ -419,7 +424,9 @@ def test_new_run_command_history_skip_history_cmd(
 
 def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None:
     """Test successful command recording in history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock(spec=HistoryProtocol)
 
         def side_effect(cls: type) -> MagicMock:
@@ -436,9 +443,9 @@ def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None
                 builder,
                 quiet=False,
                 verbose=False,
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
         mock_hist.add.assert_called_with(
             command="cmd", params=[], success=True, return_code=0, duration_ms=0.0
@@ -447,7 +454,9 @@ def test_new_run_command_history_success(mock_di: types.SimpleNamespace) -> None
 
 def test_new_run_command_history_fail(mock_di: types.SimpleNamespace) -> None:
     """Test failed command recording in history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock(spec=HistoryProtocol)
 
         def side_effect(cls: type) -> MagicMock:
@@ -464,9 +473,9 @@ def test_new_run_command_history_fail(mock_di: types.SimpleNamespace) -> None:
                 builder,
                 quiet=False,
                 verbose=False,
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 exit_code=1,
             )
         mock_hist.add.assert_called_with(
@@ -478,7 +487,9 @@ def test_new_run_command_history_permission_error(
     mock_di: types.SimpleNamespace,
 ) -> None:
     """Test handling of PermissionError when writing history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = PermissionError("perm error")
 
@@ -497,9 +508,9 @@ def test_new_run_command_history_permission_error(
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: perm error", file=sys.stderr
@@ -508,7 +519,9 @@ def test_new_run_command_history_permission_error(
 
 def test_new_run_command_history_os_error_perm(mock_di: types.SimpleNamespace) -> None:
     """Test handling of OSError EACCES/EPERM when writing history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(13, "perm")
 
@@ -527,9 +540,9 @@ def test_new_run_command_history_os_error_perm(mock_di: types.SimpleNamespace) -
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: [Errno 13] perm", file=sys.stderr
@@ -540,7 +553,9 @@ def test_new_run_command_history_os_error_space(
     mock_di: types.SimpleNamespace,
 ) -> None:
     """Test handling of OSError ENOSPC when writing history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(28, "no space")
 
@@ -559,9 +574,9 @@ def test_new_run_command_history_os_error_space(
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "No space left on device while writing history: [Errno 28] no space",
@@ -573,7 +588,9 @@ def test_new_run_command_history_os_error_other(
     mock_di: types.SimpleNamespace,
 ) -> None:
     """Test handling of other OSErrors when writing history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(5, "io error")
 
@@ -592,9 +609,9 @@ def test_new_run_command_history_os_error_other(
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "Error writing history: [Errno 5] io error", file=sys.stderr
@@ -603,7 +620,9 @@ def test_new_run_command_history_os_error_other(
 
 def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> None:
     """Test handling of generic exceptions when writing history."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = Exception("other error")
 
@@ -622,9 +641,9 @@ def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> No
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "Error writing history: other error", file=sys.stderr
@@ -738,8 +757,8 @@ def test_emit_and_exit_yaml_compact() -> None:
     mock_print.assert_called_with("key: value")
 
 
-def test_emit_and_exit_debug() -> None:
-    """Test that diagnostics are printed in debug mode."""
+def test_emit_and_exit_debug_ignored() -> None:
+    """Test that debug does not add diagnostics output."""
     with (
         patch(
             "bijux_cli.cli.emit.resolve_serializer",
@@ -751,13 +770,16 @@ def test_emit_and_exit_debug() -> None:
         emit_and_exit(
             {"key": "value"}, OutputFormat.JSON, True, False, True, False, "cmd"
         )
-    mock_print.assert_any_call("Diagnostics: emitted payload", file=sys.stderr)
+    assert all(
+        call.kwargs.get("file") != sys.stderr or "Diagnostics" not in str(call)
+        for call in mock_print.call_args_list
+    )
 
 
 def test_emit_error_and_exit_quiet() -> None:
     """Test that error output is suppressed in quiet mode."""
     with pytest.raises(SystemExit) as exc:
-        emit_error_and_exit("error", 1, "fail", "cmd", "json", True)
+        emit_error_and_exit("error", 1, "fail", "cmd", OutputFormat.JSON, True)
     assert exc.value.code == 1
 
 
@@ -771,8 +793,8 @@ def test_emit_error_and_exit_json() -> None:
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
         mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
-            emit_error_and_exit("test", 1, "fail", "cmd", "json", False)
-    mock_serializer.dumps.assert_called_with(ANY, fmt="json", pretty=False)
+            emit_error_and_exit("test", 1, "fail", "cmd", OutputFormat.JSON, False)
+    mock_serializer.dumps.assert_called_with(ANY, fmt=OutputFormat.JSON, pretty=False)
     mock_print.assert_called_with('{"error": "test"}', file=sys.stderr, flush=True)
 
 
@@ -786,8 +808,10 @@ def test_emit_error_and_exit_include_runtime() -> None:
         mock_serializer.dumps.return_value = '{"error": "test"}\n'
         mock_factory.return_value = mock_serializer
         with pytest.raises(SystemExit):
-            emit_error_and_exit("test", 1, "fail", "cmd", "json", False, True)
-    mock_serializer.dumps.assert_called_with(ANY, fmt="json", pretty=False)
+            emit_error_and_exit(
+                "test", 1, "fail", "cmd", OutputFormat.JSON, False, True
+            )
+    mock_serializer.dumps.assert_called_with(ANY, fmt=OutputFormat.JSON, pretty=False)
     assert "python" in mock_serializer.dumps.call_args[0][0]
     assert "platform" in mock_serializer.dumps.call_args[0][0]
     assert "timestamp" in mock_serializer.dumps.call_args[0][0]
@@ -808,7 +832,7 @@ def test_emit_error_and_exit_extra() -> None:
                 1,
                 "fail",
                 "cmd",
-                "json",
+                OutputFormat.JSON,
                 False,
                 False,
                 False,
@@ -817,29 +841,39 @@ def test_emit_error_and_exit_extra() -> None:
     assert "extra" in mock_serializer.dumps.call_args[0][0]
 
 
-def test_emit_error_and_exit_debug() -> None:
-    """Test that a traceback is printed in debug mode."""
+def test_emit_error_and_exit_debug_ignored() -> None:
+    """Test that debug does not emit a traceback."""
     with (
         patch(
             "bijux_cli.cli.emit.resolve_serializer",
             return_value=MagicMock(dumps=MagicMock(return_value='{"error": "test"}\n')),
         ),
-        patch("builtins.print"),
-        patch("traceback.print_exc") as mock_tb,
+        patch("builtins.print") as mock_print,
         pytest.raises(SystemExit),
     ):
-        emit_error_and_exit("test", 1, "fail", "cmd", "json", False, False, True)
-    mock_tb.assert_called_once()
+        emit_error_and_exit(
+            "test",
+            1,
+            "fail",
+            "cmd",
+            OutputFormat.JSON,
+            False,
+            False,
+            True,
+        )
+    assert any(
+        call.kwargs.get("file") is sys.stderr for call in mock_print.call_args_list
+    )
 
 
 def test_parse_global_flags_empty() -> None:
     """Parse global flags with no arguments."""
     config = parse_global_flags([])
     assert config.help is False
-    assert config.quiet is False
-    assert config.verbose_level == 0
-    assert config.fmt == "json"
-    assert config.pretty is True
+    assert config.flags.quiet is None
+    assert config.flags.log_level is None
+    assert config.flags.color is None
+    assert config.flags.format is None
     assert config.args == ()
     assert config.errors == ()
 
@@ -855,31 +889,22 @@ def test_parse_global_flags_help() -> None:
 def test_parse_global_flags_quiet() -> None:
     """Parse the --quiet (-q) flag."""
     config = parse_global_flags(["-q"])
-    assert config.quiet is True
+    assert config.flags.quiet is True
     assert config.args == ()
     assert config.errors == ()
 
 
 def test_parse_global_flags_debug() -> None:
-    """Reject the deprecated --debug flag."""
+    """Leave --debug for command parsing."""
     config = parse_global_flags(["--debug"])
-    assert config.args == ()
-    assert config.errors
-    assert config.errors[0]["flag"] == "--debug"
-
-
-def test_parse_global_flags_verbose() -> None:
-    """Parse the --verbose (-v) flag."""
-    config = parse_global_flags(["-v"])
-    assert config.verbose_level == 1
-    assert config.args == ()
+    assert config.args == ("--debug",)
     assert config.errors == ()
 
 
 def test_parse_global_flags_format() -> None:
     """Global parser leaves --format (-f) for commands."""
     config = parse_global_flags(["-f", "yaml"])
-    assert config.fmt == "json"
+    assert config.flags.format is None
     assert config.args == ("-f", "yaml")
     assert config.errors == ()
 
@@ -887,7 +912,7 @@ def test_parse_global_flags_format() -> None:
 def test_parse_global_flags_format_missing() -> None:
     """Global parser leaves missing --format value for commands."""
     config = parse_global_flags(["-f"])
-    assert config.fmt == "json"
+    assert config.flags.format is None
     assert config.args == ("-f",)
     assert config.errors == ()
 
@@ -903,16 +928,16 @@ def test_parse_global_flags_format_invalid_help() -> None:
 def test_parse_global_flags_pretty() -> None:
     """Parse the --pretty flag."""
     config = parse_global_flags(["--pretty"])
-    assert config.pretty is True
-    assert config.args == ()
+    assert config.flags.format is None
+    assert config.args == ("--pretty",)
     assert config.errors == ()
 
 
 def test_parse_global_flags_no_pretty() -> None:
     """Parse the --no-pretty flag."""
     config = parse_global_flags(["--no-pretty"])
-    assert config.pretty is False
-    assert config.args == ()
+    assert config.flags.format is None
+    assert config.args == ("--no-pretty",)
     assert config.errors == ()
 
 
@@ -942,7 +967,7 @@ def test_list_installed_plugins_delegates() -> None:
 
 
 def test_parse_global_flags_multiple() -> None:
-    """Parse multiple global flags with invalid ones rejected."""
+    """Parse multiple global flags with unknown ones retained."""
     config = parse_global_flags(
         [
             "-q",
@@ -954,12 +979,10 @@ def test_parse_global_flags_multiple() -> None:
             "--unknown",
         ]
     )
-    assert config.quiet is True
-    assert config.fmt == "json"
-    assert config.pretty is False
-    assert config.verbose_level == 1
-    assert config.args == ("-f", "yaml", "--unknown")
-    assert any(err.get("flag") == "--debug" for err in config.errors)
+    assert config.flags.quiet is True
+    assert config.flags.format is None
+    assert config.args == ("--debug", "-f", "yaml", "--no-pretty", "-v", "--unknown")
+    assert config.errors == ()
 
 
 @patch.dict(os.environ, {"BIJUXCLI_CONFIG": "/path/to/config"})
@@ -994,7 +1017,7 @@ def test_emit_error_and_exit_no_failure() -> None:
                 1,
                 failure,
                 "cmd",
-                "json",
+                OutputFormat.JSON,
                 False,
             )
 
@@ -1012,7 +1035,7 @@ def test_emit_error_and_exit_no_command() -> None:
         patch("builtins.print"),
         pytest.raises(SystemExit),
     ):
-        emit_error_and_exit("test", 1, "fail", None, "json", False)
+        emit_error_and_exit("test", 1, "fail", None, OutputFormat.JSON, False)
     payload = mock_factory.return_value.dumps.call_args[0][0]
     assert "command" not in payload
 
@@ -1042,7 +1065,7 @@ def test_emit_error_and_exit_json_dumps_fails() -> None:
         patch("builtins.print") as mock_print,
         pytest.raises(SystemExit),
     ):
-        emit_error_and_exit("test", 1, "fail", "cmd", "json", False)
+        emit_error_and_exit("test", 1, "fail", "cmd", OutputFormat.JSON, False)
     mock_print.assert_any_call(
         '{"error": "Unserializable error"}', file=sys.stderr, flush=True
     )
@@ -1062,7 +1085,9 @@ def test_emit_and_exit_history_permission_denied(
     mock_di: types.SimpleNamespace,
 ) -> None:
     """Test history recording failure due to EACCES permission error."""
-    with patch("bijux_cli.cli.output.validate_common_flags", return_value="json"):
+    with patch(
+        "bijux_cli.cli.output.validate_common_flags", return_value=OutputFormat.JSON
+    ):
         mock_hist = MagicMock()
         mock_hist.add.side_effect = OSError(errno.EACCES, "denied")
 
@@ -1081,9 +1106,9 @@ def test_emit_and_exit_history_permission_denied(
                     builder,
                     quiet=False,
                     verbose=False,
-                    fmt="json",
+                    fmt=OutputFormat.JSON,
                     pretty=True,
-                    log_level="info",
+                    log_level=LogLevel.INFO,
                 )
             mock_print.assert_any_call(
                 "Permission denied writing history: [Errno 13] denied", file=sys.stderr
@@ -1119,6 +1144,15 @@ def test_emit_and_exit_plain_oserror_eacces_hits_oerror_branch(
         def resolve(self, proto: Any) -> Any:
             if proto is HistoryProtocol:
                 return FakeHistory()
+            if proto is Serializer:
+
+                class _TestSerializer:
+                    def dumps(
+                        self, payload: Any, fmt: OutputFormat, pretty: bool = False
+                    ) -> str:
+                        return json.dumps(payload)
+
+                return _TestSerializer()
             raise RuntimeError("unexpected resolve")
 
     monkeypatch.setattr(
@@ -1163,6 +1197,15 @@ def test_emit_and_exit_plain_oserror_eperm_hits_oerror_branch(
             """Resolve the FakeHistory protocol."""
             if proto is HistoryProtocol:
                 return FakeHistory()
+            if proto is Serializer:
+
+                class _TestSerializer:
+                    def dumps(
+                        self, payload: Any, fmt: OutputFormat, pretty: bool = False
+                    ) -> str:
+                        return json.dumps(payload)
+
+                return _TestSerializer()
             raise RuntimeError("unexpected resolve")
 
     monkeypatch.setattr(

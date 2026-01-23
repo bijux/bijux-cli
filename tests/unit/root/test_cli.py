@@ -96,7 +96,7 @@ def test_maybe_default_to_repl_shows_help_on_failed_command(
         cli_mod.maybe_default_to_repl(ctx)
 
     assert exc_info.value.exit_code == 2
-    mock_echo.assert_called_once_with("Usage: ...")
+    mock_echo.assert_called_once_with("Usage: ...", color=None)
 
 
 def test_maybe_default_to_repl_does_nothing_with_subcommand(

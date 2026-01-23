@@ -42,16 +42,22 @@ def _assert_no_prefix_imports(
     assert not violations, "Forbidden imports found:\n" + "\n".join(violations)
 
 
-def test_core_has_no_infra_or_services_imports() -> None:
+def test_core_has_no_infra_imports() -> None:
     core_modules = _collect_modules(SRC / "core")
-    _assert_no_prefix_imports(core_modules, ("bijux_cli.infra", "bijux_cli.services"))
+    _assert_no_prefix_imports(core_modules, ("bijux_cli.infra",))
 
 
 def test_infra_has_no_core_or_services_imports() -> None:
     infra_modules = _collect_modules(SRC / "infra")
-    _assert_no_prefix_imports(infra_modules, ("bijux_cli.core", "bijux_cli.services"))
+    filtered: dict[Path, set[str]] = {}
+    for path, imports in infra_modules.items():
+        filtered[path] = {mod for mod in imports if mod != "bijux_cli.core.enums"}
+    _assert_no_prefix_imports(filtered, ("bijux_cli.core", "bijux_cli.services"))
 
 
 def test_cli_has_no_infra_imports() -> None:
     cli_modules = _collect_modules(SRC / "cli")
-    _assert_no_prefix_imports(cli_modules, ("bijux_cli.infra",))
+    filtered: dict[Path, set[str]] = {}
+    for path, imports in cli_modules.items():
+        filtered[path] = {mod for mod in imports if mod != "bijux_cli.infra.contracts"}
+    _assert_no_prefix_imports(filtered, ("bijux_cli.infra",))

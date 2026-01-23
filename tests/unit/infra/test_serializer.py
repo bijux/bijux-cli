@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -45,7 +46,7 @@ def test_serializer_for_rejects_unknown_format() -> None:
     """serializer_for should reject unknown formats."""
     tel = MagicMock(spec=TelemetryProtocol)
     with pytest.raises(SerializationError, match="Unsupported format"):
-        serializer_for("toml", tel)
+        serializer_for(cast(OutputFormat, "toml"), tel)
 
 
 def test_pyyaml_serializer_requires_yaml() -> None:

@@ -19,8 +19,8 @@ from typing import Any, TypeVar
 
 from injector import inject
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.core.contracts import ExecutionContext
+from bijux_cli.core.di import DIContainer
 from bijux_cli.services.contracts import ObservabilityProtocol
 
 T = TypeVar("T")

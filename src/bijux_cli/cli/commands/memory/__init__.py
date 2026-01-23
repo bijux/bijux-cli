@@ -29,13 +29,13 @@ from __future__ import annotations
 
 import typer
 
-from bijux_cli.app.async_exec import AsyncTyper
 from bijux_cli.cli.commands.memory.clear import clear_memory
 from bijux_cli.cli.commands.memory.delete import delete_memory
 from bijux_cli.cli.commands.memory.get import get_memory
 from bijux_cli.cli.commands.memory.list import list_memory
 from bijux_cli.cli.commands.memory.service import memory
 from bijux_cli.cli.commands.memory.set import set_memory
+from bijux_cli.core.runtime import AsyncTyper
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 

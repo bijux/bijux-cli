@@ -10,6 +10,7 @@ from typing import Any
 
 import structlog
 
+from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.infra.serializer import serializer_for
 
 
@@ -19,7 +20,7 @@ class ConsoleEmitter:
     def __init__(
         self,
         telemetry: Any,
-        output_format: Any = "json",
+        output_format: OutputFormat = OutputFormat.JSON,
     ) -> None:
         """Initialize the console emitter."""
         self._telemetry = telemetry
@@ -30,9 +31,9 @@ class ConsoleEmitter:
         self,
         payload: Any,
         *,
-        fmt: Any | None = None,
+        fmt: OutputFormat | None = None,
         pretty: bool = False,
-        level: str = "info",
+        level: LogLevel = LogLevel.INFO,
         message: str = "Emitting output",
         output: str | None = None,
         emit_output: bool = True,
@@ -58,23 +59,14 @@ class ConsoleEmitter:
         else:
             print(stripped, file=sys.stdout, flush=True)
 
-        if emit_diagnostics:
-            print("Diagnostics: emitted payload", file=sys.stderr)
-            log = getattr(self._logger, level)
-            log(message, output=stripped, **context)
-
         try:
-            format_name = (
-                str(output_format.value)
-                if hasattr(output_format, "value")
-                else str(output_format)
-            )
+            format_name = output_format.value
             self._telemetry.event(
-                "output_emitted", {"format": format_name, "size_chars": len(stripped)}
+                "output_emitted",
+                {"format": format_name, "size_chars": len(stripped)},
             )
         except Exception as tel_err:
-            if emit_diagnostics:
-                self._logger.error("Telemetry failed", error=str(tel_err), **context)
+            self._logger.debug("Telemetry failed", error=str(tel_err), **context)
 
     def flush(self) -> None:
         """Flushes standard output."""
@@ -88,9 +80,9 @@ class NullEmitter:
         self,
         payload: Any,
         *,
-        fmt: Any | None = None,
+        fmt: OutputFormat | None = None,
         pretty: bool = False,
-        level: str = "info",
+        level: LogLevel = LogLevel.INFO,
         message: str = "Emitting output",
         output: str | None = None,
         emit_output: bool = True,

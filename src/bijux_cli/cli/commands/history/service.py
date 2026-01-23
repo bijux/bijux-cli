@@ -40,7 +40,6 @@ from typing import Any
 
 import typer
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -54,17 +53,23 @@ from bijux_cli.cli.validation import (
     ascii_safe,
     validate_common_flags,
 )
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.services.history.contracts import HistoryProtocol
 
 
 def resolve_history_service(
-    command: str, fmt_lower: str, quiet: bool, include_runtime: bool, debug: bool
+    command: str,
+    fmt_lower: OutputFormat,
+    quiet: bool,
+    include_runtime: bool,
+    debug: bool,
 ) -> HistoryProtocol:
     """Resolves the HistoryProtocol implementation from the DI container.
 
     Args:
         command (str): The full command name (e.g., "history").
-        fmt_lower (str): The chosen output format, lowercased.
+        fmt_lower (OutputFormat): The chosen output format.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
         log_level (str): The requested logging level.
@@ -158,7 +163,7 @@ def history(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == "debug"
+    debug = effective.log_level == LogLevel.DEBUG
     pretty = effective.pretty
     include_runtime = effective.include_runtime
     validate_common_flags(fmt, command, quiet, include_runtime=include_runtime)

@@ -26,6 +26,7 @@ import sys
 
 import typer
 
+from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
@@ -43,7 +44,7 @@ from bijux_cli.cli.validation import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import LogLevel, OutputFormat
 
 
 def _build_payload(
@@ -79,7 +80,7 @@ def _build_payload(
 def _run_one_shot_mode(
     *,
     command: str,
-    fmt: str,
+    fmt: OutputFormat,
     output_format: OutputFormat,
     quiet: bool,
     verbose: bool,
@@ -139,7 +140,7 @@ def _run_one_shot_mode(
         fmt=output_format,
         effective_pretty=effective_pretty,
         verbose=verbose,
-        debug=(log_level == "debug"),
+        debug=(LogLevel(log_level) == LogLevel.DEBUG),
         quiet=quiet,
         command=command,
         exit_code=0,
@@ -180,19 +181,19 @@ def memory_summary(
     policy = get_execution_policy()
     quiet = policy.quiet
     verbose = policy.verbose
-    debug = policy.log_level == "debug"
+    debug = policy.log_level == LogLevel.DEBUG
     include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
-    fmt_lower = normalize_format(fmt) or "json"
+    fmt_lower = normalize_format(fmt) or OutputFormat.JSON
 
     validate_common_flags(
-        fmt,
+        fmt_lower,
         command,
         quiet,
         include_runtime=include_runtime,
     )
 
-    output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
+    output_format = fmt_lower
 
     svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, debug)
 
@@ -242,15 +243,17 @@ def memory(
         typer.Exit: Exits after displaying help text.
     """
     if any(arg in ("-h", "--help") for arg in sys.argv):
+        policy = get_execution_policy()
+        color = resolve_click_color(quiet=policy.quiet, fmt=None)
         if ctx.invoked_subcommand:
             cmd = getattr(ctx.command, "get_command", None)
             sub_cmd = cmd(ctx, ctx.invoked_subcommand) if callable(cmd) else None
             if sub_cmd and hasattr(sub_cmd, "get_help"):
-                typer.echo(sub_cmd.get_help(ctx))
+                typer.echo(sub_cmd.get_help(ctx), color=color)
             else:
-                typer.echo(ctx.get_help())
+                typer.echo(ctx.get_help(), color=color)
         else:
-            typer.echo(ctx.get_help())
+            typer.echo(ctx.get_help(), color=color)
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         memory_summary(ctx, quiet, verbose, fmt, pretty, log_level)

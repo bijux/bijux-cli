@@ -13,11 +13,11 @@ from typing import Any
 import pytest
 import typer
 
-from bijux_cli.app.di import DIContainer
 import bijux_cli.cli.commands.status as mod
-from bijux_cli.core.contracts import Emitter
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
 
@@ -160,10 +160,10 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
         mod._run_watch_mode(
             command="status",
             watch_interval=0.01,
-            fmt="yaml",
+            fmt=OutputFormat.YAML,
             quiet=False,
             verbose=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
             telemetry=tel,
@@ -191,10 +191,10 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
         mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             verbose=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=True,
             telemetry=tel,
@@ -221,10 +221,10 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
         mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             verbose=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
             telemetry=tel,
@@ -258,9 +258,9 @@ def test_status_returns_early_on_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
         watch=None,
         quiet=False,
         verbose=False,
-        fmt="json",
+        fmt=OutputFormat.JSON,
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
     assert called["new_run"] == 0
     assert called["watch"] == 0
@@ -277,12 +277,12 @@ def test_status_calls_new_run_command_when_not_watching(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=True,
             verbose_level=1,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=True,
             json=False,
@@ -307,7 +307,7 @@ def test_status_calls_new_run_command_when_not_watching(
         verbose=True,
         fmt="JSON",
         pretty=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
     assert seen["command_name"] == "status"
     assert seen["quiet"] is True
@@ -346,9 +346,9 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             watch=0,
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert e1.value.code == 2
 
@@ -358,9 +358,9 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             watch=cast(Any, "abc"),
             quiet=False,
             verbose=False,
-            fmt="json",
+            fmt=OutputFormat.JSON,
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert e2.value.code == 2
 
@@ -381,12 +381,12 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -406,14 +406,14 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
         verbose=False,
         fmt="JSON",
         pretty=True,
-        log_level="debug",
+        log_level=LogLevel.DEBUG,
     )
     assert seen["command"] == "status"
     assert seen["watch_interval"] == pytest.approx(0.5)
     assert seen["fmt"] == "json"
     assert seen["quiet"] is True
     assert seen["verbose"] is False
-    assert seen["log_level"] == "debug"
+    assert seen["log_level"] == LogLevel.DEBUG
     assert seen["effective_pretty"] is True
     assert seen["telemetry"] is tel
     assert seen["emitter"] is em
@@ -433,10 +433,10 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
     mod._run_watch_mode(
         command="status",
         watch_interval=0.01,
-        fmt="json",
+        fmt=OutputFormat.JSON,
         quiet=True,
         verbose=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
         effective_pretty=True,
         include_runtime=False,
         telemetry=tel,
@@ -462,10 +462,10 @@ def test_run_watch_mode_one_iteration_and_stop(
     mod._run_watch_mode(
         command="status",
         watch_interval=0.01,
-        fmt="json",
+        fmt=OutputFormat.JSON,
         quiet=False,
         verbose=True,
-        log_level="debug",
+        log_level=LogLevel.DEBUG,
         effective_pretty=True,
         include_runtime=True,
         telemetry=tel,
@@ -523,10 +523,10 @@ def test_run_watch_mode_final_emit_exception_swallowed(
     mod._run_watch_mode(
         command="status",
         watch_interval=0.0,
-        fmt="json",
+        fmt=OutputFormat.JSON,
         quiet=False,
         verbose=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
         effective_pretty=False,
         include_runtime=False,
         telemetry=tel,

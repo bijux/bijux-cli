@@ -25,14 +25,15 @@ from pathlib import Path
 import sys
 from typing import Any, cast
 
-from bijux_cli.app.async_exec import run_awaitable, run_command
-from bijux_cli.app.di import DIContainer
-from bijux_cli.app.engine import Engine
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.errors import BijuxError, CommandError, ServiceError
-from bijux_cli.core.precedence import resolve_effective_config
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.engine import Engine
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.errors import BijuxError, PluginError
+from bijux_cli.core.precedence import FlagLayer, Flags, resolve_effective_config
+from bijux_cli.core.runtime import run_awaitable, run_command
 from bijux_cli.plugins.contracts import RegistryProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
+from bijux_cli.services.errors import ServiceError
 
 IGNORE = {"PS1", "LS_COLORS", "PROMPT_COMMAND", "GIT_PS1_FORMAT"}
 
@@ -63,7 +64,7 @@ class BijuxAPI:
         _tel (TelemetryProtocol): The telemetry service.
     """
 
-    def __init__(self, *, log_level: str = "info") -> None:
+    def __init__(self, *, log_level: LogLevel = LogLevel.INFO) -> None:
         """Initializes the `BijuxAPI` and the underlying CLI engine.
 
         Args:
@@ -167,7 +168,7 @@ class BijuxAPI:
         verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
-        log_level: str = "info",
+        log_level: LogLevel = LogLevel.INFO,
         **kwargs: Any,
     ) -> Any:
         """Runs a command synchronously.
@@ -209,7 +210,7 @@ class BijuxAPI:
         verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
-        log_level: str = "info",
+        log_level: LogLevel = LogLevel.INFO,
         **kwargs: Any,
     ) -> Any:
         """Runs a command asynchronously with validation.
@@ -235,33 +236,32 @@ class BijuxAPI:
                 execution errors.
         """
         try:
+            _ = pretty
             if quiet and verbose:
                 raise BijuxError(
                     "--quiet cannot be combined with --verbose", http_status=400
                 )
-            resolved = resolve_effective_config(
-                cli={
-                    "quiet": quiet,
-                    "verbose": verbose,
-                    "log_level": log_level,
-                    "format": fmt,
-                    "pretty": pretty,
-                },
-                env={},
-                file={},
-                defaults={
-                    "quiet": False,
-                    "verbose": False,
-                    "pretty": True,
-                    "log_level": "info",
-                    "color": "auto",
-                    "format": "json",
-                    "json": False,
-                },
+            fmt_value = OutputFormat(fmt)
+            log_value = (
+                log_level if isinstance(log_level, LogLevel) else LogLevel(log_level)
             )
-            fmt = resolved.fmt
-            if fmt not in ("json", "yaml"):
-                raise BijuxError(f"Unsupported format: {fmt}", http_status=400)
+            resolved = resolve_effective_config(
+                cli=FlagLayer(
+                    quiet=quiet,
+                    log_level=log_value,
+                    color=ColorMode.AUTO,
+                    format=fmt_value,
+                ),
+                env=FlagLayer(),
+                file=FlagLayer(),
+                defaults=Flags(
+                    quiet=False,
+                    log_level=LogLevel.INFO,
+                    color=ColorMode.AUTO,
+                    format=OutputFormat.JSON,
+                ),
+            )
+            fmt_value = resolved.flags.format
 
             for k, v in os.environ.items():
                 if k in IGNORE:
@@ -275,7 +275,7 @@ class BijuxAPI:
             self._schedule_event("api.run", {"name": name})
             return result
 
-        except CommandError as exc:
+        except PluginError as exc:
             self._schedule_event("api.run.error", {"name": name, "error": str(exc)})
             raise BijuxError(
                 f"Failed to run command {name}: {exc}", http_status=500
@@ -309,8 +309,8 @@ class BijuxAPI:
         Raises:
             BijuxError: If plugin loading, initialization, or registration fails.
         """
+        from bijux_cli.core.version import __version__
         from bijux_cli.plugins import load_plugin as _load_plugin
-        from bijux_cli.version import __version__
 
         p = Path(path).expanduser().resolve()
         module_name = f"bijux_plugin_{p.stem}"

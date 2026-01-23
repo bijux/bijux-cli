@@ -23,7 +23,7 @@ from bijux_cli.cli.commands.dev.di import (
 )
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -134,7 +134,7 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
         verbose=False,
         fmt="json",
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
         output=[],
     )
     assert captured["built"] == base_payload
@@ -178,7 +178,7 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
         verbose=False,
         fmt="json",
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
         output=[],
     )
 
@@ -217,7 +217,7 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
         verbose=False,
         fmt="json",
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
         output=[out_path],
     )
 
@@ -250,7 +250,7 @@ def test_dev_di_graph_output_yaml_writes_file(
         verbose=False,
         fmt="yaml",
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
         output=[out_path],
     )
 
@@ -266,12 +266,12 @@ def test_dev_di_graph_quiet_after_writing_exits(
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.di.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -340,7 +340,7 @@ def test_dev_di_graph_force_serialize_failure_env(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[],
         )
 
@@ -386,7 +386,7 @@ def test_dev_di_graph_invalid_limit_emits_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[],
         )
 
@@ -427,7 +427,7 @@ def test_dev_di_graph_config_env_non_ascii_emits_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[],
         )
 
@@ -470,7 +470,7 @@ def test_dev_di_graph_config_env_unreadable_path(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[],
         )
 
@@ -513,7 +513,7 @@ def test_dev_di_graph_payload_builder_raises_value_error(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[],
         )
 
@@ -600,7 +600,7 @@ def test_dev_di_graph_output_write_raises(
             verbose=False,
             fmt="json",
             pretty=True,
-            log_level="info",
+            log_level=LogLevel.INFO,
             output=[out_path],
         )
 
@@ -613,12 +613,12 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -644,7 +644,7 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
     dev_list_plugins(
-        quiet=True, verbose=False, fmt="json", pretty=True, log_level="info"
+        quiet=True, verbose=False, fmt="json", pretty=True, log_level=LogLevel.INFO
     )
 
     assert called["validated"] == ("json", "dev list-plugins", True)
@@ -674,12 +674,12 @@ def test_dev_payload_basic_and_runtime_inclusion(
     """Test that the dev payload is built correctly with and without runtime info."""
     ctx.invoked_subcommand = None
     policy = ExecutionPolicy(
-        output_format="json",
+        output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
         verbose=False,
         verbose_level=0,
-        log_level="info",
+        log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
         json=False,
@@ -707,24 +707,38 @@ def test_dev_payload_basic_and_runtime_inclusion(
         "bijux_cli.cli.commands.dev.service.new_run_command", fake_new_run_command
     )
 
-    dev(ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info")
+    dev(
+        ctx,
+        quiet=False,
+        verbose=False,
+        fmt="json",
+        pretty=True,
+        log_level=LogLevel.INFO,
+    )
     assert captured["kwargs"]["fmt"] == "json"
     assert not captured["kwargs"]["verbose"]
     assert captured["built"]["status"] == "ok"
     assert "python" not in captured["built"]
 
     policy = ExecutionPolicy(
-        output_format="json",
+        output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
         verbose=True,
         verbose_level=1,
-        log_level="info",
+        log_level=LogLevel.INFO,
         pretty=False,
         include_runtime=True,
         json=False,
     )
-    dev(ctx, quiet=False, verbose=True, fmt="json", pretty=False, log_level="info")
+    dev(
+        ctx,
+        quiet=False,
+        verbose=True,
+        fmt="json",
+        pretty=False,
+        log_level=LogLevel.INFO,
+    )
     assert captured["kwargs"]["verbose"]
     assert "python" in captured["built_rt"]
     assert "platform" in captured["built_rt"]
@@ -739,12 +753,12 @@ def test_dev_payload_includes_mode_env(
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="json",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
             verbose=True,
             verbose_level=1,
-            log_level="info",
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
             json=False,
@@ -761,7 +775,9 @@ def test_dev_payload_includes_mode_env(
         lambda **kw: built_payload.update(kw["payload_builder"](True)),
     )
 
-    dev(ctx, quiet=False, verbose=True, fmt="json", pretty=True, log_level="info")
+    dev(
+        ctx, quiet=False, verbose=True, fmt="json", pretty=True, log_level=LogLevel.INFO
+    )
     assert built_payload["status"] == "ok"
     assert built_payload["mode"] == "diagnostic"
     assert "python" in built_payload
@@ -796,7 +812,7 @@ def test_dev_di_graph_config_env_readable_path(
         verbose=False,
         fmt="json",
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
         output=[],
     )
 

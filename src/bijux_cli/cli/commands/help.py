@@ -27,18 +27,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 import platform as _platform
 import sys
-import sys as _sys
 import time
 from typing import Any
 
 import click
-import click as _click
 import typer
-import typer as _typer
 
-from bijux_cli.app.async_exec import AsyncTyper
-from bijux_cli.app.di import DIContainer
-from bijux_cli.cli.color import apply_color_mode
+from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.constants import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
@@ -51,98 +46,13 @@ from bijux_cli.cli.output import get_execution_policy
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
+    normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.contracts import Emitter
-from bijux_cli.core.enums import OutputFormat
-
-if len(_sys.argv) > 1 and _sys.argv[1] == "help" and "--quiet" in _sys.argv:
-    import io
-    import sys
-    from typing import IO, Any, AnyStr
-
-    import click as _click
-    import typer as _typer
-
-    _orig_stderr = sys.stderr
-    _orig_click_echo = _click.echo
-    _orig_click_secho = _click.secho
-
-    class _FilteredStderr(io.TextIOBase):
-        """A proxy for sys.stderr that filters known noisy plugin warnings."""
-
-        def write(self, data: str) -> int:
-            """Writes to stderr, suppressing specific noisy plugin warnings.
-
-            Args:
-                data (str): The string to write to the stream.
-
-            Returns:
-                int: The number of characters written, or 0 if suppressed.
-            """
-            if data.strip() == "":
-                return 0
-            if (
-                "Plugin 'test-src' does not expose a Typer app via 'cli()' or 'app'"
-                in data
-                or "does not expose a Typer app" in data
-            ):
-                return 0
-            return _orig_stderr.write(data)
-
-        def flush(self) -> None:
-            """Flushes the underlying stderr stream."""
-            _orig_stderr.flush()
-
-        def __getattr__(self, name: str) -> Any:
-            """Delegates attribute access to the original `sys.stderr`.
-
-            Args:
-                name (str): The name of the attribute to access.
-
-            Returns:
-                Any: The attribute from the original `sys.stderr`.
-            """
-            return getattr(_orig_stderr, name)
-
-    sys.stderr = _FilteredStderr()
-
-    def _filtered_echo(
-        message: Any = None,
-        file: IO[AnyStr] | None = None,
-        nl: bool = True,
-        err: bool = False,
-        color: bool | None = None,
-        **styles: Any,
-    ) -> None:
-        """A proxy for click.echo that filters known plugin warnings.
-
-        Args:
-            message (Any): The message to print.
-            file (IO[AnyStr] | None): The output stream.
-            nl (bool): If True, print a newline character at the end.
-            err (bool): If True, print to stderr instead of stdout.
-            color (bool | None): If True, enable color output.
-            **styles: Additional style keyword arguments for `click.secho`.
-        """
-        text = "" if message is None else str(message)
-        if not text.strip():
-            return
-        if (
-            text.startswith("[WARN] Plugin 'test-src'")
-            and "does not expose a Typer app" in text
-        ):
-            return
-        color = apply_color_mode(color)
-        if styles:
-            _orig_click_secho(message, file=file, nl=nl, err=err, color=color, **styles)
-        else:
-            _orig_click_echo(message, file=file, nl=nl, err=err, color=color)
-
-    _click.echo = _filtered_echo
-    _click.secho = _filtered_echo
-    _typer.echo = _filtered_echo
-    _typer.secho = _filtered_echo
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.infra.contracts import Emitter
 
 _HUMAN = "human"
 _VALID_FORMATS = ("human", "json", "yaml")
@@ -303,7 +213,11 @@ def help_callback(
         if target:
             target_cmd, target_ctx = target
             help_text = _get_formatted_help(target_cmd, target_ctx)
-            typer.echo(help_text)
+            policy = get_execution_policy()
+            typer.echo(
+                help_text,
+                color=resolve_click_color(quiet=policy.quiet, fmt=None),
+            )
         raise typer.Exit(0)
 
     tokens = command_path or []
@@ -313,7 +227,8 @@ def help_callback(
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = fmt.strip().lower()
-    error_fmt = fmt_lower if fmt_lower in ("json", "yaml") else "json"
+    format_value = normalize_format(fmt)
+    error_fmt = format_value or OutputFormat.JSON
 
     if policy.quiet:
         if fmt_lower not in _VALID_FORMATS:
@@ -337,7 +252,7 @@ def help_callback(
 
     if fmt_lower != "human":
         validate_common_flags(
-            fmt,
+            format_value or OutputFormat.JSON,
             command,
             policy.quiet,
             include_runtime=effective_include_runtime,
@@ -352,7 +267,7 @@ def help_callback(
             fmt=error_fmt,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_level == "debug"),
+            debug=(policy.log_level == LogLevel.DEBUG),
         )
 
     for token in tokens:
@@ -365,7 +280,7 @@ def help_callback(
                 fmt=error_fmt,
                 quiet=policy.quiet,
                 include_runtime=effective_include_runtime,
-                debug=(policy.log_level == "debug"),
+                debug=(policy.log_level == LogLevel.DEBUG),
             )
         try:
             token.encode("ascii")
@@ -378,7 +293,7 @@ def help_callback(
                 fmt=error_fmt,
                 quiet=policy.quiet,
                 include_runtime=effective_include_runtime,
-                debug=(policy.log_level == "debug"),
+                debug=(policy.log_level == LogLevel.DEBUG),
             )
 
     if contains_non_ascii_env():
@@ -390,7 +305,7 @@ def help_callback(
             fmt=error_fmt,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_level == "debug"),
+            debug=(policy.log_level == LogLevel.DEBUG),
         )
 
     target = _find_target_command(ctx, tokens)
@@ -403,7 +318,7 @@ def help_callback(
             fmt=error_fmt,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_level == "debug"),
+            debug=(policy.log_level == LogLevel.DEBUG),
         )
 
     DIContainer.current().resolve(Emitter)
@@ -411,7 +326,10 @@ def help_callback(
     help_text = _get_formatted_help(target_cmd, target_ctx)
 
     if fmt_lower == _HUMAN:
-        typer.echo(help_text)
+        typer.echo(
+            help_text,
+            color=resolve_click_color(quiet=policy.quiet, fmt=None),
+        )
         raise typer.Exit(0)
 
     try:
@@ -422,19 +340,21 @@ def help_callback(
             code=3,
             failure="ascii",
             command=command,
-            fmt=fmt_lower,
+            fmt=error_fmt,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_level == "debug"),
+            debug=(policy.log_level == LogLevel.DEBUG),
         )
 
-    output_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
+    output_format = (
+        OutputFormat.YAML if format_value == OutputFormat.YAML else OutputFormat.JSON
+    )
     emit_and_exit(
         payload=payload,
         fmt=output_format,
         effective_pretty=effective_pretty,
         verbose=policy.verbose,
-        debug=(policy.log_level == "debug"),
+        debug=(policy.log_level == LogLevel.DEBUG),
         quiet=policy.quiet,
         command=command,
         exit_code=0,

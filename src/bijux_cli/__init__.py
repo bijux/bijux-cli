@@ -18,9 +18,9 @@ The primary exports are:
 
 from __future__ import annotations
 
-from bijux_cli.app.api import BijuxAPI
-from bijux_cli.app.bootstrap import main
-from bijux_cli.version import api_version, version
+from bijux_cli.api import BijuxAPI
+from bijux_cli.core.bootstrap import main
+from bijux_cli.core.version import api_version, version
 
 
 def entry_point() -> int | None:

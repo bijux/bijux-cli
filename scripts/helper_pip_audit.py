@@ -82,8 +82,10 @@ def _fmt_table(rows: Sequence[Sequence[str]], header: Sequence[str]) -> str:
                 widths[i] = max(widths[i], len(cell))
             else:
                 widths.append(len(cell))
+
     def fmt_row(cols: Sequence[str]) -> str:
         return "  ".join(c.ljust(widths[i]) for i, c in enumerate(cols))
+
     sep = "  ".join("-" * w for w in widths)
     out = [fmt_row(header), sep]
     out.extend(fmt_row(r) for r in rows)
@@ -121,7 +123,9 @@ def main() -> None:
             remaining.append((str(name), str(ver), _primary_id(ids), fix))
 
     if ignored_count:
-        print(f"INFO: {ignored_count} vulnerability instance(s) matched ignore list and were skipped.")
+        print(
+            f"INFO: {ignored_count} vulnerability instance(s) matched ignore list and were skipped."
+        )
 
     if not remaining:
         print("OK: 0 vulnerabilities remain after ignores.")
@@ -131,13 +135,17 @@ def main() -> None:
 
     header = ("Package", "Version", "ID", "FixVersions")
     table = _fmt_table(remaining, header)
-    print(f"FAIL: {len(remaining)} vulnerability instance(s) remain after ignores.\n{table}")
+    print(
+        f"FAIL: {len(remaining)} vulnerability instance(s) remain after ignores.\n{table}"
+    )
 
     if IS_STRICT:
         print(f"STRICT: failing due to remaining vulnerabilities. See {REPORT_PATH}")
         sys.exit(1)
     else:
-        print(f"NON-STRICT: not failing despite remaining vulnerabilities. See {REPORT_PATH}")
+        print(
+            f"NON-STRICT: not failing despite remaining vulnerabilities. See {REPORT_PATH}"
+        )
         sys.exit(0)
 
 

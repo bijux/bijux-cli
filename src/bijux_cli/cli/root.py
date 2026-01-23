@@ -26,8 +26,10 @@ from typing import Any
 import typer
 from typer import Context
 
-from bijux_cli.app.async_exec import AsyncTyper
+from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
+from bijux_cli.cli.output import get_execution_policy
+from bijux_cli.core.runtime import AsyncTyper
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -92,7 +94,11 @@ def maybe_default_to_repl(ctx: Context) -> None:
     if ctx.invoked_subcommand is None and len(sys.argv) == 1:
         subprocess.call([sys.argv[0], "repl"])  # noqa: S603
     elif ctx.invoked_subcommand is None:
-        typer.echo(ctx.get_help())
+        policy = get_execution_policy()
+        typer.echo(
+            ctx.get_help(),
+            color=resolve_click_color(quiet=policy.quiet, fmt=None),
+        )
         raise typer.Exit(code=2)
 
 

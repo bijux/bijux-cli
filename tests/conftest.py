@@ -40,10 +40,57 @@ def _reset_di_between_tests() -> Generator[None, None, None]:
     Yields:
         None: Yields control to the test function.
     """
-    from bijux_cli.app.di import DIContainer
+    from bijux_cli.core.di import DIContainer
 
     yield
     DIContainer._reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _register_basic_serializer() -> None:
+    """Ensure a minimal serializer is registered for tests needing DI output."""
+    import json as _json
+
+    from bijux_cli.core.di import DIContainer
+    from bijux_cli.core.enums import OutputFormat
+    from bijux_cli.infra.contracts import Serializer
+
+    class _BasicSerializer:
+        def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
+            if fmt not in (OutputFormat.JSON, OutputFormat.YAML):
+                raise ValueError("Unsupported format in tests")
+            payload = _normalize_payload(obj)
+            return _json.dumps(payload, indent=2 if pretty else None)
+
+        def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
+            return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
+
+        def loads(self, data: str | bytes, *, fmt: OutputFormat, pretty: bool) -> Any:
+            _ = (fmt, pretty)
+            return _json.loads(data)
+
+        def emit(self, payload: Any, *, fmt: OutputFormat, pretty: bool) -> None:
+            _ = (payload, fmt, pretty)
+            return None
+
+    def _normalize_payload(obj: Any) -> Any:
+        if hasattr(obj, "__dataclass_fields__"):
+            data = {}
+            for key, value in obj.__dict__.items():
+                if value is None:
+                    continue
+                data[key] = _normalize_payload(value)
+            return data
+        if isinstance(obj, dict):
+            return {key: _normalize_payload(value) for key, value in obj.items()}
+        if isinstance(obj, list | tuple | set):
+            return [_normalize_payload(value) for value in obj]
+        if hasattr(obj, "value"):
+            return obj.value
+        return obj
+
+    di = DIContainer.current()
+    di.register(Serializer, lambda: _BasicSerializer())
 
 
 @pytest.fixture(autouse=True)

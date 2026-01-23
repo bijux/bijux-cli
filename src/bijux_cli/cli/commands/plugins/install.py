@@ -39,6 +39,7 @@ from bijux_cli.cli.constants import (
 from bijux_cli.cli.emit import emit_error_and_exit
 from bijux_cli.cli.output import new_run_command, resolve_command_config
 from bijux_cli.cli.validation import validate_common_flags
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins.metadata import (
     discover_plugins,
     invalidate_plugin_cache,
@@ -89,7 +90,7 @@ def install_plugin(
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_level == "debug"
+    debug = effective.log_level == LogLevel.DEBUG
     pretty = effective.pretty
     if Path(name).exists():
         emit_error_and_exit(

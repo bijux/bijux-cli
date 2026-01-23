@@ -45,7 +45,7 @@ from bijux_cli.cli.commands.memory.set import (
     _build_payload as set_build_payload,
 )
 from bijux_cli.cli.commands.memory.set import set_memory
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import LogLevel, OutputFormat
 
 
 @pytest.fixture
@@ -75,7 +75,9 @@ def test_resolve_memory_service_success(mock_flags: dict[str, Any]) -> None:
         mock_current.return_value = mock_di_instance
         mock_memory_svc = MagicMock()
         mock_di_instance.resolve.return_value = mock_memory_svc
-        result = resolve_memory_service("command", "json", False, False, False)
+        result = resolve_memory_service(
+            "command", OutputFormat.JSON, False, False, False
+        )
         assert result == mock_memory_svc
 
 
@@ -92,13 +94,13 @@ def test_resolve_memory_service_exception(mock_flags: dict[str, Any]) -> None:
         mock_current.return_value = mock_di_instance
         mock_di_instance.resolve.side_effect = Exception("error")
         with pytest.raises(SystemExit):
-            resolve_memory_service("command", "json", False, False, False)
+            resolve_memory_service("command", OutputFormat.JSON, False, False, False)
         mock_emit.assert_called_with(
             "Memory service unavailable: error",
             code=1,
             failure="service_unavailable",
             command="command",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
         )
@@ -109,7 +111,7 @@ def test_memory_summary_no_subcommand(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.service.resolve_memory_service"
@@ -137,7 +139,7 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.service.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.service.resolve_memory_service"
@@ -159,11 +161,11 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
         )
         mock_run.assert_called_with(
             command="memory",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             output_format=OutputFormat.JSON,
             quiet=False,
             verbose=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
             keys_count=None,
@@ -185,11 +187,11 @@ def test_run_one_shot_mode(mock_flags: dict[str, Any]) -> None:
     ):
         _run_one_shot_mode(
             command="memory",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             output_format=OutputFormat.JSON,
             quiet=False,
             verbose=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
             keys_count=0,
@@ -210,11 +212,11 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
         with pytest.raises(SystemExit):
             _run_one_shot_mode(
                 command="memory",
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
                 verbose=False,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -224,7 +226,7 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
             code=3,
             failure="ascii_env",
             command="memory",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
         )
@@ -247,11 +249,11 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
         with pytest.raises(SystemExit):
             _run_one_shot_mode(
                 command="memory",
-                fmt="json",
+                fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
                 verbose=False,
-                log_level="info",
+                log_level=LogLevel.INFO,
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -280,7 +282,7 @@ def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.clear.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.clear.resolve_memory_service"
@@ -305,7 +307,7 @@ def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.clear.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.clear.resolve_memory_service"
@@ -344,7 +346,7 @@ def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.delete.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.delete.resolve_memory_service"
@@ -369,7 +371,7 @@ def test_delete_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.delete.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch("bijux_cli.cli.commands.memory.delete.emit_error_and_exit") as mock_emit,
     ):
@@ -384,7 +386,7 @@ def test_delete_memory_key_error(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.delete.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.delete.resolve_memory_service"
@@ -414,7 +416,7 @@ def test_delete_memory_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.delete.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.delete.resolve_memory_service"
@@ -453,7 +455,7 @@ def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.get.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.get.resolve_memory_service"
@@ -480,7 +482,7 @@ def test_get_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.get.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch("bijux_cli.cli.commands.memory.get.emit_error_and_exit") as mock_emit,
     ):
@@ -495,7 +497,7 @@ def test_get_memory_key_error(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.get.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.get.resolve_memory_service"
@@ -525,7 +527,7 @@ def test_get_memory_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.get.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.get.resolve_memory_service"
@@ -565,7 +567,7 @@ def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.list.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.list.resolve_memory_service"
@@ -592,7 +594,7 @@ def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.list.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.list.resolve_memory_service"
@@ -632,7 +634,7 @@ def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.set.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.set.resolve_memory_service"
@@ -658,7 +660,7 @@ def test_set_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.set.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch("bijux_cli.cli.commands.memory.set.emit_error_and_exit") as mock_emit,
     ):
@@ -673,7 +675,7 @@ def test_set_memory_exception(mock_flags: dict[str, Any]) -> None:
     with (
         patch(
             "bijux_cli.cli.commands.memory.set.validate_common_flags",
-            return_value="json",
+            return_value=OutputFormat.JSON,
         ),
         patch(
             "bijux_cli.cli.commands.memory.set.resolve_memory_service"
@@ -756,7 +758,12 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits(
     ctx.invoked_subcommand = None
     with pytest.raises(typer.Exit):
         memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
     out, err = capsys.readouterr()
     assert "TOP HELP TEXT" in out
@@ -775,7 +782,12 @@ def test_memory_help_with_subcommand_prints_sub_help_and_exits(
     ctx.invoked_subcommand = "anything"
     with pytest.raises(typer.Exit):
         memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
     out, err = capsys.readouterr()
     assert "SUBCOMMAND HELP TEXT" in out
@@ -800,7 +812,12 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits_alt(
     ctx.invoked_subcommand = None
     with pytest.raises(typer.Exit):
         memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "TOP HELP TEXT" in out
@@ -817,7 +834,12 @@ def test_memory_help_with_subcommand_else_branch(
     ctx.invoked_subcommand = "does_not_exist"
     with pytest.raises(typer.Exit):
         memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "SUBCMD BRANCH HELP" in out
@@ -835,7 +857,14 @@ def test_memory_no_help_falls_through_to_summary(
         "bijux_cli.cli.commands.memory.service.memory_summary",
         lambda c, q, v, f, p, d: called.append((c, q, v, f, p, d)),
     )
-    memory(ctx, quiet=True, verbose=True, fmt="yaml", pretty=False, log_level="debug")
+    memory(
+        ctx,
+        quiet=True,
+        verbose=True,
+        fmt="yaml",
+        pretty=False,
+        log_level=LogLevel.DEBUG,
+    )
     assert called == [(ctx, True, True, "yaml", False, "debug")]
 
 
@@ -855,7 +884,12 @@ def test_memory_fall_through_to_summary_and_exit(
     monkeypatch.setattr(svc, "memory_summary", fake_summary)
     with pytest.raises(typer.Exit) as exc:
         svc.memory(
-            ctx, quiet=False, verbose=False, fmt="json", pretty=True, log_level="info"
+            ctx,
+            quiet=False,
+            verbose=False,
+            fmt="json",
+            pretty=True,
+            log_level=LogLevel.INFO,
         )
     assert exc.value.exit_code == 42
 
@@ -878,6 +912,6 @@ def test_memory_with_subcommand_does_not_call_summary() -> None:
                 verbose=False,
                 fmt="json",
                 pretty=True,
-                log_level="info",
+                log_level=LogLevel.INFO,
             )
     mock_summary.assert_not_called()

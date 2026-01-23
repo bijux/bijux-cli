@@ -22,7 +22,8 @@ import pytest
 import typer
 
 import bijux_cli.cli.commands.repl as mod
-from bijux_cli.core.enums import ColorMode
+from bijux_cli.cli.repl import completion, execution, parsing, ui
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -74,13 +75,15 @@ def _capture_io() -> tuple[io.StringIO, io.StringIO, pytest.MonkeyPatch]:
 def test_filter_control_removes_ansi() -> None:
     """Remove ANSI escapes from text."""
     s = "\x1b[31mred\x1b[0m plain"
-    assert mod._filter_control(s) == "red plain"
+    from bijux_cli.cli.repl import parsing
+
+    assert parsing._filter_control(s) == "red plain"
 
 
 def test_split_segments_handles_quotes_and_semicolons() -> None:
     """Split segments respecting quotes and semicolons."""
     text = "a; b\n'c; d'; \"e;f\" ;  ; g"
-    assert list(mod._split_segments(text)) == [
+    assert list(parsing._split_segments(text)) == [
         "a",
         "b",
         "'c; d'",
@@ -91,19 +94,19 @@ def test_split_segments_handles_quotes_and_semicolons() -> None:
 
 def test_suggest() -> None:
     """Suggest nearest known command."""
-    orig = mod._known_commands
-    mod._known_commands = lambda: [
+    orig = parsing._known_commands
+    parsing._known_commands = lambda: [
         "status",
         "version",
     ]
     try:
-        hint = mod._suggest("verzion")
+        hint = parsing._suggest("verzion")
         assert hint
         assert "version" in hint
-        assert mod._suggest("version") is None
-        assert mod._suggest("zzzz") is None
+        assert parsing._suggest("version") is None
+        assert parsing._suggest("zzzz") is None
     finally:
-        mod._known_commands = orig
+        parsing._known_commands = orig
 
 
 def build_fake_root_app() -> Any:
@@ -145,7 +148,7 @@ def _run_piped_lines(lines: list[str], *, quiet: bool = False) -> None:
     buf = io.StringIO("\n".join(lines))
     with patch.object(sys, "stdin", buf):
         with pytest.raises(SystemExit) as ex:
-            mod._run_piped(quiet)
+            execution._run_piped(quiet)
         assert ex.value.code == 0
 
 
@@ -154,7 +157,7 @@ def test_run_piped_flow_and_messages(
 ) -> None:
     """Exercise piped flow and messages."""
     monkeypatch.setattr(
-        mod, "_known_commands", lambda: ["status", "memory", "config", "docs"]
+        execution, "_known_commands", lambda: ["status", "memory", "config", "docs"]
     )
     calls: list[list[str]] = []
 
@@ -162,9 +165,9 @@ def test_run_piped_flow_and_messages(
         calls.append(tokens)
         return 0
 
-    monkeypatch.setattr(mod, "_invoke", fake_invoke)
+    monkeypatch.setattr(execution, "_invoke", fake_invoke)
     monkeypatch.setattr(
-        mod,
+        execution,
         "_suggest",
         lambda s: (" Did you mean 'status'?" if s != "status" else None),
     )
@@ -204,14 +207,14 @@ def test_run_piped_quiet_suppresses_everything(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Suppress all output in quiet mode."""
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["status"])
+    monkeypatch.setattr(execution, "_known_commands", lambda: ["status"])
     monkeypatch.setattr(
-        mod,
+        execution,
         "_suggest",
         lambda s: None,
     )
     monkeypatch.setattr(
-        mod,
+        execution,
         "_invoke",
         lambda *a, **k: 0,
     )
@@ -224,19 +227,19 @@ def test_run_piped_quiet_suppresses_everything(
 def test_get_prompt_plain_and_ansi(monkeypatch: pytest.MonkeyPatch) -> None:
     """Return plain prompt under test/NO_COLOR, otherwise ANSI object."""
     monkeypatch.setenv("BIJUXCLI_TEST_MODE", "1")
-    assert mod.get_prompt() == "bijux> "
+    assert ui.get_prompt() == "bijux> "
     monkeypatch.delenv("BIJUXCLI_TEST_MODE", raising=False)
     monkeypatch.setenv("NO_COLOR", "1")
-    assert mod.get_prompt() == "bijux> "
+    assert ui.get_prompt() == "bijux> "
     monkeypatch.delenv("NO_COLOR", raising=False)
-    p = mod.get_prompt()
+    p = ui.get_prompt()
     assert "bijux" in str(p)
 
 
 def test_exit_on_signal() -> None:
     """Exit cleanly on signal."""
     with pytest.raises(SystemExit) as ex:
-        mod._exit_on_signal(2, None)
+        ui._exit_on_signal(2, None)
     assert ex.value.code == 0
 
 
@@ -280,7 +283,7 @@ class FakeApp:
         self.registered_groups: list[FakeGroup] = groups
 
 
-def make_fake_completer() -> mod.CommandCompleter:
+def make_fake_completer() -> completion.CommandCompleter:
     """Build a minimal real Typer app (not FakeApp) for the completer."""
     app = typer.Typer()
 
@@ -301,10 +304,10 @@ def make_fake_completer() -> mod.CommandCompleter:
         pass  # no-op
 
     app.add_typer(config, name="config")
-    return mod.CommandCompleter(app)
+    return completion.CommandCompleter(app)
 
 
-def complete_text(comp: mod.CommandCompleter, text: str) -> list[str]:
+def complete_text(comp: completion.CommandCompleter, text: str) -> list[str]:
     """Return completion texts for input."""
     ev = CompleteEvent(text_inserted=True)
     return [c.text for c in comp.get_completions(Document(text), ev)]
@@ -349,12 +352,12 @@ def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(
         "bijux_cli.cli.output.get_execution_policy",
         lambda: ExecutionPolicy(
-            output_format="human",
+            output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
             verbose=False,
             verbose_level=0,
-            log_level="error",
+            log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
             json=False,
@@ -454,11 +457,11 @@ def test_known_commands_spec_invalid_json_falls_back(
             return self._path
 
     monkeypatch.setattr(
-        mod,
+        parsing,
         "Path",
         lambda *_: FakePath("dummy"),
     )
-    cmds = mod._known_commands()
+    cmds = parsing._known_commands()
     assert {"status", "version", "repl"} <= set(cmds)
 
 
@@ -469,7 +472,7 @@ def test_invoke_history_prints_empty_entries_pretty(
     _install_fake_cli_module(build_fake_root_app())
     out, err, m = _capture_io()
     try:
-        code = mod._invoke(["history"], repl_quiet=False)
+        code = execution._invoke(["history"], repl_quiet=False)
         assert code == 0
         s = out.getvalue().strip()
         assert s.startswith("{")
@@ -479,7 +482,7 @@ def test_invoke_history_prints_empty_entries_pretty(
         m.undo()
 
 
-def make_real_completer() -> mod.CommandCompleter:
+def make_real_completer() -> completion.CommandCompleter:
     """Build a real Typer app and wrap in completer."""
     import typer
 
@@ -503,7 +506,7 @@ def make_real_completer() -> mod.CommandCompleter:
         return None
 
     app.add_typer(config, name="config")
-    return mod.CommandCompleter(app)
+    return completion.CommandCompleter(app)
 
 
 @pytest.mark.asyncio
@@ -546,13 +549,12 @@ async def test_run_interactive_end_to_end(
         calls.append(tokens)
         return 0
 
-    monkeypatch.setattr(mod, "_invoke", _record_invoke)
-
+    monkeypatch.setattr(ui, "_invoke", _record_invoke)
     monkeypatch.setattr(
-        mod, "_known_commands", lambda: ["status", "memory", "config", "docs"]
+        ui, "_known_commands", lambda: ["status", "memory", "config", "docs"]
     )
     monkeypatch.setattr(
-        mod,
+        ui,
         "_suggest",
         lambda s: (" Did you mean 'status'?" if s != "status" else None),
     )
@@ -560,7 +562,7 @@ async def test_run_interactive_end_to_end(
     monkeypatch.setenv("BIJUXCLI_HISTORY_FILE", str(Path.cwd() / ".tmp_history"))
     monkeypatch.setattr(sys, "argv", ["bijux"])
 
-    await mod._run_interactive()
+    await ui._run_interactive()
 
     out = capsys.readouterr()
     assert "Available topics" in out.out
@@ -579,19 +581,19 @@ def test_invoke_json_commands_and_quiet(monkeypatch: pytest.MonkeyPatch) -> None
 
     out, _, m = _capture_io()
     try:
-        code = mod._invoke(["version"], repl_quiet=False)
+        code = execution._invoke(["version"], repl_quiet=False)
         assert code == 0
         assert out.getvalue().strip().startswith("{")
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(["status", "--quiet"], repl_quiet=False)
+        code = execution._invoke(["status", "--quiet"], repl_quiet=False)
         assert code == 0
         assert out.getvalue() == ""
 
         out.truncate(0)
         out.seek(0)
-        code = mod._invoke(["status"], repl_quiet=True)
+        code = execution._invoke(["status"], repl_quiet=True)
         assert code == 0
         assert out.getvalue() == ""
     finally:
@@ -606,7 +608,7 @@ def test_invoke_config_list_forces_no_pretty(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _RecordingFakeRunner(calls))
     out, _, m = _capture_io()
     try:
-        assert mod._invoke(["config", "list"], repl_quiet=False) == 0
+        assert execution._invoke(["config", "list"], repl_quiet=False) == 0
         assert "CONFIG-LIST-COMPACT" in out.getvalue()
         assert any(c[:2] == ["config", "list"] and "--no-pretty" in c for c in calls)
     finally:
@@ -666,8 +668,8 @@ def test_known_commands_spec_wrong_type(monkeypatch: pytest.MonkeyPatch) -> None
         def __str__(self) -> str:
             return self._path
 
-    monkeypatch.setattr(mod, "Path", lambda *_: FakePath("dummy"))
-    cmds = mod._known_commands()
+    monkeypatch.setattr(parsing, "Path", lambda *_: FakePath("dummy"))
+    cmds = parsing._known_commands()
     assert "status" in cmds
     assert "version" in cmds
 
@@ -685,7 +687,7 @@ def test_invoke_history_non_empty_prints_raw(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(["history"], repl_quiet=False)
+        code = execution._invoke(["history"], repl_quiet=False)
         assert code == 0
         assert '"y"' in out.getvalue()
         assert err.getvalue() == ""
@@ -697,9 +699,9 @@ def test_run_piped_ignores_unclosed_quote(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Ignore unclosed quote ValueError."""
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["status"])
-    monkeypatch.setattr(mod, "_suggest", lambda s: None)
-    monkeypatch.setattr(mod, "_invoke", lambda *a, **k: 0)
+    monkeypatch.setattr(execution, "_known_commands", lambda: ["status"])
+    monkeypatch.setattr(execution, "_suggest", lambda s: None)
+    monkeypatch.setattr(execution, "_invoke", lambda *a, **k: 0)
     _run_piped_lines(['"unterminated'], quiet=False)
     out = capsys.readouterr()
     assert out.out == ""
@@ -736,7 +738,12 @@ def test_main_returns_early_when_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
     ctx.invoked_subcommand = "anything"
 
     mod.main(
-        ctx, quiet=False, verbose=False, fmt="human", pretty=True, log_level="info"
+        ctx,
+        quiet=False,
+        verbose=False,
+        fmt="human",
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
 
     assert "piped" not in flags
@@ -771,7 +778,12 @@ def test_main_interactive_path_calls_async_loop(
     ctx.invoked_subcommand = None
 
     mod.main(
-        ctx, quiet=False, verbose=False, fmt="human", pretty=True, log_level="info"
+        ctx,
+        quiet=False,
+        verbose=False,
+        fmt="human",
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
 
 
@@ -790,7 +802,7 @@ def test_invoke_history_empty_quiet_skips_pretty(
     monkeypatch.setattr(typer_testing, "CliRunner", lambda: _Runner())
     out, err, mp = _capture_io()
     try:
-        code = mod._invoke(["history"], repl_quiet=True)
+        code = execution._invoke(["history"], repl_quiet=True)
         assert code == 0
         assert out.getvalue() == ""
         assert err.getvalue() == ""
@@ -804,8 +816,8 @@ def test_run_piped_edges_empty_segs_docs_quiet_unknown_and_empty_tokens(
     """Cover edge cases in piped processing."""
     import shlex
 
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["status", "config"])
-    monkeypatch.setattr(mod, "_suggest", lambda s: None)
+    monkeypatch.setattr(execution, "_known_commands", lambda: ["status", "config"])
+    monkeypatch.setattr(execution, "_suggest", lambda s: None)
     real_split = shlex.split
 
     def split_or_empty(s: str) -> list[str]:
@@ -820,7 +832,7 @@ def test_run_piped_edges_empty_segs_docs_quiet_unknown_and_empty_tokens(
         calls.append(t)
         return 0
 
-    monkeypatch.setattr(mod, "_invoke", fake_invoke)
+    monkeypatch.setattr(execution, "_invoke", fake_invoke)
 
     _run_piped_lines(
         [
@@ -964,10 +976,10 @@ async def test_run_interactive_keybindings_and_value_error_and_unknown(
     import prompt_toolkit
 
     monkeypatch.setattr(prompt_toolkit, "PromptSession", PSValueErrorThenQuit)
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
-    monkeypatch.setattr(mod, "_suggest", lambda s: None)
+    monkeypatch.setattr(parsing, "_known_commands", lambda: ["config"])
+    monkeypatch.setattr(parsing, "_suggest", lambda s: None)
 
-    await mod._run_interactive()
+    await ui._run_interactive()
 
     out = capsys.readouterr()
     assert "No such command 'unknown'." in (out.err or out.out)
@@ -992,7 +1004,7 @@ async def test_run_interactive_exits_on_keyboard_interrupt(
     import prompt_toolkit
 
     monkeypatch.setattr(prompt_toolkit, "PromptSession", PSKI)
-    await mod._run_interactive()
+    await ui._run_interactive()
     out = capsys.readouterr()
     assert "Exiting REPL." in out.out
 
@@ -1034,7 +1046,7 @@ def test_main_guard_invokes_repl_app_without_side_effects(
         testing=_types.SimpleNamespace(CliRunner=lambda: _RecordingFakeRunner()),
     )
     monkeypatch.setitem(_sys.modules, "typer", fake_typer)
-    import bijux_cli.app.async_exec as async_exec
+    import bijux_cli.core.runtime as async_exec
 
     monkeypatch.setattr(async_exec, "run_command", lambda *a, **k: None)
     monkeypatch.setattr(_sys.stdin, "isatty", lambda: True)
@@ -1072,7 +1084,7 @@ async def test_run_interactive_keybindings_apply_completion(
     import prompt_toolkit
 
     monkeypatch.setattr(prompt_toolkit, "PromptSession", PSOnce)
-    await mod._run_interactive()
+    await ui._run_interactive()
 
     from prompt_toolkit.completion import Completion
 
@@ -1118,12 +1130,12 @@ def test_run_piped_config_get_missing_arg_emits_json(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Emit JSON error for missing config get argument."""
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
+    monkeypatch.setattr(parsing, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO("config get\n")
     out, _, mp = _capture_io()
     try:
         with pytest.raises(SystemExit) as se:
-            mod._run_piped(repl_quiet=False)
+            execution._run_piped(repl_quiet=False)
         assert se.value.code == 0
     finally:
         mp.undo()
@@ -1146,12 +1158,12 @@ def test_run_piped_skips_empty_and_comment_segments(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Treat leading semicolon as unknown command."""
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
+    monkeypatch.setattr(parsing, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO(" ;   #comment only\n")
     _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
-            mod._run_piped(repl_quiet=False)
+            execution._run_piped(repl_quiet=False)
     finally:
         mp.undo()
         sys.stdin = old_stdin
@@ -1164,12 +1176,12 @@ def test_run_piped_prints_prompt_for_pure_blank_or_comment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Print prompt for pure blank or comment lines."""
-    monkeypatch.setattr(mod, "_known_commands", lambda: ["config"])
+    monkeypatch.setattr(parsing, "_known_commands", lambda: ["config"])
     old_stdin, sys.stdin = sys.stdin, io.StringIO("\n# only comment\n")
     _, err, mp = _capture_io()
     try:
         with pytest.raises(SystemExit):
-            mod._run_piped(repl_quiet=False)
+            execution._run_piped(repl_quiet=False)
     finally:
         mp.undo()
         sys.stdin = old_stdin

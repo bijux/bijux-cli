@@ -17,8 +17,8 @@ from unittest.mock import ANY, AsyncMock, MagicMock, Mock, call, create_autospec
 import pytest
 from typer.models import ParameterInfo
 
-from bijux_cli.app.di import DIContainer
-from bijux_cli.core.errors import BijuxError, ServiceError
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.errors import BijuxError
 from bijux_cli.plugins import (
     get_plugins_dir,
     install_plugin,
@@ -38,6 +38,7 @@ from bijux_cli.plugins.registry import (
     load_entrypoints,
 )
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
+from bijux_cli.services.errors import ServiceError
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ def test_di_none() -> None:
     """Test that _di returns None when the DI container is unavailable."""
     from bijux_cli.plugins import _di
 
-    with patch("bijux_cli.app.di.DIContainer.current", side_effect=Exception):
+    with patch("bijux_cli.core.di.DIContainer.current", side_effect=Exception):
         assert _di() is None
 
 
@@ -81,7 +82,7 @@ def test_di_success(mock_di: Any) -> None:
     """Test that _di successfully returns the current DI container."""
     from bijux_cli.plugins import _di
 
-    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
         assert _di() == mock_di
 
 
@@ -1070,7 +1071,7 @@ def test_command_group_register(
 ) -> None:
     """Test the successful registration of a command group and subcommand."""
     mock_di.resolve.side_effect = [mock_reg, mock_obs, mock_tel]
-    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test", version="1.0")
         sub = grp("sub")
 
@@ -1086,7 +1087,7 @@ def test_command_group_register(
 def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> None:
     """Test command group registration with no observability service."""
     mock_di.resolve.side_effect = [mock_reg, KeyError, mock_tel]
-    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test")
         sub = grp("sub")
 
@@ -1101,7 +1102,7 @@ def test_command_group_no_obs(mock_di: Any, mock_reg: Mock, mock_tel: Mock) -> N
 def test_command_group_no_tel(mock_di: Any, mock_reg: Mock, mock_obs: Mock) -> None:
     """Test command group registration with no telemetry service."""
     mock_di.resolve.side_effect = [mock_reg, mock_obs, KeyError]
-    with patch("bijux_cli.app.di.DIContainer.current", return_value=mock_di):
+    with patch("bijux_cli.core.di.DIContainer.current", return_value=mock_di):
         grp = command_group("test")
         sub = grp("sub")
 
@@ -1115,7 +1116,7 @@ def test_command_group_no_tel(mock_di: Any, mock_reg: Mock, mock_obs: Mock) -> N
 
 def test_command_group_no_di() -> None:
     """Test that command group registration fails if the DI container is unavailable."""
-    with patch("bijux_cli.app.di.DIContainer.current", side_effect=KeyError):
+    with patch("bijux_cli.core.di.DIContainer.current", side_effect=KeyError):
         grp = command_group("test")
         sub = grp("sub")
         with pytest.raises(RuntimeError):

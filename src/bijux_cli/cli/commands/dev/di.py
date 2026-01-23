@@ -30,7 +30,6 @@ from typing import Any
 
 import typer
 
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -45,6 +44,8 @@ from bijux_cli.cli.validation import (
     normalize_format,
     validate_common_flags,
 )
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel, OutputFormat
 
 QUIET_OPTION = typer.Option(False, "-q", "--quiet", help=HELP_QUIET)
 VERBOSE_OPTION = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE)
@@ -136,10 +137,10 @@ def dev_di_graph(
     _ = (quiet, verbose, log_level, pretty, fmt)
     policy = get_execution_policy()
     quiet = policy.quiet
-    debug = policy.log_level == "debug"
+    debug = policy.log_level == LogLevel.DEBUG
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
-    fmt_lower = normalize_format(fmt) or "json"
+    fmt_lower = normalize_format(fmt) or OutputFormat.JSON
 
     limit_env = os.environ.get("BIJUXCLI_DI_LIMIT")
     limit: int | None = None
@@ -197,7 +198,7 @@ def dev_di_graph(
             )
 
     validate_common_flags(
-        fmt,
+        fmt_lower,
         command,
         quiet,
         include_runtime=effective_include_runtime,

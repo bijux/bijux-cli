@@ -9,8 +9,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bijux_cli.app.di import DIContainer
-from bijux_cli.core.enums import ColorMode, OutputFormat
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.plugins.services import register_plugin_services
 from bijux_cli.services import register_default_services
 from bijux_cli.services.logging.contracts import LoggingConfig
 
@@ -62,7 +63,7 @@ def test_register_default_services_100pct(
             return_value=None,
         ) as mock_exp_init,
         patch(
-            "bijux_cli.app.context.Context.__init__", return_value=None
+            "bijux_cli.core.context.Context.__init__", return_value=None
         ) as mock_context_init,
         patch(
             "bijux_cli.services.config.Config.__init__", return_value=None
@@ -90,10 +91,10 @@ def test_register_default_services_100pct(
             "bijux_cli.services.diagnostics.memory.Memory.__init__", return_value=None
         ) as mock_memory_init,
     ):
-        import bijux_cli.app.context as core_context
-        from bijux_cli.core.contracts import (
+        import bijux_cli.core.context as core_context
+        from bijux_cli.core.contracts import ExecutionContext
+        from bijux_cli.infra.contracts import (
             Emitter,
-            ExecutionContext,
             ProcessRunner,
             RetryPolicy,
             Serializer,
@@ -130,7 +131,7 @@ def test_register_default_services_100pct(
             debug=debug,
             quiet=quiet,
             verbose=False,
-            log_level="debug" if debug else "info",
+            log_level=LogLevel.DEBUG if debug else LogLevel.INFO,
             color=ColorMode.AUTO,
         )
         register_default_services(
@@ -138,6 +139,7 @@ def test_register_default_services_100pct(
             logging_config=logging_config,
             output_format=output_format,
         )
+        register_plugin_services(di)
 
         mock_obs_init.assert_called_once()
         assert mock_obs_init.call_args.kwargs["log_level"] == logging_config.log_level
@@ -152,8 +154,8 @@ def test_register_default_services_100pct(
         mock_tel_init.assert_called_once_with()
         assert isinstance(tel_inst, infra_tel.NoopTelemetry)
 
-        assert isinstance(di.resolve(PluginConfig), PluginConfig)
         assert isinstance(di.resolve(DiagnosticsConfig), DiagnosticsConfig)
+        assert isinstance(di.resolve(PluginConfig), PluginConfig)
 
         emitter_inst = di.resolve(Emitter)
         mock_emitter_init.assert_called_once()

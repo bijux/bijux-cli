@@ -30,8 +30,6 @@ import platform
 
 import typer
 
-from bijux_cli.app.async_exec import AsyncTyper
-from bijux_cli.app.di import DIContainer
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
@@ -45,11 +43,14 @@ from bijux_cli.cli.payloads import AuditPayload
 from bijux_cli.cli.validation import (
     ascii_safe,
     contains_non_ascii_env,
+    normalize_format,
     validate_common_flags,
     validate_env_file_if_present,
 )
-from bijux_cli.core.contracts import Emitter
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.infra.contracts import Emitter
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
 
@@ -133,7 +134,7 @@ def _write_output_file(
         payload,
         fmt=fmt,
         pretty=pretty,
-        level="info",
+        level=LogLevel.INFO,
         message="Audit dry-run completed" if dry_run else "Audit completed",
         output=str(output_path),
         emit_output=True,
@@ -207,7 +208,7 @@ def audit(
         stray_args = [a for a in ctx.args if not a.startswith("-")]
         if stray_args:
             raise typer.BadParameter(f"No such argument: {stray_args[0]}")
-        out_format = OutputFormat.YAML if fmt_lower == "yaml" else OutputFormat.JSON
+        out_format = fmt_lower
         if contains_non_ascii_env():
             emit_error_and_exit(
                 "Non-ASCII environment variables detected",
@@ -232,7 +233,7 @@ def audit(
             )
 
     except typer.BadParameter as exc:
-        error_fmt = fmt.lower() if fmt.lower() in ("json", "yaml") else "json"
+        error_fmt = normalize_format(fmt) or OutputFormat.JSON
         emit_error_and_exit(
             exc.message,
             code=2,
@@ -254,7 +255,7 @@ def audit(
                 emitter=emitter,
                 fmt=out_format,
                 pretty=effective_pretty,
-                debug=(effective.log_level == "debug"),
+                debug=(effective.log_level == LogLevel.DEBUG),
                 dry_run=dry_run,
             )
             payload = AuditPayload(status="written", file=str(output))

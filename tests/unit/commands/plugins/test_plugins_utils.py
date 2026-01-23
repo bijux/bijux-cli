@@ -17,6 +17,7 @@ from bijux_cli.cli.commands.plugins.validation import (
     parse_required_cli_version,
     refuse_on_symlink,
 )
+from bijux_cli.core.enums import OutputFormat
 
 
 def test_ignore_hidden_and_broken_symlinks(
@@ -71,7 +72,7 @@ def test_refuse_on_symlink_noop(tmp_path: Path) -> None:
     """Test that the symlink check does nothing for a regular directory."""
     d = tmp_path / "normal"
     d.mkdir()
-    refuse_on_symlink(d, "plugins install", "json", False, False, False)
+    refuse_on_symlink(d, "plugins install", OutputFormat.JSON, False, False, False)
 
 
 def test_refuse_on_symlink_calls_emit(
@@ -110,7 +111,9 @@ def test_refuse_on_symlink_calls_emit(
     monkeypatch.setattr(validation_mod, "emit_error_and_exit", fake_emit)
 
     with pytest.raises(SystemExit) as exc:
-        refuse_on_symlink(link, "plugins uninstall", "yaml", True, True, True)
+        refuse_on_symlink(
+            link, "plugins uninstall", OutputFormat.YAML, True, True, True
+        )
 
     assert exc.value.code == 1
     assert called["failure"] == "symlink_dir"

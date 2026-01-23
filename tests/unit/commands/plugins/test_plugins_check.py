@@ -13,9 +13,10 @@ from unittest.mock import patch
 
 import pytest
 
-from bijux_cli.app.async_exec import run_command
 import bijux_cli.cli.commands.plugins.check as plugin_check
 from bijux_cli.cli.commands.plugins.check import check_plugin
+from bijux_cli.core.enums import LogLevel
+from bijux_cli.core.runtime import run_command
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
@@ -177,7 +178,7 @@ def test_health_various_returns(
             "foo",
             verbose=True,
             pretty=False,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
             fmt="json",
             quiet=False,
         )
@@ -209,7 +210,7 @@ def test_missing_plugin_py(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.code == 1
     assert exc.value.payload["failure"] == "not_found"
@@ -230,7 +231,7 @@ def test_missing_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.code == 1
     assert exc.value.payload["failure"] == "metadata_error"
@@ -251,7 +252,7 @@ def test_corrupt_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.payload["failure"] == "metadata_error"
 
@@ -281,7 +282,7 @@ def test_import_spec_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.payload["failure"] == "import_error"
     assert "Cannot create import spec" in exc.value.payload["error"]
@@ -312,7 +313,7 @@ def test_import_exec_error_and_debug(
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc1.value.payload["failure"] == "import_error"
 
@@ -324,7 +325,7 @@ def test_import_exec_error_and_debug(
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="debug",
+            log_level=LogLevel.DEBUG,
         )
     assert exc2.value.payload["error"].startswith("Import error")
 
@@ -349,7 +350,7 @@ def test_no_health_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.payload["failure"] == "health_error"
     assert exc.value.payload["error"] == "No health() hook"
@@ -376,7 +377,7 @@ def test_bad_signature(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.payload["failure"] == "health_error"
     assert "exactly one argument" in exc.value.payload["error"]
@@ -403,7 +404,7 @@ def test_health_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
     assert exc.value.payload["failure"] == "health_error"
     assert exc.value.payload["error"] == "boom"
@@ -437,7 +438,7 @@ def test_async_health_and_payload_builder(
         quiet=False,
         verbose=True,
         pretty=False,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
 
     assert captured["exit_code"] == 0
@@ -478,7 +479,7 @@ def test_unexpected_health_return_marks_unhealthy(
         quiet=False,
         verbose=True,
         pretty=True,
-        log_level="info",
+        log_level=LogLevel.INFO,
     )
 
     builder = captured["payload_builder"]
@@ -512,7 +513,7 @@ def test_signature_introspection_error(
             quiet=False,
             verbose=False,
             pretty=False,
-            log_level="info",
+            log_level=LogLevel.INFO,
         )
 
     assert exc.value.payload["failure"] == "health_error"

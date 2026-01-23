@@ -32,6 +32,7 @@ class Bullet:
         usage: An optional line providing usage instructions or a call to action,
             e.g., "Run `ruff format`; enforce via CI."
     """
+
     title: str
     good: str | None = None
     usage: str | None = None
@@ -200,7 +201,10 @@ class StandardArtifactPage:
             bullet = self.bullet_for(label, path, content)
             bullet_text = bullet_block(bullet.title, bullet.good, bullet.usage)
             if not exists:
-                bullet_text = bullet_text.rstrip() + "\n    - **Status:** _missing at build time_\n\n"
+                bullet_text = (
+                    bullet_text.rstrip()
+                    + "\n    - **Status:** _missing at build time_\n\n"
+                )
             bullets_content.append(bullet_text)
 
             section_md: list[str] = []
@@ -213,14 +217,18 @@ class StandardArtifactPage:
             if not exists:
                 section_md.append('!!! warning "Not found"\n\n')
                 section_md.append(
-                    indent("This artifact was not present during the build. "
-                           "Generate it via the corresponding `make` target (e.g. `make test`, `make lint`).\n"))
+                    indent(
+                        "This artifact was not present during the build. "
+                        "Generate it via the corresponding `make` target (e.g. `make test`, `make lint`).\n"
+                    )
+                )
                 section_md.append("\n")
 
             if exists and path.is_file():
                 rel_path_str = Path(label).as_posix()
                 safe_rel = Path(
-                    "/".join(part or "file" for part in rel_path_str.split("/")))
+                    "/".join(part or "file" for part in rel_path_str.split("/"))
+                )
                 suffix = path.suffix.lower()
 
                 canonical_rel = safe_rel if suffix else safe_rel.with_suffix(".txt")
@@ -232,10 +240,10 @@ class StandardArtifactPage:
 
                 link_target_rel = link_root_rel / canonical_rel
                 if suffix == ".xml":
-                    xml_txt_rel = safe_rel.with_suffix(
-                        safe_rel.suffix + ".txt")
-                    write_if_changed((raw_root / xml_txt_rel).as_posix(), body,
-                                     mode="w")
+                    xml_txt_rel = safe_rel.with_suffix(safe_rel.suffix + ".txt")
+                    write_if_changed(
+                        (raw_root / xml_txt_rel).as_posix(), body, mode="w"
+                    )
                     link_target_rel = link_root_rel / xml_txt_rel
 
                 section_md.append(

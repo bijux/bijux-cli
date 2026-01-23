@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from bijux_cli.core.enums import LogLevel
 from bijux_cli.infra.telemetry import LoggingTelemetry, NoopTelemetry, TelemetryEvent
 
 
@@ -41,7 +42,7 @@ def test_loggingtelemetry_event_string_and_enum() -> None:
     tel = LoggingTelemetry(cast(ObservabilityProtocol, obs))
 
     tel.event("custom_evt", {"x": 123})
-    assert obs.calls[-1][0] == "debug"
+    assert obs.calls[-1][0] == LogLevel.DEBUG
     assert "custom_evt" in obs.calls[-1][1]
     assert obs.calls[-1][2]
     assert obs.calls[-1][2]["x"] == 123
