@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from bijux_cli.cli.constants import ENV_CONFIG, ENV_PREFIX
 from bijux_cli.core.enums import OutputFormat
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
@@ -37,7 +38,7 @@ def normalize_format(fmt: str | OutputFormat | None) -> OutputFormat | None:
 
 def contains_non_ascii_env() -> bool:
     """Return True when config env or file contents are non-ASCII."""
-    config_path_str = os.environ.get("BIJUXCLI_CONFIG")
+    config_path_str = os.environ.get(ENV_CONFIG)
     if config_path_str:
         if not config_path_str.isascii():
             return True
@@ -54,7 +55,7 @@ def contains_non_ascii_env() -> bool:
                 pass
 
     for k, v in os.environ.items():
-        if k.startswith("BIJUXCLI_") and not v.isascii():
+        if k.startswith(ENV_PREFIX) and not v.isascii():
             return True
     return False
 
@@ -69,7 +70,7 @@ def validate_common_flags(
     format_value = normalize_format(fmt)
     if format_value is None:
         format_value = OutputFormat.JSON
-        from bijux_cli.cli.emit import emit_error_and_exit
+        from bijux_cli.cli.core.emit import emit_error_and_exit
 
         emit_error_and_exit(
             f"Unsupported format: {fmt}",
@@ -82,7 +83,7 @@ def validate_common_flags(
             debug=False,
         )
     if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
-        from bijux_cli.cli.emit import emit_error_and_exit
+        from bijux_cli.cli.core.emit import emit_error_and_exit
 
         emit_error_and_exit(
             f"Unsupported format: {fmt}",
@@ -96,7 +97,7 @@ def validate_common_flags(
         )
 
     if contains_non_ascii_env():
-        from bijux_cli.cli.emit import emit_error_and_exit
+        from bijux_cli.cli.core.emit import emit_error_and_exit
 
         emit_error_and_exit(
             "Non-ASCII in configuration or environment",

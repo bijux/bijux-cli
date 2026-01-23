@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.core.emit import emit_error_and_exit
 from bijux_cli.core.enums import OutputFormat
 
 

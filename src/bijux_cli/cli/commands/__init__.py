@@ -17,11 +17,11 @@ from bijux_cli.cli.commands.diagnostics.doctor import doctor_app
 from bijux_cli.cli.commands.help import help_app
 from bijux_cli.cli.commands.history import history_app
 from bijux_cli.cli.commands.memory import memory_app
-from bijux_cli.cli.commands.plugins import plugins_app
 from bijux_cli.cli.commands.repl import repl_app
 from bijux_cli.cli.commands.sleep import sleep_app
 from bijux_cli.cli.commands.status import status_app
 from bijux_cli.cli.commands.version import version_app
+from bijux_cli.cli.plugins.commands import plugins_app
 
 logger = logging.getLogger(__name__)
 

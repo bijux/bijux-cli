@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-import bijux_cli.cli.commands.plugins.info as plugins_info
-from bijux_cli.cli.commands.plugins.info import info_plugin
+import bijux_cli.cli.plugins.commands.info as plugins_info
+from bijux_cli.cli.plugins.commands.info import info_plugin
 from bijux_cli.core.enums import LogLevel
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 

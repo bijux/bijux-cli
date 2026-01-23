@@ -204,7 +204,9 @@ class Engine:
         Raises:
             ValueError: If the timeout value in the configuration is malformed.
         """
-        raw = os.getenv("BIJUXCLI_COMMAND_TIMEOUT", "30.0")
+        from bijux_cli.cli.constants import ENV_COMMAND_TIMEOUT
+
+        raw = os.getenv(ENV_COMMAND_TIMEOUT, "30.0")
         try:
             return float(raw)
         except (TypeError, ValueError) as err:

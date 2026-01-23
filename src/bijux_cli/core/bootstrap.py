@@ -40,8 +40,14 @@ import structlog
 import typer
 
 from bijux_cli.cli.color import resolve_color_mode, set_color_mode
-from bijux_cli.cli.flags import parse_global_flags
-from bijux_cli.cli.root import build_app
+from bijux_cli.cli.constants import (
+    ENV_COLOR,
+    ENV_DISABLE_HISTORY,
+    ENV_LOG_LEVEL,
+    ENV_NO_COLOR,
+    ENV_TEST_MODE,
+)
+from bijux_cli.cli.root import build_app, parse_global_config
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.engine import Engine
 from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
@@ -52,6 +58,7 @@ from bijux_cli.core.precedence import (
     ExecutionPolicy,
     FlagLayer,
     Flags,
+    GlobalCLIConfig,
     resolve_effective_config,
     resolve_execution_policy,
     validate_cli_flags,
@@ -76,7 +83,7 @@ def should_record_command_history(command_line: list[str]) -> bool:
     Returns:
         bool: True if the command should be recorded, otherwise False.
     """
-    if os.environ.get("BIJUXCLI_DISABLE_HISTORY") == "1":
+    if os.environ.get(ENV_DISABLE_HISTORY) == "1":
         return False
     if not command_line:
         return False
@@ -120,9 +127,7 @@ def setup_structlog(log_level: LogLevel | None = None) -> None:
     level = logging.DEBUG if log_level is LogLevel.DEBUG else logging.WARNING
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
-    use_console = (log_level is LogLevel.DEBUG) or os.environ.get(
-        "BIJUXCLI_TEST_MODE"
-    ) == "1"
+    use_console = (log_level is LogLevel.DEBUG) or os.environ.get(ENV_TEST_MODE) == "1"
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -154,7 +159,7 @@ def main() -> int:
     """
     args = sys.argv[1:]
 
-    parsed = parse_global_flags(args)
+    parsed = parse_global_config(args)
     for err in validate_cli_flags(parsed):
         behavior = resolve_exit_behavior(
             ErrorType.USAGE,
@@ -168,8 +173,8 @@ def main() -> int:
                 file=stream,
             )
         return int(behavior.code)
-    env_log = os.environ.get("BIJUXCLI_LOG_LEVEL")
-    env_color = os.environ.get("BIJUXCLI_COLOR")
+    env_log = os.environ.get(ENV_LOG_LEVEL)
+    env_color = os.environ.get(ENV_COLOR)
     resolved = resolve_effective_config(
         cli=parsed.flags,
         env=FlagLayer(
@@ -189,11 +194,16 @@ def main() -> int:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
     debug_enabled = resolved.flags.log_level == LogLevel.DEBUG
+    color_config = GlobalCLIConfig(
+        help=parsed.help,
+        flags=FlagLayer(color=resolved.flags.color),
+        args=parsed.args,
+        errors=parsed.errors,
+    )
     resolved_color = resolve_color_mode(
-        parsed.flags.color,
-        ColorMode(env_color) if env_color else None,
-        None,
+        color_config,
         sys.stdout.isatty(),
+        no_color=os.environ.get(ENV_NO_COLOR) == "1",
     )
     if resolved_color != resolved.flags.color:
         resolved = EffectiveConfig(
@@ -225,6 +235,7 @@ def main() -> int:
         return 0
 
     container = DIContainer.current()
+    container.register(GlobalCLIConfig, parsed)
     container.register(EffectiveConfig, resolved)
     container.register(ExecutionPolicy, policy)
     register_default_services(

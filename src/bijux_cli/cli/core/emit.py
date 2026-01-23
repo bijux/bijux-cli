@@ -11,7 +11,7 @@ import sys
 import time
 from typing import Any, NoReturn
 
-from bijux_cli.cli.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.infra.contracts import Serializer
 
@@ -29,6 +29,15 @@ def resolve_serializer() -> Serializer:
 def _normalize_payload(obj: Any) -> Any:
     """Normalize dataclasses and enums into plain serializable structures."""
     if is_dataclass(obj):
+        from bijux_cli.cli.commands.payloads import ConfigDumpPayload
+
+        if isinstance(obj, ConfigDumpPayload):
+            merged: dict[str, Any] = dict(obj.entries)
+            if obj.python is not None:
+                merged["python"] = obj.python
+            if obj.platform is not None:
+                merged["platform"] = obj.platform
+            return {key: _normalize_payload(value) for key, value in merged.items()}
         payload: dict[str, Any] = {}
         for field in fields(obj):
             value = getattr(obj, field.name)

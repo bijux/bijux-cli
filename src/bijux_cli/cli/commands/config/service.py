@@ -24,26 +24,32 @@ import platform
 
 import typer
 
+from bijux_cli.cli.commands.payloads import ConfigDumpPayload
 from bijux_cli.cli.constants import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.output import new_run_command, resolve_command_config
-from bijux_cli.cli.validation import ascii_safe
+from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
 def config(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("json", "-f", "--format", help=HELP_FORMAT),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux config` command group.
 
@@ -81,21 +87,24 @@ def config(
 
     config_svc = DIContainer.current().resolve(ConfigProtocol)
 
-    def payload_builder(include_runtime: bool) -> dict[str, object]:
+    def payload_builder(include_runtime: bool) -> ConfigDumpPayload:
         """Builds the payload containing all configuration values.
 
         Args:
             include_runtime (bool): If True, includes Python and platform info.
 
         Returns:
-            dict[str, object]: A dictionary of all configuration key-value
-                pairs and optional runtime metadata.
+            ConfigDumpPayload: A payload containing configuration entries
+                and optional runtime metadata.
         """
         data = config_svc.all()
-        payload: dict[str, object] = dict(data)
+        payload = ConfigDumpPayload(entries=dict(data))
         if include_runtime:
-            payload["python"] = ascii_safe(platform.python_version(), "python_version")
-            payload["platform"] = ascii_safe(platform.platform(), "platform")
+            return ConfigDumpPayload(
+                entries=payload.entries,
+                python=ascii_safe(platform.python_version(), "python_version"),
+                platform=ascii_safe(platform.platform(), "platform"),
+            )
         return payload
 
     new_run_command(

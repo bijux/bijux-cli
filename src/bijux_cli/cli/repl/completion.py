@@ -13,18 +13,22 @@ from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 import typer
 
+from bijux_cli.cli.constants import (
+    OPT_FORMAT,
+    OPT_HELP,
+    OPT_LOG_LEVEL,
+    OPT_QUIET,
+    OPT_VERBOSE,
+    PRETTY_FLAGS,
+)
+
 GLOBAL_OPTS = [
-    "-q",
-    "--quiet",
-    "-v",
-    "--verbose",
-    "-f",
-    "--format",
-    "--log-level",
-    "--pretty",
-    "--no-pretty",
-    "-h",
-    "--help",
+    *OPT_QUIET,
+    *OPT_VERBOSE,
+    *OPT_FORMAT,
+    *OPT_LOG_LEVEL,
+    *PRETTY_FLAGS,
+    *OPT_HELP,
 ]
 
 _BUILTINS = ("exit", "quit")

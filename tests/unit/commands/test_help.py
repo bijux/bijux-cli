@@ -21,6 +21,7 @@ from bijux_cli.cli.commands.help import (
     _build_help_payload,
     _find_target_command,
 )
+from bijux_cli.cli.commands.payloads import HelpPayload
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
@@ -95,7 +96,10 @@ def test_build_help_payload_without_runtime() -> None:
     """Test building a help payload without runtime info."""
     start = time.perf_counter()
     p = _build_help_payload("txt", False, start)
-    assert p == {"help": "txt"}
+    assert p.help == "txt"
+    assert p.python is None
+    assert p.platform is None
+    assert p.runtime_ms is None
 
 
 def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -106,11 +110,10 @@ def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> Non
         raising=True,
     )
     p = _build_help_payload("txt", True, started_at=999.0)
-    assert p["help"] == "txt"
-    assert "python" in p
-    assert "platform" in p
-    assert "runtime_ms" in p
-    assert isinstance(p["runtime_ms"], int)
+    assert p.help == "txt"
+    assert p.python is not None
+    assert p.platform is not None
+    assert isinstance(p.runtime_ms, int)
 
 
 def make_ctx_for_callback(
@@ -523,10 +526,12 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             log_level=LogLevel.INFO,
         )
     assert ex.value.code == 0
-    assert called["payload"]["help"] == "HELPTXT"
-    assert "python" in called["payload"]
-    assert "platform" in called["payload"]
-    assert "runtime_ms" in called["payload"]
+    payload = called["payload"]
+    assert isinstance(payload, HelpPayload)
+    assert payload.help == "HELPTXT"
+    assert payload.python is not None
+    assert payload.platform is not None
+    assert payload.runtime_ms is not None
     assert called["fmt"] is OutputFormat.JSON
 
 
@@ -577,7 +582,9 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             log_level=LogLevel.INFO,
         )
     assert ex.value.code == 99
-    assert called["payload"]["help"] == "YAMLHELP"
+    payload = called["payload"]
+    assert isinstance(payload, HelpPayload)
+    assert payload.help == "YAMLHELP"
     assert called["fmt"] is OutputFormat.YAML
 
 

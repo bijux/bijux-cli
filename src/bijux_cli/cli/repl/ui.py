@@ -15,6 +15,12 @@ from types import FrameType
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 
+from bijux_cli.cli.constants import (
+    ENV_BIN,
+    ENV_HISTORY_FILE,
+    ENV_NO_COLOR,
+    ENV_TEST_MODE,
+)
 from bijux_cli.cli.repl.completion import CommandCompleter
 from bijux_cli.cli.repl.execution import _invoke
 from bijux_cli.cli.repl.parsing import _known_commands, _split_segments, _suggest
@@ -27,7 +33,7 @@ def _exit_on_signal(_signum: int, _frame: FrameType | None = None) -> None:
 
 def get_prompt() -> str | ANSI:
     """Returns the REPL prompt string."""
-    if os.environ.get("BIJUXCLI_TEST_MODE") == "1" or os.environ.get("NO_COLOR") == "1":
+    if os.environ.get(ENV_TEST_MODE) == "1" or os.environ.get(ENV_NO_COLOR) == "1":
         return "bijux> "
     return ANSI("\x1b[36mbijux> \x1b[0m")
 
@@ -75,7 +81,7 @@ async def _run_interactive() -> None:
             buf.validate_and_handle()
 
     history_file = os.environ.get(
-        "BIJUXCLI_HISTORY_FILE",
+        ENV_HISTORY_FILE,
         str(Path.home() / ".bijux" / ".repl_history"),
     )
 
@@ -90,7 +96,7 @@ async def _run_interactive() -> None:
         key_bindings=kb,
     )
 
-    cli_bin = os.environ.get("BIJUXCLI_BIN") or sys.argv[0]
+    cli_bin = os.environ.get(ENV_BIN) or sys.argv[0]
 
     while True:
         try:

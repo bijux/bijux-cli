@@ -275,7 +275,7 @@ def test_status_calls_new_run_command_when_not_watching(
     em, tel = FakeEmitter(), FakeTelemetry()
     monkeypatch.setattr(DIContainer, "current", lambda: FakeDI(em, tel))
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -378,7 +378,7 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
 
     monkeypatch.setattr(mod, "validate_common_flags", _validate)
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

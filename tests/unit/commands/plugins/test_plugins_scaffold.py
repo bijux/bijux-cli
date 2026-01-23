@@ -18,7 +18,7 @@ from typing import Any, cast
 import pytest
 from typer.testing import CliRunner
 
-import bijux_cli.cli.commands.plugins.scaffold as scaffold_mod
+import bijux_cli.cli.plugins.commands.scaffold as scaffold_mod
 from bijux_cli.cli.root import app as cli_app
 
 
@@ -160,7 +160,7 @@ def test_remove_failed(
     target = parent / "plugin"
     target.mkdir()
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.plugins.scaffold.shutil.rmtree",
+        "bijux_cli.cli.plugins.commands.scaffold.shutil.rmtree",
         lambda p: (_ for _ in ()).throw(RuntimeError("rm fail")),
     )
     result = runner.invoke(

@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-import bijux_cli.cli.commands.plugins.install as install_mod
+import bijux_cli.cli.plugins.commands.install as install_mod
 from bijux_cli.cli.root import app as cli_app
 
 

@@ -10,14 +10,13 @@ commands on a single line using semicolons. The REPL can also operate in a
 non-interactive mode to process commands piped from stdin.
 
 The REPL itself operates in a human-readable format. When executing commands,
-it respects global flags like `--format` or `--quiet` for those specific
-invocations.
+it respects global flags like format or quiet for those specific invocations.
 
 Exit Codes:
     * `0`: The REPL session was exited cleanly (e.g., via `exit`, `quit`,
       Ctrl+D, or a caught signal).
     * `2`: An invalid flag was provided to the `repl` command itself
-      (e.g., `--format=json`).
+      (e.g., an unsupported format).
 """
 
 from __future__ import annotations
@@ -32,14 +31,19 @@ from bijux_cli.cli.constants import (
     HELP_NO_PRETTY,
     HELP_QUIET,
     HELP_VERBOSE,
+    OPT_FORMAT,
+    OPT_LOG_LEVEL,
+    OPT_PRETTY,
+    OPT_QUIET,
+    OPT_VERBOSE,
 )
-from bijux_cli.cli.emit import emit_error_and_exit
+from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.repl.execution import _run_piped
 from bijux_cli.cli.repl.ui import (
     _run_interactive,
     register_signal_handlers,
 )
-from bijux_cli.cli.validation import validate_common_flags
 from bijux_cli.core.enums import LogLevel
 from bijux_cli.core.runtime import AsyncTyper, run_command
 
@@ -53,11 +57,11 @@ repl_app = AsyncTyper(
 @repl_app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
-    quiet: bool = typer.Option(False, "-q", "--quiet", help=HELP_QUIET),
-    verbose: bool = typer.Option(False, "-v", "--verbose", help=HELP_VERBOSE),
-    fmt: str = typer.Option("human", "-f", "--format", help=HELP_FORMAT_HELP),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help=HELP_NO_PRETTY),
-    log_level: str = typer.Option("info", "--log-level", help=HELP_LOG_LEVEL),
+    quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
+    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
+    fmt: str = typer.Option("human", *OPT_FORMAT, help=HELP_FORMAT_HELP),
+    pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
+    log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
 ) -> None:
     """Defines the entrypoint for the `bijux repl` command.
 
@@ -82,7 +86,7 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.output import get_execution_policy
+    from bijux_cli.cli.core.output import get_execution_policy
 
     _ = (quiet, verbose, log_level, pretty, fmt)
     policy = get_execution_policy()

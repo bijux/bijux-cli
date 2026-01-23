@@ -21,6 +21,7 @@ from bijux_cli.cli.commands.diagnostics.docs import (
     _resolve_output_target,
     docs,
 )
+from bijux_cli.cli.commands.payloads import DocsWritePayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
@@ -292,21 +293,21 @@ def test_build_spec_payload_basic(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     payload = _build_spec_payload(include_runtime=False)
-    assert payload["version"] == "vX.Y.Z"
-    assert payload["commands"] == ["one", "two"]
-    assert "python" not in payload
-    assert "platform" not in payload
+    assert payload.version == "vX.Y.Z"
+    assert payload.commands == ["one", "two"]
+    assert payload.python is None
+    assert payload.platform is None
 
     payload_rt = _build_spec_payload(include_runtime=True)
-    assert payload_rt["python"] == platform.python_version()
-    assert payload_rt["platform"] == platform.platform()
+    assert payload_rt.python == platform.python_version()
+    assert payload_rt.platform == platform.platform()
 
 
 def test_build_spec_payload_ascii_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that an ASCII safety check failure raises an error."""
     monkeypatch.setenv("DUMMY", "")
     monkeypatch.setattr(
-        "bijux_cli.cli.validation.ascii_safe",
+        "bijux_cli.cli.core.validation.ascii_safe",
         lambda v, k: (_ for _ in ()).throw(ValueError("bad ascii")),
     )
     import bijux_cli.cli.commands as cmd_pkg
@@ -404,7 +405,7 @@ def test_docs_file_written_and_emit_and_exit(
     spec_file = tmp_path / "spec.json"
     assert spec_file.read_text(encoding="utf-8") == '{"hello":"world"}'
     mock_emit.assert_called_once_with(
-        {"status": "written", "file": str(spec_file)},
+        DocsWritePayload(status="written", file=str(spec_file)),
         OutputFormat.JSON,
         False,
         True,
@@ -572,7 +573,7 @@ def test_docs_writes_yaml_and_emit(
     text = spec_file.read_text(encoding="utf-8")
     assert "foo: bar" in text
     mock_emit.assert_called_once_with(
-        {"status": "written", "file": str(spec_file)},
+        DocsWritePayload(status="written", file=str(spec_file)),
         OutputFormat.YAML,
         False,
         False,

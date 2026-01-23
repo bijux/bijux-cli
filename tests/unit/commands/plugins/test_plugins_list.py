@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-import bijux_cli.cli.commands.plugins.list as list_mod
+import bijux_cli.cli.plugins.commands.list as list_mod
 from bijux_cli.cli.root import app as cli_app
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
@@ -68,7 +68,7 @@ def test_default_list(
 ) -> None:
     """Test the 'plugins list' command with default flags."""
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -105,7 +105,7 @@ def test_all_flags(
 ) -> None:
     """Test the 'plugins list' command with all flags specified."""
     monkeypatch.setattr(
-        "bijux_cli.cli.output.get_execution_policy",
+        "bijux_cli.cli.core.output.get_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,

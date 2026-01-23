@@ -5,6 +5,13 @@
 
 from __future__ import annotations
 
+from bijux_cli.cli.constants import (
+    OPT_COLOR,
+    OPT_FORMAT,
+    OPT_HELP,
+    OPT_LOG_LEVEL,
+    OPT_QUIET,
+)
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import FlagError, FlagLayer, GlobalCLIConfig
 
@@ -22,16 +29,16 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
     i = 0
     while i < len(argv):
         flag = argv[i]
-        if flag in ("-h", "--help"):
+        if flag in OPT_HELP:
             help_flag = True
             suppress_errors = True
             i += 1
             continue
-        if flag in ("-q", "--quiet"):
+        if flag in OPT_QUIET:
             quiet = True
             i += 1
             continue
-        if flag == "--log-level":
+        if flag in OPT_LOG_LEVEL:
             try:
                 log_level = LogLevel(argv[i + 1])
                 i += 2
@@ -54,7 +61,7 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
                 )
                 i += 2
             continue
-        if flag == "--color":
+        if flag in OPT_COLOR:
             try:
                 color = ColorMode(argv[i + 1])
                 i += 2
@@ -77,7 +84,7 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
                 )
                 i += 2
             continue
-        if flag in ("-f", "--format"):
+        if flag in OPT_FORMAT:
             try:
                 raw_value = argv[i + 1]
                 fmt = OutputFormat(raw_value)
