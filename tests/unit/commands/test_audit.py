@@ -235,7 +235,6 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -294,7 +293,6 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -438,7 +436,6 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
     captured: dict[str, Any] = {}
@@ -475,7 +472,6 @@ def test_debug_does_not_force_verbose_or_pretty(
             log_level=LogLevel.DEBUG,
             pretty=False,
             include_runtime=False,
-            json=False,
         ),
     )
     captured: dict[str, Any] = {}
@@ -599,7 +595,6 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -642,7 +637,6 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -677,7 +671,6 @@ def test_audit_output_to_file_with_verbose(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -743,7 +736,6 @@ def test_verbose_file_output_constructs_correct_final_payload(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 

@@ -38,7 +38,6 @@ def _fake_resolve_command_config(
             log_level=log_level,
             pretty=pretty,
             include_runtime=verbose,
-            json=output_format is OutputFormat.JSON,
         ),
         output_format,
         output_format,

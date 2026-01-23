@@ -19,7 +19,6 @@ The primary exports are:
 from __future__ import annotations
 
 from bijux_cli.api import BijuxAPI
-from bijux_cli.core.bootstrap import main
 from bijux_cli.core.version import api_version, version
 
 
@@ -38,4 +37,11 @@ def entry_point() -> int | None:
         return int(exc.code or 0)
 
 
-__all__ = ["version", "api_version", "BijuxAPI", "entry_point"]
+def main() -> int:
+    """Lazily import and run the CLI entrypoint."""
+    from bijux_cli.core.bootstrap import main as _main
+
+    return _main()
+
+
+__all__ = ["version", "api_version", "BijuxAPI", "entry_point", "main"]

@@ -20,6 +20,7 @@ def test___all___exports() -> None:
         "api_version",
         "BijuxAPI",
         "entry_point",
+        "main",
     }
 
 

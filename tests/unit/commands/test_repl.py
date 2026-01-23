@@ -360,7 +360,6 @@ def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> No
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     monkeypatch.setattr(

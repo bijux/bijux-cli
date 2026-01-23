@@ -39,12 +39,12 @@ from click.exceptions import NoSuchOption, UsageError
 import structlog
 import typer
 
-from bijux_cli.cli.color import set_color_mode
+from bijux_cli.cli.color import resolve_color_mode, set_color_mode
 from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.engine import Engine
-from bijux_cli.core.enums import ColorMode, ErrorType, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.errors import UserInputError
 from bijux_cli.core.exit_policy import resolve_exit_behavior
 from bijux_cli.core.precedence import (
@@ -83,45 +83,6 @@ def should_record_command_history(command_line: list[str]) -> bool:
     return command_line[0].lower() not in {"history", "help"}
 
 
-def is_quiet_mode(args: list[str]) -> bool:
-    """Checks if the CLI was invoked with a quiet flag.
-
-    Args:
-        args (list[str]): The list of command-line arguments.
-
-    Returns:
-        bool: True if `--quiet` or `-q` is present, otherwise False.
-    """
-    return any(arg in ("--quiet", "-q") for arg in args)
-
-
-def print_json_error(
-    msg: str,
-    error_type: ErrorType = ErrorType.USAGE,
-    quiet: bool = False,
-    fmt: OutputFormat = OutputFormat.JSON,
-) -> ExitCode:
-    """Prints a structured JSON error message.
-
-    The message is printed to stdout for usage errors (code 2) and stderr for
-    all other errors, unless quiet mode is enabled.
-
-    Args:
-        msg (str): The error message.
-        error_type (ErrorType): The error category for exit mapping.
-        quiet (bool): If True, suppresses all output.
-        fmt (OutputFormat): The output format to record in exit mapping.
-    """
-    behavior = resolve_exit_behavior(error_type, quiet=quiet, fmt=fmt)
-    if behavior.stream is not None:
-        stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-        print(
-            json.dumps({"error": msg, "code": int(behavior.code)}),
-            file=stream,
-        )
-    return behavior.code
-
-
 def get_usage_for_args(args: list[str], app: typer.Typer) -> str:
     """Gets the CLI help message for a given set of arguments.
 
@@ -150,67 +111,16 @@ def get_usage_for_args(args: list[str], app: typer.Typer) -> str:
         return buf.getvalue()
 
 
-def _strip_format_help(args: list[str]) -> list[str]:
-    """Removes an ambiguous `--format --help` combination from arguments.
-
-    This prevents a parsing error where `--help` could be interpreted as the
-    value for the `--format` option.
-
-    Args:
-        args (list[str]): The original list of command-line arguments.
-
-    Returns:
-        list[str]: A filtered list of arguments.
-    """
-    new_args = []
-    skip_next = False
-    for i, arg in enumerate(args):
-        if skip_next:
-            skip_next = False
-            continue
-        if (
-            arg in ("--format", "-f")
-            and i + 1 < len(args)
-            and args[i + 1] in ("--help", "-h")
-        ):
-            skip_next = True
-            continue
-        new_args.append(arg)
-    return new_args
-
-
-def check_missing_format_argument(args: list[str]) -> str | None:
-    """Checks if a `--format` or `-f` flag is missing its required value.
-
-    Args:
-        args (list[str]): The list of command-line arguments.
-
-    Returns:
-        str | None: An error message if the value is missing, otherwise None.
-    """
-    for i, arg in enumerate(args):
-        if arg in ("--format", "-f"):
-            if i + 1 >= len(args):
-                return "Option '--format' requires an argument"
-            next_arg = args[i + 1]
-            if next_arg.startswith("-"):
-                return "Option '--format' requires an argument"
-    return None
-
-
-def setup_structlog(log_level: str | None = None) -> None:
+def setup_structlog(log_level: LogLevel | None = None) -> None:
     """Configures `structlog` for the application.
 
     Args:
         log_level (str | None): Optional explicit log level override.
     """
-    if log_level:
-        level = getattr(logging, log_level.upper(), logging.CRITICAL)
-    else:
-        level = logging.CRITICAL
+    level = logging.DEBUG if log_level is LogLevel.DEBUG else logging.WARNING
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
-    use_console = (log_level == LogLevel.DEBUG) or os.environ.get(
+    use_console = (log_level is LogLevel.DEBUG) or os.environ.get(
         "BIJUXCLI_TEST_MODE"
     ) == "1"
     structlog.configure(
@@ -242,17 +152,22 @@ def main() -> int:
             * `2`: A usage error or invalid option was provided.
             * `130`: The process was interrupted by the user (Ctrl+C).
     """
-    args = _strip_format_help(sys.argv[1:])
+    args = sys.argv[1:]
 
     parsed = parse_global_flags(args)
     for err in validate_cli_flags(parsed):
-        msg = err["message"]
-        failure = err["failure"]
-        if failure == "missing_argument" and "format" in msg.lower():
-            continue
-        return print_json_error(
-            msg, ErrorType.USAGE, bool(parsed.flags.quiet), OutputFormat.JSON
+        behavior = resolve_exit_behavior(
+            ErrorType.USAGE,
+            quiet=bool(parsed.flags.quiet),
+            fmt=parsed.flags.format or OutputFormat.JSON,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps({"error": err.message, "code": int(behavior.code)}),
+                file=stream,
+            )
+        return int(behavior.code)
     env_log = os.environ.get("BIJUXCLI_LOG_LEVEL")
     env_color = os.environ.get("BIJUXCLI_COLOR")
     resolved = resolve_effective_config(
@@ -274,6 +189,22 @@ def main() -> int:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
     debug_enabled = resolved.flags.log_level == LogLevel.DEBUG
+    resolved_color = resolve_color_mode(
+        parsed.flags.color,
+        ColorMode(env_color) if env_color else None,
+        None,
+        sys.stdout.isatty(),
+    )
+    if resolved_color != resolved.flags.color:
+        resolved = EffectiveConfig(
+            flags=Flags(
+                quiet=resolved.flags.quiet,
+                log_level=resolved.flags.log_level,
+                color=resolved_color,
+                format=resolved.flags.format,
+            )
+        )
+
     logging_config = LoggingConfig(
         debug=debug_enabled,
         quiet=resolved.flags.quiet,
@@ -282,7 +213,7 @@ def main() -> int:
         color=resolved.flags.color,
     )
     policy = resolve_execution_policy(resolved)
-    setup_structlog(resolved.flags.log_level.value)
+    setup_structlog(resolved.flags.log_level)
     set_color_mode(policy.color)
 
     if any(a in ("--version", "-V") for a in args):
@@ -312,12 +243,6 @@ def main() -> int:
         print(get_usage_for_args(args, app))
         return 0
 
-    missing_format_msg = check_missing_format_argument(args)
-    if missing_format_msg:
-        return print_json_error(
-            missing_format_msg, ErrorType.USAGE, resolved.flags.quiet, OutputFormat.JSON
-        )
-
     command_line = list(parsed.args)
     start = time.time()
     exit_code = 0
@@ -328,34 +253,77 @@ def main() -> int:
     except typer.Exit as exc:
         exit_code = exc.exit_code
     except NoSuchOption as exc:
-        exit_code = print_json_error(
-            f"No such option: {exc.option_name}",
+        behavior = resolve_exit_behavior(
             ErrorType.USAGE,
-            resolved.flags.quiet,
-            OutputFormat.JSON,
+            quiet=resolved.flags.quiet,
+            fmt=resolved.flags.format,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps(
+                    {
+                        "error": f"No such option: {exc.option_name}",
+                        "code": int(behavior.code),
+                    }
+                ),
+                file=stream,
+            )
+        exit_code = int(behavior.code)
     except UsageError as exc:
-        exit_code = print_json_error(
-            str(exc), ErrorType.USAGE, resolved.flags.quiet, OutputFormat.JSON
+        behavior = resolve_exit_behavior(
+            ErrorType.USAGE,
+            quiet=resolved.flags.quiet,
+            fmt=resolved.flags.format,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps({"error": str(exc), "code": int(behavior.code)}),
+                file=stream,
+            )
+        exit_code = int(behavior.code)
     except UserInputError as exc:
-        exit_code = print_json_error(
-            str(exc), ErrorType.USER_INPUT, resolved.flags.quiet, OutputFormat.JSON
+        behavior = resolve_exit_behavior(
+            ErrorType.USER_INPUT,
+            quiet=resolved.flags.quiet,
+            fmt=resolved.flags.format,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps({"error": str(exc), "code": int(behavior.code)}),
+                file=stream,
+            )
+        exit_code = int(behavior.code)
     except KeyboardInterrupt:
-        exit_code = print_json_error(
-            "Aborted by user",
+        behavior = resolve_exit_behavior(
             ErrorType.ABORTED,
-            resolved.flags.quiet,
-            OutputFormat.JSON,
+            quiet=resolved.flags.quiet,
+            fmt=resolved.flags.format,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps({"error": "Aborted by user", "code": int(behavior.code)}),
+                file=stream,
+            )
+        exit_code = int(behavior.code)
     except Exception as exc:
-        exit_code = print_json_error(
-            f"Unexpected error: {exc}",
+        behavior = resolve_exit_behavior(
             ErrorType.INTERNAL,
-            resolved.flags.quiet,
-            OutputFormat.JSON,
+            quiet=resolved.flags.quiet,
+            fmt=resolved.flags.format,
         )
+        if behavior.stream is not None:
+            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+            print(
+                json.dumps(
+                    {"error": f"Unexpected error: {exc}", "code": int(behavior.code)}
+                ),
+                file=stream,
+            )
+        exit_code = int(behavior.code)
 
     if should_record_command_history(command_line):
         try:

@@ -274,7 +274,6 @@ def test_dev_di_graph_quiet_after_writing_exits(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     monkeypatch.setattr(
@@ -621,7 +620,6 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -682,7 +680,6 @@ def test_dev_payload_basic_and_runtime_inclusion(
         log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
-        json=False,
     )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.get_execution_policy",
@@ -729,7 +726,6 @@ def test_dev_payload_basic_and_runtime_inclusion(
         log_level=LogLevel.INFO,
         pretty=False,
         include_runtime=True,
-        json=False,
     )
     dev(
         ctx,
@@ -761,7 +757,6 @@ def test_dev_payload_includes_mode_env(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
     monkeypatch.setattr(

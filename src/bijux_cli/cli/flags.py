@@ -5,75 +5,105 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import FlagLayer, GlobalCLIConfig
+from bijux_cli.core.precedence import FlagError, FlagLayer, GlobalCLIConfig
 
 
 def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
     """Parse global CLI flags from argv into an immutable config."""
-    help_present = any(flag in ("-h", "--help") for flag in argv)
     help_flag = False
+    suppress_errors = False
     quiet: bool | None = None
     log_level: LogLevel | None = None
     color: ColorMode | None = None
     fmt: OutputFormat | None = None
-    errors: list[dict[str, Any]] = []
-    retained: list[str] = []
-    it = iter(argv)
-    for flag in it:
+    errors: list[FlagError] = []
+    retained: list[str] = list(argv)
+    i = 0
+    while i < len(argv):
+        flag = argv[i]
         if flag in ("-h", "--help"):
             help_flag = True
-            retained.append(flag)
-            continue
-        if help_present:
-            retained.append(flag.lstrip("-"))
+            suppress_errors = True
+            i += 1
             continue
         if flag in ("-q", "--quiet"):
             quiet = True
-        elif flag == "--log-level":
+            i += 1
+            continue
+        if flag == "--log-level":
             try:
-                log_level = LogLevel(next(it))
-            except StopIteration:
+                log_level = LogLevel(argv[i + 1])
+                i += 2
+            except IndexError:
                 errors.append(
-                    {
-                        "message": "Missing value for --log-level.",
-                        "failure": "missing_argument",
-                        "flag": "--log-level",
-                    }
+                    FlagError(
+                        message="Missing value for --log-level.",
+                        failure="missing_argument",
+                        flag="--log-level",
+                    )
                 )
+                i += 1
             except ValueError:
                 errors.append(
-                    {
-                        "message": "Invalid log level.",
-                        "failure": "invalid_log_level",
-                        "flag": "--log-level",
-                    }
+                    FlagError(
+                        message="Invalid log level.",
+                        failure="invalid_log_level",
+                        flag="--log-level",
+                    )
                 )
-        elif flag == "--color":
+                i += 2
+            continue
+        if flag == "--color":
             try:
-                color = ColorMode(next(it))
-            except StopIteration:
+                color = ColorMode(argv[i + 1])
+                i += 2
+            except IndexError:
                 errors.append(
-                    {
-                        "message": "Missing value for --color.",
-                        "failure": "missing_argument",
-                        "flag": "--color",
-                    }
+                    FlagError(
+                        message="Missing value for --color.",
+                        failure="missing_argument",
+                        flag="--color",
+                    )
                 )
+                i += 1
             except ValueError:
                 errors.append(
-                    {
-                        "message": "Invalid color mode.",
-                        "failure": "invalid_color",
-                        "flag": "--color",
-                    }
+                    FlagError(
+                        message="Invalid color mode.",
+                        failure="invalid_color",
+                        flag="--color",
+                    )
                 )
-        elif flag == "--json":
-            fmt = OutputFormat.JSON
-        else:
-            retained.append(flag)
+                i += 2
+            continue
+        if flag in ("-f", "--format"):
+            try:
+                raw_value = argv[i + 1]
+                fmt = OutputFormat(raw_value)
+                i += 2
+            except IndexError:
+                errors.append(
+                    FlagError(
+                        message="Missing value for --format.",
+                        failure="missing_argument",
+                        flag="--format",
+                    )
+                )
+                i += 1
+            except ValueError:
+                errors.append(
+                    FlagError(
+                        message=f"Unsupported format: {argv[i + 1]}",
+                        failure="invalid_format",
+                        flag="--format",
+                    )
+                )
+                i += 2
+            continue
+        i += 1
+    if suppress_errors:
+        errors = []
     return GlobalCLIConfig(
         help=help_flag,
         flags=FlagLayer(

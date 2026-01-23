@@ -19,7 +19,16 @@ class GlobalCLIConfig:
     help: bool
     flags: FlagLayer
     args: tuple[str, ...]
-    errors: tuple[dict[str, Any], ...]
+    errors: tuple[FlagError, ...]
+
+
+@dataclass(frozen=True)
+class FlagError:
+    """Structured error for flag parsing/validation."""
+
+    message: str
+    failure: str
+    flag: str
 
 
 @dataclass(frozen=True)
@@ -61,7 +70,6 @@ class ExecutionPolicy:
     log_level: LogLevel
     pretty: bool
     include_runtime: bool
-    json: bool
 
 
 @dataclass(frozen=True)
@@ -85,21 +93,21 @@ def _coerce_verbose(value: Any) -> int:
 
 
 def validate_cli_flags(
-    config: GlobalCLIConfig, parse_errors: Sequence[dict[str, Any]] | None = None
-) -> list[dict[str, Any]]:
+    config: GlobalCLIConfig, parse_errors: Sequence[FlagError] | None = None
+) -> tuple[FlagError, ...]:
     """Validate raw CLI flags without applying behavior."""
-    errors: list[dict[str, Any]] = list(parse_errors or config.errors)
+    errors: list[FlagError] = list(parse_errors or config.errors)
     flags = config.flags
     if flags.format is not None and flags.format not in (
         OutputFormat.JSON,
         OutputFormat.YAML,
     ):
         errors.append(
-            {
-                "message": "Invalid output format.",
-                "failure": "invalid_format",
-                "flag": "--format",
-            }
+            FlagError(
+                message="Invalid output format.",
+                failure="invalid_format",
+                flag="--format",
+            )
         )
     if flags.color is not None and flags.color not in (
         ColorMode.AUTO,
@@ -107,11 +115,11 @@ def validate_cli_flags(
         ColorMode.NEVER,
     ):
         errors.append(
-            {
-                "message": "Invalid color mode.",
-                "failure": "invalid_color",
-                "flag": "--color",
-            }
+            FlagError(
+                message="Invalid color mode.",
+                failure="invalid_color",
+                flag="--color",
+            )
         )
     if flags.log_level is not None and flags.log_level not in (
         LogLevel.DEBUG,
@@ -121,13 +129,13 @@ def validate_cli_flags(
         LogLevel.CRITICAL,
     ):
         errors.append(
-            {
-                "message": "Invalid log level.",
-                "failure": "invalid_log_level",
-                "flag": "--log-level",
-            }
+            FlagError(
+                message="Invalid log level.",
+                failure="invalid_log_level",
+                flag="--log-level",
+            )
         )
-    return errors
+    return tuple(errors)
 
 
 def _pick_value(
@@ -189,7 +197,6 @@ def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:
         log_level=flags.log_level,
         pretty=True,
         include_runtime=False,
-        json=(flags.format == OutputFormat.JSON),
     )
 
 
