@@ -8,8 +8,14 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis import strategies as st
 
+from bijux_cli.cli.flags import parse_global_flags
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import FlagLayer, Flags, resolve_effective_config
+from bijux_cli.core.precedence import (
+    FlagLayer,
+    Flags,
+    resolve_effective_config,
+    validate_cli_flags,
+)
 
 _log_levels = st.sampled_from(list(LogLevel))
 _colors = st.sampled_from(list(ColorMode))
@@ -17,7 +23,7 @@ _formats = st.sampled_from(list(OutputFormat))
 
 
 @given(
-    cli_quiet=st.one_of(st.none(), st.booleans()),
+    cli_quiet=st.one_of(st.none(), st.just(True)),
     env_quiet=st.one_of(st.none(), st.booleans()),
     file_quiet=st.one_of(st.none(), st.booleans()),
 )
@@ -30,7 +36,12 @@ def test_left_identity_for_quiet(
         color=ColorMode.AUTO,
         format=OutputFormat.JSON,
     )
-    cli = FlagLayer(quiet=cli_quiet)
+    argv: list[str] = []
+    if cli_quiet:
+        argv.append("--quiet")
+    parsed = parse_global_flags(argv)
+    assert validate_cli_flags(parsed) == ()
+    cli = parsed.flags
     env = FlagLayer(quiet=env_quiet)
     file = FlagLayer(quiet=file_quiet)
 
@@ -61,8 +72,10 @@ def test_right_identity_defaults_only(
         color=color,
         format=fmt,
     )
+    parsed = parse_global_flags([])
+    assert validate_cli_flags(parsed) == ()
     effective = resolve_effective_config(
-        cli=FlagLayer(), env=FlagLayer(), file=FlagLayer(), defaults=defaults
+        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
     )
     assert effective.flags == defaults
 
@@ -81,6 +94,17 @@ def test_idempotence_when_layers_equal(
         color=ColorMode.AUTO,
         format=OutputFormat.JSON,
     )
+    argv = [
+        "--quiet",
+        "--log-level",
+        log_level.value,
+        "--color",
+        color.value,
+        "--format",
+        fmt.value,
+    ]
+    parsed = parse_global_flags(argv)
+    assert validate_cli_flags(parsed) == ()
     layer = FlagLayer(
         quiet=True,
         log_level=log_level,
@@ -88,9 +112,31 @@ def test_idempotence_when_layers_equal(
         format=fmt,
     )
     eff_a = resolve_effective_config(
-        cli=layer, env=layer, file=layer, defaults=defaults
+        cli=parsed.flags, env=layer, file=layer, defaults=defaults
     )
     eff_b = resolve_effective_config(
-        cli=layer, env=FlagLayer(), file=FlagLayer(), defaults=defaults
+        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
     )
     assert eff_a == eff_b
+
+
+@given(
+    log_level=_log_levels,
+    fmt=_formats,
+)
+def test_quiet_dominates_log_level(log_level: LogLevel, fmt: OutputFormat) -> None:
+    """Quiet should force ERROR regardless of requested log level."""
+    defaults = Flags(
+        quiet=False,
+        log_level=LogLevel.INFO,
+        color=ColorMode.AUTO,
+        format=OutputFormat.JSON,
+    )
+    argv = ["--quiet", "--log-level", log_level.value, "--format", fmt.value]
+    parsed = parse_global_flags(argv)
+    assert validate_cli_flags(parsed) == ()
+    effective = resolve_effective_config(
+        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
+    )
+    assert effective.flags.quiet is True
+    assert effective.flags.log_level is LogLevel.ERROR

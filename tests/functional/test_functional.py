@@ -666,7 +666,8 @@ def test_docs_invalid_format(tmp_path: Path) -> None:
     """Test that generating docs with an invalid format fails."""
     out = tmp_path / "spec.invalid"
     r = cli("docs", "--out", str(out), "--format", "invalid", expect_exit_code=2)
-    assert "unsupported format" in (r.json_err or {}).get("error", "").lower()
+    data = r.json_err or r.json_out or {}
+    assert "unsupported format" in str(data.get("error", "")).lower()
 
 
 def test_docs_no_out(tmp_path: Path) -> None:
@@ -1436,7 +1437,8 @@ def test_version_verbose_di() -> None:
 def test_version_invalid_format() -> None:
     """Test that the version command fails with an invalid format."""
     r = cli("version", "--format", "invalid", expect_exit_code=2)
-    assert "unsupported format" in (r.json_err or {}).get("error", "").lower()
+    data = r.json_err or r.json_out or {}
+    assert "unsupported format" in str(data.get("error", "")).lower()
 
 
 def test_version_debug() -> None:
@@ -1602,10 +1604,10 @@ def test_invalid_global_format() -> None:
         if not isinstance(data, dict):
             data = {}
         err = str(data.get("error", "")).lower()
-        assert "no such option" in err
+        assert "unsupported format" in err or "invalid format" in err
     else:
         msg = _decolorise((r.stderr or r.stdout).lower())
-        assert "no such option" in msg
+        assert "unsupported format" in msg or "invalid format" in msg
 
 
 def test_quiet_with_error() -> None:

@@ -285,7 +285,6 @@ def test_status_calls_new_run_command_when_not_watching(
             log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=True,
-            json=False,
         ),
     )
     seen: dict[str, Any] = {}
@@ -389,7 +388,6 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
             log_level=LogLevel.DEBUG,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     seen: dict[str, Any] = {}

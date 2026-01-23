@@ -712,7 +712,6 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
                 log_level=LogLevel.DEBUG,
                 pretty=True,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(
@@ -858,7 +857,6 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(
@@ -913,7 +911,6 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
                 log_level=LogLevel.DEBUG,
                 pretty=False,
                 include_runtime=False,
-                json=False,
             ),
         ),
         patch(
@@ -1056,7 +1053,6 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(
@@ -1118,7 +1114,6 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(
@@ -1175,7 +1170,6 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(
@@ -1231,7 +1225,6 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
-                json=False,
             ),
         ),
         patch(

@@ -174,7 +174,6 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
-            json=False,
         ),
     )
 

@@ -78,7 +78,6 @@ def test_default_list(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     result = runner.invoke(cli_app, ["plugins", "list"])
@@ -116,7 +115,6 @@ def test_all_flags(
             log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=False,
-            json=False,
         ),
     )
     result = runner.invoke(

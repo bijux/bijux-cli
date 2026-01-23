@@ -163,7 +163,6 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     with pytest.raises(SystemExit) as ex:
@@ -278,7 +277,6 @@ def test_nonquiet_invalid_format_calls_emit_error(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
@@ -428,7 +426,6 @@ def test_nonquiet_human_format_prints_and_exits(
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -483,7 +480,6 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     monkeypatch.setattr(
@@ -498,7 +494,6 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
-            json=False,
         ),
     )
     called: dict[str, Any] = {}
@@ -562,7 +557,6 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     called: dict[str, Any] = {}
@@ -614,7 +608,6 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
     with pytest.raises(SystemExit) as ex:

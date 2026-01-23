@@ -45,7 +45,6 @@ def mock_flags() -> ExecutionPolicy:
         log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
-        json=False,
     )
 
 
@@ -797,7 +796,6 @@ def test_non_ascii_config_path_triggers_error(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -834,7 +832,6 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -879,7 +876,6 @@ def test_posix_lock_success_and_run(
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -933,7 +929,6 @@ def test_posix_lock_import_failure_skips_lock(
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
-            json=False,
         ),
     )
 
@@ -1000,7 +995,6 @@ def test_posix_unlock_failure_is_ignored(
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
-            json=False,
         ),
     )
 
@@ -1062,7 +1056,6 @@ def test_non_posix_skips_file_lock_block(
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
-            json=False,
         ),
     )
 

@@ -28,7 +28,7 @@ from bijux_cli.cli.validation import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, FlagError
 from bijux_cli.infra.contracts import Serializer
 from bijux_cli.plugins.listing import list_installed_plugins
 from bijux_cli.services.history.contracts import HistoryProtocol
@@ -370,7 +370,6 @@ def test_new_run_command_history_skip_quiet(mock_di: types.SimpleNamespace) -> N
                 log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
-                json=False,
             ),
         ),
         patch(
@@ -890,7 +889,7 @@ def test_parse_global_flags_quiet() -> None:
     """Parse the --quiet (-q) flag."""
     config = parse_global_flags(["-q"])
     assert config.flags.quiet is True
-    assert config.args == ()
+    assert config.args == ("-q",)
     assert config.errors == ()
 
 
@@ -902,26 +901,32 @@ def test_parse_global_flags_debug() -> None:
 
 
 def test_parse_global_flags_format() -> None:
-    """Global parser leaves --format (-f) for commands."""
+    """Global parser captures --format (-f)."""
     config = parse_global_flags(["-f", "yaml"])
-    assert config.flags.format is None
+    assert config.flags.format is OutputFormat.YAML
     assert config.args == ("-f", "yaml")
     assert config.errors == ()
 
 
 def test_parse_global_flags_format_missing() -> None:
-    """Global parser leaves missing --format value for commands."""
+    """Global parser records missing --format value."""
     config = parse_global_flags(["-f"])
     assert config.flags.format is None
     assert config.args == ("-f",)
-    assert config.errors == ()
+    assert config.errors == (
+        FlagError(
+            message="Missing value for --format.",
+            failure="missing_argument",
+            flag="--format",
+        ),
+    )
 
 
 def test_parse_global_flags_format_invalid_help() -> None:
-    """Parse invalid format when --help is present."""
+    """Parse --format when --help is present."""
     config = parse_global_flags(["--help", "-f", "invalid"])
     assert config.help is True
-    assert config.args == ("--help", "f", "invalid")
+    assert config.args == ("--help", "-f", "invalid")
     assert config.errors == ()
 
 
@@ -953,7 +958,7 @@ def test_parse_global_flags_unknown_help() -> None:
     """Unknown flags are retained with help."""
     config = parse_global_flags(["--help", "--unknown"])
     assert config.help is True
-    assert config.args == ("--help", "unknown")
+    assert config.args == ("--help", "--unknown")
     assert config.errors == ()
 
 
@@ -980,8 +985,16 @@ def test_parse_global_flags_multiple() -> None:
         ]
     )
     assert config.flags.quiet is True
-    assert config.flags.format is None
-    assert config.args == ("--debug", "-f", "yaml", "--no-pretty", "-v", "--unknown")
+    assert config.flags.format is OutputFormat.YAML
+    assert config.args == (
+        "-q",
+        "--debug",
+        "-f",
+        "yaml",
+        "--no-pretty",
+        "-v",
+        "--unknown",
+    )
     assert config.errors == ()
 
 

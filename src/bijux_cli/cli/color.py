@@ -34,4 +34,27 @@ def resolve_click_color(*, quiet: bool, fmt: OutputFormat | None = None) -> bool
     return None
 
 
-__all__ = ["get_color_mode", "resolve_click_color", "set_color_mode"]
+def resolve_color_mode(
+    cli: ColorMode | None,
+    env: ColorMode | None,
+    config: ColorMode | None,
+    tty: bool,
+) -> ColorMode:
+    """Resolve the effective color mode for CLI rendering."""
+    for value in (cli, env, config):
+        if value is not None:
+            mode = value
+            break
+    else:
+        mode = ColorMode.AUTO
+    if mode is ColorMode.AUTO and not tty:
+        return ColorMode.NEVER
+    return mode
+
+
+__all__ = [
+    "get_color_mode",
+    "resolve_click_color",
+    "resolve_color_mode",
+    "set_color_mode",
+]
