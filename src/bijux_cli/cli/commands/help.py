@@ -83,6 +83,7 @@ def _build_help_intent(
     fmt: str,
     policy: ExecutionPolicy,
 ) -> HelpIntent:
+    """Build a normalized help intent from raw CLI inputs."""
     fmt_lower = fmt.strip().lower()
     format_value = normalize_format(fmt)
     error_fmt = format_value or OutputFormat.JSON

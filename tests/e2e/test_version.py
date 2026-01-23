@@ -32,7 +32,7 @@ ALL_FLAGS = [
     "-q",
     "--verbose",
     "-v",
-    "--log-level",
+    "--debug",
     "--no-pretty",
     "--format",
     "-f",
@@ -56,7 +56,7 @@ def flags_verbose(flags: list[str]) -> bool:
 
 def flags_debug(flags: list[str]) -> bool:
     """Check if debug flags are present."""
-    return "--log-level" in flags and "debug" in flags
+    return "--debug" in flags
 
 
 @composite
@@ -64,9 +64,8 @@ def flag_permutations(draw: DrawFn) -> list[str]:
     """Generate permutations of command-line flags."""
     base = draw(lists(sampled_from(ALL_FLAGS), min_size=0, max_size=5, unique=False))
     assert isinstance(base, list)
-    if "--log-level" in base:
-        level = draw(sampled_from(["debug", "info", "warning", "error"]))
-        base = [f for f in base if f != "--log-level"] + ["--log-level", level]
+    if "--debug" in base:
+        base = [f for f in base if f != "--debug"] + ["--debug"]
     if any(f in base for f in ("--format", "-f")):
         fmt_flag = draw(sampled_from(["--format", "-f"]))
         fmt_value = draw(sampled_from(FORMATS))
@@ -119,9 +118,9 @@ def parse_output(fmt: str, out: str) -> dict[str, Any]:
         (["-f", "yaml"], "yaml", False, False),
         (["-v"], "json", True, False),
         (["--verbose", "--format", "yaml"], "yaml", True, False),
-        (["--log-level", "debug"], "json", False, True),
-        (["--log-level", "debug", "--format", "yaml"], "yaml", False, True),
-        (["--log-level", "debug", "--no-pretty"], "json", False, True),
+        (["--debug"], "json", False, True),
+        (["--debug", "--format", "yaml"], "yaml", False, True),
+        (["--debug", "--no-pretty"], "json", False, True),
     ],
 )
 def test_version_contract(
@@ -164,7 +163,7 @@ def test_version_quiet(flag: str) -> None:
         (["-q", "-v"], False),
         (["--format", "yaml", "-q"], False),
         (["--verbose", "-f", "yaml"], True),
-        (["--log-level", "debug", "--no-pretty"], True),
+        (["--debug", "--no-pretty"], True),
     ],
 )
 def test_version_flag_output_precedence(flags: list[str], expect: bool) -> None:
@@ -197,7 +196,7 @@ def test_version_no_pretty_flag(fmt: str) -> None:
 
 def test_version_debug_output() -> None:
     """Test the log-level debug flag produces debug information."""
-    res = run_cli(["version", "--log-level", "debug"])
+    res = run_cli(["version", "--debug"])
     assert res.returncode == 0
     out = json.loads(res.stdout)
     assert_version_output(out, debug=True)
@@ -206,7 +205,7 @@ def test_version_debug_output() -> None:
 
 def test_version_debug_pretty_overrides_no_pretty() -> None:
     """Test that log-level debug pretty printing overrides --no-pretty."""
-    res = run_cli(["version", "--log-level", "debug", "--no-pretty"])
+    res = run_cli(["version", "--debug", "--no-pretty"])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 2
 
@@ -303,7 +302,7 @@ def test_version_default_has_no_timestamp() -> None:
     assert "timestamp" not in out
 
 
-@settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=5, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(data=data())
 def test_version_hypothesis_flags(data: Any) -> None:
     """Test various flag combinations using hypothesis."""

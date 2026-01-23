@@ -18,6 +18,7 @@ from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
 def _load_module_from_path(path: str, module_name: str) -> ModuleType:
+    """Load a module from a file path and register it in sys.modules."""
     spec = importlib.util.spec_from_file_location(module_name, path)
     if not spec or not spec.loader:
         raise PluginMetadataError(f"Cannot import plugin: {path}", http_status=400)
@@ -28,6 +29,7 @@ def _load_module_from_path(path: str, module_name: str) -> ModuleType:
 
 
 def _load_typer_from_module(module: ModuleType) -> typer.Typer:
+    """Extract a Typer app from a plugin module and adapt it for async."""
     if hasattr(module, "cli") and callable(module.cli):
         app = module.cli()
     elif hasattr(module, "app"):
@@ -47,6 +49,7 @@ def _load_typer_from_module(module: ModuleType) -> typer.Typer:
 
 
 def _entrypoint_loader(meta: PluginMetadata) -> typer.Typer:
+    """Load a Typer app from entry point metadata."""
     if not meta.entrypoint:
         raise PluginMetadataError("Entry point metadata missing", http_status=400)
     obj = meta.entrypoint.load()
@@ -77,6 +80,7 @@ def _entrypoint_loader(meta: PluginMetadata) -> typer.Typer:
 
 
 def _local_loader(meta: PluginMetadata) -> typer.Typer:
+    """Load a local plugin by importing its plugin.py module."""
     if not meta.path:
         raise PluginMetadataError("Local plugin path missing", http_status=400)
     plug_py = meta.path / "plugin.py"
@@ -94,6 +98,7 @@ class LazyTyper(AsyncTyper):
         self._loaded: click.Group | None = None
 
     def _load(self) -> click.Group:
+        """Load the underlying plugin command tree on first access."""
         if self._loaded is None:
             if self._meta.source == "entrypoint":
                 app = _entrypoint_loader(self._meta)

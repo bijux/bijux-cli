@@ -71,22 +71,22 @@ def test_plugin_scaffold_yaml_output(tmp_path: Path) -> None:
     assert data["status"] == "created"
     assert data["plugin"] == "plugYaml"
 
+    def test_plugin_scaffold_debug(tmp_path: Path) -> None:
+        """Test the scaffold command with the --log-level debug flag."""
 
-def test_plugin_scaffold_debug(tmp_path: Path) -> None:
-    """Test the scaffold command with the --log-level debug flag."""
-    res = run_cli(
+    run_cli(
         [
             "plugins",
             "scaffold",
             "dbg",
             "--output-dir",
             str(tmp_path),
-            "--log-level",
-            "debug",
+            "--debug",
             "--template",
             TEST_TEMPLATE,
         ]
     )
+
     assert res.returncode == 0
 
 

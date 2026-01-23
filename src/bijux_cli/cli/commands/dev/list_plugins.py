@@ -83,6 +83,7 @@ def dev_list_plugins(
     plugins = list_installed_plugins()
 
     def payload_builder(include_runtime: bool) -> DevPluginsPayload:
+        """Build the list-plugins payload with optional runtime metadata."""
         payload = DevPluginsPayload(plugins=plugins)
         if include_runtime:
             return DevPluginsPayload(

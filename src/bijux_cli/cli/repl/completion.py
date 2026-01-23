@@ -48,6 +48,7 @@ class CommandCompleter(Completer):
         app: typer.Typer,
         path: list[str] | None = None,
     ) -> dict[tuple[str, ...], Any]:
+        """Build a command lookup table keyed by command path."""
         path = path or []
         out: dict[tuple[str, ...], Any] = {}
         for cmd in getattr(app, "registered_commands", []):
@@ -61,6 +62,7 @@ class CommandCompleter(Completer):
         self,
         words: list[str],
     ) -> tuple[Any | None, list[str]]:
+        """Locate the deepest command match and return remaining tokens."""
         for i in range(len(words), 0, -1):
             key = tuple(words[:i])
             if key in self._cmd_map:
