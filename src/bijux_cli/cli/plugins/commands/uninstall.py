@@ -34,19 +34,24 @@ import unicodedata
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.plugins.commands.validation import refuse_on_symlink
 from bijux_cli.plugins import get_plugins_dir
@@ -73,8 +78,7 @@ def uninstall_plugin(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes Python/platform details in error outputs.
         fmt (str): The output format for confirmation or error messages.
-        pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -86,17 +90,13 @@ def uninstall_plugin(
     command = "plugins uninstall"
 
     validate_common_flags(fmt, command, quiet)
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
     try:
         meta = get_plugin_metadata(name)
@@ -108,7 +108,7 @@ def uninstall_plugin(
         proc = subprocess.run(cmd, capture_output=True, text=True)  # noqa: S603
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"pip uninstall failed: {detail}",
                 code=1,
                 failure="pip_uninstall_failed",
@@ -116,7 +116,7 @@ def uninstall_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
         invalidate_plugin_cache()
         payload = {"status": "uninstalled", "plugin": name}
@@ -132,7 +132,7 @@ def uninstall_plugin(
         return
 
     plugins_dir = get_plugins_dir()
-    refuse_on_symlink(plugins_dir, command, fmt_lower, quiet, verbose, debug)
+    refuse_on_symlink(plugins_dir, command, fmt_lower, quiet, verbose, log_policy)
 
     lock_file = plugins_dir / ".bijux_install.lock"
 
@@ -146,7 +146,7 @@ def uninstall_plugin(
             == unicodedata.normalize("NFC", name)
         ]
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Could not list plugins dir '{plugins_dir}': {exc}",
             code=1,
             failure="list_failed",
@@ -154,11 +154,11 @@ def uninstall_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if not plugin_dirs:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Plugin '{name}' is not installed.",
             code=1,
             failure="not_installed",
@@ -166,7 +166,7 @@ def uninstall_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     plug_path = plugin_dirs[0]
@@ -197,7 +197,7 @@ def uninstall_plugin(
         if not plug_path.exists():
             pass
         elif plug_path.is_symlink():
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"Plugin path '{plug_path}' is a symlink. Refusing to uninstall.",
                 code=1,
                 failure="symlink_path",
@@ -205,10 +205,10 @@ def uninstall_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
         elif not plug_path.is_dir():
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"Plugin path '{plug_path}' is not a directory.",
                 code=1,
                 failure="not_dir",
@@ -216,13 +216,13 @@ def uninstall_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
         else:
             try:
                 shutil.rmtree(plug_path)
             except PermissionError:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Permission denied removing '{plug_path}'",
                     code=1,
                     failure="permission_denied",
@@ -230,10 +230,10 @@ def uninstall_plugin(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective.include_runtime,
-                    debug=debug,
+                    log_policy=log_policy,
                 )
             except Exception as exc:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Failed to remove '{plug_path}': {exc}",
                     code=1,
                     failure="remove_failed",
@@ -241,7 +241,7 @@ def uninstall_plugin(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective.include_runtime,
-                    debug=debug,
+                    log_policy=log_policy,
                 )
 
     invalidate_plugin_cache()

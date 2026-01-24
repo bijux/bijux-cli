@@ -111,7 +111,7 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
     """Test the version command with YAML format."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.YAML,
                 color=ColorMode.AUTO,
@@ -225,7 +225,7 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
     """Test the version command with the --quiet flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -259,7 +259,7 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
     """Test the version command with the --verbose flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -292,7 +292,7 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
     """Test the version command with the --no-pretty flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
@@ -325,7 +325,7 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
     """Test the version command with the --log-level flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,

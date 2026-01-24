@@ -30,27 +30,29 @@ from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.payloads import MemorySummaryPayload
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_and_exit, emit_error_and_exit
-from bijux_cli.cli.core.output import get_execution_policy
+from bijux_cli.cli.core.emit import emit_and_exit
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import current_execution_policy, emit_error_with_policy
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.enums import LogLevel, OutputFormat
-from bijux_cli.core.precedence import resolve_log_policy
+from bijux_cli.core.enums import ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.precedence import default_execution_policy, resolve_log_policy
 
 
 def _build_payload(
@@ -118,8 +120,12 @@ def _run_one_shot_mode(
         SystemExit: Always exits with a contract-compliant status code and
             payload upon completion or error.
     """
+    if isinstance(log_level, LogLevel):
+        log_policy = resolve_log_policy(log_level)
+    else:
+        log_policy = resolve_log_policy(LogLevel(str(log_level).lower()))
     if contains_non_ascii_env():
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Non-ASCII characters in environment variables",
             code=3,
             failure="ascii_env",
@@ -127,11 +133,12 @@ def _run_one_shot_mode(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
+            log_policy=log_policy,
         )
     try:
         payload = _build_payload(include_runtime, keys_count)
     except ValueError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=3,
             failure="ascii",
@@ -139,15 +146,27 @@ def _run_one_shot_mode(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
+            log_policy=log_policy,
         )
 
+    if quiet:
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=output_format,
+                pretty=effective_pretty,
+                show_traceback=False,
+            )
+        )
     emit_and_exit(
         payload=payload,
         fmt=output_format,
         effective_pretty=effective_pretty,
         verbose=verbose,
-        debug=resolve_log_policy(LogLevel(log_level)).show_internal,
-        quiet=quiet,
         command=command,
         exit_code=0,
     )
@@ -184,10 +203,10 @@ def memory_summary(
     """
     command = "memory"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
+    policy = current_execution_policy()
     quiet = policy.quiet
     verbose = policy.verbose
-    debug = policy.log_policy.show_internal
+    log_policy = policy.log_policy
     include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON
@@ -201,7 +220,7 @@ def memory_summary(
 
     output_format = fmt_lower
 
-    svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, debug)
+    svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, log_policy)
 
     keys_count = None
     with contextlib.suppress(Exception):
@@ -249,7 +268,7 @@ def memory(
         typer.Exit: Exits after displaying help text.
     """
     if any(arg in ("-h", "--help") for arg in sys.argv):
-        policy = get_execution_policy()
+        policy = default_execution_policy()
         color = resolve_click_color(quiet=policy.quiet, fmt=None)
         if ctx.invoked_subcommand:
             cmd = getattr(ctx.command, "get_command", None)

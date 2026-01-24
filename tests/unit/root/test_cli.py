@@ -15,6 +15,21 @@ import typer
 from bijux_cli.cli.color import set_color_mode
 import bijux_cli.cli.root as cli_mod
 from bijux_cli.core.enums import ColorMode
+from bijux_cli.core.precedence import default_execution_policy
+
+
+@pytest.fixture(autouse=True)
+def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure a default execution policy for CLI output helpers."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.output.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
+    monkeypatch.setattr(
+        cli_mod,
+        "current_execution_policy",
+        lambda: default_execution_policy(),
+    )
 
 
 def test_collect_names() -> None:

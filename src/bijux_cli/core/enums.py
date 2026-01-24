@@ -70,6 +70,7 @@ class ColorMode(str, Enum):
 class LogLevel(str, Enum):
     """Logging level names for structured logging."""
 
+    TRACE = "trace"
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"

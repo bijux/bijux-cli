@@ -30,19 +30,24 @@ import sys
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.plugins.metadata import (
     discover_plugins,
@@ -71,8 +76,7 @@ def install_plugin(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes runtime metadata in error payloads.
         fmt (str): The output format for confirmation or error messages.
-        pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -84,20 +88,16 @@ def install_plugin(
     command = "plugins install"
 
     validate_common_flags(fmt, command, quiet)
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
     if Path(name).exists():
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Local paths are not supported; use a PyPI package name.",
             code=1,
             failure="local_path_not_supported",
@@ -105,11 +105,11 @@ def install_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Invalid package name: only ASCII letters, digits, dash and underscore are allowed.",
             code=1,
             failure="invalid_name",
@@ -117,7 +117,7 @@ def install_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if dry_run:
@@ -137,7 +137,7 @@ def install_plugin(
         )
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"pip install failed: {detail}",
                 code=1,
                 failure="pip_install_failed",
@@ -145,7 +145,7 @@ def install_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
         invalidate_plugin_cache()
@@ -153,7 +153,7 @@ def install_plugin(
             discover_plugins()
             plugins = plugins_for_package(name)
         except Exception as exc:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 str(exc),
                 code=1,
                 failure="metadata_error",
@@ -161,11 +161,11 @@ def install_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
         if not plugins:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Package installed but no bijux_cli.plugins entry point found.",
                 code=1,
                 failure="entrypoint_missing",
@@ -173,7 +173,7 @@ def install_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
         payload = {

@@ -30,18 +30,20 @@ import typer
 from bijux_cli.cli.commands.payloads import DevStatusPayload
 from bijux_cli.cli.core.constants import (
     ENV_DEV_MODE,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.output import get_execution_policy, new_run_command
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import current_execution_policy, new_run_command
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     normalize_format,
@@ -69,8 +71,7 @@ def dev(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
-        pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -84,7 +85,7 @@ def dev(
 
     command = "dev"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
+    policy = current_execution_policy()
     quiet = policy.quiet
     verbose = policy.verbose
     effective_include_runtime = policy.include_runtime

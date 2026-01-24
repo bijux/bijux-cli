@@ -36,11 +36,6 @@ import typer
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.payloads import HelpPayload
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT_HELP,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
@@ -49,18 +44,24 @@ from bijux_cli.cli.core.constants import (
 )
 from bijux_cli.cli.core.emit import (
     emit_and_exit,
-    emit_error_and_exit,
     emit_text_and_exit,
 )
-from bijux_cli.cli.core.output import get_execution_policy
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT_HELP,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import current_execution_policy, emit_error_with_policy
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.enums import ErrorType, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
+from bijux_cli.core.precedence import ExecutionPolicy, LogPolicy
 from bijux_cli.core.runtime import AsyncTyper
 
 _HUMAN = "human"
@@ -78,7 +79,7 @@ class HelpIntent:
     include_runtime: bool
     pretty: bool
     quiet: bool
-    debug: bool
+    log_policy: LogPolicy
 
 
 def _build_help_intent(
@@ -98,7 +99,7 @@ def _build_help_intent(
         include_runtime=policy.include_runtime,
         pretty=policy.pretty,
         quiet=policy.quiet,
-        debug=(policy.log_policy.show_internal),
+        log_policy=policy.log_policy,
     )
 
 
@@ -193,8 +194,19 @@ def _emit_human_help(
 ) -> None:
     """Emit human help output without building text in quiet mode."""
     if quiet:
-        raise typer.Exit(0)
-    emit_text_and_exit(help_text_provider(), quiet=False, color=color, exit_code=0)
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
+    emit_text_and_exit(help_text_provider(), color=color, exit_code=0)
 
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -240,7 +252,7 @@ def help_callback(
             structured output formats.
         fmt (str): The output format: "human", "json", or "yaml".
         pretty (bool): If True, pretty-prints structured output.
-        debug (bool): If True, enables debug diagnostics, implying `verbose`
+        log_level (str): Logging level for diagnostics.
             and `pretty`.
 
     Returns:
@@ -271,19 +283,43 @@ def help_callback(
         if target:
             target_cmd, target_ctx = target
             help_text = _get_formatted_help(target_cmd, target_ctx)
-            policy = get_execution_policy()
+            policy = current_execution_policy()
+            if policy.quiet:
+                from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+                raise ExitIntentError(
+                    ExitIntent(
+                        code=ExitCode.SUCCESS,
+                        stream=None,
+                        payload=None,
+                        fmt=OutputFormat.JSON,
+                        pretty=False,
+                        show_traceback=False,
+                    )
+                )
             emit_text_and_exit(
                 help_text,
-                quiet=policy.quiet,
                 color=resolve_click_color(quiet=policy.quiet, fmt=None),
                 exit_code=0,
             )
-        raise typer.Exit(0)
+        else:
+            from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+            raise ExitIntentError(
+                ExitIntent(
+                    code=ExitCode.SUCCESS,
+                    stream=None,
+                    payload=None,
+                    fmt=OutputFormat.JSON,
+                    pretty=False,
+                    show_traceback=False,
+                )
+            )
 
     tokens = command_path or []
     command = "help"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
+    policy = current_execution_policy()
     intent = _build_help_intent(tokens, fmt, policy)
 
     if intent.fmt_lower != "human":
@@ -295,7 +331,7 @@ def help_callback(
         )
 
     if intent.fmt_lower not in _VALID_FORMATS:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Unsupported format: '{fmt}'",
             code=2,
             failure="format",
@@ -303,14 +339,13 @@ def help_callback(
             fmt=intent.error_fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            debug=intent.debug,
+            log_policy=intent.log_policy,
             error_type=ErrorType.USER_INPUT,
-            log_policy=policy.log_policy,
         )
 
     for token in intent.tokens:
         if "\x00" in token:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Embedded null byte in command path",
                 code=3,
                 failure="null_byte",
@@ -318,14 +353,13 @@ def help_callback(
                 fmt=intent.error_fmt,
                 quiet=intent.quiet,
                 include_runtime=intent.include_runtime,
-                debug=intent.debug,
+                log_policy=intent.log_policy,
                 error_type=ErrorType.ASCII,
-                log_policy=policy.log_policy,
             )
         try:
             token.encode("ascii")
         except UnicodeEncodeError:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"Non-ASCII characters in command path: {token!r}",
                 code=3,
                 failure="ascii",
@@ -333,13 +367,12 @@ def help_callback(
                 fmt=intent.error_fmt,
                 quiet=intent.quiet,
                 include_runtime=intent.include_runtime,
-                debug=intent.debug,
+                log_policy=intent.log_policy,
                 error_type=ErrorType.ASCII,
-                log_policy=policy.log_policy,
             )
 
     if contains_non_ascii_env():
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Non-ASCII in environment",
             code=3,
             failure="ascii",
@@ -347,14 +380,13 @@ def help_callback(
             fmt=intent.error_fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            debug=intent.debug,
+            log_policy=intent.log_policy,
             error_type=ErrorType.ASCII,
-            log_policy=policy.log_policy,
         )
 
     target = _find_target_command(ctx, intent.tokens)
     if not target:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"No such command: {' '.join(intent.tokens)}",
             code=2,
             failure="not_found",
@@ -362,9 +394,8 @@ def help_callback(
             fmt=intent.error_fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            debug=intent.debug,
+            log_policy=intent.log_policy,
             error_type=ErrorType.USER_INPUT,
-            log_policy=policy.log_policy,
         )
 
     target_cmd, target_ctx = target
@@ -381,7 +412,7 @@ def help_callback(
     try:
         payload = _build_help_payload(help_text, intent.include_runtime, started_at)
     except ValueError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=3,
             failure="ascii",
@@ -389,7 +420,7 @@ def help_callback(
             fmt=intent.error_fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            debug=intent.debug,
+            log_policy=intent.log_policy,
         )
 
     output_format = (
@@ -397,13 +428,24 @@ def help_callback(
         if intent.format_value == OutputFormat.YAML
         else OutputFormat.JSON
     )
+    if intent.quiet:
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=output_format,
+                pretty=intent.pretty,
+                show_traceback=False,
+            )
+        )
     emit_and_exit(
         payload=payload,
         fmt=output_format,
         effective_pretty=intent.pretty,
         verbose=policy.verbose,
-        debug=intent.debug,
-        quiet=intent.quiet,
         command=command,
         exit_code=0,
     )

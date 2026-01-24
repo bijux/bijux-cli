@@ -61,3 +61,28 @@ def test_cli_has_no_infra_imports() -> None:
     for path, imports in cli_modules.items():
         filtered[path] = {mod for mod in imports if mod != "bijux_cli.infra.contracts"}
     _assert_no_prefix_imports(filtered, ("bijux_cli.infra",))
+
+
+def test_cli_commands_have_no_raw_flag_strings() -> None:
+    forbidden = (
+        "--quiet",
+        "--log-level",
+        "--format",
+        "--verbose",
+        "--pretty",
+        "--no-pretty",
+        "--color",
+        "NO_COLOR",
+    )
+    roots = [
+        SRC / "cli" / "commands",
+        SRC / "cli" / "plugins" / "commands",
+    ]
+    violations: list[str] = []
+    for root in roots:
+        for path in root.rglob("*.py"):
+            content = path.read_text(encoding="utf-8")
+            violations.extend(
+                f"{path}: {token}" for token in forbidden if token in content
+            )
+    assert not violations, "Raw flag strings found:\n" + "\n".join(violations)

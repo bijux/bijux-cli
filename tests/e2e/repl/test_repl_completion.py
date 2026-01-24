@@ -185,7 +185,7 @@ def test_tab_on_option_prefix_single_dash(repl: pexpect.spawn[str]) -> None:
     """Ensure tab after a single dash suggests short options."""
     repl.send("-")
     _send_tabs(repl)
-    _expect_any(repl, [r"-f", r"-q", r"--debug", PROMPT_REGEX])
+    _expect_any(repl, [r"-f", r"-q", r"--log-level debug", PROMPT_REGEX])
 
 
 def test_partial_option_then_tab(repl: pexpect.spawn[str]) -> None:
@@ -210,17 +210,17 @@ def test_partial_format_option_then_tab(repl: pexpect.spawn[str]) -> None:
 
 
 def test_tab_on_debug_flag_prefix(repl: pexpect.spawn[str]) -> None:
-    """Ensure tab after '--debug' suggests debug option."""
-    repl.send("--debug")
+    """Ensure tab after '--log-level debug' suggests debug option."""
+    repl.send("--log-level debug")
     _send_tabs(repl)
-    _expect_any(repl, [r"--debug\b", PROMPT_REGEX])
+    _expect_any(repl, [r"--log-level debug\b", PROMPT_REGEX])
 
 
 def test_partial_debug_flag_then_tab(repl: pexpect.spawn[str]) -> None:
-    """Ensure the '--debug' flag can be tab-completed."""
+    """Ensure the '--log-level debug' flag can be tab-completed."""
     repl.send("--deb")
     _send_tabs(repl)
-    _expect_any(repl, [r"--debug\b", PROMPT_REGEX])
+    _expect_any(repl, [r"--log-level debug\b", PROMPT_REGEX])
 
 
 def test_tab_on_quiet_flag_prefix(repl: pexpect.spawn[str]) -> None:

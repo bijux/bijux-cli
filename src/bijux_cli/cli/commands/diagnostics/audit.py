@@ -33,19 +33,24 @@ import typer
 from bijux_cli.cli.commands.payloads import AuditPayload
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -55,6 +60,8 @@ from bijux_cli.cli.core.validation import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import LogPolicy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 
@@ -109,7 +116,7 @@ def _write_output_file(
     emitter: Emitter,
     fmt: OutputFormat,
     pretty: bool,
-    debug: bool,
+    log_policy: LogPolicy,
     dry_run: bool,
 ) -> None:
     """Writes the audit payload to a specified file.
@@ -124,7 +131,7 @@ def _write_output_file(
             output.
         fmt (OutputFormat): The desired output format (JSON or YAML).
         pretty (bool): If True, the output is formatted for human readability.
-        debug (bool): If True, enables debug-level logging during emission.
+        log_policy (LogPolicy): Logging policy for diagnostics.
         dry_run (bool): If True, logs a message indicating a dry run.
 
     Returns:
@@ -144,7 +151,7 @@ def _write_output_file(
         message="Audit dry-run completed" if dry_run else "Audit completed",
         output=str(output_path),
         emit_output=True,
-        emit_diagnostics=debug,
+        emit_diagnostics=log_policy.show_internal,
     )
 
 
@@ -180,8 +187,8 @@ def audit(
             output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.
-            This is overridden by `debug`.
-        debug (bool): If True, enables debug diagnostics, which implies `verbose`
+            This is overridden by `log_level`.
+        log_level (str): Logging level; determines diagnostics and verbosity.
             and `pretty`.
 
     Returns:
@@ -199,16 +206,13 @@ def audit(
     command = "audit"
     validate_common_flags(fmt, command, quiet)
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     include_runtime = effective.include_runtime
     effective_pretty = effective.pretty
+    log_policy = effective.log_policy
 
     try:
         stray_args = [a for a in ctx.args if not a.startswith("-")]
@@ -216,7 +220,7 @@ def audit(
             raise typer.BadParameter(f"No such argument: {stray_args[0]}")
         out_format = fmt_lower
         if contains_non_ascii_env():
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Non-ASCII environment variables detected",
                 code=3,
                 failure="ascii_env",
@@ -224,11 +228,13 @@ def audit(
                 fmt=fmt_lower,
                 quiet=effective.quiet,
                 include_runtime=include_runtime,
+                error_type=ErrorType.ASCII,
+                log_policy=log_policy,
             )
         try:
             validate_env_file_if_present(os.environ.get(ENV_CONFIG, ""))
         except ValueError as exc:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 str(exc),
                 code=3,
                 failure="ascii",
@@ -236,11 +242,13 @@ def audit(
                 fmt=fmt_lower,
                 quiet=effective.quiet,
                 include_runtime=include_runtime,
+                error_type=ErrorType.ASCII,
+                log_policy=log_policy,
             )
 
     except typer.BadParameter as exc:
         error_fmt = normalize_format(fmt) or OutputFormat.JSON
-        emit_error_and_exit(
+        emit_error_with_policy(
             exc.message,
             code=2,
             failure="args",
@@ -248,6 +256,8 @@ def audit(
             fmt=error_fmt,
             quiet=effective.quiet,
             include_runtime=include_runtime,
+            error_type=ErrorType.USAGE,
+            log_policy=log_policy,
         )
 
     try:
@@ -261,7 +271,7 @@ def audit(
                 emitter=emitter,
                 fmt=out_format,
                 pretty=effective_pretty,
-                debug=(effective.log_policy.show_internal),
+                log_policy=effective.log_policy,
                 dry_run=dry_run,
             )
             payload = AuditPayload(status="written", file=str(output))
@@ -284,7 +294,7 @@ def audit(
         )
 
     except ValueError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=3,
             failure="ascii",
@@ -292,9 +302,11 @@ def audit(
             fmt=fmt_lower,
             quiet=effective.quiet,
             include_runtime=include_runtime,
+            error_type=ErrorType.ASCII,
+            log_policy=log_policy,
         )
     except OSError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=2,
             failure="output_file",
@@ -305,10 +317,10 @@ def audit(
             error_type=ErrorType.USER_INPUT,
             log_policy=effective.log_policy,
         )
-    except typer.Exit:
+    except (typer.Exit, ExitIntentError):
         raise
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"An unexpected error occurred: {exc}",
             code=1,
             failure="unexpected",
@@ -316,4 +328,5 @@ def audit(
             fmt=fmt_lower,
             quiet=effective.quiet,
             include_runtime=include_runtime,
+            log_policy=log_policy,
         )

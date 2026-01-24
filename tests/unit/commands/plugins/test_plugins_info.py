@@ -35,7 +35,7 @@ def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
     ) -> None:
         raise DummyExitError(code, {"error": message, "failure": failure})
 
-    monkeypatch.setattr(plugins_info, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(plugins_info, "emit_error_with_policy", fake_emit)
 
 
 def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:

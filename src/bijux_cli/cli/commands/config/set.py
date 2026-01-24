@@ -37,23 +37,28 @@ import typer
 from bijux_cli.cli.commands.payloads import ConfigSetPayload
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ErrorType, OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -72,13 +77,12 @@ def _parse_pair(
     fmt: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    debug: bool,
     log_policy: LogPolicy,
 ) -> ConfigSetIntent:
     """Parse and validate a KEY=VALUE pair for config set."""
     if pair is None:
         if sys.stdin.isatty():
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Missing argument: KEY=VALUE required",
                 code=2,
                 failure="missing_argument",
@@ -86,11 +90,11 @@ def _parse_pair(
                 fmt=fmt,
                 quiet=quiet,
                 include_runtime=include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
         pair = sys.stdin.read().rstrip("\n")
     if not pair or "=" not in pair:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Invalid argument: KEY=VALUE required",
             code=2,
             failure="invalid_argument",
@@ -98,9 +102,8 @@ def _parse_pair(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
-            error_type=ErrorType.USER_INPUT,
             log_policy=log_policy,
+            error_type=ErrorType.USER_INPUT,
         )
     raw_key, raw_value = pair.split("=", 1)
     key = raw_key.strip()
@@ -113,7 +116,7 @@ def _parse_pair(
 
         service_value_str = codecs.decode(service_value_str[1:-1], "unicode_escape")
     if not key:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Key cannot be empty",
             code=2,
             failure="empty_key",
@@ -121,12 +124,11 @@ def _parse_pair(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
-            error_type=ErrorType.USER_INPUT,
             log_policy=log_policy,
+            error_type=ErrorType.USER_INPUT,
         )
     if not all(ord(c) < 128 for c in key + service_value_str):
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Non-ASCII characters are not allowed in keys or values.",
             code=3,
             failure="ascii_error",
@@ -134,11 +136,11 @@ def _parse_pair(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            log_policy=log_policy,
             extra={"key": key},
         )
     if not re.match(r"^[A-Za-z0-9_]+$", key):
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Invalid key: only alphanumerics and underscore allowed.",
             code=2,
             failure="invalid_key",
@@ -146,15 +148,14 @@ def _parse_pair(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            log_policy=log_policy,
             extra={"key": key},
             error_type=ErrorType.USER_INPUT,
-            log_policy=log_policy,
         )
     if not all(
         c in string.printable and c not in "\r\n\t\x0b\x0c" for c in service_value_str
     ):
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Control characters are not allowed in config values.",
             code=3,
             failure="control_char_error",
@@ -162,7 +163,7 @@ def _parse_pair(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            log_policy=log_policy,
             extra={"key": key},
         )
     return ConfigSetIntent(key=key, value=service_value_str)
@@ -195,7 +196,7 @@ def set_config(
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -209,7 +210,7 @@ def set_config(
         try:
             cfg_path.encode("ascii")
         except UnicodeEncodeError:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Non-ASCII characters in config path",
                 code=3,
                 failure="ascii",
@@ -217,21 +218,17 @@ def set_config(
                 fmt=OutputFormat.JSON,
                 quiet=False,
                 include_runtime=False,
-                debug=False,
                 extra={"path": "[non-ascii path provided]"},
+                log_policy=resolve_log_policy(LogLevel.INFO),
             )
     command = "config set"
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
     include_runtime = effective.include_runtime
     if cfg_path:
@@ -240,7 +237,7 @@ def set_config(
                 try:
                     fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except OSError:
-                    emit_error_and_exit(
+                    emit_error_with_policy(
                         "Config file is locked",
                         code=1,
                         failure="file_locked",
@@ -248,7 +245,7 @@ def set_config(
                         fmt=fmt_lower,
                         quiet=quiet,
                         include_runtime=include_runtime,
-                        debug=debug,
+                        log_policy=log_policy,
                         extra={"path": cfg_path},
                     )
                 finally:
@@ -262,14 +259,13 @@ def set_config(
         fmt=fmt_lower,
         quiet=quiet,
         include_runtime=include_runtime,
-        debug=debug,
         log_policy=effective.log_policy,
     )
     config_svc = DIContainer.current().resolve(ConfigProtocol)
     try:
         config_svc.set(intent.key, intent.value)
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Failed to set config: {exc}",
             code=1,
             failure="set_failed",
@@ -277,7 +273,7 @@ def set_config(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     def payload_builder(include_runtime: bool) -> ConfigSetPayload:

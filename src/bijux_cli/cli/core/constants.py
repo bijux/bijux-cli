@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Defines shared constants and help text for CLI commands."""
+"""Defines shared constants for CLI commands."""
 
 from __future__ import annotations
 
@@ -41,13 +41,6 @@ DEFAULT_PRETTY = True
 DEFAULT_QUIET = False
 DEFAULT_VERBOSE = False
 
-HELP_VERBOSE = "Include extra runtime details."
-HELP_QUIET = "Suppress normal output; exit code still indicates success/failure."
-HELP_NO_PRETTY = "Disable pretty-printing (indentation) in JSON/YAML output."
-HELP_FORMAT = "Machine-readable output format (json|yaml); defaults to json."
-HELP_LOG_LEVEL = "Set logging level (debug|info|warning|error|critical)."
-HELP_FORMAT_HELP = "Output format: human (default), json, yaml."
-
 DEFAULT_COMMAND_TIMEOUT = 30.0
 
 __all__ = [
@@ -82,11 +75,5 @@ __all__ = [
     "DEFAULT_PRETTY",
     "DEFAULT_QUIET",
     "DEFAULT_VERBOSE",
-    "HELP_VERBOSE",
-    "HELP_QUIET",
-    "HELP_NO_PRETTY",
-    "HELP_FORMAT",
-    "HELP_LOG_LEVEL",
-    "HELP_FORMAT_HELP",
     "DEFAULT_COMMAND_TIMEOUT",
 ]

@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+# Copyright © 2025 Bijan Mousavi
+
+"""Help text strings for CLI commands."""
+
+from __future__ import annotations
+
+HELP_VERBOSE = "Include extra runtime details."
+HELP_QUIET = "Suppress normal output; exit code still indicates success/failure."
+HELP_NO_PRETTY = "Disable pretty-printing (indentation) in JSON/YAML output."
+HELP_FORMAT = "Machine-readable output format (json|yaml); defaults to json."
+HELP_LOG_LEVEL = "Set logging level (trace|debug|info)."
+HELP_FORMAT_HELP = "Output format: human (default), json, yaml."
+
+__all__ = [
+    "HELP_VERBOSE",
+    "HELP_QUIET",
+    "HELP_NO_PRETTY",
+    "HELP_FORMAT",
+    "HELP_LOG_LEVEL",
+    "HELP_FORMAT_HELP",
+]

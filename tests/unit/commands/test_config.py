@@ -40,9 +40,24 @@ from bijux_cli.cli.commands.payloads import (
     ConfigSetPayload,
     ConfigUnsetPayload,
 )
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
 from bijux_cli.core.errors import ConfigError
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.runtime import execute_exit_intent
+
+
+def _raise_exit_intent(*_args: Any, **_kwargs: Any) -> None:
+    """Raise an ExitIntentError to stop command execution in tests."""
+    intent = ExitIntent(
+        code=ExitCode.ERROR,
+        stream="stderr",
+        payload=None,
+        fmt=OutputFormat.JSON,
+        pretty=False,
+        show_traceback=False,
+    )
+    raise ExitIntentError(intent)
 
 
 @pytest.fixture
@@ -73,7 +88,7 @@ def test_config_callback_no_subcommand(
     """Test the main config command callback when no subcommand is invoked."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -99,7 +114,7 @@ def test_clear_config_success(
     """Test the successful clearing of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -124,19 +139,23 @@ def test_clear_config_fail(
     """Test the failure path when clearing the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.clear.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.clear.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.config.clear.emit_error_with_policy"
+        ) as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.clear.side_effect = Exception("error")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError) as exc:
             clear_config(ctx)
+        with pytest.raises(typer.Exit):
+            execute_exit_intent(exc.value.intent)
         mock_emit.assert_called()
 
 
@@ -146,7 +165,7 @@ def test_export_config_stdout(
     """Test exporting the configuration to stdout."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -165,7 +184,7 @@ def test_export_config_file(
     """Test exporting the configuration to a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -190,7 +209,7 @@ def test_get_config_success(
     """Test successfully getting a configuration value."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -214,7 +233,7 @@ def test_list_config_success(
     """Test successfully listing all configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -240,7 +259,7 @@ def test_load_config_success(
     """Test successfully loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -264,16 +283,16 @@ def test_load_config_exception(
     """Test the failure path when loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.load.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.load.emit_error_with_policy") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.load.side_effect = Exception("error")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             load_config(ctx, "path")
         mock_emit.assert_called()
 
@@ -284,7 +303,7 @@ def test_reload_config_success(
     """Test the successful reloading of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -309,18 +328,20 @@ def test_reload_config_exception(
     """Test the failure path when reloading the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.reload.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.reload.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.config.reload.emit_error_with_policy"
+        ) as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.reload.side_effect = Exception("error")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             reload_config(ctx)
         mock_emit.assert_called()
 
@@ -331,7 +352,7 @@ def test_set_config_arg(
     """Test setting a configuration value from a command-line argument."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -358,7 +379,7 @@ def test_set_config_stdin(
     """Test setting a configuration value from stdin."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -378,15 +399,16 @@ def test_set_config_empty_key(
     """Test that setting a value with an empty key fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             set_config(ctx, "=value")
         mock_emit.assert_called()
 
@@ -397,15 +419,16 @@ def test_set_config_non_ascii(
     """Test that setting a value with non-ASCII characters fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             set_config(ctx, "key=value©")
         mock_emit.assert_called()
 
@@ -416,15 +439,16 @@ def test_set_config_control_char(
     """Test that setting a value with a control character fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             set_config(ctx, "key=value\x07")
         mock_emit.assert_called()
 
@@ -435,15 +459,16 @@ def test_set_config_invalid_key(
     """Test that setting a value with an invalid key format fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             set_config(ctx, "invalid-key=value")
         mock_emit.assert_called()
 
@@ -454,16 +479,17 @@ def test_set_config_exception(
     """Test the failure path when the config service 'set' method raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.set.side_effect = Exception("error")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             set_config(ctx, "key=value")
         mock_emit.assert_called()
 
@@ -474,7 +500,7 @@ def test_unset_config_success(
     """Test the successful unsetting of a configuration key."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -500,18 +526,21 @@ def test_unset_config_key_error(
     """Test that unsetting a non-existent key is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.unset.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.unset.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.config.unset.emit_error_with_policy"
+        ) as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.unset.side_effect = KeyError("key")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             unset_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -522,18 +551,21 @@ def test_unset_config_exception(
     """Test the failure path when the config service 'unset' raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.unset.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.unset.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.config.unset.emit_error_with_policy"
+        ) as mock_emit,
     ):
+        mock_emit.side_effect = _raise_exit_intent
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
         mock_config_svc.unset.side_effect = Exception("error")
-        with pytest.raises(typer.Exit):
+        with pytest.raises(ExitIntentError):
             unset_config(ctx, "key")
         mock_emit.assert_called()
 
@@ -552,13 +584,15 @@ def test_export_config_command_error(
     """Test that a ConfigError during export is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.export.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.export.emit_error_and_exit") as mock_emit,
+        patch(
+            "bijux_cli.cli.commands.config.export.emit_error_with_policy"
+        ) as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -575,13 +609,13 @@ def test_export_config_exception(
     """Test that a generic Exception during export is propagated."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.export.DIContainer.current"
         ) as mock_current,
-        patch("bijux_cli.cli.commands.config.export.emit_error_and_exit"),
+        patch("bijux_cli.cli.commands.config.export.emit_error_with_policy"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -596,11 +630,11 @@ def test_get_config_not_found(
     """Test that a ConfigError when getting a non-existent key is handled."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.get.emit_error_with_policy") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -617,11 +651,11 @@ def test_get_config_exception(
     """Test that a generic exception when getting a config value is propagated."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit"),
+        patch("bijux_cli.cli.commands.config.get.emit_error_with_policy"),
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         ctx = Context(MagicMock())
@@ -636,14 +670,14 @@ def test_list_config_exception(
     """Test the failure path when listing configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
             "bijux_cli.cli.commands.config.list_cmd.DIContainer.current"
         ) as mock_current,
         patch(
-            "bijux_cli.cli.commands.config.list_cmd.emit_error_and_exit"
+            "bijux_cli.cli.commands.config.list_cmd.emit_error_with_policy"
         ) as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
@@ -663,11 +697,11 @@ def test_set_config_no_arg_tty(
     """Test that setting a value with no argument on a TTY fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -684,11 +718,11 @@ def test_set_config_invalid_pair(
     """Test that setting a value with an invalid pair format fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.set.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.set.emit_error_with_policy") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
         mock_current.return_value.resolve.return_value = mock_config_svc
@@ -706,7 +740,7 @@ def test_set_config_stdin_escaped(
     """Test that escaped characters from stdin are correctly handled."""
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -728,11 +762,11 @@ def test_get_config_other_command_error(
 
     with (
         patch(
-            "bijux_cli.cli.core.output.get_execution_policy",
+            "bijux_cli.cli.core.output.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
-        patch("bijux_cli.cli.commands.config.get.emit_error_and_exit") as mock_emit,
+        patch("bijux_cli.cli.commands.config.get.emit_error_with_policy") as mock_emit,
     ):
         mock_current.return_value.resolve.return_value = mock_config_svc
         mock_config_svc.get.side_effect = ConfigError("boom!")
@@ -774,9 +808,9 @@ def test_config_root_with_subcommand_skips_execution(
     fake_ctx.invoked_subcommand = "something"
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: (_ for _ in ()).throw(
-            AssertionError("get_execution_policy should not run")
+            AssertionError("current_execution_policy should not run")
         ),
     )
     monkeypatch.setattr(
@@ -820,7 +854,7 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(bad_path))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -840,7 +874,7 @@ def test_non_ascii_config_path_triggers_error(
         raise typer.Exit(3)
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.emit_error_and_exit", fake_emit
+        "bijux_cli.cli.commands.config.set.emit_error_with_policy", fake_emit
     )
 
     with pytest.raises(typer.Exit) as exc:
@@ -856,7 +890,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -882,7 +916,7 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     )
 
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.emit_error_and_exit",
+        "bijux_cli.cli.commands.config.set.emit_error_with_policy",
         lambda msg, **kwargs: (_ for _ in ()).throw(typer.Exit(1)),
     )
 
@@ -900,7 +934,7 @@ def test_posix_lock_success_and_run(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -956,7 +990,7 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -1025,7 +1059,7 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -1089,7 +1123,7 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

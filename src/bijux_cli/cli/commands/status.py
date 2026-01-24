@@ -35,19 +35,24 @@ import typer
 
 from bijux_cli.cli.commands.payloads import StatusPayload
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_debug_message, emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
@@ -132,7 +137,7 @@ def _run_watch_mode(
 
     format_value = fmt
     if format_value is not OutputFormat.JSON:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Only JSON output is supported in watch mode.",
             code=2,
             failure="watch_fmt",
@@ -140,6 +145,7 @@ def _run_watch_mode(
             fmt=format_value,
             quiet=quiet,
             include_runtime=include_runtime,
+            log_policy=log_policy,
         )
 
     stop = False
@@ -164,11 +170,17 @@ def _run_watch_mode(
         while not stop:
             try:
                 payload = replace(_build_payload(include_runtime), ts=time.time())
-                emit_debug_message(
-                    f"Debug: Emitting payload at ts={payload.ts}",
-                    quiet=quiet,
-                    log_policy=log_policy,
-                )
+                if log_policy.show_internal and not quiet:
+                    emitter.emit(
+                        payload,
+                        fmt=OutputFormat.JSON,
+                        pretty=effective_pretty,
+                        level=LogLevel.DEBUG,
+                        message=f"Debug: Emitting payload at ts={payload.ts}",
+                        output=None,
+                        emit_output=False,
+                        emit_diagnostics=True,
+                    )
                 if not quiet:
                     emitter.emit(
                         payload,
@@ -186,7 +198,7 @@ def _run_watch_mode(
                 )
                 time.sleep(watch_interval)
             except ValueError as exc:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     str(exc),
                     code=3,
                     failure="ascii",
@@ -194,9 +206,10 @@ def _run_watch_mode(
                     fmt=fmt,
                     quiet=quiet,
                     include_runtime=include_runtime,
+                    log_policy=log_policy,
                 )
             except Exception as exc:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Watch mode failed: {exc}",
                     code=1,
                     failure="emit",
@@ -204,6 +217,7 @@ def _run_watch_mode(
                     fmt=fmt,
                     quiet=quiet,
                     include_runtime=include_runtime,
+                    log_policy=log_policy,
                 )
     finally:
         if old_handler is not None:
@@ -212,11 +226,17 @@ def _run_watch_mode(
             stop_payload = replace(
                 _build_payload(include_runtime), status="watch-stopped"
             )
-            emit_debug_message(
-                "Debug: Emitting watch-stopped payload",
-                quiet=quiet,
-                log_policy=log_policy,
-            )
+            if log_policy.show_internal and not quiet:
+                emitter.emit(
+                    stop_payload,
+                    fmt=OutputFormat.JSON,
+                    pretty=effective_pretty,
+                    level=LogLevel.DEBUG,
+                    message="Debug: Emitting watch-stopped payload",
+                    output=None,
+                    emit_output=False,
+                    emit_diagnostics=True,
+                )
             if not quiet:
                 emitter.emit(
                     stop_payload,
@@ -278,17 +298,13 @@ def status(
     telemetry = DIContainer.current().resolve(TelemetryProtocol)
     command = "status"
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
     validate_common_flags(
         fmt, command, quiet, include_runtime=effective.include_runtime
@@ -300,7 +316,7 @@ def status(
             if interval <= 0:
                 raise ValueError
         except (ValueError, TypeError):
-            emit_error_and_exit(
+            emit_error_with_policy(
                 "Invalid watch interval: must be > 0",
                 code=2,
                 failure="interval",
@@ -308,7 +324,7 @@ def status(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
         _run_watch_mode(

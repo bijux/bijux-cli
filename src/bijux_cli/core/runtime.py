@@ -15,6 +15,8 @@ from typing import Any, TypeVar, cast
 import anyio
 import typer
 
+from bijux_cli.core.exit_policy import ExitIntentError
+
 T = TypeVar("T")
 
 
@@ -29,7 +31,10 @@ def run_command(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
     """Run a callable under the CLI-owned event loop."""
 
     async def _inner() -> Any:
-        return await _execute(func, *args, **kwargs)
+        try:
+            return await _execute(func, *args, **kwargs)
+        except ExitIntentError as exc:
+            execute_exit_intent(exc.intent)
 
     return anyio.run(_inner)
 
@@ -123,3 +128,14 @@ class AsyncTyper(typer.Typer):
             sub = args[0]
             if isinstance(sub, typer.Typer):
                 adapt_typer(sub)
+
+
+def execute_exit_intent(intent: Any) -> None:
+    """Execute an exit intent by emitting its payload and raising typer.Exit."""
+    from bijux_cli.cli.core.emit import emit_payload
+
+    if intent.stream is not None and intent.payload is not None:
+        emit_payload(
+            intent.payload, fmt=intent.fmt, pretty=intent.pretty, stream=intent.stream
+        )
+    raise typer.Exit(int(intent.code))

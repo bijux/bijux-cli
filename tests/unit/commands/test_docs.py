@@ -23,7 +23,7 @@ from bijux_cli.cli.commands.diagnostics.docs import (
 )
 from bijux_cli.cli.commands.payloads import DocsWritePayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 
 
 class FakeDocsService:
@@ -57,7 +57,7 @@ class FakeDocsService:
 
 def _fake_resolve_command_config(
     **kwargs: Any,
-) -> tuple[ExecutionPolicy, OutputFormat, OutputFormat]:
+) -> tuple[ExecutionPolicy, OutputFormat]:
     fmt = (kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
     verbose = bool(kwargs.get("verbose", False))
@@ -79,7 +79,6 @@ def _fake_resolve_command_config(
             pretty=pretty,
             include_runtime=verbose,
         ),
-        output_format,
         output_format,
     )
 
@@ -116,7 +115,7 @@ def test_resolve_output_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert p == f
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray option causes a structured error and exit."""
@@ -143,11 +142,11 @@ def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray argument causes a structured error and exit."""
@@ -174,12 +173,12 @@ def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> 
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 def test_docs_ascii_env_failure(
     mock_resolve: MagicMock, mock_emit: MagicMock, mock_nonascii: MagicMock
@@ -209,12 +208,12 @@ def test_docs_ascii_env_failure(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
 @patch("bijux_cli.cli.commands.diagnostics.docs._build_spec_payload", autospec=True)
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_ascii_payload_failure(
@@ -249,7 +248,7 @@ def test_docs_ascii_payload_failure(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
@@ -382,7 +381,6 @@ def test_docs_file_written_and_emit_and_exit(
                 include_runtime=True,
             ),
             OutputFormat.JSON,
-            "json",
         ),
     )
 
@@ -409,13 +407,11 @@ def test_docs_file_written_and_emit_and_exit(
         OutputFormat.JSON,
         False,
         True,
-        False,
-        False,
         "docs",
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_write_failure(
@@ -465,11 +461,11 @@ def test_docs_write_failure(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_missing_output_dir(
@@ -517,7 +513,7 @@ def test_docs_missing_output_dir(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
@@ -545,7 +541,6 @@ def test_docs_writes_yaml_and_emit(
             include_runtime=False,
         ),
         OutputFormat.YAML,
-        "yaml",
     )
     monkeypatch.delenv("BIJUXCLI_TEST_IO_FAIL", raising=False)
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
@@ -577,13 +572,11 @@ def test_docs_writes_yaml_and_emit(
         OutputFormat.YAML,
         False,
         False,
-        False,
-        False,
         "docs",
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_io_fail_flag(
@@ -630,11 +623,11 @@ def test_docs_io_fail_flag(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_internal_error_path_none(
@@ -682,7 +675,7 @@ def test_docs_internal_error_path_none(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
@@ -754,7 +747,6 @@ def test_docs_stdout_quiet_skips_echo(
                 include_runtime=False,
             ),
             OutputFormat.JSON,
-            "json",
         ),
     )
 
@@ -815,7 +807,7 @@ def test_docs_stdout_yaml(
     assert err == ""
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_and_exit", autospec=True)
+@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_yaml_serialization_failure(
@@ -839,7 +831,6 @@ def test_docs_yaml_serialization_failure(
             include_runtime=False,
         ),
         OutputFormat.YAML,
-        "yaml",
     )
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"foo": "bar"})
@@ -874,5 +865,5 @@ def test_docs_yaml_serialization_failure(
         fmt="yaml",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )

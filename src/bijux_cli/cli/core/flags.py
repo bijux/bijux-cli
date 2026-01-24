@@ -5,35 +5,37 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from bijux_cli.cli.core.constants import (
     OPT_COLOR,
     OPT_FORMAT,
-    OPT_HELP,
     OPT_LOG_LEVEL,
     OPT_QUIET,
 )
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import FlagError, FlagLayer, GlobalCLIConfig
+from bijux_cli.core.precedence import FlagError
 
 
-def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
-    """Parse global CLI flags from argv into an immutable config."""
-    help_flag = False
-    suppress_errors = False
+@dataclass(frozen=True)
+class Flags:
+    """Parsed global CLI flags without precedence or policy decisions."""
+
+    quiet: bool | None = None
+    log_level: LogLevel | None = None
+    color: ColorMode | None = None
+    format: OutputFormat | None = None
+
+
+def parse_global_flags(argv: list[str]) -> Flags:
+    """Parse global CLI flags into a data-only Flags bundle."""
     quiet: bool | None = None
     log_level: LogLevel | None = None
     color: ColorMode | None = None
     fmt: OutputFormat | None = None
-    errors: list[FlagError] = []
-    retained: list[str] = list(argv)
     i = 0
     while i < len(argv):
         flag = argv[i]
-        if flag in OPT_HELP:
-            help_flag = True
-            suppress_errors = True
-            i += 1
-            continue
         if flag in OPT_QUIET:
             quiet = True
             i += 1
@@ -41,6 +43,42 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
         if flag in OPT_LOG_LEVEL:
             try:
                 log_level = LogLevel(argv[i + 1])
+                i += 2
+            except (IndexError, ValueError):
+                i += 1
+            continue
+        if flag in OPT_COLOR:
+            try:
+                color = ColorMode(argv[i + 1])
+                i += 2
+            except (IndexError, ValueError):
+                i += 1
+            continue
+        if flag in OPT_FORMAT:
+            try:
+                fmt = OutputFormat(argv[i + 1])
+                i += 2
+            except (IndexError, ValueError):
+                i += 1
+            continue
+        i += 1
+    return Flags(
+        quiet=quiet,
+        log_level=log_level,
+        color=color,
+        format=fmt,
+    )
+
+
+def collect_global_flag_errors(argv: list[str]) -> tuple[FlagError, ...]:
+    """Collect parse-time flag errors without applying precedence or defaults."""
+    errors: list[FlagError] = []
+    i = 0
+    while i < len(argv):
+        flag = argv[i]
+        if flag in OPT_LOG_LEVEL:
+            try:
+                LogLevel(argv[i + 1])
                 i += 2
             except IndexError:
                 errors.append(
@@ -63,7 +101,7 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
             continue
         if flag in OPT_COLOR:
             try:
-                color = ColorMode(argv[i + 1])
+                ColorMode(argv[i + 1])
                 i += 2
             except IndexError:
                 errors.append(
@@ -86,8 +124,7 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
             continue
         if flag in OPT_FORMAT:
             try:
-                raw_value = argv[i + 1]
-                fmt = OutputFormat(raw_value)
+                OutputFormat(argv[i + 1])
                 i += 2
             except IndexError:
                 errors.append(
@@ -109,19 +146,7 @@ def parse_global_flags(argv: list[str]) -> GlobalCLIConfig:
                 i += 2
             continue
         i += 1
-    if suppress_errors:
-        errors = []
-    return GlobalCLIConfig(
-        help=help_flag,
-        flags=FlagLayer(
-            quiet=quiet,
-            log_level=log_level,
-            color=color,
-            format=fmt,
-        ),
-        args=tuple(retained),
-        errors=tuple(errors),
-    )
+    return tuple(errors)
 
 
-__all__ = ["parse_global_flags"]
+__all__ = ["Flags", "collect_global_flag_errors", "parse_global_flags"]

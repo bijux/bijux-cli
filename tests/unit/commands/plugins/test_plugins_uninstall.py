@@ -50,16 +50,13 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         message: str,
         code: int,
         failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        debug: bool,
-        log_level: str | None = None,
+        **_kwargs: Any,
     ) -> None:
         raise RuntimeError({"message": message, "code": code, "failure": failure})
 
-    monkeypatch.setattr(uninstall_mod, "emit_error_and_exit", fake_emit_error_and_exit)
+    monkeypatch.setattr(
+        uninstall_mod, "emit_error_with_policy", fake_emit_error_and_exit
+    )
     return data
 
 

@@ -154,7 +154,7 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
         seen.update(locals())
         raise SystemExit(code)
 
-    monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
+    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
     with pytest.raises(SystemExit) as ei:
         mod._run_watch_mode(
@@ -185,7 +185,7 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
         assert failure == "ascii"
         raise SystemExit(code)
 
-    monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
+    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
     with pytest.raises(SystemExit) as ei:
         mod._run_watch_mode(
@@ -216,7 +216,7 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
         assert failure == "emit"
         raise SystemExit(code)
 
-    monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
+    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
     with pytest.raises(SystemExit) as ei:
         mod._run_watch_mode(
             command="status",
@@ -275,7 +275,7 @@ def test_status_calls_new_run_command_when_not_watching(
     em, tel = FakeEmitter(), FakeTelemetry()
     monkeypatch.setattr(DIContainer, "current", lambda: FakeDI(em, tel))
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -336,7 +336,7 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
         assert failure == "interval"
         raise SystemExit(code)
 
-    monkeypatch.setattr(mod, "emit_error_and_exit", fake_exit)
+    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
     ctx = cast(typer.Context, SimpleNamespace(invoked_subcommand=None))
 
     with pytest.raises(SystemExit) as e1:
@@ -378,7 +378,7 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
 
     monkeypatch.setattr(mod, "validate_common_flags", _validate)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -447,7 +447,7 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
 
 
 def test_run_watch_mode_one_iteration_and_stop(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """One iteration then SIGINT stop."""
     em = FakeEmitter()
@@ -478,9 +478,35 @@ def test_run_watch_mode_one_iteration_and_stop(
     names = [n for n, _ in tel.events]
     assert "COMMAND_SUCCESS" in names
     assert "COMMAND_STOPPED" in names
-    err = capsys.readouterr().err
-    assert "Debug: Emitting payload" in err
-    assert "Debug: Emitting watch-stopped payload" in err
+    assert any(call[1]["level"] == LogLevel.DEBUG for call in em.calls)
+
+
+def test_run_watch_mode_info_suppresses_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """INFO log level should not emit internal diagnostics."""
+    em = FakeEmitter()
+    tel = FakeTelemetry()
+
+    def sleep_then_sigint(_secs: float) -> None:
+        signal.raise_signal(signal.SIGINT)
+
+    monkeypatch.setattr(time, "sleep", sleep_then_sigint)
+    mod._run_watch_mode(
+        command="status",
+        watch_interval=0.01,
+        fmt=OutputFormat.JSON,
+        quiet=False,
+        verbose=False,
+        log_level=LogLevel.INFO,
+        effective_pretty=True,
+        include_runtime=False,
+        telemetry=tel,
+        emitter=em,
+    )
+    assert em.calls
+    assert all(call[1].get("emit_diagnostics") is False for call in em.calls)
+    assert all(call[1].get("level") != LogLevel.DEBUG for call in em.calls)
 
 
 def test_run_watch_mode_final_emit_exception_swallowed(

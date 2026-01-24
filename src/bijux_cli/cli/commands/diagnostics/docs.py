@@ -38,11 +38,6 @@ from bijux_cli.cli.commands.payloads import DocsSpecPayload, DocsWritePayload
 from bijux_cli.cli.core.constants import (
     ENV_DOCS_OUT,
     ENV_TEST_IO_FAIL,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
@@ -51,14 +46,20 @@ from bijux_cli.cli.core.constants import (
 )
 from bijux_cli.cli.core.emit import (
     emit_and_exit,
-    emit_error_and_exit,
     emit_text_and_exit,
 )
-from bijux_cli.cli.core.output import resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import emit_error_with_policy, resolve_command_config
 from bijux_cli.cli.core.validation import (
     contains_non_ascii_env,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ExitCode, OutputFormat
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.core.version import __version__
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
@@ -195,8 +196,7 @@ def docs(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes Python and platform metadata in the spec.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
-        pretty (bool): If True, pretty-prints the output for human readability.
-        debug (bool): If True, enables debug diagnostics, implying `verbose`
+        pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
             and `pretty`.
 
     Returns:
@@ -209,22 +209,18 @@ def docs(
     """
     command = "docs"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    effective, output_format, _ = resolve_command_config(
+    effective, output_format = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     effective_include_runtime = effective.include_runtime
     effective_pretty = effective.pretty
 
     if contains_non_ascii_env():
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Non-ASCII characters in environment variables",
             code=3,
             failure="ascii_env",
@@ -232,7 +228,7 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if ctx.args:
@@ -242,7 +238,7 @@ def docs(
             if stray.startswith("-")
             else f"Too many arguments: {' '.join(ctx.args)}"
         )
-        emit_error_and_exit(
+        emit_error_with_policy(
             msg,
             code=2,
             failure="args",
@@ -250,7 +246,7 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     out_env = os.environ.get(ENV_DOCS_OUT)
@@ -263,7 +259,7 @@ def docs(
         spec = _build_spec_payload(effective_include_runtime)
         spec_mapping = _spec_mapping(spec)
     except ValueError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=3,
             failure="ascii",
@@ -271,7 +267,7 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     docs_service = _resolve_docs_service()
@@ -280,7 +276,7 @@ def docs(
             spec_mapping, fmt=output_format, pretty=effective_pretty
         )
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Serialization failed: {exc}",
             code=1,
             failure="serialize",
@@ -288,11 +284,11 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if os.environ.get(ENV_TEST_IO_FAIL) == "1":
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Simulated I/O failure for test",
             code=1,
             failure="io_fail",
@@ -300,19 +296,31 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if target == "-":
+        if quiet:
+            from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+            raise ExitIntentError(
+                ExitIntent(
+                    code=ExitCode.SUCCESS,
+                    stream=None,
+                    payload=None,
+                    fmt=output_format,
+                    pretty=False,
+                    show_traceback=False,
+                )
+            )
         emit_text_and_exit(
             content,
-            quiet=quiet,
             color=resolve_click_color(quiet=quiet, fmt=output_format),
             exit_code=0,
         )
 
     if path is None:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Internal error: expected non-null output path",
             code=1,
             failure="internal",
@@ -320,12 +328,12 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     parent = path.parent
     if not parent.exists():
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Output directory does not exist: {parent}",
             code=2,
             failure="output_dir",
@@ -333,7 +341,7 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     try:
@@ -344,7 +352,7 @@ def docs(
             pretty=effective_pretty,
         )
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Failed to write spec: {exc}",
             code=2,
             failure="write",
@@ -352,16 +360,27 @@ def docs(
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
+    if quiet:
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=output_format,
+                pretty=effective_pretty,
+                show_traceback=False,
+            )
+        )
     emit_and_exit(
         DocsWritePayload(status="written", file=str(path)),
         output_format,
         effective_pretty,
         verbose,
-        debug,
-        quiet,
         command,
     )
 

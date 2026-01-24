@@ -168,17 +168,8 @@ class DIContainer:
         ] = {}
         self._services: dict[tuple[type[Any] | str, str | None], Any] = {}
         self._obs: ObservabilityProtocol | None = None
-        self._verbose = False
         self._initialised = True
         self._log_static(logging.DEBUG, "DIContainer initialised")
-
-    def set_verbose(self, enabled: bool) -> None:
-        """Enable or disable verbose DI logging."""
-        self._verbose = enabled
-
-    def is_verbose(self) -> bool:
-        """Return whether verbose DI logging is enabled."""
-        return self._verbose
 
     @classmethod
     def set_log_policy(cls, policy: LogPolicy) -> None:
@@ -350,12 +341,6 @@ class DIContainer:
                 or inspect.iscoroutinefunction(factory)
             )
             result: T | None
-            if self._verbose:
-                self._log(
-                    logging.DEBUG,
-                    f"Executing factory for service: {name_str}",
-                    extra={"service_name": name_str},
-                )
             raw = factory() if is_function_like else factory
             if inspect.isawaitable(raw):
                 if async_mode:

@@ -30,21 +30,27 @@ from bijux_cli.cli.commands.payloads import SleepPayload
 from bijux_cli.cli.core.constants import (
     DEFAULT_COMMAND_TIMEOUT,
     ENV_COMMAND_TIMEOUT,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.services.config.contracts import ConfigProtocol
 
@@ -107,8 +113,7 @@ def sleep(
         verbose (bool): If True, includes Python and platform details in the
             output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
-        pretty (bool): If True, pretty-prints the output for human readability.
-        debug (bool): If True, enables debug diagnostics, implying `verbose`
+        pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
             and `pretty`.
 
     Returns:
@@ -121,21 +126,17 @@ def sleep(
     """
     command = "sleep"
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
 
     if seconds < 0:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "sleep length must be non-negative",
             code=2,
             failure="negative",
@@ -143,7 +144,8 @@ def sleep(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=log_policy,
         )
 
     cfg: ConfigProtocol = DIContainer.current().resolve(ConfigProtocol)
@@ -151,7 +153,7 @@ def sleep(
     try:
         timeout = float(cfg.get(ENV_COMMAND_TIMEOUT, DEFAULT_COMMAND_TIMEOUT))
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Failed to read timeout: {exc}",
             code=1,
             failure="config",
@@ -159,11 +161,11 @@ def sleep(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if seconds > timeout:
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Command timed out because sleep duration exceeded the configured timeout.",
             code=2,
             failure="timeout",
@@ -171,7 +173,8 @@ def sleep(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            error_type=ErrorType.USER_INPUT,
+            log_policy=log_policy,
         )
 
     time.sleep(seconds)

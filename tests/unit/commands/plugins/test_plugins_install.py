@@ -36,7 +36,7 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
                 "verbose": kwargs.get("verbose"),
                 "fmt": kwargs.get("fmt"),
                 "pretty": kwargs.get("pretty"),
-                "debug": kwargs.get("debug"),
+                "log_level": kwargs.get("log_level"),
             }
         )
 
@@ -46,15 +46,11 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         msg: str,
         code: int,
         failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        debug: bool,
+        **kwargs: Any,
     ) -> None:
         raise RuntimeError({"message": msg, "code": code, "failure": failure})
 
-    monkeypatch.setattr(install_mod, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(install_mod, "emit_error_with_policy", fake_emit)
     return data
 
 

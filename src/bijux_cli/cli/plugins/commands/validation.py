@@ -18,8 +18,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.output import emit_error_with_policy
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import LogPolicy
 
 
 def ignore_hidden_and_broken_symlinks(dirpath: str, names: list[str]) -> list[str]:
@@ -120,7 +121,7 @@ def refuse_on_symlink(
     fmt: OutputFormat,
     quiet: bool,
     verbose: bool,
-    debug: bool,
+    log_policy: LogPolicy,
 ) -> None:
     """Emits an error and exits if the given directory is a symbolic link.
 
@@ -133,7 +134,7 @@ def refuse_on_symlink(
         fmt (OutputFormat): The requested output format for the error payload.
         quiet (bool): If True, suppresses output before exiting.
         verbose (bool): If True, includes runtime info in the error payload.
-        debug (bool): If True, enables debug diagnostics.
+        log_policy (LogPolicy): Logging policy for diagnostics.
 
     Returns:
         None:
@@ -144,7 +145,7 @@ def refuse_on_symlink(
     """
     if directory.is_symlink():
         verb = command.split()[-1]
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Refusing to {verb}: plugins dir {directory.name!r} is a symlink.",
             code=1,
             failure="symlink_dir",
@@ -152,5 +153,5 @@ def refuse_on_symlink(
             fmt=fmt,
             quiet=quiet,
             include_runtime=verbose,
-            debug=debug,
+            log_policy=log_policy,
         )
