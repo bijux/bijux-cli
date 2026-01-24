@@ -35,20 +35,6 @@ class SerializationError(RuntimeError):
     """Raised when serialization or deserialization fails."""
 
 
-def _redact_default(_: Any) -> str:
-    """Fallback serializer for non-JSON values."""
-    return "***"
-
-
-def _format_name(fmt: Any) -> str:
-    """Normalize format values to lowercase strings."""
-    if hasattr(fmt, "value"):
-        return str(fmt.value).lower()
-    if isinstance(fmt, str):
-        return fmt.lower()
-    return str(fmt).lower()
-
-
 def _yaml_dump(obj: Any, pretty: bool) -> str:
     """Serialize an object to YAML."""
     if _YAML is None:
@@ -73,21 +59,18 @@ class OrjsonSerializer:
         self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
     ) -> str:
         """Serialize an object to JSON or YAML."""
-        name = _format_name(fmt)
-        if name == "json":
+        if fmt is OutputFormat.JSON:
             try:
                 if _ORJSON is not None:
                     option = _ORJSON.OPT_INDENT_2 if pretty else 0
                     return cast(
                         str,
-                        _ORJSON.dumps(
-                            obj, default=_redact_default, option=option
-                        ).decode("utf-8"),
+                        _ORJSON.dumps(obj, option=option).decode("utf-8"),
                     )
                 return json.dumps(obj, indent=2 if pretty else None)
             except Exception as exc:
                 raise SerializationError(f"Failed to serialize json: {exc}") from exc
-        if name == "yaml":
+        if fmt is OutputFormat.YAML:
             return _yaml_dump(obj, pretty)
         raise SerializationError(f"Unsupported format: {fmt}")
 
@@ -105,13 +88,12 @@ class OrjsonSerializer:
         pretty: bool = False,
     ) -> Any:
         """Deserialize JSON or YAML data."""
-        name = _format_name(fmt)
-        if name == "json":
+        if fmt is OutputFormat.JSON:
             try:
                 return json.loads(data)
             except Exception as exc:
                 raise SerializationError(f"Failed to deserialize json: {exc}") from exc
-        if name == "yaml":
+        if fmt is OutputFormat.YAML:
             if _YAML is None:
                 raise SerializationError("PyYAML is required for YAML operations")
             return _YAML.safe_load(data)
@@ -128,7 +110,7 @@ class OrjsonSerializer:
         text = self.dumps(payload, fmt=fmt, pretty=pretty)
         print(text.rstrip("\n"), file=sys.stdout, flush=True)
         if self._telemetry is not None:
-            self._telemetry.event("serializer_emit", {"format": _format_name(fmt)})
+            self._telemetry.event("serializer_emit", {"format": fmt.value})
 
 
 class PyYAMLSerializer:
@@ -144,7 +126,7 @@ class PyYAMLSerializer:
         self, obj: Any, *, fmt: OutputFormat = OutputFormat.YAML, pretty: bool = False
     ) -> str:
         """Serialize an object to YAML."""
-        if _format_name(fmt) != "yaml":
+        if fmt is not OutputFormat.YAML:
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _yaml_dump(obj, pretty)
 
@@ -162,7 +144,7 @@ class PyYAMLSerializer:
         pretty: bool = False,
     ) -> Any:
         """Deserialize YAML data."""
-        if _format_name(fmt) != "yaml":
+        if fmt is not OutputFormat.YAML:
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _YAML.safe_load(data) if _YAML is not None else None
 
@@ -177,17 +159,16 @@ class PyYAMLSerializer:
         text = self.dumps(payload, fmt=fmt, pretty=pretty)
         print(text.rstrip("\n"), file=sys.stdout, flush=True)
         if self._telemetry is not None:
-            self._telemetry.event("serializer_emit", {"format": _format_name(fmt)})
+            self._telemetry.event("serializer_emit", {"format": fmt.value})
 
 
 def serializer_for(
     fmt: OutputFormat, telemetry: Any | None
 ) -> OrjsonSerializer | PyYAMLSerializer:
     """Return the best serializer for the requested format."""
-    name = _format_name(fmt)
-    if name == "json":
+    if fmt is OutputFormat.JSON:
         return OrjsonSerializer(telemetry)
-    if name == "yaml":
+    if fmt is OutputFormat.YAML:
         return PyYAMLSerializer(telemetry)
     raise SerializationError(f"Unsupported format: {fmt}")
 

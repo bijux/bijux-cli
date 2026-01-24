@@ -28,7 +28,7 @@ import signal
 import threading
 import time
 from types import FrameType
-from typing import Protocol
+from typing import Any
 
 import typer
 
@@ -87,16 +87,6 @@ def _build_payload(include_runtime: bool) -> dict[str, object]:
     return payload
 
 
-class _LogPolicy(Protocol):
-    """Minimal log policy contract for watch mode."""
-
-    @property
-    def level(self) -> LogLevel: ...
-
-    @property
-    def show_internal(self) -> bool: ...
-
-
 def _run_watch_mode(
     *,
     command: str,
@@ -105,7 +95,7 @@ def _run_watch_mode(
     quiet: bool,
     effective_pretty: bool,
     include_runtime: bool,
-    log_policy: _LogPolicy,
+    log_policy: Any,
     telemetry: TelemetryProtocol,
     emitter: Emitter,
 ) -> None:
@@ -148,6 +138,8 @@ def _run_watch_mode(
         raise ExitIntentError(intent)
 
     stop = False
+    emit_output = not quiet
+    emit_diagnostics = log_policy.show_internal and emit_output
 
     def _sigint_handler(_sig: int, _frame: FrameType | None) -> None:
         """Handles SIGINT to allow for a graceful shutdown of the watch loop.
@@ -170,7 +162,7 @@ def _run_watch_mode(
             try:
                 payload = _build_payload(include_runtime)
                 payload["ts"] = time.time()
-                if log_policy.show_internal and not quiet:
+                if emit_diagnostics:
                     emitter.emit(
                         payload,
                         fmt=OutputFormat.JSON,
@@ -181,7 +173,7 @@ def _run_watch_mode(
                         emit_output=False,
                         emit_diagnostics=True,
                     )
-                if not quiet:
+                if emit_output:
                     emitter.emit(
                         payload,
                         fmt=OutputFormat.JSON,
@@ -189,8 +181,8 @@ def _run_watch_mode(
                         level=LogLevel.INFO,
                         message="Status update",
                         output=None,
-                        emit_output=not quiet,
-                        emit_diagnostics=log_policy.show_internal,
+                        emit_output=emit_output,
+                        emit_diagnostics=emit_diagnostics,
                     )
                 telemetry.event(
                     "COMMAND_SUCCESS",
@@ -229,7 +221,7 @@ def _run_watch_mode(
         try:
             stop_payload = _build_payload(include_runtime)
             stop_payload["status"] = "watch-stopped"
-            if log_policy.show_internal and not quiet:
+            if emit_diagnostics:
                 emitter.emit(
                     stop_payload,
                     fmt=OutputFormat.JSON,
@@ -240,7 +232,7 @@ def _run_watch_mode(
                     emit_output=False,
                     emit_diagnostics=True,
                 )
-            if not quiet:
+            if emit_output:
                 emitter.emit(
                     stop_payload,
                     fmt=OutputFormat.JSON,
@@ -248,8 +240,8 @@ def _run_watch_mode(
                     level=LogLevel.INFO,
                     message="Status watch stopped",
                     output=None,
-                    emit_output=not quiet,
-                    emit_diagnostics=log_policy.show_internal,
+                    emit_output=emit_output,
+                    emit_diagnostics=emit_diagnostics,
                 )
             telemetry.event(
                 "COMMAND_STOPPED",

@@ -61,9 +61,11 @@ from bijux_cli.core.precedence import (
     GlobalCLIConfig,
     LogPolicy,
     default_execution_policy,
-    resolve_effective_config,
     resolve_log_policy,
     validate_cli_flags,
+)
+from bijux_cli.core.precedence import (
+    resolve_effective_config as resolve_effective_config_core,
 )
 from bijux_cli.plugins.services import register_plugin_services
 from bijux_cli.services import register_default_services
@@ -204,7 +206,7 @@ def _resolve_effective_flags(parsed: GlobalCLIConfig) -> EffectiveConfig:
     env_log = os.environ.get(ENV_LOG_LEVEL)
     env_color = os.environ.get(ENV_COLOR)
     # POLICY: precedence order for effective flags (CLI/env/defaults).
-    resolved = resolve_effective_config(
+    resolved = resolve_effective_config_core(
         cli=parsed.flags,
         env=FlagLayer(
             log_level=LogLevel(env_log) if env_log else None,
@@ -241,6 +243,49 @@ def _resolve_effective_flags(parsed: GlobalCLIConfig) -> EffectiveConfig:
             )
         )
     return resolved
+
+
+def resolve_effective_config(
+    args: list[str],
+) -> tuple[GlobalCLIConfig, EffectiveConfig, ExecutionPolicy] | int:
+    """Resolve CLI config and policy from argv."""
+    parsed = parse_global_config(args)
+    errors = validate_cli_flags(parsed)
+    if errors:
+        policy = default_execution_policy()
+        for err in errors:
+            behavior = resolve_exit_behavior(
+                ErrorType.USAGE,
+                quiet=bool(parsed.flags.quiet),
+                fmt=parsed.flags.format or OutputFormat.JSON,
+                log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
+            )
+            if behavior.stream is not None:
+                stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
+                print(
+                    json.dumps({"error": err.message, "code": int(behavior.code)}),
+                    file=stream,
+                )
+            return int(behavior.code)
+
+    resolved = _resolve_effective_flags(parsed)
+    # POLICY: derive execution policy from effective flags.
+    log_policy = resolve_log_policy(resolved.flags.log_level)
+    policy = ExecutionPolicy(
+        output_format=resolved.flags.format,
+        color=resolved.flags.color,
+        quiet=resolved.flags.quiet,
+        log_level=resolved.flags.log_level,
+        pretty=log_policy.pretty_default,
+        include_runtime=log_policy.show_internal,
+    )
+    DIContainer.set_log_policy(policy.log_policy or resolve_log_policy(LogLevel.INFO))
+
+    setup_structlog(resolved.flags.log_level)
+    # POLICY: resolve final color mode for CLI output.
+    set_color_mode(policy.color)
+
+    return parsed, resolved, policy
 
 
 def _split_command_args(args: list[str]) -> tuple[str | None, list[str]]:
@@ -398,58 +443,12 @@ def _maybe_fast_version(
     return 0
 
 
-def main() -> int:
-    """The main entry point for the Bijux CLI.
-
-    This function orchestrates the entire lifecycle of a CLI command, from
-    argument parsing and setup to execution and history recording.
-
-    Returns:
-        int: The final exit code of the command.
-            * `0`: Success.
-            * `1`: A generic command error occurred.
-            * `2`: A usage error or invalid option was provided.
-            * `130`: The process was interrupted by the user (Ctrl+C).
-    """
-    # IO: read CLI argv tokens.
-    args = sys.argv[1:]
-
-    parsed = parse_global_config(args)
-    errors = validate_cli_flags(parsed)
-    if errors:
-        policy = default_execution_policy()
-        for err in errors:
-            behavior = resolve_exit_behavior(
-                ErrorType.USAGE,
-                quiet=bool(parsed.flags.quiet),
-                fmt=parsed.flags.format or OutputFormat.JSON,
-                log_policy=policy.log_policy or resolve_log_policy(LogLevel.INFO),
-            )
-            if behavior.stream is not None:
-                stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-                print(
-                    json.dumps({"error": err.message, "code": int(behavior.code)}),
-                    file=stream,
-                )
-            return int(behavior.code)
-
-    resolved = _resolve_effective_flags(parsed)
-    # POLICY: derive execution policy from effective flags.
-    log_policy = resolve_log_policy(resolved.flags.log_level)
-    policy = ExecutionPolicy(
-        output_format=resolved.flags.format,
-        color=resolved.flags.color,
-        quiet=resolved.flags.quiet,
-        log_level=resolved.flags.log_level,
-        pretty=log_policy.pretty_default,
-        include_runtime=log_policy.show_internal,
-    )
-    DIContainer.set_log_policy(policy.log_policy or resolve_log_policy(LogLevel.INFO))
-
-    setup_structlog(resolved.flags.log_level)
-    # POLICY: resolve final color mode for CLI output.
-    set_color_mode(policy.color)
-
+def handle_fast_paths(
+    args: list[str],
+    parsed: GlobalCLIConfig,
+    policy: ExecutionPolicy,
+) -> int | None:
+    """Handle fast-path exits without DI or plugins."""
     # FAST PATH: `--version` without initializing the app.
     if any(a in ("--version", "-V") for a in args):
         try:
@@ -470,6 +469,16 @@ def main() -> int:
     if fast_version is not None:
         return fast_version
 
+    return None
+
+
+def run_runtime(
+    args: list[str],
+    parsed: GlobalCLIConfig,
+    resolved: EffectiveConfig,
+    policy: ExecutionPolicy,
+) -> int:
+    """Run the DI/runtime execution path."""
     # IO: suppress stderr in quiet mode.
     if resolved.flags.quiet:
         with contextlib.suppress(Exception):
@@ -599,6 +608,34 @@ def main() -> int:
             exit_code = 1
 
     return exit_code
+
+
+def main() -> int:
+    """The main entry point for the Bijux CLI.
+
+    This function orchestrates the entire lifecycle of a CLI command, from
+    argument parsing and setup to execution and history recording.
+
+    Returns:
+        int: The final exit code of the command.
+            * `0`: Success.
+            * `1`: A generic command error occurred.
+            * `2`: A usage error or invalid option was provided.
+            * `130`: The process was interrupted by the user (Ctrl+C).
+    """
+    # IO: read CLI argv tokens.
+    args = sys.argv[1:]
+
+    resolved = resolve_effective_config(args)
+    if isinstance(resolved, int):
+        return resolved
+    parsed, effective, policy = resolved
+
+    fast_exit = handle_fast_paths(args, parsed, policy)
+    if fast_exit is not None:
+        return fast_exit
+
+    return run_runtime(args, parsed, effective, policy)
 
 
 if __name__ == "__main__":

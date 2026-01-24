@@ -129,3 +129,24 @@ def test_cli_does_not_import_policy_types() -> None:
             if name in forbidden:
                 violations.append(f"{path}: {module}.{name}")
     assert not violations, "CLI imports policy types:\n" + "\n".join(violations)
+
+
+def test_cli_commands_define_no_policy_or_policy_branches() -> None:
+    roots = [
+        SRC / "cli" / "commands",
+        SRC / "cli" / "plugins" / "commands",
+    ]
+    forbidden_names = {"quiet", "log_level", "format"}
+    violations: list[str] = []
+    for root in roots:
+        for path in root.rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef) and node.name.endswith("Policy"):
+                    violations.append(f"{path}: class {node.name}")
+                if isinstance(node, ast.If) and any(
+                    isinstance(name, ast.Name) and name.id in forbidden_names
+                    for name in ast.walk(node.test)
+                ):
+                    violations.append(f"{path}: if {ast.unparse(node.test)}")
+    assert not violations, "Command policy logic found:\n" + "\n".join(violations)

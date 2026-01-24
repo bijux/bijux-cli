@@ -9,7 +9,7 @@ import sys
 from typing import Any
 
 from bijux_cli.core.enums import OutputFormat
-from bijux_cli.infra.contracts import Serializer
+from bijux_cli.infra.contracts import Emitter, Serializer
 
 
 def resolve_serializer() -> Serializer:
@@ -46,18 +46,30 @@ def resolve_serializer() -> Serializer:
         return _FallbackSerializer()
 
 
+def resolve_emitter() -> Emitter | None:
+    """Resolve the emitter adapter or fallback."""
+    from bijux_cli.core.di import DIContainer
+
+    try:
+        return DIContainer.current().resolve(Emitter)
+    except Exception:
+        return None
+
+
 def emit_payload(
-    payload: object, *, fmt: OutputFormat, pretty: bool, stream: str
+    payload: object,
+    *,
+    serializer: Serializer,
+    emitter: Emitter | None,
+    fmt: OutputFormat,
+    pretty: bool,
+    stream: str,
 ) -> None:
     """Emit a payload to the requested stream."""
     out = sys.stdout if stream == "stdout" else sys.stderr
-    try:
-        output = (
-            resolve_serializer().dumps(payload, fmt=fmt, pretty=pretty).rstrip("\n")
-        )
-        print(output, file=out, flush=True)
-    except Exception:
-        print('{"error": "Unserializable error"}', file=sys.stderr, flush=True)
+    _ = emitter
+    output = serializer.dumps(payload, fmt=fmt, pretty=pretty).rstrip("\n")
+    print(output, file=out, flush=True)
 
 
-__all__ = ["emit_payload", "resolve_serializer"]
+__all__ = ["emit_payload", "resolve_emitter", "resolve_serializer"]

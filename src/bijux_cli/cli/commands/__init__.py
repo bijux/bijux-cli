@@ -12,9 +12,9 @@ from typer import Typer
 from bijux_cli.cli.commands.config import config_app
 from bijux_cli.cli.commands.dev import dev_app
 from bijux_cli.cli.commands.diagnostics.audit import audit_app
-from bijux_cli.cli.commands.diagnostics.docs import docs_app
+from bijux_cli.cli.commands.diagnostics.docs_command import docs_app
 from bijux_cli.cli.commands.diagnostics.doctor import doctor_app
-from bijux_cli.cli.commands.help import help_app
+from bijux_cli.cli.commands.help_command import help_app
 from bijux_cli.cli.commands.history import history_app
 from bijux_cli.cli.commands.memory import memory_app
 from bijux_cli.cli.commands.repl import repl_app

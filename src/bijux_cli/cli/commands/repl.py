@@ -66,10 +66,11 @@ async def _run_interactive() -> None:
 
 def _run_repl_session(*, quiet: bool, stdin_isatty: bool) -> None:
     """Route to piped or interactive mode."""
-    if quiet or not stdin_isatty:
+    interactive = stdin_isatty and not quiet
+    if not interactive:
         _run_piped(quiet)
-    else:
-        run_command(_run_interactive)
+        return
+    run_command(_run_interactive)
 
 
 @repl_app.callback(invoke_without_command=True)
