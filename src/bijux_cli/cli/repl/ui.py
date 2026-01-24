@@ -24,11 +24,22 @@ from bijux_cli.cli.core.constants import (
 from bijux_cli.cli.repl.completion import CommandCompleter
 from bijux_cli.cli.repl.execution import _invoke
 from bijux_cli.cli.repl.parsing import _known_commands, _split_segments, _suggest
+from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 
 
 def _exit_on_signal(_signum: int, _frame: FrameType | None = None) -> None:
     """Exits the process cleanly when a watched signal is received."""
-    sys.exit(0)
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream=None,
+            payload=None,
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            show_traceback=False,
+        )
+    )
 
 
 def get_prompt() -> str | ANSI:

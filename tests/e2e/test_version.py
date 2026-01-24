@@ -30,8 +30,6 @@ ALL_FLAGS = [
     "-h",
     "--quiet",
     "-q",
-    "--verbose",
-    "-v",
     "--log-level debug",
     "--no-pretty",
     "--format",
@@ -47,11 +45,6 @@ def _no_stacktrace_leak(text: str) -> None:
     assert "traceback" not in s
     assert "typer" not in s
     assert "click" not in s
-
-
-def flags_verbose(flags: list[str]) -> bool:
-    """Check if verbose flags are present."""
-    return "--verbose" in flags or "-v" in flags
 
 
 def flags_log_level_debug(flags: list[str]) -> bool:
@@ -74,12 +67,12 @@ def flag_permutations(draw: DrawFn) -> list[str]:
 
 
 def assert_version_output(
-    data: dict[str, Any], *, verbose: bool = False, log_level: str | None = None
+    data: dict[str, Any], *, log_level: str | None = None
 ) -> None:
     """Assert the structure and content of a successful version command output."""
     assert "version" in data
     assert data["version"] == bijux_version
-    if verbose or log_level in {"debug", "trace"}:
+    if log_level in {"debug", "trace"}:
         assert "python" in data
         assert "platform" in data
         assert "timestamp" in data
@@ -111,26 +104,22 @@ def parse_output(fmt: str, out: str) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    ("flags", "fmt", "verbose", "log_level"),
+    ("flags", "fmt", "log_level"),
     [
-        ([], "json", False, None),
-        (["--format", "json"], "json", False, None),
-        (["-f", "yaml"], "yaml", False, None),
-        (["-v"], "json", True, None),
-        (["--verbose", "--format", "yaml"], "yaml", True, None),
-        (["--log-level debug"], "json", False, "debug"),
-        (["--log-level debug", "--format", "yaml"], "yaml", False, "debug"),
-        (["--log-level debug", "--no-pretty"], "json", False, "debug"),
+        ([], "json", None),
+        (["--format", "json"], "json", None),
+        (["-f", "yaml"], "yaml", None),
+        (["--log-level debug", "--format", "yaml"], "yaml", "debug"),
+        (["--log-level debug"], "json", "debug"),
+        (["--log-level debug", "--no-pretty"], "json", "debug"),
     ],
 )
-def test_version_contract(
-    flags: list[str], fmt: str, verbose: bool, log_level: str | None
-) -> None:
+def test_version_contract(flags: list[str], fmt: str, log_level: str | None) -> None:
     """Test the version command with various flag combinations."""
     res: CompletedProcess[str] = run_cli(["version"] + flags)
     assert res.returncode == 0
     data = parse_output(fmt, res.stdout)
-    assert_version_output(data, verbose=verbose, log_level=log_level)
+    assert_version_output(data, log_level=log_level)
     assert "traceback" not in (res.stdout + res.stderr).lower()
     assert "warning" not in (res.stdout + res.stderr).lower()
 
@@ -143,7 +132,7 @@ def test_version_help_output(flag: str) -> None:
     out = res.stdout
     assert out.startswith("Usage:")
     assert "Options:" in out
-    for k in ("--help", "-h", "--quiet", "-q", "--verbose", "-v"):
+    for k in ("--help", "-h", "--quiet", "-q", "--log-level debug"):
         assert k in out
 
 
@@ -159,10 +148,9 @@ def test_version_quiet(flag: str) -> None:
 @pytest.mark.parametrize(
     ("flags", "expect"),
     [
-        (["--quiet", "--verbose"], False),
-        (["-q", "-v"], False),
+        (["--quiet", "--log-level debug"], False),
         (["--format", "yaml", "-q"], False),
-        (["--verbose", "-f", "yaml"], True),
+        (["--log-level debug", "-f", "yaml"], True),
         (["--log-level debug", "--no-pretty"], True),
     ],
 )
@@ -290,9 +278,9 @@ def test_version_parallel_and_perf() -> None:
     assert elapsed < 5.0, f"Parallel CLI slow: {elapsed}s"
 
 
-def test_version_verbose_timestamp() -> None:
-    """Test that verbose output includes a timestamp."""
-    out = json.loads(run_cli(["version", "-v"]).stdout)
+def test_version_debug_timestamp() -> None:
+    """Test that debug output includes a timestamp."""
+    out = json.loads(run_cli(["version", "--log-level", "debug"]).stdout)
     assert isinstance(out.get("timestamp"), float)
 
 
@@ -341,7 +329,6 @@ def test_version_hypothesis_flags(data: Any) -> None:
         out = parse_output(fmt, res.stdout)
         assert_version_output(
             out,
-            verbose=flags_verbose(flags),
             log_level="debug" if flags_log_level_debug(flags) else None,
         )
     except Exception:

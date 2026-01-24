@@ -78,7 +78,6 @@ def test_refuse_on_symlink_noop(tmp_path: Path) -> None:
         "plugins install",
         OutputFormat.JSON,
         False,
-        False,
         resolve_log_policy(LogLevel.INFO),
     )
 
@@ -119,7 +118,6 @@ def test_refuse_on_symlink_calls_emit(
             link,
             "plugins uninstall",
             OutputFormat.YAML,
-            True,
             True,
             resolve_log_policy(LogLevel.INFO),
         )

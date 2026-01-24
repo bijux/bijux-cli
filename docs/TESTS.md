@@ -112,7 +112,7 @@ Focus: realistic pipelines, cross-layer config propagation, contention (history 
 
 **Goal:** assert user-visible command behavior.
 
-Focus: global flag precedence (help/quiet/debug/format/pretty/verbose), structured stdout/stderr, exit codes, non-interactive REPL.
+Focus: global flag precedence (help/quiet/debug/format/pretty), structured stdout/stderr, exit codes, non-interactive REPL.
 
 [Back to top](#top)
 

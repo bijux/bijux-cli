@@ -49,7 +49,6 @@ def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -77,7 +76,6 @@ def test_info_success(monkeypatch: pytest.MonkeyPatch) -> None:
         "foo",
         fmt="json",
         quiet=False,
-        verbose=False,
         pretty=True,
         log_level=LogLevel.INFO,
     )

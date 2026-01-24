@@ -31,7 +31,7 @@ REQUIRED_FLAGS = [
     "-q",
     "--quiet",
     "-v",
-    "--verbose",
+    "--log-level debug",
     "-f",
     "--format",
     "--pretty",

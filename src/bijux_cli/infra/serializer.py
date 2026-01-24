@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from enum import Enum
 import importlib.util as _importlib_util
 import json
 import sys
@@ -51,30 +49,10 @@ def _format_name(fmt: Any) -> str:
     return str(fmt).lower()
 
 
-def _normalize_payload(obj: Any) -> Any:
-    """Normalize dataclasses and enums into plain serializable structures."""
-    if is_dataclass(obj):
-        payload: dict[str, Any] = {}
-        for field in fields(obj):
-            value = getattr(obj, field.name)
-            if value is None:
-                continue
-            payload[field.name] = _normalize_payload(value)
-        return payload
-    if isinstance(obj, Enum):
-        return obj.value
-    if isinstance(obj, dict):
-        return {key: _normalize_payload(value) for key, value in obj.items()}
-    if isinstance(obj, list | tuple | set):
-        return [_normalize_payload(value) for value in obj]
-    return obj
-
-
 def _yaml_dump(obj: Any, pretty: bool) -> str:
     """Serialize an object to YAML."""
     if _YAML is None:
         raise SerializationError("PyYAML is required for YAML operations")
-    obj = _normalize_payload(obj)
     dumped = _YAML.safe_dump(
         obj,
         sort_keys=False,
@@ -95,7 +73,6 @@ class OrjsonSerializer:
         self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
     ) -> str:
         """Serialize an object to JSON or YAML."""
-        obj = _normalize_payload(obj)
         name = _format_name(fmt)
         if name == "json":
             try:

@@ -93,10 +93,10 @@ def test_build_payload_env_invalid_semver(mock_getenv: MagicMock) -> None:
 @patch("platform.python_version")
 @patch("platform.platform")
 @patch("time.time")
-def test_build_payload_verbose(
+def test_build_payload_debug(
     mock_time: MagicMock, mock_platform: MagicMock, mock_python: MagicMock
 ) -> None:
-    """Test building the verbose version payload."""
+    """Test building the debug version payload."""
     mock_python.return_value = "3.11.0"
     mock_platform.return_value = "Darwin"
     mock_time.return_value = 1234567890.0
@@ -111,13 +111,11 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
     """Test the version command with YAML format."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.YAML,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=False,
-                verbose_level=0,
                 log_level=LogLevel.INFO,
                 pretty=True,
                 include_runtime=False,
@@ -134,7 +132,6 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=False,
             fmt="yaml",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -184,7 +181,7 @@ def test_build_payload_ascii_safe_fail() -> None:
         _build_payload(False)
 
 
-def test_build_payload_verbose_ascii_safe_fail_python() -> None:
+def test_build_payload_debug_ascii_safe_fail_python() -> None:
     """Test payload build failure when ascii_safe fails on python version."""
     with patch("bijux_cli.cli.commands.version.ascii_safe") as mock_ascii:
         mock_ascii.side_effect = [cli_version, ValueError("ascii fail")]
@@ -192,7 +189,7 @@ def test_build_payload_verbose_ascii_safe_fail_python() -> None:
             _build_payload(True)
 
 
-def test_build_payload_verbose_ascii_safe_fail_platform() -> None:
+def test_build_payload_debug_ascii_safe_fail_platform() -> None:
     """Test payload build failure when ascii_safe fails on platform."""
     with patch("bijux_cli.cli.commands.version.ascii_safe") as mock_ascii:
         mock_ascii.side_effect = [cli_version, "python", ValueError("ascii fail")]
@@ -214,7 +211,6 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -225,13 +221,11 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
     """Test the version command with the --quiet flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=True,
-                verbose=False,
-                verbose_level=0,
                 log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
@@ -248,24 +242,21 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=True,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.ERROR,
         )
 
 
-def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
-    """Test the version command with the --verbose flag."""
+def test_version_callback_debug(mock_di_class: MagicMock) -> None:
+    """Test the version command with the --log-level debug flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=True,
                 include_runtime=True,
@@ -275,13 +266,12 @@ def test_version_callback_verbose(mock_di_class: MagicMock) -> None:
         patch("bijux_cli.cli.commands.version.new_run_command") as mock_run,
     ):
         mock_validate.return_value = "json"
-        result = runner.invoke(version_app, ["--verbose"])
+        result = runner.invoke(version_app, ["--log-level", "debug"])
         assert result.exit_code == 0
         mock_run.assert_called_with(
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=True,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -292,13 +282,11 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
     """Test the version command with the --no-pretty flag."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=False,
-                verbose_level=0,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=False,
@@ -314,24 +302,21 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
         )
 
 
-def test_version_callback_debug(mock_di_class: MagicMock) -> None:
-    """Test the version command with the --log-level flag."""
+def test_version_callback_debug_uses_policy(mock_di_class: MagicMock) -> None:
+    """Test the version command with the --log-level flag and policy."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.DEBUG,
                 pretty=True,
                 include_runtime=True,
@@ -347,7 +332,6 @@ def test_version_callback_debug(mock_di_class: MagicMock) -> None:
             command_name="version",
             payload_builder=ANY,
             quiet=False,
-            verbose=True,
             fmt="json",
             pretty=True,
             log_level=LogLevel.DEBUG,
@@ -361,7 +345,6 @@ def test_version_callback_help(mock_di_class: MagicMock) -> None:
     out = result.output
     assert "Show the CLI version." in out
     assert "-q, --quiet" in out
-    assert "-v, --verbose" in out
     assert "-f, --format" in out
     assert re.search(r"--pretty\s*/\s*--no-pretty", out)
     assert "--log-level" in out

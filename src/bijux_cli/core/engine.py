@@ -86,7 +86,6 @@ class Engine:
             )
             logging_config = LoggingConfig(
                 quiet=quiet,
-                verbose=False,
                 log_level=resolved.log_level,
                 color=resolved.color,
             )

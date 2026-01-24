@@ -37,10 +37,9 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         command: str,
         fmt: OutputFormat,
         quiet: bool,
-        verbose: bool,
         log_policy: Any | None,
     ) -> None:
-        calls["refuse"] = (dir_, command, fmt, quiet, verbose, log_policy)
+        calls["refuse"] = (dir_, command, fmt, quiet, log_policy)
 
     monkeypatch.setattr(list_mod, "refuse_on_symlink", fake_refuse)
 
@@ -68,13 +67,11 @@ def test_default_list(
 ) -> None:
     """Test the 'plugins list' command with default flags."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -89,12 +86,10 @@ def test_default_list(
         "plugins list",
         "json",
         False,
-        False,
         resolve_log_policy(LogLevel.INFO),
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is False
-    assert caps["run"]["verbose"] is False
     assert caps["run"]["fmt"] == "json"
     assert caps["run"]["pretty"] is True
     assert caps["run"]["log_level"] == "info"
@@ -105,13 +100,11 @@ def test_all_flags(
 ) -> None:
     """Test the 'plugins list' command with all flags specified."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=False,
@@ -123,7 +116,8 @@ def test_all_flags(
             "plugins",
             "list",
             "--quiet",
-            "--verbose",
+            "--log-level",
+            "debug",
             "--format",
             "yaml",
             "--no-pretty",
@@ -139,12 +133,10 @@ def test_all_flags(
         "plugins list",
         "yaml",
         True,
-        True,
         resolve_log_policy(LogLevel.ERROR),
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is True
-    assert caps["run"]["verbose"] is True
     assert caps["run"]["fmt"] == "yaml"
     assert caps["run"]["pretty"] is False
     assert caps["run"]["log_level"] == "error"

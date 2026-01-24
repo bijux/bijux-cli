@@ -12,7 +12,6 @@ Output Contract:
     * Success (file):   `{"status": "written", "file": "<path>"}`
     * Success (stdout): The raw specification string is printed directly.
     * Spec fields:      `{"version": str, "commands": list, ...}`
-    * Verbose:          Adds `{"python": str, "platform": str}` to the spec.
     * Error:            `{"error": str, "code": int}`
 
 Exit Codes:
@@ -35,6 +34,12 @@ import typer.core
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.payloads import DocsSpecPayload, DocsWritePayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    normalize_payload,
+    record_history,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     ENV_DOCS_OUT,
     ENV_TEST_IO_FAIL,
@@ -42,20 +47,13 @@ from bijux_cli.cli.core.constants import (
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
-)
-from bijux_cli.cli.core.emit import (
-    emit_and_exit,
-    emit_text_and_exit,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
 )
-from bijux_cli.cli.core.output import emit_error_with_policy, resolve_command_config
 from bijux_cli.cli.core.validation import (
     contains_non_ascii_env,
 )
@@ -176,7 +174,6 @@ def docs(
     ctx: typer.Context,
     out: Path | None = OUT_OPTION,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -194,7 +191,6 @@ def docs(
         out (Path | None): The output destination: a file path, a directory, or
             '-' to signify stdout.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python and platform metadata in the spec.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
             and `pretty`.
@@ -208,13 +204,11 @@ def docs(
             violations, serialization failures, or I/O issues.
     """
     command = "docs"
-    _ = (quiet, verbose, log_level, pretty, fmt)
     effective, output_format = resolve_command_config(
         command=command,
         fmt=fmt,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0
     log_policy = effective.log_policy
     effective_include_runtime = effective.include_runtime
     effective_pretty = effective.pretty
@@ -313,10 +307,23 @@ def docs(
                     show_traceback=False,
                 )
             )
-        emit_text_and_exit(
+        typer.echo(
             content,
             color=resolve_click_color(quiet=quiet, fmt=output_format),
-            exit_code=0,
+            err=False,
+        )
+        record_history(command, 0)
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=output_format,
+                pretty=effective_pretty,
+                show_traceback=False,
+            )
         )
 
     if path is None:
@@ -376,12 +383,20 @@ def docs(
                 show_traceback=False,
             )
         )
-    emit_and_exit(
-        DocsWritePayload(status="written", file=str(path)),
-        output_format,
-        effective_pretty,
-        verbose,
-        command,
+    record_history(command, 0)
+    from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream="stdout",
+            payload=normalize_payload(
+                DocsWritePayload(status="written", file=str(path))
+            ),
+            fmt=output_format,
+            pretty=effective_pretty,
+            show_traceback=False,
+        )
     )
 
 

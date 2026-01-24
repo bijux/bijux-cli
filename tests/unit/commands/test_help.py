@@ -8,7 +8,7 @@ from __future__ import annotations
 import importlib
 import sys
 import time
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import click
@@ -21,9 +21,9 @@ from bijux_cli.cli.commands.help import (
     _build_help_payload,
     _find_target_command,
 )
-from bijux_cli.cli.commands.payloads import HelpPayload
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
 
 
@@ -31,7 +31,7 @@ from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a default execution policy for CLI output helpers."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: default_execution_policy(),
     )
     monkeypatch.setattr(
@@ -39,6 +39,7 @@ def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
         "current_execution_policy",
         lambda: default_execution_policy(),
     )
+    monkeypatch.setattr(help_mod, "record_history", lambda *_a, **_k: None)
 
 
 class DummyCmd(click.Command):
@@ -130,6 +131,10 @@ def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> Non
     assert isinstance(p.runtime_ms, int)
 
 
+def call_help(*args: Any, **kwargs: Any) -> Any:
+    return help_mod.help_callback.__wrapped__(*args, **kwargs)
+
+
 def make_ctx_for_callback(
     tmp_group: click.Group | None = None,
 ) -> typer.Context:
@@ -150,19 +155,18 @@ def test_help_flag_triggers_help_and_exit(
     group.add_command(foo_cmd)
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(foo_cmd, info_name="foo", parent=parent_ctx)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             None,
             quiet=False,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
     captured = capsys.readouterr()
     assert "FOO HELP" in captured.out
-    assert ex.value.exit_code == 0
+    assert ex.value.intent.code == 0
 
 
 def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -175,90 +179,83 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
         ),
     )
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=True,
-            verbose=False,
             fmt="badfmt",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 2
+    assert ex.value.intent.code == 2
 
 
 def test_quiet_null_byte(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a null byte in tokens exits with code 3."""
     ctx = make_ctx_for_callback()
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["\x00foo"],
             quiet=True,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
 
 
 def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-ASCII token exits with code 3."""
     ctx = make_ctx_for_callback()
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["föo"],
             quiet=True,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
 
 
 def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-ASCII env var exits with code 3."""
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: True)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=True,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
 
 
 def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-existent target exits with code 2."""
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=True,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 2
+    assert ex.value.intent.code == 2
 
 
 def test_nonquiet_invalid_format_calls_emit_error(
@@ -281,7 +278,16 @@ def test_nonquiet_invalid_format_calls_emit_error(
         **_kwargs: Any,
     ) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(
         help_mod,
@@ -290,25 +296,22 @@ def test_nonquiet_invalid_format_calls_emit_error(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
         ),
     )
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=False,
-            verbose=False,
             fmt="BAD",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 2
+    assert ex.value.intent.code == 2
     assert "Unsupported format" in called["msg"]
     assert called["fmt"] == "json"
 
@@ -323,20 +326,28 @@ def test_nonquiet_null_byte_emits_null_byte_error(
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["\x00"],
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
     assert called["failure"] == "null_byte"
 
 
@@ -350,20 +361,28 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["föo"],
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
     assert called["failure"] == "ascii"
 
 
@@ -376,20 +395,28 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
     assert called["failure"] == "ascii"
 
 
@@ -403,20 +430,28 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["no", "such"],
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 2
+    assert ex.value.intent.code == 2
     assert called["failure"] == "not_found"
 
 
@@ -439,8 +474,6 @@ def test_nonquiet_human_format_prints_and_exits(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=False,
@@ -455,12 +488,11 @@ def test_nonquiet_human_format_prints_and_exits(
         DIContainer, "current", classmethod(lambda cls: DummyContainer())
     )
 
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["foo"],
             quiet=False,
-            verbose=False,
             fmt="human",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -468,7 +500,7 @@ def test_nonquiet_human_format_prints_and_exits(
 
     out = capsys.readouterr().out
     assert "X HELP" in out
-    assert ex.value.exit_code == 0
+    assert ex.value.intent.code == 0
 
 
 def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -493,8 +525,6 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -507,45 +537,27 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
         ),
     )
-    called: dict[str, Any] = {}
-
-    def fake_emit(
-        payload: dict[str, Any],
-        fmt: OutputFormat,
-        effective_pretty: bool,
-        verbose: bool,
-        command: str,
-        exit_code: int,
-    ) -> None:
-        called.update(locals())
-        raise typer.Exit(exit_code)
-
-    monkeypatch.setattr(help_mod, "emit_and_exit", fake_emit)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["foo"],
             quiet=False,
-            verbose=True,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 0
-    payload = called["payload"]
-    assert isinstance(payload, HelpPayload)
-    assert payload.help == "HELPTXT"
-    assert payload.python is not None
-    assert payload.platform is not None
-    assert payload.runtime_ms is not None
-    assert called["fmt"] is OutputFormat.JSON
+    assert ex.value.intent.code == 0
+    payload = cast(dict[str, Any], ex.value.intent.payload)
+    assert payload["help"] == "HELPTXT"
+    assert payload["python"] is not None
+    assert payload["platform"] is not None
+    assert payload["runtime_ms"] is not None
+    assert ex.value.intent.fmt is OutputFormat.JSON
 
 
 def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -570,35 +582,24 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
         ),
     )
-    called: dict[str, Any] = {}
-
-    def fake_emit(payload: dict[str, Any], fmt: OutputFormat, **kwargs: Any) -> None:
-        called.update(locals())
-        raise typer.Exit(99)
-
-    monkeypatch.setattr(help_mod, "emit_and_exit", fake_emit)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["foo"],
             quiet=False,
-            verbose=False,
             fmt="yaml",
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 99
-    payload = called["payload"]
-    assert isinstance(payload, HelpPayload)
-    assert payload.help == "YAMLHELP"
-    assert called["fmt"] is OutputFormat.YAML
+    assert ex.value.intent.code == 0
+    payload = cast(dict[str, Any], ex.value.intent.payload)
+    assert payload["help"] == "YAMLHELP"
+    assert ex.value.intent.fmt is OutputFormat.YAML
 
 
 def test_find_target_command_path_too_long() -> None:
@@ -623,24 +624,21 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
         ),
     )
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             [],
             quiet=True,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 0
+    assert ex.value.intent.code == 0
 
 
 def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -667,20 +665,28 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
 
     def fake_emit(msg: str, code: int, failure: str, **kwargs: Any) -> None:
         called.update(locals())
-        raise typer.Exit(code)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode(code),
+                stream="stderr",
+                payload={"error": msg},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_emit)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             ["foo"],
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 3
+    assert ex.value.intent.code == 3
     assert "broken" in called["msg"]
     assert called["failure"] == "ascii"
 
@@ -741,17 +747,16 @@ def test_help_flag_no_target(
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent_ctx)
     monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
-    with pytest.raises(typer.Exit) as ex:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as ex:
+        call_help(
             ctx,
             None,
             quiet=False,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert ex.value.exit_code == 0
+    assert ex.value.intent.code == 0
     assert capsys.readouterr().out == ""
 
 
@@ -773,19 +778,18 @@ def test_help_flag_fallback_to_root(
         "_find_target_command",
         lambda c, p: None if p else (group, parent_ctx),
     )
-    with pytest.raises(typer.Exit) as exc:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as exc:
+        call_help(
             ctx,
             None,
             quiet=False,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "ROOT HELP" in out
-    assert exc.value.exit_code == 0
+    assert exc.value.intent.code == 0
 
 
 def test_help_flag_with_format_flag(
@@ -801,16 +805,15 @@ def test_help_flag_with_format_flag(
     monkeypatch.setattr(
         help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
-    with pytest.raises(typer.Exit) as exc:
-        help_mod.help_callback(
+    with pytest.raises(ExitIntentError) as exc:
+        call_help(
             ctx,
             None,
             quiet=False,
-            verbose=False,
             fmt=_HUMAN,
             pretty=True,
             log_level=LogLevel.INFO,
         )
     out = capsys.readouterr().out
     assert "FOO HELP" in out
-    assert exc.value.exit_code == 0
+    assert exc.value.intent.code == 0

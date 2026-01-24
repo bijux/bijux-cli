@@ -8,7 +8,6 @@ from __future__ import annotations
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 
 OPT_QUIET = ("-q", "--quiet")
-OPT_VERBOSE = ("-v", "--verbose")
 OPT_FORMAT = ("-f", "--format")
 OPT_LOG_LEVEL = ("--log-level",)
 OPT_COLOR = ("--color",)
@@ -39,13 +38,11 @@ DEFAULT_COLOR = ColorMode.AUTO
 DEFAULT_FORMAT = OutputFormat.JSON
 DEFAULT_PRETTY = True
 DEFAULT_QUIET = False
-DEFAULT_VERBOSE = False
 
 DEFAULT_COMMAND_TIMEOUT = 30.0
 
 __all__ = [
     "OPT_QUIET",
-    "OPT_VERBOSE",
     "OPT_FORMAT",
     "OPT_LOG_LEVEL",
     "OPT_COLOR",
@@ -74,6 +71,5 @@ __all__ = [
     "DEFAULT_FORMAT",
     "DEFAULT_PRETTY",
     "DEFAULT_QUIET",
-    "DEFAULT_VERBOSE",
     "DEFAULT_COMMAND_TIMEOUT",
 ]

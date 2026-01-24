@@ -84,9 +84,9 @@ def _install_fake_container(
 
     class _TestSerializer:
         def dumps(self, payload: Any, fmt: OutputFormat, pretty: bool = False) -> str:
-            from bijux_cli.cli.core.emit import _normalize_payload
+            from bijux_cli.cli.core.command import normalize_payload
 
-            return json.dumps(_normalize_payload(payload))
+            return json.dumps(normalize_payload(payload))
 
     class _TestEmitter:
         pass
@@ -161,16 +161,14 @@ def test_sleep_timeout_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Succeeds and returns payload with runtime when verbose."""
+    """Succeeds and returns payload with runtime when debug."""
     _install_fake_container(monkeypatch, get_returns="10")
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -184,7 +182,7 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = runner.invoke(
         sleep_app,
-        ["--seconds", "0.2", "--format", "json", "--verbose", "--pretty"],
+        ["--seconds", "0.2", "--format", "json", "--log-level", "debug", "--pretty"],
     )
     assert result.exit_code == 0
 

@@ -24,6 +24,7 @@ import typer
 import bijux_cli.cli.commands.repl as mod
 from bijux_cli.cli.repl import completion, execution, parsing, ui
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -147,9 +148,9 @@ def _run_piped_lines(lines: list[str], *, quiet: bool = False) -> None:
     """Feed lines to stdin and run _run_piped()."""
     buf = io.StringIO("\n".join(lines))
     with patch.object(sys, "stdin", buf):
-        with pytest.raises(SystemExit) as ex:
+        with pytest.raises(ExitIntentError) as ex:
             execution._run_piped(quiet)
-        assert ex.value.code == 0
+        assert ex.value.intent.code == 0
 
 
 def test_run_piped_flow_and_messages(
@@ -238,9 +239,9 @@ def test_get_prompt_plain_and_ansi(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_exit_on_signal() -> None:
     """Exit cleanly on signal."""
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(ExitIntentError) as ex:
         ui._exit_on_signal(2, None)
-    assert ex.value.code == 0
+    assert ex.value.intent.code == 0
 
 
 class FakeParam:
@@ -350,13 +351,11 @@ class FakePromptSession:
 def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Route human quiet mode to piped path."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
@@ -748,7 +747,6 @@ def test_main_returns_early_when_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
     mod.main(
         ctx,
         quiet=False,
-        verbose=False,
         fmt="human",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -788,7 +786,6 @@ def test_main_interactive_path_calls_async_loop(
     mod.main(
         ctx,
         quiet=False,
-        verbose=False,
         fmt="human",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -1142,9 +1139,9 @@ def test_run_piped_config_get_missing_arg_emits_json(
     old_stdin, sys.stdin = sys.stdin, io.StringIO("config get\n")
     out, _, mp = _capture_io()
     try:
-        with pytest.raises(SystemExit) as se:
+        with pytest.raises(ExitIntentError) as se:
             execution._run_piped(repl_quiet=False)
-        assert se.value.code == 0
+        assert se.value.intent.code == 0
     finally:
         mp.undo()
         sys.stdin = old_stdin
@@ -1170,8 +1167,9 @@ def test_run_piped_skips_empty_and_comment_segments(
     old_stdin, sys.stdin = sys.stdin, io.StringIO(" ;   #comment only\n")
     _, err, mp = _capture_io()
     try:
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExitIntentError) as ex:
             execution._run_piped(repl_quiet=False)
+        assert ex.value.intent.code == 0
     finally:
         mp.undo()
         sys.stdin = old_stdin
@@ -1188,8 +1186,9 @@ def test_run_piped_prints_prompt_for_pure_blank_or_comment(
     old_stdin, sys.stdin = sys.stdin, io.StringIO("\n# only comment\n")
     _, err, mp = _capture_io()
     try:
-        with pytest.raises(SystemExit):
+        with pytest.raises(ExitIntentError) as ex:
             execution._run_piped(repl_quiet=False)
+        assert ex.value.intent.code == 0
     finally:
         mp.undo()
         sys.stdin = old_stdin

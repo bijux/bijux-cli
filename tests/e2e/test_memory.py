@@ -380,8 +380,8 @@ def test_e2e_memory_delete_with_quiet_suppresses_output() -> None:
 
 
 def test_e2e_memory_verbose_root_and_subcommands() -> None:
-    """Test that --verbose adds context to root and subcommand outputs."""
-    res = run_cli(["memory", "--verbose"])
+    """Test that --log-level debug adds context to root and subcommand outputs."""
+    res = run_cli(["memory", "--log-level debug"])
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert "python" in data
@@ -394,7 +394,7 @@ def test_e2e_memory_verbose_root_and_subcommands() -> None:
     assert "platform" in data
 
     run_cli(["memory", "set", "gvkey", "gvval"])
-    res = run_cli(["memory", "get", "gvkey", "--verbose"])
+    res = run_cli(["memory", "get", "gvkey", "--log-level debug"])
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert "python" in data
@@ -408,13 +408,13 @@ def test_e2e_memory_verbose_root_and_subcommands() -> None:
     assert "platform" in data
 
     run_cli(["memory", "set", "lvkey", "lvval"])
-    res = run_cli(["memory", "list", "--verbose"])
+    res = run_cli(["memory", "list", "--log-level debug"])
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert "python" in data
     assert "platform" in data
 
-    res = run_cli(["memory", "clear", "--verbose"])
+    res = run_cli(["memory", "clear", "--log-level debug"])
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert "python" in data
@@ -460,7 +460,7 @@ def test_e2e_memory_subcommand_help_contract(sub: str) -> None:
         "-q",
         "--quiet",
         "-v",
-        "--verbose",
+        "--log-level debug",
         "-f",
         "--format",
         "--pretty",

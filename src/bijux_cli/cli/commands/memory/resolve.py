@@ -12,7 +12,7 @@ unavailable.
 
 from __future__ import annotations
 
-from bijux_cli.cli.core.output import emit_error_with_policy
+from bijux_cli.cli.core.command import emit_error_with_policy
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import LogPolicy

@@ -15,7 +15,6 @@ class LoggingConfig:
     """Configuration for logging and console output behavior."""
 
     quiet: bool
-    verbose: bool
     log_level: LogLevel
     color: ColorMode
 

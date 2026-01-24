@@ -36,7 +36,7 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     def fake_new_run(**kwargs: Any) -> None:
         data["command"] = kwargs["command_name"]
         data["payload"] = kwargs["payload_builder"](include=True)
-        for flag in ("quiet", "verbose", "fmt", "pretty", "log_level"):
+        for flag in ("quiet", "fmt", "pretty", "log_level"):
             data[flag] = kwargs.get(flag)
 
     monkeypatch.setattr(scaffold_mod, "new_run_command", fake_new_run)
@@ -444,7 +444,6 @@ def _stub_out(monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]) -> None
         captured["payload"] = kwargs["payload_builder"](True)
         captured["opts"] = {
             "quiet": kwargs["quiet"],
-            "verbose": kwargs["verbose"],
             "fmt": kwargs["fmt"],
             "pretty": kwargs["pretty"],
             "log_level": kwargs["log_level"],

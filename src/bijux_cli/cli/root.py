@@ -28,9 +28,9 @@ from typer import Context
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
+from bijux_cli.cli.core.command import current_execution_policy
 from bijux_cli.cli.core.constants import OPT_HELP
 from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
-from bijux_cli.cli.core.output import current_execution_policy
 from bijux_cli.core.precedence import FlagLayer, GlobalCLIConfig
 from bijux_cli.core.runtime import AsyncTyper
 

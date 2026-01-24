@@ -8,11 +8,17 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
+import sys
+import time
 from typing import Any
 
 from bijux_cli.cli.core.constants import ENV_CONFIG, ENV_PREFIX
-from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
-from bijux_cli.core.exit_policy import resolve_exit_behavior
+from bijux_cli.core.enums import ErrorType, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import (
+    ExitIntent,
+    ExitIntentError,
+    resolve_exit_behavior,
+)
 from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
@@ -70,64 +76,90 @@ def validate_common_flags(
     log_policy: LogPolicy | None = None,
 ) -> OutputFormat:
     """Validate output format and ASCII environment."""
+
+    def _raise_error_intent(
+        message: str,
+        *,
+        code: ExitCode,
+        failure: str,
+        fmt_value: OutputFormat,
+        behavior_stream: str | None,
+        show_traceback: bool,
+    ) -> None:
+        error_payload = {"error": message, "code": int(code)}
+        if failure:
+            error_payload["failure"] = failure
+        error_payload["command"] = command
+        error_payload["fmt"] = fmt_value
+        if show_traceback:
+            import traceback
+
+            trace = traceback.format_exc()
+            if "NoneType: None" not in trace:
+                error_payload["traceback"] = trace
+        if include_runtime:
+            error_payload["python"] = ascii_safe(
+                sys.version.split()[0], "python_version"
+            )
+            error_payload["platform"] = ascii_safe(sys.platform, "platform")
+            error_payload["timestamp"] = str(time.time())
+
+        intent = ExitIntent(
+            code=code,
+            stream=behavior_stream,
+            payload=error_payload,
+            fmt=fmt_value,
+            pretty=False,
+            show_traceback=show_traceback,
+        )
+        raise ExitIntentError(intent)
+
     format_value = normalize_format(fmt)
     if format_value is None:
         format_value = OutputFormat.JSON
-        from bijux_cli.cli.core.emit import emit_error_and_exit
-
         behavior = resolve_exit_behavior(
             ErrorType.USAGE,
             quiet=quiet,
             fmt=OutputFormat.JSON,
             log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
         )
-        emit_error_and_exit(
+        _raise_error_intent(
             f"Unsupported format: {fmt}",
-            code=int(behavior.code),
+            code=behavior.code,
             failure="format",
-            command=command,
-            fmt=OutputFormat.JSON,
-            include_runtime=include_runtime,
-            stream=behavior.stream,
+            fmt_value=OutputFormat.JSON,
+            behavior_stream=behavior.stream,
             show_traceback=behavior.show_traceback,
         )
     if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
-        from bijux_cli.cli.core.emit import emit_error_and_exit
-
         behavior = resolve_exit_behavior(
             ErrorType.USAGE,
             quiet=quiet,
             fmt=format_value,
             log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
         )
-        emit_error_and_exit(
+        _raise_error_intent(
             f"Unsupported format: {fmt}",
-            code=int(behavior.code),
+            code=behavior.code,
             failure="format",
-            command=command,
-            fmt=format_value,
-            include_runtime=include_runtime,
-            stream=behavior.stream,
+            fmt_value=format_value,
+            behavior_stream=behavior.stream,
             show_traceback=behavior.show_traceback,
         )
 
     if contains_non_ascii_env():
-        from bijux_cli.cli.core.emit import emit_error_and_exit
-
         behavior = resolve_exit_behavior(
             ErrorType.ASCII,
             quiet=quiet,
             fmt=format_value,
             log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
         )
-        emit_error_and_exit(
+        _raise_error_intent(
             "Non-ASCII in configuration or environment",
-            code=int(behavior.code),
+            code=behavior.code,
             failure="ascii",
-            command=command,
-            fmt=format_value,
-            include_runtime=include_runtime,
-            stream=behavior.stream,
+            fmt_value=format_value,
+            behavior_stream=behavior.stream,
             show_traceback=behavior.show_traceback,
         )
 

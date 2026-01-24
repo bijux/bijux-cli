@@ -11,7 +11,6 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
-import typer
 from typer import Context
 import yaml
 
@@ -25,6 +24,7 @@ from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 from bijux_cli.cli.commands.payloads import DevDiPayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
 
 
@@ -32,7 +32,7 @@ from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a default execution policy for CLI output helpers."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: default_execution_policy(),
     )
     monkeypatch.setattr(
@@ -149,7 +149,6 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
 
     dev_di_graph(
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -157,7 +156,7 @@ def test_dev_di_graph_basic_json_calls_new_run_command(
     )
     assert captured["built"] == base_payload
     assert captured["kwargs"]["fmt"] == "json"
-    assert not captured["kwargs"]["verbose"]
+    assert captured["kwargs"]["log_level"] == LogLevel.INFO
 
 
 def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -192,7 +191,6 @@ def test_dev_di_graph_limit_env_trims_payload(monkeypatch: pytest.MonkeyPatch) -
 
     dev_di_graph(
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -231,7 +229,6 @@ def test_dev_di_graph_output_json_writes_file_and_calls_new_run(
     out_path = tmp_path / "di.json"
     dev_di_graph(
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -267,7 +264,6 @@ def test_dev_di_graph_output_yaml_writes_file(
     out_path = tmp_path / "di.yaml"
     dev_di_graph(
         quiet=False,
-        verbose=False,
         fmt="yaml",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -292,8 +288,6 @@ def test_dev_di_graph_quiet_after_writing_exits(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -308,9 +302,9 @@ def test_dev_di_graph_quiet_after_writing_exits(
         lambda include_runtime: {"factories": [], "services": []},
     )
     out_path = tmp_path / "di.json"
-    with pytest.raises(typer.Exit) as ei:
+    with pytest.raises(ExitIntentError) as ei:
         dev_di_graph(quiet=True, output=[out_path])
-    assert ei.value.exit_code == 0
+    assert ei.value.intent.code == 0
     assert out_path.exists()
 
 
@@ -359,7 +353,6 @@ def test_dev_di_graph_force_serialize_failure_env(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -405,7 +398,6 @@ def test_dev_di_graph_invalid_limit_emits_error(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -446,7 +438,6 @@ def test_dev_di_graph_config_env_non_ascii_emits_error(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -489,7 +480,6 @@ def test_dev_di_graph_config_env_unreadable_path(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -532,7 +522,6 @@ def test_dev_di_graph_payload_builder_raises_value_error(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -619,7 +608,6 @@ def test_dev_di_graph_output_write_raises(
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -633,13 +621,11 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test that the list-plugins command correctly calls its handlers."""
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.ERROR,
             pretty=True,
             include_runtime=False,
@@ -665,13 +651,15 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
     dev_list_plugins(
-        quiet=True, verbose=False, fmt="json", pretty=True, log_level=LogLevel.INFO
+        quiet=True,
+        fmt="json",
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
 
     assert called["validated"] == ("json", "dev list-plugins", True)
     assert called["run"]["command_name"] == "dev list-plugins"
     assert called["run"]["quiet"] is True
-    assert called["run"]["verbose"] is False
     assert called["run"]["fmt"] == "json"
     assert called["run"]["pretty"] is True
     assert called["run"]["log_level"] == "error"
@@ -698,8 +686,6 @@ def test_dev_payload_basic_and_runtime_inclusion(
         output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
-        verbose=False,
-        verbose_level=0,
         log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
@@ -720,8 +706,8 @@ def test_dev_payload_basic_and_runtime_inclusion(
         captured["kwargs"] = kwargs
         built = kwargs["payload_builder"](False)
         captured["built"] = built
-        if kwargs["verbose"]:
-            captured["built_rt"] = kwargs["payload_builder"](True)
+        if policy.include_runtime:
+            captured["built_rt"] = kwargs["payload_builder"](policy.include_runtime)
 
     monkeypatch.setattr(
         "bijux_cli.cli.commands.dev.service.new_run_command", fake_new_run_command
@@ -730,13 +716,11 @@ def test_dev_payload_basic_and_runtime_inclusion(
     dev(
         ctx,
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,
     )
     assert captured["kwargs"]["fmt"] == "json"
-    assert not captured["kwargs"]["verbose"]
     built = captured["built"]
     assert built.status == "ok"
     assert built.python is None
@@ -745,8 +729,6 @@ def test_dev_payload_basic_and_runtime_inclusion(
         output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
-        verbose=True,
-        verbose_level=1,
         log_level=LogLevel.INFO,
         pretty=False,
         include_runtime=True,
@@ -754,12 +736,10 @@ def test_dev_payload_basic_and_runtime_inclusion(
     dev(
         ctx,
         quiet=False,
-        verbose=True,
         fmt="json",
         pretty=False,
         log_level=LogLevel.INFO,
     )
-    assert captured["kwargs"]["verbose"]
     assert captured["built_rt"].python is not None
     assert captured["built_rt"].platform is not None
 
@@ -776,8 +756,6 @@ def test_dev_payload_includes_mode_env(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -795,7 +773,11 @@ def test_dev_payload_includes_mode_env(
     )
 
     dev(
-        ctx, quiet=False, verbose=True, fmt="json", pretty=True, log_level=LogLevel.INFO
+        ctx,
+        quiet=False,
+        fmt="json",
+        pretty=True,
+        log_level=LogLevel.INFO,
     )
     built_payload = captured[0]
     assert built_payload.status == "ok"
@@ -829,7 +811,6 @@ def test_dev_di_graph_config_env_readable_path(
 
     dev_di_graph(
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,

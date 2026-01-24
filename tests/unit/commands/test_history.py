@@ -28,7 +28,6 @@ def mock_flags() -> dict[str, Any]:
     """Return mock common flags."""
     return {
         "quiet": False,
-        "verbose": False,
         "fmt": "json",
         "pretty": True,
         "log_level": "info",
@@ -766,13 +765,11 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
     flags = {**mock_flags, "log_level": "debug"}
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.DEBUG,
                 pretty=True,
                 include_runtime=True,
@@ -792,7 +789,6 @@ def test_clear_history_debug_overrides_flags(mock_flags: dict[str, Any]) -> None
         clear_history(**flags)
 
         call_kwargs = mock_new_run.call_args.kwargs
-        assert call_kwargs["verbose"] is True
         assert call_kwargs["pretty"] is True
 
         builder = call_kwargs["payload_builder"]
@@ -861,7 +857,6 @@ def test_history_list_positive_limit_and_failure(
             export_path=cast(str, None),
             import_path=cast(str, None),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -893,7 +888,6 @@ def test_history_list_positive_limit_and_failure(
                 export_path=cast(str, None),
                 import_path=cast(str, None),
                 quiet=False,
-                verbose=False,
                 fmt=OutputFormat.JSON,
                 pretty=False,
                 log_level=LogLevel.INFO,
@@ -911,19 +905,17 @@ def test_history_list_positive_limit_and_failure(
 
 
 def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
-    """Test that verbose export includes runtime metadata in the payload."""
+    """Test that debug export includes runtime metadata in the payload."""
     out_path = tmp_path / "out.json"
     svc = MagicMock()
     svc.list.return_value = [{"a": 1}]
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -951,7 +943,6 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
             export_path=str(out_path),
             import_path=cast(str, None),
             quiet=False,
-            verbose=True,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -967,17 +958,15 @@ def test_history_export_payload_and_runtime(tmp_path: Path) -> None:
     assert _has_platform(payload)
 
 
-def test_history_debug_flag_respects_verbose_and_pretty() -> None:
-    """Test that debug does not override verbose or pretty flags."""
+def test_history_debug_flag_respects_pretty() -> None:
+    """Test that debug does not override pretty flags."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=False,
-                verbose_level=0,
                 log_level=LogLevel.DEBUG,
                 pretty=False,
                 include_runtime=False,
@@ -1005,7 +994,6 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
             export_path=cast(str, None),
             import_path=cast(str, None),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.DEBUG,
@@ -1016,7 +1004,6 @@ def test_history_debug_flag_respects_verbose_and_pretty() -> None:
         )
 
         _, kwargs = mock_new_run.call_args
-        assert kwargs["verbose"] is False
         assert kwargs["pretty"] is False
         assert kwargs["log_level"] == LogLevel.DEBUG
 
@@ -1036,7 +1023,6 @@ def test_history_invoked_subcommand_skips() -> None:
             None,
             cast(str, None),
             cast(str, None),
-            False,
             False,
             "json",
             True,
@@ -1077,7 +1063,6 @@ def test_history_list_failure() -> None:
                 cast(str, None),
                 cast(str, None),
                 False,
-                False,
                 "json",
                 True,
                 "info",
@@ -1113,13 +1098,11 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -1147,7 +1130,6 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
             export_path=cast(str, None),
             import_path=str(p),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1165,8 +1147,8 @@ def test_history_import_skip_empty_and_payload(tmp_path: Path) -> None:
     assert _file(payload).endswith("inp.json")
 
 
-def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
-    """Test that verbose import includes runtime metadata in the payload."""
+def test_history_import_payload_runtime_with_debug(tmp_path: Path) -> None:
+    """Test that debug import includes runtime metadata in the payload."""
     data = [{"command": "cmd"}]
     p = tmp_path / "in2.json"
     p.write_text(json.dumps(data))
@@ -1174,13 +1156,11 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -1208,7 +1188,6 @@ def test_history_import_payload_runtime_with_verbose(tmp_path: Path) -> None:
             export_path=cast(str, None),
             import_path=str(p),
             quiet=False,
-            verbose=True,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1230,13 +1209,11 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
 
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -1264,7 +1241,6 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
             export_path=str(out),
             import_path=cast(str, None),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1278,20 +1254,18 @@ def test_history_export_payload_and_basic(tmp_path: Path) -> None:
     assert _file(payload) == str(out)
 
 
-def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
-    """Test that verbose export includes runtime metadata in the payload."""
+def test_history_export_payload_runtime_with_debug(tmp_path: Path) -> None:
+    """Test that debug export includes runtime metadata in the payload."""
     out = tmp_path / "out2.json"
     svc = MagicMock(list=MagicMock(return_value=[{"foo": "bar"}]))
 
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=ExecutionPolicy(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -1319,7 +1293,6 @@ def test_history_export_payload_runtime_with_verbose(tmp_path: Path) -> None:
             export_path=str(out),
             import_path=cast(str, None),
             quiet=False,
-            verbose=True,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1360,7 +1333,6 @@ def test_history_list_limit_slicing(monkeypatch: pytest.MonkeyPatch) -> None:
             export_path=cast(str, None),
             import_path=cast(str, None),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1400,7 +1372,6 @@ def test_history_limit_positive_slicing(monkeypatch: pytest.MonkeyPatch) -> None
             export_path=cast(str, None),
             import_path=cast(str, None),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=False,
             log_level=LogLevel.INFO,
@@ -1456,7 +1427,6 @@ def test_history_positive_limit_branch_and_payload_builder(
         export_path=cast(str, None),
         import_path=cast(str, None),
         quiet=False,
-        verbose=False,
         fmt=OutputFormat.JSON,
         pretty=False,
         log_level=LogLevel.INFO,

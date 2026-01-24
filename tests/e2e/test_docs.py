@@ -36,7 +36,7 @@ GLOBAL_FLAGS_MATRIX: list[tuple[list[str], int]] = [
     (["-q"], 0),
     (["--quiet"], 0),
     (["-v"], 0),
-    (["--verbose"], 0),
+    (["--log-level debug"], 0),
     (["-f", "json"], 0),
     (["-f", "yaml"], 0),
     (["-f", "JSON"], 0),
@@ -51,7 +51,7 @@ FUZZABLE_FLAGS = [
     "-q",
     "--quiet",
     "-v",
-    "--verbose",
+    "--log-level debug",
     "-f",
     "--format",
     "--pretty",
@@ -328,7 +328,16 @@ def test_docs_help_contract(flag: str) -> None:
     text_ = res.stdout
     assert text_.lstrip().lower().startswith("usage:")
     assert text_.count("\n") <= 60
-    for k in ("--help", "-h", "--quiet", "-q", "--verbose", "-v", "--format", "-f"):
+    for k in (
+        "--help",
+        "-h",
+        "--quiet",
+        "-q",
+        "--log-level debug",
+        "-v",
+        "--format",
+        "-f",
+    ):
         assert k in text_
     _no_stacktrace_leak(text_)
 
@@ -474,9 +483,9 @@ def test_docs_signal_interrupt(tmp_path: Path) -> None:
 
 
 def test_docs_verbose_fields(tmp_path: Path) -> None:
-    """Test that the --verbose flag adds expected fields to the spec."""
+    """Test that the --log-level debug flag adds expected fields to the spec."""
     out = tmp_path / "spec.json"
-    res = run_cli(["docs", "--out", str(out), "--verbose"])
+    res = run_cli(["docs", "--out", str(out), "--log-level debug"])
     assert res.returncode == 0
     payload = json.loads(out.read_text())
     assert "python" in payload

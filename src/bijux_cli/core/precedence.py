@@ -65,8 +65,6 @@ class ExecutionPolicy:
     output_format: OutputFormat
     color: ColorMode
     quiet: bool
-    verbose: bool
-    verbose_level: int
     log_level: LogLevel
     log_policy: LogPolicy = field(init=False)
     pretty: bool = True
@@ -135,17 +133,6 @@ def resolve_log_policy(log_level: LogLevel) -> LogPolicy:
         pretty_default=rank <= info_rank,
         telemetry_verbosity=telemetry,
     )
-
-
-def _coerce_verbose(value: Any) -> int:
-    """Normalize verbosity inputs into a non-negative integer level."""
-    if isinstance(value, bool):
-        return 1 if value else 0
-    if isinstance(value, int):
-        return max(0, value)
-    if isinstance(value, str) and value.strip().isdigit():
-        return int(value.strip())
-    return 0
 
 
 def validate_cli_flags(
@@ -239,22 +226,6 @@ def resolve_effective_config(
     return EffectiveConfig(flags=flags)
 
 
-def resolve_execution_policy(effective: EffectiveConfig) -> ExecutionPolicy:
-    """Create an immutable execution policy from resolved config."""
-    flags = effective.flags
-    log_policy = resolve_log_policy(flags.log_level)
-    return ExecutionPolicy(
-        output_format=flags.format,
-        color=flags.color,
-        quiet=flags.quiet,
-        verbose=False,
-        verbose_level=0,
-        log_level=flags.log_level,
-        pretty=log_policy.pretty_default,
-        include_runtime=log_policy.show_internal,
-    )
-
-
 def default_execution_policy() -> ExecutionPolicy:
     """Return the default execution policy without DI."""
     defaults = Flags(
@@ -263,7 +234,21 @@ def default_execution_policy() -> ExecutionPolicy:
         color=ColorMode.AUTO,
         format=OutputFormat.JSON,
     )
-    return resolve_execution_policy(EffectiveConfig(flags=defaults))
+    effective = resolve_effective_config(
+        cli=FlagLayer(),
+        env=FlagLayer(),
+        file=FlagLayer(),
+        defaults=defaults,
+    )
+    log_policy = resolve_log_policy(effective.flags.log_level)
+    return ExecutionPolicy(
+        output_format=effective.flags.format,
+        color=effective.flags.color,
+        quiet=effective.flags.quiet,
+        log_level=effective.flags.log_level,
+        pretty=log_policy.pretty_default,
+        include_runtime=log_policy.show_internal,
+    )
 
 
 def resolve_output_flags(

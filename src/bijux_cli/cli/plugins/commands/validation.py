@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bijux_cli.cli.core.output import emit_error_with_policy
+from bijux_cli.cli.core.command import emit_error_with_policy
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import LogPolicy
 
@@ -120,7 +120,6 @@ def refuse_on_symlink(
     command: str,
     fmt: OutputFormat,
     quiet: bool,
-    verbose: bool,
     log_policy: LogPolicy,
 ) -> None:
     """Emits an error and exits if the given directory is a symbolic link.
@@ -133,7 +132,6 @@ def refuse_on_symlink(
         command (str): The invoking command name for the error payload.
         fmt (OutputFormat): The requested output format for the error payload.
         quiet (bool): If True, suppresses output before exiting.
-        verbose (bool): If True, includes runtime info in the error payload.
         log_policy (LogPolicy): Logging policy for diagnostics.
 
     Returns:
@@ -152,6 +150,5 @@ def refuse_on_symlink(
             command=command,
             fmt=fmt,
             quiet=quiet,
-            include_runtime=verbose,
             log_policy=log_policy,
         )

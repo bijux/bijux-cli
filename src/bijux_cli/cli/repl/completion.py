@@ -18,13 +18,11 @@ from bijux_cli.cli.core.constants import (
     OPT_HELP,
     OPT_LOG_LEVEL,
     OPT_QUIET,
-    OPT_VERBOSE,
     PRETTY_FLAGS,
 )
 
 GLOBAL_OPTS = [
     *OPT_QUIET,
-    *OPT_VERBOSE,
     *OPT_FORMAT,
     *OPT_LOG_LEVEL,
     *PRETTY_FLAGS,

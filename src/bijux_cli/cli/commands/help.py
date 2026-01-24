@@ -12,7 +12,6 @@ suppress known noisy warnings from the plugin system during help generation.
 Output Contract:
     * Human:      Standard CLI help text is printed to stdout.
     * JSON/YAML:  `{"help": str}`
-    * Verbose:    Adds `{"python": str, "platform": str, "runtime_ms": int}`.
     * Error:      `{"error": str, "code": int}`
 
 Exit Codes:
@@ -35,25 +34,24 @@ import typer
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.payloads import HelpPayload
+from bijux_cli.cli.core.command import (
+    current_execution_policy,
+    emit_error_with_policy,
+    normalize_payload,
+    record_history,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
-)
-from bijux_cli.cli.core.emit import (
-    emit_and_exit,
-    emit_text_and_exit,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
 )
-from bijux_cli.cli.core.output import current_execution_policy, emit_error_with_policy
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -186,6 +184,43 @@ def _build_help_payload(
     return payload
 
 
+def _emit_structured_help(
+    *,
+    command: str,
+    payload: HelpPayload,
+    output_format: OutputFormat,
+    pretty: bool,
+    quiet: bool,
+) -> None:
+    """Emit structured help payload and raise an ExitIntent."""
+    if quiet:
+        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=output_format,
+                pretty=pretty,
+                show_traceback=False,
+            )
+        )
+    record_history(command, 0)
+    from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream="stdout",
+            payload=normalize_payload(payload),
+            fmt=output_format,
+            pretty=pretty,
+            show_traceback=False,
+        )
+    )
+
+
 def _emit_human_help(
     *,
     quiet: bool,
@@ -206,7 +241,20 @@ def _emit_human_help(
                 show_traceback=False,
             )
         )
-    emit_text_and_exit(help_text_provider(), color=color, exit_code=0)
+    text = help_text_provider()
+    typer.echo(text, color=color, err=False)
+    from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream=None,
+            payload=None,
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            show_traceback=False,
+        )
+    )
 
 
 typer.core.rich = None  # type: ignore[attr-defined,assignment]
@@ -231,7 +279,6 @@ def help_callback(
     ctx: typer.Context,
     command_path: list[str] | None = ARGS,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option(_HUMAN, *OPT_FORMAT, help=HELP_FORMAT_HELP),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -248,7 +295,6 @@ def help_callback(
             to the target command (e.g., `["config", "get"]`).
         quiet (bool): If True, suppresses all output. The exit code is the
             primary indicator of outcome.
-        verbose (bool): If True, includes Python and platform details in
             structured output formats.
         fmt (str): The output format: "human", "json", or "yaml".
         pretty (bool): If True, pretty-prints structured output.
@@ -297,10 +343,22 @@ def help_callback(
                         show_traceback=False,
                     )
                 )
-            emit_text_and_exit(
+            typer.echo(
                 help_text,
                 color=resolve_click_color(quiet=policy.quiet, fmt=None),
-                exit_code=0,
+                err=False,
+            )
+            from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+            raise ExitIntentError(
+                ExitIntent(
+                    code=ExitCode.SUCCESS,
+                    stream=None,
+                    payload=None,
+                    fmt=OutputFormat.JSON,
+                    pretty=False,
+                    show_traceback=False,
+                )
             )
         else:
             from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
@@ -318,7 +376,6 @@ def help_callback(
 
     tokens = command_path or []
     command = "help"
-    _ = (quiet, verbose, log_level, pretty, fmt)
     policy = current_execution_policy()
     intent = _build_help_intent(tokens, fmt, policy)
 
@@ -428,24 +485,10 @@ def help_callback(
         if intent.format_value == OutputFormat.YAML
         else OutputFormat.JSON
     )
-    if intent.quiet:
-        from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
-
-        raise ExitIntentError(
-            ExitIntent(
-                code=ExitCode.SUCCESS,
-                stream=None,
-                payload=None,
-                fmt=output_format,
-                pretty=intent.pretty,
-                show_traceback=False,
-            )
-        )
-    emit_and_exit(
-        payload=payload,
-        fmt=output_format,
-        effective_pretty=intent.pretty,
-        verbose=policy.verbose,
+    _emit_structured_help(
         command=command,
-        exit_code=0,
+        payload=payload,
+        output_format=output_format,
+        pretty=intent.pretty,
+        quiet=intent.quiet,
     )

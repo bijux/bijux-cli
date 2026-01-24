@@ -165,7 +165,6 @@ class BijuxAPI:
         name: str,
         *args: Any,
         quiet: bool = False,
-        verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
         log_level: LogLevel = LogLevel.INFO,
@@ -181,7 +180,6 @@ class BijuxAPI:
             name (str): The name of the command to run.
             *args (Any): Positional arguments for the command.
             quiet (bool): If True, suppresses output.
-            verbose (bool): If True, enables verbose logging.
             fmt (str): The output format ("json" or "yaml").
             pretty (bool): If True, formats the output for readability.
             log_level (str): The requested log level.
@@ -195,7 +193,6 @@ class BijuxAPI:
             name,
             *args,
             quiet=quiet,
-            verbose=verbose,
             fmt=fmt,
             pretty=pretty,
             log_level=log_level,
@@ -207,7 +204,6 @@ class BijuxAPI:
         name: str,
         *args: Any,
         quiet: bool = False,
-        verbose: bool = False,
         fmt: str = "json",
         pretty: bool = True,
         log_level: LogLevel = LogLevel.INFO,
@@ -222,7 +218,6 @@ class BijuxAPI:
             name (str): The name of the command to execute.
             *args (Any): Positional arguments for the command.
             quiet (bool): If True, suppresses output.
-            verbose (bool): If True, enables verbose output.
             fmt (str): The output format ("json" or "yaml").
             pretty (bool): If True, formats the output for readability.
             log_level (str): The requested log level.
@@ -237,10 +232,6 @@ class BijuxAPI:
         """
         try:
             _ = pretty
-            if quiet and verbose:
-                raise BijuxError(
-                    "--quiet cannot be combined with --verbose", http_status=400
-                )
             fmt_value = OutputFormat(fmt)
             log_value = (
                 log_level if isinstance(log_level, LogLevel) else LogLevel(log_level)

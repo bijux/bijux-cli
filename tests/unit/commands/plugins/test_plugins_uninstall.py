@@ -17,6 +17,8 @@ from typer.testing import CliRunner
 import bijux_cli.cli.plugins.commands.uninstall as uninstall_mod
 import bijux_cli.cli.root as cli
 from bijux_cli.cli.root import app as cli_app
+from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.plugins.metadata import PluginMetadata
 
 
@@ -37,12 +39,21 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         command_name: str,
         payload_builder: Any,
         quiet: bool,
-        verbose: bool,
         fmt: str,
         pretty: bool,
         log_level: str,
     ) -> None:
         data["payload"] = payload_builder(include=True)
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(uninstall_mod, "new_run_command", fake_new_run)
 
@@ -81,12 +92,21 @@ def stub_plugins_dir_and_capture(
         command_name: str,
         payload_builder: Any,
         quiet: bool,
-        verbose: bool,
         fmt: str,
         pretty: bool,
         log_level: str,
     ) -> None:
         data.update(payload_builder(include=True))
+        raise ExitIntentError(
+            ExitIntent(
+                code=ExitCode.SUCCESS,
+                stream=None,
+                payload=None,
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                show_traceback=False,
+            )
+        )
 
     monkeypatch.setattr(uninstall_mod, "new_run_command", fake_new_run)
     return {"plugins_dir": plugins_dir, "captured": data}

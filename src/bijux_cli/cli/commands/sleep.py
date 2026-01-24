@@ -10,7 +10,6 @@ duration slept.
 
 Output Contract:
     * Success: `{"slept": float}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -27,6 +26,11 @@ import time
 import typer
 
 from bijux_cli.cli.commands.payloads import SleepPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     DEFAULT_COMMAND_TIMEOUT,
     ENV_COMMAND_TIMEOUT,
@@ -34,19 +38,12 @@ from bijux_cli.cli.core.constants import (
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
@@ -94,7 +91,6 @@ def sleep(
         ..., "--seconds", "-s", help="Duration in seconds (must be ≥ 0)"
     ),
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -110,7 +106,6 @@ def sleep(
         seconds (float): The duration in seconds to pause execution. Must be
             non-negative and not exceed the configured command timeout.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python and platform details in the
             output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
@@ -131,7 +126,6 @@ def sleep(
         fmt=fmt,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0
     log_policy = effective.log_policy
     pretty = effective.pretty
 
@@ -183,7 +177,6 @@ def sleep(
         command_name=command,
         payload_builder=lambda include: _build_payload(include, seconds),
         quiet=quiet,
-        verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
         log_level=log_level,

@@ -27,7 +27,7 @@ GLOBAL_FLAGS = [
     (["-q"], 0),
     (["--quiet"], 0),
     (["-v"], 0),
-    (["--verbose"], 0),
+    (["--log-level debug"], 0),
     (["-f", "json"], 0),
     (["-f", "yaml"], 0),
     (["-f", "JSON"], 0),
@@ -42,7 +42,7 @@ ALL_FLAGS = [
     "-h",
     "--quiet",
     "-q",
-    "--verbose",
+    "--log-level debug",
     "-v",
     "--format",
     "-f",
@@ -269,17 +269,13 @@ def test_audit_no_config_env_leak(
     assert "config.env" not in stderr
 
 
-def test_audit_debug_and_verbose_add_runtime(tmp_path: Path) -> None:
-    """Test that debug/verbose flags add runtime info to the output."""
+def test_audit_debug_adds_runtime(tmp_path: Path) -> None:
+    """Test that debug flags add runtime info to the output."""
     out_file = tmp_path / "audit.json"
-    for flag in (
-        "-v",
-        "--log-level debug",
-    ):
-        run_cli(["audit", "--dry-run", "--output", str(out_file), flag])
-        payload = _assert_json(out_file.read_text())
-        assert "python" in payload
-        assert "platform" in payload
+    run_cli(["audit", "--dry-run", "--output", str(out_file), "--log-level", "debug"])
+    payload = _assert_json(out_file.read_text())
+    assert "python" in payload
+    assert "platform" in payload
 
 
 def test_audit_pretty_and_no_pretty(tmp_path: Path) -> None:
@@ -660,11 +656,13 @@ def test_audit_help_precedes_di_failure(monkeypatch: pytest.MonkeyPatch) -> None
     assert not res.stderr.strip()
 
 
-def test_audit_verbose_info_persists_with_output_flag(tmp_path: Path) -> None:
-    """ADR Test: --verbose info must be in stdout payload when --output is used."""
+def test_audit_debug_info_persists_with_output_flag(tmp_path: Path) -> None:
+    """ADR Test: --log-level debug info must be in stdout payload when --output is used."""
     out_file = tmp_path / "audit.json"
 
-    res = run_cli(["audit", "--dry-run", "--output", str(out_file), "--verbose"])
+    res = run_cli(
+        ["audit", "--dry-run", "--output", str(out_file), "--log-level debug"]
+    )
 
     assert res.returncode == 0
 

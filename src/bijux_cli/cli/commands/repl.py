@@ -25,21 +25,19 @@ import sys
 
 import typer
 
+from bijux_cli.cli.core.command import emit_error_with_policy
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT_HELP,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
 )
-from bijux_cli.cli.core.output import emit_error_with_policy
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.repl.execution import _run_piped as _exec_run_piped
 from bijux_cli.cli.repl.ui import register_signal_handlers
@@ -76,7 +74,6 @@ def _run_repl_session(*, quiet: bool, stdin_isatty: bool) -> None:
 def main(
     ctx: typer.Context,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("human", *OPT_FORMAT, help=HELP_FORMAT_HELP),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -91,7 +88,6 @@ def main(
         ctx (typer.Context): The Typer context for the CLI.
         quiet (bool): If True, forces non-interactive mode and suppresses
             prompts and command output.
-        verbose (bool): If True, enables verbose output for subcommands.
         fmt (str): The desired output format. Only "human" is supported for
             the REPL itself.
         pretty (bool): If True, enables pretty-printing for subcommands.
@@ -104,14 +100,11 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.core.output import current_execution_policy
+    from bijux_cli.cli.core.command import current_execution_policy
 
-    _ = (quiet, verbose, log_level, pretty, fmt)
     policy = current_execution_policy()
     effective_include_runtime = policy.include_runtime
     quiet = policy.quiet
-    verbose = policy.verbose
-    pretty = policy.pretty
 
     fmt_lower = fmt.strip().lower()
     format_value = None
