@@ -21,25 +21,40 @@ from bijux_cli.cli.commands.help import (
     _build_help_payload,
     _find_target_command,
 )
+import bijux_cli.cli.commands.help_command as help_cmd
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
-from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
+from bijux_cli.core.precedence import (
+    EffectiveConfig,
+    ExecutionPolicy,
+    Flags,
+    OutputConfig,
+    default_execution_policy,
+)
 
 
 @pytest.fixture(autouse=True)
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a default execution policy for CLI output helpers."""
-    monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
-        lambda: default_execution_policy(),
+    policy = default_execution_policy()
+    effective = EffectiveConfig(
+        flags=Flags(
+            quiet=policy.quiet,
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: default_execution_policy(),
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
     )
-    monkeypatch.setattr(help_mod, "record_history", lambda *_a, **_k: None)
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
 
 
 class DummyCmd(click.Command):
@@ -132,7 +147,7 @@ def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def call_help(*args: Any, **kwargs: Any) -> Any:
-    return help_mod.help_callback.__wrapped__(*args, **kwargs)
+    return help_cmd.help_callback.__wrapped__(*args, **kwargs)
 
 
 def make_ctx_for_callback(
@@ -172,18 +187,31 @@ def test_help_flag_triggers_help_and_exit(
 def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with an invalid format exits with code 2."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
-            quiet=True,
-            log_level=LogLevel.ERROR,
-            pretty=True,
-            include_runtime=False,
-        ),
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.JSON,
+        color=ColorMode.AUTO,
+        quiet=True,
+        log_level=LogLevel.ERROR,
+        pretty=True,
+        include_runtime=False,
     )
+    effective = EffectiveConfig(
+        flags=Flags(
+            quiet=True,
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
+    )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -229,7 +257,7 @@ def test_quiet_non_ascii_token(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-ASCII env var exits with code 3."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr(help_cmd, "contains_non_ascii_env", lambda: True)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -245,7 +273,7 @@ def test_quiet_non_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_quiet_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a non-existent target exits with code 2."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
+    monkeypatch.setattr(help_cmd, "_find_target_command", lambda c, p: None)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -263,7 +291,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
 ) -> None:
     """Test that non-quiet mode with invalid format emits a structured error."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "validate_common_flags", lambda *a, **k: None)
+    monkeypatch.setattr(help_cmd, "validate_common_flags", lambda *a, **k: None)
     called: dict[str, Any] = {}
 
     def fake_error(
@@ -288,19 +316,32 @@ def test_nonquiet_invalid_format_calls_emit_error(
             )
         )
 
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
-            quiet=False,
-            log_level=LogLevel.INFO,
-            pretty=True,
-            include_runtime=False,
-        ),
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.JSON,
+        color=ColorMode.AUTO,
+        quiet=False,
+        log_level=LogLevel.INFO,
+        pretty=True,
+        include_runtime=False,
     )
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
+    effective = EffectiveConfig(
+        flags=Flags(
+            quiet=False,
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
+    )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -320,7 +361,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
 ) -> None:
     """Test that non-quiet mode with a null byte emits a structured error."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "validate_common_flags", lambda *a, **k: None)
+    monkeypatch.setattr(help_cmd, "validate_common_flags", lambda *a, **k: None)
     called: dict[str, Any] = {}
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
@@ -336,7 +377,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
             )
         )
 
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -355,7 +396,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
 ) -> None:
     """Test that non-quiet mode with a non-ASCII token emits a structured error."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "validate_common_flags", lambda *a, **k: None)
+    monkeypatch.setattr(help_cmd, "validate_common_flags", lambda *a, **k: None)
     called: dict[str, Any] = {}
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
@@ -371,7 +412,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
             )
         )
 
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -388,8 +429,8 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
 def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-quiet mode with a non-ASCII env emits a structured error."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "validate_common_flags", lambda *a, **k: None)
-    monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: True)
+    monkeypatch.setattr(help_cmd, "validate_common_flags", lambda *a, **k: None)
+    monkeypatch.setattr(help_cmd, "contains_non_ascii_env", lambda: True)
     called: dict[str, Any] = {}
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
@@ -405,7 +446,7 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
             )
         )
 
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -422,9 +463,9 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
 def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that non-quiet mode with a non-existent target emits a not_found error."""
     ctx = make_ctx_for_callback()
-    monkeypatch.setattr(help_mod, "validate_common_flags", lambda *a, **k: None)
-    monkeypatch.setattr(help_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
+    monkeypatch.setattr(help_cmd, "validate_common_flags", lambda *a, **k: None)
+    monkeypatch.setattr(help_cmd, "contains_non_ascii_env", lambda: False)
+    monkeypatch.setattr(help_cmd, "_find_target_command", lambda c, p: None)
     called: dict[str, Any] = {}
 
     def fake_error(msg: str, code: int, failure: str, **kwargs: Any) -> None:
@@ -440,7 +481,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
             )
         )
 
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -464,20 +505,33 @@ def test_nonquiet_human_format_prints_and_exits(
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent_ctx)
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
+        help_cmd, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.JSON,
+        color=ColorMode.AUTO,
+        quiet=False,
+        log_level=LogLevel.INFO,
+        pretty=False,
+        include_runtime=False,
+    )
+    effective = EffectiveConfig(
+        flags=Flags(
             quiet=False,
-            log_level=LogLevel.INFO,
-            pretty=False,
-            include_runtime=False,
-        ),
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
     )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
 
     class DummyContainer:
         def resolve(self, proto: type) -> None:
@@ -510,37 +564,38 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
     parent = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent)
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
+        help_cmd, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
     monkeypatch.setattr(
         DIContainer,
         "current",
         classmethod(lambda cls: MagicMock(resolve=lambda p: None)),
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.YAML,
-            color=ColorMode.AUTO,
-            quiet=False,
-            log_level=LogLevel.INFO,
-            pretty=True,
-            include_runtime=False,
-        ),
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.JSON,
+        color=ColorMode.AUTO,
+        quiet=False,
+        log_level=LogLevel.INFO,
+        pretty=False,
+        include_runtime=True,
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
+    effective = EffectiveConfig(
+        flags=Flags(
             quiet=False,
-            log_level=LogLevel.INFO,
-            pretty=False,
-            include_runtime=True,
-        ),
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
     )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -567,25 +622,38 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
     parent = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent)
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
+        help_cmd, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
     monkeypatch.setattr(
         DIContainer,
         "current",
         classmethod(lambda cls: MagicMock(resolve=lambda p: None)),
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.YAML,
-            color=ColorMode.AUTO,
-            quiet=False,
-            log_level=LogLevel.INFO,
-            pretty=True,
-            include_runtime=False,
-        ),
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.YAML,
+        color=ColorMode.AUTO,
+        quiet=False,
+        log_level=LogLevel.INFO,
+        pretty=True,
+        include_runtime=False,
     )
+    effective = EffectiveConfig(
+        flags=Flags(
+            quiet=False,
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
+    )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -614,20 +682,33 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that quiet mode with a valid target exits with code 0."""
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (object(), object())
+        help_cmd, "_find_target_command", lambda c, p: (object(), object())
     )
-    monkeypatch.setattr(
-        help_mod,
-        "current_execution_policy",
-        lambda: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
+    policy = ExecutionPolicy(
+        output_format=OutputFormat.JSON,
+        color=ColorMode.AUTO,
+        quiet=True,
+        log_level=LogLevel.ERROR,
+        pretty=True,
+        include_runtime=False,
+    )
+    effective = EffectiveConfig(
+        flags=Flags(
             quiet=True,
-            log_level=LogLevel.ERROR,
-            pretty=True,
-            include_runtime=False,
-        ),
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
     )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    monkeypatch.setattr(help_cmd, "_resolve_help_config", lambda: (effective, output))
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -648,7 +729,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
     parent = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent)
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
+        help_cmd, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
     monkeypatch.setattr(
         DIContainer,
@@ -656,7 +737,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
         classmethod(lambda cls: MagicMock(resolve=lambda p: None)),
     )
     monkeypatch.setattr(
-        help_mod,
+        help_cmd,
         "_build_help_payload",
         lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("broken")),
     )
@@ -675,7 +756,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
             )
         )
 
-    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_emit)
+    monkeypatch.setattr(help_cmd, "raise_exit_intent", fake_emit)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -713,7 +794,7 @@ def test_import_level_overrides(
     orig_typer_secho = real_typer.secho
 
     monkeypatch.setattr(real_sys, "argv", ["prog", "help", "--quiet"])
-    importlib.reload(help_mod)
+    importlib.reload(help_cmd)
 
     assert real_sys.stderr.write("") == 0
     assert real_sys.stderr.write("   ") == 3
@@ -745,7 +826,7 @@ def test_help_flag_no_target(
     group = click.Group(name="root")
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent_ctx)
-    monkeypatch.setattr(help_mod, "_find_target_command", lambda c, p: None)
+    monkeypatch.setattr(help_cmd, "_find_target_command", lambda c, p: None)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -773,7 +854,7 @@ def test_help_flag_fallback_to_root(
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent_ctx)
     monkeypatch.setattr(
-        help_mod,
+        help_cmd,
         "_find_target_command",
         lambda c, p: None if p else (group, parent_ctx),
     )
@@ -802,7 +883,7 @@ def test_help_flag_with_format_flag(
     parent_ctx = typer.Context(group, info_name="bijux")
     ctx = typer.Context(group, parent=parent_ctx)
     monkeypatch.setattr(
-        help_mod, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
+        help_cmd, "_find_target_command", lambda c, p: (foo, typer.Context(foo))
     )
     with pytest.raises(ExitIntentError) as exc:
         call_help(

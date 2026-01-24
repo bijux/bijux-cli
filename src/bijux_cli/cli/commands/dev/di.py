@@ -275,7 +275,8 @@ def dev_di_graph(
                     log_level=log_level_value,
                 )
 
-        if quiet:
+        emit_output = not quiet
+        if not emit_output:
             record_history(command, 0)
             from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 

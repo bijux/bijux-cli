@@ -132,10 +132,16 @@ class AsyncTyper(typer.Typer):
 
 def execute_exit_intent(intent: Any) -> None:
     """Execute an exit intent by emitting its payload and raising typer.Exit."""
-    from bijux_cli.cli.core.emit import emit_payload
+    from bijux_cli.cli.core.emit import emit_payload, resolve_serializer
 
     if intent.stream is not None and intent.payload is not None:
+        serializer = resolve_serializer()
         emit_payload(
-            intent.payload, fmt=intent.fmt, pretty=intent.pretty, stream=intent.stream
+            intent.payload,
+            serializer=serializer,
+            emitter=None,
+            fmt=intent.fmt,
+            pretty=intent.pretty,
+            stream=intent.stream,
         )
     raise typer.Exit(int(intent.code))

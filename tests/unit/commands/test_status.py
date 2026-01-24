@@ -17,7 +17,7 @@ import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -170,7 +170,7 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
             quiet=False,
             effective_pretty=True,
             include_runtime=False,
-            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -207,7 +207,7 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
             quiet=False,
             effective_pretty=True,
             include_runtime=True,
-            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -243,7 +243,7 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
             quiet=False,
             effective_pretty=True,
             include_runtime=False,
-            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -449,7 +449,7 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
         quiet=True,
         effective_pretty=True,
         include_runtime=False,
-        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -477,7 +477,7 @@ def test_run_watch_mode_one_iteration_and_stop(
         quiet=False,
         effective_pretty=True,
         include_runtime=True,
-        log_policy=SimpleNamespace(show_internal=True, level=LogLevel.DEBUG),
+        log_policy=resolve_log_policy(LogLevel.DEBUG),
         telemetry=tel,
         emitter=em,
     )
@@ -510,7 +510,7 @@ def test_run_watch_mode_info_suppresses_diagnostics(
         quiet=False,
         effective_pretty=True,
         include_runtime=False,
-        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -561,7 +561,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         quiet=False,
         effective_pretty=False,
         include_runtime=False,
-        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )

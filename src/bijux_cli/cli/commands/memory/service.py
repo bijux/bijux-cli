@@ -138,7 +138,8 @@ def _run_one_shot_mode(
             log_level=log_level,
         )
 
-    if quiet:
+    emit_output = not quiet
+    if not emit_output:
         from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 
         raise ExitIntentError(

@@ -14,16 +14,22 @@ import pytest
 from typer import Context
 import yaml
 
-import bijux_cli.cli.commands.diagnostics.docs as docs_mod
+import bijux_cli.cli.commands.diagnostics.docs as docs_pure
 from bijux_cli.cli.commands.diagnostics.docs import (
     _build_spec_payload,
     _default_output_path,
     _resolve_output_target,
-    docs,
 )
+import bijux_cli.cli.commands.diagnostics.docs_command as docs_mod
+from bijux_cli.cli.commands.diagnostics.docs_command import docs
 from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntentError
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import (
+    EffectiveConfig,
+    ExecutionPolicy,
+    Flags,
+    OutputConfig,
+)
 
 
 class FakeDocsService:
@@ -59,7 +65,9 @@ def call_docs(*args: Any, **kwargs: Any) -> Any:
     return docs.__wrapped__(*args, **kwargs)
 
 
-def _fake_current_execution_policy(**kwargs: Any) -> ExecutionPolicy:
+def _fake_resolve_docs_config(
+    **kwargs: Any,
+) -> tuple[EffectiveConfig, OutputConfig]:
     fmt = (kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
     raw_level = kwargs.get("log_level", LogLevel.INFO)
@@ -69,7 +77,7 @@ def _fake_current_execution_policy(**kwargs: Any) -> ExecutionPolicy:
         else LogLevel(str(raw_level).lower())
     )
     pretty = bool(kwargs.get("pretty", False))
-    return ExecutionPolicy(
+    policy = ExecutionPolicy(
         output_format=output_format,
         color=ColorMode.AUTO,
         quiet=bool(kwargs.get("quiet", False)),
@@ -77,6 +85,23 @@ def _fake_current_execution_policy(**kwargs: Any) -> ExecutionPolicy:
         pretty=pretty,
         include_runtime=bool(kwargs.get("include_runtime", False)),
     )
+    effective = EffectiveConfig(
+        flags=Flags(
+            quiet=policy.quiet,
+            log_level=policy.log_level,
+            color=policy.color,
+            format=policy.output_format,
+        )
+    )
+    output = OutputConfig(
+        include_runtime=policy.include_runtime,
+        pretty=policy.pretty,
+        log_level=policy.log_level,
+        color=policy.color,
+        format=policy.output_format,
+        log_policy=policy.log_policy,
+    )
+    return effective, output
 
 
 def test_default_output_path() -> None:
@@ -111,14 +136,17 @@ def test_resolve_output_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert p == f
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
 def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray option causes a structured error and exit."""
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = ["-x"]
@@ -144,14 +172,17 @@ def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
 def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> None:
     """Test that a stray argument causes a structured error and exit."""
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = ["foo"]
@@ -177,10 +208,16 @@ def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> 
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
 def test_docs_ascii_env_failure(
     mock_resolve: MagicMock, mock_emit: MagicMock, mock_nonascii: MagicMock
@@ -188,7 +225,7 @@ def test_docs_ascii_env_failure(
     """Test that non-ASCII environment variables cause an error and exit."""
     mock_nonascii.return_value = True
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
@@ -214,12 +251,20 @@ def test_docs_ascii_env_failure(
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs._build_spec_payload", autospec=True)
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command._build_spec_payload", autospec=True
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_ascii_payload_failure(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -230,7 +275,7 @@ def test_docs_ascii_payload_failure(
     mock_nonascii.return_value = False
     mock_build.side_effect = ValueError("bad payload")
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
@@ -288,7 +333,7 @@ def test_default_output_and_resolve_targets(
 
 def test_build_spec_payload_basic(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the basic structure of the specification payload."""
-    monkeypatch.setattr(docs_mod, "CLI_VERSION", "vX.Y.Z")
+    monkeypatch.setattr(docs_pure, "CLI_VERSION", "vX.Y.Z")
     import bijux_cli.cli.commands as cmd_pkg
 
     monkeypatch.setattr(
@@ -310,7 +355,8 @@ def test_build_spec_payload_ascii_failure(monkeypatch: pytest.MonkeyPatch) -> No
     """Test that an ASCII safety check failure raises an error."""
     monkeypatch.setenv("DUMMY", "")
     monkeypatch.setattr(
-        "bijux_cli.cli.core.validation.ascii_safe",
+        docs_pure,
+        "ascii_safe",
         lambda v, k: (_ for _ in ()).throw(ValueError("bad ascii")),
     )
     import bijux_cli.cli.commands as cmd_pkg
@@ -326,9 +372,7 @@ def test_docs_stdout_branch(
     """Test that specifying stdout ('-') prints the spec to stdout."""
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", "")
     monkeypatch.setattr(docs_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(
-        docs_mod, "current_execution_policy", _fake_current_execution_policy
-    )
+    monkeypatch.setattr(docs_mod, "_resolve_docs_config", _fake_resolve_docs_config)
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"val": 3})
     monkeypatch.setattr(
         docs_mod,
@@ -359,9 +403,7 @@ def test_docs_file_written_and_exit_intent(
     """Test that the spec is written to a file and a success payload is emitted."""
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(
-        docs_mod, "current_execution_policy", _fake_current_execution_policy
-    )
+    monkeypatch.setattr(docs_mod, "_resolve_docs_config", _fake_resolve_docs_config)
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
 
     monkeypatch.setattr(
@@ -371,10 +413,9 @@ def test_docs_file_written_and_exit_intent(
     )
     monkeypatch.setattr(
         docs_mod,
-        "current_execution_policy",
-        lambda **_kw: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
+        "_resolve_docs_config",
+        lambda **_kw: _fake_resolve_docs_config(
+            fmt="json",
             quiet=False,
             log_level=LogLevel.INFO,
             pretty=False,
@@ -404,9 +445,13 @@ def test_docs_file_written_and_exit_intent(
 
 
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_write_failure(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -415,7 +460,7 @@ def test_docs_write_failure(
 ) -> None:
     """Test that a file write failure is handled gracefully."""
     mock_nonascii.return_value = False
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
 
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"b": 2})
@@ -450,9 +495,13 @@ def test_docs_write_failure(
 
 
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_missing_output_dir(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -461,7 +510,7 @@ def test_docs_missing_output_dir(
 ) -> None:
     """Test that a non-existent output directory causes an error."""
     mock_nonascii.return_value = False
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
 
     bad_dir = tmp_path / "no" / "such" / "dir"
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(bad_dir))
@@ -493,9 +542,13 @@ def test_docs_missing_output_dir(
 
 
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_writes_yaml_and_emit(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -504,9 +557,8 @@ def test_docs_writes_yaml_and_emit(
 ) -> None:
     """Test that YAML output is correctly serialized and written."""
     mock_nonascii.return_value = False
-    mock_resolve.side_effect = lambda **_kw: ExecutionPolicy(
-        output_format=OutputFormat.YAML,
-        color=ColorMode.AUTO,
+    mock_resolve.side_effect = lambda **_kw: _fake_resolve_docs_config(
+        fmt="yaml",
         quiet=False,
         log_level=LogLevel.INFO,
         pretty=False,
@@ -541,11 +593,17 @@ def test_docs_writes_yaml_and_emit(
     assert payload["status"] == "written"
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_io_fail_flag(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -556,7 +614,7 @@ def test_docs_io_fail_flag(
     """Test that a simulated I/O failure flag is handled."""
     mock_nonascii.return_value = False
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
 
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
     monkeypatch.setenv("BIJUXCLI_TEST_IO_FAIL", "1")
@@ -594,11 +652,17 @@ def test_docs_io_fail_flag(
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_internal_error_path_none(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -609,7 +673,7 @@ def test_docs_internal_error_path_none(
     """Test handling of an internal error where the resolved output path is None."""
     mock_nonascii.return_value = False
     mock_emit.side_effect = SystemExit()
-    mock_resolve.side_effect = _fake_current_execution_policy
+    mock_resolve.side_effect = _fake_resolve_docs_config
 
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"k": "v"})
     monkeypatch.setattr(
@@ -654,9 +718,7 @@ def test_docs_stdout_debug_no_diagnostics(
     """Test that debug mode with stdout output does not print diagnostics."""
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", "")
     monkeypatch.setattr(docs_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(
-        docs_mod, "current_execution_policy", _fake_current_execution_policy
-    )
+    monkeypatch.setattr(docs_mod, "_resolve_docs_config", _fake_resolve_docs_config)
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"num": 7})
     monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
@@ -691,9 +753,7 @@ def test_docs_stdout_quiet_skips_echo(
     """Test that quiet mode with stdout output produces no output."""
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", "")
     monkeypatch.setattr(docs_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(
-        docs_mod, "current_execution_policy", _fake_current_execution_policy
-    )
+    monkeypatch.setattr(docs_mod, "_resolve_docs_config", _fake_resolve_docs_config)
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
     monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
@@ -704,10 +764,9 @@ def test_docs_stdout_quiet_skips_echo(
     )
     monkeypatch.setattr(
         docs_mod,
-        "current_execution_policy",
-        lambda **_kw: ExecutionPolicy(
-            output_format=OutputFormat.JSON,
-            color=ColorMode.AUTO,
+        "_resolve_docs_config",
+        lambda **_kw: _fake_resolve_docs_config(
+            fmt="json",
             quiet=True,
             log_level=LogLevel.ERROR,
             pretty=True,
@@ -740,9 +799,7 @@ def test_docs_stdout_yaml(
     """Test that YAML output is correctly echoed to stdout."""
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", "")
     monkeypatch.setattr(docs_mod, "contains_non_ascii_env", lambda: False)
-    monkeypatch.setattr(
-        docs_mod, "current_execution_policy", _fake_current_execution_policy
-    )
+    monkeypatch.setattr(docs_mod, "_resolve_docs_config", _fake_resolve_docs_config)
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
     monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
@@ -771,11 +828,17 @@ def test_docs_stdout_yaml(
     assert err == ""
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.raise_exit_intent", autospec=True)
 @patch(
-    "bijux_cli.cli.commands.diagnostics.docs.current_execution_policy", autospec=True
+    "bijux_cli.cli.commands.diagnostics.docs_command.raise_exit_intent", autospec=True
 )
-@patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command._resolve_docs_config",
+    autospec=True,
+)
+@patch(
+    "bijux_cli.cli.commands.diagnostics.docs_command.contains_non_ascii_env",
+    autospec=True,
+)
 def test_docs_yaml_serialization_failure(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
@@ -785,9 +848,8 @@ def test_docs_yaml_serialization_failure(
 ) -> None:
     """Test that a YAML serialization failure is handled gracefully."""
     mock_nonascii.return_value = False
-    mock_resolve.side_effect = lambda **_kw: ExecutionPolicy(
-        output_format=OutputFormat.YAML,
-        color=ColorMode.AUTO,
+    mock_resolve.side_effect = lambda **_kw: _fake_resolve_docs_config(
+        fmt="yaml",
         quiet=False,
         log_level=LogLevel.INFO,
         pretty=True,
