@@ -385,8 +385,8 @@ def rewrite_links_tree(md: str) -> str:
     """Rewrite links specifically for the project tree and source code files.
 
     This function extends `rewrite_links_general` with rules tailored to this
-    project. It converts links pointing to Python source files (`.py`) into
-    links pointing to their corresponding pages in the API reference section.
+    project. It converts links pointing to source paths into GitHub URLs so
+    the docs site can link to the code directly.
 
     Args:
         md: The input Markdown content.
@@ -396,21 +396,17 @@ def rewrite_links_tree(md: str) -> str:
     """
     md = rewrite_links_general(md)
 
+    repo_base = "https://github.com/bijux/bijux-cli/blob/main/"
+
     def repl(m: Match[str]) -> str:
         href = m.group(1)
-        if href.startswith("src/bijux_cli/") and href.endswith(".py"):
-            rel = href[len("src/bijux_cli/") : -3]
-            ref = ("reference/" + rel + ".md").replace("\\", "/")
-            return f"]({ref})"
-        if href.rstrip("/").endswith("src/bijux_cli/commands"):
-            return "](reference/commands/index.md)"
+        if href.startswith("src/"):
+            return f"]({repo_base}{href})"
         if href in ("#source-code-srcbijux_cli", "#plugin-template-plugin_template"):
             return "](#top)"
         return m.group(0)
 
     md = _LINK_PAT.sub(repl, md)
-    md = md.replace("src/bijux_cli/cli.py", "reference/cli.md")
-    md = md.replace("src/bijux_cli/commands/", "reference/commands/index.md")
     return md
 
 

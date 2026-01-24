@@ -77,7 +77,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * **Docs assets:** Community landing page, Plausible analytics partial, and CSS overrides.
 
 ### Changed
-* **Docs generator (`scripts/helper_mkdocs.py`):**
+* **Docs generator (`scripts/docs_builder/mkdocs_manager.py`):**
   * Copies **README**, **USAGE**, **TESTS**, **PROJECT_TREE**, and **TOOLING** into the site with link rewrites and `{#top}` anchors.
   * Generates mkdocstrings pages for all modules under `src/bijux_cli/**`.
   * Builds **one** consolidated **API Reference** with this structure:

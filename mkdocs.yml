@@ -71,22 +71,6 @@ plugins:
       comments: false
       rewrite_relative_urls: true
 
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [src]
-          options:
-            docstring_style: google
-            docstring_section_style: list
-            merge_init_into_class: true
-            show_source: true
-            show_if_no_docstring: false
-            show_root_heading: true
-            heading_level: 2
-            separate_signature: true
-            signature_crossrefs: true
-            filters: ["!^_"]
-
   - search
   - social:
       enabled: !ENV [ENABLE_SOCIAL_CARDS, false]

@@ -27,7 +27,6 @@ REQUIRED_FLAGS = [
     "--help",
     "-q",
     "--quiet",
-    "-v",
     "--log-level debug",
     "-f",
     "--format",
@@ -61,7 +60,6 @@ def test_format_with_whitespace(fmt: str) -> None:
             [
                 "--pretty",
                 "--no-pretty",
-                "-v",
                 "--log-level debug",
                 "--log-level",
                 "debug",

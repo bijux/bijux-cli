@@ -1724,11 +1724,11 @@ def test_plugin_submodule_loader_importable() -> None:
     assert loader_mod.__name__.endswith("loader")
 
 
-def test_plugin_submodule_cache_importable() -> None:
-    """Test the cache submodule is importable."""
-    import bijux_cli.plugins.cache as cache_mod
+def test_plugin_submodule_helpers_importable() -> None:
+    """Test the helpers submodule is importable."""
+    import bijux_cli.plugins.helpers as helpers_mod
 
-    assert cache_mod.__name__.endswith("cache")
+    assert helpers_mod.__name__.endswith("helpers")
 
 
 def test_plugin_submodule_registry_importable() -> None:

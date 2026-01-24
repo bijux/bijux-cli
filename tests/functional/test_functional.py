@@ -38,11 +38,9 @@ def find_bijux_binary() -> Path:
     """Locate the `bijux` executable in common dev/test locations."""
     exe_name = "bijux"
 
-    override = os.getenv("BIJUX_BIN")
-    if override:
-        p = Path(override)
-        if p.is_file():
-            return p.resolve()
+    local = ROOT / "bin" / exe_name
+    if local.exists():
+        return local.resolve()
 
     sibling = Path(sys.executable).parent / exe_name
     if sibling.exists():
@@ -52,13 +50,15 @@ def find_bijux_binary() -> Path:
         if p.is_file():
             return p.resolve()
 
+    override = os.getenv("BIJUX_BIN")
+    if override:
+        p = Path(override)
+        if p.is_file():
+            return p.resolve()
+
     which = shutil.which("bijux")
     if which:
         return Path(which).resolve()
-
-    local = ROOT / "bin" / exe_name
-    if local.exists():
-        return local.resolve()
 
     raise FileNotFoundError("Could not locate 'bijux' binary")
 
