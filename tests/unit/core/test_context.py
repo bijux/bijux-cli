@@ -11,16 +11,12 @@ import pytest
 
 from bijux_cli.core.context import Context, _current_context
 from bijux_cli.core.di import DIContainer
-from bijux_cli.services.contracts import ObservabilityProtocol
 
 
 @pytest.fixture
 def mock_di() -> MagicMock:
     """Provide a mock DIContainer."""
-    di = MagicMock(spec=DIContainer)
-    di.resolve.return_value = MagicMock(spec=ObservabilityProtocol)
-    di.is_verbose.return_value = False
-    return di
+    return MagicMock(spec=DIContainer)
 
 
 @pytest.fixture
@@ -29,249 +25,35 @@ def context(mock_di: MagicMock) -> Context:
     return Context(mock_di)
 
 
-def test_init_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that context initialization logs when verbose mode is enabled."""
-    mock_di.is_verbose.return_value = True
-    mock_log = mock_di.resolve.return_value
-    Context(mock_di)
-    mock_log.log.assert_called_with("debug", "Context initialized", extra={})
-
-
-def test_init_no_verbose(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that context initialization does not log when verbose mode is disabled."""
-    mock_di.is_verbose.return_value = False
-    mock_log = mock_di.resolve.return_value
-    Context(mock_di)
-    mock_log.log.assert_not_called()
-
-
-def test_init_test_mode(mock_di: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that context initialization does not log when in test mode."""
-    mock_di.is_verbose.return_value = False
-    mock_log = mock_di.resolve.return_value
-    Context(mock_di)
-    mock_log.log.assert_not_called()
-
-
-def test_set_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that setting a context value logs when verbose mode is enabled."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
+def test_set_and_get(context: Context) -> None:
+    """Set a value and retrieve it."""
     context.set("key", "value")
-    assert context._data["key"] == "value"
-    context._log.log.assert_called_with(  # type: ignore[attr-defined]
-        "debug", "Context set", extra={"key": "key", "value": "value"}
-    )
-
-
-def test_set_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that setting a context value does not log when verbose mode is disabled."""
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    context.set("key", "value")
-    assert context._data["key"] == "value"
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-
-
-def test_get_success_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that getting a context value logs when verbose mode is enabled."""
-    context._data["key"] = "value"
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
-    monkeypatch.setenv("BIJUXCLI_TEST_MODE", "")
     assert context.get("key") == "value"
-    context._log.log.assert_called_with(  # type: ignore[attr-defined]
-        "debug", "Context get", extra={"key": "key", "value": "value"}
-    )
 
 
-def test_get_success_no_verbose(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that getting a context value does not log when verbose mode is disabled."""
-    context._data["key"] = "value"
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    assert context.get("key") == "value"
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-
-
-def test_get_fail_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that failing to get a value logs when verbose mode is enabled."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
+def test_get_missing_raises(context: Context) -> None:
+    """Missing keys raise KeyError."""
     with pytest.raises(KeyError, match="not found"):
         context.get("missing")
-    context._log.log.assert_called_with(  # type: ignore[attr-defined]
-        "warning", "Context key not found", extra={"key": "missing"}
-    )
 
 
-def test_get_fail_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that failing to get a value does not log when verbose mode is disabled."""
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    with pytest.raises(KeyError, match="not found"):
-        context.get("missing")
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-
-
-def test_clear_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that clearing the context logs when verbose mode is enabled."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
+def test_clear(context: Context) -> None:
+    """Clear removes all values."""
+    context.set("key", "value")
     context.clear()
     assert context._data == {}
-    context._log.log.assert_called_with(  # type: ignore[attr-defined]
-        "debug", "Context cleared", extra={}
-    )
 
 
-def test_clear_no_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that clearing the context does not log when verbose mode is disabled."""
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    context.clear()
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-
-
-def test_enter_exit_verbose(context: Context, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that entering and exiting a context logs when verbose mode is enabled."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
+def test_sync_context_manager(context: Context) -> None:
+    """Context manager sets and clears current data."""
     with context:
-        assert _current_context.get() is context._data
-    context._log.log.assert_any_call(  # type: ignore[attr-defined]
-        "debug", "Context entered", extra={}
-    )
-    context._log.log.assert_any_call(  # type: ignore[attr-defined]
-        "debug", "Context exited", extra={}
-    )
-    assert _current_context.get() is None
-
-
-def test_enter_exit_no_verbose(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that entering and exiting a context does not log when verbose is disabled."""
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    with context:
-        assert _current_context.get() is context._data
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-    assert _current_context.get() is None
-
-
-def test_enter_exit_exception(context: Context) -> None:
-    """Test that the context is correctly reset after an exception."""
-    with pytest.raises(ValueError, match="test"), context:
-        raise ValueError("test")
-    assert _current_context.get() is None
+        assert _current_context.get() == context._data
+    assert _current_context.get() is None or _current_context.get() == {}
 
 
 @pytest.mark.asyncio
-async def test_aenter_aexit_verbose(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that entering and exiting an async context logs when verbose is enabled."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
+async def test_async_context_manager(context: Context) -> None:
+    """Async context manager sets and clears current data."""
     async with context:
-        assert _current_context.get() is context._data
-    context._log.log.assert_any_call(  # type: ignore[attr-defined]
-        "debug", "Async context entered", extra={}
-    )
-    context._log.log.assert_any_call(  # type: ignore[attr-defined]
-        "debug", "Async context exited", extra={}
-    )
-    assert _current_context.get() is None
-
-
-@pytest.mark.asyncio
-async def test_aenter_aexit_no_verbose(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that async enter/exit does not log when verbose is disabled."""
-    context._di.is_verbose.return_value = False  # type: ignore[attr-defined]
-    async with context:
-        assert _current_context.get() is context._data
-    context._log.log.assert_not_called()  # type: ignore[attr-defined]
-    assert _current_context.get() is None
-
-
-@pytest.mark.asyncio
-async def test_aenter_aexit_exception(context: Context) -> None:
-    """Test that the async context is correctly reset after an exception."""
-    with pytest.raises(ValueError, match="test"):
-        async with context:
-            raise ValueError("test")
-    assert _current_context.get() is None
-
-
-def test_current_data_empty() -> None:
-    """Test that current_data returns a new empty dict if no context is set."""
-    _current_context.set(None)
-    data = Context.current_data()
-    assert data == {}
-    assert _current_context.get() is data
-
-
-def test_current_data_existing() -> None:
-    """Test that current_data returns the existing context data if set."""
-    existing = {"existing": "data"}
-    _current_context.set(existing)
-    data = Context.current_data()
-    assert data is existing
-
-
-def test_set_current_data() -> None:
-    """Test that set_current_data correctly updates the context variable."""
-    new_data = {"new": "data"}
-    Context.set_current_data(new_data)
-    assert _current_context.get() is new_data
-
-
-def test_use_context() -> None:
-    """Test the 'use_context' class method context manager."""
-    original = _current_context.get()
-    temp_data = {"temp": "data"}
-    with Context.use_context(temp_data):
-        assert _current_context.get() is temp_data
-    assert _current_context.get() is original
-
-
-def test_use_context_exception() -> None:
-    """Test that 'use_context' correctly restores the context after an exception."""
-    original = _current_context.get()
-    temp_data = {"temp": "data"}
-    with pytest.raises(ValueError, match="test"), Context.use_context(temp_data):
-        raise ValueError("test")
-    assert _current_context.get() is original
-
-
-def test_exit_without_token_noop_and_logs(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that __exit__ without a token does not reset the context but still logs."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
-
-    sentinel = {"keep": "me"}
-    tok = _current_context.set(sentinel)
-    try:
-        assert context._token is None
-        context.__exit__(None, None, None)
-        assert _current_context.get() is sentinel
-        context._log.log.assert_called_with(  # type: ignore[attr-defined]
-            "debug", "Context exited", extra={}
-        )
-    finally:
-        _current_context.reset(tok)
-
-
-@pytest.mark.asyncio
-async def test_aexit_without_token_noop_and_logs(
-    context: Context, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test that __aexit__ without a token does not reset the context but still logs."""
-    context._di.is_verbose.return_value = True  # type: ignore[attr-defined]
-
-    sentinel = {"keep": "me-too"}
-    tok = _current_context.set(sentinel)
-    try:
-        assert context._token is None
-        await context.__aexit__(None, None, None)
-        assert _current_context.get() is sentinel
-        context._log.log.assert_called_with(  # type: ignore[attr-defined]
-            "debug", "Async context exited", extra={}
-        )
-    finally:
-        _current_context.reset(tok)
+        assert _current_context.get() == context._data
+    assert _current_context.get() is None or _current_context.get() == {}

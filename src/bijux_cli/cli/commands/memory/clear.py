@@ -26,19 +26,24 @@ import typer
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.payloads import MemoryClearPayload
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 
 
@@ -79,8 +84,7 @@ def clear_memory(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
-        pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -92,25 +96,21 @@ def clear_memory(
     command = "memory clear"
     validate_common_flags(fmt, command, quiet)
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
 
-    memory_svc = resolve_memory_service(command, fmt_lower, quiet, verbose, debug)
+    memory_svc = resolve_memory_service(command, fmt_lower, quiet, verbose, log_policy)
 
     try:
         memory_svc.clear()
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Failed to clear memory: {exc}",
             code=1,
             failure="clear_failed",
@@ -118,7 +118,7 @@ def clear_memory(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     new_run_command(

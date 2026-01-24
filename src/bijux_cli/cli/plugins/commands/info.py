@@ -30,19 +30,24 @@ from typing import Any
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.plugins.metadata import get_plugin_metadata
 
@@ -66,8 +71,7 @@ def info_plugin(
         quiet (bool): If True, suppresses all output except for errors.
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
-        pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -78,23 +82,19 @@ def info_plugin(
     """
     command = "plugins info"
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
 
     try:
         meta = get_plugin_metadata(name)
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=1,
             failure="metadata_error",
@@ -102,7 +102,7 @@ def info_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     payload: dict[str, Any] = {
@@ -122,7 +122,7 @@ def info_plugin(
             if isinstance(extra, dict):
                 payload.update(extra)
         except Exception as exc:
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f'Plugin "{name}" metadata is corrupt: {exc}',
                 code=1,
                 failure="metadata_corrupt",
@@ -130,7 +130,7 @@ def info_plugin(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
     new_run_command(

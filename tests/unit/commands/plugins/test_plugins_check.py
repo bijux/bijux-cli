@@ -16,6 +16,7 @@ import pytest
 import bijux_cli.cli.plugins.commands.check as plugin_check
 from bijux_cli.cli.plugins.commands.check import check_plugin
 from bijux_cli.core.enums import LogLevel
+from bijux_cli.core.precedence import default_execution_policy
 from bijux_cli.core.runtime import run_command
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
@@ -27,6 +28,15 @@ class DummyExitError(Exception):
         """Initialize the DummyExit exception."""
         self.code = code
         self.payload = payload
+
+
+@pytest.fixture(autouse=True)
+def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure a default execution policy for CLI output helpers."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.output.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
 
 
 def _make_dir(
@@ -102,9 +112,15 @@ def run_check(
         "bijux_cli.cli.plugins.commands.check.get_plugin_metadata", lambda _: meta
     ):
         captured: dict[str, Any] = {}
-        with patch(
-            "bijux_cli.cli.plugins.commands.check.new_run_command",
-            lambda **kw: captured.update(kw),
+        with (
+            patch(
+                "bijux_cli.cli.plugins.commands.check.new_run_command",
+                lambda **kw: captured.update(kw),
+            ),
+            patch(
+                "bijux_cli.cli.core.output.current_execution_policy",
+                lambda: default_execution_policy(),
+            ),
         ):
             run_command(
                 check_plugin,
@@ -113,7 +129,7 @@ def run_check(
                 verbose=opts.get("verbose", False),
                 fmt=fmt,
                 pretty=opts.get("pretty", True),
-                log_level=opts.get("debug", False),
+                log_level=opts.get("log_level", "info"),
             )
         return captured
 
@@ -130,7 +146,7 @@ def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
         fmt: str | None = None,
         quiet: bool = False,
         include_runtime: bool = False,
-        debug: bool = False,
+        log_policy: Any | None = None,
         extra: dict[str, Any] | None = None,
     ) -> None:
         payload = {"error": message, "failure": failure}
@@ -142,7 +158,7 @@ def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
             payload.update(extra)
         raise DummyExitError(code, payload)
 
-    monkeypatch.setattr(plugin_check, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(plugin_check, "emit_error_with_policy", fake_emit)
 
 
 @pytest.mark.parametrize(
@@ -172,6 +188,10 @@ def test_health_various_returns(
             "bijux_cli.cli.plugins.commands.check.get_plugin_metadata", lambda _: meta
         ),
         patch("bijux_cli.cli.plugins.commands.check.new_run_command") as mock_new_run,
+        patch(
+            "bijux_cli.cli.core.output.current_execution_policy",
+            lambda: default_execution_policy(),
+        ),
     ):
         run_command(
             check_plugin,

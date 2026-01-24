@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 import bijux_cli.cli.plugins.commands.list as list_mod
 from bijux_cli.cli.root import app as cli_app
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 
 
 @pytest.fixture
@@ -38,9 +38,9 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         fmt: OutputFormat,
         quiet: bool,
         verbose: bool,
-        debug: bool,
+        log_policy: Any | None,
     ) -> None:
-        calls["refuse"] = (dir_, command, fmt, quiet, verbose, debug)
+        calls["refuse"] = (dir_, command, fmt, quiet, verbose, log_policy)
 
     monkeypatch.setattr(list_mod, "refuse_on_symlink", fake_refuse)
 
@@ -68,7 +68,7 @@ def test_default_list(
 ) -> None:
     """Test the 'plugins list' command with default flags."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -90,7 +90,7 @@ def test_default_list(
         "json",
         False,
         False,
-        False,
+        resolve_log_policy(LogLevel.INFO),
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is False
@@ -105,7 +105,7 @@ def test_all_flags(
 ) -> None:
     """Test the 'plugins list' command with all flags specified."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -140,7 +140,7 @@ def test_all_flags(
         "yaml",
         True,
         True,
-        False,
+        resolve_log_policy(LogLevel.ERROR),
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is True

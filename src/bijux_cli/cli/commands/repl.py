@@ -26,18 +26,20 @@ import sys
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT_HELP,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT_HELP,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import emit_error_with_policy
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.repl.execution import _run_piped as _exec_run_piped
 from bijux_cli.cli.repl.ui import register_signal_handlers
@@ -102,10 +104,10 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.core.output import get_execution_policy
+    from bijux_cli.cli.core.output import current_execution_policy
 
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
+    policy = current_execution_policy()
     effective_include_runtime = policy.include_runtime
     quiet = policy.quiet
     verbose = policy.verbose
@@ -121,7 +123,7 @@ def main(
             policy.quiet,
             include_runtime=effective_include_runtime,
         )
-        emit_error_and_exit(
+        emit_error_with_policy(
             "REPL only supports human format.",
             code=2,
             failure="format",
@@ -129,7 +131,7 @@ def main(
             fmt=format_value,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            debug=(policy.log_policy.show_internal),
+            log_policy=policy.log_policy,
         )
 
     register_signal_handlers()

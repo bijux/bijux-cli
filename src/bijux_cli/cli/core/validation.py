@@ -11,7 +11,9 @@ import re
 from typing import Any
 
 from bijux_cli.cli.core.constants import ENV_CONFIG, ENV_PREFIX
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import resolve_exit_behavior
+from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
 _ENV_LINE_RX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=[A-Za-z0-9_./\\-]*$")
@@ -65,6 +67,7 @@ def validate_common_flags(
     command: str,
     quiet: bool,
     include_runtime: bool = False,
+    log_policy: LogPolicy | None = None,
 ) -> OutputFormat:
     """Validate output format and ASCII environment."""
     format_value = normalize_format(fmt)
@@ -72,42 +75,60 @@ def validate_common_flags(
         format_value = OutputFormat.JSON
         from bijux_cli.cli.core.emit import emit_error_and_exit
 
+        behavior = resolve_exit_behavior(
+            ErrorType.USAGE,
+            quiet=quiet,
+            fmt=OutputFormat.JSON,
+            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
+        )
         emit_error_and_exit(
             f"Unsupported format: {fmt}",
-            code=2,
+            code=int(behavior.code),
             failure="format",
             command=command,
             fmt=OutputFormat.JSON,
-            quiet=quiet,
             include_runtime=include_runtime,
-            debug=False,
+            stream=behavior.stream,
+            show_traceback=behavior.show_traceback,
         )
     if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
         from bijux_cli.cli.core.emit import emit_error_and_exit
 
+        behavior = resolve_exit_behavior(
+            ErrorType.USAGE,
+            quiet=quiet,
+            fmt=format_value,
+            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
+        )
         emit_error_and_exit(
             f"Unsupported format: {fmt}",
-            code=2,
+            code=int(behavior.code),
             failure="format",
             command=command,
             fmt=format_value,
-            quiet=quiet,
             include_runtime=include_runtime,
-            debug=False,
+            stream=behavior.stream,
+            show_traceback=behavior.show_traceback,
         )
 
     if contains_non_ascii_env():
         from bijux_cli.cli.core.emit import emit_error_and_exit
 
+        behavior = resolve_exit_behavior(
+            ErrorType.ASCII,
+            quiet=quiet,
+            fmt=format_value,
+            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
+        )
         emit_error_and_exit(
             "Non-ASCII in configuration or environment",
-            code=3,
+            code=int(behavior.code),
             failure="ascii",
             command=command,
             fmt=format_value,
-            quiet=quiet,
             include_runtime=include_runtime,
-            debug=False,
+            stream=behavior.stream,
+            show_traceback=behavior.show_traceback,
         )
 
     return format_value

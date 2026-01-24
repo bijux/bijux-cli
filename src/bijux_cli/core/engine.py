@@ -85,7 +85,6 @@ class Engine:
                 color=ColorMode.AUTO,
             )
             logging_config = LoggingConfig(
-                debug=(resolved.log_policy.show_internal),
                 quiet=quiet,
                 verbose=False,
                 log_level=resolved.log_level,

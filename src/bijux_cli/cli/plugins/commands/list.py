@@ -28,16 +28,18 @@ import platform
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
+)
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
 )
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import validate_common_flags
@@ -77,13 +79,9 @@ def list_plugin(
     command = "plugins list"
 
     validate_common_flags(fmt, command, quiet)
-    effective, _, _ = resolve_command_config(
+    effective, _ = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     plugins_dir = get_plugins_dir()
     refuse_on_symlink(
@@ -92,7 +90,7 @@ def list_plugin(
         effective.output_format,
         effective.quiet,
         effective.verbose_level > 0,
-        (effective.log_policy.show_internal),
+        effective.log_policy,
     )
     plugins = list_installed_plugins()
 

@@ -31,14 +31,14 @@ class DummyObs(ObservabilityProtocol):
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
         self.closed: int = 0
         self.bound: dict[str, Any] = {}
-        self.debug: bool = False
+        self.log_level: str | None = None
         self._logger: FilteringBoundLogger | None = None
 
     @classmethod
     def setup(cls, *, log_level: str, telemetry: Any) -> DummyObs:
         """Construct and configure the dummy observability service."""
         inst = cls()
-        inst.debug = log_level == LogLevel.DEBUG
+        inst.log_level = log_level
         inst.bound["telemetry"] = telemetry
         return inst
 

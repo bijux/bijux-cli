@@ -28,9 +28,10 @@ from typer import Context
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
-from bijux_cli.cli.core.flags import parse_global_flags
-from bijux_cli.cli.core.output import get_execution_policy
-from bijux_cli.core.precedence import GlobalCLIConfig
+from bijux_cli.cli.core.constants import OPT_HELP
+from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
+from bijux_cli.cli.core.output import current_execution_policy
+from bijux_cli.core.precedence import FlagLayer, GlobalCLIConfig
 from bijux_cli.core.runtime import AsyncTyper
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ def maybe_default_to_repl(ctx: Context) -> None:
     if ctx.invoked_subcommand is None and len(sys.argv) == 1:
         subprocess.call([sys.argv[0], "repl"])  # noqa: S603
     elif ctx.invoked_subcommand is None:
-        policy = get_execution_policy()
+        policy = current_execution_policy()
         typer.echo(
             ctx.get_help(),
             color=resolve_click_color(quiet=policy.quiet, fmt=None),
@@ -136,7 +137,20 @@ def build_app(*, load_plugins: bool = True) -> AsyncTyper:
 
 def parse_global_config(argv: list[str]) -> GlobalCLIConfig:
     """Parse global CLI flags once at the CLI root layer."""
-    return parse_global_flags(argv)
+    flags = parse_global_flags(argv)
+    help_flag = any(arg in OPT_HELP for arg in argv)
+    errors = () if help_flag else collect_global_flag_errors(argv)
+    return GlobalCLIConfig(
+        help=help_flag,
+        flags=FlagLayer(
+            quiet=flags.quiet,
+            log_level=flags.log_level,
+            color=flags.color,
+            format=flags.format,
+        ),
+        args=tuple(argv),
+        errors=errors,
+    )
 
 
 app = build_app()

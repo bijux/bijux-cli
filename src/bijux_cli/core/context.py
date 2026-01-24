@@ -21,7 +21,6 @@ from injector import inject
 
 from bijux_cli.core.contracts import ExecutionContext
 from bijux_cli.core.di import DIContainer
-from bijux_cli.services.contracts import ObservabilityProtocol
 
 T = TypeVar("T")
 _current_context: ContextVar[dict[str, Any] | None] = ContextVar(
@@ -38,7 +37,6 @@ class Context(ExecutionContext):
 
     Attributes:
         _di (DIContainer): The dependency injection container.
-        _log (ObservabilityProtocol): The logging service.
         _data (dict[str, Any]): The dictionary storing the context's data.
         _token (Token | None): The token for resetting the `ContextVar`.
     """
@@ -52,11 +50,8 @@ class Context(ExecutionContext):
                 resolve the logging service.
         """
         self._di = di
-        self._log: ObservabilityProtocol = di.resolve(ObservabilityProtocol)
         self._data: dict[str, Any] = {}
         self._token: Token[dict[str, Any] | None] | None = None
-        if self._di.is_verbose():
-            self._log.log("debug", "Context initialized", extra={})
 
     def set(self, key: str, value: Any) -> None:
         """Sets a value in the current context's data.
@@ -69,10 +64,6 @@ class Context(ExecutionContext):
             None:
         """
         self._data[key] = value
-        if self._di.is_verbose():
-            self._log.log(
-                "debug", "Context set", extra={"key": key, "value": str(value)}
-            )
 
     def get(self, key: str) -> Any:
         """Gets a value from the current context's data.
@@ -87,22 +78,12 @@ class Context(ExecutionContext):
             KeyError: If the key is not found in the context.
         """
         if key not in self._data:
-            if self._di.is_verbose():
-                self._log.log("warning", "Context key not found", extra={"key": key})
             raise KeyError(f"Key '{key}' not found in context")
-        if self._di.is_verbose():
-            self._log.log(
-                "debug",
-                "Context get",
-                extra={"key": key, "value": str(self._data[key])},
-            )
         return self._data[key]
 
     def clear(self) -> None:
         """Removes all values from the context's data."""
         self._data.clear()
-        if self._di.is_verbose():
-            self._log.log("debug", "Context cleared", extra={})
 
     def __enter__(self) -> Context:
         """Enters the context as a synchronous manager.
@@ -113,8 +94,6 @@ class Context(ExecutionContext):
             Context: The context instance itself.
         """
         self._token = _current_context.set(self._data)
-        if self._di.is_verbose():
-            self._log.log("debug", "Context entered", extra={})
         return self
 
     def __exit__(self, _exc_type: Any, _exc_value: Any, traceback: Any) -> None:
@@ -133,8 +112,6 @@ class Context(ExecutionContext):
         if self._token:
             _current_context.reset(self._token)
             self._token = None
-        if self._di.is_verbose():
-            self._log.log("debug", "Context exited", extra={})
 
     async def __aenter__(self) -> Context:
         """Enters the context as an asynchronous manager.
@@ -145,8 +122,6 @@ class Context(ExecutionContext):
             Context: The context instance itself.
         """
         self._token = _current_context.set(self._data)
-        if self._di.is_verbose():
-            self._log.log("debug", "Async context entered", extra={})
         return self
 
     async def __aexit__(self, _exc_type: Any, _exc_value: Any, traceback: Any) -> None:
@@ -165,8 +140,6 @@ class Context(ExecutionContext):
         if self._token:
             _current_context.reset(self._token)
             self._token = None
-        if self._di.is_verbose():
-            self._log.log("debug", "Async context exited", extra={})
 
     @classmethod
     def current_data(cls) -> dict[str, Any]:

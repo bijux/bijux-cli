@@ -24,7 +24,7 @@ from bijux_cli.cli.commands.diagnostics.audit import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 from bijux_cli.infra.contracts import Serializer
 
 runner = CliRunner()
@@ -151,7 +151,7 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
             emitter=emitter,
             fmt=OutputFormat.YAML,
             pretty=False,
-            debug=True,
+            log_policy=resolve_log_policy(LogLevel.DEBUG),
             dry_run=False,
         )
 
@@ -225,7 +225,7 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -283,7 +283,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -370,7 +370,7 @@ def test_write_output_file_success(
         emitter=emitter,
         fmt=OutputFormat.JSON,
         pretty=True,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
         dry_run=True,
     )
 
@@ -392,7 +392,7 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
             emitter=DummyEmitter(),
             fmt=OutputFormat.JSON,
             pretty=False,
-            debug=False,
+            log_policy=resolve_log_policy(LogLevel.INFO),
             dry_run=False,
         )
 
@@ -426,7 +426,7 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -462,7 +462,7 @@ def test_debug_does_not_force_verbose_or_pretty(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -585,7 +585,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -627,7 +627,7 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -661,7 +661,7 @@ def test_audit_output_to_file_with_verbose(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -691,7 +691,8 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test the stray argument handling logic."""
     mock_emit_error = MagicMock(side_effect=SystemExit(2))
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.diagnostics.audit.emit_error_and_exit", mock_emit_error
+        "bijux_cli.cli.commands.diagnostics.audit.emit_error_with_policy",
+        mock_emit_error,
     )
 
     mock_ctx = MagicMock(spec=typer.Context)
@@ -726,7 +727,7 @@ def test_verbose_file_output_constructs_correct_final_payload(
     """Test that verbose file output executes the final payload modification."""
     _fake_configure_emitter(monkeypatch, DummyEmitter())
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

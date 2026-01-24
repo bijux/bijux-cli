@@ -38,19 +38,24 @@ import anyio
 import typer
 
 from bijux_cli.cli.core.constants import (
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.plugins.metadata import get_plugin_metadata
 
@@ -75,7 +80,7 @@ async def check_plugin(
         verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
-        debug (bool): If True, enables debug diagnostics.
+        log_level (str): Logging level for diagnostics.
 
     Returns:
         None:
@@ -86,23 +91,19 @@ async def check_plugin(
     """
     command = "plugins check"
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
     quiet = effective.quiet
     verbose = effective.verbose_level > 0
-    debug = effective.log_policy.show_internal
+    log_policy = effective.log_policy
     pretty = effective.pretty
 
     try:
         meta = await anyio.to_thread.run_sync(get_plugin_metadata, name)
     except Exception as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=1,
             failure="metadata_error",
@@ -110,11 +111,11 @@ async def check_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if not meta.path:
-        emit_error_and_exit(
+        emit_error_with_policy(
             f'Plugin "{name}" has no local health hook',
             code=1,
             failure="health_unavailable",
@@ -122,13 +123,13 @@ async def check_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     plug_dir = meta.path
     plug_py = plug_dir / "plugin.py"
     if not plug_py.is_file():
-        emit_error_and_exit(
+        emit_error_with_policy(
             f'Plugin "{name}" not found',
             code=1,
             failure="not_found",
@@ -136,7 +137,7 @@ async def check_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
             extra={"plugin": name},
         )
 
@@ -150,9 +151,9 @@ async def check_plugin(
         spec.loader.exec_module(module)
     except Exception as exc:
         err = f"Import error: {exc}"
-        if debug:
+        if log_policy.show_internal:
             err += "\n" + traceback.format_exc()
-        emit_error_and_exit(
+        emit_error_with_policy(
             err,
             code=1,
             failure="import_error",
@@ -160,7 +161,7 @@ async def check_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     async def _run_health() -> dict[str, Any]:
@@ -209,7 +210,7 @@ async def check_plugin(
     exit_code = 1 if result.get("status") == "unhealthy" else 0
 
     if result.get("error"):
-        emit_error_and_exit(
+        emit_error_with_policy(
             result["error"],
             code=1,
             failure="health_error",
@@ -217,7 +218,7 @@ async def check_plugin(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     def _build_payload(include: bool) -> Mapping[str, object]:

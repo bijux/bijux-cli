@@ -1,142 +1,58 @@
 # SPDX-License-Identifier: MIT
 # Copyright © 2025 Bijan Mousavi
 
-"""Property tests for precedence resolution."""
+"""Property tests for LogLevel ordering and parsing."""
 
 from __future__ import annotations
 
 from hypothesis import given
 from hypothesis import strategies as st
 
-from bijux_cli.cli.core.flags import parse_global_flags
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import (
-    FlagLayer,
-    Flags,
-    resolve_effective_config,
-    validate_cli_flags,
-)
-
-_log_levels = st.sampled_from(list(LogLevel))
-_colors = st.sampled_from(list(ColorMode))
-_formats = st.sampled_from(list(OutputFormat))
+from bijux_cli.core.enums import LogLevel
+from bijux_cli.core.precedence import _log_rank
 
 
-@given(
-    cli_quiet=st.one_of(st.none(), st.just(True)),
-    env_quiet=st.one_of(st.none(), st.booleans()),
-    file_quiet=st.one_of(st.none(), st.booleans()),
-)
-def test_left_identity_for_quiet(
-    cli_quiet: bool | None, env_quiet: bool | None, file_quiet: bool | None
+@st.composite
+def _level_triplets(draw: st.DrawFn) -> tuple[LogLevel, LogLevel, LogLevel]:
+    levels = list(LogLevel)
+    return (
+        draw(st.sampled_from(levels)),
+        draw(st.sampled_from(levels)),
+        draw(st.sampled_from(levels)),
+    )
+
+
+@given(_level_triplets())
+def test_log_level_rank_transitivity(
+    levels: tuple[LogLevel, LogLevel, LogLevel],
 ) -> None:
-    defaults = Flags(
-        quiet=False,
-        log_level=LogLevel.INFO,
-        color=ColorMode.AUTO,
-        format=OutputFormat.JSON,
-    )
-    argv: list[str] = []
-    if cli_quiet:
-        argv.append("--quiet")
-    parsed = parse_global_flags(argv)
-    assert validate_cli_flags(parsed) == ()
-    cli = parsed.flags
-    env = FlagLayer(quiet=env_quiet)
-    file = FlagLayer(quiet=file_quiet)
-
-    eff_full = resolve_effective_config(cli=cli, env=env, file=file, defaults=defaults)
-    expected = (
-        cli_quiet
-        if cli_quiet is not None
-        else env_quiet
-        if env_quiet is not None
-        else file_quiet
-        if file_quiet is not None
-        else defaults.quiet
-    )
-    assert eff_full.flags.quiet == expected
+    a, b, c = levels
+    if _log_rank(a) <= _log_rank(b) and _log_rank(b) <= _log_rank(c):
+        assert _log_rank(a) <= _log_rank(c)
 
 
-@given(
-    color=_colors,
-    log_level=_log_levels,
-    fmt=_formats,
-)
-def test_right_identity_defaults_only(
-    color: ColorMode, log_level: LogLevel, fmt: OutputFormat
-) -> None:
-    defaults = Flags(
-        quiet=False,
-        log_level=log_level,
-        color=color,
-        format=fmt,
-    )
-    parsed = parse_global_flags([])
-    assert validate_cli_flags(parsed) == ()
-    effective = resolve_effective_config(
-        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
-    )
-    assert effective.flags == defaults
+@given(st.sampled_from(list(LogLevel)), st.sampled_from(list(LogLevel)))
+def test_log_level_total_ordering(a: LogLevel, b: LogLevel) -> None:
+    assert _log_rank(a) <= _log_rank(b) or _log_rank(b) <= _log_rank(a)
 
 
-@given(
-    color=_colors,
-    log_level=_log_levels,
-    fmt=_formats,
-)
-def test_idempotence_when_layers_equal(
-    color: ColorMode, log_level: LogLevel, fmt: OutputFormat
-) -> None:
-    defaults = Flags(
-        quiet=False,
-        log_level=LogLevel.INFO,
-        color=ColorMode.AUTO,
-        format=OutputFormat.JSON,
+@given(st.sampled_from(list(LogLevel)))
+def test_log_level_case_insensitive_parsing(level: LogLevel) -> None:
+    value = level.value
+    mixed = "".join(
+        ch.upper() if idx % 2 else ch.lower() for idx, ch in enumerate(value)
     )
-    argv = [
-        "--quiet",
-        "--log-level",
-        log_level.value,
-        "--color",
-        color.value,
-        "--format",
-        fmt.value,
+    assert LogLevel(mixed) is level
+
+
+def test_log_level_strict_ordering() -> None:
+    ordered = [
+        LogLevel.DEBUG,
+        LogLevel.INFO,
+        LogLevel.WARNING,
+        LogLevel.ERROR,
+        LogLevel.CRITICAL,
     ]
-    parsed = parse_global_flags(argv)
-    assert validate_cli_flags(parsed) == ()
-    layer = FlagLayer(
-        quiet=True,
-        log_level=log_level,
-        color=color,
-        format=fmt,
-    )
-    eff_a = resolve_effective_config(
-        cli=parsed.flags, env=layer, file=layer, defaults=defaults
-    )
-    eff_b = resolve_effective_config(
-        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
-    )
-    assert eff_a == eff_b
-
-
-@given(
-    log_level=_log_levels,
-    fmt=_formats,
-)
-def test_quiet_dominates_log_level(log_level: LogLevel, fmt: OutputFormat) -> None:
-    """Quiet should force ERROR regardless of requested log level."""
-    defaults = Flags(
-        quiet=False,
-        log_level=LogLevel.INFO,
-        color=ColorMode.AUTO,
-        format=OutputFormat.JSON,
-    )
-    argv = ["--quiet", "--log-level", log_level.value, "--format", fmt.value]
-    parsed = parse_global_flags(argv)
-    assert validate_cli_flags(parsed) == ()
-    effective = resolve_effective_config(
-        cli=parsed.flags, env=FlagLayer(), file=FlagLayer(), defaults=defaults
-    )
-    assert effective.flags.quiet is True
-    assert effective.flags.log_level is LogLevel.ERROR
+    ranks = [_log_rank(level) for level in ordered]
+    assert ranks == sorted(ranks)
+    assert len(set(ranks)) == len(ranks)

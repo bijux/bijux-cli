@@ -14,7 +14,6 @@ from bijux_cli.core.enums import ColorMode, LogLevel
 class LoggingConfig:
     """Configuration for logging and console output behavior."""
 
-    debug: bool
     quiet: bool
     verbose: bool
     log_level: LogLevel

@@ -17,7 +17,8 @@ from bijux_cli.cli.plugins.commands.validation import (
     parse_required_cli_version,
     refuse_on_symlink,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.precedence import resolve_log_policy
 
 
 def test_ignore_hidden_and_broken_symlinks(
@@ -72,7 +73,14 @@ def test_refuse_on_symlink_noop(tmp_path: Path) -> None:
     """Test that the symlink check does nothing for a regular directory."""
     d = tmp_path / "normal"
     d.mkdir()
-    refuse_on_symlink(d, "plugins install", OutputFormat.JSON, False, False, False)
+    refuse_on_symlink(
+        d,
+        "plugins install",
+        OutputFormat.JSON,
+        False,
+        False,
+        resolve_log_policy(LogLevel.INFO),
+    )
 
 
 def test_refuse_on_symlink_calls_emit(
@@ -90,29 +98,30 @@ def test_refuse_on_symlink_calls_emit(
         msg: str,
         code: int,
         failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        debug: bool,
+        **kwargs: Any,
     ) -> None:
         called.update(
             message=msg,
             code=code,
             failure=failure,
-            command=command,
-            fmt=fmt,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            log_level=debug,
+            command=kwargs.get("command"),
+            fmt=kwargs.get("fmt"),
+            quiet=kwargs.get("quiet"),
+            include_runtime=kwargs.get("include_runtime"),
+            log_policy=kwargs.get("log_policy"),
         )
         raise SystemExit(code)
 
-    monkeypatch.setattr(validation_mod, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(validation_mod, "emit_error_with_policy", fake_emit)
 
     with pytest.raises(SystemExit) as exc:
         refuse_on_symlink(
-            link, "plugins uninstall", OutputFormat.YAML, True, True, True
+            link,
+            "plugins uninstall",
+            OutputFormat.YAML,
+            True,
+            True,
+            resolve_log_policy(LogLevel.INFO),
         )
 
     assert exc.value.code == 1

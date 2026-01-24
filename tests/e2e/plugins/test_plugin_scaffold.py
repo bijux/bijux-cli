@@ -81,7 +81,7 @@ def test_plugin_scaffold_yaml_output(tmp_path: Path) -> None:
             "dbg",
             "--output-dir",
             str(tmp_path),
-            "--debug",
+            "--log-level debug",
             "--template",
             TEST_TEMPLATE,
         ]

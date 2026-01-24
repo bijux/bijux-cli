@@ -24,7 +24,21 @@ from bijux_cli.cli.commands.help import (
 from bijux_cli.cli.commands.payloads import HelpPayload
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
+
+
+@pytest.fixture(autouse=True)
+def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure a default execution policy for CLI output helpers."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.output.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
+    monkeypatch.setattr(
+        help_mod,
+        "current_execution_policy",
+        lambda: default_execution_policy(),
+    )
 
 
 class DummyCmd(click.Command):
@@ -156,7 +170,7 @@ def test_quiet_invalid_format(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx = make_ctx_for_callback()
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -263,7 +277,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **_kwargs: Any,
     ) -> None:
         called.update(locals())
@@ -271,7 +285,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
 
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -283,7 +297,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
             include_runtime=False,
         ),
     )
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
@@ -311,7 +325,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
         called.update(locals())
         raise typer.Exit(code)
 
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
@@ -338,7 +352,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
         called.update(locals())
         raise typer.Exit(code)
 
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
@@ -364,7 +378,7 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
         called.update(locals())
         raise typer.Exit(code)
 
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
@@ -391,7 +405,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
         called.update(locals())
         raise typer.Exit(code)
 
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_error)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,
@@ -420,7 +434,7 @@ def test_nonquiet_human_format_prints_and_exits(
     )
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -474,7 +488,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
     )
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -488,7 +502,7 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
     )
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -507,8 +521,6 @@ def test_nonquiet_json_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
         fmt: OutputFormat,
         effective_pretty: bool,
         verbose: bool,
-        debug: bool,
-        quiet: bool,
         command: str,
         exit_code: int,
     ) -> None:
@@ -553,7 +565,7 @@ def test_nonquiet_yaml_format_emits_payload(monkeypatch: pytest.MonkeyPatch) -> 
     )
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -606,7 +618,7 @@ def test_quiet_success(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr(
         help_mod,
-        "get_execution_policy",
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -657,7 +669,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
         called.update(locals())
         raise typer.Exit(code)
 
-    monkeypatch.setattr(help_mod, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_emit)
     with pytest.raises(typer.Exit) as ex:
         help_mod.help_callback(
             ctx,

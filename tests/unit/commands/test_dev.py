@@ -25,7 +25,20 @@ from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 from bijux_cli.cli.commands.payloads import DevDiPayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, default_execution_policy
+
+
+@pytest.fixture(autouse=True)
+def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure a default execution policy for CLI output helpers."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.output.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.di.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
 
 
 @pytest.fixture
@@ -274,7 +287,7 @@ def test_dev_di_graph_quiet_after_writing_exits(
 ) -> None:
     """Test that quiet mode exits after writing files without calling new_run_command."""
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.dev.di.get_execution_policy",
+        "bijux_cli.cli.commands.dev.di.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -325,7 +338,7 @@ def test_dev_di_graph_force_serialize_failure_env(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(
@@ -336,12 +349,12 @@ def test_dev_di_graph_force_serialize_failure_env(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_level=debug,
+            log_policy=log_policy,
             **kwargs,
         )
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
 
     with pytest.raises(SystemExit):
         dev_di_graph(
@@ -382,13 +395,13 @@ def test_dev_di_graph_invalid_limit_emits_error(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure, fmt=fmt)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -423,13 +436,13 @@ def test_dev_di_graph_config_env_non_ascii_emits_error(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -466,13 +479,13 @@ def test_dev_di_graph_config_env_unreadable_path(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -509,13 +522,13 @@ def test_dev_di_graph_payload_builder_raises_value_error(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(
             quiet=False,
@@ -552,13 +565,13 @@ def test_dev_di_graph_output_path_is_directory(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
     with pytest.raises(SystemExit):
         dev_di_graph(output=[tmp_path])
 
@@ -595,13 +608,13 @@ def test_dev_di_graph_output_write_raises(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
         **kwargs: Any,
     ) -> None:
         called.update(msg=msg, code=code, failure=failure)
         raise SystemExit(code)
 
-    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_and_exit", _emit)
+    monkeypatch.setattr("bijux_cli.cli.commands.dev.di.emit_error_with_policy", _emit)
 
     with pytest.raises(SystemExit):
         dev_di_graph(
@@ -620,7 +633,7 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test that the list-plugins command correctly calls its handlers."""
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -692,7 +705,7 @@ def test_dev_payload_basic_and_runtime_inclusion(
         include_runtime=False,
     )
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.dev.service.get_execution_policy",
+        "bijux_cli.cli.commands.dev.service.current_execution_policy",
         lambda: policy,
     )
 
@@ -758,7 +771,7 @@ def test_dev_payload_includes_mode_env(
     ctx.invoked_subcommand = None
     monkeypatch.setenv("BIJUXCLI_DEV_MODE", "diagnostic")
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.dev.service.get_execution_policy",
+        "bijux_cli.cli.commands.dev.service.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

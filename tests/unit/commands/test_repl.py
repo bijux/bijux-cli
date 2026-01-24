@@ -350,7 +350,7 @@ class FakePromptSession:
 def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Route human quiet mode to piped path."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -398,13 +398,22 @@ def test_main_invalid_format_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        debug: bool,
+        log_policy: Any | None,
     ) -> None:  # noqa: ARG001
-        seen["emit"] = (msg, code, failure, command, fmt, quiet, include_runtime, debug)
+        seen["emit"] = (
+            msg,
+            code,
+            failure,
+            command,
+            fmt,
+            quiet,
+            include_runtime,
+            log_policy,
+        )
         raise SystemExit(2)
 
     monkeypatch.setattr(mod, "validate_common_flags", vcf)
-    monkeypatch.setattr(mod, "emit_error_and_exit", emit)
+    monkeypatch.setattr(mod, "emit_error_with_policy", emit)
     monkeypatch.setattr(
         sys.stdin,
         "isatty",
@@ -420,7 +429,7 @@ def test_main_invalid_format_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
     res = CliRunner().invoke(mod.repl_app, ["--format", "yaml"])
     assert res.exit_code == 2
     assert cast(tuple[str, str, bool, bool], seen["validate"])[0] == "yaml"
-    assert cast(tuple[str, int, str, str, str, bool, bool, bool], seen["emit"])[1] == 2
+    assert cast(tuple[str, int, str, str, str, bool, bool, Any], seen["emit"])[1] == 2
 
 
 def test_known_commands_spec_invalid_json_falls_back(

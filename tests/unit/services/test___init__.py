@@ -18,10 +18,10 @@ from bijux_cli.services.logging.contracts import LoggingConfig
 
 
 @pytest.mark.parametrize("output_format", [OutputFormat.JSON, OutputFormat.YAML])
-@pytest.mark.parametrize("debug", [True, False])
+@pytest.mark.parametrize("log_level", [LogLevel.DEBUG, LogLevel.INFO])
 @pytest.mark.parametrize("quiet", [True, False])
 def test_register_default_services_100pct(
-    output_format: OutputFormat, debug: bool, quiet: bool
+    output_format: OutputFormat, log_level: LogLevel, quiet: bool
 ) -> None:
     """Test that all default services are registered correctly with the DI container."""
     di = DIContainer()
@@ -129,10 +129,9 @@ def test_register_default_services_100pct(
         import bijux_cli.services.logging.observability as infra_obs
 
         logging_config = LoggingConfig(
-            debug=debug,
             quiet=quiet,
             verbose=False,
-            log_level=LogLevel.DEBUG if debug else LogLevel.INFO,
+            log_level=log_level,
             color=ColorMode.AUTO,
         )
         DIContainer.set_log_policy(resolve_log_policy(LogLevel.DEBUG))

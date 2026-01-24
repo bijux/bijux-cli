@@ -100,6 +100,7 @@ class LogPolicy:
 
 
 _LOG_RANK: dict[LogLevel, int] = {
+    LogLevel.TRACE: 5,
     LogLevel.DEBUG: 10,
     LogLevel.INFO: 20,
     LogLevel.WARNING: 30,
@@ -177,11 +178,9 @@ def validate_cli_flags(
             )
         )
     if flags.log_level is not None and flags.log_level not in (
+        LogLevel.TRACE,
         LogLevel.DEBUG,
         LogLevel.INFO,
-        LogLevel.WARNING,
-        LogLevel.ERROR,
-        LogLevel.CRITICAL,
     ):
         errors.append(
             FlagError(

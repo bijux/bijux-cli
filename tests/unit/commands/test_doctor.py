@@ -12,12 +12,12 @@ from typer import Context
 
 from bijux_cli.cli.commands.diagnostics.doctor import _build_payload, doctor
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 
 
 def _fake_resolve_command_config(
     **kwargs: object,
-) -> tuple[ExecutionPolicy, OutputFormat, OutputFormat]:
+) -> tuple[ExecutionPolicy, OutputFormat]:
     fmt = str(kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
     verbose = bool(kwargs.get("verbose", False))
@@ -39,7 +39,6 @@ def _fake_resolve_command_config(
             pretty=pretty,
             include_runtime=verbose,
         ),
-        output_format,
         output_format,
     )
 
@@ -150,7 +149,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     ctx.args = []
 
     with patch(
-        "bijux_cli.cli.commands.diagnostics.doctor.emit_error_and_exit"
+        "bijux_cli.cli.commands.diagnostics.doctor.emit_error_with_policy"
     ) as mock_emit:
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -171,7 +170,7 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
@@ -219,7 +218,7 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert p1.platform
 
 
-@patch("bijux_cli.cli.commands.diagnostics.doctor.emit_error_and_exit")
+@patch("bijux_cli.cli.commands.diagnostics.doctor.emit_error_with_policy")
 @patch(
     "bijux_cli.cli.commands.diagnostics.doctor.resolve_command_config",
     autospec=True,
@@ -253,11 +252,11 @@ def test_doctor_stray_option_calls_emit_and_exits(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )
 
 
-@patch("bijux_cli.cli.commands.diagnostics.doctor.emit_error_and_exit")
+@patch("bijux_cli.cli.commands.diagnostics.doctor.emit_error_with_policy")
 @patch(
     "bijux_cli.cli.commands.diagnostics.doctor.resolve_command_config",
     autospec=True,
@@ -291,5 +290,5 @@ def test_doctor_stray_argument_calls_emit_and_exits(
         fmt="json",
         quiet=False,
         include_runtime=False,
-        debug=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
     )

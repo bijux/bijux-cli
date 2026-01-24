@@ -34,19 +34,25 @@ from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     ENV_DI_LIMIT,
     ENV_TEST_FORCE_SERIALIZE_FAIL,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_error_and_exit, exit_if_quiet
-from bijux_cli.cli.core.output import get_execution_policy, new_run_command
+from bijux_cli.cli.core.emit import exit_if_quiet
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
+)
+from bijux_cli.cli.core.output import (
+    current_execution_policy,
+    emit_error_with_policy,
+    new_run_command,
+)
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     normalize_format,
@@ -147,9 +153,9 @@ def dev_di_graph(
     """
     command = "dev di"
     _ = (quiet, verbose, log_level, pretty, fmt)
-    policy = get_execution_policy()
+    policy = current_execution_policy()
     quiet = policy.quiet
-    debug = policy.log_policy.show_internal
+    log_policy = policy.log_policy
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON
@@ -160,7 +166,7 @@ def dev_di_graph(
         try:
             limit = int(limit_env)
             if limit < 0:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                     code=2,
                     failure="limit",
@@ -168,10 +174,10 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    debug=debug,
+                    log_policy=log_policy,
                 )
         except (ValueError, TypeError):
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                 code=2,
                 failure="limit",
@@ -179,12 +185,12 @@ def dev_di_graph(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
     config_env = os.environ.get(ENV_CONFIG)
     if config_env and not config_env.isascii():
-        emit_error_and_exit(
+        emit_error_with_policy(
             f"Config path contains non-ASCII characters: {config_env!r}",
             code=3,
             failure="ascii",
@@ -192,13 +198,13 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     if config_env:
         cfg_path = Path(config_env)
         if cfg_path.exists() and not os.access(cfg_path, os.R_OK):
-            emit_error_and_exit(
+            emit_error_with_policy(
                 f"Config path not readable: {cfg_path}",
                 code=2,
                 failure="config_unreadable",
@@ -206,7 +212,7 @@ def dev_di_graph(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
-                debug=debug,
+                log_policy=log_policy,
             )
 
     validate_common_flags(
@@ -226,7 +232,7 @@ def dev_di_graph(
                 platform=payload.platform,
             )
     except ValueError as exc:
-        emit_error_and_exit(
+        emit_error_with_policy(
             str(exc),
             code=3,
             failure="ascii",
@@ -234,14 +240,14 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     outputs = output
     if outputs:
         for p in outputs:
             if p.is_dir():
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Output path is a directory: {p}",
                     code=2,
                     failure="output_dir",
@@ -249,7 +255,7 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    debug=debug,
+                    log_policy=log_policy,
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
@@ -260,7 +266,7 @@ def dev_di_graph(
                 )
                 p.write_text(rendered.rstrip("\n") + "\n", encoding="utf-8")
             except OSError as exc:
-                emit_error_and_exit(
+                emit_error_with_policy(
                     f"Failed to write output file '{p}': {exc}",
                     code=2,
                     failure="output_write",
@@ -268,13 +274,13 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    debug=debug,
+                    log_policy=log_policy,
                 )
 
         exit_if_quiet(quiet, code=0)
 
     if os.environ.get(ENV_TEST_FORCE_SERIALIZE_FAIL) == "1":
-        emit_error_and_exit(
+        emit_error_with_policy(
             "Forced serialization failure",
             code=1,
             failure="serialize",
@@ -282,7 +288,7 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            debug=debug,
+            log_policy=log_policy,
         )
 
     new_run_command(

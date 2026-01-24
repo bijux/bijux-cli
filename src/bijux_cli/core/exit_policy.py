@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
 from bijux_cli.core.precedence import LogPolicy
@@ -18,6 +19,27 @@ class ExitBehavior:
     code: ExitCode
     stream: str | None
     show_traceback: bool
+
+
+@dataclass(frozen=True)
+class ExitIntent:
+    """Represents an execution intent for exiting with optional output."""
+
+    code: ExitCode
+    stream: str | None
+    payload: Any | None
+    fmt: OutputFormat
+    pretty: bool
+    show_traceback: bool
+
+
+class ExitIntentError(Exception):
+    """Raised to signal an exit intent without performing the exit."""
+
+    def __init__(self, intent: ExitIntent) -> None:
+        """Store the exit intent payload."""
+        super().__init__("exit_intent")
+        self.intent = intent
 
 
 _BASE_BEHAVIOR: dict[ErrorType, ExitBehavior] = {
@@ -47,4 +69,39 @@ def resolve_exit_behavior(
     return ExitBehavior(base.code, base.stream, show_traceback)
 
 
-__all__ = ["ExitBehavior", "resolve_exit_behavior"]
+def resolve_error_type(code: int, explicit: ErrorType | None = None) -> ErrorType:
+    """Resolve an error type from an explicit override or exit code."""
+    if explicit is not None:
+        return explicit
+    if code == ExitCode.USAGE:
+        return ErrorType.USAGE
+    if code == ExitCode.ASCII:
+        return ErrorType.ASCII
+    if code == ExitCode.ABORTED:
+        return ErrorType.ABORTED
+    return ErrorType.INTERNAL
+
+
+def resolve_error_behavior(
+    code: int,
+    *,
+    quiet: bool,
+    fmt: OutputFormat,
+    log_policy: LogPolicy,
+    error_type: ErrorType | None = None,
+) -> ExitBehavior:
+    """Resolve exit behavior for an error code and context."""
+    resolved_type = resolve_error_type(code, error_type)
+    return resolve_exit_behavior(
+        resolved_type, quiet=quiet, fmt=fmt, log_policy=log_policy
+    )
+
+
+__all__ = [
+    "ExitBehavior",
+    "ExitIntent",
+    "ExitIntentError",
+    "resolve_error_type",
+    "resolve_error_behavior",
+    "resolve_exit_behavior",
+]

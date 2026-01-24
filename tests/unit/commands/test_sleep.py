@@ -164,7 +164,7 @@ def test_sleep_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Succeeds and returns payload with runtime when verbose."""
     _install_fake_container(monkeypatch, get_returns="10")
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.get_execution_policy",
+        "bijux_cli.cli.core.output.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,

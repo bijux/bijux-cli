@@ -32,16 +32,18 @@ import typer
 from bijux_cli.cli.commands.payloads import VersionPayload
 from bijux_cli.cli.core.constants import (
     ENV_VERSION,
-    HELP_FORMAT,
-    HELP_LOG_LEVEL,
-    HELP_NO_PRETTY,
-    HELP_QUIET,
-    HELP_VERBOSE,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
     OPT_VERBOSE,
+)
+from bijux_cli.cli.core.help_text import (
+    HELP_FORMAT,
+    HELP_LOG_LEVEL,
+    HELP_NO_PRETTY,
+    HELP_QUIET,
+    HELP_VERBOSE,
 )
 from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
@@ -127,8 +129,7 @@ def version(
         verbose (bool): If True, includes Python, platform, and timestamp
             details in the output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
-        pretty (bool): If True, pretty-prints the output for human readability.
-        debug (bool): If True, enables debug diagnostics, implying `verbose`
+        pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
             and `pretty`.
 
     Returns:
@@ -146,13 +147,9 @@ def version(
     command = "version"
     validate_common_flags(fmt, command, quiet)
 
-    effective, _, fmt_lower = resolve_command_config(
+    effective, fmt_lower = resolve_command_config(
         command=command,
-        quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
         fmt=fmt,
-        pretty=pretty,
     )
 
     new_run_command(

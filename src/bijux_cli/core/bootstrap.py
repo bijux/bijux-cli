@@ -86,6 +86,7 @@ def should_record_command_history(command_line: list[str]) -> bool:
     Returns:
         bool: True if the command should be recorded, otherwise False.
     """
+    # POLICY: history recording eligibility.
     if os.environ.get(ENV_DISABLE_HISTORY) == "1":
         return False
     if not command_line:
@@ -115,6 +116,7 @@ def get_usage_for_args(args: list[str], app: typer.Typer) -> str:
             break
         subcmds.append(arg)
 
+    # IO: capture help output by redirecting stdout.
     with io.StringIO() as buf, redirect_stdout(buf):
         with suppress(SystemExit):
             app(subcmds + ["--help"], standalone_mode=False)
@@ -127,9 +129,11 @@ def setup_structlog(log_level: LogLevel | None = None) -> None:
     Args:
         log_level (str | None): Optional explicit log level override.
     """
+    # POLICY: logging level threshold for structlog.
     level = logging.DEBUG if log_level is LogLevel.DEBUG else logging.WARNING
     logging.basicConfig(level=level, stream=sys.stderr, format="%(message)s")
 
+    # IO: environment read for test-mode logging choice.
     use_console = (log_level is LogLevel.DEBUG) or os.environ.get(ENV_TEST_MODE) == "1"
     structlog.configure(
         processors=[
@@ -157,6 +161,7 @@ def _emit_fast_payload(
     from dataclasses import asdict, is_dataclass
     from typing import Any, cast
 
+    # FAST PATH: emit without DI initialization.
     if is_dataclass(payload):
         payload = asdict(cast(Any, payload))
     if fmt is OutputFormat.YAML:
@@ -168,6 +173,7 @@ def _emit_fast_payload(
             text = (yaml.safe_dump(payload, sort_keys=False) or "").rstrip("\n")
     else:
         text = json.dumps(payload)
+    # IO: direct stream output for fast path.
     out = sys.stdout if stream == "stdout" else sys.stderr
     print(text, file=out)
 
@@ -181,6 +187,7 @@ def _emit_fast_error(
     log_policy: LogPolicy,
 ) -> int:
     """Emit a structured error payload without DI initialization."""
+    # POLICY: exit behavior resolved from error type and log policy.
     behavior = resolve_exit_behavior(
         error_type, quiet=quiet, fmt=fmt, log_policy=log_policy
     )
@@ -194,8 +201,10 @@ def _emit_fast_error(
 
 def _resolve_effective_flags(parsed: GlobalCLIConfig) -> EffectiveConfig:
     """Resolve effective flags from CLI and environment sources."""
+    # IO: environment-derived overrides.
     env_log = os.environ.get(ENV_LOG_LEVEL)
     env_color = os.environ.get(ENV_COLOR)
+    # POLICY: precedence order for effective flags (CLI/env/defaults).
     resolved = resolve_effective_config(
         cli=parsed.flags,
         env=FlagLayer(
@@ -217,6 +226,7 @@ def _resolve_effective_flags(parsed: GlobalCLIConfig) -> EffectiveConfig:
         args=parsed.args,
         errors=parsed.errors,
     )
+    # POLICY: color mode resolution from effective flags.
     resolved_color = resolve_color_mode(
         color_config,
         sys.stdout.isatty(),
@@ -267,9 +277,11 @@ def _maybe_fast_help(
     policy: ExecutionPolicy,
 ) -> int | None:
     """Handle --help without initializing DI or plugins."""
+    # FAST PATH: help rendering without DI/plugins.
     if not parsed.help:
         return None
     app = build_app(load_plugins=False)
+    # IO: print help text directly.
     print(get_usage_for_args(args, app))
     return 0
 
@@ -279,12 +291,14 @@ def _maybe_fast_version(
     policy: ExecutionPolicy,
 ) -> int | None:
     """Handle `bijux version` without initializing DI or plugins."""
+    # FAST PATH: version without DI/plugins.
     command, sub_args = _split_command_args(args)
     if command != "version":
         return None
 
     if "-h" in sub_args or "--help" in sub_args:
         app = build_app(load_plugins=False)
+        # IO: print help text directly.
         print(get_usage_for_args(["version", "--help"], app))
         return 0
 
@@ -405,6 +419,7 @@ def main() -> int:
             * `2`: A usage error or invalid option was provided.
             * `130`: The process was interrupted by the user (Ctrl+C).
     """
+    # IO: read CLI argv tokens.
     args = sys.argv[1:]
 
     parsed = parse_global_config(args)
@@ -427,34 +442,40 @@ def main() -> int:
             return int(behavior.code)
 
     resolved = _resolve_effective_flags(parsed)
+    # POLICY: derive execution policy from effective flags.
     policy = resolve_execution_policy(resolved)
     DIContainer.set_log_policy(policy.log_policy or resolve_log_policy(LogLevel.INFO))
 
     setup_structlog(resolved.flags.log_level)
+    # POLICY: resolve final color mode for CLI output.
     set_color_mode(policy.color)
 
+    # FAST PATH: `--version` without initializing the app.
     if any(a in ("--version", "-V") for a in args):
         try:
             ver = importlib_metadata.version("bijux-cli")
         except importlib_metadata.PackageNotFoundError:
             ver = "unknown"
+        # IO: emit version payload.
         print(json.dumps({"version": ver}))
         return 0
 
+    # FAST PATH: `--help` handling before DI/plugin init.
     fast_help = _maybe_fast_help(args, parsed, policy)
     if fast_help is not None:
         return fast_help
 
+    # FAST PATH: `version` subcommand before DI/plugin init.
     fast_version = _maybe_fast_version(args, policy)
     if fast_version is not None:
         return fast_version
 
+    # IO: suppress stderr in quiet mode.
     if resolved.flags.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
 
     logging_config = LoggingConfig(
-        debug=policy.log_policy.show_internal if policy.log_policy else False,
         quiet=resolved.flags.quiet,
         verbose=False,
         log_level=resolved.flags.log_level,

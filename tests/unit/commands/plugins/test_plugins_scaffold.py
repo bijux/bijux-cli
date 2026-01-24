@@ -36,7 +36,7 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     def fake_new_run(**kwargs: Any) -> None:
         data["command"] = kwargs["command_name"]
         data["payload"] = kwargs["payload_builder"](include=True)
-        for flag in ("quiet", "verbose", "fmt", "pretty", "debug"):
+        for flag in ("quiet", "verbose", "fmt", "pretty", "log_level"):
             data[flag] = kwargs.get(flag)
 
     monkeypatch.setattr(scaffold_mod, "new_run_command", fake_new_run)
@@ -45,16 +45,11 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         msg: str,
         code: int,
         failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        debug: bool,
         **_kwargs: Any,
     ) -> None:
         raise RuntimeError({"failure": failure, "message": msg})
 
-    monkeypatch.setattr(scaffold_mod, "emit_error_and_exit", fake_emit)
+    monkeypatch.setattr(scaffold_mod, "emit_error_with_policy", fake_emit)
     return data
 
 
@@ -461,15 +456,13 @@ def _stub_out(monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]) -> None
         message: str,
         code: int,
         failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        debug: bool,
+        **_kwargs: Any,
     ) -> None:
         raise RuntimeError({"message": message, "code": code, "failure": failure})
 
-    monkeypatch.setattr(scaffold_mod, "emit_error_and_exit", fake_emit_error_and_exit)
+    monkeypatch.setattr(
+        scaffold_mod, "emit_error_with_policy", fake_emit_error_and_exit
+    )
 
 
 def _inject_cookiecutter(fn: Callable[[str, bool, str, dict[str, Any]], None]) -> None:
