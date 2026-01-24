@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 """End-to-end tests for Bijux CLI.
@@ -23,6 +23,8 @@ from typing import Any, cast
 import pexpect
 import pytest
 import yaml
+
+pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 _ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 """Provides the main entry point and lifecycle orchestration for the Bijux CLI.

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 """End-to-end tests for `bijux history` command."""
@@ -27,7 +27,7 @@ from tests.e2e.history.conftest import (
     run_module,
 )
 
-pytestmark = pytest.mark.night
+pytestmark = [pytest.mark.night, pytest.mark.e2e, pytest.mark.slow]
 
 
 def _worker_rw(hist_file: Path, n: int) -> None:

@@ -12,7 +12,7 @@ dynamic = ["version"]
 description = "Lean, plug-in-driven CLI kernel"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-license = {file = "LICENSES/MIT.txt" }
+license = {file = "LICENSES/Apache-2.0.txt" }
 authors = [{ name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com" }]
 keywords = ["cli", "developer-tools", "plugins", "dependency-injection", "repl", "fastapi", "typer", "pluggy"]
 classifiers = [
@@ -20,7 +20,7 @@ classifiers = [
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Operating System :: MacOS",
   "Operating System :: POSIX",

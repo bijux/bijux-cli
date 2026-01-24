@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 """Provides version metadata for the Bijux CLI package.

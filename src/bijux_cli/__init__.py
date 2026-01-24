@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 # Root package invariant: only __init__.py and py.typed live at this level.

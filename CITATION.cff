@@ -9,7 +9,7 @@ authors:
     orcid: "https://orcid.org/0009-0002-4092-2854"
 repository-code: "https://github.com/bijux/bijux-cli"
 url: "https://github.com/bijux/bijux-cli"
-license: "MIT"
+license: "Apache-2.0"
 keywords: ["cli", "developer-tools", "plugins"]
 preferred-citation:
   type: software

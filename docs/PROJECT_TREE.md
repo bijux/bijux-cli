@@ -64,7 +64,7 @@ A guided map of the Bijux CLI repository: what lives where, and why.
 * `CHANGELOG.md`, `changelog.d/` — release notes + fragments  
 * `pyproject.toml`, `tox.ini`, `pytest.ini` — packaging & test config  
 * `mkdocs.yml` — docs site config  
-* `LICENSES/` — MIT and CC0 texts  
+* `LICENSES/` — Apache-2.0 and CC0 texts  
 * `CITATION.cff` — citation metadata  
 * `REUSE.toml` — REUSE licensing compliance  
 * `Makefile` — task entrypoint (delegates to `makefiles/`)
@@ -244,7 +244,7 @@ docs/
 ├── security.md         # Wraps SECURITY.md
 ├── contributing.md     # Wraps CONTRIBUTING.md
 ├── code_of_conduct.md  # Wraps CODE_OF_CONDUCT.md
-├── license.md          # Wraps LICENSES/MIT.txt
+├── license.md          # Wraps LICENSES/Apache-2.0.txt
 ├── community.md        # Community landing (overview page)
 ├── ADR/                # Architecture Decision Records
 ├── assets/             # Logos, CSS (Material overrides in assets/styles/extra.css)
@@ -380,7 +380,7 @@ make test-night     # night-only
 
 ## Licensing & Governance
 
-* `LICENSES/` — MIT and CC0 texts
+* `LICENSES/` — Apache-2.0 and CC0 texts
 * `CODE_OF_CONDUCT.md` — community guidelines
 * `CONTRIBUTING.md` — how to contribute
 * `SECURITY.md` — vulnerability reporting policy

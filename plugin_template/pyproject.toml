@@ -4,7 +4,7 @@ version = "{{cookiecutter.plugin_version}}"
 description = "Bijux CLI plugin for {{cookiecutter.project_name}}"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Bijan Mousavi", email = "mousavi.bijan@gmail.com"},
 ]

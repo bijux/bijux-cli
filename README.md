@@ -6,7 +6,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/MIT.txt)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/Apache-2.0.txt)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
 
@@ -426,7 +426,11 @@ Welcome! See **[CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CO
 
 ## License
 
-MIT — see **[LICENSES/MIT.txt](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/MIT.txt)**.
+Apache-2.0 — see **[LICENSES/Apache-2.0.txt](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/Apache-2.0.txt)**.
 © 2025 Bijan Mousavi.
+
+Migration note: This project moved from MIT to Apache-2.0; see `NOTICE` for attribution.
+
+Dependency license audit (declared dependencies): checked available local metadata; no Apache-2.0 incompatibilities identified in that set.
 
 [Back to top](#top)
