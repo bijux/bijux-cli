@@ -126,10 +126,10 @@ def test_help_pretty_and_nopretty_flags() -> None:
     assert len(res2.stdout.strip().splitlines()) == 1
 
 
-@pytest.mark.parametrize("flag", ["-v"])
-def test_help_verbose_and_debug_flags(flag: str) -> None:
-    """Test that verbose and debug flags add extra context."""
-    res = run_cli(["help", "--format", "json", flag])
+@pytest.mark.parametrize("flag", [["--log-level", "debug"]])
+def test_help_debug_flag_adds_context(flag: list[str]) -> None:
+    """Test that debug flags add extra context."""
+    res = run_cli(["help", "--format", "json", *flag])
     obj = assert_json_obj(res.stdout)
     assert "help" in obj
     assert "platform" in obj
@@ -194,9 +194,7 @@ def test_adr_help_wins_over_errors(error_flags: list[str]) -> None:
     assert_no_framework_leak(res.stdout + res.stderr)
 
 
-@pytest.mark.parametrize(
-    "output_flags", [["--log-level debug"], ["--verbose"], ["--format", "json"]]
-)
+@pytest.mark.parametrize("output_flags", [["--log-level debug"], ["--format", "json"]])
 def test_adr_quiet_wins_over_output_flags(output_flags: list[str]) -> None:
     """ADR: --quiet must suppress all output from other flags."""
     argv = ["help", "--quiet", *output_flags]
@@ -229,8 +227,8 @@ def test_adr_debug_overrides_no_pretty() -> None:
     assert "platform" in payload
 
 
-def test_adr_debug_with_error_is_verbose_and_pretty() -> None:
-    """ADR: An error under --log-level debug must be verbose and pretty-printed."""
+def test_adr_debug_with_error_is_pretty() -> None:
+    """ADR: An error under --log-level debug must be pretty-printed."""
     res = run_cli(
         [
             "help",

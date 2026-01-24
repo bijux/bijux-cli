@@ -12,7 +12,6 @@ Output Contract:
     * Success: `{"status": "completed"}`
     * Dry-run: `{"status": "dry-run"}`
     * Written: `{"status": "written", "file": "<path>"}`
-    * Verbose: `{"python": str, "platform": str}`
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -31,25 +30,24 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import AuditPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    normalize_payload,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import (
     ascii_safe,
@@ -144,7 +142,7 @@ def _write_output_file(
         raise OSError(f"Output directory does not exist: {output_path.parent}")
 
     emitter.emit(
-        payload,
+        normalize_payload(payload),
         fmt=fmt,
         pretty=pretty,
         level=LogLevel.INFO,
@@ -161,7 +159,6 @@ def audit(
     dry_run: bool = DRY_RUN_OPTION,
     output: Path | None = OUTPUT_OPTION,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -183,7 +180,6 @@ def audit(
             to the specified file instead of stdout.
         quiet (bool): If True, suppresses all output except for errors. The
             exit code is the primary indicator of the outcome.
-        verbose (bool): If True, includes Python and platform details in the
             output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.
@@ -287,7 +283,6 @@ def audit(
             command_name=command,
             payload_builder=lambda _: payload,
             quiet=effective.quiet,
-            verbose=include_runtime,
             fmt=fmt_lower,
             pretty=effective_pretty,
             log_level=effective.log_level,

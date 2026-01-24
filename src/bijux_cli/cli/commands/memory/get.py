@@ -10,7 +10,6 @@ not found.
 
 Output Contract:
     * Success: `{"status": "ok", "key": str, "value": str}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -27,24 +26,22 @@ import typer
 
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.payloads import MemoryItemPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 
@@ -76,7 +73,6 @@ def _build_payload(include_runtime: bool, key: str, value: str) -> MemoryItemPay
 def get_memory(
     key: str = typer.Argument(..., help="Key to retrieve"),
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -90,7 +86,6 @@ def get_memory(
         key (str): The memory key to look up. Must be between 1 and 4096
             printable, non-whitespace characters.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.        log_level (str): Logging level for diagnostics.
 
@@ -108,7 +103,7 @@ def get_memory(
         fmt=fmt,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0
+    include_runtime = effective.include_runtime
     log_policy = effective.log_policy
     pretty = effective.pretty
 
@@ -126,7 +121,9 @@ def get_memory(
             log_policy=log_policy,
         )
 
-    memory_svc = resolve_memory_service(command, fmt_lower, quiet, verbose, log_policy)
+    memory_svc = resolve_memory_service(
+        command, fmt_lower, quiet, include_runtime, log_policy
+    )
 
     try:
         value = memory_svc.get(key)
@@ -157,7 +154,6 @@ def get_memory(
         command_name=command,
         payload_builder=lambda include: _build_payload(include, key, value),
         quiet=quiet,
-        verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
         log_level=log_level,

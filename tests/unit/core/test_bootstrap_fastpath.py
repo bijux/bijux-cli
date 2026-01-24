@@ -26,10 +26,10 @@ def _forbid_engine(*_args: object, **_kwargs: object) -> None:
 
 def test_split_command_args_skips_flags() -> None:
     command, rest = bootstrap._split_command_args(
-        ["--quiet", "--format", "json", "version", "--verbose"]
+        ["--quiet", "--format", "json", "version", "--log-level", "debug"]
     )
     assert command == "version"
-    assert rest == ["--verbose"]
+    assert rest == ["--log-level", "debug"]
 
 
 def test_fast_help_skips_di(

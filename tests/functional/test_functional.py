@@ -240,15 +240,10 @@ def test_root_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_root_verbose() -> None:
-    """Test that --verbose provides extra output."""
-    r = cli("version", "--verbose")
-    assert r.stdout.strip()
-
-
 def test_root_debug() -> None:
     """Test that --log-level debug provides debug output."""
     r = cli("version", "--log-level", "debug")
+    assert r.stdout.strip()
     assert ("debug" in r.stdout.lower()) or ("debug" in r.stderr.lower())
 
 
@@ -351,9 +346,9 @@ def test_audit_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_audit_verbose() -> None:
-    """Test the audit command with verbose output."""
-    r = cli("audit", "--verbose")
+def test_audit_debug() -> None:
+    """Test the audit command with debug output."""
+    r = cli("audit", "--log-level", "debug")
     text = _decolorise(r.stdout.lower())
     assert "status" in text
 
@@ -585,9 +580,9 @@ def test_dev_di_format_yaml() -> None:
     yaml.safe_load(r.stdout)
 
 
-def test_dev_list_plugins_verbose() -> None:
-    """Test the dev list-plugins command with verbose output."""
-    cli("dev", "list-plugins", "--verbose")
+def test_dev_list_plugins_debug() -> None:
+    """Test the dev list-plugins command with debug output."""
+    cli("dev", "list-plugins", "--log-level", "debug")
 
 
 def test_dev_service_json() -> None:
@@ -656,10 +651,10 @@ def test_docs_quiet(tmp_path: Path) -> None:
     assert r.stdout.strip() == ""
 
 
-def test_docs_verbose(tmp_path: Path) -> None:
-    """Test the docs command with verbose output."""
+def test_docs_debug(tmp_path: Path) -> None:
+    """Test the docs command with debug output."""
     out = tmp_path / "spec.json"
-    cli("docs", "--out", str(out), "--verbose")
+    cli("docs", "--out", str(out), "--log-level", "debug")
 
 
 def test_docs_invalid_format(tmp_path: Path) -> None:
@@ -743,9 +738,9 @@ def test_doctor_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_doctor_verbose() -> None:
-    """Test the doctor command with verbose output."""
-    cli("doctor", "--verbose")
+def test_doctor_debug() -> None:
+    """Test the doctor command with debug output."""
+    cli("doctor", "--log-level", "debug")
 
 
 def test_doctor_pretty() -> None:
@@ -809,9 +804,9 @@ def test_help_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_help_verbose() -> None:
-    """Test the help command with verbose output."""
-    cli("help", "--verbose")
+def test_help_debug() -> None:
+    """Test the help command with debug output."""
+    cli("help", "--log-level", "debug")
 
 
 def test_help_pretty() -> None:
@@ -890,8 +885,8 @@ def test_history_invalid_sub() -> None:
     cli("history", "invalid", expect_exit_code=2)
 
 
-def test_history_service_list_verbose() -> None:
-    """Test the base history command with the verbose flag."""
+def test_history_service_list_debug() -> None:
+    """Test the base history command with the debug flag."""
     r = cli("history", expect_exit_code=None)
     assert r.returncode in (0, 2, -signal.SIGTERM)
     assert (r.stdout or r.stderr).strip() != ""
@@ -1088,26 +1083,33 @@ def test_plugins_scaffold_help() -> None:
     assert "scaffold" in _decolorise(r.stdout.lower())
 
 
-def test_plugins_check_verbose() -> None:
-    """Test the plugins check command with verbose output."""
-    r = cli("plugins", "check", "--verbose", expect_exit_code=None)
+def test_plugins_check_debug() -> None:
+    """Test the plugins check command with debug output."""
+    r = cli("plugins", "check", "--log-level", "debug", expect_exit_code=None)
     assert r.returncode in (0, 2, -signal.SIGTERM)
     if r.returncode == 0:
         assert (r.stdout or r.stderr).strip() != ""
 
 
-def test_plugins_list_verbose(tmp_path: Path) -> None:
-    """Test the plugins list command with verbose output."""
+def test_plugins_list_debug(tmp_path: Path) -> None:
+    """Test the plugins list command with debug output."""
     plugins_dir = tmp_path / "plugins"
     with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
-        cli("plugins", "list", "--verbose")
+        cli("plugins", "list", "--log-level", "debug")
 
 
-def test_plugins_uninstall_verbose(tmp_path: Path) -> None:
-    """Test the plugins uninstall command with verbose output."""
+def test_plugins_uninstall_debug(tmp_path: Path) -> None:
+    """Test the plugins uninstall command with debug output."""
     plugins_dir = tmp_path / "plugins"
     with patch("bijux_cli.plugins.get_plugins_dir", return_value=plugins_dir):
-        r = cli("plugins", "uninstall", "myplug", "--verbose", expect_exit_code=None)
+        r = cli(
+            "plugins",
+            "uninstall",
+            "myplug",
+            "--log-level",
+            "debug",
+            expect_exit_code=None,
+        )
         assert r.returncode in (1, 2)
         if r.stdout.strip().startswith("{") or r.stderr.strip().startswith("{"):
             data = r.json_out or r.json_err or {}
@@ -1328,9 +1330,9 @@ def test_sleep_quiet() -> None:
     assert (r.returncode in (0, 2)) or (r.returncode < 0)
 
 
-def test_sleep_verbose() -> None:
-    """Test the sleep command with verbose output."""
-    r = cli("sleep", "0.1", "--verbose", timeout=1, expect_exit_code=None)
+def test_sleep_debug() -> None:
+    """Test the sleep command with debug output."""
+    r = cli("sleep", "0.1", "--log-level", "debug", timeout=1, expect_exit_code=None)
     assert (r.returncode in (0, 2)) or (r.returncode < 0)
 
 
@@ -1382,9 +1384,9 @@ def test_status_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_status_verbose() -> None:
-    """Test the status command with verbose output."""
-    cli("status", "--verbose")
+def test_status_debug() -> None:
+    """Test the status command with debug output."""
+    cli("status", "--log-level", "debug")
 
 
 def test_status_pretty() -> None:
@@ -1428,9 +1430,9 @@ def test_version_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_version_verbose_di() -> None:
-    """Test the version command with verbose output."""
-    r = cli("version", "--verbose")
+def test_version_debug_di() -> None:
+    """Test the version command with debug output."""
+    r = cli("version", "--log-level", "debug")
     assert r.stdout.strip()
 
 
@@ -1482,10 +1484,10 @@ def test_config_clear_quiet() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_config_export_verbose(tmp_path: Path) -> None:
-    """Test exporting config with verbose output."""
+def test_config_export_debug(tmp_path: Path) -> None:
+    """Test exporting config with debug output."""
     export = tmp_path / "out.env"
-    r = cli("config", "export", str(export), "--verbose")
+    r = cli("config", "export", str(export), "--log-level", "debug")
     assert r.returncode in (0, -signal.SIGTERM)
 
 
@@ -1616,9 +1618,9 @@ def test_quiet_with_error() -> None:
     assert r.stdout.strip() == ""
 
 
-def test_verbose_error() -> None:
-    """Test that the verbose flag works with a command that causes an error."""
-    cli("invalid", "--verbose", expect_exit_code=2)
+def test_debug_error() -> None:
+    """Test that the debug flag works with a command that causes an error."""
+    cli("invalid", "--log-level", "debug", expect_exit_code=2)
 
 
 def test_debug_with_success() -> None:

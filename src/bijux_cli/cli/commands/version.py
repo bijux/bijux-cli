@@ -10,7 +10,6 @@ contract and ASCII hygiene.
 
 Output Contract:
     * Success: `{"version": str}`
-    * Verbose: Adds `{"python": str, "platform": str, "timestamp": float}`.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -30,22 +29,20 @@ import time
 import typer
 
 from bijux_cli.cli.commands.payloads import VersionPayload
+from bijux_cli.cli.core.command import new_run_command, resolve_command_config
 from bijux_cli.cli.core.constants import (
     ENV_VERSION,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
 )
-from bijux_cli.cli.core.output import new_run_command, resolve_command_config
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.runtime import AsyncTyper
@@ -111,7 +108,6 @@ def _build_payload(include_runtime: bool) -> VersionPayload:
 def version(
     ctx: typer.Context,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -126,7 +122,6 @@ def version(
         ctx (typer.Context): The Typer context for the CLI.
         quiet (bool): If True, suppresses all output; the exit code is the
             primary indicator of the outcome.
-        verbose (bool): If True, includes Python, platform, and timestamp
             details in the output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
@@ -156,7 +151,6 @@ def version(
         command_name=command,
         payload_builder=lambda include: _build_payload(include),
         quiet=effective.quiet,
-        verbose=effective.verbose_level > 0,
         fmt=fmt_lower,
         pretty=effective.pretty,
         log_level=effective.log_level,

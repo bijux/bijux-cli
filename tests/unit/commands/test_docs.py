@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import platform
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from typer import Context, Exit
+from typer import Context
 import yaml
 
 import bijux_cli.cli.commands.diagnostics.docs as docs_mod
@@ -21,8 +21,8 @@ from bijux_cli.cli.commands.diagnostics.docs import (
     _resolve_output_target,
     docs,
 )
-from bijux_cli.cli.commands.payloads import DocsWritePayload
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 
 
@@ -55,12 +55,15 @@ class FakeDocsService:
         return str(path)
 
 
+def call_docs(*args: Any, **kwargs: Any) -> Any:
+    return docs.__wrapped__(*args, **kwargs)
+
+
 def _fake_resolve_command_config(
     **kwargs: Any,
 ) -> tuple[ExecutionPolicy, OutputFormat]:
     fmt = (kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
-    verbose = bool(kwargs.get("verbose", False))
     raw_level = kwargs.get("log_level", LogLevel.INFO)
     log_level = (
         raw_level
@@ -68,16 +71,15 @@ def _fake_resolve_command_config(
         else LogLevel(str(raw_level).lower())
     )
     pretty = bool(kwargs.get("pretty", False))
+    log_policy = resolve_log_policy(log_level)
     return (
         ExecutionPolicy(
             output_format=output_format,
             color=ColorMode.AUTO,
             quiet=bool(kwargs.get("quiet", False)),
-            verbose=verbose,
-            verbose_level=1 if verbose else 0,
             log_level=log_level,
             pretty=pretty,
-            include_runtime=verbose,
+            include_runtime=log_policy.show_internal,
         ),
         output_format,
     )
@@ -125,11 +127,10 @@ def test_docs_stray_args_option(mock_resolve: MagicMock, mock_emit: MagicMock) -
     ctx.invoked_subcommand = None
     ctx.args = ["-x"]
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -156,11 +157,10 @@ def test_docs_stray_args_word(mock_resolve: MagicMock, mock_emit: MagicMock) -> 
     ctx.invoked_subcommand = None
     ctx.args = ["foo"]
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -191,11 +191,10 @@ def test_docs_ascii_env_failure(
     ctx.invoked_subcommand = None
     ctx.args = []
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -231,11 +230,10 @@ def test_docs_ascii_payload_failure(
     ctx.invoked_subcommand = None
     ctx.args = []
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -335,22 +333,21 @@ def test_docs_stdout_branch(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(Exit) as ei:
-        docs(
+    with pytest.raises(ExitIntentError) as ei:
+        call_docs(
             ctx,
             out=Path("-"),
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
 
-    assert ei.value.exit_code == 0
+    assert ei.value.intent.code == 0
     assert capsys.readouterr().out == "JSON_OUT\n"
 
 
-def test_docs_file_written_and_emit_and_exit(
+def test_docs_file_written_and_exit_intent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that the spec is written to a file and a success payload is emitted."""
@@ -374,8 +371,6 @@ def test_docs_file_written_and_emit_and_exit(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=False,
-                verbose=True,
-                verbose_level=1,
                 log_level=LogLevel.INFO,
                 pretty=False,
                 include_runtime=True,
@@ -389,12 +384,11 @@ def test_docs_file_written_and_emit_and_exit(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with patch("bijux_cli.cli.commands.diagnostics.docs.emit_and_exit") as mock_emit:
-        docs(
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=True,
             fmt="json",
             pretty=False,
             log_level=LogLevel.INFO,
@@ -402,28 +396,20 @@ def test_docs_file_written_and_emit_and_exit(
 
     spec_file = tmp_path / "spec.json"
     assert spec_file.read_text(encoding="utf-8") == '{"hello":"world"}'
-    mock_emit.assert_called_once_with(
-        DocsWritePayload(status="written", file=str(spec_file)),
-        OutputFormat.JSON,
-        False,
-        True,
-        "docs",
-    )
+    intent = exc.value.intent
+    assert intent.payload == {"status": "written", "file": str(spec_file)}
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_write_failure(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
-    mock_emit: MagicMock,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that a file write failure is handled gracefully."""
     mock_nonascii.return_value = False
-    mock_emit.side_effect = SystemExit()
     mock_resolve.side_effect = _fake_resolve_command_config
 
     monkeypatch.setenv("BIJUXCLI_DOCS_OUT", str(tmp_path))
@@ -442,42 +428,32 @@ def test_docs_write_failure(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(SystemExit):
-        docs(
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
 
-    mock_emit.assert_called_once_with(
-        "Failed to write spec: disk full",
-        code=2,
-        failure="write",
-        command="docs",
-        fmt="json",
-        quiet=False,
-        include_runtime=False,
-        log_policy=resolve_log_policy(LogLevel.INFO),
-    )
+    intent = exc.value.intent
+    payload = cast(dict[str, Any], intent.payload)
+    assert payload["failure"] == "write"
+    assert "disk full" in payload["error"]
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_missing_output_dir(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
-    mock_emit: MagicMock,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that a non-existent output directory causes an error."""
     mock_nonascii.return_value = False
-    mock_emit.side_effect = SystemExit()
     mock_resolve.side_effect = _fake_resolve_command_config
 
     bad_dir = tmp_path / "no" / "such" / "dir"
@@ -493,37 +469,27 @@ def test_docs_missing_output_dir(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(SystemExit):
-        docs(
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
 
-    bad_parent = bad_dir.parent
-    mock_emit.assert_called_once_with(
-        f"Output directory does not exist: {bad_parent}",
-        code=2,
-        failure="output_dir",
-        command="docs",
-        fmt="json",
-        quiet=False,
-        include_runtime=False,
-        log_policy=resolve_log_policy(LogLevel.INFO),
-    )
+    intent = exc.value.intent
+    payload = cast(dict[str, Any], intent.payload)
+    assert payload["failure"] == "output_dir"
+    assert str(bad_dir.parent) in payload["error"]
 
 
-@patch("bijux_cli.cli.commands.diagnostics.docs.emit_and_exit", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.resolve_command_config", autospec=True)
 @patch("bijux_cli.cli.commands.diagnostics.docs.contains_non_ascii_env", autospec=True)
 def test_docs_writes_yaml_and_emit(
     mock_nonascii: MagicMock,
     mock_resolve: MagicMock,
-    mock_emit: MagicMock,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -534,8 +500,6 @@ def test_docs_writes_yaml_and_emit(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=False,
@@ -555,25 +519,20 @@ def test_docs_writes_yaml_and_emit(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    docs(
-        ctx,
-        out=None,
-        quiet=False,
-        verbose=False,
-        fmt="yaml",
-        pretty=False,
-        log_level=LogLevel.INFO,
-    )
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
+            ctx,
+            out=None,
+            quiet=False,
+            fmt="yaml",
+            pretty=False,
+            log_level=LogLevel.INFO,
+        )
     spec_file = tmp_path / "spec.yaml"
     text = spec_file.read_text(encoding="utf-8")
     assert "foo: bar" in text
-    mock_emit.assert_called_once_with(
-        DocsWritePayload(status="written", file=str(spec_file)),
-        OutputFormat.YAML,
-        False,
-        False,
-        "docs",
-    )
+    payload = cast(dict[str, Any], exc.value.intent.payload)
+    assert payload["status"] == "written"
 
 
 @patch("bijux_cli.cli.commands.diagnostics.docs.emit_error_with_policy", autospec=True)
@@ -605,11 +564,10 @@ def test_docs_io_fail_flag(
     ctx.invoked_subcommand = None
     ctx.args = []
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -657,11 +615,10 @@ def test_docs_internal_error_path_none(
     ctx.invoked_subcommand = None
     ctx.args = []
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -689,6 +646,7 @@ def test_docs_stdout_debug_no_diagnostics(
         docs_mod, "resolve_command_config", _fake_resolve_command_config
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"num": 7})
+    monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
     monkeypatch.setattr(
         docs_mod,
@@ -699,12 +657,11 @@ def test_docs_stdout_debug_no_diagnostics(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(Exit) as ei:
-        docs(
+    with pytest.raises(ExitIntentError) as ei:
+        call_docs(
             ctx,
             out=Path("-"),
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.DEBUG,
@@ -713,7 +670,7 @@ def test_docs_stdout_debug_no_diagnostics(
     out, err = capsys.readouterr()
     assert out == "DUMP\n"
     assert err == ""
-    assert ei.value.exit_code == 0
+    assert ei.value.intent.code == 0
 
 
 def test_docs_stdout_quiet_skips_echo(
@@ -726,6 +683,7 @@ def test_docs_stdout_quiet_skips_echo(
         docs_mod, "resolve_command_config", _fake_resolve_command_config
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"a": 1})
+    monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
     monkeypatch.setattr(
         docs_mod,
@@ -740,8 +698,6 @@ def test_docs_stdout_quiet_skips_echo(
                 output_format=OutputFormat.JSON,
                 color=ColorMode.AUTO,
                 quiet=True,
-                verbose=False,
-                verbose_level=0,
                 log_level=LogLevel.ERROR,
                 pretty=True,
                 include_runtime=False,
@@ -753,18 +709,17 @@ def test_docs_stdout_quiet_skips_echo(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(Exit) as exc:
-        docs(
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
             ctx,
             out=Path("-"),
             quiet=True,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
         )
 
-    assert exc.value.exit_code == 0
+    assert exc.value.intent.code == 0
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
@@ -780,6 +735,7 @@ def test_docs_stdout_yaml(
         docs_mod, "resolve_command_config", _fake_resolve_command_config
     )
     monkeypatch.setattr(docs_mod, "_build_spec_payload", lambda ir: {"hello": "world"})
+    monkeypatch.setattr(docs_mod, "record_history", lambda *_a, **_k: None)
 
     monkeypatch.setattr(
         docs_mod,
@@ -790,18 +746,17 @@ def test_docs_stdout_yaml(
     ctx: Context = MagicMock()
     ctx.invoked_subcommand = None
     ctx.args = []
-    with pytest.raises(Exit) as exc:
-        docs(
+    with pytest.raises(ExitIntentError) as exc:
+        call_docs(
             ctx,
             out=Path("-"),
             quiet=False,
-            verbose=False,
             fmt="yaml",
             pretty=False,
             log_level=LogLevel.INFO,
         )
 
-    assert exc.value.exit_code == 0
+    assert exc.value.intent.code == 0
     out, err = capsys.readouterr()
     assert out.strip() == "{hello: world}"
     assert err == ""
@@ -824,8 +779,6 @@ def test_docs_yaml_serialization_failure(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -847,11 +800,10 @@ def test_docs_yaml_serialization_failure(
     mock_emit.side_effect = SystemExit()
 
     with pytest.raises(SystemExit):
-        docs(
+        call_docs(
             ctx,
             out=None,
             quiet=False,
-            verbose=False,
             fmt="yaml",
             pretty=True,
             log_level=LogLevel.INFO,

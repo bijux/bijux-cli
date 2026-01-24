@@ -30,7 +30,6 @@ VALID_FLAGS = {
     "help": ["--help", "-h"],
     "quiet": ["--quiet", "-q"],
     "debug": ["--log-level debug"],
-    "verbose": ["--verbose", "-v"],
 }
 ALL_FLAGS = [
     "--help",
@@ -38,8 +37,6 @@ ALL_FLAGS = [
     "--quiet",
     "-q",
     "--log-level debug",
-    "--verbose",
-    "-v",
     "--format",
     "-f",
     "--no-pretty",
@@ -219,7 +216,7 @@ def test_sleep_flag_combinations() -> None:
     """Test various legal flag combinations."""
     combos = [
         ["--seconds", "0.01", "--quiet", "--log-level debug"],
-        ["--seconds", "0.01", "--quiet", "--verbose"],
+        ["--seconds", "0.01", "--quiet", "--log-level debug"],
         ["--seconds", "0.01", "--log-level debug", "--no-pretty"],
         ["--seconds", "0.01", "--format", "yaml", "--no-pretty"],
     ]
@@ -373,9 +370,9 @@ def test_sleep_default_output(fmt: str) -> None:
         assert res.stdout.count("\n") >= 1
 
 
-@pytest.mark.parametrize("flag", VALID_FLAGS["verbose"])
-def test_sleep_verbose_flag(flag: str) -> None:
-    """Test --verbose does not add fields unless implemented (future)."""
+@pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
+def test_sleep_debug_flag_does_not_add_fields(flag: str) -> None:
+    """Test --log-level debug does not add fields unless implemented (future)."""
     res = run_cli(["sleep", "--seconds", "0.01", flag])
     data = json.loads(res.stdout)
     assert "slept" in data
@@ -420,7 +417,6 @@ def test_sleep_duplicate_flags(flag: list[str]) -> None:
     ("args", "expect_output"),
     [
         (["--seconds", "0.01", "--quiet", "--log-level debug"], False),
-        (["--seconds", "0.01", "--quiet", "--verbose"], False),
         (["--seconds", "0.01", "--format", "yaml", "--no-pretty"], True),
         (["--seconds", "0.01", "--log-level debug", "--no-pretty"], True),
     ],

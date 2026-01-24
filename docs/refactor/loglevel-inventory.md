@@ -1,6 +1,6 @@
-# LogLevel Inventory (verbosity-related identifiers)
+# LogLevel Inventory (debug-related identifiers)
 
-Scope: initial pass for replacing verbosity/debug booleans with `LogLevel`.
+Scope: initial pass for replacing debug-only toggles with `LogLevel`.
 
 ## `debug`
 
@@ -15,42 +15,6 @@ Why it exists
 
 Replacement with LogLevel
 - Replace boolean `debug` with `log_level` comparisons: use `LogLevel.DEBUG` (or lower) as the threshold for diagnostics.
-
-## `verbose`
-
-Where it appears
-- CLI flags and command payload shaping (`src/bijux_cli/cli/commands/*`).
-- Execution policy resolution (`src/bijux_cli/core/precedence.py`).
-- Context/DI logging gates (`src/bijux_cli/core/context.py`, `src/bijux_cli/core/di.py`).
-- Tests and docs for `--verbose`.
-
-Why it exists
-- Historically used as a separate boolean axis for “include runtime metadata.”
-
-Replacement with LogLevel
-- Replace `verbose` with `LogLevel` threshold (e.g., include runtime metadata when `log_level <= LogLevel.DEBUG` or a chosen threshold). The policy should use `log_level` only.
-
-## `set_verbose`
-
-Where it appears
-- `src/bijux_cli/core/di.py` on `DIContainer`.
-
-Why it exists
-- Provides a global DI verbosity flag to decide whether DI operations emit internal logs.
-
-Replacement with LogLevel
-- Remove the method; DI internal logging should be controlled via `LogLevel` threshold in `LogPolicy`.
-
-## `_coerce_verbose`
-
-Where it appears
-- `src/bijux_cli/core/precedence.py`.
-
-Why it exists
-- Normalizes `verbose` flags to a numeric level (`verbose_level`).
-
-Replacement with LogLevel
-- Remove when `verbose` is no longer a separate axis; `LogLevel` ordering should drive all verbosity behavior.
 
 ## `emit_debug_message`
 

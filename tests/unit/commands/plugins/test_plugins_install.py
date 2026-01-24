@@ -33,7 +33,6 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
                 "command": cmd,
                 "payload": builder(include=True),
                 "quiet": kwargs.get("quiet"),
-                "verbose": kwargs.get("verbose"),
                 "fmt": kwargs.get("fmt"),
                 "pretty": kwargs.get("pretty"),
                 "log_level": kwargs.get("log_level"),

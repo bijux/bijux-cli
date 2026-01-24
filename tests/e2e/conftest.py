@@ -127,6 +127,14 @@ def run_cli(
     """
     if isinstance(args, str):
         args = shlex.split(args)
+    else:
+        expanded: list[str] = []
+        for arg in args:
+            if isinstance(arg, str) and arg.startswith("-") and " " in arg:
+                expanded.extend(shlex.split(arg))
+            else:
+                expanded.append(arg)
+        args = expanded
 
     merged = os.environ.copy()
     merged.update(env or {})

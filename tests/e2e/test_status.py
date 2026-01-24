@@ -32,7 +32,6 @@ FORMATS = ["json", "yaml", "bogus", "garbage", ""]
 VALID_FLAGS = {
     "help": ["--help", "-h"],
     "quiet": ["--quiet", "-q"],
-    "verbose": ["--verbose", "-v"],
     "debug": ["--log-level debug"],
 }
 ALL_FLAGS = [
@@ -40,8 +39,6 @@ ALL_FLAGS = [
     "-h",
     "--quiet",
     "-q",
-    "--verbose",
-    "-v",
     "--log-level debug",
     "--format",
     "-f",
@@ -107,7 +104,7 @@ def load_output(stdout: str, fmt: str) -> dict[str, Any]:
 def assert_status_schema(
     data: dict[str, Any],
     *,
-    expect_verbose: bool = False,
+    expect_runtime: bool = False,
     expect_ts: bool = False,
     expect_watch_stopped: bool = False,
 ) -> None:
@@ -118,7 +115,7 @@ def assert_status_schema(
     assert data.get("status") == "ok"
     if expect_ts:
         assert isinstance(data.get("ts"), float)
-    if expect_verbose:
+    if expect_runtime:
         assert isinstance(data.get("python"), str)
         assert isinstance(data.get("platform"), str)
 
@@ -184,10 +181,10 @@ def test_status_quiet_contract(flags: list[str]) -> None:
         assert res.returncode == 0
 
 
-@pytest.mark.parametrize("flag", VALID_FLAGS["verbose"])
+@pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 @pytest.mark.parametrize("fmt", SUPPORTED_FORMATS)
-def test_status_verbose_flag(flag: str, fmt: str) -> None:
-    """Test that the --verbose flag adds extra fields to the output."""
+def test_status_debug_flag_adds_runtime(flag: str, fmt: str) -> None:
+    """Test that the debug flag adds extra fields to the output."""
     res = run_cli(["status", flag, "--format", fmt])
     data = load_output(res.stdout, fmt)
     assert "status" in data
@@ -214,7 +211,7 @@ def test_status_no_pretty_flag(fmt: str) -> None:
 
 @pytest.mark.parametrize("flag", VALID_FLAGS["debug"])
 def test_status_debug_flag(flag: str) -> None:
-    """Test that the debug flag produces verbose, pretty-printed output and diagnostics."""
+    """Test that the debug flag produces pretty output and diagnostics."""
     res = run_cli(["status", flag])
     assert res.returncode == 0
     assert res.stdout.count("\n") >= 2
@@ -248,10 +245,10 @@ def test_status_help_flag_strict(flag: str) -> None:
 @pytest.mark.parametrize(
     "args",
     [
-        ["--quiet", "--verbose"],
+        ["--quiet", "--log-level debug"],
         ["-q", "-v"],
         ["--format", "yaml", "-q"],
-        ["--verbose", "-f", "yaml"],
+        ["--log-level debug", "-f", "yaml"],
         ["--log-level debug", "--no-pretty"],
     ],
 )
@@ -264,10 +261,10 @@ def test_status_flag_combinations_success(args: list[str]) -> None:
 @pytest.mark.parametrize(
     ("args", "expect_output"),
     [
-        (["--quiet", "--verbose"], False),
+        (["--quiet", "--log-level debug"], False),
         (["-q", "-v"], False),
         (["--format", "yaml", "-q"], False),
-        (["--verbose", "-f", "yaml"], True),
+        (["--log-level debug", "-f", "yaml"], True),
         (["--log-level debug", "--no-pretty"], True),
     ],
 )
@@ -345,9 +342,7 @@ def test_status_idempotent_fields() -> None:
     assert nondet <= {"timestamp", "uptime"}
 
 
-@pytest.mark.parametrize(
-    "flag", [["--format", "json"], ["--verbose"], ["--log-level debug"]]
-)
+@pytest.mark.parametrize("flag", [["--format", "json"], ["--log-level debug"]])
 def test_status_no_stacktrace_warning_leakage(flag: list[str]) -> None:
     """Test that no internal warnings or tracebacks leak into output."""
     res = run_cli(["status", *flag])

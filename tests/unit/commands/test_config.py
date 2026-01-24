@@ -67,8 +67,6 @@ def mock_flags() -> ExecutionPolicy:
         output_format=OutputFormat.JSON,
         color=ColorMode.AUTO,
         quiet=False,
-        verbose=False,
-        verbose_level=0,
         log_level=LogLevel.INFO,
         pretty=True,
         include_runtime=False,
@@ -88,7 +86,7 @@ def test_config_callback_no_subcommand(
     """Test the main config command callback when no subcommand is invoked."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -114,7 +112,7 @@ def test_clear_config_success(
     """Test the successful clearing of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -139,7 +137,7 @@ def test_clear_config_fail(
     """Test the failure path when clearing the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -165,7 +163,7 @@ def test_export_config_stdout(
     """Test exporting the configuration to stdout."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -184,7 +182,7 @@ def test_export_config_file(
     """Test exporting the configuration to a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -209,7 +207,7 @@ def test_get_config_success(
     """Test successfully getting a configuration value."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -233,7 +231,7 @@ def test_list_config_success(
     """Test successfully listing all configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -259,7 +257,7 @@ def test_load_config_success(
     """Test successfully loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -283,7 +281,7 @@ def test_load_config_exception(
     """Test the failure path when loading configuration from a file."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.load.DIContainer.current") as mock_current,
@@ -303,7 +301,7 @@ def test_reload_config_success(
     """Test the successful reloading of the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -328,7 +326,7 @@ def test_reload_config_exception(
     """Test the failure path when reloading the configuration."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -352,7 +350,7 @@ def test_set_config_arg(
     """Test setting a configuration value from a command-line argument."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -379,7 +377,7 @@ def test_set_config_stdin(
     """Test setting a configuration value from stdin."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -399,7 +397,7 @@ def test_set_config_empty_key(
     """Test that setting a value with an empty key fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -419,7 +417,7 @@ def test_set_config_non_ascii(
     """Test that setting a value with non-ASCII characters fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -439,7 +437,7 @@ def test_set_config_control_char(
     """Test that setting a value with a control character fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -459,7 +457,7 @@ def test_set_config_invalid_key(
     """Test that setting a value with an invalid key format fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -479,7 +477,7 @@ def test_set_config_exception(
     """Test the failure path when the config service 'set' method raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -500,7 +498,7 @@ def test_unset_config_success(
     """Test the successful unsetting of a configuration key."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -526,7 +524,7 @@ def test_unset_config_key_error(
     """Test that unsetting a non-existent key is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -551,7 +549,7 @@ def test_unset_config_exception(
     """Test the failure path when the config service 'unset' raises an exception."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -584,7 +582,7 @@ def test_export_config_command_error(
     """Test that a ConfigError during export is handled correctly."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -609,7 +607,7 @@ def test_export_config_exception(
     """Test that a generic Exception during export is propagated."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -630,7 +628,7 @@ def test_get_config_not_found(
     """Test that a ConfigError when getting a non-existent key is handled."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -651,7 +649,7 @@ def test_get_config_exception(
     """Test that a generic exception when getting a config value is propagated."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -670,7 +668,7 @@ def test_list_config_exception(
     """Test the failure path when listing configuration keys."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch(
@@ -697,7 +695,7 @@ def test_set_config_no_arg_tty(
     """Test that setting a value with no argument on a TTY fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -718,7 +716,7 @@ def test_set_config_invalid_pair(
     """Test that setting a value with an invalid pair format fails."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -740,7 +738,7 @@ def test_set_config_stdin_escaped(
     """Test that escaped characters from stdin are correctly handled."""
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.set.DIContainer.current") as mock_current,
@@ -762,7 +760,7 @@ def test_get_config_other_command_error(
 
     with (
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             return_value=mock_flags,
         ),
         patch("bijux_cli.cli.commands.config.get.DIContainer.current") as mock_current,
@@ -808,7 +806,7 @@ def test_config_root_with_subcommand_skips_execution(
     fake_ctx.invoked_subcommand = "something"
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: (_ for _ in ()).throw(
             AssertionError("current_execution_policy should not run")
         ),
@@ -854,33 +852,21 @@ def test_non_ascii_config_path_triggers_error(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(bad_path))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
         ),
     )
 
-    called: dict[str, Any] = {}
-
-    def fake_emit(msg: str, **kwargs: Any) -> None:
-        called["msg"] = msg
-        raise typer.Exit(3)
-
-    monkeypatch.setattr(
-        "bijux_cli.cli.commands.config.set.emit_error_with_policy", fake_emit
-    )
-
-    with pytest.raises(typer.Exit) as exc:
+    with pytest.raises(ExitIntentError) as exc:
         set_config(make_ctx(), "key=value")
-    assert exc.value.exit_code == 3
-    assert "Non-ASCII characters in config path" in called["msg"]
+    payload = cast(dict[str, Any], exc.value.intent.payload)
+    assert "Non-ASCII" in payload["error"]
 
 
 def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -890,13 +876,11 @@ def test_posix_lock_failure(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -934,13 +918,11 @@ def test_posix_lock_success_and_run(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
@@ -990,13 +972,11 @@ def test_posix_lock_import_failure_skips_lock(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -1059,13 +1039,11 @@ def test_posix_unlock_failure_is_ignored(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
@@ -1123,13 +1101,11 @@ def test_non_posix_skips_file_lock_block(
     monkeypatch.setenv("BIJUXCLI_CONFIG", str(cfg))
 
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,

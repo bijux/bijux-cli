@@ -20,7 +20,6 @@ def _fake_resolve_command_config(
 ) -> tuple[ExecutionPolicy, OutputFormat]:
     fmt = str(kwargs.get("fmt") or "json").lower()
     output_format = OutputFormat.YAML if fmt == "yaml" else OutputFormat.JSON
-    verbose = bool(kwargs.get("verbose", False))
     log_level_raw = kwargs.get("log_level", LogLevel.INFO)
     log_level = (
         log_level_raw
@@ -28,16 +27,15 @@ def _fake_resolve_command_config(
         else LogLevel(str(log_level_raw).lower())
     )
     pretty = bool(kwargs.get("pretty", False))
+    log_policy = resolve_log_policy(log_level)
     return (
         ExecutionPolicy(
             output_format=output_format,
             color=ColorMode.AUTO,
             quiet=bool(kwargs.get("quiet", False)),
-            verbose=verbose,
-            verbose_level=1 if verbose else 0,
             log_level=log_level,
             pretty=pretty,
-            include_runtime=verbose,
+            include_runtime=log_policy.show_internal,
         ),
         output_format,
     )
@@ -118,7 +116,6 @@ def test_doctor_short_circuits_if_subcommand_set() -> None:
     result = doctor(
         ctx,
         quiet=False,
-        verbose=False,
         fmt="json",
         pretty=True,
         log_level=LogLevel.INFO,
@@ -156,7 +153,6 @@ def test_doctor_di_failure(monkeypatch: pytest.MonkeyPatch) -> None:
             doctor(
                 ctx,
                 quiet=False,
-                verbose=False,
                 fmt="json",
                 pretty=True,
                 log_level=LogLevel.INFO,
@@ -200,7 +196,6 @@ def test_doctor_success_path(monkeypatch: pytest.MonkeyPatch) -> None:
         doctor(
             ctx,
             quiet=True,
-            verbose=True,
             fmt="yaml",
             pretty=False,
             log_level=LogLevel.DEBUG,
@@ -238,7 +233,6 @@ def test_doctor_stray_option_calls_emit_and_exits(
         doctor(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -276,7 +270,6 @@ def test_doctor_stray_argument_calls_emit_and_exits(
         doctor(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,

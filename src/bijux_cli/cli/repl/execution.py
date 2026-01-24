@@ -18,7 +18,8 @@ from bijux_cli.cli.repl.parsing import (
     _split_segments,
     _suggest,
 )
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.core.runtime import run_command
 
 _JSON_CMDS = {
@@ -113,7 +114,16 @@ def _run_piped(repl_quiet: bool) -> None:
 
             lo = seg.lower()
             if lo in {"exit", "quit"}:
-                sys.exit(0)
+                raise ExitIntentError(
+                    ExitIntent(
+                        code=ExitCode.SUCCESS,
+                        stream=None,
+                        payload=None,
+                        fmt=OutputFormat.JSON,
+                        pretty=False,
+                        show_traceback=False,
+                    )
+                )
 
             if seg == "docs":
                 if not repl_quiet:
@@ -188,7 +198,16 @@ def _run_piped(repl_quiet: bool) -> None:
             else:
                 _invoke(tokens, repl_quiet=repl_quiet)
 
-    sys.exit(0)
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream=None,
+            payload=None,
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            show_traceback=False,
+        )
+    )
 
 
 def run_repl_session(*, quiet: bool, stdin_isatty: bool) -> None:

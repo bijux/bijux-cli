@@ -10,7 +10,6 @@ structured, machine-readable response.
 
 Output Contract:
     * Success: `{"status": "updated", "key": str, "value": str}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -35,30 +34,28 @@ import sys
 import typer
 
 from bijux_cli.cli.commands.payloads import ConfigSetPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import ascii_safe
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
-from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
+from bijux_cli.core.enums import ErrorType, OutputFormat
+from bijux_cli.core.precedence import LogPolicy
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -175,7 +172,6 @@ def set_config(
         None, help="KEY=VALUE to set; if omitted, read from stdin"
     ),
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -193,7 +189,6 @@ def set_config(
         pair (str | None): A string in "KEY=VALUE" format. If None, the pair
             is read from stdin.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
         log_level (str): Logging level for diagnostics.
@@ -205,6 +200,16 @@ def set_config(
         SystemExit: Always exits with a contract-compliant status code and
             payload, indicating success or detailing the error.
     """
+    command = "config set"
+    effective, fmt_lower = resolve_command_config(
+        command=command,
+        fmt=fmt,
+    )
+    quiet = effective.quiet
+    include_runtime = effective.include_runtime
+    log_policy = effective.log_policy
+    pretty = effective.pretty
+    include_runtime = effective.include_runtime
     cfg_path = os.environ.get(ENV_CONFIG, "") or ""
     if cfg_path:
         try:
@@ -219,18 +224,8 @@ def set_config(
                 quiet=False,
                 include_runtime=False,
                 extra={"path": "[non-ascii path provided]"},
-                log_policy=resolve_log_policy(LogLevel.INFO),
+                log_policy=log_policy,
             )
-    command = "config set"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
-    )
-    quiet = effective.quiet
-    verbose = effective.verbose_level > 0
-    log_policy = effective.log_policy
-    pretty = effective.pretty
-    include_runtime = effective.include_runtime
     if cfg_path:
         try:
             with open(cfg_path, "a+") as fh:
@@ -300,7 +295,6 @@ def set_config(
         command_name=command,
         payload_builder=payload_builder,
         quiet=quiet,
-        verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
         log_level=log_level,

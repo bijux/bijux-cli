@@ -34,7 +34,7 @@ class DummyExitError(Exception):
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a default execution policy for CLI output helpers."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: default_execution_policy(),
     )
 
@@ -118,7 +118,7 @@ def run_check(
                 lambda **kw: captured.update(kw),
             ),
             patch(
-                "bijux_cli.cli.core.output.current_execution_policy",
+                "bijux_cli.cli.core.command.current_execution_policy",
                 lambda: default_execution_policy(),
             ),
         ):
@@ -126,7 +126,6 @@ def run_check(
                 check_plugin,
                 name,
                 quiet=opts.get("quiet", False),
-                verbose=opts.get("verbose", False),
                 fmt=fmt,
                 pretty=opts.get("pretty", True),
                 log_level=opts.get("log_level", "info"),
@@ -189,14 +188,13 @@ def test_health_various_returns(
         ),
         patch("bijux_cli.cli.plugins.commands.check.new_run_command") as mock_new_run,
         patch(
-            "bijux_cli.cli.core.output.current_execution_policy",
+            "bijux_cli.cli.core.command.current_execution_policy",
             lambda: default_execution_policy(),
         ),
     ):
         run_command(
             check_plugin,
             "foo",
-            verbose=True,
             pretty=False,
             log_level=LogLevel.DEBUG,
             fmt="json",
@@ -228,7 +226,6 @@ def test_missing_plugin_py(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -249,7 +246,6 @@ def test_missing_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -270,7 +266,6 @@ def test_corrupt_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -300,7 +295,6 @@ def test_import_spec_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -331,7 +325,6 @@ def test_import_exec_error_and_debug(
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -343,7 +336,6 @@ def test_import_exec_error_and_debug(
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.DEBUG,
         )
@@ -368,7 +360,6 @@ def test_no_health_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -395,7 +386,6 @@ def test_bad_signature(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -422,7 +412,6 @@ def test_health_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )
@@ -456,7 +445,6 @@ def test_async_health_and_payload_builder(
         "foo",
         fmt="json",
         quiet=False,
-        verbose=True,
         pretty=False,
         log_level=LogLevel.INFO,
     )
@@ -497,7 +485,6 @@ def test_unexpected_health_return_marks_unhealthy(
         "foo",
         fmt="json",
         quiet=False,
-        verbose=True,
         pretty=True,
         log_level=LogLevel.INFO,
     )
@@ -531,7 +518,6 @@ def test_signature_introspection_error(
             "foo",
             fmt="json",
             quiet=False,
-            verbose=False,
             pretty=False,
             log_level=LogLevel.INFO,
         )

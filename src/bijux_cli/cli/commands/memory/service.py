@@ -9,7 +9,6 @@ in-memory data store, including the number of keys currently set.
 
 Output Contract:
     * Success: `{"status": "ok", "count": int|None, "message": str}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -29,30 +28,32 @@ import typer
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
 from bijux_cli.cli.commands.payloads import MemorySummaryPayload
+from bijux_cli.cli.core.command import (
+    current_execution_policy,
+    emit_error_with_policy,
+    normalize_payload,
+    record_history,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import emit_and_exit
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
 )
-from bijux_cli.cli.core.output import current_execution_policy, emit_error_with_policy
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.enums import ExitCode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import default_execution_policy, resolve_log_policy
+from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.precedence import LogPolicy, default_execution_policy
 
 
 def _build_payload(
@@ -91,8 +92,7 @@ def _run_one_shot_mode(
     fmt: OutputFormat,
     output_format: OutputFormat,
     quiet: bool,
-    verbose: bool,
-    log_level: str,
+    log_policy: LogPolicy,
     effective_pretty: bool,
     include_runtime: bool,
     keys_count: int | None,
@@ -107,8 +107,7 @@ def _run_one_shot_mode(
         fmt (str): The output format string (e.g., "json").
         output_format (OutputFormat): The output format enum for serialization.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes runtime metadata in the payload.
-        log_level (str): The resolved log level name.
+        log_policy (LogPolicy): Logging policy for diagnostics.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python/platform info.
         keys_count (int | None): The number of keys in the memory store.
@@ -120,10 +119,6 @@ def _run_one_shot_mode(
         SystemExit: Always exits with a contract-compliant status code and
             payload upon completion or error.
     """
-    if isinstance(log_level, LogLevel):
-        log_policy = resolve_log_policy(log_level)
-    else:
-        log_policy = resolve_log_policy(LogLevel(str(log_level).lower()))
     if contains_non_ascii_env():
         emit_error_with_policy(
             "Non-ASCII characters in environment variables",
@@ -162,20 +157,24 @@ def _run_one_shot_mode(
                 show_traceback=False,
             )
         )
-    emit_and_exit(
-        payload=payload,
-        fmt=output_format,
-        effective_pretty=effective_pretty,
-        verbose=verbose,
-        command=command,
-        exit_code=0,
+    record_history(command, 0)
+    from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+    raise ExitIntentError(
+        ExitIntent(
+            code=ExitCode.SUCCESS,
+            stream="stdout",
+            payload=normalize_payload(payload),
+            fmt=output_format,
+            pretty=effective_pretty,
+            show_traceback=False,
+        )
     )
 
 
 def memory_summary(
     ctx: typer.Context,
     quiet: bool,
-    verbose: bool,
     fmt: str,
     pretty: bool,
     log_level: str,
@@ -189,7 +188,6 @@ def memory_summary(
     Args:
         ctx (typer.Context): The Typer context for the CLI.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
         log_level (str): The requested logging level.
@@ -202,10 +200,9 @@ def memory_summary(
             payload upon completion or error.
     """
     command = "memory"
-    _ = (quiet, verbose, log_level, pretty, fmt)
     policy = current_execution_policy()
     quiet = policy.quiet
-    verbose = policy.verbose
+    include_runtime = policy.include_runtime
     log_policy = policy.log_policy
     include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
@@ -231,8 +228,7 @@ def memory_summary(
         fmt=fmt_lower,
         output_format=output_format,
         quiet=quiet,
-        verbose=verbose,
-        log_level=log_level,
+        log_policy=log_policy,
         effective_pretty=effective_pretty,
         include_runtime=include_runtime,
         keys_count=keys_count,
@@ -242,7 +238,6 @@ def memory_summary(
 def memory(
     ctx: typer.Context,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -256,7 +251,6 @@ def memory(
     Args:
         ctx (typer.Context): The Typer context for the CLI.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes runtime metadata in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
         log_level (str): The resolved log level name.
@@ -281,4 +275,10 @@ def memory(
             typer.echo(ctx.get_help(), color=color)
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
-        memory_summary(ctx, quiet, verbose, fmt, pretty, log_level)
+        memory_summary(
+            ctx=ctx,
+            quiet=quiet,
+            fmt=fmt,
+            pretty=pretty,
+            log_level=log_level,
+        )

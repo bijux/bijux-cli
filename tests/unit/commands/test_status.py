@@ -16,7 +16,7 @@ import typer
 import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy
+from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -94,6 +94,13 @@ class FakeTelemetry(TelemetryProtocol):
         return None
 
 
+def _payload_status(payload: Any) -> str | None:
+    """Return status from payloads that may be dicts or dataclasses."""
+    if isinstance(payload, dict):
+        return payload.get("status")
+    return getattr(payload, "status", None)
+
+
 class FakeDI:
     """A fake Dependency Injection container for testing."""
 
@@ -162,10 +169,9 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
             watch_interval=0.01,
             fmt=OutputFormat.YAML,
             quiet=False,
-            verbose=False,
-            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -193,10 +199,9 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
             watch_interval=0.0,
             fmt=OutputFormat.JSON,
             quiet=False,
-            verbose=True,
-            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=True,
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -223,10 +228,9 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
             watch_interval=0.0,
             fmt=OutputFormat.JSON,
             quiet=False,
-            verbose=False,
-            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
+            log_policy=resolve_log_policy(LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
@@ -257,7 +261,6 @@ def test_status_returns_early_on_subcommand(monkeypatch: pytest.MonkeyPatch) -> 
         ctx,
         watch=None,
         quiet=False,
-        verbose=False,
         fmt=OutputFormat.JSON,
         pretty=True,
         log_level=LogLevel.INFO,
@@ -275,13 +278,11 @@ def test_status_calls_new_run_command_when_not_watching(
     em, tel = FakeEmitter(), FakeTelemetry()
     monkeypatch.setattr(DIContainer, "current", lambda: FakeDI(em, tel))
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.ERROR,
             pretty=False,
             include_runtime=True,
@@ -303,14 +304,12 @@ def test_status_calls_new_run_command_when_not_watching(
         ctx,
         watch=None,
         quiet=True,
-        verbose=True,
         fmt="JSON",
         pretty=False,
         log_level=LogLevel.INFO,
     )
     assert seen["command_name"] == "status"
     assert seen["quiet"] is True
-    assert seen["verbose"] is True
     assert seen["fmt"] == "json"
     assert seen["pretty"] is False
     pb = seen["payload_builder"]
@@ -344,7 +343,6 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             ctx,
             watch=0,
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=True,
             log_level=LogLevel.INFO,
@@ -356,7 +354,6 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             ctx,
             watch=cast(Any, "abc"),
             quiet=False,
-            verbose=False,
             fmt=OutputFormat.JSON,
             pretty=True,
             log_level=LogLevel.INFO,
@@ -378,13 +375,11 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
 
     monkeypatch.setattr(mod, "validate_common_flags", _validate)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.DEBUG,
             pretty=True,
             include_runtime=False,
@@ -401,7 +396,6 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
         ctx,
         watch=0.5,
         quiet=True,
-        verbose=False,
         fmt="JSON",
         pretty=True,
         log_level=LogLevel.DEBUG,
@@ -410,8 +404,8 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
     assert seen["watch_interval"] == pytest.approx(0.5)
     assert seen["fmt"] == "json"
     assert seen["quiet"] is True
-    assert seen["verbose"] is False
-    assert seen["log_level"] == LogLevel.DEBUG
+    assert seen["include_runtime"] is False
+    assert seen["log_policy"].level == LogLevel.DEBUG
     assert seen["effective_pretty"] is True
     assert seen["telemetry"] is tel
     assert seen["emitter"] is em
@@ -433,10 +427,9 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
         watch_interval=0.01,
         fmt=OutputFormat.JSON,
         quiet=True,
-        verbose=False,
-        log_level=LogLevel.INFO,
         effective_pretty=True,
         include_runtime=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -462,17 +455,15 @@ def test_run_watch_mode_one_iteration_and_stop(
         watch_interval=0.01,
         fmt=OutputFormat.JSON,
         quiet=False,
-        verbose=True,
-        log_level=LogLevel.DEBUG,
         effective_pretty=True,
         include_runtime=True,
+        log_policy=resolve_log_policy(LogLevel.DEBUG),
         telemetry=tel,
         emitter=em,
     )
     assert any(call[1]["level"] == "info" for call in em.calls)
     assert any(
-        call[1]["level"] == "info"
-        and getattr(call[0], "status", None) == "watch-stopped"
+        call[1]["level"] == "info" and _payload_status(call[0]) == "watch-stopped"
         for call in em.calls
     )
     names = [n for n, _ in tel.events]
@@ -497,10 +488,9 @@ def test_run_watch_mode_info_suppresses_diagnostics(
         watch_interval=0.01,
         fmt=OutputFormat.JSON,
         quiet=False,
-        verbose=False,
-        log_level=LogLevel.INFO,
         effective_pretty=True,
         include_runtime=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -529,7 +519,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         output: str | None = None,
         **context: Any,
     ) -> None:
-        if getattr(payload, "status", None) == "watch-stopped":
+        if _payload_status(payload) == "watch-stopped":
             raise ValueError("stop emit fail")
         return FakeEmitter.emit(
             em,
@@ -549,10 +539,9 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         watch_interval=0.0,
         fmt=OutputFormat.JSON,
         quiet=False,
-        verbose=False,
-        log_level=LogLevel.INFO,
         effective_pretty=False,
         include_runtime=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )

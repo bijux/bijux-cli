@@ -38,7 +38,7 @@ Until v0.2.0 ships:
 
 ## Output Precedence (Truth Table)
 
-Flags resolve in this order: `quiet` → `log_level` → `verbose` → defaults.
+Flags resolve in this order: `quiet` → `log_level` → defaults.
 `--json` forces JSON output; color settings do not affect JSON payloads.
 
 | quiet | log-level flag | -v/-vv | --json | --color | effective log_level | include runtime | format | color |

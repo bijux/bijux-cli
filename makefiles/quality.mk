@@ -53,7 +53,7 @@ interrogate-report:
 	@echo "→ Generating docstring coverage report (<100%)"
 	@mkdir -p "$(QUALITY_ARTIFACTS_DIR)"
 	@set +e; \
-	  OUT="$$( $(QUALITY_ENV) $(INTERROGATE) --verbose $(INTERROGATE_PATHS) )"; \
+	  OUT="$$( $(QUALITY_ENV) $(INTERROGATE) -v $(INTERROGATE_PATHS) )"; \
 	  rc=$$?; \
 	  printf '%s\n' "$$OUT" >"$(QUALITY_ARTIFACTS_DIR)/interrogate.full.txt"; \
 	  OFF="$$(printf '%s\n' "$$OUT" | awk -F'|' 'NR>3 && $$0 ~ /^\|/ { \

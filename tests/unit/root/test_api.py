@@ -252,13 +252,6 @@ async def test_run_async_invalid_fmt(
 
 
 @pytest.mark.asyncio
-async def test_run_async_quiet_conflict(bijux_api: BijuxAPI) -> None:
-    """Test that run_async raises an error for conflicting quiet/verbose flags."""
-    with pytest.raises(BijuxError, match="--quiet cannot be combined"):
-        await bijux_api.run_async("cmd", quiet=True, verbose=True)
-
-
-@pytest.mark.asyncio
 async def test_run_async_non_ascii_env(
     bijux_api: BijuxAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -580,12 +573,6 @@ def test_run_sync_missing_command_raises() -> None:
     api = BijuxAPI()
     with pytest.raises(BijuxError, match="Failed to run command"):
         api.run_sync("anything")
-
-
-@pytest.mark.asyncio
-async def test_run_async_quiet_verbose_conflict(bijux_api: BijuxAPI) -> None:
-    with pytest.raises(BijuxError, match="cannot be combined"):
-        await bijux_api.run_async("cmd", quiet=True, verbose=True)
 
 
 @pytest.mark.asyncio

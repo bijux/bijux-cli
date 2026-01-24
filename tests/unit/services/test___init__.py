@@ -130,7 +130,6 @@ def test_register_default_services_100pct(
 
         logging_config = LoggingConfig(
             quiet=quiet,
-            verbose=False,
             log_level=log_level,
             color=ColorMode.AUTO,
         )

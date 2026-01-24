@@ -223,10 +223,10 @@ Fixed ordering eliminates ambiguity.
 | -------: |-------------------------------| --------------------------------------------------------- |
 |        1 | `-h`, `--help`                | Immediate exit (code 0) with usage; ignores all.          |
 |        2 | `-q`, `--quiet`               | Suppress stdout/stderr; preserves exit code.              |
-|        3 | `--log-level debug`               | Full diagnostics; implies `--verbose`, forces `--pretty`. |
+|        3 | `--log-level debug`               | Full diagnostics; implies `--log-level debug`, forces `--pretty`. |
 |        4 | `-f`, `--format <json\|yaml>` | Structured output; invalid → code 2.                      |
 |        5 | `--pretty` / `--no-pretty`    | Indentation toggle (default: `--pretty`).                 |
-|        6 | `-v`, `--verbose`             | Runtime metadata; implied by `--log-level debug`.                   |
+|        6 | `-v`, `--log-level debug`             | Runtime metadata; implied by `--log-level debug`.                   |
 
 Rationale: [ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
 

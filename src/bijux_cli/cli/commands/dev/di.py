@@ -10,7 +10,6 @@ architecture and service resolution.
 
 Output Contract:
     * Success: `{"factories": list, "services": list}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -30,6 +29,13 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DevDiPayload
+from bijux_cli.cli.core.command import (
+    current_execution_policy,
+    emit_error_with_policy,
+    new_run_command,
+    normalize_payload,
+    record_history,
+)
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     ENV_DI_LIMIT,
@@ -38,20 +44,12 @@ from bijux_cli.cli.core.constants import (
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
-from bijux_cli.cli.core.emit import exit_if_quiet
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    current_execution_policy,
-    emit_error_with_policy,
-    new_run_command,
 )
 from bijux_cli.cli.core.validation import (
     ascii_safe,
@@ -59,10 +57,9 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.enums import ExitCode, OutputFormat
 
 QUIET_OPTION = typer.Option(False, *OPT_QUIET, help=HELP_QUIET)
-VERBOSE_OPTION = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE)
 FORMAT_OPTION = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT)
 PRETTY_OPTION = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY)
 LOG_LEVEL_OPTION = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL)
@@ -124,7 +121,6 @@ def _build_dev_di_payload(include_runtime: bool) -> DevDiPayload:
 
 def dev_di_graph(
     quiet: bool = QUIET_OPTION,
-    verbose: bool = VERBOSE_OPTION,
     fmt: str = FORMAT_OPTION,
     pretty: bool = PRETTY_OPTION,
     log_level: str = LOG_LEVEL_OPTION,
@@ -138,7 +134,6 @@ def dev_di_graph(
 
     Args:
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python/platform details in the output.
         fmt (str): The output format, "json" or "yaml".
         pretty (bool): If True, pretty-prints the output.
         log_level (str): The requested logging level.
@@ -152,7 +147,6 @@ def dev_di_graph(
             payload, indicating success or detailing an error.
     """
     command = "dev di"
-    _ = (quiet, verbose, log_level, pretty, fmt)
     policy = current_execution_policy()
     quiet = policy.quiet
     log_policy = policy.log_policy
@@ -262,7 +256,7 @@ def dev_di_graph(
                 from bijux_cli.cli.core.emit import resolve_serializer
 
                 rendered = resolve_serializer().dumps(
-                    payload, fmt=fmt_lower, pretty=effective_pretty
+                    normalize_payload(payload), fmt=fmt_lower, pretty=effective_pretty
                 )
                 p.write_text(rendered.rstrip("\n") + "\n", encoding="utf-8")
             except OSError as exc:
@@ -277,7 +271,20 @@ def dev_di_graph(
                     log_policy=log_policy,
                 )
 
-        exit_if_quiet(quiet, code=0)
+        if quiet:
+            record_history(command, 0)
+            from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+
+            raise ExitIntentError(
+                ExitIntent(
+                    code=ExitCode.SUCCESS,
+                    stream=None,
+                    payload=None,
+                    fmt=fmt_lower,
+                    pretty=effective_pretty,
+                    show_traceback=False,
+                )
+            )
 
     if os.environ.get(ENV_TEST_FORCE_SERIALIZE_FAIL) == "1":
         emit_error_with_policy(
@@ -295,7 +302,6 @@ def dev_di_graph(
         command_name=command,
         payload_builder=lambda _: payload,
         quiet=quiet,
-        verbose=effective_include_runtime,
         fmt=fmt_lower,
         pretty=effective_pretty,
         log_level=log_level,

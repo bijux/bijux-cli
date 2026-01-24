@@ -28,7 +28,7 @@ REQUIRED_FLAGS = [
     "-q",
     "--quiet",
     "-v",
-    "--verbose",
+    "--log-level debug",
     "-f",
     "--format",
     "--pretty",
@@ -58,7 +58,14 @@ def test_format_with_whitespace(fmt: str) -> None:
 @given(
     st.lists(
         st.sampled_from(
-            ["--pretty", "--no-pretty", "-v", "--verbose", "--log-level", "debug"]
+            [
+                "--pretty",
+                "--no-pretty",
+                "-v",
+                "--log-level debug",
+                "--log-level",
+                "debug",
+            ]
         ),
         unique=True,
     )

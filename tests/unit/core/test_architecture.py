@@ -68,7 +68,7 @@ def test_cli_commands_have_no_raw_flag_strings() -> None:
         "--quiet",
         "--log-level",
         "--format",
-        "--verbose",
+        "--log-level debug",
         "--pretty",
         "--no-pretty",
         "--color",
@@ -86,3 +86,26 @@ def test_cli_commands_have_no_raw_flag_strings() -> None:
                 f"{path}: {token}" for token in forbidden if token in content
             )
     assert not violations, "Raw flag strings found:\n" + "\n".join(violations)
+
+
+def test_policy_resolution_lives_in_core_precedence() -> None:
+    """Ensure CLI/infra/services do not resolve policy directly."""
+    forbidden = (
+        "resolve_effective_config",
+        "resolve_log_policy",
+        "resolve_output_flags",
+    )
+    roots = [
+        SRC / "cli" / "commands",
+        SRC / "cli" / "plugins" / "commands",
+        SRC / "infra",
+        SRC / "services",
+    ]
+    violations: list[str] = []
+    for root in roots:
+        for path in root.rglob("*.py"):
+            content = path.read_text(encoding="utf-8")
+            violations.extend(
+                f"{path}: {token}" for token in forbidden if token in content
+            )
+    assert not violations, "Policy resolution outside core:\n" + "\n".join(violations)

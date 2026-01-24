@@ -10,7 +10,6 @@ structured, machine-readable format suitable for automation.
 
 Output Contract:
     * Success: `{"status": str, "summary": list[str]}`
-    * Verbose: Adds `{"python": str, "platform": str}` to the payload.
     * Error:   `{"error": str, "code": int}`
 
 Exit Codes:
@@ -27,25 +26,23 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DoctorPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     ENV_TEST_FORCE_UNHEALTHY,
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import (
     ascii_safe,
@@ -116,7 +113,6 @@ def _build_payload(include_runtime: bool) -> DoctorPayload:
 def doctor(
     ctx: typer.Context,
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -131,7 +127,6 @@ def doctor(
         ctx (typer.Context): The Typer context for managing command state.
         quiet (bool): If True, suppresses all output; the exit code is the
             primary indicator of the outcome.
-        verbose (bool): If True, includes Python and platform details in the
             output payload.
         fmt (str): The output format, either "json" or "yaml". Defaults to "json".
         pretty (bool): If True, pretty-prints the output for human readability.        log_level (str): Logging level for diagnostics.
@@ -149,13 +144,12 @@ def doctor(
         return
 
     command = "doctor"
-    _ = (quiet, verbose, log_level, pretty, fmt)
     effective, fmt_lower = resolve_command_config(
         command=command,
         fmt=fmt,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0
+    include_runtime = effective.include_runtime
     log_policy = effective.log_policy
     pretty = effective.pretty
     include_runtime = effective.include_runtime
@@ -197,7 +191,6 @@ def doctor(
         command_name=command,
         payload_builder=_build_payload,
         quiet=quiet,
-        verbose=verbose,
         fmt=fmt_lower,
         pretty=pretty,
         log_level=log_level,

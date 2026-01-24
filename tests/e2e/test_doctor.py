@@ -40,7 +40,7 @@ ALL_FLAGS = [
     "-h",
     "--quiet",
     "-q",
-    "--verbose",
+    "--log-level debug",
     "-v",
     "--format",
     "-f",
@@ -224,7 +224,16 @@ def test_doctor_help_output(flag: str) -> None:
     text = res.stdout
     assert text.lstrip().lower().startswith("usage:")
     assert text.count("\n") < 60
-    for k in ("--help", "-h", "--quiet", "-q", "--verbose", "-v", "--format", "-f"):
+    for k in (
+        "--help",
+        "-h",
+        "--quiet",
+        "-q",
+        "--log-level debug",
+        "-v",
+        "--format",
+        "-f",
+    ):
         assert k in text
     _no_stacktrace_leak(text)
 

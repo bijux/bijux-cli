@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import sys
-from typing import Any
+from typing import Any, cast
 from unittest.mock import ANY, MagicMock, patch
 
 from click import Command
@@ -46,6 +46,7 @@ from bijux_cli.cli.commands.memory.set import (
 )
 from bijux_cli.cli.commands.memory.set import set_memory
 from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
 from bijux_cli.core.precedence import default_execution_policy, resolve_log_policy
 
 
@@ -53,7 +54,7 @@ from bijux_cli.core.precedence import default_execution_policy, resolve_log_poli
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure a default execution policy for CLI output helpers."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: default_execution_policy(),
     )
     monkeypatch.setattr(
@@ -67,7 +68,6 @@ def mock_flags() -> dict[str, Any]:
     """Provide common CLI flags."""
     return {
         "quiet": False,
-        "verbose": False,
         "fmt": "json",
         "pretty": True,
         "log_level": "info",
@@ -153,7 +153,6 @@ def test_memory_summary_no_subcommand(mock_flags: dict[str, Any]) -> None:
         memory_summary(
             ctx,
             mock_flags["quiet"],
-            mock_flags["verbose"],
             mock_flags["fmt"],
             mock_flags["pretty"],
             mock_flags["log_level"],
@@ -181,7 +180,6 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
         memory_summary(
             ctx,
             mock_flags["quiet"],
-            mock_flags["verbose"],
             mock_flags["fmt"],
             mock_flags["pretty"],
             mock_flags["log_level"],
@@ -191,8 +189,7 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             output_format=OutputFormat.JSON,
             quiet=False,
-            verbose=False,
-            log_level=LogLevel.INFO,
+            log_policy=resolve_log_policy(LogLevel.INFO),
             effective_pretty=True,
             include_runtime=False,
             keys_count=None,
@@ -210,20 +207,20 @@ def test_run_one_shot_mode(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.service._build_payload",
             return_value={"status": "ok"},
         ),
-        patch("bijux_cli.cli.commands.memory.service.emit_and_exit") as mock_emit,
     ):
-        _run_one_shot_mode(
-            command="memory",
-            fmt=OutputFormat.JSON,
-            output_format=OutputFormat.JSON,
-            quiet=False,
-            verbose=False,
-            log_level=LogLevel.INFO,
-            effective_pretty=True,
-            include_runtime=False,
-            keys_count=0,
-        )
-        mock_emit.assert_called()
+        with pytest.raises(ExitIntentError) as exc:
+            _run_one_shot_mode(
+                command="memory",
+                fmt=OutputFormat.JSON,
+                output_format=OutputFormat.JSON,
+                quiet=False,
+                log_policy=resolve_log_policy(LogLevel.INFO),
+                effective_pretty=True,
+                include_runtime=False,
+                keys_count=0,
+            )
+        payload = cast(dict[str, Any], exc.value.intent.payload)
+        assert payload["status"] == "ok"
 
 
 def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
@@ -244,8 +241,7 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
                 fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
-                verbose=False,
-                log_level=LogLevel.INFO,
+                log_policy=resolve_log_policy(LogLevel.INFO),
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -284,8 +280,7 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
                 fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
-                verbose=False,
-                log_level=LogLevel.INFO,
+                log_policy=resolve_log_policy(LogLevel.INFO),
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -306,8 +301,8 @@ def test_summary_build_payload() -> None:
     """Build summary payload."""
     payload = summary_build_payload(False, 5)
     assert payload.count == 5
-    payload_verbose = summary_build_payload(True, 5)
-    assert payload_verbose.python
+    payload_runtime = summary_build_payload(True, 5)
+    assert payload_runtime.python
 
 
 def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -372,8 +367,8 @@ def test_clear_build_payload() -> None:
     payload = clear_build_payload(False)
     assert payload.status == "cleared"
     assert payload.count == 0
-    payload_verbose = clear_build_payload(True)
-    assert payload_verbose.python
+    payload_runtime = clear_build_payload(True)
+    assert payload_runtime.python
 
 
 def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -487,8 +482,8 @@ def test_delete_build_payload() -> None:
     payload = delete_build_payload(False, "key")
     assert payload.status == "deleted"
     assert payload.key == "key"
-    payload_verbose = delete_build_payload(True, "key")
-    assert payload_verbose.python
+    payload_runtime = delete_build_payload(True, "key")
+    assert payload_runtime.python
 
 
 def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -599,8 +594,8 @@ def test_get_build_payload() -> None:
     assert payload.status == "ok"
     assert payload.key == "key"
     assert payload.value == "value"
-    payload_verbose = get_build_payload(True, "key", "value")
-    assert payload_verbose.python
+    payload_runtime = get_build_payload(True, "key", "value")
+    assert payload_runtime.python
 
 
 def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -666,8 +661,8 @@ def test_list_build_payload() -> None:
     assert payload.status == "ok"
     assert payload.keys == ["key1", "key2"]
     assert payload.count == 2
-    payload_verbose = list_build_payload(True, ["key1", "key2"])
-    assert payload_verbose.python
+    payload_runtime = list_build_payload(True, ["key1", "key2"])
+    assert payload_runtime.python
 
 
 def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -747,8 +742,8 @@ def test_set_build_payload() -> None:
     assert payload.status == "updated"
     assert payload.key == "key"
     assert payload.value == "value"
-    payload_verbose = set_build_payload(True, "key", "value")
-    assert payload_verbose.python
+    payload_runtime = set_build_payload(True, "key", "value")
+    assert payload_runtime.python
 
 
 class _DummyCmd(Command):
@@ -801,7 +796,6 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits(
         memory(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -825,7 +819,6 @@ def test_memory_help_with_subcommand_prints_sub_help_and_exits(
         memory(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -855,7 +848,6 @@ def test_memory_help_no_subcommand_prints_top_help_and_exits_alt(
         memory(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -877,7 +869,6 @@ def test_memory_help_with_subcommand_else_branch(
         memory(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -893,20 +884,21 @@ def test_memory_no_help_falls_through_to_summary(
     monkeypatch.setattr(sys, "argv", ["prog"])
     ctx = Context(command=FakeCmd())
     ctx.invoked_subcommand = None
-    called: list[tuple[Context, bool, bool, str, bool, str]] = []
+    called: list[tuple[Context, bool, str, bool, str]] = []
     monkeypatch.setattr(
         "bijux_cli.cli.commands.memory.service.memory_summary",
-        lambda c, q, v, f, p, d: called.append((c, q, v, f, p, d)),
+        lambda **kw: called.append(
+            (kw["ctx"], kw["quiet"], kw["fmt"], kw["pretty"], kw["log_level"])
+        ),
     )
     memory(
         ctx,
         quiet=True,
-        verbose=True,
         fmt="yaml",
         pretty=False,
         log_level="debug",
     )
-    assert called == [(ctx, True, True, "yaml", False, "debug")]
+    assert called == [(ctx, True, "yaml", False, "debug")]
 
 
 def test_memory_fall_through_to_summary_and_exit(
@@ -927,7 +919,6 @@ def test_memory_fall_through_to_summary_and_exit(
         svc.memory(
             ctx,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -950,7 +941,6 @@ def test_memory_with_subcommand_does_not_call_summary() -> None:
             memory(
                 ctx,
                 quiet=False,
-                verbose=False,
                 fmt="json",
                 pretty=True,
                 log_level=LogLevel.INFO,

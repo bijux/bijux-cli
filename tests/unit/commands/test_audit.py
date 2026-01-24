@@ -225,13 +225,11 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -246,7 +244,9 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
     out_file = tmp_path / "report.json"
     result = runner.invoke(
-        audit_app, ["--output", str(out_file), "--verbose"], catch_exceptions=False
+        audit_app,
+        ["--output", str(out_file), "--log-level", "debug"],
+        catch_exceptions=False,
     )
     assert result.exit_code == 0
 
@@ -283,13 +283,11 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
@@ -421,18 +419,16 @@ def test_env_file_validation_error(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "bad env" in err["error"]
 
 
-def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that the verbose flag includes runtime info in the payload."""
+def test_debug_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that the debug flag includes runtime info in the payload."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -447,7 +443,9 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.commands.diagnostics.audit.new_run_command", fake_nrc
     )
 
-    runner.invoke(audit_app, ["--dry-run", "--verbose"], catch_exceptions=False)
+    runner.invoke(
+        audit_app, ["--dry-run", "--log-level", "debug"], catch_exceptions=False
+    )
     builder = captured["payload_builder"]
     payload = builder(True)
     assert payload.status == "dry-run"
@@ -455,20 +453,18 @@ def test_verbose_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     assert payload.platform
 
 
-def test_debug_does_not_force_verbose_or_pretty(
+def test_debug_does_not_force_pretty(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test that debug does not override verbose or pretty flags."""
+    """Test that debug does not override pretty flags."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=False,
-            verbose_level=0,
             log_level=LogLevel.DEBUG,
             pretty=False,
             include_runtime=False,
@@ -483,7 +479,6 @@ def test_debug_does_not_force_verbose_or_pretty(
     runner.invoke(
         audit_app, ["--dry-run", "--log-level", "debug"], catch_exceptions=False
     )
-    assert captured["verbose"] is False
     assert captured["pretty"] is False
 
 
@@ -578,20 +573,18 @@ def test_audit_catches_generic_exception_from_main_logic(
     assert err_payload["code"] == 1
 
 
-def test_audit_output_to_file_with_verbose_includes_runtime(
+def test_audit_output_to_file_with_debug_includes_runtime(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that verbose file output includes runtime info in the final payload."""
+    """Test that debug file output includes runtime info in the final payload."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -608,7 +601,9 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     )
 
     out_file = tmp_path / "report.json"
-    result = runner.invoke(audit_app, ["--output", str(out_file), "--verbose"])
+    result = runner.invoke(
+        audit_app, ["--output", str(out_file), "--log-level", "debug"]
+    )
 
     assert result.exit_code == 0
     final_payload_builder = captured_kwargs.get("payload_builder")
@@ -620,20 +615,18 @@ def test_audit_output_to_file_with_verbose_includes_runtime(
     assert final_payload.platform is not None
 
 
-def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
+def test_audit_output_to_file_with_debug_includes_runtime_in_final_payload(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that verbose file output writes a payload with runtime info."""
+    """Test that debug file output writes a payload with runtime info."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -641,7 +634,9 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     )
 
     out_file = tmp_path / "report.json"
-    result = runner.invoke(audit_app, ["--output", str(out_file), "--verbose"])
+    result = runner.invoke(
+        audit_app, ["--output", str(out_file), "--log-level", "debug"]
+    )
 
     assert result.exit_code == 0
     assert len(emitter.emitted) == 1
@@ -649,25 +644,23 @@ def test_audit_output_to_file_with_verbose_includes_runtime_in_final_payload(
     file_emit_call = emitter.emitted[0]
     payload_written_to_file = file_emit_call["payload"]
 
-    assert payload_written_to_file.status == "completed"
-    assert payload_written_to_file.python
-    assert payload_written_to_file.platform
+    assert payload_written_to_file["status"] == "completed"
+    assert payload_written_to_file["python"]
+    assert payload_written_to_file["platform"]
 
 
-def test_audit_output_to_file_with_verbose(
+def test_audit_output_to_file_with_debug(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that verbose file output writes the correct payload."""
+    """Test that debug file output writes the correct payload."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -675,16 +668,18 @@ def test_audit_output_to_file_with_verbose(
     )
 
     out_file = tmp_path / "report.json"
-    result = runner.invoke(audit_app, ["--output", str(out_file), "--verbose"])
+    result = runner.invoke(
+        audit_app, ["--output", str(out_file), "--log-level", "debug"]
+    )
 
     assert result.exit_code == 0
     assert len(emitter.emitted) == 1
 
     payload_written_to_file = emitter.emitted[0]["payload"]
 
-    assert payload_written_to_file.status == "completed"
-    assert payload_written_to_file.python
-    assert payload_written_to_file.platform
+    assert payload_written_to_file["status"] == "completed"
+    assert payload_written_to_file["python"]
+    assert payload_written_to_file["platform"]
 
 
 def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -705,7 +700,6 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
             dry_run=False,
             output=None,
             quiet=False,
-            verbose=False,
             fmt="json",
             pretty=True,
             log_level=LogLevel.INFO,
@@ -721,19 +715,17 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
     assert call_kwargs.get("failure") == "args"
 
 
-def test_verbose_file_output_constructs_correct_final_payload(
+def test_debug_file_output_constructs_correct_final_payload(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that verbose file output executes the final payload modification."""
+    """Test that debug file output executes the final payload modification."""
     _fake_configure_emitter(monkeypatch, DummyEmitter())
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=False,
-            verbose=True,
-            verbose_level=1,
             log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=True,
@@ -750,7 +742,9 @@ def test_verbose_file_output_constructs_correct_final_payload(
     )
 
     out_file = tmp_path / "report.json"
-    result = runner.invoke(audit_app, ["--output", str(out_file), "--verbose"])
+    result = runner.invoke(
+        audit_app, ["--output", str(out_file), "--log-level", "debug"]
+    )
 
     assert result.exit_code == 0
     assert "payload_builder" in captured_kwargs
@@ -761,10 +755,10 @@ def test_verbose_file_output_constructs_correct_final_payload(
     assert final_payload.platform is not None
 
 
-def test_audit_written_without_runtime_when_not_verbose(
+def test_audit_written_without_runtime_when_not_debug(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that non-verbose file output does not include runtime info."""
+    """Test that non-debug file output does not include runtime info."""
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
 

@@ -10,7 +10,6 @@ that emits status updates at a regular interval.
 
 Output Contract:
     * Success:          `{"status": "ok"}`
-    * Verbose:          Adds `{"python": str, "platform": str}` to the payload.
     * Watch Mode Tick:  `{"status": "ok", "ts": float, ...}`
     * Watch Mode Stop:  `{"status": "watch-stopped", ...}`
     * Error:            `{"error": str, "code": int}`
@@ -34,29 +33,28 @@ from types import FrameType
 import typer
 
 from bijux_cli.cli.commands.payloads import StatusPayload
+from bijux_cli.cli.core.command import (
+    emit_error_with_policy,
+    new_run_command,
+    normalize_payload,
+    resolve_command_config,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
     OPT_PRETTY,
     OPT_QUIET,
-    OPT_VERBOSE,
 )
 from bijux_cli.cli.core.help_text import (
     HELP_FORMAT,
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-    HELP_VERBOSE,
-)
-from bijux_cli.cli.core.output import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import LogLevel, OutputFormat
-from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
+from bijux_cli.core.precedence import LogPolicy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -99,11 +97,9 @@ def _run_watch_mode(
     watch_interval: float,
     fmt: OutputFormat,
     quiet: bool,
-    verbose: bool,
     effective_pretty: bool,
     include_runtime: bool,
-    log_policy: LogPolicy | None = None,
-    log_level: LogLevel | None = None,
+    log_policy: LogPolicy,
     telemetry: TelemetryProtocol,
     emitter: Emitter,
 ) -> None:
@@ -117,11 +113,9 @@ def _run_watch_mode(
         watch_interval (float): The polling interval in seconds.
         fmt (str): The output format, which must be "json" for streaming.
         quiet (bool): If True, suppresses all output except errors.
-        verbose (bool): If True, includes verbose fields in the payload.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python and platform fields.
-        log_policy (LogPolicy | None): Logging behavior for debug output.
-        log_level (LogLevel | None): Legacy log level used to derive a policy.
+        log_policy (LogPolicy): Logging behavior for debug output.
         telemetry (TelemetryProtocol): The telemetry sink for reporting events.
         emitter (Emitter): The output emitter instance.
 
@@ -132,9 +126,6 @@ def _run_watch_mode(
         SystemExit: On an invalid format or an unrecoverable error during
             the watch loop.
     """
-    if log_policy is None:
-        log_policy = resolve_log_policy(log_level or LogLevel.INFO)
-
     format_value = fmt
     if format_value is not OutputFormat.JSON:
         emit_error_with_policy(
@@ -172,7 +163,7 @@ def _run_watch_mode(
                 payload = replace(_build_payload(include_runtime), ts=time.time())
                 if log_policy.show_internal and not quiet:
                     emitter.emit(
-                        payload,
+                        normalize_payload(payload),
                         fmt=OutputFormat.JSON,
                         pretty=effective_pretty,
                         level=LogLevel.DEBUG,
@@ -183,7 +174,7 @@ def _run_watch_mode(
                     )
                 if not quiet:
                     emitter.emit(
-                        payload,
+                        normalize_payload(payload),
                         fmt=OutputFormat.JSON,
                         pretty=effective_pretty,
                         level=LogLevel.INFO,
@@ -228,7 +219,7 @@ def _run_watch_mode(
             )
             if log_policy.show_internal and not quiet:
                 emitter.emit(
-                    stop_payload,
+                    normalize_payload(stop_payload),
                     fmt=OutputFormat.JSON,
                     pretty=effective_pretty,
                     level=LogLevel.DEBUG,
@@ -239,7 +230,7 @@ def _run_watch_mode(
                 )
             if not quiet:
                 emitter.emit(
-                    stop_payload,
+                    normalize_payload(stop_payload),
                     fmt=OutputFormat.JSON,
                     pretty=effective_pretty,
                     level=LogLevel.INFO,
@@ -261,7 +252,6 @@ def status(
     ctx: typer.Context,
     watch: float | None = typer.Option(None, "--watch", help="Poll every N seconds"),
     quiet: bool = typer.Option(False, *OPT_QUIET, help=HELP_QUIET),
-    verbose: bool = typer.Option(False, *OPT_VERBOSE, help=HELP_VERBOSE),
     fmt: str = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT),
     pretty: bool = typer.Option(True, OPT_PRETTY, help=HELP_NO_PRETTY),
     log_level: str = typer.Option("info", *OPT_LOG_LEVEL, help=HELP_LOG_LEVEL),
@@ -277,7 +267,6 @@ def status(
         watch (float | None): If provided, enters watch mode, polling at this
             interval in seconds. Must be a positive number.
         quiet (bool): If True, suppresses all output except for errors.
-        verbose (bool): If True, includes Python and platform details in the
             output payload.
         fmt (str): The output format, either "json" or "yaml". Watch mode only
             supports "json".
@@ -303,7 +292,6 @@ def status(
         fmt=fmt,
     )
     quiet = effective.quiet
-    verbose = effective.verbose_level > 0
     log_policy = effective.log_policy
     pretty = effective.pretty
     validate_common_flags(
@@ -332,11 +320,9 @@ def status(
             watch_interval=interval,
             fmt=fmt_lower,
             quiet=quiet,
-            verbose=verbose,
             effective_pretty=pretty,
             include_runtime=effective.include_runtime,
             log_policy=effective.log_policy,
-            log_level=effective.log_policy.level,
             telemetry=telemetry,
             emitter=emitter,
         )
@@ -345,7 +331,6 @@ def status(
             command_name=command,
             payload_builder=lambda include: _build_payload(include),
             quiet=quiet,
-            verbose=verbose,
             fmt=fmt_lower,
             pretty=pretty,
             log_level=log_level,

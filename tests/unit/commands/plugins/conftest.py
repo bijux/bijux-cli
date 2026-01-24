@@ -14,6 +14,6 @@ from bijux_cli.core.precedence import default_execution_policy
 def _default_policy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Provide a default execution policy for CLI helpers."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.output.current_execution_policy",
+        "bijux_cli.cli.core.command.current_execution_policy",
         lambda: default_execution_policy(),
     )
