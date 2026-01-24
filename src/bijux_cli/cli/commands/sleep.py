@@ -25,12 +25,7 @@ import time
 
 import typer
 
-from bijux_cli.cli.commands.payloads import SleepPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     DEFAULT_COMMAND_TIMEOUT,
     ENV_COMMAND_TIMEOUT,
@@ -45,9 +40,11 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.services.config.contracts import ConfigProtocol
 
@@ -62,7 +59,7 @@ sleep_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool, slept: float) -> SleepPayload:
+def _build_payload(include_runtime: bool, slept: float) -> dict[str, object]:
     """Constructs the structured payload for the sleep command.
 
     Args:
@@ -74,12 +71,13 @@ def _build_payload(include_runtime: bool, slept: float) -> SleepPayload:
         Mapping[str, object]: A dictionary containing the sleep duration and
             optional runtime details.
     """
-    payload = SleepPayload(slept=slept)
+    payload: dict[str, object] = {"slept": slept}
     if include_runtime:
-        return SleepPayload(
-            slept=slept,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
+        payload.update(
+            {
+                "python": ascii_safe(platform.python_version(), "python_version"),
+                "platform": ascii_safe(platform.platform(), "platform"),
+            }
         )
     return payload
 
@@ -121,17 +119,20 @@ def sleep(
     """
     command = "sleep"
 
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     quiet = effective.quiet
-    log_policy = effective.log_policy
     pretty = effective.pretty
 
     if seconds < 0:
-        emit_error_with_policy(
-            "sleep length must be non-negative",
+        intent = resolve_exit_intent(
+            message="sleep length must be non-negative",
             code=2,
             failure="negative",
             command=command,
@@ -139,28 +140,33 @@ def sleep(
             quiet=quiet,
             include_runtime=effective.include_runtime,
             error_type=ErrorType.USER_INPUT,
-            log_policy=log_policy,
+            log_level=effective.log_level,
         )
+        raise ExitIntentError(intent)
 
     cfg: ConfigProtocol = DIContainer.current().resolve(ConfigProtocol)
 
     try:
         timeout = float(cfg.get(ENV_COMMAND_TIMEOUT, DEFAULT_COMMAND_TIMEOUT))
     except Exception as exc:
-        emit_error_with_policy(
-            f"Failed to read timeout: {exc}",
+        intent = resolve_exit_intent(
+            message=f"Failed to read timeout: {exc}",
             code=1,
             failure="config",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            error_type=ErrorType.INTERNAL,
+            log_level=effective.log_level,
         )
+        raise ExitIntentError(intent) from exc
 
     if seconds > timeout:
-        emit_error_with_policy(
-            "Command timed out because sleep duration exceeded the configured timeout.",
+        intent = resolve_exit_intent(
+            message=(
+                "Command timed out because sleep duration exceeded the configured timeout."
+            ),
             code=2,
             failure="timeout",
             command=command,
@@ -168,8 +174,9 @@ def sleep(
             quiet=quiet,
             include_runtime=effective.include_runtime,
             error_type=ErrorType.USER_INPUT,
-            log_policy=log_policy,
+            log_level=effective.log_level,
         )
+        raise ExitIntentError(intent)
 
     time.sleep(seconds)
 

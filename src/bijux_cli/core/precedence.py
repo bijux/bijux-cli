@@ -7,9 +7,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+import sys
+import time
 from typing import Any
 
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ErrorType, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, resolve_exit_behavior
 
 
 @dataclass(frozen=True)
@@ -83,6 +86,7 @@ class OutputConfig:
     pretty: bool
     log_level: LogLevel
     color: ColorMode
+    format: OutputFormat
     log_policy: LogPolicy
 
 
@@ -132,6 +136,57 @@ def resolve_log_policy(log_level: LogLevel) -> LogPolicy:
         show_traceback=rank <= debug_rank,
         pretty_default=rank <= info_rank,
         telemetry_verbosity=telemetry,
+    )
+
+
+def resolve_exit_intent(
+    *,
+    message: str,
+    code: int,
+    failure: str,
+    command: str | None,
+    fmt: OutputFormat,
+    quiet: bool,
+    include_runtime: bool,
+    error_type: ErrorType,
+    log_level: LogLevel = LogLevel.INFO,
+    log_policy: LogPolicy | None = None,
+    extra: dict[str, object] | None = None,
+) -> ExitIntent:
+    """Resolve an exit intent and build a structured error payload."""
+    policy = log_policy or resolve_log_policy(log_level)
+    behavior = resolve_exit_behavior(
+        error_type,
+        quiet=quiet,
+        fmt=fmt,
+        log_policy=policy,
+    )
+    payload: dict[str, object] = {"error": message, "code": int(code)}
+    if failure:
+        payload["failure"] = failure
+    if command:
+        payload["command"] = command
+    if fmt:
+        payload["fmt"] = fmt
+    if extra:
+        payload.update(extra)
+    if behavior.show_traceback:
+        import traceback
+
+        trace = traceback.format_exc()
+        if "NoneType: None" not in trace:
+            payload["traceback"] = trace
+    if include_runtime:
+        payload["python"] = sys.version.split()[0]
+        payload["platform"] = sys.platform
+        payload["timestamp"] = str(time.time())
+    return ExitIntent(
+        code=ExitCode(int(code)),
+        stream=behavior.stream,
+        payload=payload,
+        fmt=fmt,
+        pretty=False,
+        show_traceback=behavior.show_traceback,
     )
 
 
@@ -257,6 +312,7 @@ def resolve_output_flags(
     pretty: bool,
     log_level: LogLevel = LogLevel.INFO,
     color: ColorMode = ColorMode.AUTO,
+    output_format: OutputFormat = OutputFormat.JSON,
 ) -> OutputConfig:
     """Resolve logging/color/pretty flags from a single source of truth."""
     effective = resolve_effective_config(
@@ -264,7 +320,7 @@ def resolve_output_flags(
             quiet=quiet,
             log_level=log_level,
             color=color,
-            format=OutputFormat.JSON,
+            format=output_format,
         ),
         env=FlagLayer(),
         file=FlagLayer(),
@@ -281,5 +337,19 @@ def resolve_output_flags(
         pretty=pretty,
         log_level=effective.flags.log_level,
         color=effective.flags.color,
+        format=effective.flags.format,
         log_policy=log_policy,
     )
+
+
+def current_execution_policy() -> ExecutionPolicy:
+    """Resolve the execution policy from the DI container."""
+    from bijux_cli.core.di import DIContainer
+
+    try:
+        policy_obj: object = DIContainer.current().resolve(ExecutionPolicy)
+    except Exception:
+        return default_execution_policy()
+    if isinstance(policy_obj, ExecutionPolicy):
+        return policy_obj
+    return default_execution_policy()

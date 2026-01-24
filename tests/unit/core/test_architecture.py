@@ -24,6 +24,16 @@ def _imports_in(path: Path) -> set[str]:
     return modules
 
 
+def _imported_names(path: Path) -> set[tuple[str, str]]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    names: set[tuple[str, str]] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            for name in node.names:
+                names.add((node.module, name.name))
+    return names
+
+
 def _collect_modules(root: Path) -> dict[Path, set[str]]:
     modules: dict[Path, set[str]] = {}
     for path in root.rglob("*.py"):
@@ -109,3 +119,13 @@ def test_policy_resolution_lives_in_core_precedence() -> None:
                 f"{path}: {token}" for token in forbidden if token in content
             )
     assert not violations, "Policy resolution outside core:\n" + "\n".join(violations)
+
+
+def test_cli_does_not_import_policy_types() -> None:
+    forbidden = {"ExecutionPolicy", "LogPolicy", "ExitBehavior"}
+    violations: list[str] = []
+    for path in (SRC / "cli").rglob("*.py"):
+        for module, name in _imported_names(path):
+            if name in forbidden:
+                violations.append(f"{path}: {module}.{name}")
+    assert not violations, "CLI imports policy types:\n" + "\n".join(violations)

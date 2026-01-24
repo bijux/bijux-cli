@@ -6,10 +6,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+
+if TYPE_CHECKING:
+    from bijux_cli.core.precedence import LogPolicy
 
 
 @dataclass(frozen=True)

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import platform
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,7 +24,7 @@ from bijux_cli.cli.commands.diagnostics.audit import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.infra.contracts import Serializer
 
 runner = CliRunner()
@@ -110,10 +110,10 @@ class DummyEmitter:
 def test_build_payload_without_runtime() -> None:
     """Test building the basic audit payload without runtime info."""
     payload = _build_payload(include_runtime=False, dry_run=False)
-    assert payload.status == "completed"
+    assert payload["status"] == "completed"
 
     payload = _build_payload(include_runtime=False, dry_run=True)
-    assert payload.status == "dry-run"
+    assert payload["status"] == "dry-run"
 
 
 def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -132,9 +132,9 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     payload = _build_payload(include_runtime=True, dry_run=False)
-    assert payload.status == "completed"
-    assert payload.python == "python_version-3.11.9"
-    assert payload.platform == "platform-TestOS-99"
+    assert payload["status"] == "completed"
+    assert payload["python"] == "python_version-3.11.9"
+    assert payload["platform"] == "platform-TestOS-99"
     assert set(calls) == {"python_version", "platform"}
 
 
@@ -151,7 +151,7 @@ def test_write_output_file_parent_missing(tmp_path: Path) -> None:
             emitter=emitter,
             fmt=OutputFormat.YAML,
             pretty=False,
-            log_policy=resolve_log_policy(LogLevel.DEBUG),
+            emit_diagnostics=True,
             dry_run=False,
         )
 
@@ -225,7 +225,7 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -257,10 +257,10 @@ def test_audit_write_to_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
     builder = capture["payload_builder"]
     out_payload = builder(False)
-    assert out_payload.status == "written"
-    assert out_payload.file == str(out_file)
-    assert out_payload.python is not None
-    assert out_payload.platform is not None
+    assert out_payload["status"] == "written"
+    assert out_payload["file"] == str(out_file)
+    assert out_payload["python"] is not None
+    assert out_payload["platform"] is not None
 
 
 def test_audit_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -283,7 +283,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -310,7 +310,7 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
 
     builder = called["payload_builder"]
     payload = builder(False)
-    assert payload.status == "dry-run"
+    assert payload["status"] == "dry-run"
 
     assert called["command_name"] == "audit"
     assert called["fmt"] == "yaml"
@@ -320,14 +320,15 @@ def test_audit_dry_run_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_build_payload_variants() -> None:
     """Test the different variants of the audit payload."""
     p1 = _build_payload(False, False)
-    assert p1.status == "completed"
+    assert p1["status"] == "completed"
     p2 = _build_payload(False, True)
-    assert p2.status == "dry-run"
+    assert p2["status"] == "dry-run"
     p3 = _build_payload(True, False)
-    assert p3.status == "completed"
-    assert p3.python
-    assert p3.platform
-    assert p3.python == p3.python.encode("ascii", "ignore").decode()
+    assert p3["status"] == "completed"
+    assert p3["python"]
+    assert p3["platform"]
+    python_value = cast(str, p3["python"])
+    assert python_value == python_value.encode("ascii", "ignore").decode()
 
 
 def test_write_output_file_success(
@@ -368,7 +369,7 @@ def test_write_output_file_success(
         emitter=emitter,
         fmt=OutputFormat.JSON,
         pretty=True,
-        log_policy=resolve_log_policy(LogLevel.INFO),
+        emit_diagnostics=False,
         dry_run=True,
     )
 
@@ -390,7 +391,7 @@ def test_write_output_file_os_error(tmp_path: Path) -> None:
             emitter=DummyEmitter(),
             fmt=OutputFormat.JSON,
             pretty=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            emit_diagnostics=False,
             dry_run=False,
         )
 
@@ -424,7 +425,7 @@ def test_debug_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -448,9 +449,9 @@ def test_debug_includes_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     builder = captured["payload_builder"]
     payload = builder(True)
-    assert payload.status == "dry-run"
-    assert payload.python
-    assert payload.platform
+    assert payload["status"] == "dry-run"
+    assert payload["python"]
+    assert payload["platform"]
 
 
 def test_debug_does_not_force_pretty(
@@ -460,7 +461,7 @@ def test_debug_does_not_force_pretty(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -580,7 +581,7 @@ def test_audit_output_to_file_with_debug_includes_runtime(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -610,9 +611,9 @@ def test_audit_output_to_file_with_debug_includes_runtime(
     assert final_payload_builder is not None
     final_payload = final_payload_builder(True)
 
-    assert final_payload.status == "written"
-    assert final_payload.python is not None
-    assert final_payload.platform is not None
+    assert final_payload["status"] == "written"
+    assert final_payload["python"] is not None
+    assert final_payload["platform"] is not None
 
 
 def test_audit_output_to_file_with_debug_includes_runtime_in_final_payload(
@@ -622,7 +623,7 @@ def test_audit_output_to_file_with_debug_includes_runtime_in_final_payload(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -656,7 +657,7 @@ def test_audit_output_to_file_with_debug(
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -686,7 +687,7 @@ def test_audit_stray_argument_error_path(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test the stray argument handling logic."""
     mock_emit_error = MagicMock(side_effect=SystemExit(2))
     monkeypatch.setattr(
-        "bijux_cli.cli.commands.diagnostics.audit.emit_error_with_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.raise_exit_intent",
         mock_emit_error,
     )
 
@@ -721,7 +722,7 @@ def test_debug_file_output_constructs_correct_final_payload(
     """Test that debug file output executes the final payload modification."""
     _fake_configure_emitter(monkeypatch, DummyEmitter())
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -750,9 +751,9 @@ def test_debug_file_output_constructs_correct_final_payload(
     assert "payload_builder" in captured_kwargs
     final_payload = captured_kwargs["payload_builder"](True)
 
-    assert final_payload.status == "written"
-    assert final_payload.python is not None
-    assert final_payload.platform is not None
+    assert final_payload["status"] == "written"
+    assert final_payload["python"] is not None
+    assert final_payload["platform"] is not None
 
 
 def test_audit_written_without_runtime_when_not_debug(
@@ -777,7 +778,7 @@ def test_audit_written_without_runtime_when_not_debug(
     assert "payload_builder" in captured
     builder = captured["payload_builder"]
     payload = builder(False)
-    assert payload.status == "written"
-    assert payload.file == str(out_file)
-    assert payload.python is None
-    assert payload.platform is None
+    assert payload["status"] == "written"
+    assert payload["file"] == str(out_file)
+    assert payload.get("python") is None
+    assert payload.get("platform") is None

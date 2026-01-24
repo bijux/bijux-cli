@@ -111,10 +111,10 @@ def test_build_help_payload_without_runtime() -> None:
     """Test building a help payload without runtime info."""
     start = time.perf_counter()
     p = _build_help_payload("txt", False, start)
-    assert p.help == "txt"
-    assert p.python is None
-    assert p.platform is None
-    assert p.runtime_ms is None
+    assert p["help"] == "txt"
+    assert p.get("python") is None
+    assert p.get("platform") is None
+    assert p.get("runtime_ms") is None
 
 
 def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -125,10 +125,10 @@ def test_build_help_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> Non
         raising=True,
     )
     p = _build_help_payload("txt", True, started_at=999.0)
-    assert p.help == "txt"
-    assert p.python is not None
-    assert p.platform is not None
-    assert isinstance(p.runtime_ms, int)
+    assert p["help"] == "txt"
+    assert p.get("python") is not None
+    assert p.get("platform") is not None
+    assert isinstance(p.get("runtime_ms"), int)
 
 
 def call_help(*args: Any, **kwargs: Any) -> Any:
@@ -274,7 +274,6 @@ def test_nonquiet_invalid_format_calls_emit_error(
         fmt: str,
         quiet: bool,
         include_runtime: bool,
-        log_policy: Any | None,
         **_kwargs: Any,
     ) -> None:
         called.update(locals())
@@ -301,7 +300,7 @@ def test_nonquiet_invalid_format_calls_emit_error(
             include_runtime=False,
         ),
     )
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -337,7 +336,7 @@ def test_nonquiet_null_byte_emits_null_byte_error(
             )
         )
 
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -372,7 +371,7 @@ def test_nonquiet_nonascii_token_emits_ascii_error(
             )
         )
 
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -406,7 +405,7 @@ def test_nonquiet_ascii_env_emits_error(monkeypatch: pytest.MonkeyPatch) -> None
             )
         )
 
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -441,7 +440,7 @@ def test_nonquiet_not_found_emits_not_found(monkeypatch: pytest.MonkeyPatch) -> 
             )
         )
 
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_error)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_error)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,
@@ -676,7 +675,7 @@ def test_payload_value_error_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
             )
         )
 
-    monkeypatch.setattr(help_mod, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(help_mod, "raise_exit_intent", fake_emit)
     with pytest.raises(ExitIntentError) as ex:
         call_help(
             ctx,

@@ -23,22 +23,16 @@ Exit Codes:
 
 from __future__ import annotations
 
-from dataclasses import replace
 import platform
 import signal
 import threading
 import time
 from types import FrameType
+from typing import Protocol
 
 import typer
 
-from bijux_cli.cli.commands.payloads import StatusPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    normalize_payload,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -53,8 +47,9 @@ from bijux_cli.cli.core.help_text import (
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import LogLevel, OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -70,7 +65,7 @@ status_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> StatusPayload:
+def _build_payload(include_runtime: bool) -> dict[str, object]:
     """Constructs the status payload.
 
     Args:
@@ -81,14 +76,25 @@ def _build_payload(include_runtime: bool) -> StatusPayload:
         Mapping[str, object]: A dictionary containing the status and optional
             runtime details.
     """
-    payload = StatusPayload(status="ok")
+    payload: dict[str, object] = {"status": "ok"}
     if include_runtime:
-        return replace(
-            payload,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
+        payload.update(
+            {
+                "python": ascii_safe(platform.python_version(), "python_version"),
+                "platform": ascii_safe(platform.platform(), "platform"),
+            }
         )
     return payload
+
+
+class _LogPolicy(Protocol):
+    """Minimal log policy contract for watch mode."""
+
+    @property
+    def level(self) -> LogLevel: ...
+
+    @property
+    def show_internal(self) -> bool: ...
 
 
 def _run_watch_mode(
@@ -99,7 +105,7 @@ def _run_watch_mode(
     quiet: bool,
     effective_pretty: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_policy: _LogPolicy,
     telemetry: TelemetryProtocol,
     emitter: Emitter,
 ) -> None:
@@ -115,7 +121,7 @@ def _run_watch_mode(
         quiet (bool): If True, suppresses all output except errors.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python and platform fields.
-        log_policy (LogPolicy): Logging behavior for debug output.
+        log_level (LogLevel): Logging level for diagnostics.
         telemetry (TelemetryProtocol): The telemetry sink for reporting events.
         emitter (Emitter): The output emitter instance.
 
@@ -128,16 +134,18 @@ def _run_watch_mode(
     """
     format_value = fmt
     if format_value is not OutputFormat.JSON:
-        emit_error_with_policy(
-            "Only JSON output is supported in watch mode.",
+        intent = resolve_exit_intent(
+            message="Only JSON output is supported in watch mode.",
             code=2,
             failure="watch_fmt",
             command=command,
             fmt=format_value,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            error_type=ErrorType.USER_INPUT,
+            log_level=log_policy.level,
         )
+        raise ExitIntentError(intent)
 
     stop = False
 
@@ -160,21 +168,22 @@ def _run_watch_mode(
     try:
         while not stop:
             try:
-                payload = replace(_build_payload(include_runtime), ts=time.time())
+                payload = _build_payload(include_runtime)
+                payload["ts"] = time.time()
                 if log_policy.show_internal and not quiet:
                     emitter.emit(
-                        normalize_payload(payload),
+                        payload,
                         fmt=OutputFormat.JSON,
                         pretty=effective_pretty,
                         level=LogLevel.DEBUG,
-                        message=f"Debug: Emitting payload at ts={payload.ts}",
+                        message=f"Debug: Emitting payload at ts={payload['ts']}",
                         output=None,
                         emit_output=False,
                         emit_diagnostics=True,
                     )
                 if not quiet:
                     emitter.emit(
-                        normalize_payload(payload),
+                        payload,
                         fmt=OutputFormat.JSON,
                         pretty=effective_pretty,
                         level=LogLevel.INFO,
@@ -189,37 +198,40 @@ def _run_watch_mode(
                 )
                 time.sleep(watch_interval)
             except ValueError as exc:
-                emit_error_with_policy(
-                    str(exc),
+                intent = resolve_exit_intent(
+                    message=str(exc),
                     code=3,
                     failure="ascii",
                     command=command,
                     fmt=fmt,
                     quiet=quiet,
                     include_runtime=include_runtime,
-                    log_policy=log_policy,
+                    error_type=ErrorType.ASCII,
+                    log_level=log_policy.level,
                 )
+                raise ExitIntentError(intent) from exc
             except Exception as exc:
-                emit_error_with_policy(
-                    f"Watch mode failed: {exc}",
+                intent = resolve_exit_intent(
+                    message=f"Watch mode failed: {exc}",
                     code=1,
                     failure="emit",
                     command=command,
                     fmt=fmt,
                     quiet=quiet,
                     include_runtime=include_runtime,
-                    log_policy=log_policy,
+                    error_type=ErrorType.INTERNAL,
+                    log_level=log_policy.level,
                 )
+                raise ExitIntentError(intent) from exc
     finally:
         if old_handler is not None:
             signal.signal(signal.SIGINT, old_handler)
         try:
-            stop_payload = replace(
-                _build_payload(include_runtime), status="watch-stopped"
-            )
+            stop_payload = _build_payload(include_runtime)
+            stop_payload["status"] = "watch-stopped"
             if log_policy.show_internal and not quiet:
                 emitter.emit(
-                    normalize_payload(stop_payload),
+                    stop_payload,
                     fmt=OutputFormat.JSON,
                     pretty=effective_pretty,
                     level=LogLevel.DEBUG,
@@ -230,7 +242,7 @@ def _run_watch_mode(
                 )
             if not quiet:
                 emitter.emit(
-                    normalize_payload(stop_payload),
+                    stop_payload,
                     fmt=OutputFormat.JSON,
                     pretty=effective_pretty,
                     level=LogLevel.INFO,
@@ -287,16 +299,18 @@ def status(
     telemetry = DIContainer.current().resolve(TelemetryProtocol)
     command = "status"
 
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     quiet = effective.quiet
     log_policy = effective.log_policy
+    log_level_value = effective.log_level
     pretty = effective.pretty
-    validate_common_flags(
-        fmt, command, quiet, include_runtime=effective.include_runtime
-    )
 
     if watch is not None:
         try:
@@ -304,16 +318,18 @@ def status(
             if interval <= 0:
                 raise ValueError
         except (ValueError, TypeError):
-            emit_error_with_policy(
-                "Invalid watch interval: must be > 0",
+            intent = resolve_exit_intent(
+                message="Invalid watch interval: must be > 0",
                 code=2,
                 failure="interval",
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective.include_runtime,
-                log_policy=log_policy,
+                error_type=ErrorType.USER_INPUT,
+                log_level=log_level_value,
             )
+            raise ExitIntentError(intent) from None
 
         _run_watch_mode(
             command=command,
@@ -322,7 +338,7 @@ def status(
             quiet=quiet,
             effective_pretty=pretty,
             include_runtime=effective.include_runtime,
-            log_policy=effective.log_policy,
+            log_policy=log_policy,
             telemetry=telemetry,
             emitter=emitter,
         )
@@ -333,5 +349,5 @@ def status(
             quiet=quiet,
             fmt=fmt_lower,
             pretty=pretty,
-            log_level=log_level,
+            log_level=log_level_value,
         )

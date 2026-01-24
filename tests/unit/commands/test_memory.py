@@ -45,9 +45,9 @@ from bijux_cli.cli.commands.memory.set import (
     _build_payload as set_build_payload,
 )
 from bijux_cli.cli.commands.memory.set import set_memory
-from bijux_cli.core.enums import LogLevel, OutputFormat
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntentError
-from bijux_cli.core.precedence import default_execution_policy, resolve_log_policy
+from bijux_cli.core.precedence import default_execution_policy
 
 
 @pytest.fixture(autouse=True)
@@ -94,7 +94,7 @@ def test_resolve_memory_service_success(mock_flags: dict[str, Any]) -> None:
             OutputFormat.JSON,
             False,
             False,
-            resolve_log_policy(LogLevel.INFO),
+            LogLevel.INFO,
         )
         assert result == mock_memory_svc
 
@@ -105,9 +105,7 @@ def test_resolve_memory_service_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.resolve.DIContainer.current"
         ) as mock_current,
-        patch(
-            "bijux_cli.cli.commands.memory.resolve.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.resolve.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_di_instance = MagicMock()
@@ -119,17 +117,18 @@ def test_resolve_memory_service_exception(mock_flags: dict[str, Any]) -> None:
                 OutputFormat.JSON,
                 False,
                 False,
-                resolve_log_policy(LogLevel.INFO),
+                LogLevel.INFO,
             )
         mock_emit.assert_called_with(
             "Memory service unavailable: error",
             code=1,
             failure="service_unavailable",
+            error_type=ErrorType.INTERNAL,
             command="command",
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -189,7 +188,7 @@ def test_memory_summary_keys_count_fail(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             output_format=OutputFormat.JSON,
             quiet=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             effective_pretty=True,
             include_runtime=False,
             keys_count=None,
@@ -214,7 +213,7 @@ def test_run_one_shot_mode(mock_flags: dict[str, Any]) -> None:
                 fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
-                log_policy=resolve_log_policy(LogLevel.INFO),
+                log_level=LogLevel.INFO,
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -230,9 +229,7 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.service.contains_non_ascii_env",
             return_value=True,
         ),
-        patch(
-            "bijux_cli.cli.commands.memory.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.service.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -241,7 +238,7 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
                 fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
-                log_policy=resolve_log_policy(LogLevel.INFO),
+                log_level=LogLevel.INFO,
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -250,11 +247,12 @@ def test_run_one_shot_mode_ascii_env(mock_flags: dict[str, Any]) -> None:
             ANY,
             code=3,
             failure="ascii_env",
+            error_type=ErrorType.ASCII,
             command="memory",
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -269,9 +267,7 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.service._build_payload",
             side_effect=ValueError("error"),
         ),
-        patch(
-            "bijux_cli.cli.commands.memory.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.service.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -280,7 +276,7 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
                 fmt=OutputFormat.JSON,
                 output_format=OutputFormat.JSON,
                 quiet=False,
-                log_policy=resolve_log_policy(LogLevel.INFO),
+                log_level=LogLevel.INFO,
                 effective_pretty=True,
                 include_runtime=False,
                 keys_count=0,
@@ -289,20 +285,21 @@ def test_run_one_shot_mode_value_error(mock_flags: dict[str, Any]) -> None:
             "error",
             code=3,
             failure="ascii",
+            error_type=ErrorType.ASCII,
             command="memory",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_summary_build_payload() -> None:
     """Build summary payload."""
     payload = summary_build_payload(False, 5)
-    assert payload.count == 5
+    assert payload["count"] == 5
     payload_runtime = summary_build_payload(True, 5)
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -325,9 +322,9 @@ def test_clear_memory_success(mock_flags: dict[str, Any]) -> None:
             "payload_builder"
         ]
         payload = builder(False)
-        assert payload.status == "cleared"
-        assert payload.count == 0
-        assert builder(True).python
+        assert payload["status"] == "cleared"
+        assert payload["count"] == 0
+        assert builder(True)["python"]
 
 
 def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
@@ -340,9 +337,7 @@ def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.clear.resolve_memory_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.memory.clear.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.clear.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -354,21 +349,22 @@ def test_clear_memory_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to clear memory: error",
             code=1,
             failure="clear_failed",
+            error_type=ErrorType.INTERNAL,
             command="memory clear",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_clear_build_payload() -> None:
     """Build clear payload."""
     payload = clear_build_payload(False)
-    assert payload.status == "cleared"
-    assert payload.count == 0
+    assert payload["status"] == "cleared"
+    assert payload["count"] == 0
     payload_runtime = clear_build_payload(True)
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -391,9 +387,9 @@ def test_delete_memory_success(mock_flags: dict[str, Any]) -> None:
             "payload_builder"
         ]
         payload = builder(False)
-        assert payload.status == "deleted"
-        assert payload.key == "key"
-        assert builder(True).python
+        assert payload["status"] == "deleted"
+        assert payload["key"] == "key"
+        assert builder(True)["python"]
 
 
 def test_delete_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -403,9 +399,7 @@ def test_delete_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.delete.validate_common_flags",
             return_value=OutputFormat.JSON,
         ),
-        patch(
-            "bijux_cli.cli.commands.memory.delete.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.delete.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -423,9 +417,7 @@ def test_delete_memory_key_error(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.delete.resolve_memory_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.memory.delete.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.delete.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -437,11 +429,12 @@ def test_delete_memory_key_error(mock_flags: dict[str, Any]) -> None:
             "Key not found: key",
             code=1,
             failure="not_found",
+            error_type=ErrorType.USER_INPUT,
             command="memory delete",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -455,9 +448,7 @@ def test_delete_memory_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.delete.resolve_memory_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.memory.delete.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.memory.delete.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -469,21 +460,22 @@ def test_delete_memory_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to delete memory key: error",
             code=1,
             failure="delete_failed",
+            error_type=ErrorType.INTERNAL,
             command="memory delete",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_delete_build_payload() -> None:
     """Build delete payload."""
     payload = delete_build_payload(False, "key")
-    assert payload.status == "deleted"
-    assert payload.key == "key"
+    assert payload["status"] == "deleted"
+    assert payload["key"] == "key"
     payload_runtime = delete_build_payload(True, "key")
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -507,10 +499,10 @@ def test_get_memory_success(mock_flags: dict[str, Any]) -> None:
             "payload_builder"
         ]
         payload = builder(False)
-        assert payload.status == "ok"
-        assert payload.key == "key"
-        assert payload.value == "value"
-        assert builder(True).python
+        assert payload["status"] == "ok"
+        assert payload["key"] == "key"
+        assert payload["value"] == "value"
+        assert builder(True)["python"]
 
 
 def test_get_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -520,7 +512,7 @@ def test_get_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.get.validate_common_flags",
             return_value=OutputFormat.JSON,
         ),
-        patch("bijux_cli.cli.commands.memory.get.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.get.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -538,7 +530,7 @@ def test_get_memory_key_error(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.get.resolve_memory_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.memory.get.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.get.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -550,11 +542,12 @@ def test_get_memory_key_error(mock_flags: dict[str, Any]) -> None:
             "Key not found: key",
             code=1,
             failure="not_found",
+            error_type=ErrorType.USER_INPUT,
             command="memory get",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -568,7 +561,7 @@ def test_get_memory_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.get.resolve_memory_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.memory.get.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.get.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -580,22 +573,23 @@ def test_get_memory_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to get memory: error",
             code=1,
             failure="get_failed",
+            error_type=ErrorType.INTERNAL,
             command="memory get",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_get_build_payload() -> None:
     """Build get payload."""
     payload = get_build_payload(False, "key", "value")
-    assert payload.status == "ok"
-    assert payload.key == "key"
-    assert payload.value == "value"
+    assert payload["status"] == "ok"
+    assert payload["key"] == "key"
+    assert payload["value"] == "value"
     payload_runtime = get_build_payload(True, "key", "value")
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -619,10 +613,10 @@ def test_list_memory_success(mock_flags: dict[str, Any]) -> None:
             "payload_builder"
         ]
         payload = builder(False)
-        assert payload.status == "ok"
-        assert payload.keys == ["key1", "key2"]
-        assert payload.count == 2
-        assert builder(True).python
+        assert payload["status"] == "ok"
+        assert payload["keys"] == ["key1", "key2"]
+        assert payload["count"] == 2
+        assert builder(True)["python"]
 
 
 def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
@@ -635,7 +629,7 @@ def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.list.resolve_memory_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.memory.list.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.list.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -647,22 +641,23 @@ def test_list_memory_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to list memory keys: error",
             code=1,
             failure="list_failed",
+            error_type=ErrorType.INTERNAL,
             command="memory list",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_list_build_payload() -> None:
     """Build list payload."""
     payload = list_build_payload(False, ["key1", "key2"])
-    assert payload.status == "ok"
-    assert payload.keys == ["key1", "key2"]
-    assert payload.count == 2
+    assert payload["status"] == "ok"
+    assert payload["keys"] == ["key1", "key2"]
+    assert payload["count"] == 2
     payload_runtime = list_build_payload(True, ["key1", "key2"])
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
@@ -685,10 +680,10 @@ def test_set_memory_success(mock_flags: dict[str, Any]) -> None:
             "payload_builder"
         ]
         payload = builder(False)
-        assert payload.status == "updated"
-        assert payload.key == "key"
-        assert payload.value == "value"
-        assert builder(True).python
+        assert payload["status"] == "updated"
+        assert payload["key"] == "key"
+        assert payload["value"] == "value"
+        assert builder(True)["python"]
 
 
 def test_set_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
@@ -698,7 +693,7 @@ def test_set_memory_invalid_key(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.memory.set.validate_common_flags",
             return_value=OutputFormat.JSON,
         ),
-        patch("bijux_cli.cli.commands.memory.set.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.set.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         with pytest.raises(SystemExit):
@@ -716,7 +711,7 @@ def test_set_memory_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.memory.set.resolve_memory_service"
         ) as mock_resolve,
-        patch("bijux_cli.cli.commands.memory.set.emit_error_with_policy") as mock_emit,
+        patch("bijux_cli.cli.commands.memory.set.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = SystemExit
         mock_memory_svc = MagicMock()
@@ -728,22 +723,23 @@ def test_set_memory_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to set memory: error",
             code=1,
             failure="set_failed",
+            error_type=ErrorType.INTERNAL,
             command="memory set",
-            fmt="json",
+            fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
 def test_set_build_payload() -> None:
     """Build set payload."""
     payload = set_build_payload(False, "key", "value")
-    assert payload.status == "updated"
-    assert payload.key == "key"
-    assert payload.value == "value"
+    assert payload["status"] == "updated"
+    assert payload["key"] == "key"
+    assert payload["value"] == "value"
     payload_runtime = set_build_payload(True, "key", "value")
-    assert payload_runtime.python
+    assert payload_runtime["python"]
 
 
 class _DummyCmd(Command):

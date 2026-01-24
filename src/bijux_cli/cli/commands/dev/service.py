@@ -27,7 +27,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DevStatusPayload
-from bijux_cli.cli.core.command import current_execution_policy, new_run_command
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     ENV_DEV_MODE,
     OPT_FORMAT,
@@ -47,6 +47,7 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 
 
 def dev(

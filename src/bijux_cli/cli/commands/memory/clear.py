@@ -23,12 +23,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
-from bijux_cli.cli.commands.payloads import MemoryClearPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -42,9 +37,11 @@ from bijux_cli.cli.core.help_text import (
     HELP_QUIET,
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
+from bijux_cli.core.enums import ErrorType
+from bijux_cli.core.precedence import current_execution_policy
 
 
-def _build_payload(include_runtime: bool) -> MemoryClearPayload:
+def _build_payload(include_runtime: bool) -> dict[str, object]:
     """Builds the payload confirming that the in-memory store was cleared.
 
     Args:
@@ -54,14 +51,14 @@ def _build_payload(include_runtime: bool) -> MemoryClearPayload:
         Mapping[str, object]: A dictionary containing the status, a count of 0,
             and optional runtime metadata.
     """
-    payload = MemoryClearPayload(status="cleared", count=0)
+    payload: dict[str, object] = {"status": "cleared", "count": 0}
     if include_runtime:
-        return MemoryClearPayload(
-            status=payload.status,
-            count=payload.count,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "status": payload["status"],
+            "count": payload["count"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
@@ -89,33 +86,36 @@ def clear_memory(
             payload, indicating success or detailing an error.
     """
     command = "memory clear"
-    validate_common_flags(fmt, command, quiet)
-
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    pretty = policy.pretty
+    log_level_value = policy.log_level
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
-    pretty = effective.pretty
 
     memory_svc = resolve_memory_service(
-        command, fmt_lower, quiet, include_runtime, log_policy
+        command, fmt_lower, quiet, include_runtime, log_level_value
     )
 
     try:
         memory_svc.clear()
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to clear memory: {exc}",
             code=1,
             failure="clear_failed",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     new_run_command(

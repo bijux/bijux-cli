@@ -25,15 +25,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import platform
+from typing import Any
 
 import typer
 
-from bijux_cli.cli.commands.payloads import DevDiPayload
 from bijux_cli.cli.core.command import (
-    current_execution_policy,
-    emit_error_with_policy,
     new_run_command,
-    normalize_payload,
+    raise_exit_intent,
     record_history,
 )
 from bijux_cli.cli.core.constants import (
@@ -58,6 +56,7 @@ from bijux_cli.cli.core.validation import (
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 
 QUIET_OPTION = typer.Option(False, *OPT_QUIET, help=HELP_QUIET)
 FORMAT_OPTION = typer.Option("json", *OPT_FORMAT, help=HELP_FORMAT)
@@ -86,7 +85,7 @@ def _key_to_name(key: object) -> str:
     return str(name) if name else str(key)
 
 
-def _build_dev_di_payload(include_runtime: bool) -> DevDiPayload:
+def _build_dev_di_payload(include_runtime: bool) -> dict[str, Any]:
     """Builds the DI graph payload for structured output.
 
     Args:
@@ -108,14 +107,10 @@ def _build_dev_di_payload(include_runtime: bool) -> DevDiPayload:
         for protocol, alias in di.services()
     ]
 
-    payload = DevDiPayload(factories=factories, services=services)
+    payload: dict[str, Any] = {"factories": factories, "services": services}
     if include_runtime:
-        return DevDiPayload(
-            factories=payload.factories,
-            services=payload.services,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        payload["python"] = ascii_safe(platform.python_version(), "python_version")
+        payload["platform"] = ascii_safe(platform.platform(), "platform")
     return payload
 
 
@@ -149,7 +144,7 @@ def dev_di_graph(
     command = "dev di"
     policy = current_execution_policy()
     quiet = policy.quiet
-    log_policy = policy.log_policy
+    log_level_value = policy.log_level
     effective_include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON
@@ -160,7 +155,7 @@ def dev_di_graph(
         try:
             limit = int(limit_env)
             if limit < 0:
-                emit_error_with_policy(
+                raise_exit_intent(
                     f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                     code=2,
                     failure="limit",
@@ -168,10 +163,10 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    log_policy=log_policy,
+                    log_level=log_level_value,
                 )
         except (ValueError, TypeError):
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Invalid {ENV_DI_LIMIT} value: '{limit_env}'",
                 code=2,
                 failure="limit",
@@ -179,12 +174,12 @@ def dev_di_graph(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
-                log_policy=log_policy,
+                log_level=log_level_value,
             )
 
     config_env = os.environ.get(ENV_CONFIG)
     if config_env and not config_env.isascii():
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Config path contains non-ASCII characters: {config_env!r}",
             code=3,
             failure="ascii",
@@ -192,13 +187,13 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     if config_env:
         cfg_path = Path(config_env)
         if cfg_path.exists() and not os.access(cfg_path, os.R_OK):
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Config path not readable: {cfg_path}",
                 code=2,
                 failure="config_unreadable",
@@ -206,7 +201,7 @@ def dev_di_graph(
                 fmt=fmt_lower,
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
-                log_policy=log_policy,
+                log_level=log_level_value,
             )
 
     validate_common_flags(
@@ -214,19 +209,28 @@ def dev_di_graph(
         command,
         quiet,
         include_runtime=effective_include_runtime,
+        log_level=log_level_value,
     )
 
     try:
         payload = _build_dev_di_payload(effective_include_runtime)
         if limit is not None:
-            payload = DevDiPayload(
-                factories=payload.factories[:limit],
-                services=payload.services[:limit],
-                python=payload.python,
-                platform=payload.platform,
-            )
+            payload = {
+                "factories": payload["factories"][:limit],
+                "services": payload["services"][:limit],
+                **(
+                    {}
+                    if payload.get("python") is None
+                    else {"python": payload["python"]}
+                ),
+                **(
+                    {}
+                    if payload.get("platform") is None
+                    else {"platform": payload["platform"]}
+                ),
+            }
     except ValueError as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             str(exc),
             code=3,
             failure="ascii",
@@ -234,14 +238,14 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     outputs = output
     if outputs:
         for p in outputs:
             if p.is_dir():
-                emit_error_with_policy(
+                raise_exit_intent(
                     f"Output path is a directory: {p}",
                     code=2,
                     failure="output_dir",
@@ -249,18 +253,18 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    log_policy=log_policy,
+                    log_level=log_level_value,
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
                 from bijux_cli.cli.core.emit import resolve_serializer
 
                 rendered = resolve_serializer().dumps(
-                    normalize_payload(payload), fmt=fmt_lower, pretty=effective_pretty
+                    payload, fmt=fmt_lower, pretty=effective_pretty
                 )
                 p.write_text(rendered.rstrip("\n") + "\n", encoding="utf-8")
             except OSError as exc:
-                emit_error_with_policy(
+                raise_exit_intent(
                     f"Failed to write output file '{p}': {exc}",
                     code=2,
                     failure="output_write",
@@ -268,7 +272,7 @@ def dev_di_graph(
                     fmt=fmt_lower,
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
-                    log_policy=log_policy,
+                    log_level=log_level_value,
                 )
 
         if quiet:
@@ -287,7 +291,7 @@ def dev_di_graph(
             )
 
     if os.environ.get(ENV_TEST_FORCE_SERIALIZE_FAIL) == "1":
-        emit_error_with_policy(
+        raise_exit_intent(
             "Forced serialization failure",
             code=1,
             failure="serialize",
@@ -295,7 +299,7 @@ def dev_di_graph(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     new_run_command(

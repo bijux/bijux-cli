@@ -30,7 +30,7 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(
         scaffold_mod,
         "validate_common_flags",
-        lambda fmt, cmd, quiet: fmt.lower(),
+        lambda fmt, cmd, quiet, **_kwargs: fmt.lower(),
     )
 
     def fake_new_run(**kwargs: Any) -> None:
@@ -49,7 +49,7 @@ def cap(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     ) -> None:
         raise RuntimeError({"failure": failure, "message": msg})
 
-    monkeypatch.setattr(scaffold_mod, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(scaffold_mod, "raise_exit_intent", fake_emit)
     return data
 
 
@@ -459,9 +459,7 @@ def _stub_out(monkeypatch: pytest.MonkeyPatch, captured: dict[str, Any]) -> None
     ) -> None:
         raise RuntimeError({"message": message, "code": code, "failure": failure})
 
-    monkeypatch.setattr(
-        scaffold_mod, "emit_error_with_policy", fake_emit_error_and_exit
-    )
+    monkeypatch.setattr(scaffold_mod, "raise_exit_intent", fake_emit_error_and_exit)
 
 
 def _inject_cookiecutter(fn: Callable[[str, bool, str, dict[str, Any]], None]) -> None:

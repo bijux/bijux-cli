@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import typer
 
-from bijux_cli.cli.core.command import emit_error_with_policy, new_run_command
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.validation import (
     ascii_safe,
     contains_non_ascii_env,
@@ -24,9 +24,9 @@ from bijux_cli.cli.core.validation import (
     validate_env_file_if_present,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntentError
-from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.core.runtime import execute_exit_intent
 from bijux_cli.services.history.contracts import HistoryProtocol
 
@@ -623,19 +623,19 @@ def test_new_run_command_history_exception(mock_di: types.SimpleNamespace) -> No
             )
 
 
-def test_emit_error_with_policy_builds_payload() -> None:
-    """Test that emit_error_with_policy raises an intent with payload."""
-    policy = resolve_log_policy(LogLevel.INFO)
+def test_raise_exit_intent_builds_payload() -> None:
+    """Test that raise_exit_intent raises an intent with payload."""
     with pytest.raises(ExitIntentError) as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             "boom",
             code=1,
             failure="internal",
+            error_type=ErrorType.INTERNAL,
             command="cmd",
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=True,
-            log_policy=policy,
+            log_level=LogLevel.INFO,
         )
     intent = exc.value.intent
     payload = cast(dict[str, Any], intent.payload)

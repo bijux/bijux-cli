@@ -25,7 +25,6 @@ import sys
 
 import typer
 
-from bijux_cli.cli.core.command import emit_error_with_policy
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -41,6 +40,9 @@ from bijux_cli.cli.core.help_text import (
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.cli.repl.execution import _run_piped as _exec_run_piped
 from bijux_cli.cli.repl.ui import register_signal_handlers
+from bijux_cli.core.enums import ErrorType
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.core.runtime import AsyncTyper, run_command
 
 repl_app = AsyncTyper(
@@ -100,8 +102,6 @@ def main(
         return
 
     command = "repl"
-    from bijux_cli.cli.core.command import current_execution_policy
-
     policy = current_execution_policy()
     effective_include_runtime = policy.include_runtime
     quiet = policy.quiet
@@ -115,17 +115,20 @@ def main(
             command,
             policy.quiet,
             include_runtime=effective_include_runtime,
+            log_level=policy.log_level,
         )
-        emit_error_with_policy(
-            "REPL only supports human format.",
+        intent = resolve_exit_intent(
+            message="REPL only supports human format.",
             code=2,
             failure="format",
             command=command,
             fmt=format_value,
             quiet=policy.quiet,
             include_runtime=effective_include_runtime,
-            log_policy=policy.log_policy,
+            error_type=ErrorType.USAGE,
+            log_level=policy.log_level,
         )
+        raise ExitIntentError(intent)
 
     register_signal_handlers()
 

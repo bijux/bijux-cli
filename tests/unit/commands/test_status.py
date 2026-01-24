@@ -15,8 +15,9 @@ import typer
 
 import bijux_cli.cli.commands.status as mod
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
+from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+from bijux_cli.core.precedence import ExecutionPolicy
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -127,7 +128,7 @@ def test_build_payload_minimal(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(mod, "ascii_safe", _fake_ascii)
     p = mod._build_payload(include_runtime=False)
-    assert p.status == "ok"
+    assert p["status"] == "ok"
     assert called["ascii"] == 0
 
 
@@ -139,31 +140,29 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(mod, "ascii_safe", fake_ascii_safe)
     p = mod._build_payload(include_runtime=True)
-    assert p.status == "ok"
-    assert isinstance(p.python, str)
-    assert isinstance(p.platform, str)
+    assert p["status"] == "ok"
+    assert isinstance(p["python"], str)
+    assert isinstance(p["platform"], str)
 
 
 def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that watch mode rejects non-JSON output formats."""
     seen: dict[str, Any] = {}
 
-    def fake_exit(
-        msg: str,
-        code: int,
-        failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        **kw: Any,
-    ) -> None:
-        seen.update(locals())
-        raise SystemExit(code)
+    def fake_exit(**kwargs: Any) -> ExitIntent:
+        seen.update(kwargs)
+        return ExitIntent(
+            code=ExitCode(kwargs["code"]),
+            stream="stderr",
+            payload={"error": kwargs["message"]},
+            fmt=kwargs["fmt"],
+            pretty=False,
+            show_traceback=False,
+        )
 
-    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
+    monkeypatch.setattr(mod, "resolve_exit_intent", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
-    with pytest.raises(SystemExit) as ei:
+    with pytest.raises(ExitIntentError) as ei:
         mod._run_watch_mode(
             command="status",
             watch_interval=0.01,
@@ -171,11 +170,11 @@ def test_run_watch_mode_rejects_non_json(monkeypatch: pytest.MonkeyPatch) -> Non
             quiet=False,
             effective_pretty=True,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
-    assert ei.value.code == 2
+    assert ei.value.intent.code == ExitCode.USAGE
     assert seen["failure"] == "watch_fmt"
 
 
@@ -187,13 +186,20 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
 
     monkeypatch.setattr(mod, "ascii_safe", bad_ascii)
 
-    def fake_exit(msg: str, code: int, failure: str, **_: Any) -> None:
-        assert failure == "ascii"
-        raise SystemExit(code)
+    def fake_exit(**kwargs: Any) -> ExitIntent:
+        assert kwargs["failure"] == "ascii"
+        return ExitIntent(
+            code=ExitCode(kwargs["code"]),
+            stream="stderr",
+            payload={"error": kwargs["message"]},
+            fmt=kwargs["fmt"],
+            pretty=False,
+            show_traceback=False,
+        )
 
-    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
+    monkeypatch.setattr(mod, "resolve_exit_intent", fake_exit)
     em, tel = FakeEmitter(), FakeTelemetry()
-    with pytest.raises(SystemExit) as ei:
+    with pytest.raises(ExitIntentError) as ei:
         mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
@@ -201,11 +207,11 @@ def test_run_watch_mode_ascii_value_error(monkeypatch: pytest.MonkeyPatch) -> No
             quiet=False,
             effective_pretty=True,
             include_runtime=True,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
-    assert ei.value.code == 3
+    assert ei.value.intent.code == ExitCode.ASCII
 
 
 def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -217,12 +223,19 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
 
     em, tel = BoomEmitter(), FakeTelemetry()
 
-    def fake_exit(msg: str, code: int, failure: str, **_: Any) -> None:
-        assert failure == "emit"
-        raise SystemExit(code)
+    def fake_exit(**kwargs: Any) -> ExitIntent:
+        assert kwargs["failure"] == "emit"
+        return ExitIntent(
+            code=ExitCode(kwargs["code"]),
+            stream="stderr",
+            payload={"error": kwargs["message"]},
+            fmt=kwargs["fmt"],
+            pretty=False,
+            show_traceback=False,
+        )
 
-    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
-    with pytest.raises(SystemExit) as ei:
+    monkeypatch.setattr(mod, "resolve_exit_intent", fake_exit)
+    with pytest.raises(ExitIntentError) as ei:
         mod._run_watch_mode(
             command="status",
             watch_interval=0.0,
@@ -230,11 +243,11 @@ def test_run_watch_mode_generic_emit_error(monkeypatch: pytest.MonkeyPatch) -> N
             quiet=False,
             effective_pretty=True,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
             telemetry=tel,
             emitter=em,
         )
-    assert ei.value.code == 1
+    assert ei.value.intent.code == ExitCode.ERROR
 
 
 def test_status_returns_early_on_subcommand(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -278,12 +291,12 @@ def test_status_calls_new_run_command_when_not_watching(
     em, tel = FakeEmitter(), FakeTelemetry()
     monkeypatch.setattr(DIContainer, "current", lambda: FakeDI(em, tel))
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.status.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
             quiet=True,
-            log_level=LogLevel.ERROR,
+            log_level=LogLevel.INFO,
             pretty=False,
             include_runtime=True,
         ),
@@ -314,9 +327,9 @@ def test_status_calls_new_run_command_when_not_watching(
     assert seen["pretty"] is False
     pb = seen["payload_builder"]
     payload = pb(True)
-    assert payload.status == "ok"
-    assert payload.python
-    assert payload.platform
+    assert payload["status"] == "ok"
+    assert payload["python"]
+    assert payload["platform"]
 
 
 def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -331,14 +344,21 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
         DIContainer, "current", lambda: FakeDI(FakeEmitter(), FakeTelemetry())
     )
 
-    def fake_exit(msg: str, code: int, failure: str, **_: Any) -> None:
-        assert failure == "interval"
-        raise SystemExit(code)
+    def fake_exit(**kwargs: Any) -> ExitIntent:
+        assert kwargs["failure"] == "interval"
+        return ExitIntent(
+            code=ExitCode(kwargs["code"]),
+            stream="stderr",
+            payload={"error": kwargs["message"]},
+            fmt=kwargs["fmt"],
+            pretty=False,
+            show_traceback=False,
+        )
 
-    monkeypatch.setattr(mod, "emit_error_with_policy", fake_exit)
+    monkeypatch.setattr(mod, "resolve_exit_intent", fake_exit)
     ctx = cast(typer.Context, SimpleNamespace(invoked_subcommand=None))
 
-    with pytest.raises(SystemExit) as e1:
+    with pytest.raises(typer.Exit) as e1:
         mod.status(
             ctx,
             watch=0,
@@ -347,9 +367,9 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert e1.value.code == 2
+    assert e1.value.exit_code == ExitCode.USAGE
 
-    with pytest.raises(SystemExit) as e2:
+    with pytest.raises(typer.Exit) as e2:
         mod.status(
             ctx,
             watch=cast(Any, "abc"),
@@ -358,7 +378,7 @@ def test_status_watch_invalid_interval_types(monkeypatch: pytest.MonkeyPatch) ->
             pretty=True,
             log_level=LogLevel.INFO,
         )
-    assert e2.value.code == 2
+    assert e2.value.exit_code == ExitCode.USAGE
 
 
 def test_status_watch_happy_path_delegates_to_run_watch_mode(
@@ -375,7 +395,7 @@ def test_status_watch_happy_path_delegates_to_run_watch_mode(
 
     monkeypatch.setattr(mod, "validate_common_flags", _validate)
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.status.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
@@ -429,7 +449,7 @@ def test_run_watch_mode_quiet_skips_final_emit_but_records_stop(
         quiet=True,
         effective_pretty=True,
         include_runtime=False,
-        log_policy=resolve_log_policy(LogLevel.INFO),
+        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -457,7 +477,7 @@ def test_run_watch_mode_one_iteration_and_stop(
         quiet=False,
         effective_pretty=True,
         include_runtime=True,
-        log_policy=resolve_log_policy(LogLevel.DEBUG),
+        log_policy=SimpleNamespace(show_internal=True, level=LogLevel.DEBUG),
         telemetry=tel,
         emitter=em,
     )
@@ -490,7 +510,7 @@ def test_run_watch_mode_info_suppresses_diagnostics(
         quiet=False,
         effective_pretty=True,
         include_runtime=False,
-        log_policy=resolve_log_policy(LogLevel.INFO),
+        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )
@@ -541,7 +561,7 @@ def test_run_watch_mode_final_emit_exception_swallowed(
         quiet=False,
         effective_pretty=False,
         include_runtime=False,
-        log_policy=resolve_log_policy(LogLevel.INFO),
+        log_policy=SimpleNamespace(show_internal=False, level=LogLevel.INFO),
         telemetry=tel,
         emitter=em,
     )

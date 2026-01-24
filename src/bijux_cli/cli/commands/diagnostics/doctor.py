@@ -25,12 +25,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.commands.payloads import DoctorPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     ENV_TEST_FORCE_UNHEALTHY,
     OPT_FORMAT,
@@ -44,10 +39,10 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import (
-    ascii_safe,
-)
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ErrorType
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
@@ -63,7 +58,7 @@ doctor_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> DoctorPayload:
+def _build_payload(include_runtime: bool) -> dict[str, object]:
     """Builds the payload summarizing CLI environment health.
 
     This function performs a series of checks on the environment and aggregates
@@ -93,18 +88,18 @@ def _build_payload(include_runtime: bool) -> DoctorPayload:
             "All core checks passed" if healthy else "Unknown issue detected"
         )
 
-    payload = DoctorPayload(
-        status="healthy" if healthy else "unhealthy",
-        summary=summary,
-    )
+    payload: dict[str, object] = {
+        "status": "healthy" if healthy else "unhealthy",
+        "summary": summary,
+    }
 
     if include_runtime:
-        return DoctorPayload(
-            status=payload.status,
-            summary=payload.summary,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "status": payload["status"],
+            "summary": payload["summary"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
 
     return payload
 
@@ -144,16 +139,18 @@ def doctor(
         return
 
     command = "doctor"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
-    pretty = effective.pretty
-    include_runtime = effective.include_runtime
-
     if ctx.args:
         stray = ctx.args[0]
         msg = (
@@ -161,30 +158,32 @@ def doctor(
             if stray.startswith("-")
             else f"Too many arguments: {' '.join(ctx.args)}"
         )
-        emit_error_with_policy(
+        raise_exit_intent(
             msg,
             code=2,
             failure="args",
+            error_type=ErrorType.USAGE,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     try:
         DIContainer.current().resolve(Emitter)
         DIContainer.current().resolve(TelemetryProtocol)
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             str(exc),
             code=1,
             failure="internal",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     new_run_command(

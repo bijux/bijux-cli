@@ -31,7 +31,7 @@ Exit Codes:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import platform
@@ -39,16 +39,7 @@ from typing import Any
 
 import typer
 
-from bijux_cli.cli.commands.payloads import (
-    HistoryEntriesPayload,
-    HistoryExportPayload,
-    HistoryImportPayload,
-)
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -63,8 +54,8 @@ from bijux_cli.cli.core.help_text import (
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ErrorType, OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.services.history.contracts import HistoryProtocol
 
 
@@ -73,7 +64,7 @@ def resolve_history_service(
     fmt_lower: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
 ) -> HistoryProtocol:
     """Resolves the HistoryProtocol implementation from the DI container.
 
@@ -82,7 +73,7 @@ def resolve_history_service(
         fmt_lower (OutputFormat): The chosen output format.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
-        log_policy (LogPolicy): Logging policy for diagnostics.
+        log_level (LogLevel): Logging level for diagnostics.
 
     Returns:
         HistoryProtocol: An instance of the history service.
@@ -94,15 +85,16 @@ def resolve_history_service(
     try:
         return DIContainer.current().resolve(HistoryProtocol)
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"History service unavailable: {exc}",
             code=1,
             failure="service_unavailable",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )
 
 
@@ -120,7 +112,7 @@ class HistoryIntent:
     import_path: str | None
     quiet: bool
     include_runtime: bool
-    log_policy: LogPolicy
+    log_level: LogLevel
     fmt: OutputFormat
 
 
@@ -136,7 +128,7 @@ def _build_history_intent(
     fmt_lower: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
 ) -> HistoryIntent:
     """Validate inputs and build a history intent."""
     action = "list"
@@ -146,7 +138,7 @@ def _build_history_intent(
         action = "export"
 
     if limit < 0:
-        emit_error_with_policy(
+        raise_exit_intent(
             "Invalid value for --limit: must be non-negative.",
             code=2,
             failure="limit",
@@ -154,12 +146,12 @@ def _build_history_intent(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
     if sort and sort != "timestamp":
-        emit_error_with_policy(
+        raise_exit_intent(
             "Invalid sort key: only 'timestamp' is supported.",
             code=2,
             failure="sort",
@@ -167,12 +159,12 @@ def _build_history_intent(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
     if group_by and group_by != "command":
-        emit_error_with_policy(
+        raise_exit_intent(
             "Invalid group_by: only 'command' is supported.",
             code=2,
             failure="group_by",
@@ -180,7 +172,7 @@ def _build_history_intent(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -195,14 +187,14 @@ def _build_history_intent(
         import_path=import_path,
         quiet=quiet,
         include_runtime=include_runtime,
-        log_policy=log_policy,
+        log_level=log_level,
         fmt=fmt_lower,
     )
 
 
 def _import_history(
     intent: HistoryIntent, history_svc: HistoryProtocol
-) -> HistoryImportPayload:
+) -> dict[str, object]:
     """Import history data and return a payload."""
     try:
         text = Path(intent.import_path or "").read_text(encoding="utf-8").strip()
@@ -225,7 +217,7 @@ def _import_history(
                 duration_ms=item.get("duration_ms", 0.0),
             )
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to import history: {exc}",
             code=2,
             failure="import_failed",
@@ -233,24 +225,27 @@ def _import_history(
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
-    payload = HistoryImportPayload(status="imported", file=intent.import_path or "")
+    payload: dict[str, object] = {
+        "status": "imported",
+        "file": intent.import_path or "",
+    }
     if intent.include_runtime:
-        return HistoryImportPayload(
-            status=payload.status,
-            file=payload.file,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "status": payload["status"],
+            "file": payload["file"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
 def _export_history(
     intent: HistoryIntent, history_svc: HistoryProtocol
-) -> HistoryExportPayload:
+) -> dict[str, object]:
     """Export history data and return a payload."""
     try:
         entries = history_svc.list()
@@ -262,7 +257,7 @@ def _export_history(
             encoding="utf-8",
         )
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to export history: {exc}",
             code=2,
             failure="export_failed",
@@ -270,24 +265,27 @@ def _export_history(
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
-    payload = HistoryExportPayload(status="exported", file=intent.export_path or "")
+    payload: dict[str, object] = {
+        "status": "exported",
+        "file": intent.export_path or "",
+    }
     if intent.include_runtime:
-        return HistoryExportPayload(
-            status=payload.status,
-            file=payload.file,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "status": payload["status"],
+            "file": payload["file"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
 def _list_history(
     intent: HistoryIntent, history_svc: HistoryProtocol
-) -> HistoryEntriesPayload:
+) -> dict[str, object]:
     """List history entries and return a payload."""
     try:
         entries = history_svc.list()
@@ -307,7 +305,7 @@ def _list_history(
         elif intent.limit > 0:
             entries = entries[-intent.limit :]
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to list history: {exc}",
             code=1,
             failure="list_failed",
@@ -315,31 +313,30 @@ def _list_history(
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
         )
 
-    payload = HistoryEntriesPayload(entries=entries)
+    payload: dict[str, object] = {"entries": entries}
     if intent.include_runtime:
-        return HistoryEntriesPayload(
-            entries=payload.entries,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "entries": payload["entries"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
 def _with_runtime(
-    payload: HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload,
-    include_runtime: bool,
-) -> HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload:
+    payload: dict[str, object], include_runtime: bool
+) -> dict[str, object]:
     """Attach runtime metadata when requested."""
     if not include_runtime:
         return payload
-    return replace(
-        payload,
-        python=ascii_safe(platform.python_version(), "python_version"),
-        platform=ascii_safe(platform.platform(), "platform"),
-    )
+    return {
+        **payload,
+        "python": ascii_safe(platform.python_version(), "python_version"),
+        "platform": ascii_safe(platform.platform(), "platform"),
+    }
 
 
 def history(
@@ -397,19 +394,21 @@ def history(
         return
 
     command = "history"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
-    pretty = effective.pretty
-    include_runtime = effective.include_runtime
-    validate_common_flags(fmt, command, quiet, include_runtime=include_runtime)
 
     history_svc = resolve_history_service(
-        command, fmt_lower, quiet, include_runtime, log_policy
+        command, fmt_lower, quiet, include_runtime, log_level_value
     )
 
     intent = _build_history_intent(
@@ -423,10 +422,10 @@ def history(
         fmt_lower=fmt_lower,
         quiet=quiet,
         include_runtime=include_runtime,
-        log_policy=log_policy,
+        log_level=log_level_value,
     )
 
-    payload: HistoryEntriesPayload | HistoryExportPayload | HistoryImportPayload
+    payload: dict[str, object]
     if intent.action == "import":
         payload = _import_history(intent, history_svc)
     elif intent.action == "export":
@@ -440,5 +439,5 @@ def history(
         quiet=quiet,
         fmt=fmt_lower,
         pretty=pretty,
-        log_level=log_level,
+        log_level=log_level_value,
     )

@@ -24,8 +24,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.commands.payloads import DevPluginsPayload
-from bijux_cli.cli.core.command import new_run_command, resolve_command_config
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -39,6 +38,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_QUIET,
 )
 from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins.listing import list_installed_plugins
 
 
@@ -68,21 +68,25 @@ def dev_list_plugins(
     """
     command = "dev list-plugins"
 
-    validate_common_flags(fmt, command, quiet)
-    effective, _ = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     plugins = list_installed_plugins()
 
-    def payload_builder(include_runtime: bool) -> DevPluginsPayload:
+    def payload_builder(include_runtime: bool) -> dict[str, object]:
         """Build the list-plugins payload with optional runtime metadata."""
-        payload = DevPluginsPayload(plugins=plugins)
+        payload: dict[str, object] = {"plugins": plugins}
         if include_runtime:
-            return DevPluginsPayload(
-                plugins=payload.plugins,
-                python=platform.python_version(),
-                platform=platform.platform(),
+            payload.update(
+                {
+                    "python": platform.python_version(),
+                    "platform": platform.platform(),
+                }
             )
         return payload
 

@@ -34,9 +34,9 @@ def _load_payload(result: Any) -> dict[str, Any]:
 def test_build_payload_no_runtime() -> None:
     """Builds payload without runtime fields."""
     payload = _build_payload(include_runtime=False, slept=1.25)
-    assert payload.slept == 1.25
-    assert payload.python is None
-    assert payload.platform is None
+    assert payload["slept"] == 1.25
+    assert payload.get("python") is None
+    assert payload.get("platform") is None
 
 
 def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -60,9 +60,9 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("platform.platform", fake_platform, raising=True)
 
     payload = _build_payload(include_runtime=True, slept=0.5)
-    assert payload.slept == 0.5
-    assert payload.python == "SAFE(python_version)"
-    assert payload.platform == "SAFE(platform)"
+    assert payload["slept"] == 0.5
+    assert payload.get("python") == "SAFE(python_version)"
+    assert payload.get("platform") == "SAFE(platform)"
     assert {field for _, field in calls} == {"python_version", "platform"}
 
 
@@ -84,9 +84,8 @@ def _install_fake_container(
 
     class _TestSerializer:
         def dumps(self, payload: Any, fmt: OutputFormat, pretty: bool = False) -> str:
-            from bijux_cli.cli.core.command import normalize_payload
-
-            return json.dumps(normalize_payload(payload))
+            _ = (fmt, pretty)
+            return json.dumps(payload)
 
     class _TestEmitter:
         pass

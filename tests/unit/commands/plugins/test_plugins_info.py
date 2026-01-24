@@ -27,15 +27,16 @@ class DummyExitError(Exception):
 def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
     """Intercept error emissions and raise a custom exception."""
 
-    def fake_emit(
+    def fake_resolve_exit_intent(
         message: str,
         code: int,
         failure: str,
         **kwargs: Any,
     ) -> None:
+        _ = kwargs
         raise DummyExitError(code, {"error": message, "failure": failure})
 
-    monkeypatch.setattr(plugins_info, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(plugins_info, "resolve_exit_intent", fake_resolve_exit_intent)
 
 
 def test_info_plugin_not_found(monkeypatch: pytest.MonkeyPatch) -> None:

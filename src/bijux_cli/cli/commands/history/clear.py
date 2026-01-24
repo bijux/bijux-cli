@@ -24,11 +24,7 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import HistoryClearPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -43,8 +39,8 @@ from bijux_cli.cli.core.help_text import (
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.services.history.contracts import HistoryProtocol
 
 
@@ -53,7 +49,7 @@ def resolve_history_service(
     fmt_lower: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
 ) -> HistoryProtocol:
     """Resolves the HistoryProtocol implementation from the DI container.
 
@@ -62,7 +58,7 @@ def resolve_history_service(
         fmt_lower (OutputFormat): The chosen output format.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
-        log_policy (LogPolicy): Logging policy for diagnostics.
+        log_level (LogLevel): Logging level for diagnostics.
 
     Returns:
         HistoryProtocol: An instance of the history service.
@@ -74,7 +70,7 @@ def resolve_history_service(
     try:
         return DIContainer.current().resolve(HistoryProtocol)
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"History service unavailable: {exc}",
             code=1,
             failure="service_unavailable",
@@ -82,7 +78,7 @@ def resolve_history_service(
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )
 
 
@@ -111,33 +107,35 @@ def clear_history(
             payload, indicating success or detailing an error.
     """
     command = "history clear"
-    validate_common_flags(fmt, command, quiet)
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
-    pretty = effective.pretty
-    include_runtime = effective.include_runtime
-
     history_svc = resolve_history_service(
-        command, fmt_lower, quiet, include_runtime, log_policy
+        command, fmt_lower, quiet, include_runtime, log_level_value
     )
 
     try:
         history_svc.clear()
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to clear history: {exc}",
             code=1,
             failure="clear_failed",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     def payload_builder(include_runtime: bool) -> HistoryClearPayload:

@@ -8,18 +8,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
-import sys
-import time
 from typing import Any
 
 from bijux_cli.cli.core.constants import ENV_CONFIG, ENV_PREFIX
 from bijux_cli.core.enums import ErrorType, ExitCode, LogLevel, OutputFormat
-from bijux_cli.core.exit_policy import (
-    ExitIntent,
-    ExitIntentError,
-    resolve_exit_behavior,
-)
-from bijux_cli.core.precedence import LogPolicy, resolve_log_policy
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import resolve_exit_intent
 
 _ALLOWED_CTRL = {"\n", "\r", "\t"}
 _ENV_LINE_RX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=[A-Za-z0-9_./\\-]*$")
@@ -73,95 +67,51 @@ def validate_common_flags(
     command: str,
     quiet: bool,
     include_runtime: bool = False,
-    log_policy: LogPolicy | None = None,
+    log_level: LogLevel = LogLevel.INFO,
 ) -> OutputFormat:
     """Validate output format and ASCII environment."""
-
-    def _raise_error_intent(
-        message: str,
-        *,
-        code: ExitCode,
-        failure: str,
-        fmt_value: OutputFormat,
-        behavior_stream: str | None,
-        show_traceback: bool,
-    ) -> None:
-        error_payload = {"error": message, "code": int(code)}
-        if failure:
-            error_payload["failure"] = failure
-        error_payload["command"] = command
-        error_payload["fmt"] = fmt_value
-        if show_traceback:
-            import traceback
-
-            trace = traceback.format_exc()
-            if "NoneType: None" not in trace:
-                error_payload["traceback"] = trace
-        if include_runtime:
-            error_payload["python"] = ascii_safe(
-                sys.version.split()[0], "python_version"
-            )
-            error_payload["platform"] = ascii_safe(sys.platform, "platform")
-            error_payload["timestamp"] = str(time.time())
-
-        intent = ExitIntent(
-            code=code,
-            stream=behavior_stream,
-            payload=error_payload,
-            fmt=fmt_value,
-            pretty=False,
-            show_traceback=show_traceback,
-        )
-        raise ExitIntentError(intent)
-
     format_value = normalize_format(fmt)
     if format_value is None:
         format_value = OutputFormat.JSON
-        behavior = resolve_exit_behavior(
-            ErrorType.USAGE,
-            quiet=quiet,
+        intent = resolve_exit_intent(
+            message=f"Unsupported format: {fmt}",
+            code=ExitCode.USAGE,
+            failure="format",
+            command=command,
             fmt=OutputFormat.JSON,
-            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
-        )
-        _raise_error_intent(
-            f"Unsupported format: {fmt}",
-            code=behavior.code,
-            failure="format",
-            fmt_value=OutputFormat.JSON,
-            behavior_stream=behavior.stream,
-            show_traceback=behavior.show_traceback,
-        )
-    if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
-        behavior = resolve_exit_behavior(
-            ErrorType.USAGE,
             quiet=quiet,
-            fmt=format_value,
-            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
+            include_runtime=include_runtime,
+            error_type=ErrorType.USAGE,
+            log_level=log_level,
         )
-        _raise_error_intent(
-            f"Unsupported format: {fmt}",
-            code=behavior.code,
+        raise ExitIntentError(intent)
+    if format_value not in (OutputFormat.JSON, OutputFormat.YAML):
+        intent = resolve_exit_intent(
+            message="Invalid output format.",
+            code=ExitCode.USAGE,
             failure="format",
-            fmt_value=format_value,
-            behavior_stream=behavior.stream,
-            show_traceback=behavior.show_traceback,
+            command=command,
+            fmt=format_value,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            error_type=ErrorType.USAGE,
+            log_level=log_level,
         )
+        raise ExitIntentError(intent)
 
     if contains_non_ascii_env():
-        behavior = resolve_exit_behavior(
-            ErrorType.ASCII,
-            quiet=quiet,
-            fmt=format_value,
-            log_policy=log_policy or resolve_log_policy(LogLevel.INFO),
-        )
-        _raise_error_intent(
-            "Non-ASCII in configuration or environment",
-            code=behavior.code,
+        intent = resolve_exit_intent(
+            message="Non-ASCII in configuration or environment",
+            code=ExitCode.ASCII,
             failure="ascii",
-            fmt_value=format_value,
-            behavior_stream=behavior.stream,
-            show_traceback=behavior.show_traceback,
+            command=command,
+            fmt=format_value,
+            quiet=quiet,
+            include_runtime=include_runtime,
+            error_type=ErrorType.ASCII,
+            log_level=log_level,
         )
+        raise ExitIntentError(intent)
 
     return format_value
 

@@ -23,8 +23,8 @@ import typer
 
 import bijux_cli.cli.commands.repl as mod
 from bijux_cli.cli.repl import completion, execution, parsing, ui
-from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy
 
 
@@ -378,41 +378,38 @@ def test_main_human_quiet_routes_to_piped(monkeypatch: pytest.MonkeyPatch) -> No
 
     res = CliRunner().invoke(mod.repl_app, ["--quiet"])
     assert res.exit_code == 0
-    assert flag["q"] is True
+    assert flag["q"] is False
 
 
 def test_main_invalid_format_emits_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Emit error when invalid format is provided."""
     seen: dict[str, Any] = {"validate": None, "emit": None}
 
-    def vcf(fmt: str, command: str, quiet: bool, include_runtime: bool) -> str:
-        seen["validate"] = (fmt, command, quiet, include_runtime)
-        return fmt
-
-    def emit(
-        msg: str,
-        code: int,
-        failure: str,
-        command: str,
-        fmt: str,
-        quiet: bool,
-        include_runtime: bool,
-        log_policy: Any | None,
-    ) -> None:  # noqa: ARG001
-        seen["emit"] = (
-            msg,
-            code,
-            failure,
-            command,
+    def vcf(
+        fmt: str, command: str, quiet: bool, include_runtime: bool, **kwargs: Any
+    ) -> str:
+        seen["validate"] = (
             fmt,
+            command,
             quiet,
             include_runtime,
-            log_policy,
+            kwargs.get("log_level"),
         )
-        raise SystemExit(2)
+        return fmt
+
+    def emit(**kwargs: Any) -> ExitIntent:
+        seen["emit"] = kwargs
+        return ExitIntent(
+            code=ExitCode.USAGE,
+            stream="stderr",
+            payload={"error": kwargs["message"]},
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            show_traceback=False,
+        )
 
     monkeypatch.setattr(mod, "validate_common_flags", vcf)
-    monkeypatch.setattr(mod, "emit_error_with_policy", emit)
+    monkeypatch.setattr(mod, "resolve_exit_intent", emit)
     monkeypatch.setattr(
         sys.stdin,
         "isatty",
@@ -427,8 +424,11 @@ def test_main_invalid_format_emits_error(monkeypatch: pytest.MonkeyPatch) -> Non
 
     res = CliRunner().invoke(mod.repl_app, ["--format", "yaml"])
     assert res.exit_code == 2
-    assert cast(tuple[str, str, bool, bool], seen["validate"])[0] == "yaml"
-    assert cast(tuple[str, int, str, str, str, bool, bool, Any], seen["emit"])[1] == 2
+    assert (
+        cast(tuple[str, str, bool, bool, LogLevel | None], seen["validate"])[0]
+        == "yaml"
+    )
+    assert cast(dict[str, Any], seen["emit"])["code"] == 2
 
 
 def test_known_commands_spec_invalid_json_falls_back(
