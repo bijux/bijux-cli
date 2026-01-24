@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
 """Main build manager for generating the MkDocs documentation site.
@@ -126,7 +126,11 @@ def _materialize_root_docs() -> None:
         ),
         (REPO_ROOT / "CONTRIBUTING.md", Path("contributing.md"), rewrite_links_general),
         (REPO_ROOT / "CHANGELOG.md", Path("changelog.md"), rewrite_links_general),
-        (REPO_ROOT / "LICENSES" / "MIT.txt", Path("license.md"), rewrite_links_general),
+        (
+            REPO_ROOT / "LICENSES" / "Apache-2.0.txt",
+            Path("license.md"),
+            rewrite_links_general,
+        ),
     ]
     have_index = False
     for src, dst, fixer in pairs:
