@@ -46,8 +46,9 @@ def find_bijux_binary() -> Path:
     """
     exe_name = "bijux"
 
-    if (override := os.getenv("BIJUX_BIN")) and Path(override).is_file():
-        return Path(override).resolve()
+    local = ROOT / "bin" / exe_name
+    if local.exists():
+        return local.resolve()
 
     sibling = Path(sys.executable).with_name(exe_name)
     if sibling.exists():
@@ -57,12 +58,11 @@ def find_bijux_binary() -> Path:
         if p.is_file():
             return p.resolve()
 
+    if (override := os.getenv("BIJUX_BIN")) and Path(override).is_file():
+        return Path(override).resolve()
+
     if which := shutil.which("bijux"):
         return Path(which).resolve()
-
-    local = ROOT / "bin" / exe_name
-    if local.exists():
-        return local.resolve()
 
     raise FileNotFoundError(
         "Could not locate the 'bijux' binary in "
@@ -78,8 +78,7 @@ PROMPT_REGEX = re.compile(
 TEST_TEMPLATE = str((Path(__file__).parent.parent.parent / "plugin_template").resolve())
 _JSON_RE = re.compile(r"\{.*\}")
 
-_bin = shutil.which("bijux")
-_fallback_cmd = [sys.executable, "-m", "bijux_cli"] if _bin is None else [str(_bin)]
+_fallback_cmd = [str(BIN)]
 
 _repo_root = Path(__file__).resolve().parents[2]
 

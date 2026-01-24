@@ -55,7 +55,7 @@ from bijux_cli.cli.core.validation import (
     validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
 from bijux_cli.core.precedence import current_execution_policy
 
 QUIET_OPTION = typer.Option(False, *OPT_QUIET, help=HELP_QUIET)
@@ -164,6 +164,7 @@ def dev_di_graph(
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
                     log_level=log_level_value,
+                    error_type=ErrorType.USER_INPUT,
                 )
         except (ValueError, TypeError):
             raise_exit_intent(
@@ -175,6 +176,7 @@ def dev_di_graph(
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
                 log_level=log_level_value,
+                error_type=ErrorType.USER_INPUT,
             )
 
     config_env = os.environ.get(ENV_CONFIG)
@@ -188,6 +190,7 @@ def dev_di_graph(
             quiet=quiet,
             include_runtime=effective_include_runtime,
             log_level=log_level_value,
+            error_type=ErrorType.ASCII,
         )
 
     if config_env:
@@ -202,6 +205,7 @@ def dev_di_graph(
                 quiet=quiet,
                 include_runtime=effective_include_runtime,
                 log_level=log_level_value,
+                error_type=ErrorType.USER_INPUT,
             )
 
     validate_common_flags(
@@ -239,6 +243,7 @@ def dev_di_graph(
             quiet=quiet,
             include_runtime=effective_include_runtime,
             log_level=log_level_value,
+            error_type=ErrorType.ASCII,
         )
 
     outputs = output
@@ -254,6 +259,7 @@ def dev_di_graph(
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
                     log_level=log_level_value,
+                    error_type=ErrorType.USER_INPUT,
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
@@ -273,6 +279,7 @@ def dev_di_graph(
                     quiet=quiet,
                     include_runtime=effective_include_runtime,
                     log_level=log_level_value,
+                    error_type=ErrorType.USER_INPUT,
                 )
 
         emit_output = not quiet
@@ -301,6 +308,7 @@ def dev_di_graph(
             quiet=quiet,
             include_runtime=effective_include_runtime,
             log_level=log_level_value,
+            error_type=ErrorType.INTERNAL,
         )
 
     new_run_command(

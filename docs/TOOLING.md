@@ -472,7 +472,7 @@ tox -q -p auto
 * Dictionary (codespell): `config/bijux.dic`
 * Config notes: `config/README.md`
 * CI: `.github/workflows/`, `tox.ini`, `pytest.ini`
-* Docs: `mkdocs.yml`, `scripts/helper_mkdocs.py`
+* Docs: `mkdocs.yml`, `scripts/docs_builder/mkdocs_manager.py`
 * Security & licensing: `REUSE.toml`
 * Packaging & release: `pyproject.toml`
 

@@ -45,12 +45,12 @@ from bijux_cli.cli.core.help_text import (
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.precedence import current_execution_policy
+from bijux_cli.plugins.helpers import PLUGIN_NAME_RE
 from bijux_cli.plugins.metadata import (
     discover_plugins,
     invalidate_plugin_cache,
     plugins_for_package,
 )
-from bijux_cli.plugins.validation import PLUGIN_NAME_RE
 
 
 def install_plugin(
