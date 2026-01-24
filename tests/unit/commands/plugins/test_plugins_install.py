@@ -22,7 +22,9 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     data: dict[str, Any] = {}
 
     monkeypatch.setattr(
-        install_mod, "validate_common_flags", lambda fmt, cmd, quiet: fmt
+        install_mod,
+        "validate_common_flags",
+        lambda fmt, cmd, quiet, **_kwargs: fmt,
     )
 
     def fake_new_run(*args: Any, **kwargs: Any) -> None:
@@ -49,7 +51,7 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     ) -> None:
         raise RuntimeError({"message": msg, "code": code, "failure": failure})
 
-    monkeypatch.setattr(install_mod, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(install_mod, "raise_exit_intent", fake_emit)
     return data
 
 

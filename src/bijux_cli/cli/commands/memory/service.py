@@ -27,13 +27,7 @@ import typer
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
-from bijux_cli.cli.commands.payloads import MemorySummaryPayload
-from bijux_cli.cli.core.command import (
-    current_execution_policy,
-    emit_error_with_policy,
-    normalize_payload,
-    record_history,
-)
+from bijux_cli.cli.core.command import raise_exit_intent, record_history
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -52,13 +46,11 @@ from bijux_cli.cli.core.validation import (
     normalize_format,
     validate_common_flags,
 )
-from bijux_cli.core.enums import ExitCode, OutputFormat
-from bijux_cli.core.precedence import LogPolicy, default_execution_policy
+from bijux_cli.core.enums import ErrorType, ExitCode, LogLevel, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 
 
-def _build_payload(
-    include_runtime: bool, keys_count: int | None
-) -> MemorySummaryPayload:
+def _build_payload(include_runtime: bool, keys_count: int | None) -> dict[str, object]:
     """Constructs the payload for the memory summary command.
 
     Args:
@@ -70,19 +62,19 @@ def _build_payload(
         Mapping[str, object]: A dictionary containing the status, key count,
             a confirmation message, and optional runtime metadata.
     """
-    payload = MemorySummaryPayload(
-        status="ok",
-        count=keys_count,
-        message="Memory command executed",
-    )
+    payload: dict[str, object] = {
+        "status": "ok",
+        "count": keys_count,
+        "message": "Memory command executed",
+    }
     if include_runtime:
-        return MemorySummaryPayload(
-            status=payload.status,
-            count=payload.count,
-            message=payload.message,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "status": payload["status"],
+            "count": payload["count"],
+            "message": payload["message"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
@@ -92,7 +84,7 @@ def _run_one_shot_mode(
     fmt: OutputFormat,
     output_format: OutputFormat,
     quiet: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
     effective_pretty: bool,
     include_runtime: bool,
     keys_count: int | None,
@@ -107,7 +99,7 @@ def _run_one_shot_mode(
         fmt (str): The output format string (e.g., "json").
         output_format (OutputFormat): The output format enum for serialization.
         quiet (bool): If True, suppresses all output except for errors.
-        log_policy (LogPolicy): Logging policy for diagnostics.
+        log_level (LogLevel): Logging level for diagnostics.
         effective_pretty (bool): If True, pretty-prints the output.
         include_runtime (bool): If True, includes Python/platform info.
         keys_count (int | None): The number of keys in the memory store.
@@ -120,28 +112,30 @@ def _run_one_shot_mode(
             payload upon completion or error.
     """
     if contains_non_ascii_env():
-        emit_error_with_policy(
+        raise_exit_intent(
             "Non-ASCII characters in environment variables",
             code=3,
             failure="ascii_env",
+            error_type=ErrorType.ASCII,
             command=command,
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )
     try:
         payload = _build_payload(include_runtime, keys_count)
     except ValueError as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             str(exc),
             code=3,
             failure="ascii",
+            error_type=ErrorType.ASCII,
             command=command,
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )
 
     if quiet:
@@ -164,7 +158,7 @@ def _run_one_shot_mode(
         ExitIntent(
             code=ExitCode.SUCCESS,
             stream="stdout",
-            payload=normalize_payload(payload),
+            payload=payload,
             fmt=output_format,
             pretty=effective_pretty,
             show_traceback=False,
@@ -203,7 +197,7 @@ def memory_summary(
     policy = current_execution_policy()
     quiet = policy.quiet
     include_runtime = policy.include_runtime
-    log_policy = policy.log_policy
+    log_level_value = policy.log_level
     include_runtime = policy.include_runtime
     effective_pretty = policy.pretty
     fmt_lower = normalize_format(fmt) or OutputFormat.JSON
@@ -213,11 +207,14 @@ def memory_summary(
         command,
         quiet,
         include_runtime=include_runtime,
+        log_level=log_level_value,
     )
 
     output_format = fmt_lower
 
-    svc = resolve_memory_service(command, fmt_lower, quiet, include_runtime, log_policy)
+    svc = resolve_memory_service(
+        command, fmt_lower, quiet, include_runtime, log_level_value
+    )
 
     keys_count = None
     with contextlib.suppress(Exception):
@@ -228,7 +225,7 @@ def memory_summary(
         fmt=fmt_lower,
         output_format=output_format,
         quiet=quiet,
-        log_policy=log_policy,
+        log_level=log_level_value,
         effective_pretty=effective_pretty,
         include_runtime=include_runtime,
         keys_count=keys_count,
@@ -262,7 +259,7 @@ def memory(
         typer.Exit: Exits after displaying help text.
     """
     if any(arg in ("-h", "--help") for arg in sys.argv):
-        policy = default_execution_policy()
+        policy = current_execution_policy()
         color = resolve_click_color(quiet=policy.quiet, fmt=None)
         if ctx.invoked_subcommand:
             cmd = getattr(ctx.command, "get_command", None)

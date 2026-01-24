@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 import bijux_cli.cli.plugins.commands.list as list_mod
 from bijux_cli.cli.root import app as cli_app
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(list_mod, "get_plugins_dir", lambda: fake_dir)
     calls["plugins_dir"] = fake_dir
 
-    def fake_validate(fmt: str, cmd: str, quiet: bool) -> OutputFormat:
+    def fake_validate(fmt: str, cmd: str, quiet: bool, **_kwargs: Any) -> OutputFormat:
         calls["validate"] = (fmt, cmd, quiet)
         return OutputFormat(fmt)
 
@@ -37,9 +37,9 @@ def caps(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         command: str,
         fmt: OutputFormat,
         quiet: bool,
-        log_policy: Any | None,
+        log_level: Any | None,
     ) -> None:
-        calls["refuse"] = (dir_, command, fmt, quiet, log_policy)
+        calls["refuse"] = (dir_, command, fmt, quiet, log_level)
 
     monkeypatch.setattr(list_mod, "refuse_on_symlink", fake_refuse)
 
@@ -86,7 +86,7 @@ def test_default_list(
         "plugins list",
         "json",
         False,
-        resolve_log_policy(LogLevel.INFO),
+        LogLevel.INFO,
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is False
@@ -100,7 +100,8 @@ def test_all_flags(
 ) -> None:
     """Test the 'plugins list' command with all flags specified."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        list_mod,
+        "current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.YAML,
             color=ColorMode.AUTO,
@@ -133,7 +134,7 @@ def test_all_flags(
         "plugins list",
         "yaml",
         True,
-        resolve_log_policy(LogLevel.ERROR),
+        LogLevel.ERROR,
     )
     assert caps["run"]["command_name"] == "plugins list"
     assert caps["run"]["quiet"] is True
@@ -147,7 +148,7 @@ def test_validate_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> N
     monkeypatch.setattr(
         list_mod,
         "validate_common_flags",
-        lambda f, c, q: (_ for _ in ()).throw(SystemExit(2)),
+        lambda f, c, q, **_kwargs: (_ for _ in ()).throw(SystemExit(2)),
     )
     result = runner.invoke(cli_app, ["plugins", "list"])
     assert result.exit_code == 2
@@ -156,7 +157,9 @@ def test_validate_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> N
 def test_refuse_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:
     """Test that a SystemExit from the symlink check is propagated."""
     monkeypatch.setattr(
-        list_mod, "validate_common_flags", lambda f, c, q: OutputFormat(f)
+        list_mod,
+        "validate_common_flags",
+        lambda f, c, q, **_kwargs: OutputFormat(f),
     )
     monkeypatch.setattr(list_mod, "get_plugins_dir", lambda: Path("/x"))
     monkeypatch.setattr(

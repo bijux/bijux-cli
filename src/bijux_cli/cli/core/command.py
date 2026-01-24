@@ -5,76 +5,13 @@
 
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
-from enum import Enum
 import sys
-import time
 from typing import Any, NoReturn
 
-from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
+from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
-from bijux_cli.core.exit_policy import (
-    ExitIntent,
-    ExitIntentError,
-    resolve_exit_behavior,
-)
-from bijux_cli.core.precedence import ExecutionPolicy, LogPolicy
-
-
-def normalize_payload(obj: Any) -> Any:
-    """Normalize dataclasses/enums into plain serializable structures."""
-    if is_dataclass(obj):
-        from bijux_cli.cli.commands.payloads import ConfigDumpPayload
-
-        if isinstance(obj, ConfigDumpPayload):
-            merged: dict[str, Any] = dict(obj.entries)
-            if obj.python is not None:
-                merged["python"] = obj.python
-            if obj.platform is not None:
-                merged["platform"] = obj.platform
-            return {key: normalize_payload(value) for key, value in merged.items()}
-        payload: dict[str, Any] = {}
-        for field in fields(obj):
-            value = getattr(obj, field.name)
-            if value is None:
-                continue
-            payload[field.name] = normalize_payload(value)
-        return payload
-    if isinstance(obj, Enum):
-        return obj.value
-    if isinstance(obj, dict):
-        return {key: normalize_payload(value) for key, value in obj.items()}
-    if isinstance(obj, list | tuple | set):
-        return [normalize_payload(value) for value in obj]
-    return obj
-
-
-def current_execution_policy() -> ExecutionPolicy:
-    """Return the execution policy resolved during bootstrap."""
-    from bijux_cli.core.di import DIContainer
-
-    policy = DIContainer.current().resolve(ExecutionPolicy)
-    if not isinstance(policy, ExecutionPolicy):
-        raise TypeError("ExecutionPolicy not available")
-    return policy
-
-
-def resolve_command_config(
-    *,
-    command: str,
-    fmt: str,
-) -> tuple[ExecutionPolicy, OutputFormat]:
-    """Resolve the shared policy for a command invocation."""
-    effective = current_execution_policy()
-    format_source = fmt if isinstance(fmt, str) else effective.output_format.value
-    output_format = validate_common_flags(
-        format_source,
-        command,
-        effective.quiet,
-        include_runtime=effective.include_runtime,
-        log_policy=effective.log_policy,
-    )
-    return effective, output_format
+from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 
 
 def record_history(command: str, exit_code: int) -> None:
@@ -136,14 +73,14 @@ def new_run_command(
         command_name,
         resolved.quiet,
         include_runtime=include_runtime,
-        log_policy=resolved.log_policy,
+        log_level=resolved.log_level,
     )
     effective_pretty = resolved.pretty
     try:
         payload = payload_builder(include_runtime)
     except ValueError as exc:
-        emit_error_with_policy(
-            str(exc),
+        intent = resolve_exit_intent(
+            message=str(exc),
             code=2,
             failure="ascii",
             command=command_name,
@@ -151,8 +88,9 @@ def new_run_command(
             quiet=resolved.quiet,
             include_runtime=include_runtime,
             error_type=ErrorType.ASCII,
-            log_policy=resolved.log_policy,
+            log_level=resolved.log_level,
         )
+        raise ExitIntentError(intent) from exc
 
     record_history(command_name, exit_code)
 
@@ -170,7 +108,7 @@ def new_run_command(
     intent = ExitIntent(
         code=ExitCode(exit_code),
         stream="stdout",
-        payload=normalize_payload(payload),
+        payload=payload,
         fmt=output_format,
         pretty=effective_pretty,
         show_traceback=False,
@@ -178,63 +116,17 @@ def new_run_command(
     raise ExitIntentError(intent)
 
 
-def emit_error_with_policy(
-    message: str,
-    code: int,
-    failure: str,
-    *,
-    command: str | None = None,
-    fmt: OutputFormat | None = None,
-    quiet: bool,
-    include_runtime: bool = False,
-    extra: dict[str, Any] | None = None,
-    error_type: ErrorType | None = None,
-    log_policy: LogPolicy,
-) -> NoReturn:
-    """Resolve error behavior and raise an exit intent."""
-    behavior = resolve_exit_behavior(
-        error_type or ErrorType.INTERNAL,
-        quiet=quiet,
-        fmt=fmt or OutputFormat.JSON,
-        log_policy=log_policy,
-    )
-
-    error_payload: dict[str, Any] = {"error": message, "code": int(code)}
-    if failure:
-        error_payload["failure"] = failure
-    if command:
-        error_payload["command"] = command
-    if fmt:
-        error_payload["fmt"] = fmt
-    if extra:
-        error_payload.update(extra)
-    if behavior.show_traceback:
-        import traceback
-
-        trace = traceback.format_exc()
-        if "NoneType: None" not in trace:
-            error_payload["traceback"] = trace
-    if include_runtime:
-        error_payload["python"] = ascii_safe(sys.version.split()[0], "python_version")
-        error_payload["platform"] = ascii_safe(sys.platform, "platform")
-        error_payload["timestamp"] = str(time.time())
-
-    intent = ExitIntent(
-        code=ExitCode(int(code)),
-        stream=behavior.stream,
-        payload=normalize_payload(error_payload),
-        fmt=fmt or OutputFormat.JSON,
-        pretty=False,
-        show_traceback=behavior.show_traceback,
-    )
-    raise ExitIntentError(intent)
+def raise_exit_intent(*args: Any, **kwargs: Any) -> NoReturn:
+    """Raise an ExitIntentError from resolved error intent."""
+    if args:
+        if len(args) != 1:
+            raise TypeError("raise_exit_intent accepts at most one positional arg")
+        kwargs["message"] = args[0]
+    raise ExitIntentError(resolve_exit_intent(**kwargs))
 
 
 __all__ = [
-    "current_execution_policy",
-    "emit_error_with_policy",
     "new_run_command",
-    "normalize_payload",
     "record_history",
-    "resolve_command_config",
+    "raise_exit_intent",
 ]

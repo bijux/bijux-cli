@@ -32,7 +32,9 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         uninstall_mod, "refuse_on_symlink", lambda *args, **kwargs: None
     )
     monkeypatch.setattr(
-        uninstall_mod, "validate_common_flags", lambda fmt, cmd, quiet: fmt
+        uninstall_mod,
+        "validate_common_flags",
+        lambda fmt, cmd, quiet, **_kwargs: fmt,
     )
 
     def fake_new_run(
@@ -65,9 +67,7 @@ def captured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     ) -> None:
         raise RuntimeError({"message": message, "code": code, "failure": failure})
 
-    monkeypatch.setattr(
-        uninstall_mod, "emit_error_with_policy", fake_emit_error_and_exit
-    )
+    monkeypatch.setattr(uninstall_mod, "raise_exit_intent", fake_emit_error_and_exit)
     return data
 
 

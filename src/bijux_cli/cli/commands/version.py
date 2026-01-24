@@ -28,8 +28,7 @@ import time
 
 import typer
 
-from bijux_cli.cli.commands.payloads import VersionPayload
-from bijux_cli.cli.core.command import new_run_command, resolve_command_config
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     ENV_VERSION,
     OPT_FORMAT,
@@ -45,6 +44,7 @@ from bijux_cli.cli.core.help_text import (
 )
 from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.core.version import __version__ as cli_version
 from bijux_cli.infra.contracts import Emitter
@@ -61,7 +61,7 @@ version_app = AsyncTyper(
 )
 
 
-def _build_payload(include_runtime: bool) -> VersionPayload:
+def _build_payload(include_runtime: bool) -> dict[str, object]:
     """Builds the structured payload for the version command.
 
     The version can be overridden by a dedicated environment variable,
@@ -91,16 +91,15 @@ def _build_payload(include_runtime: bool) -> VersionPayload:
     else:
         version_ = cli_version
 
-    payload = VersionPayload(version=ascii_safe(version_, ENV_VERSION))
-
+    payload: dict[str, object] = {"version": ascii_safe(version_, ENV_VERSION)}
     if include_runtime:
-        return VersionPayload(
-            version=payload.version,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-            timestamp=time.time(),
+        payload.update(
+            {
+                "python": ascii_safe(platform.python_version(), "python_version"),
+                "platform": ascii_safe(platform.platform(), "platform"),
+                "timestamp": time.time(),
+            }
         )
-
     return payload
 
 
@@ -142,9 +141,13 @@ def version(
     command = "version"
     validate_common_flags(fmt, command, quiet)
 
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
 
     new_run_command(

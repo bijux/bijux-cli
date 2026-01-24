@@ -25,12 +25,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.commands.payloads import ConfigExportPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -43,9 +38,12 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
+from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.errors import ConfigError
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -87,15 +85,17 @@ def export_config(
             payload, indicating success or detailing the error.
     """
     command = "config export"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     quiet = effective.quiet
     include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
     pretty = effective.pretty
-    include_runtime = effective.include_runtime
 
     config_svc = DIContainer.current().resolve(ConfigProtocol)
 
@@ -103,20 +103,22 @@ def export_config(
         config_svc.export(path, out_fmt)
     except ConfigError as exc:
         code = 2 if getattr(exc, "http_status", 0) == 400 else 1
-        emit_error_with_policy(
-            f"Failed to export config: {exc}",
+        intent = resolve_exit_intent(
+            message=f"Failed to export config: {exc}",
             code=code,
             failure="export_failed",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            error_type=ErrorType.INTERNAL,
+            log_level=effective.log_level,
         )
+        raise ExitIntentError(intent) from exc
 
     if path != "-":
 
-        def payload_builder(include_runtime: bool) -> ConfigExportPayload:
+        def payload_builder(include_runtime: bool) -> dict[str, object]:
             """Builds the payload confirming a successful export to a file.
 
             Args:
@@ -125,18 +127,19 @@ def export_config(
             Returns:
                 ConfigExportPayload: The structured payload.
             """
-            payload = ConfigExportPayload(
-                status="exported",
-                file=path,
-                format=out_fmt or "auto",
-            )
+            payload: dict[str, object] = {
+                "status": "exported",
+                "file": path,
+                "format": out_fmt or "auto",
+            }
             if include_runtime:
-                return ConfigExportPayload(
-                    status=payload.status,
-                    file=payload.file,
-                    format=payload.format,
-                    python=ascii_safe(platform.python_version(), "python_version"),
-                    platform=ascii_safe(platform.platform(), "platform"),
+                payload.update(
+                    {
+                        "python": ascii_safe(
+                            platform.python_version(), "python_version"
+                        ),
+                        "platform": ascii_safe(platform.platform(), "platform"),
+                    }
                 )
             return payload
 

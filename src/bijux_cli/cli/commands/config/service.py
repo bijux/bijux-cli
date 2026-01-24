@@ -23,8 +23,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.commands.payloads import ConfigDumpPayload
-from bijux_cli.cli.core.command import new_run_command, resolve_command_config
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -37,8 +36,9 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -69,16 +69,20 @@ def config(
         return
 
     command = "config"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     quiet = effective.quiet
     pretty = effective.pretty
 
     config_svc = DIContainer.current().resolve(ConfigProtocol)
 
-    def payload_builder(include_runtime: bool) -> ConfigDumpPayload:
+    def payload_builder(include_runtime: bool) -> dict[str, object]:
         """Builds the payload containing all configuration values.
 
         Args:
@@ -89,12 +93,13 @@ def config(
                 and optional runtime metadata.
         """
         data = config_svc.all()
-        payload = ConfigDumpPayload(entries=dict(data))
+        payload: dict[str, object] = dict(data)
         if include_runtime:
-            return ConfigDumpPayload(
-                entries=payload.entries,
-                python=ascii_safe(platform.python_version(), "python_version"),
-                platform=ascii_safe(platform.platform(), "platform"),
+            payload.update(
+                {
+                    "python": ascii_safe(platform.python_version(), "python_version"),
+                    "platform": ascii_safe(platform.platform(), "platform"),
+                }
             )
         return payload
 

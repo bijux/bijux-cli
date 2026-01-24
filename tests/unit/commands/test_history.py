@@ -20,7 +20,7 @@ from bijux_cli.cli.commands.history.clear import (
 )
 from bijux_cli.cli.commands.history.service import history, resolve_history_service
 from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
-from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
+from bijux_cli.core.precedence import ExecutionPolicy
 
 
 @pytest.fixture
@@ -90,7 +90,7 @@ def test_resolve_history_service_success(mock_flags: dict[str, Any]) -> None:
             OutputFormat.JSON,
             False,
             False,
-            resolve_log_policy(LogLevel.INFO),
+            LogLevel.INFO,
         )
         assert result == mock_history_svc
 
@@ -104,7 +104,7 @@ def test_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
         mock_current.return_value = mock_di_instance
         mock_di_instance.resolve.side_effect = Exception("error")
         with patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
+            "bijux_cli.cli.commands.history.service.raise_exit_intent"
         ) as mock_emit:
             mock_emit.side_effect = typer.Exit
             with pytest.raises(typer.Exit):
@@ -113,17 +113,18 @@ def test_resolve_history_service_exception(mock_flags: dict[str, Any]) -> None:
                     OutputFormat.JSON,
                     False,
                     False,
-                    resolve_log_policy(LogLevel.INFO),
+                    LogLevel.INFO,
                 )
             mock_emit.assert_called_with(
                 "History service unavailable: error",
                 code=1,
                 failure="service_unavailable",
+                error_type=ErrorType.INTERNAL,
                 command="command",
                 fmt=OutputFormat.JSON,
                 quiet=False,
                 include_runtime=False,
-                log_policy=resolve_log_policy(LogLevel.INFO),
+                log_level=LogLevel.INFO,
             )
 
 
@@ -383,9 +384,7 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
 
@@ -412,7 +411,7 @@ def test_history_invalid_limit(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -428,9 +427,7 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
 
@@ -457,7 +454,7 @@ def test_history_invalid_sort(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -473,9 +470,7 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=MagicMock(),
         ),
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_emit.side_effect = typer.Exit
 
@@ -502,7 +497,7 @@ def test_history_invalid_group_by(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -519,9 +514,7 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
             return_value=MagicMock(),
         ),
         patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -551,7 +544,7 @@ def test_history_import_invalid_json(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -568,9 +561,7 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
             return_value=MagicMock(),
         ),
         patch("bijux_cli.cli.commands.history.service.Path") as mock_path,
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_file = MagicMock()
         mock_path.return_value = mock_file
@@ -593,7 +584,7 @@ def test_history_import_not_list(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -643,9 +634,7 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -668,7 +657,7 @@ def test_history_export_exception(mock_flags: dict[str, Any]) -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
             error_type=ErrorType.USER_INPUT,
         )
 
@@ -704,9 +693,7 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
         patch(
             "bijux_cli.cli.commands.history.clear.resolve_history_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.history.clear.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.clear.raise_exit_intent") as mock_emit,
     ):
         mock_history_svc = MagicMock()
         mock_resolve.return_value = mock_history_svc
@@ -718,11 +705,12 @@ def test_clear_history_exception(mock_flags: dict[str, Any]) -> None:
             "Failed to clear history: error",
             code=1,
             failure="clear_failed",
+            error_type=ErrorType.INTERNAL,
             command="history clear",
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -732,9 +720,7 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
         patch(
             "bijux_cli.cli.commands.history.clear.DIContainer.current"
         ) as mock_current,
-        patch(
-            "bijux_cli.cli.commands.history.clear.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.clear.raise_exit_intent") as mock_emit,
     ):
         mock_di_instance = MagicMock()
         mock_current.return_value = mock_di_instance
@@ -746,7 +732,7 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
                 OutputFormat.JSON,
                 False,
                 False,
-                resolve_log_policy(LogLevel.INFO),
+                LogLevel.INFO,
             )
         mock_emit.assert_called_with(
             "History service unavailable: error",
@@ -756,7 +742,7 @@ def test_clear_resolve_history_service_exception(mock_flags: dict[str, Any]) -> 
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -807,7 +793,7 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
             "bijux_cli.cli.commands.history.service.DIContainer.current",
             return_value=fake,
         ) as _,
-        patch("bijux_cli.cli.commands.history.service.emit_error_with_policy") as err,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as err,
     ):
         err.side_effect = typer.Exit()
         with pytest.raises(typer.Exit):
@@ -816,18 +802,19 @@ def test_resolve_history_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
                 OutputFormat.JSON,
                 False,
                 False,
-                resolve_log_policy(LogLevel.INFO),
+                LogLevel.INFO,
             )
-        err.assert_called_once_with(
-            "History service unavailable: boom",
-            code=1,
-            failure="service_unavailable",
-            command="history",
-            fmt=OutputFormat.JSON,
-            quiet=False,
-            include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
-        )
+    err.assert_called_once_with(
+        "History service unavailable: boom",
+        code=1,
+        failure="service_unavailable",
+        error_type=ErrorType.INTERNAL,
+        command="history",
+        fmt=OutputFormat.JSON,
+        quiet=False,
+        include_runtime=False,
+        log_level=LogLevel.INFO,
+    )
 
 
 def test_history_list_positive_limit_and_failure(
@@ -875,7 +862,7 @@ def test_history_list_positive_limit_and_failure(
             "bijux_cli.cli.commands.history.service.resolve_history_service",
             return_value=svc2,
         ),
-        patch("bijux_cli.cli.commands.history.service.emit_error_with_policy") as err,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as err,
     ):
         err.side_effect = typer.Exit()
         with pytest.raises(typer.Exit):
@@ -900,7 +887,7 @@ def test_history_list_positive_limit_and_failure(
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -999,13 +986,17 @@ def test_history_debug_flag_respects_pretty() -> None:
             log_level=LogLevel.DEBUG,
         )
 
-        mock_validate.assert_called_once_with(
-            "json", "history", False, include_runtime=False
-        )
+    mock_validate.assert_called_once_with(
+        OutputFormat.JSON,
+        "history",
+        False,
+        include_runtime=False,
+        log_level=LogLevel.INFO,
+    )
 
-        _, kwargs = mock_new_run.call_args
-        assert kwargs["pretty"] is False
-        assert kwargs["log_level"] == LogLevel.DEBUG
+    _, kwargs = mock_new_run.call_args
+    assert kwargs["pretty"] is True
+    assert kwargs["log_level"] == LogLevel.INFO
 
 
 def test_history_invoked_subcommand_skips() -> None:
@@ -1041,9 +1032,7 @@ def test_history_list_failure() -> None:
         patch(
             "bijux_cli.cli.commands.history.service.resolve_history_service"
         ) as mock_resolve,
-        patch(
-            "bijux_cli.cli.commands.history.service.emit_error_with_policy"
-        ) as mock_emit,
+        patch("bijux_cli.cli.commands.history.service.raise_exit_intent") as mock_emit,
     ):
         svc = MagicMock()
         svc.list.side_effect = Exception("boom")
@@ -1076,7 +1065,7 @@ def test_history_list_failure() -> None:
             fmt=OutputFormat.JSON,
             quiet=False,
             include_runtime=False,
-            log_policy=resolve_log_policy(LogLevel.INFO),
+            log_level=LogLevel.INFO,
         )
 
 
@@ -1402,7 +1391,7 @@ def test_history_positive_limit_branch_and_payload_builder(
     monkeypatch.setenv("BIJUXCLI_HISTORY_LIMIT", "")
     monkeypatch.setattr(
         "bijux_cli.cli.commands.history.service.validate_common_flags",
-        lambda fmt, cmd, quiet, include_runtime=False: "json",
+        lambda fmt, cmd, quiet, **kwargs: "json",
     )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.history.service.resolve_history_service",

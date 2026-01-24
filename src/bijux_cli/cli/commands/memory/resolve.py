@@ -12,10 +12,9 @@ unavailable.
 
 from __future__ import annotations
 
-from bijux_cli.cli.core.command import emit_error_with_policy
+from bijux_cli.cli.core.command import raise_exit_intent
 from bijux_cli.core.di import DIContainer
-from bijux_cli.core.enums import OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.services.diagnostics.contracts import MemoryProtocol
 
 
@@ -24,7 +23,7 @@ def resolve_memory_service(
     fmt_lower: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
 ) -> MemoryProtocol:
     """Resolves the MemoryProtocol implementation from the DI container.
 
@@ -33,7 +32,7 @@ def resolve_memory_service(
         fmt_lower (OutputFormat): The chosen output format.
         quiet (bool): If True, suppresses non-error output.
         include_runtime (bool): If True, includes runtime metadata in errors.
-        log_policy (LogPolicy): Logging policy for diagnostics.
+        log_level (LogLevel): Logging level for diagnostics.
 
     Returns:
         MemoryProtocol: An instance of the memory service.
@@ -45,13 +44,14 @@ def resolve_memory_service(
     try:
         return DIContainer.current().resolve(MemoryProtocol)
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Memory service unavailable: {exc}",
             code=1,
             failure="service_unavailable",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )

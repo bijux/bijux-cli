@@ -23,12 +23,7 @@ import platform
 
 import typer
 
-from bijux_cli.cli.commands.payloads import ConfigGetPayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -41,10 +36,12 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.errors import ConfigError
+from bijux_cli.core.exit_policy import ExitIntentError
+from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.services.config.contracts import ConfigProtocol
 
 
@@ -77,15 +74,17 @@ def get_config(
             payload, indicating success or detailing the error.
     """
     command = "config get"
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    effective = current_execution_policy()
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        effective.quiet,
+        include_runtime=effective.include_runtime,
+        log_level=effective.log_level,
     )
     quiet = effective.quiet
     include_runtime = effective.include_runtime
-    log_policy = effective.log_policy
     pretty = effective.pretty
-    include_runtime = effective.include_runtime
 
     config_svc = DIContainer.current().resolve(ConfigProtocol)
 
@@ -93,8 +92,8 @@ def get_config(
         value = config_svc.get(key)
     except ConfigError as exc:
         if str(exc).startswith("Config key not found"):
-            emit_error_with_policy(
-                f"Config key not found: {key}",
+            intent = resolve_exit_intent(
+                message=f"Config key not found: {key}",
                 code=2,
                 failure="not_found",
                 command=command,
@@ -102,21 +101,24 @@ def get_config(
                 quiet=quiet,
                 include_runtime=include_runtime,
                 error_type=ErrorType.USER_INPUT,
-                log_policy=log_policy,
+                log_level=effective.log_level,
                 extra={"key": key},
             )
-        emit_error_with_policy(
-            f"Failed to get config: {exc}",
+            raise ExitIntentError(intent) from exc
+        intent = resolve_exit_intent(
+            message=f"Failed to get config: {exc}",
             code=1,
             failure="get_failed",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            error_type=ErrorType.INTERNAL,
+            log_level=effective.log_level,
         )
+        raise ExitIntentError(intent) from exc
 
-    def payload_builder(include_runtime: bool) -> ConfigGetPayload:
+    def payload_builder(include_runtime: bool) -> dict[str, object]:
         """Builds a payload containing the retrieved configuration value.
 
         Args:
@@ -126,12 +128,13 @@ def get_config(
             dict[str, object]: A dictionary containing the key's value and
                 optional runtime metadata.
         """
-        payload = ConfigGetPayload(value=value)
+        payload: dict[str, object] = {"value": value}
         if include_runtime:
-            return ConfigGetPayload(
-                value=payload.value,
-                python=ascii_safe(platform.python_version(), "python_version"),
-                platform=ascii_safe(platform.platform(), "platform"),
+            payload.update(
+                {
+                    "python": ascii_safe(platform.python_version(), "python_version"),
+                    "platform": ascii_safe(platform.platform(), "platform"),
+                }
             )
         return payload
 

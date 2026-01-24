@@ -29,18 +29,13 @@ import importlib.util
 import inspect
 import platform
 import sys
-import traceback
 import types
 from typing import Any
 
 import anyio
 import typer
 
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -53,7 +48,8 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins.metadata import get_plugin_metadata
 
 
@@ -86,52 +82,57 @@ async def check_plugin(
     """
     command = "plugins check"
 
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    log_policy = effective.log_policy
-    pretty = effective.pretty
 
     try:
         meta = await anyio.to_thread.run_sync(get_plugin_metadata, name)
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             str(exc),
             code=1,
             failure="metadata_error",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     if not meta.path:
-        emit_error_with_policy(
+        raise_exit_intent(
             f'Plugin "{name}" has no local health hook',
             code=1,
             failure="health_unavailable",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     plug_dir = meta.path
     plug_py = plug_dir / "plugin.py"
     if not plug_py.is_file():
-        emit_error_with_policy(
+        raise_exit_intent(
             f'Plugin "{name}" not found',
             code=1,
             failure="not_found",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
             extra={"plugin": name},
         )
 
@@ -145,17 +146,15 @@ async def check_plugin(
         spec.loader.exec_module(module)
     except Exception as exc:
         err = f"Import error: {exc}"
-        if log_policy.show_internal:
-            err += "\n" + traceback.format_exc()
-        emit_error_with_policy(
+        raise_exit_intent(
             err,
             code=1,
             failure="import_error",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     async def _run_health() -> dict[str, Any]:
@@ -204,15 +203,15 @@ async def check_plugin(
     exit_code = 1 if result.get("status") == "unhealthy" else 0
 
     if result.get("error"):
-        emit_error_with_policy(
+        raise_exit_intent(
             result["error"],
             code=1,
             failure="health_error",
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     def _build_payload(include: bool) -> Mapping[str, object]:
@@ -237,6 +236,6 @@ async def check_plugin(
         quiet=quiet,
         fmt=fmt_lower,
         pretty=pretty,
-        log_level=log_level,
+        log_level=log_level_value,
         exit_code=exit_code,
     )

@@ -29,11 +29,7 @@ import sys
 
 import typer
 
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -47,6 +43,8 @@ from bijux_cli.cli.core.help_text import (
     HELP_QUIET,
 )
 from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.core.enums import ErrorType
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins.metadata import (
     discover_plugins,
     invalidate_plugin_cache,
@@ -83,36 +81,42 @@ def install_plugin(
     """
     command = "plugins install"
 
-    validate_common_flags(fmt, command, quiet)
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    log_policy = effective.log_policy
-    pretty = effective.pretty
     if Path(name).exists():
-        emit_error_with_policy(
+        raise_exit_intent(
             "Local paths are not supported; use a PyPI package name.",
             code=1,
             failure="local_path_not_supported",
+            error_type=ErrorType.USER_INPUT,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
-        emit_error_with_policy(
+        raise_exit_intent(
             "Invalid package name: only ASCII letters, digits, dash and underscore are allowed.",
             code=1,
             failure="invalid_name",
+            error_type=ErrorType.USER_INPUT,
             command=command,
             fmt=fmt_lower,
             quiet=quiet,
-            include_runtime=effective.include_runtime,
-            log_policy=log_policy,
+            include_runtime=include_runtime,
+            log_level=log_level_value,
         )
 
     if dry_run:
@@ -132,15 +136,16 @@ def install_plugin(
         )
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"pip install failed: {detail}",
                 code=1,
                 failure="pip_install_failed",
+                error_type=ErrorType.PLUGIN,
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=effective.include_runtime,
-                log_policy=log_policy,
+                include_runtime=include_runtime,
+                log_level=log_level_value,
             )
 
         invalidate_plugin_cache()
@@ -148,27 +153,29 @@ def install_plugin(
             discover_plugins()
             plugins = plugins_for_package(name)
         except Exception as exc:
-            emit_error_with_policy(
+            raise_exit_intent(
                 str(exc),
                 code=1,
                 failure="metadata_error",
+                error_type=ErrorType.PLUGIN,
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=effective.include_runtime,
-                log_policy=log_policy,
+                include_runtime=include_runtime,
+                log_level=log_level_value,
             )
 
         if not plugins:
-            emit_error_with_policy(
+            raise_exit_intent(
                 "Package installed but no bijux_cli.plugins entry point found.",
                 code=1,
                 failure="entrypoint_missing",
+                error_type=ErrorType.PLUGIN,
                 command=command,
                 fmt=fmt_lower,
                 quiet=quiet,
-                include_runtime=effective.include_runtime,
-                log_policy=log_policy,
+                include_runtime=include_runtime,
+                log_level=log_level_value,
             )
 
         payload = {

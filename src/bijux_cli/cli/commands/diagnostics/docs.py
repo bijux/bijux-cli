@@ -33,13 +33,7 @@ import typer
 import typer.core
 
 from bijux_cli.cli.color import resolve_click_color
-from bijux_cli.cli.commands.payloads import DocsSpecPayload, DocsWritePayload
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    normalize_payload,
-    record_history,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import raise_exit_intent, record_history
 from bijux_cli.cli.core.constants import (
     ENV_DOCS_OUT,
     ENV_TEST_IO_FAIL,
@@ -54,10 +48,9 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import (
-    contains_non_ascii_env,
-)
-from bijux_cli.core.enums import ExitCode, OutputFormat
+from bijux_cli.cli.core.validation import contains_non_ascii_env, validate_common_flags
+from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.core.version import __version__
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
@@ -117,7 +110,7 @@ def _resolve_output_target(
     return str(out), out
 
 
-def _build_spec_payload(include_runtime: bool) -> DocsSpecPayload:
+def _build_spec_payload(include_runtime: bool) -> dict[str, object]:
     """Builds the CLI specification payload.
 
     Args:
@@ -136,28 +129,23 @@ def _build_spec_payload(include_runtime: bool) -> DocsSpecPayload:
     from bijux_cli.cli.core.validation import ascii_safe
 
     version_str = ascii_safe(CLI_VERSION, "version")
-    payload = DocsSpecPayload(
-        version=version_str,
-        commands=list_registered_command_names(),
-    )
+    payload: dict[str, object] = {
+        "version": version_str,
+        "commands": list_registered_command_names(),
+    }
     if include_runtime:
-        return DocsSpecPayload(
-            version=payload.version,
-            commands=payload.commands,
-            python=ascii_safe(platform.python_version(), "python_version"),
-            platform=ascii_safe(platform.platform(), "platform"),
-        )
+        return {
+            "version": payload["version"],
+            "commands": payload["commands"],
+            "python": ascii_safe(platform.python_version(), "python_version"),
+            "platform": ascii_safe(platform.platform(), "platform"),
+        }
     return payload
 
 
-def _spec_mapping(spec: DocsSpecPayload | Mapping[str, object]) -> dict[str, object]:
+def _spec_mapping(spec: Mapping[str, object]) -> dict[str, object]:
     """Convert a spec payload into a mapping for service calls."""
-    if is_dataclass(spec):
-        data = asdict(spec)
-    elif isinstance(spec, Mapping):
-        data = dict(spec)
-    else:
-        raise TypeError("Docs spec payload must be a dataclass or mapping.")
+    data = asdict(spec) if is_dataclass(spec) else dict(spec)
     return {key: value for key, value in data.items() if value is not None}
 
 
@@ -204,25 +192,30 @@ def docs(
             violations, serialization failures, or I/O issues.
     """
     command = "docs"
-    effective, output_format = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    effective_include_runtime = policy.include_runtime
+    effective_pretty = policy.pretty
+    log_level_value = policy.log_level
+    output_format = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=effective_include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    log_policy = effective.log_policy
-    effective_include_runtime = effective.include_runtime
-    effective_pretty = effective.pretty
 
     if contains_non_ascii_env():
-        emit_error_with_policy(
+        raise_exit_intent(
             "Non-ASCII characters in environment variables",
             code=3,
             failure="ascii_env",
+            error_type=ErrorType.ASCII,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     if ctx.args:
@@ -232,15 +225,16 @@ def docs(
             if stray.startswith("-")
             else f"Too many arguments: {' '.join(ctx.args)}"
         )
-        emit_error_with_policy(
+        raise_exit_intent(
             msg,
             code=2,
             failure="args",
+            error_type=ErrorType.USAGE,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     out_env = os.environ.get(ENV_DOCS_OUT)
@@ -253,15 +247,16 @@ def docs(
         spec = _build_spec_payload(effective_include_runtime)
         spec_mapping = _spec_mapping(spec)
     except ValueError as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             str(exc),
             code=3,
             failure="ascii",
+            error_type=ErrorType.ASCII,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     docs_service = _resolve_docs_service()
@@ -270,27 +265,29 @@ def docs(
             spec_mapping, fmt=output_format, pretty=effective_pretty
         )
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Serialization failed: {exc}",
             code=1,
             failure="serialize",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     if os.environ.get(ENV_TEST_IO_FAIL) == "1":
-        emit_error_with_policy(
+        raise_exit_intent(
             "Simulated I/O failure for test",
             code=1,
             failure="io_fail",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     if target == "-":
@@ -327,28 +324,30 @@ def docs(
         )
 
     if path is None:
-        emit_error_with_policy(
+        raise_exit_intent(
             "Internal error: expected non-null output path",
             code=1,
             failure="internal",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     parent = path.parent
     if not parent.exists():
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Output directory does not exist: {parent}",
             code=2,
             failure="output_dir",
+            error_type=ErrorType.USER_INPUT,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     try:
@@ -359,15 +358,16 @@ def docs(
             pretty=effective_pretty,
         )
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Failed to write spec: {exc}",
             code=2,
             failure="write",
+            error_type=ErrorType.INTERNAL,
             command=command,
             fmt=output_format,
             quiet=quiet,
             include_runtime=effective_include_runtime,
-            log_policy=log_policy,
+            log_level=log_level_value,
         )
 
     if quiet:
@@ -390,9 +390,7 @@ def docs(
         ExitIntent(
             code=ExitCode.SUCCESS,
             stream="stdout",
-            payload=normalize_payload(
-                DocsWritePayload(status="written", file=str(path))
-            ),
+            payload={"status": "written", "file": str(path)},
             fmt=output_format,
             pretty=effective_pretty,
             show_traceback=False,

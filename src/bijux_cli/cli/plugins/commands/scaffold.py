@@ -31,11 +31,7 @@ import unicodedata
 
 import typer
 
-from bijux_cli.cli.core.command import (
-    emit_error_with_policy,
-    new_run_command,
-    resolve_command_config,
-)
+from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -49,8 +45,8 @@ from bijux_cli.cli.core.help_text import (
     HELP_QUIET,
 )
 from bijux_cli.cli.core.validation import validate_common_flags
-from bijux_cli.core.enums import ErrorType, OutputFormat
-from bijux_cli.core.precedence import LogPolicy
+from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins.validation import PLUGIN_NAME_RE
 
 
@@ -64,7 +60,7 @@ class ScaffoldIntent:
     force: bool
     quiet: bool
     include_runtime: bool
-    log_policy: LogPolicy
+    log_level: LogLevel
     fmt: OutputFormat
 
 
@@ -78,11 +74,11 @@ def _build_scaffold_intent(
     fmt: OutputFormat,
     quiet: bool,
     include_runtime: bool,
-    log_policy: LogPolicy,
+    log_level: LogLevel,
 ) -> ScaffoldIntent:
     """Validate inputs and build a scaffold intent."""
     if name in keyword.kwlist:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Invalid plugin name: '{name}' is a reserved Python keyword.",
             code=1,
             failure="reserved_keyword",
@@ -90,12 +86,12 @@ def _build_scaffold_intent(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
     if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
-        emit_error_with_policy(
+        raise_exit_intent(
             "Invalid plugin name: only ASCII letters, digits, dash and underscore are allowed.",
             code=1,
             failure="invalid_name",
@@ -103,12 +99,12 @@ def _build_scaffold_intent(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
 
     if not template:
-        emit_error_with_policy(
+        raise_exit_intent(
             "No plugin template found. Please specify --template (path or URL).",
             code=1,
             failure="no_template",
@@ -116,7 +112,7 @@ def _build_scaffold_intent(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
             error_type=ErrorType.USER_INPUT,
         )
     if template is None:
@@ -130,7 +126,7 @@ def _build_scaffold_intent(
         try:
             parent.mkdir(parents=True, exist_ok=True)
         except Exception as exc:
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Failed to create output directory '{parent}': {exc}",
                 code=1,
                 failure="create_dir_failed",
@@ -138,10 +134,10 @@ def _build_scaffold_intent(
                 fmt=fmt,
                 quiet=quiet,
                 include_runtime=include_runtime,
-                log_policy=log_policy,
+                log_level=log_level,
             )
     elif not parent.is_dir():
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Output directory '{parent}' is not a directory.",
             code=1,
             failure="not_dir",
@@ -149,7 +145,7 @@ def _build_scaffold_intent(
             fmt=fmt,
             quiet=quiet,
             include_runtime=include_runtime,
-            log_policy=log_policy,
+            log_level=log_level,
         )
 
     normalized = name.lower()
@@ -159,7 +155,7 @@ def _build_scaffold_intent(
             and existing.name.lower() == normalized
             and existing.resolve() != target.resolve()
         ):
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Plugin name '{name}' conflicts with existing directory '{existing.name}'. "
                 "Plugin names must be unique (case-insensitive).",
                 code=1,
@@ -168,12 +164,12 @@ def _build_scaffold_intent(
                 fmt=fmt,
                 quiet=quiet,
                 include_runtime=include_runtime,
-                log_policy=log_policy,
+                log_level=log_level,
             )
 
     if target.exists() or target.is_symlink():
         if not force:
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Directory '{target}' is not empty – use --force to overwrite.",
                 code=1,
                 failure="dir_not_empty",
@@ -181,7 +177,7 @@ def _build_scaffold_intent(
                 fmt=fmt,
                 quiet=quiet,
                 include_runtime=include_runtime,
-                log_policy=log_policy,
+                log_level=log_level,
             )
         try:
             if target.is_symlink():
@@ -191,7 +187,7 @@ def _build_scaffold_intent(
             else:
                 target.unlink()
         except Exception as exc:
-            emit_error_with_policy(
+            raise_exit_intent(
                 f"Failed to remove existing '{target}': {exc}",
                 code=1,
                 failure="remove_failed",
@@ -199,7 +195,7 @@ def _build_scaffold_intent(
                 fmt=fmt,
                 quiet=quiet,
                 include_runtime=include_runtime,
-                log_policy=log_policy,
+                log_level=log_level,
             )
 
     return ScaffoldIntent(
@@ -209,7 +205,7 @@ def _build_scaffold_intent(
         force=force,
         quiet=quiet,
         include_runtime=include_runtime,
-        log_policy=log_policy,
+        log_level=log_level,
         fmt=fmt,
     )
 
@@ -231,7 +227,7 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
         if not intent.target.is_dir():
             raise RuntimeError("Template copy failed")
     except ModuleNotFoundError:
-        emit_error_with_policy(
+        raise_exit_intent(
             "cookiecutter is required but not installed.",
             code=1,
             failure="cookiecutter_missing",
@@ -239,11 +235,11 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
         )
     except Exception as exc:
         msg = f"Scaffold failed: {exc} (template not found or invalid)"
-        emit_error_with_policy(
+        raise_exit_intent(
             msg,
             code=1,
             failure="scaffold_failed",
@@ -251,12 +247,12 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
         )
 
     plugin_json = intent.target / "plugin.json"
     if not plugin_json.is_file():
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Scaffold failed: plugin.json not found in '{intent.target}'.",
             code=1,
             failure="plugin_json_missing",
@@ -264,7 +260,7 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
         )
     try:
         meta = json.loads(plugin_json.read_text("utf-8"))
@@ -276,7 +272,7 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
         ):
             raise ValueError("Missing required fields")
     except Exception as exc:
-        emit_error_with_policy(
+        raise_exit_intent(
             f"Scaffold failed: plugin.json invalid: {exc}",
             code=1,
             failure="plugin_json_invalid",
@@ -284,7 +280,7 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
             fmt=intent.fmt,
             quiet=intent.quiet,
             include_runtime=intent.include_runtime,
-            log_policy=intent.log_policy,
+            log_level=intent.log_level,
         )
 
     return {"status": "created", "plugin": intent.name, "dir": str(intent.target)}
@@ -332,14 +328,18 @@ def scaffold_plugin(
     """
     command = "plugins scaffold"
 
-    validate_common_flags(fmt, command, quiet)
-    effective, fmt_lower = resolve_command_config(
-        command=command,
-        fmt=fmt,
+    policy = current_execution_policy()
+    quiet = policy.quiet
+    include_runtime = policy.include_runtime
+    log_level_value = policy.log_level
+    pretty = policy.pretty
+    fmt_lower = validate_common_flags(
+        fmt,
+        command,
+        quiet,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
-    quiet = effective.quiet
-    log_policy = effective.log_policy
-    pretty = effective.pretty
 
     intent = _build_scaffold_intent(
         name=name,
@@ -349,8 +349,8 @@ def scaffold_plugin(
         command=command,
         fmt=fmt_lower,
         quiet=quiet,
-        include_runtime=effective.include_runtime,
-        log_policy=log_policy,
+        include_runtime=include_runtime,
+        log_level=log_level_value,
     )
     payload = _scaffold_project(intent)
 
@@ -360,5 +360,5 @@ def scaffold_plugin(
         quiet=quiet,
         fmt=fmt_lower,
         pretty=pretty,
-        log_level=log_level,
+        log_level=log_level_value,
     )

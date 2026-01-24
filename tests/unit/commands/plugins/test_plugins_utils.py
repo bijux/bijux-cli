@@ -18,7 +18,6 @@ from bijux_cli.cli.plugins.commands.validation import (
     refuse_on_symlink,
 )
 from bijux_cli.core.enums import LogLevel, OutputFormat
-from bijux_cli.core.precedence import resolve_log_policy
 
 
 def test_ignore_hidden_and_broken_symlinks(
@@ -78,7 +77,7 @@ def test_refuse_on_symlink_noop(tmp_path: Path) -> None:
         "plugins install",
         OutputFormat.JSON,
         False,
-        resolve_log_policy(LogLevel.INFO),
+        LogLevel.INFO,
     )
 
 
@@ -93,25 +92,25 @@ def test_refuse_on_symlink_calls_emit(
 
     called: dict[str, Any] = {}
 
-    def fake_emit(
-        msg: str,
+    def fake_resolve_exit_intent(
+        message: str,
         code: int,
         failure: str,
         **kwargs: Any,
     ) -> None:
         called.update(
-            message=msg,
+            message=message,
             code=code,
             failure=failure,
             command=kwargs.get("command"),
             fmt=kwargs.get("fmt"),
             quiet=kwargs.get("quiet"),
             include_runtime=kwargs.get("include_runtime"),
-            log_policy=kwargs.get("log_policy"),
+            log_level=kwargs.get("log_level"),
         )
         raise SystemExit(code)
 
-    monkeypatch.setattr(validation_mod, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(validation_mod, "resolve_exit_intent", fake_resolve_exit_intent)
 
     with pytest.raises(SystemExit) as exc:
         refuse_on_symlink(
@@ -119,7 +118,7 @@ def test_refuse_on_symlink_calls_emit(
             "plugins uninstall",
             OutputFormat.YAML,
             True,
-            resolve_log_policy(LogLevel.INFO),
+            LogLevel.INFO,
         )
 
     assert exc.value.code == 1

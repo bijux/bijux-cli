@@ -145,8 +145,9 @@ def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
         fmt: str | None = None,
         quiet: bool = False,
         include_runtime: bool = False,
-        log_policy: Any | None = None,
+        log_level: Any | None = None,
         extra: dict[str, Any] | None = None,
+        **_kwargs: Any,
     ) -> None:
         payload = {"error": message, "failure": failure}
         if command:
@@ -157,7 +158,7 @@ def _capture_emit(monkeypatch: pytest.MonkeyPatch) -> None:
             payload.update(extra)
         raise DummyExitError(code, payload)
 
-    monkeypatch.setattr(plugin_check, "emit_error_with_policy", fake_emit)
+    monkeypatch.setattr(plugin_check, "raise_exit_intent", fake_emit)
 
 
 @pytest.mark.parametrize(

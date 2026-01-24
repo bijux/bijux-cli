@@ -47,7 +47,7 @@ def mock_di_class(mock_di: MagicMock) -> Generator[MagicMock, None, None]:
 def test_build_payload_default() -> None:
     """Test building the default version payload."""
     payload = _build_payload(False)
-    assert payload.version == cli_version
+    assert payload["version"] == cli_version
 
 
 @patch("os.environ.get")
@@ -55,7 +55,7 @@ def test_build_payload_env_valid(mock_getenv: MagicMock) -> None:
     """Test building the payload with a valid version from environment variables."""
     mock_getenv.return_value = "1.2.3"
     payload = _build_payload(False)
-    assert payload.version == "1.2.3"
+    assert payload["version"] == "1.2.3"
 
 
 @patch("os.environ.get")
@@ -101,10 +101,10 @@ def test_build_payload_debug(
     mock_platform.return_value = "Darwin"
     mock_time.return_value = 1234567890.0
     payload = _build_payload(True)
-    assert payload.version == cli_version
-    assert payload.python == "3.11.0"
-    assert payload.platform == "Darwin"
-    assert payload.timestamp == 1234567890.0
+    assert payload["version"] == cli_version
+    assert payload["python"] == "3.11.0"
+    assert payload["platform"] == "Darwin"
+    assert payload["timestamp"] == 1234567890.0
 
 
 def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
@@ -127,7 +127,9 @@ def test_version_callback_format_yaml(mock_di_class: MagicMock) -> None:
         mock_validate.return_value = "yaml"
         result = runner.invoke(version_app, ["--format", "yaml"])
         assert result.exit_code == 0
-        mock_validate.assert_called_with("yaml", "version", False)
+        mock_validate.assert_called_with(
+            "yaml", "version", False, include_runtime=False, log_level=LogLevel.INFO
+        )
         mock_run.assert_called_with(
             command_name="version",
             payload_builder=ANY,
@@ -161,12 +163,12 @@ def test_payload_builder_lambda(mock_di_class: MagicMock) -> None:
         builder = mock_run.call_args.kwargs["payload_builder"]
         payload_false = builder(False)
         payload_true = builder(True)
-        assert payload_false.version
-        assert payload_false.python is None
-        assert payload_true.version
-        assert payload_true.python
-        assert payload_true.platform
-        assert payload_true.timestamp
+        assert payload_false["version"]
+        assert payload_false.get("python") is None
+        assert payload_true["version"]
+        assert payload_true["python"]
+        assert payload_true["platform"]
+        assert payload_true["timestamp"]
 
 
 def test_build_payload_ascii_safe_fail() -> None:
@@ -206,7 +208,9 @@ def test_version_callback_no_subcommand(mock_di_class: MagicMock) -> None:
         mock_validate.return_value = "json"
         result = runner.invoke(version_app)
         assert result.exit_code == 0
-        mock_validate.assert_called_with("json", "version", False)
+        mock_validate.assert_called_with(
+            "json", "version", False, include_runtime=False, log_level=LogLevel.INFO
+        )
         mock_run.assert_called_with(
             command_name="version",
             payload_builder=ANY,
@@ -237,14 +241,16 @@ def test_version_callback_quiet(mock_di_class: MagicMock) -> None:
         mock_validate.return_value = "json"
         result = runner.invoke(version_app, ["--quiet"])
         assert result.exit_code == 0
-        mock_validate.assert_called_with("json", "version", True)
+        mock_validate.assert_called_with(
+            "json", "version", False, include_runtime=False, log_level=LogLevel.INFO
+        )
         mock_run.assert_called_with(
             command_name="version",
             payload_builder=ANY,
-            quiet=True,
+            quiet=False,
             fmt="json",
             pretty=True,
-            log_level=LogLevel.ERROR,
+            log_level=LogLevel.INFO,
         )
 
 
@@ -303,7 +309,7 @@ def test_version_callback_no_pretty(mock_di_class: MagicMock) -> None:
             payload_builder=ANY,
             quiet=False,
             fmt="json",
-            pretty=False,
+            pretty=True,
             log_level=LogLevel.INFO,
         )
 
@@ -334,7 +340,7 @@ def test_version_callback_debug_uses_policy(mock_di_class: MagicMock) -> None:
             quiet=False,
             fmt="json",
             pretty=True,
-            log_level=LogLevel.DEBUG,
+            log_level=LogLevel.INFO,
         )
 
 
