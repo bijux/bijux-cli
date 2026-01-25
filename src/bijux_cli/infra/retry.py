@@ -72,7 +72,7 @@ class ExponentialBackoffRetryPolicy:
                 last_error = exc
                 attempt += 1
                 delay = min(self._base_delay * (2**attempt), self._max_delay)
-                delay = delay + random.uniform(0.0, delay / 4)  # noqa: S311
+                delay = delay + random.uniform(0.0, delay / 4)  # noqa: S311  # nosec B311 - non-crypto jitter
                 self._telemetry.event(
                     "retry_backoff",
                     {"attempt": attempt, "delay": delay, "error": str(exc)},

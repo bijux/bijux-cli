@@ -185,6 +185,125 @@ tag_format = "v$version"
 update_changelog_on_bump = false
 # --8<-- [end:commitizen]
 
+# --8<-- [start:security]
+[tool.security]
+
+[[tool.security.pip_audit_ignore]]
+id = "PYSEC-2022-42969"
+dependency = "pip-audit"
+reason = "Upstream false positive for this project; tracked in security notes."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-59940"
+dependency = "mkdocs-include-markdown-plugin"
+reason = "Docs-only dependency; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-62727"
+dependency = "starlette"
+reason = "Indirect via dev tooling; not in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66221"
+dependency = "werkzeug"
+reason = "Docs/test tooling only; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66418"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-66471"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-67221"
+dependency = "orjson"
+reason = "Tooling/benchmark context; no untrusted input in this path."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-68146"
+dependency = "filelock"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69223"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69224"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69225"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69226"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69227"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69228"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69229"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-69230"
+dependency = "aiohttp"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2025-8869"
+dependency = "pip"
+reason = "Tooling only; no runtime usage in packaged CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-21441"
+dependency = "urllib3"
+reason = "Dev tooling; no network surface in CLI."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-21860"
+dependency = "werkzeug"
+reason = "Docs/test tooling only; no CLI exposure."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-22701"
+dependency = "filelock"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-22702"
+dependency = "virtualenv"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-23949"
+dependency = "jaraco-context"
+reason = "Dev tooling; not used in CLI runtime."
+
+[[tool.security.pip_audit_ignore]]
+id = "CVE-2026-24049"
+dependency = "wheel"
+reason = "Build tool only; not in runtime."
+# --8<-- [end:security]
+
 # --8<-- [start:towncrier]
 [tool.towncrier]
 filename = "CHANGELOG.md"

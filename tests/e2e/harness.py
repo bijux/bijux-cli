@@ -101,12 +101,14 @@ class E2EHarness:
         args: Iterable[str],
         *,
         input_data: str | None = None,
-        timeout: int = 10,
+        timeout: int | None = None,
         extra_env: dict[str, str] | None = None,
     ) -> HarnessResult:
         """Run the CLI with the harness environment."""
         merged = self.env.copy()
         merged.update(extra_env or {})
+        if timeout is None:
+            timeout = int(merged.get("BIJUXCLI_TEST_TIMEOUT", "10"))
         proc = subprocess.run(  # noqa: S603
             [str(self.bin), *args],
             input=input_data,
