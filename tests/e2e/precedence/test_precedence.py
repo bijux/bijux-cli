@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Precedence E2E tests."""
+"""Intent: precedence rules across CLI, env, and config.
+
+Why E2E: precedence + exit routing only holds at CLI boundary.
+Primary invariants: exit code stability, config consistency, no traceback.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,7 @@ from tests.e2e.invariants import (
     assert_no_traceback,
 )
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.precedence]
 
 
 def _json_value(payload: str) -> str:
@@ -52,6 +56,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
         ("prec_b", "left", "right"),
     ],
 )
+@pytest.mark.core
 def test_env_overrides_config_value(key: str, cfg_val: str, env_val: str) -> None:
     with E2EHarness() as h:
         res = h.run(["config", "set", f"{key}={cfg_val}"])
@@ -83,6 +88,7 @@ def test_env_overrides_config_value(key: str, cfg_val: str, env_val: str) -> Non
         "prec_missing_b",
     ],
 )
+@pytest.mark.core
 def test_quiet_trace_and_json_preserve_exit_codes(missing_key: str) -> None:
     with E2EHarness() as h:
         res_trace = h.run(["config", "get", missing_key, "--log-level", "trace"])

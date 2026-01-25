@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Plugin lifecycle E2E tests."""
+"""Intent: abusive plugin lifecycle sequences.
+
+Why E2E: filesystem + registry consistency only visible via real CLI.
+Primary invariants: plugin consistency, exit stability, no corruption.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,7 @@ from tests.e2e.invariants import (
 )
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.plugin]
 
 
 def _restart(h: E2EHarness) -> E2EHarness:
@@ -34,6 +38,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
         "dummy_plugin_e",
     ],
 )
+@pytest.mark.core
 def test_plugin_install_uninstall_reinstall(name: str) -> None:
     with E2EHarness() as h:
         dummy_dir = write_dummy_plugin(h.root / name, name=name)
@@ -65,6 +70,7 @@ def test_plugin_install_uninstall_reinstall(name: str) -> None:
         "idem_plugin_d",
     ],
 )
+@pytest.mark.core
 def test_plugin_install_is_idempotent_with_force(name: str) -> None:
     with E2EHarness() as h:
         dummy_dir = write_dummy_plugin(h.root / name, name=name)

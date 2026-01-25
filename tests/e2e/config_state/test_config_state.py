@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Config state E2E tests."""
+"""Intent: stateful config mutations and reversibility.
+
+Why E2E: only CLI sequences reveal persistence and idempotence issues.
+Primary invariants: config consistency, no corruption, no traceback.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +19,7 @@ from tests.e2e.invariants import (
     capture_state,
 )
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.stateful]
 
 
 def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
@@ -42,6 +46,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
         ("kappa", "10"),
     ],
 )
+@pytest.mark.core
 def test_config_set_unset_set_again(key: str, value: str) -> None:
     with E2EHarness() as h:
         res = h.run(["config", "set", f"{key}={value}"])
@@ -110,6 +115,7 @@ def test_config_unset_preserves_other_keys(primary: str, secondary: str) -> None
         ("idemp_e", "5"),
     ],
 )
+@pytest.mark.core
 def test_config_set_is_idempotent(key: str, value: str) -> None:
     with E2EHarness() as h:
         res = h.run(["config", "set", f"{key}={value}"])
@@ -140,6 +146,7 @@ def test_config_set_is_idempotent(key: str, value: str) -> None:
         "unset_e",
     ],
 )
+@pytest.mark.core
 def test_config_unset_is_idempotent(key: str) -> None:
     with E2EHarness() as h:
         res = h.run(["config", "set", f"{key}=1"])

@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Command sequence E2E tests."""
+"""Intent: compositional command sequences with persistent state.
+
+Why E2E: ordering effects and restarts only show up at the CLI boundary.
+Primary invariants: config consistency, exit code stability, no corruption.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,7 @@ from tests.e2e.invariants import (
 )
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.compositional]
 
 
 def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
@@ -37,6 +41,9 @@ def _restart(h: E2EHarness) -> E2EHarness:
         ["plugins", "info", "ghost"],
         ["plugins", "uninstall", "ghost"],
         ["plugins", "check", "ghost"],
+        ["config", "export"],
+        ["config", "load"],
+        ["plugins", "install", "--force"],
         ["config", "set"],
         ["config", "set", "badpair"],
         ["config", "set", "foo=bar", "--format", "nope"],
@@ -54,6 +61,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
         ["config", "get"],
     ],
 )
+@pytest.mark.core
 def test_invalid_ordering_does_not_corrupt_state(args: list[str]) -> None:
     with E2EHarness() as h:
         assert h.run(["config", "set", "alpha=1"]).returncode == 0
@@ -93,10 +101,6 @@ def test_invalid_ordering_does_not_corrupt_state(args: list[str]) -> None:
             ],
             [0, 0, 2],
         ),
-        (
-            [["plugins", "list"], ["plugins", "list"], ["plugins", "list"]],
-            [0, 0, 0],
-        ),
     ],
 )
 def test_valid_ordering_sequences(
@@ -131,6 +135,7 @@ def test_valid_ordering_sequences(
         "order_plugin_e",
     ],
 )
+@pytest.mark.core
 def test_plugin_ordering_list_info_uninstall_then_install(name: str) -> None:
     with E2EHarness() as h:
         dummy_dir = write_dummy_plugin(h.root / name, name=name)

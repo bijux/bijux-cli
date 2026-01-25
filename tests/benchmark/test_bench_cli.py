@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess  # noqa: S603
 import sys
 
+import pytest
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 
 
@@ -21,6 +22,7 @@ def _base_env(tmp_path: Path) -> dict[str, str]:
     }
 
 
+@pytest.mark.canary
 def test_cli_startup_benchmark(benchmark: BenchmarkFixture, tmp_path: Path) -> None:
     env = _base_env(tmp_path)
 
@@ -45,6 +47,7 @@ def test_cli_startup_benchmark(benchmark: BenchmarkFixture, tmp_path: Path) -> N
     assert benchmark.stats.stats.mean < 3.0
 
 
+@pytest.mark.canary
 def test_plugin_discovery_benchmark(
     benchmark: BenchmarkFixture, tmp_path: Path
 ) -> None:
