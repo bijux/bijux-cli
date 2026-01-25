@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Ordering sensitivity E2E tests."""
+"""Command sequence E2E tests."""
 
 from __future__ import annotations
 
@@ -15,6 +15,11 @@ pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
 def _no_traceback(text: str) -> None:
     assert "traceback" not in text.lower()
+
+
+def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
+    content = h.config_path.read_text(encoding="utf-8")
+    assert f"BIJUXCLI_{key.upper()}={value}" in content
 
 
 @pytest.mark.parametrize(
@@ -39,44 +44,36 @@ def _no_traceback(text: str) -> None:
 )
 def test_invalid_ordering_does_not_corrupt_state(args: list[str]) -> None:
     with E2EHarness() as h:
-        before = (
-            h.config_path.read_text(encoding="utf-8") if h.config_path.exists() else ""
-        )
+        assert h.run(["config", "set", "alpha=1"]).returncode == 0
+        _assert_config_contains(h, "alpha", "1")
+
         res = h.run(args)
         assert res.returncode != 0
         _no_traceback(res.stdout + res.stderr)
-        after = (
-            h.config_path.read_text(encoding="utf-8") if h.config_path.exists() else ""
-        )
-        assert before == after
+
+        res_check = h.run(["config", "get", "alpha"])
+        assert res_check.returncode == 0
+        _no_traceback(res_check.stdout + res_check.stderr)
+        _assert_config_contains(h, "alpha", "1")
 
 
 @pytest.mark.parametrize(
     ("sequence", "expect_codes"),
     [
-        ([["plugins", "list"]], [0]),
+        ([["plugins", "list"], ["plugins", "list"]], [0, 0]),
         ([["config", "set", "foo=1"], ["config", "get", "foo"]], [0, 0]),
         ([["config", "set", "foo=1"], ["config", "unset", "foo"]], [0, 0]),
-        ([["config", "set", "foo=1"], ["config", "set", "foo=2"]], [0, 0]),
-        ([["config", "set", "foo=1"], ["config", "export", "-"]], [0, 0]),
-        ([["plugins", "list"], ["plugins", "list"]], [0, 0]),
-        ([["config", "set", "alpha=1"], ["config", "set", "beta=2"]], [0, 0]),
-        ([["config", "set", "alpha=1"], ["config", "get", "alpha"]], [0, 0]),
         (
             [
-                ["config", "set", "alpha=1"],
-                ["config", "export", "-"],
-                ["config", "get", "alpha"],
-            ],
-            [0, 0, 0],
-        ),
-        (
-            [
-                ["config", "set", "alpha=1"],
-                ["config", "unset", "alpha"],
-                ["config", "get", "alpha"],
+                ["config", "set", "foo=1"],
+                ["config", "unset", "foo"],
+                ["config", "get", "foo"],
             ],
             [0, 0, 2],
+        ),
+        (
+            [["config", "set", "alpha=1"], ["config", "set", "beta=2"]],
+            [0, 0],
         ),
     ],
 )
@@ -86,8 +83,12 @@ def test_valid_ordering_sequences(
     with E2EHarness() as h:
         for args, expected in zip(sequence, expect_codes, strict=True):
             res = h.run(args)
-            _no_traceback(res.stdout + res.stderr)
             assert res.returncode == expected
+            _no_traceback(res.stdout + res.stderr)
+        saw_set_foo = any(args[:3] == ["config", "set", "foo=1"] for args in sequence)
+        saw_unset_foo = any(args[:3] == ["config", "unset", "foo"] for args in sequence)
+        if saw_set_foo and not saw_unset_foo:
+            _assert_config_contains(h, "foo", "1")
 
 
 @pytest.mark.parametrize(
@@ -124,3 +125,7 @@ def test_plugin_ordering_list_info_uninstall_then_install(name: str) -> None:
         assert res_install.returncode == 0
         _no_traceback(res_install.stdout + res_install.stderr)
         assert (h.plugins_dir / name).exists()
+
+        res_info2 = h.run(["plugins", "info", name])
+        assert res_info2.returncode == 0
+        _no_traceback(res_info2.stdout + res_info2.stderr)

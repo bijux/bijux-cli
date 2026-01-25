@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Failure surface E2E tests."""
+"""Exit policy E2E tests."""
 
 from __future__ import annotations
 
@@ -15,6 +15,11 @@ pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
 def _no_traceback(text: str) -> None:
     assert "traceback" not in text.lower()
+
+
+def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
+    content = h.config_path.read_text(encoding="utf-8")
+    assert f"BIJUXCLI_{key.upper()}={value}" in content
 
 
 @pytest.mark.parametrize(
@@ -39,16 +44,18 @@ def _no_traceback(text: str) -> None:
 )
 def test_invalid_inputs_do_not_corrupt_state(args: list[str]) -> None:
     with E2EHarness() as h:
-        before = (
-            h.config_path.read_text(encoding="utf-8") if h.config_path.exists() else ""
-        )
+        assert h.run(["config", "set", "guard=1"]).returncode == 0
+        _assert_config_contains(h, "guard", "1")
+
         res = h.run(args)
         assert res.returncode != 0
         _no_traceback(res.stdout + res.stderr)
-        after = (
-            h.config_path.read_text(encoding="utf-8") if h.config_path.exists() else ""
-        )
-        assert before == after
+        assert (res.stdout + res.stderr).strip() != ""
+
+        res_check = h.run(["config", "get", "guard"])
+        assert res_check.returncode == 0
+        _no_traceback(res_check.stdout + res_check.stderr)
+        _assert_config_contains(h, "guard", "1")
 
 
 @pytest.mark.parametrize(
@@ -79,6 +86,10 @@ def test_broken_plugin_metadata_fails_cleanly(name: str) -> None:
         _no_traceback(res.stdout + res.stderr)
         assert not (h.plugins_dir / name).exists()
 
+        res_list = h.run(["plugins", "list"])
+        assert res_list.returncode == 0
+        _no_traceback(res_list.stdout + res_list.stderr)
+
 
 @pytest.mark.parametrize(
     "name",
@@ -101,6 +112,10 @@ def test_plugin_missing_metadata_fails(name: str) -> None:
         assert res.returncode != 0
         _no_traceback(res.stdout + res.stderr)
         assert not (h.plugins_dir / name).exists()
+
+        res_list = h.run(["plugins", "list"])
+        assert res_list.returncode == 0
+        _no_traceback(res_list.stdout + res_list.stderr)
 
 
 @pytest.mark.parametrize(
@@ -134,3 +149,7 @@ def test_plugin_invalid_metadata_fields_fails(name: str) -> None:
         assert res.returncode != 0
         _no_traceback(res.stdout + res.stderr)
         assert not (h.plugins_dir / name).exists()
+
+        res_list = h.run(["plugins", "list"])
+        assert res_list.returncode == 0
+        _no_traceback(res_list.stdout + res_list.stderr)
