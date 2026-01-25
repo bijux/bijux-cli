@@ -15,6 +15,7 @@ for testing.
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, cast
 
 from bijux_cli.core.contracts import ExecutionContext
@@ -144,6 +145,9 @@ def register_default_services(
                 bijux_cli.services.logging.observability.Observability
             ),
             telemetry=di.resolve(TelemetryProtocol),
+            max_workers=int(os.getenv("BIJUXCLI_MAX_WORKERS", "4")),
+            allowed_commands=os.getenv("BIJUXCLI_ALLOWED_COMMANDS", "echo,ls,cat,grep")
+            .split(","),
         ),
     )
     di.register(ProcessRunner, lambda: di.resolve(bijux_cli.infra.process.ProcessPool))

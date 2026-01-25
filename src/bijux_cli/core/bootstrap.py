@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from bijux_cli.core.bootstrap_impl import main
+from bijux_cli.core.bootstrap_flow import main
 from bijux_cli.core.intent import split_command_args
 
 _split_command_args = split_command_args

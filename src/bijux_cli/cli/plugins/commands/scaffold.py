@@ -47,7 +47,7 @@ from bijux_cli.cli.core.help_text import (
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.precedence import current_execution_policy
-from bijux_cli.plugins.helpers import PLUGIN_NAME_RE
+from bijux_cli.plugins.catalog import PLUGIN_NAME_RE
 
 
 @dataclass(frozen=True)

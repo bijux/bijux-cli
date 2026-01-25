@@ -25,7 +25,7 @@ def test_orjson_serializer_json_roundtrip() -> None:
     tel = MagicMock(spec=TelemetryProtocol)
     serializer = OrjsonSerializer(tel)
     payload = {"a": 1}
-    dumped = serializer.dumps(payload)
+    dumped = serializer.dumps(payload, fmt=OutputFormat.JSON, pretty=False)
     assert json.loads(dumped) == payload
 
 

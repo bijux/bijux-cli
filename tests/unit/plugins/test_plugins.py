@@ -1726,9 +1726,9 @@ def test_plugin_submodule_loader_importable() -> None:
 
 def test_plugin_submodule_helpers_importable() -> None:
     """Test the helpers submodule is importable."""
-    import bijux_cli.plugins.helpers as helpers_mod
+    import bijux_cli.plugins.catalog as helpers_mod
 
-    assert helpers_mod.__name__.endswith("helpers")
+    assert helpers_mod.__name__.endswith("catalog")
 
 
 def test_plugin_submodule_registry_importable() -> None:

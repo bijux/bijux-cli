@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
 T = TypeVar("T")
@@ -46,6 +47,14 @@ class RegistryProtocol(Protocol):
         """Return plugin metadata."""
         ...
 
+    def state(self, name: str) -> PluginState | None:
+        """Return plugin lifecycle state."""
+        ...
+
+    def transition(self, name: str, state: PluginState) -> None:
+        """Move a plugin to a lifecycle state."""
+        ...
+
     async def call_hook(self, hook: str, *args: Any, **kwargs: Any) -> Any:
         """Invoke a hook on all plugins."""
         ...
@@ -59,4 +68,12 @@ class PluginConfig:
     allow_entrypoints: bool
 
 
-__all__ = ["PluginConfig", "RegistryProtocol"]
+__all__ = ["PluginConfig", "PluginState", "RegistryProtocol"]
+class PluginState(str, Enum):
+    """Lifecycle states for plugins."""
+
+    DISCOVERED = "discovered"
+    INSTALLED = "installed"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    REMOVED = "removed"

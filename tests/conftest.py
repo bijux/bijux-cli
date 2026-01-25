@@ -167,7 +167,7 @@ def _isolate_plugins_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Apply unit/integration/night markers based on test location."""
+    """Apply unit/integration/nightly markers based on test location."""
     for item in items:
         path_str = str(item.fspath)
         if "/tests/unit/" in path_str:
@@ -177,8 +177,8 @@ def pytest_collection_modifyitems(
         elif "/tests/e2e/" in path_str:
             item.add_marker("e2e")
             item.add_marker("integration")
-        elif "/tests/night/" in path_str:
-            item.add_marker("night")
+        elif "/tests/nightly/" in path_str:
+            item.add_marker("nightly")
             item.add_marker("slow")
         timeout_marker = item.get_closest_marker("timeout")
         if timeout_marker and timeout_marker.args:

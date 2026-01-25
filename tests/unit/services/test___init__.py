@@ -179,6 +179,8 @@ def test_register_default_services_100pct(
         assert mock_process_init.call_args.kwargs == {
             "observability": obs_inst,
             "telemetry": tel_inst,
+            "max_workers": 4,
+            "allowed_commands": ["echo", "ls", "cat", "grep"],
         }
 
         retry_inst = di.resolve(RetryPolicy)

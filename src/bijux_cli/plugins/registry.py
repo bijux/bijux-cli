@@ -27,7 +27,7 @@ from packaging.version import Version as PkgVersion
 import pluggy
 
 from bijux_cli.core.di import DIContainer
-from bijux_cli.plugins.contracts import RegistryProtocol
+from bijux_cli.plugins.contracts import PluginState, RegistryProtocol
 from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtocol
 from bijux_cli.services.errors import ServiceError
 
@@ -195,6 +195,8 @@ async def load_entrypoints(
                 if raw is not None and not isinstance(raw, str):
                     tgt.version = str(raw)
 
+            registry.transition(ep.name, PluginState.DISCOVERED)
+            registry.transition(ep.name, PluginState.INSTALLED)
             registry.register(ep.name, plugin, alias=None, version=plugin.version)
 
             startup = getattr(plugin, "startup", None)
@@ -255,7 +257,38 @@ class Registry(RegistryProtocol):
         self._plugins: dict[str, object] = {}
         self._aliases: dict[str, str] = {}
         self._meta: dict[str, dict[str, str]] = {}
+        self._states: dict[str, PluginState] = {}
         self.mapping = MappingProxyType(self._plugins)
+
+    def state(self, name: str) -> PluginState | None:
+        """Return the lifecycle state for a plugin."""
+        canonical = self._aliases.get(name, name)
+        return self._states.get(canonical)
+
+    def transition(self, name: str, state: PluginState) -> None:
+        """Transition a plugin to a new lifecycle state."""
+        allowed: dict[PluginState, set[PluginState]] = {
+            PluginState.DISCOVERED: {
+                PluginState.INSTALLED,
+                PluginState.ACTIVE,
+                PluginState.REMOVED,
+            },
+            PluginState.INSTALLED: {PluginState.ACTIVE, PluginState.INACTIVE},
+            PluginState.ACTIVE: {PluginState.INACTIVE, PluginState.REMOVED},
+            PluginState.INACTIVE: {PluginState.ACTIVE, PluginState.REMOVED},
+            PluginState.REMOVED: set(),
+        }
+        canonical = self._aliases.get(name, name)
+        current = self._states.get(canonical)
+        if current is None:
+            self._states[canonical] = state
+            return
+        if state not in allowed.get(current, set()):
+            raise ServiceError(
+                f"Invalid plugin state transition {current.value} -> {state.value}",
+                http_status=400,
+            )
+        self._states[canonical] = state
 
     def register(
         self,
@@ -297,6 +330,7 @@ class Registry(RegistryProtocol):
             ) from error
         self._plugins[name] = plugin
         self._meta[name] = {"version": version or "unknown"}
+        self.transition(name, PluginState.ACTIVE)
         if alias:
             self._aliases[alias] = name
         try:
@@ -333,6 +367,7 @@ class Registry(RegistryProtocol):
                 f"Pluggy failed to deregister {canonical}: {error}", http_status=500
             ) from error
         self._meta.pop(canonical, None)
+        self._states[canonical] = PluginState.REMOVED
         self._aliases = {a: n for a, n in self._aliases.items() if n != canonical}
         try:
             self._telemetry.event("registry_plugin_deregistered", {"name": canonical})
