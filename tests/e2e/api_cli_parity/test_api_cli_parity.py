@@ -15,13 +15,10 @@ from bijux_cli.api.facade import BijuxAPI
 from bijux_cli.core.di import DIContainer
 from bijux_cli.services.config.contracts import ConfigProtocol
 from tests.e2e.harness import E2EHarness
+from tests.e2e.invariants import assert_config_consistent, assert_no_traceback
 from tests.e2e.plugins.utils import write_dummy_plugin
 
 pytestmark = [pytest.mark.e2e, pytest.mark.slow]
-
-
-def _no_traceback(text: str) -> None:
-    assert "traceback" not in text.lower()
 
 
 def _json_value(payload: str) -> str:
@@ -54,6 +51,10 @@ def _register_plugin_helpers(api: BijuxAPI) -> None:
     api.register("plugin_exists", _plugin_exists)
 
 
+def _restart(h: E2EHarness) -> E2EHarness:
+    return E2EHarness(root=h.root)
+
+
 def test_api_set_cli_get_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     with E2EHarness() as h:
         _sync_api_env(monkeypatch, h)
@@ -62,18 +63,21 @@ def test_api_set_cli_get_parity(monkeypatch: pytest.MonkeyPatch) -> None:
         _register_plugin_helpers(api)
         api.run_sync("cfg_set", "parity_key", "from_api")
 
-        res = h.run(["config", "get", "parity_key", "--format", "json"])
+        h2 = _restart(h)
+        res = h2.run(["config", "get", "parity_key", "--format", "json"])
         assert res.returncode == 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
         assert _json_value(res.stdout) == "from_api"
 
-        res2 = h.run(["config", "set", "cli_key=from_cli"])
+        h3 = _restart(h2)
+        res2 = h3.run(["config", "set", "cli_key=from_cli"])
         assert res2.returncode == 0
-        _no_traceback(res2.stdout + res2.stderr)
+        assert_no_traceback(res2.stdout + res2.stderr)
 
-        content = h.config_path.read_text(encoding="utf-8")
+        content = h3.config_path.read_text(encoding="utf-8")
         assert "BIJUXCLI_PARITY_KEY=from_api" in content
         assert "BIJUXCLI_CLI_KEY=from_cli" in content
+        assert_config_consistent(h3)
 
 
 def test_cli_set_api_shares_config(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -85,19 +89,21 @@ def test_cli_set_api_shares_config(monkeypatch: pytest.MonkeyPatch) -> None:
 
         res = h.run(["config", "set", "parity_key=from_cli"])
         assert res.returncode == 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
 
-        res2 = h.run(["config", "get", "parity_key", "--format", "json"])
+        h2 = _restart(h)
+        res2 = h2.run(["config", "get", "parity_key", "--format", "json"])
         assert res2.returncode == 0
-        _no_traceback(res2.stdout + res2.stderr)
+        assert_no_traceback(res2.stdout + res2.stderr)
         assert _json_value(res2.stdout) == "from_cli"
 
         api.run_sync("cfg_set", "api_key", "from_api")
         api_value = api.run_sync("cfg_get", "api_key")
         assert api_value == "from_api"
-        content = h.config_path.read_text(encoding="utf-8")
+        content = h2.config_path.read_text(encoding="utf-8")
         assert "BIJUXCLI_PARITY_KEY=from_cli" in content
         assert "BIJUXCLI_API_KEY=from_api" in content
+        assert_config_consistent(h2)
 
 
 def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -109,35 +115,38 @@ def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> Non
         dummy_dir = write_dummy_plugin(h.root / "parity_plugin", name="parity_plugin")
         res_install = h.run(["plugins", "install", str(dummy_dir)])
         assert res_install.returncode == 0
-        _no_traceback(res_install.stdout + res_install.stderr)
+        assert_no_traceback(res_install.stdout + res_install.stderr)
         assert (h.plugins_dir / "parity_plugin").exists()
 
-        api_plugins_dir = Path(h.env["BIJUXCLI_PLUGINS_DIR"])
+        h2 = _restart(h)
+        api_plugins_dir = Path(h2.env["BIJUXCLI_PLUGINS_DIR"])
         assert (api_plugins_dir / "parity_plugin").exists()
 
-        res_uninstall = h.run(["plugins", "uninstall", "parity_plugin"])
+        res_uninstall = h2.run(["plugins", "uninstall", "parity_plugin"])
         assert res_uninstall.returncode == 0
-        _no_traceback(res_uninstall.stdout + res_uninstall.stderr)
-        assert not (h.plugins_dir / "parity_plugin").exists()
-
+        assert_no_traceback(res_uninstall.stdout + res_uninstall.stderr)
+        assert not (h2.plugins_dir / "parity_plugin").exists()
         assert not (api_plugins_dir / "parity_plugin").exists()
 
+        h3 = _restart(h2)
         dummy_dir2 = write_dummy_plugin(
-            h.root / "parity_plugin2", name="parity_plugin2"
+            h3.root / "parity_plugin2", name="parity_plugin2"
         )
-        res_install2 = h.run(["plugins", "install", str(dummy_dir2)])
+        res_install2 = h3.run(["plugins", "install", str(dummy_dir2)])
         assert res_install2.returncode == 0
-        _no_traceback(res_install2.stdout + res_install2.stderr)
-        assert (h.plugins_dir / "parity_plugin2").exists()
+        assert_no_traceback(res_install2.stdout + res_install2.stderr)
+        assert (h3.plugins_dir / "parity_plugin2").exists()
 
-        res_uninstall2 = h.run(["plugins", "uninstall", "parity_plugin2"])
+        h4 = _restart(h3)
+        res_uninstall2 = h4.run(["plugins", "uninstall", "parity_plugin2"])
         assert res_uninstall2.returncode == 0
-        _no_traceback(res_uninstall2.stdout + res_uninstall2.stderr)
-        assert not (h.plugins_dir / "parity_plugin2").exists()
+        assert_no_traceback(res_uninstall2.stdout + res_uninstall2.stderr)
+        assert not (h4.plugins_dir / "parity_plugin2").exists()
 
-        res_uninstall2b = h.run(["plugins", "uninstall", "parity_plugin2"])
+        h5 = _restart(h4)
+        res_uninstall2b = h5.run(["plugins", "uninstall", "parity_plugin2"])
         assert res_uninstall2b.returncode == 1
-        _no_traceback(res_uninstall2b.stdout + res_uninstall2b.stderr)
+        assert_no_traceback(res_uninstall2b.stdout + res_uninstall2b.stderr)
 
 
 def test_cli_reinstall_force_api_sees_plugin(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -149,14 +158,16 @@ def test_cli_reinstall_force_api_sees_plugin(monkeypatch: pytest.MonkeyPatch) ->
         dummy_dir = write_dummy_plugin(h.root / "force_plugin", name="force_plugin")
         res_install = h.run(["plugins", "install", str(dummy_dir)])
         assert res_install.returncode == 0
-        _no_traceback(res_install.stdout + res_install.stderr)
+        assert_no_traceback(res_install.stdout + res_install.stderr)
 
-        res_force = h.run(["plugins", "install", str(dummy_dir), "--force"])
+        h2 = _restart(h)
+        res_force = h2.run(["plugins", "install", str(dummy_dir), "--force"])
         assert res_force.returncode == 0
-        _no_traceback(res_force.stdout + res_force.stderr)
+        assert_no_traceback(res_force.stdout + res_force.stderr)
 
         assert api.run_sync("plugin_exists", "force_plugin") is True
 
-        res_uninstall = h.run(["plugins", "uninstall", "force_plugin"])
+        h3 = _restart(h2)
+        res_uninstall = h3.run(["plugins", "uninstall", "force_plugin"])
         assert res_uninstall.returncode == 0
-        _no_traceback(res_uninstall.stdout + res_uninstall.stderr)
+        assert_no_traceback(res_uninstall.stdout + res_uninstall.stderr)

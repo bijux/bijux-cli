@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Unit tests for plugin-related modules."""
+"""Legacy unit tests for history command package."""
 
 from __future__ import annotations
