@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Plugin-focused E2E tests and helpers."""
+"""Failure surface E2E tests."""
 
 from __future__ import annotations

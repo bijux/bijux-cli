@@ -172,7 +172,7 @@ def pytest_collection_modifyitems(
         path_str = str(item.fspath)
         if "/tests/unit/" in path_str:
             item.add_marker("unit")
-        elif "/tests/integration/" in path_str:
+        elif "/tests/regression/" in path_str:
             item.add_marker("integration")
         elif "/tests/e2e/" in path_str:
             item.add_marker("e2e")

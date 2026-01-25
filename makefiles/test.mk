@@ -4,14 +4,16 @@ TEST_PATHS            ?= tests
 TEST_PATHS_UNIT       ?= tests/unit
 TEST_PATHS_E2E        ?= tests/e2e
 TEST_PATHS_NIGHT      ?= tests/night
-TEST_PATHS_FUNCTIONAL ?= tests/functional
-TEST_PATHS_INTEGRATION ?= tests/integration
+TEST_PATHS_REGRESSION ?= tests/regression
+TEST_PATHS_BENCHMARK  ?= tests/benchmark
 
 TEST_ARTIFACTS_DIR    ?= artifacts/test
 JUNIT_XML             ?= $(TEST_ARTIFACTS_DIR)/junit.xml
 JUNIT_XML_UNIT        ?= $(TEST_ARTIFACTS_DIR)/junit-test-unit.xml
 JUNIT_XML_E2E         ?= $(TEST_ARTIFACTS_DIR)/junit-test-e2e.xml
+JUNIT_XML_NIGHT       ?= $(TEST_ARTIFACTS_DIR)/junit-test-night.xml
 JUNIT_XML_REGRESSION  ?= $(TEST_ARTIFACTS_DIR)/junit-test-regression.xml
+JUNIT_XML_BENCHMARK   ?= $(TEST_ARTIFACTS_DIR)/junit-test-benchmark.xml
 TMP_DIR               ?= $(TEST_ARTIFACTS_DIR)/tmp
 HYPOTHESIS_DB_DIR     ?= $(TEST_ARTIFACTS_DIR)/hypothesis
 BENCHMARK_DIR         ?= $(TEST_ARTIFACTS_DIR)/benchmarks
@@ -37,8 +39,8 @@ TEST_PATHS_ABS        := $(abspath $(TEST_PATHS))
 TEST_PATHS_UNIT_ABS   := $(abspath $(TEST_PATHS_UNIT))
 TEST_PATHS_E2E_ABS    := $(abspath $(TEST_PATHS_E2E))
 TEST_PATHS_NIGHT_ABS  := $(abspath $(TEST_PATHS_NIGHT))
-TEST_PATHS_FUNCTIONAL_ABS := $(abspath $(TEST_PATHS_FUNCTIONAL))
-TEST_PATHS_INTEGRATION_ABS := $(abspath $(TEST_PATHS_INTEGRATION))
+TEST_PATHS_REGRESSION_ABS := $(abspath $(TEST_PATHS_REGRESSION))
+TEST_PATHS_BENCHMARK_ABS := $(abspath $(TEST_PATHS_BENCHMARK))
 SRC_ABS               := $(abspath src)
 JUNIT_XML_ABS         = $(abspath $(JUNIT_XML))
 TMP_DIR_ABS           := $(abspath $(TMP_DIR))
@@ -63,7 +65,7 @@ PYTEST_FLAGS_NOCOV = \
   $(PYTEST_ADDOPTS_EXTRA)
 
 
-.PHONY: test test-unit test-e2e test-night test-regression test-clean
+.PHONY: test test-unit test-e2e test-night test-regression test-benchmark test-clean
 
 test:
 	@echo "→ Running full test suite on $(TEST_PATHS)"
@@ -108,11 +110,7 @@ test-unit:
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
 	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_UNIT_ABS)" -m "unit and not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	else \
-	  echo "   • no $(TEST_PATHS_UNIT); excluding e2e/integration/functional/slow"; \
-	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
-	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
-	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_ABS)" -k "not e2e and not integration and not functional" -m "not slow" --maxfail=1 -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	  echo "   • no $(TEST_PATHS_UNIT); nothing to run"; \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
@@ -136,16 +134,36 @@ test-e2e:
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_E2E_ABS)" -m "e2e and not slow" -q $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	    BIJUX_NIGHTLY=0 sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_E2E_ABS)" -m "e2e" -q -o addopts= -o timeout=10 $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	else \
 	  echo "   • no $(TEST_PATHS_E2E); nothing to run"; \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
+test-night: JUNIT_XML=$(JUNIT_XML_NIGHT)
 test-night:
 	@echo "→ Running night tests only"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
+	@rm -rf .hypothesis .benchmarks || true
+	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
+	@echo "   • Hypothesis DB → $(HYPOTHESIS_DB_ABS)"
+	@echo "   • Using pytest → $(PYTEST)"
+	@BENCH_FLAGS=""; \
+	if [ "$(ENABLE_BENCH)" = "1" ] && sh -c "$(PYTEST) -q --help" 2>/dev/null | grep -q -- '--benchmark-storage'; then \
+	  BENCH_FLAGS="--benchmark-autosave --benchmark-storage=file://$(BENCHMARK_DIR_ABS)"; \
+	  echo "   • pytest-benchmark detected → storing in $(BENCHMARK_DIR_ABS)"; \
+	else \
+	  echo "   • pytest-benchmark disabled or not installed"; \
+	fi; \
+	if [ -d "$(TEST_PATHS_NIGHT)" ] && find "$(TEST_PATHS_NIGHT)" -type f -name 'test_*.py' | grep -q .; then \
+	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
+	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
+	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
+	    BIJUX_NIGHTLY=1 sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_NIGHT_ABS)" -m "night" -q -o addopts= -o timeout=10 $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	else \
+	  echo "   • no $(TEST_PATHS_NIGHT); nothing to run"; \
+	fi
 	@rm -rf .hypothesis .benchmarks || true
 
 test-regression: JUNIT_XML=$(JUNIT_XML_REGRESSION)
@@ -164,23 +182,42 @@ test-regression:
 	else \
 	  echo "   • pytest-benchmark disabled or not installed"; \
 	fi; \
-	HAS_FUN=0; \
-	HAS_INT=0; \
-	if [ -d "$(TEST_PATHS_FUNCTIONAL)" ] && find "$(TEST_PATHS_FUNCTIONAL)" -type f -name 'test_*.py' | grep -q .; then HAS_FUN=1; fi; \
-	if [ -d "$(TEST_PATHS_INTEGRATION)" ] && find "$(TEST_PATHS_INTEGRATION)" -type f -name 'test_*.py' | grep -q .; then HAS_INT=1; fi; \
-	if [ "$$HAS_FUN" = "1" ] || [ "$$HAS_INT" = "1" ]; then \
-	  PATHS=""; \
-	  if [ "$$HAS_FUN" = "1" ]; then PATHS="$(TEST_PATHS_FUNCTIONAL_ABS)"; fi; \
-	  if [ "$$HAS_INT" = "1" ]; then PATHS="$$PATHS $(TEST_PATHS_INTEGRATION_ABS)"; fi; \
+	if [ -d "$(TEST_PATHS_REGRESSION)" ] && find "$(TEST_PATHS_REGRESSION)" -type f -name 'test_*.py' | grep -q .; then \
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    BIJUX_BIN="$(BIJUX_BIN_ABS)" \
 	    BIJUXCLI_PLUGINS_DIR="$(TMP_DIR_ABS)/plugins" \
 	    BIJUX_PYTHON="$(PYTHON_311)" \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" '"$$PATHS"' -m "not night and not slow" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_REGRESSION_ABS)" -m "not night and not slow" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
 	else \
-	  echo "   • no $(TEST_PATHS_FUNCTIONAL) or $(TEST_PATHS_INTEGRATION); nothing to run"; \
+	  echo "   • no $(TEST_PATHS_REGRESSION); nothing to run"; \
+	fi
+	@rm -rf .hypothesis .benchmarks || true
+
+test-benchmark: JUNIT_XML=$(JUNIT_XML_BENCHMARK)
+test-benchmark:
+	@echo "→ Running benchmark tests only"
+	@$(PYTEST) --version
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
+	@rm -rf .hypothesis .benchmarks || true
+	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
+	@echo "   • Hypothesis DB → $(HYPOTHESIS_DB_ABS)"
+	@echo "   • Using pytest → $(PYTEST)"
+	@BENCH_FLAGS=""; \
+	if [ "$(ENABLE_BENCH)" = "1" ] && sh -c "$(PYTEST) -q --help" 2>/dev/null | grep -q -- '--benchmark-storage'; then \
+	  BENCH_FLAGS="--benchmark-autosave --benchmark-storage=file://$(BENCHMARK_DIR_ABS)"; \
+	  echo "   • pytest-benchmark detected → storing in $(BENCHMARK_DIR_ABS)"; \
+	else \
+	  echo "   • pytest-benchmark disabled or not installed"; \
+	fi; \
+	if [ -d "$(TEST_PATHS_BENCHMARK)" ] && find "$(TEST_PATHS_BENCHMARK)" -type f -name 'test_*.py' | grep -q .; then \
+	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
+	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
+	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_BENCHMARK_ABS)" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
+	else \
+	  echo "   • no $(TEST_PATHS_BENCHMARK); nothing to run"; \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 

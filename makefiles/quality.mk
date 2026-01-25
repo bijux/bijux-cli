@@ -46,6 +46,9 @@ quality:
 	@echo "   - Documentation coverage (Interrogate)"
 	@$(MAKE) interrogate-report
 
+	@echo "   - E2E contract checks"
+	@$(PYTHON) scripts/check_e2e_contract.py
+
 	@echo "✔ Quality checks passed"
 	@printf "OK\n" >"$(QUALITY_OK_MARKER)"
 
