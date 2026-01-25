@@ -611,12 +611,12 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     """Test that the list-plugins command correctly calls its handlers."""
     called: dict[str, Any] = {}
     monkeypatch.setattr(
-        "bijux_cli.cli.core.command.current_execution_policy",
+        "bijux_cli.cli.commands.dev.list_plugins.current_execution_policy",
         lambda: ExecutionPolicy(
             output_format=OutputFormat.JSON,
             color=ColorMode.AUTO,
-            quiet=True,
-            log_level=LogLevel.ERROR,
+            quiet=False,
+            log_level=LogLevel.INFO,
             pretty=True,
             include_runtime=False,
         ),

@@ -28,13 +28,8 @@ from typer import Context
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands import register_commands, register_dynamic_plugins
-from bijux_cli.cli.core.constants import OPT_HELP
-from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
-from bijux_cli.core.precedence import (
-    FlagLayer,
-    GlobalCLIConfig,
-    current_execution_policy,
-)
+from bijux_cli.core.intent import parse_global_config
+from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.core.runtime import AsyncTyper
 
 logger = logging.getLogger(__name__)
@@ -138,24 +133,6 @@ def build_app(*, load_plugins: bool = True) -> AsyncTyper:
         register_dynamic_plugins(app)
     app.callback(invoke_without_command=True)(maybe_default_to_repl)
     return app
-
-
-def parse_global_config(argv: list[str]) -> GlobalCLIConfig:
-    """Parse global CLI flags once at the CLI root layer."""
-    flags = parse_global_flags(argv)
-    help_flag = any(arg in OPT_HELP for arg in argv)
-    errors = () if help_flag else collect_global_flag_errors(argv)
-    return GlobalCLIConfig(
-        help=help_flag,
-        flags=FlagLayer(
-            quiet=flags.quiet,
-            log_level=flags.log_level,
-            color=flags.color,
-            format=flags.format,
-        ),
-        args=tuple(argv),
-        errors=errors,
-    )
 
 
 app = build_app()

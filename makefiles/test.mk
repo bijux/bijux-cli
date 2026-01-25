@@ -65,11 +65,31 @@ PYTEST_FLAGS_NOCOV = \
   $(PYTEST_ADDOPTS_EXTRA)
 
 
-.PHONY: test test-unit test-e2e test-night test-regression test-benchmark test-clean
+.PHONY: test test-all test-unit test-e2e test-night test-regression test-benchmark test-clean
 
 test:
 	@echo "→ Running full test suite on $(TEST_PATHS)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
+	@rm -rf .hypothesis .benchmarks || true
+
+test-all:
+	@echo "→ Running full test suite (including slow/night/bench)"
+	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
+	@rm -rf .hypothesis .benchmarks || true
+	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
+	@echo "   • Hypothesis DB → $(HYPOTHESIS_DB_ABS)"
+	@echo "   • Using pytest → $(PYTEST)"
+	@BENCH_FLAGS=""; \
+	if [ "$(ENABLE_BENCH)" = "1" ] && sh -c "$(PYTEST) -q --help" 2>/dev/null | grep -q -- '--benchmark-storage'; then \
+	  BENCH_FLAGS="--benchmark-autosave --benchmark-storage=file://$(BENCHMARK_DIR_ABS)"; \
+	  echo "   • pytest-benchmark detected → storing in $(BENCHMARK_DIR_ABS)"; \
+	else \
+	  echo "   • pytest-benchmark disabled or not installed"; \
+	fi; \
+	( cd "$(TEST_ARTIFACTS_DIR)" && \
+	  PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
+	  HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
+	  BIJUX_NIGHTLY=1 sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_ABS)" -o addopts= -o timeout=60 $(PYTEST_FLAGS) '"$$BENCH_FLAGS" )
 	@rm -rf .hypothesis .benchmarks || true
 	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
 	@echo "   • Hypothesis DB → $(HYPOTHESIS_DB_ABS)"
@@ -229,6 +249,7 @@ test-clean:
 
 ##@ Test
 test: ## Run full test suite; all side-effects contained in artifacts_pages/test/ (JUnit, htmlcov, tmp, hypothesis DB, benchmarks)
+test-all: ## Run all tests including slow, night, and benchmarks
 test-unit: ## Run unit tests only; same containment; fallback excludes e2e/integration/functional/slow
 test-e2e: ## Run e2e tests only (marked), not recommended for quick runs
 test-night: ## Run night tests only (marked), excluded from default runs
