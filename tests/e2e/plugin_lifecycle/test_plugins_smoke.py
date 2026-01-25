@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Integration tests for plugin install/load/run."""
+"""Plugin smoke E2E tests."""
 
 from __future__ import annotations
 
@@ -14,8 +14,9 @@ import pytest
 
 from tests.regression.test_functional import cli
 
+pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
-@pytest.mark.integration
+
 def test_plugin_install_load_run(tmp_path: Path) -> None:
     """Install a minimal PyPI-style plugin and run its command."""
     pkg_dir = tmp_path / "smoke_pkg"

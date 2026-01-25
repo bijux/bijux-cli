@@ -450,7 +450,7 @@ tox -q -p auto
 <summary>CI workflow: publish (<code>.github/workflows/publish.yml</code>)</summary>
 
 ```yaml
---8<-- ".github/workflows/publish.yml"
+--8<-- ".github/workflows/release.yml"
 ```
 
 </details>
