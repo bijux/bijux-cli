@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import shutil
 import subprocess  # noqa: S603
 import sys
 
@@ -45,9 +46,12 @@ from bijux_cli.cli.core.help_text import (
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.precedence import current_execution_policy
+from bijux_cli.plugins import get_plugins_dir
+from bijux_cli.plugins import install_plugin as install_local_plugin
 from bijux_cli.plugins.helpers import PLUGIN_NAME_RE
 from bijux_cli.plugins.metadata import (
     discover_plugins,
+    get_plugin_metadata,
     invalidate_plugin_cache,
     plugins_for_package,
 )
@@ -93,20 +97,10 @@ def install_plugin(
         include_runtime=include_runtime,
         log_level=log_level_value,
     )
-    if Path(name).exists():
-        raise_exit_intent(
-            "Local paths are not supported; use a PyPI package name.",
-            code=1,
-            failure="local_path_not_supported",
-            error_type=ErrorType.USER_INPUT,
-            command=command,
-            fmt=fmt_lower,
-            quiet=quiet,
-            include_runtime=include_runtime,
-            log_level=log_level_value,
-        )
-
-    if not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii():
+    local_path = Path(name)
+    if not local_path.exists() and (
+        not PLUGIN_NAME_RE.fullmatch(name) or not name.isascii()
+    ):
         raise_exit_intent(
             "Invalid package name: only ASCII letters, digits, dash and underscore are allowed.",
             code=1,
@@ -121,6 +115,33 @@ def install_plugin(
 
     if dry_run:
         payload: dict[str, object] = {"status": "dry-run", "package": name}
+    elif local_path.exists():
+        invalidate_plugin_cache()
+        try:
+            install_local_plugin(str(local_path), force=force)
+            invalidate_plugin_cache()
+            discover_plugins()
+            meta = get_plugin_metadata(local_path.name)
+        except Exception as exc:
+            plug_dir = get_plugins_dir() / local_path.name
+            if plug_dir.exists():
+                shutil.rmtree(plug_dir, ignore_errors=True)
+            raise_exit_intent(
+                str(exc),
+                code=1,
+                failure="metadata_error",
+                error_type=ErrorType.PLUGIN,
+                command=command,
+                fmt=fmt_lower,
+                quiet=quiet,
+                include_runtime=include_runtime,
+                log_level=log_level_value,
+            )
+        payload = {
+            "status": "installed",
+            "package": str(local_path),
+            "plugins": [meta.name],
+        }
     else:
         invalidate_plugin_cache()
         cmd = [sys.executable, "-m", "pip", "install", name]

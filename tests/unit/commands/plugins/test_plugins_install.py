@@ -61,16 +61,16 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
-def test_local_path_rejected(
+def test_local_path_metadata_error(
     captured: dict[str, Any], runner: CliRunner, tmp_path: Path
 ) -> None:
-    """Test that local paths are rejected."""
+    """Test that invalid local plugin paths surface metadata errors."""
     plug = tmp_path / "plug"
     plug.mkdir()
     result = runner.invoke(cli_app, ["plugins", "install", str(plug)])
     assert result.exit_code == 1
     assert result.exception is not None
-    assert result.exception.args[0]["failure"] == "local_path_not_supported"
+    assert result.exception.args[0]["failure"] == "metadata_error"
 
 
 def test_invalid_package_name(captured: dict[str, Any], runner: CliRunner) -> None:
