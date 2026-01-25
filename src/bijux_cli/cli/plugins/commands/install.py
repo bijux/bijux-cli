@@ -48,7 +48,7 @@ from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins import get_plugins_dir
 from bijux_cli.plugins import install_plugin as install_local_plugin
-from bijux_cli.plugins.helpers import PLUGIN_NAME_RE
+from bijux_cli.plugins.catalog import PLUGIN_NAME_RE
 from bijux_cli.plugins.metadata import (
     discover_plugins,
     get_plugin_metadata,

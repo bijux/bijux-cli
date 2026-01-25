@@ -19,7 +19,7 @@ from packaging.utils import canonicalize_name
 from bijux_cli.core.errors import BijuxError
 from bijux_cli.core.version import __version__ as cli_version
 from bijux_cli.plugins import get_plugins_dir
-from bijux_cli.plugins.helpers import PLUGIN_NAME_RE
+from bijux_cli.plugins.catalog import PLUGIN_NAME_RE
 
 
 class PluginMetadataError(BijuxError):
@@ -166,6 +166,26 @@ def _plugin_meta_from_local(plug_dir: Path) -> PluginMetadata:
     )
 
 
+def validate_plugin_metadata(meta: PluginMetadata) -> None:
+    """Validate core metadata fields for a plugin."""
+    if not PLUGIN_NAME_RE.fullmatch(meta.name) or not meta.name.isascii():
+        raise PluginMetadataError(
+            f"Plugin name {meta.name!r} is invalid",
+            http_status=400,
+        )
+    if not meta.version or str(meta.version).strip() == "":
+        raise PluginMetadataError(
+            f"Plugin {meta.name!r} missing version",
+            http_status=400,
+        )
+    if not meta.requires_cli:
+        raise PluginMetadataError(
+            f"Plugin {meta.name!r} missing bijux-cli requirement",
+            http_status=400,
+        )
+    _require_cli_spec(meta.requires_cli, name=meta.name)
+
+
 def discover_plugins(*, strict: bool = True) -> list[PluginMetadata]:
     """Discover plugins without importing plugin bodies.
 
@@ -185,6 +205,7 @@ def discover_plugins(*, strict: bool = True) -> list[PluginMetadata]:
             if strict:
                 raise
             continue
+        validate_plugin_metadata(meta)
         if meta.name in seen:
             raise PluginMetadataError(
                 f"Duplicate plugin name detected: {meta.name!r}", http_status=400
@@ -203,6 +224,7 @@ def discover_plugins(*, strict: bool = True) -> list[PluginMetadata]:
                 if strict:
                     raise
                 continue
+            validate_plugin_metadata(meta)
             if meta.name in seen:
                 raise PluginMetadataError(
                     f"Duplicate plugin name detected: {meta.name!r}", http_status=400

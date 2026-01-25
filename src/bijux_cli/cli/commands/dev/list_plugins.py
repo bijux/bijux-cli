@@ -39,7 +39,7 @@ from bijux_cli.cli.core.help_text import (
 )
 from bijux_cli.cli.core.validation import validate_common_flags
 from bijux_cli.core.precedence import current_execution_policy
-from bijux_cli.plugins.helpers import list_installed_plugins
+from bijux_cli.plugins.catalog import list_installed_plugins
 
 
 def dev_list_plugins(

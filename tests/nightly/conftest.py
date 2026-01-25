@@ -20,5 +20,5 @@ def pytest_collection_modifyitems(
 ) -> None:
     """Extend timeouts for nightly stress tests."""
     for item in items:
-        if "tests/night" in str(item.fspath):
+        if "tests/nightly" in str(item.fspath):
             item.add_marker(pytest.mark.timeout(180))

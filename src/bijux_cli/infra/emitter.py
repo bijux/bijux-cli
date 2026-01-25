@@ -20,18 +20,18 @@ class ConsoleEmitter:
     def __init__(
         self,
         telemetry: Any,
-        output_format: OutputFormat = OutputFormat.JSON,
+        output_format: OutputFormat,
     ) -> None:
         """Initialize the console emitter."""
         self._telemetry = telemetry
-        self._default_format = output_format
+        self._output_format = output_format
         self._logger = structlog.get_logger(__name__)
 
     def emit(
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: OutputFormat,
         pretty: bool = False,
         level: LogLevel = LogLevel.INFO,
         message: str = "Emitting output",
@@ -44,7 +44,7 @@ class ConsoleEmitter:
         if not emit_output:
             return
 
-        output_format = fmt or self._default_format
+        output_format = fmt
         serializer = serializer_for(output_format, self._telemetry)
         try:
             output_str = serializer.dumps(payload, fmt=output_format, pretty=pretty)
@@ -80,7 +80,7 @@ class NullEmitter:
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None = None,
+        fmt: OutputFormat,
         pretty: bool = False,
         level: LogLevel = LogLevel.INFO,
         message: str = "Emitting output",

@@ -14,7 +14,11 @@ import click
 import typer
 
 from bijux_cli.core.runtime import AsyncTyper, adapt_typer
-from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
+from bijux_cli.plugins.metadata import (
+    PluginMetadata,
+    PluginMetadataError,
+    validate_plugin_metadata,
+)
 
 
 def _load_module_from_path(path: str, module_name: str) -> ModuleType:
@@ -133,6 +137,7 @@ def lazy_command_for(meta: PluginMetadata) -> typer.Typer:
 
 def load_command_for(meta: PluginMetadata) -> typer.Typer:
     """Load a plugin Typer app immediately."""
+    validate_plugin_metadata(meta)
     if meta.source == "entrypoint":
         return _entrypoint_loader(meta)
     return _local_loader(meta)

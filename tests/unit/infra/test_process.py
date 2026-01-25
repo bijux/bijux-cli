@@ -49,7 +49,9 @@ class FakeObservability:
 def install_validate(monkeypatch: pytest.MonkeyPatch, func: Any) -> None:
     """Inject a fake validate_command function into a mock module."""
     mod = types.ModuleType("bijux_cli.infra.process")
-    mod.validate_command = func  # type: ignore[attr-defined]
+    mod.validate_command = (  # type: ignore[attr-defined]
+        lambda cmd, **kwargs: func(cmd)
+    )
     monkeypatch.setitem(sys.modules, "bijux_cli.infra.process", mod)
 
 
@@ -87,6 +89,7 @@ def test_run_success_and_cache_hit(
         cast(ObservabilityProtocol, fake_obs),
         cast(TelemetryProtocol, fake_tel),
         max_workers=3,
+        allowed_commands=["echo"],
     )
     rc, out, err = pool.run(["echo", "x"], executor="unit")
 
@@ -142,6 +145,7 @@ def test_run_validation_failure(
         cast(ObservabilityProtocol, fake_obs),
         cast(TelemetryProtocol, fake_tel),
         max_workers=2,
+        allowed_commands=["echo"],
     )
 
     with pytest.raises(ValueError, match="invalid"):
@@ -168,7 +172,10 @@ def test_run_subprocess_exception_wrapped(
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", boom)
 
     pool = ProcessPool(
-        cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
+        cast(ObservabilityProtocol, fake_obs),
+        cast(TelemetryProtocol, fake_tel),
+        max_workers=2,
+        allowed_commands=["ls"],
     )
 
     with pytest.raises(RuntimeError, match="Process-pool execution failed:"):
@@ -201,7 +208,10 @@ def test_lru_eviction_via_max_cache_override(
     monkeypatch.setattr("bijux_cli.infra.process.subprocess.run", fake_run)
 
     pool = ProcessPool(
-        cast(ObservabilityProtocol, fake_obs), cast(TelemetryProtocol, fake_tel)
+        cast(ObservabilityProtocol, fake_obs),
+        cast(TelemetryProtocol, fake_tel),
+        max_workers=2,
+        allowed_commands=["c1", "c2", "c3"],
     )
     pool._MAX_CACHE = 2
 
@@ -216,108 +226,91 @@ def test_lru_eviction_via_max_cache_override(
 def test_validate_command_empty() -> None:
     """Test that providing an empty command list raises an error."""
     with pytest.raises(ValueError, match="invalid command"):
-        validate_command([])
+        validate_command([], allowed_commands=["echo"])
 
 
-@patch("os.getenv")
-def test_validate_command_not_allowed(mock_getenv: MagicMock) -> None:
+def test_validate_command_not_allowed() -> None:
     """Test that a command not in the allowed list is rejected."""
-    mock_getenv.return_value = "echo,ls"
     with pytest.raises(ValueError, match="not in allowed list"):
-        validate_command(["cat", "file.txt"])
+        validate_command(["cat", "file.txt"], allowed_commands=["echo", "ls"])
 
 
-@patch("os.getenv")
 @patch("shutil.which")
 def test_validate_command_not_found(
-    mock_which: MagicMock, mock_getenv: MagicMock
+    mock_which: MagicMock,
 ) -> None:
     """Test that a command not found on the system PATH is rejected."""
-    mock_getenv.return_value = "echo,cat"
     mock_which.return_value = None
     with pytest.raises(ValueError, match="not found|not executable"):
-        validate_command(["cat", "file.txt"])
+        validate_command(["cat", "file.txt"], allowed_commands=["cat"])
 
 
-@patch("os.getenv")
 @patch("shutil.which")
 @patch("os.path.basename")
 def test_validate_command_disallowed_path(
-    mock_basename: MagicMock, mock_which: MagicMock, mock_getenv: MagicMock
+    mock_basename: MagicMock, mock_which: MagicMock
 ) -> None:
     """Test that a command whose resolved path does not match the command name is rejected."""
-    mock_getenv.return_value = "cat"
     mock_which.return_value = "/bin/cat2"
     mock_basename.side_effect = lambda x: "cat" if x == "cat" else "cat2"
     with pytest.raises(ValueError, match="Disallowed command path"):
-        validate_command(["cat", "file.txt"])
+        validate_command(["cat", "file.txt"], allowed_commands=["cat"])
 
 
 @pytest.mark.parametrize("unsafe_char", [";", "|", "&", ">", "<", "`", "!"])
-@patch("os.getenv")
 @patch("shutil.which")
 @patch("os.path.basename")
 def test_validate_command_unsafe_arg(
     mock_basename: MagicMock,
     mock_which: MagicMock,
-    mock_getenv: MagicMock,
     unsafe_char: str,
 ) -> None:
     """Test that command arguments containing unsafe characters are rejected."""
-    mock_getenv.return_value = "echo"
     mock_which.return_value = "/bin/echo"
     mock_basename.side_effect = lambda x: "echo"
     with pytest.raises(ValueError, match="Unsafe argument"):
-        validate_command(["echo", f"test{unsafe_char}"])
+        validate_command(["echo", f"test{unsafe_char}"], allowed_commands=["echo"])
 
 
-@patch("os.getenv")
 @patch("shutil.which")
 @patch("os.path.basename")
 def test_validate_command_success(
-    mock_basename: MagicMock, mock_which: MagicMock, mock_getenv: MagicMock
+    mock_basename: MagicMock, mock_which: MagicMock
 ) -> None:
     """Test that a valid and safe command is successfully validated and resolved."""
-    mock_getenv.return_value = "echo"
     mock_which.return_value = "/bin/echo"
     mock_basename.side_effect = lambda x: "echo"
     cmd = ["echo", "hello"]
-    result = validate_command(cmd)
+    result = validate_command(cmd, allowed_commands=["echo"])
     assert result == ["/bin/echo", "hello"]
 
 
-@patch("os.getenv")
 @patch("shutil.which")
 @patch("os.path.basename")
 def test_validate_command_success_full_path(
-    mock_basename: MagicMock, mock_which: MagicMock, mock_getenv: MagicMock
+    mock_basename: MagicMock, mock_which: MagicMock
 ) -> None:
     """Test that a command provided with a full path is validated correctly."""
-    mock_getenv.return_value = "echo"
     mock_which.return_value = "/bin/echo"
     mock_basename.side_effect = lambda x: "echo"
     cmd = ["/bin/echo", "hello"]
-    result = validate_command(cmd)
+    result = validate_command(cmd, allowed_commands=["echo"])
     assert result == ["/bin/echo", "hello"]
 
 
-@patch("os.getenv")
-def test_validate_command_custom_env(mock_getenv: MagicMock) -> None:
-    """Test that a custom allowed commands environment variable is respected."""
-    mock_getenv.return_value = "custom_cmd"
+def test_validate_command_custom_env() -> None:
+    """Test that a disallowed command is rejected."""
     with pytest.raises(ValueError, match="not in allowed list"):
-        validate_command(["echo", "test"])
+        validate_command(["echo", "test"], allowed_commands=["custom_cmd"])
 
 
-@patch("os.getenv")
 @patch("shutil.which")
 @patch("os.path.basename")
 def test_validate_command_default_env(
-    mock_basename: MagicMock, mock_which: MagicMock, mock_getenv: MagicMock
+    mock_basename: MagicMock, mock_which: MagicMock
 ) -> None:
-    """Test that the default allowed commands are used when the env var is not set."""
-    mock_getenv.return_value = None
+    """Test that the allowlist is enforced for valid commands."""
     mock_which.return_value = "/bin/grep"
     mock_basename.side_effect = lambda x: "grep"
-    result = validate_command(["grep", "pattern"])
+    result = validate_command(["grep", "pattern"], allowed_commands=["grep"])
     assert result == ["/bin/grep", "pattern"]

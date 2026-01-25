@@ -13,12 +13,10 @@ import subprocess  # nosec B404
 from typing import Any
 
 
-def validate_command(cmd: list[str]) -> list[str]:
+def validate_command(cmd: list[str], *, allowed_commands: list[str]) -> list[str]:
     """Validates a command and its arguments against a whitelist."""
     if not cmd:
         raise ValueError("invalid command: empty")
-    env_val = os.getenv("BIJUXCLI_ALLOWED_COMMANDS")
-    allowed_commands = (env_val or "echo,ls,cat,grep").split(",")
 
     cmd_name = os.path.basename(cmd[0])
     if cmd_name not in allowed_commands:
@@ -47,13 +45,14 @@ class ProcessPool:
         self,
         observability: Any,
         telemetry: Any,
-        max_workers: int = 4,
+        max_workers: int,
+        allowed_commands: list[str],
     ) -> None:
         """Initialize the process pool executor."""
-        max_workers = int(os.getenv("BIJUXCLI_MAX_WORKERS", str(max_workers)))
         self._exec = ProcessPoolExecutor(max_workers=max_workers)
         self._log = observability
         self._tel = telemetry
+        self._allowed_commands = allowed_commands
         self._cache: OrderedDict[tuple[str, ...], tuple[int, bytes, bytes]] = (
             OrderedDict()
         )
@@ -72,7 +71,7 @@ class ProcessPool:
             validate = __import__(
                 "bijux_cli.infra.process", fromlist=["validate_command"]
             ).validate_command
-            safe_cmd = validate(cmd)
+            safe_cmd = validate(cmd, allowed_commands=self._allowed_commands)
         except ValueError:
             self._tel.event(
                 "procpool_execution_failed",

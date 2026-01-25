@@ -52,7 +52,7 @@ class Emitter(Protocol):
         self,
         payload: Any,
         *,
-        fmt: OutputFormat | None,
+        fmt: OutputFormat,
         pretty: bool,
         level: LogLevel,
         message: str,

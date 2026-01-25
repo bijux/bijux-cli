@@ -55,9 +55,7 @@ class OrjsonSerializer:
         """Initialize with telemetry."""
         self._telemetry = telemetry
 
-    def dumps(
-        self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
-    ) -> str:
+    def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
         """Serialize an object to JSON or YAML."""
         if fmt is OutputFormat.JSON:
             try:
@@ -74,9 +72,7 @@ class OrjsonSerializer:
             return _yaml_dump(obj, pretty)
         raise SerializationError(f"Unsupported format: {fmt}")
 
-    def dumps_bytes(
-        self, obj: Any, *, fmt: OutputFormat = OutputFormat.JSON, pretty: bool = False
-    ) -> bytes:
+    def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
         """Serialize an object to bytes."""
         return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
 
@@ -84,8 +80,8 @@ class OrjsonSerializer:
         self,
         data: str | bytes,
         *,
-        fmt: OutputFormat = OutputFormat.JSON,
-        pretty: bool = False,
+        fmt: OutputFormat,
+        pretty: bool,
     ) -> Any:
         """Deserialize JSON or YAML data."""
         if fmt is OutputFormat.JSON:
@@ -103,8 +99,8 @@ class OrjsonSerializer:
         self,
         payload: Any,
         *,
-        fmt: OutputFormat = OutputFormat.JSON,
-        pretty: bool = False,
+        fmt: OutputFormat,
+        pretty: bool,
     ) -> None:
         """Serialize and print to stdout."""
         text = self.dumps(payload, fmt=fmt, pretty=pretty)
@@ -122,17 +118,13 @@ class PyYAMLSerializer:
             raise SerializationError("PyYAML is not installed")
         self._telemetry = telemetry
 
-    def dumps(
-        self, obj: Any, *, fmt: OutputFormat = OutputFormat.YAML, pretty: bool = False
-    ) -> str:
+    def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
         """Serialize an object to YAML."""
         if fmt is not OutputFormat.YAML:
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _yaml_dump(obj, pretty)
 
-    def dumps_bytes(
-        self, obj: Any, *, fmt: OutputFormat = OutputFormat.YAML, pretty: bool = False
-    ) -> bytes:
+    def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
         """Serialize an object to bytes."""
         return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
 
@@ -140,8 +132,8 @@ class PyYAMLSerializer:
         self,
         data: str | bytes,
         *,
-        fmt: OutputFormat = OutputFormat.YAML,
-        pretty: bool = False,
+        fmt: OutputFormat,
+        pretty: bool,
     ) -> Any:
         """Deserialize YAML data."""
         if fmt is not OutputFormat.YAML:
@@ -152,8 +144,8 @@ class PyYAMLSerializer:
         self,
         payload: Any,
         *,
-        fmt: OutputFormat = OutputFormat.YAML,
-        pretty: bool = False,
+        fmt: OutputFormat,
+        pretty: bool,
     ) -> None:
         """Serialize and print to stdout."""
         text = self.dumps(payload, fmt=fmt, pretty=pretty)

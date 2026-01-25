@@ -25,14 +25,14 @@ def mock_telemetry() -> MagicMock:
 @pytest.fixture
 def emitter(mock_telemetry: MagicMock) -> ConsoleEmitter:
     """Provide an ConsoleEmitter instance initialized with a mock telemetry service."""
-    return ConsoleEmitter(mock_telemetry)
+    return ConsoleEmitter(mock_telemetry, output_format=OutputFormat.JSON)
 
 
 def test_init(mock_telemetry: MagicMock) -> None:
     """Test the ConsoleEmitter's constructor with all parameters."""
     em = ConsoleEmitter(mock_telemetry, output_format=OutputFormat.YAML)
     assert em._telemetry is mock_telemetry
-    assert em._default_format == OutputFormat.YAML
+    assert em._output_format == OutputFormat.YAML
 
 
 @patch("bijux_cli.infra.emitter.serializer_for")
@@ -70,13 +70,19 @@ def test_emit_stdout_success(
 def test_emit_default_format(
     mock_print: MagicMock, mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
-    """Test that the default format is used when no format is specified."""
-    emitter._default_format = OutputFormat.YAML
+    """Test that the requested format is used."""
     mock_serializer = MagicMock()
     mock_serializer.dumps.return_value = "key: value"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({"key": "value"})
+    emitter.emit(
+        {"key": "value"},
+        fmt=OutputFormat.YAML,
+        pretty=False,
+        level=LogLevel.INFO,
+        message="msg",
+        output=None,
+    )
 
     mock_serializer_for.assert_called_with(OutputFormat.YAML, emitter._telemetry)
 
@@ -92,7 +98,14 @@ def test_emit_serialization_fail(
 
     with patch.object(emitter._logger, "error") as mock_log:  # noqa: SIM117
         with pytest.raises(RuntimeError, match="Serialization failed: fail"):
-            emitter.emit({})
+            emitter.emit(
+                {},
+                fmt=OutputFormat.JSON,
+                pretty=False,
+                level=LogLevel.INFO,
+                message="msg",
+                output=None,
+            )
     mock_log.assert_called_with("Serialization failed", error="fail")
 
 
@@ -108,7 +121,13 @@ def test_emit_debug_print(
 
     with patch.object(emitter._logger, "error") as mock_log:
         emitter.emit(
-            {}, level=LogLevel.ERROR, message="test_msg", emit_diagnostics=True
+            {},
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            level=LogLevel.ERROR,
+            message="test_msg",
+            output=None,
+            emit_diagnostics=True,
         )
     mock_print.assert_any_call("output", file=sys.stdout, flush=True)
     mock_log.assert_not_called()
@@ -119,7 +138,15 @@ def test_emit_quiet_skip(
     mock_serializer_for: MagicMock, emitter: ConsoleEmitter
 ) -> None:
     """Test that emission is skipped for info level when quiet mode is enabled."""
-    emitter.emit({}, level=LogLevel.INFO, emit_output=False)
+    emitter.emit(
+        {},
+        fmt=OutputFormat.JSON,
+        pretty=False,
+        level=LogLevel.INFO,
+        message="msg",
+        output=None,
+        emit_output=False,
+    )
     mock_serializer_for.assert_not_called()
 
 
@@ -133,7 +160,15 @@ def test_emit_quiet_error_proceed(
     mock_serializer.dumps.return_value = "error"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level=LogLevel.ERROR, emit_output=True)
+    emitter.emit(
+        {},
+        fmt=OutputFormat.JSON,
+        pretty=False,
+        level=LogLevel.ERROR,
+        message="msg",
+        output=None,
+        emit_output=True,
+    )
 
     mock_print.assert_called_with("error", file=sys.stdout, flush=True)
 
@@ -148,7 +183,15 @@ def test_emit_quiet_critical_proceed(
     mock_serializer.dumps.return_value = "critical"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, level=LogLevel.CRITICAL, emit_output=True)
+    emitter.emit(
+        {},
+        fmt=OutputFormat.JSON,
+        pretty=False,
+        level=LogLevel.CRITICAL,
+        message="msg",
+        output=None,
+        emit_output=True,
+    )
 
     mock_print.assert_called_with("critical", file=sys.stdout, flush=True)
 
@@ -165,7 +208,15 @@ def test_emit_telemetry_fail_debug(
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "debug") as mock_log:
-        emitter.emit({}, level=LogLevel.ERROR, emit_diagnostics=True)
+        emitter.emit(
+            {},
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            level=LogLevel.ERROR,
+            message="msg",
+            output=None,
+            emit_diagnostics=True,
+        )
     mock_log.assert_called_with("Telemetry failed", error="tel fail")
 
 
@@ -181,7 +232,15 @@ def test_emit_telemetry_fail_no_debug(
     cast(Mock, emitter._telemetry.event).side_effect = Exception("tel fail")
 
     with patch.object(emitter._logger, "error") as mock_log:
-        emitter.emit({}, level=LogLevel.ERROR, emit_diagnostics=False)
+        emitter.emit(
+            {},
+            fmt=OutputFormat.JSON,
+            pretty=False,
+            level=LogLevel.ERROR,
+            message="msg",
+            output=None,
+            emit_diagnostics=False,
+        )
     mock_log.assert_not_called()
 
 
@@ -195,7 +254,14 @@ def test_emit_file_success(
     mock_serializer.dumps.return_value = "output"
     mock_serializer_for.return_value = mock_serializer
 
-    emitter.emit({}, output="file.txt")
+    emitter.emit(
+        {},
+        fmt=OutputFormat.JSON,
+        pretty=False,
+        level=LogLevel.INFO,
+        message="msg",
+        output="file.txt",
+    )
 
     mock_file_open.assert_called_with("file.txt", "w", encoding="utf-8")
     mock_file_open().write.assert_called_with("output")
