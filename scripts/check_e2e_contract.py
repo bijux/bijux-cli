@@ -12,8 +12,24 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 E2E_DIR = ROOT / "tests" / "e2e"
+INVENTORY_PATH = E2E_DIR / "INVENTORY.md"
 MIN_TESTS = 100
 MAX_TESTS = 150
+PRIMARY_MARKERS = {
+    "stateful",
+    "compositional",
+    "precedence",
+    "exit_policy",
+    "plugin",
+    "api_parity",
+}
+INVARIANT_CALLS = {
+    "assert_no_state_corruption",
+    "assert_exit_code_stable",
+    "assert_config_consistent",
+    "assert_plugins_consistent",
+    "assert_no_traceback",
+}
 
 
 def _has_marker(node: ast.AST, marker: str) -> bool:
@@ -66,10 +82,53 @@ def _parametrize_count(func: ast.FunctionDef) -> int:
     return total
 
 
+def _call_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    if isinstance(node, ast.Call):
+        return _call_name(node.func)
+    if isinstance(node, ast.Subscript):
+        return _call_name(node.value)
+    return None
+
+
+def _calls_invariant(func: ast.FunctionDef) -> bool:
+    for node in ast.walk(func):
+        if isinstance(node, ast.Call):
+            name = _call_name(node.func)
+            if name in INVARIANT_CALLS:
+                return True
+    return False
+
+
+def _load_inventory() -> set[str]:
+    entries: set[str] = set()
+    if not INVENTORY_PATH.exists():
+        return entries
+    for line in INVENTORY_PATH.read_text(encoding="utf-8").splitlines():
+        if "tests/e2e/" not in line or "|" not in line:
+            continue
+        if line.strip().startswith("|") is False:
+            continue
+        columns = [col.strip() for col in line.strip().strip("|").split("|")]
+        if not columns:
+            continue
+        path = columns[0]
+        if path.startswith("tests/e2e/"):
+            entries.add(path)
+    return entries
+
+
 def main() -> int:
     errors: list[str] = []
     test_count = 0
     collected = 0
+    inventory_present = INVENTORY_PATH.exists()
+    inventory_entries = _load_inventory()
+    if not inventory_present:
+        errors.append("tests/e2e/INVENTORY.md is missing")
     for path in sorted(E2E_DIR.rglob("test_*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         module_marker = _module_markers(tree)
@@ -77,6 +136,10 @@ def main() -> int:
         test_count += len(test_funcs)
         for func in test_funcs:
             collected += _parametrize_count(func)
+
+        rel_path = path.relative_to(ROOT).as_posix()
+        if inventory_present and rel_path not in inventory_entries:
+            errors.append(f"{rel_path} missing from tests/e2e/INVENTORY.md")
 
         for func in test_funcs:
             has_e2e = _decorator_has_marker(func, "e2e") or _module_has_marker(
@@ -91,18 +154,32 @@ def main() -> int:
             if not has_slow:
                 errors.append(f"{path}: missing @pytest.mark.slow")
 
+            has_primary = any(
+                _decorator_has_marker(func, marker)
+                or _module_has_marker(module_marker, marker)
+                for marker in PRIMARY_MARKERS
+            )
+            if not has_primary:
+                errors.append(f"{path}: missing primary e2e marker")
+
+            if not _calls_invariant(func):
+                errors.append(f"{path}: {func.name} missing invariant assertion")
+
     if collected < MIN_TESTS:
-        errors.append(
-            f"tests/e2e below minimum: {collected} < {MIN_TESTS}"
-        )
+        errors.append(f"tests/e2e below minimum: {collected} < {MIN_TESTS}")
     if collected > MAX_TESTS:
-        errors.append(
-            f"tests/e2e exceeds hard cap: {collected} > {MAX_TESTS}"
-        )
+        errors.append(f"tests/e2e exceeds hard cap: {collected} > {MAX_TESTS}")
     if test_count > MAX_TESTS:
-        errors.append(
-            f"tests/e2e exceeds hard cap: {test_count} > {MAX_TESTS}"
-        )
+        errors.append(f"tests/e2e exceeds hard cap: {test_count} > {MAX_TESTS}")
+
+    if inventory_present:
+        expected = {
+            path.relative_to(ROOT).as_posix()
+            for path in E2E_DIR.rglob("test_*.py")
+        }
+        stale = inventory_entries - expected
+        for entry in sorted(stale):
+            errors.append(f"{entry} listed in inventory but missing on disk")
 
     if errors:
         print("E2E contract violations:")

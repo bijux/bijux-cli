@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""API/CLI parity E2E tests."""
+"""Intent: API vs CLI parity for config and plugin lifecycle.
+
+Why E2E: only full boundary checks prove shared state and registry behavior.
+Primary invariants: config consistency, plugin consistency, no traceback.
+"""
 
 from __future__ import annotations
 
@@ -15,10 +19,14 @@ from bijux_cli.api.facade import BijuxAPI
 from bijux_cli.core.di import DIContainer
 from bijux_cli.services.config.contracts import ConfigProtocol
 from tests.e2e.harness import E2EHarness
-from tests.e2e.invariants import assert_config_consistent, assert_no_traceback
+from tests.e2e.invariants import (
+    assert_config_consistent,
+    assert_no_traceback,
+    assert_plugins_consistent,
+)
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.api_parity]
 
 
 def _json_value(payload: str) -> str:
@@ -55,6 +63,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
     return E2EHarness(root=h.root)
 
 
+@pytest.mark.core
 def test_api_set_cli_get_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     with E2EHarness() as h:
         _sync_api_env(monkeypatch, h)
@@ -80,6 +89,7 @@ def test_api_set_cli_get_parity(monkeypatch: pytest.MonkeyPatch) -> None:
         assert_config_consistent(h3)
 
 
+@pytest.mark.core
 def test_cli_set_api_shares_config(monkeypatch: pytest.MonkeyPatch) -> None:
     with E2EHarness() as h:
         _sync_api_env(monkeypatch, h)
@@ -106,6 +116,7 @@ def test_cli_set_api_shares_config(monkeypatch: pytest.MonkeyPatch) -> None:
         assert_config_consistent(h2)
 
 
+@pytest.mark.core
 def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> None:
     with E2EHarness() as h:
         _sync_api_env(monkeypatch, h)
@@ -117,6 +128,7 @@ def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> Non
         assert res_install.returncode == 0
         assert_no_traceback(res_install.stdout + res_install.stderr)
         assert (h.plugins_dir / "parity_plugin").exists()
+        assert_plugins_consistent(h)
 
         h2 = _restart(h)
         api_plugins_dir = Path(h2.env["BIJUXCLI_PLUGINS_DIR"])
@@ -127,6 +139,7 @@ def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> Non
         assert_no_traceback(res_uninstall.stdout + res_uninstall.stderr)
         assert not (h2.plugins_dir / "parity_plugin").exists()
         assert not (api_plugins_dir / "parity_plugin").exists()
+        assert_plugins_consistent(h2)
 
         h3 = _restart(h2)
         dummy_dir2 = write_dummy_plugin(
@@ -136,19 +149,23 @@ def test_api_cli_plugin_lifecycle_parity(monkeypatch: pytest.MonkeyPatch) -> Non
         assert res_install2.returncode == 0
         assert_no_traceback(res_install2.stdout + res_install2.stderr)
         assert (h3.plugins_dir / "parity_plugin2").exists()
+        assert_plugins_consistent(h3)
 
         h4 = _restart(h3)
         res_uninstall2 = h4.run(["plugins", "uninstall", "parity_plugin2"])
         assert res_uninstall2.returncode == 0
         assert_no_traceback(res_uninstall2.stdout + res_uninstall2.stderr)
         assert not (h4.plugins_dir / "parity_plugin2").exists()
+        assert_plugins_consistent(h4)
 
         h5 = _restart(h4)
         res_uninstall2b = h5.run(["plugins", "uninstall", "parity_plugin2"])
         assert res_uninstall2b.returncode == 1
         assert_no_traceback(res_uninstall2b.stdout + res_uninstall2b.stderr)
+        assert_plugins_consistent(h5)
 
 
+@pytest.mark.core
 def test_cli_reinstall_force_api_sees_plugin(monkeypatch: pytest.MonkeyPatch) -> None:
     with E2EHarness() as h:
         _sync_api_env(monkeypatch, h)
@@ -159,11 +176,13 @@ def test_cli_reinstall_force_api_sees_plugin(monkeypatch: pytest.MonkeyPatch) ->
         res_install = h.run(["plugins", "install", str(dummy_dir)])
         assert res_install.returncode == 0
         assert_no_traceback(res_install.stdout + res_install.stderr)
+        assert_plugins_consistent(h)
 
         h2 = _restart(h)
         res_force = h2.run(["plugins", "install", str(dummy_dir), "--force"])
         assert res_force.returncode == 0
         assert_no_traceback(res_force.stdout + res_force.stderr)
+        assert_plugins_consistent(h2)
 
         assert api.run_sync("plugin_exists", "force_plugin") is True
 
@@ -171,3 +190,4 @@ def test_cli_reinstall_force_api_sees_plugin(monkeypatch: pytest.MonkeyPatch) ->
         res_uninstall = h3.run(["plugins", "uninstall", "force_plugin"])
         assert res_uninstall.returncode == 0
         assert_no_traceback(res_uninstall.stdout + res_uninstall.stderr)
+        assert_plugins_consistent(h3)

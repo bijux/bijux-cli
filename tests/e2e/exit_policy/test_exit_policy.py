@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-"""Exit policy E2E tests."""
+"""Intent: failure routing and exit algebra at the CLI boundary.
+
+Why E2E: error classes must preserve state and output rules end-to-end.
+Primary invariants: no corruption, exit stability, no traceback.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,7 @@ from tests.e2e.invariants import (
 )
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.slow]
+pytestmark = [pytest.mark.e2e, pytest.mark.slow, pytest.mark.exit_policy]
 
 
 def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
@@ -49,6 +53,7 @@ def _restart(h: E2EHarness) -> E2EHarness:
         ["does-not-exist"],
     ],
 )
+@pytest.mark.core
 def test_invalid_inputs_do_not_corrupt_state(args: list[str]) -> None:
     with E2EHarness() as h:
         assert h.run(["config", "set", "guard=1"]).returncode == 0
@@ -78,6 +83,7 @@ def test_invalid_inputs_do_not_corrupt_state(args: list[str]) -> None:
         "broken_plugin_c",
     ],
 )
+@pytest.mark.core
 def test_broken_plugin_metadata_fails_cleanly(name: str) -> None:
     with E2EHarness() as h:
         plug_dir = h.root / name
