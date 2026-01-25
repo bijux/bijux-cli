@@ -343,13 +343,23 @@ def resolve_output_flags(
 
 
 def current_execution_policy() -> ExecutionPolicy:
-    """Resolve the execution policy from the DI container."""
+    """Resolve the execution policy from CLI intent or DI."""
     from bijux_cli.core.di import DIContainer
+    from bijux_cli.core.intent import current_cli_intent
 
     try:
         policy_obj: object = DIContainer.current().resolve(ExecutionPolicy)
     except Exception:
-        return default_execution_policy()
+        policy_obj = None
     if isinstance(policy_obj, ExecutionPolicy):
         return policy_obj
-    return default_execution_policy()
+
+    intent = current_cli_intent()
+    return ExecutionPolicy(
+        output_format=intent.output_format,
+        color=intent.color,
+        quiet=intent.quiet,
+        log_level=intent.log_level,
+        pretty=intent.pretty,
+        include_runtime=intent.include_runtime,
+    )

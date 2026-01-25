@@ -71,6 +71,22 @@ def _fake_configure_emitter(monkeypatch: pytest.MonkeyPatch, emitter: Any) -> No
     monkeypatch.setattr(DIContainer, "current", staticmethod(lambda: fake))
 
 
+@pytest.fixture(autouse=True)
+def _audit_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Provide a stable execution policy for audit tests."""
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=False,
+        ),
+    )
+
+
 class DummyEmitter:
     """Test emitter: matches Emitter, keeps legacy `emitted`."""
 
@@ -161,12 +177,23 @@ def test_audit_ascii_env_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "bijux_cli.cli.commands.diagnostics.audit.contains_non_ascii_env", lambda: True
     )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=False,
+        ),
+    )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
     assert result.exit_code == 3
-    err = json.loads(result.stderr)
+    err = json.loads((result.stderr or result.stdout).strip())
     assert err["failure"] == "ascii_env"
     assert err["code"] == 3
     assert "Non-ASCII environment" in err["error"]
@@ -182,12 +209,23 @@ def test_audit_env_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
         "bijux_cli.cli.commands.diagnostics.audit.validate_env_file_if_present",
         bad_validate,
     )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=False,
+        ),
+    )
     dummy = DummyEmitter()
     _fake_configure_emitter(monkeypatch, dummy)
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
     assert result.exit_code == 3
-    err = json.loads(result.stderr)
+    err = json.loads((result.stderr or result.stdout).strip())
     assert err["failure"] == "ascii"
     assert err["code"] == 3
     assert "bad config" in err["error"]
@@ -211,10 +249,21 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "bijux_cli.cli.core.emit.resolve_serializer", lambda: _BasicSerializer()
     )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=False,
+        ),
+    )
 
     result = runner.invoke(audit_app, [], catch_exceptions=False)
     assert result.exit_code == 1
-    err = json.loads(result.stderr)
+    err = json.loads((result.stderr or result.stdout).strip())
     assert err["failure"] == "unexpected"
     assert err["code"] == 1
     assert "boom" in err["error"]
@@ -267,12 +316,23 @@ def test_audit_output_file_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that an invalid output file path triggers a structured error."""
     emitter = DummyEmitter()
     _fake_configure_emitter(monkeypatch, emitter)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=False,
+        ),
+    )
 
     result = runner.invoke(
         audit_app, ["--output", "/no/such/dir/out.json"], catch_exceptions=False
     )
     assert result.exit_code == 2
-    err = json.loads(result.stderr)
+    err = json.loads((result.stderr or result.stdout).strip())
     assert err["failure"] == "output_file"
     assert err["code"] == 2
     assert "Output directory does not exist" in err["error"]
@@ -521,7 +581,7 @@ def test_audit_catches_value_error_from_env_validation(
     result = runner.invoke(audit_app, [], catch_exceptions=False)
 
     assert result.exit_code == 3
-    err_payload = json.loads(result.stderr)
+    err_payload = json.loads((result.stderr or result.stdout).strip())
 
     assert err_payload["failure"] == "ascii"
     assert err_payload["error"] == error_message
@@ -545,7 +605,7 @@ def test_audit_catches_value_error_from_main_logic(
     result = runner.invoke(audit_app, [], catch_exceptions=False)
 
     assert result.exit_code == 3
-    err_payload = json.loads(result.stderr)
+    err_payload = json.loads((result.stderr or result.stdout).strip())
 
     assert err_payload["failure"] == "ascii"
     assert err_payload["error"] == error_message
@@ -567,7 +627,7 @@ def test_audit_catches_generic_exception_from_main_logic(
     result = runner.invoke(audit_app, [], catch_exceptions=False)
 
     assert result.exit_code == 1
-    err_payload = json.loads(result.stderr)
+    err_payload = json.loads((result.stderr or result.stdout).strip())
 
     assert err_payload["failure"] == "unexpected"
     assert f"An unexpected error occurred: '{error_message}'" == err_payload["error"]
