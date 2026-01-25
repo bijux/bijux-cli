@@ -19,7 +19,7 @@ import logging
 import os
 from pathlib import Path
 import shutil
-import subprocess
+import subprocess  # nosec B404 - controlled internal execution
 import sys
 from typing import Any, cast
 
@@ -311,7 +311,7 @@ def install_plugin(name: str, force: bool = False, **kwargs: Any) -> None:
     else:
         try:
             command = [sys.executable, "-m", "pip", "install", name]
-            subprocess.check_call(command)  # noqa: S603
+            subprocess.check_call(command)  # noqa: S603  # nosec B603 - controlled command list
             logger.debug(f"Pip-installed plugin: {name}")
         except Exception as exc:
             logger.error(f"Failed to install {name}: {exc}")

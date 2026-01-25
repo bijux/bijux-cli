@@ -27,7 +27,7 @@ import contextlib
 import fcntl
 from pathlib import Path
 import shutil
-import subprocess  # noqa: S603
+import subprocess  # noqa: S603  # nosec B404 - intentional CLI invocation
 import sys
 import unicodedata
 
@@ -102,7 +102,11 @@ def uninstall_plugin(
 
     if meta and meta.source == "entrypoint" and meta.dist_name:
         cmd = [sys.executable, "-m", "pip", "uninstall", "-y", meta.dist_name]
-        proc = subprocess.run(cmd, capture_output=True, text=True)  # noqa: S603
+        proc = subprocess.run(  # noqa: S603  # nosec B603 - controlled command list
+            cmd,
+            capture_output=True,
+            text=True,
+        )
         if proc.returncode != 0:
             detail = proc.stderr.strip() or proc.stdout.strip()
             raise_exit_intent(

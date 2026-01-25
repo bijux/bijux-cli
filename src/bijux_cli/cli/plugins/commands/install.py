@@ -25,7 +25,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import shutil
-import subprocess  # noqa: S603
+import subprocess  # noqa: S603  # nosec B404 - intentional CLI invocation
 import sys
 
 import typer
@@ -149,7 +149,7 @@ def install_plugin(
             cmd.append("--upgrade")
         env = os.environ.copy()
         env.setdefault("PIP_DISABLE_PIP_VERSION_CHECK", "1")
-        proc = subprocess.run(  # noqa: S603
+        proc = subprocess.run(  # noqa: S603  # nosec B603 - controlled command list
             cmd,
             env=env,
             capture_output=True,

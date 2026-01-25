@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 import logging
-import subprocess  # noqa: S603
+import subprocess  # noqa: S603  # nosec B404 - controlled internal call
 import sys
 from typing import Any
 
@@ -98,7 +98,9 @@ def maybe_default_to_repl(ctx: Context) -> None:
         ctx: The Typer context.
     """
     if ctx.invoked_subcommand is None and len(sys.argv) == 1:
-        subprocess.call([sys.argv[0], "repl"])  # noqa: S603
+        subprocess.call(  # noqa: S603  # nosec B603 - controlled argv
+            [sys.argv[0], "repl"]
+        )
     elif ctx.invoked_subcommand is None:
         policy = current_execution_policy()
         typer.echo(

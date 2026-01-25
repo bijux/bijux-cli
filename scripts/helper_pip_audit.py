@@ -16,12 +16,35 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 import sys
+import tomllib
 from typing import Any, Dict, Iterable, List, Sequence, Set, Tuple
 
 REPORT_PATH = os.getenv("PIPA_JSON", "artifacts_pages/security/pip-audit.json")
 IGNORE_IDS: Set[str] = set(filter(None, os.getenv("SECURITY_IGNORE_IDS", "").split()))
 IS_STRICT = os.getenv("SECURITY_STRICT", "1") == "1"
+PYPROJECT_PATH = Path(__file__).resolve().parents[1] / "pyproject.toml"
+
+
+def _load_pyproject_ignore_ids() -> Set[str]:
+    if not PYPROJECT_PATH.exists():
+        return set()
+    try:
+        data = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError:
+        return set()
+    tool = data.get("tool", {})
+    security = tool.get("security", {})
+    entries = security.get("pip_audit_ignore", [])
+    ids: Set[str] = set()
+    if isinstance(entries, list):
+        for entry in entries:
+            if isinstance(entry, dict):
+                val = entry.get("id")
+                if isinstance(val, str) and val:
+                    ids.add(val)
+    return ids
 
 
 def _load_report(path: str) -> List[Dict[str, Any]]:
@@ -93,8 +116,10 @@ def _fmt_table(rows: Sequence[Sequence[str]], header: Sequence[str]) -> str:
 
 
 def main() -> None:
-    if IGNORE_IDS:
-        ids = " ".join(sorted(IGNORE_IDS))
+    pyproject_ids = _load_pyproject_ignore_ids()
+    ignore_ids = set(IGNORE_IDS) | pyproject_ids
+    if ignore_ids:
+        ids = " ".join(sorted(ignore_ids))
         print(f"INFO: ignoring IDs/aliases: {ids}")
 
     deps = _load_report(REPORT_PATH)
@@ -113,7 +138,7 @@ def main() -> None:
             continue
         for v in vulns:
             ids = _all_ids(v)
-            if ids & IGNORE_IDS:
+            if ids & ignore_ids:
                 ignored_count += 1
                 continue
             fix_versions = v.get("fix_versions") or []

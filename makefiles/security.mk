@@ -11,7 +11,7 @@ BANDIT_TXT               := $(SECURITY_REPORT_DIR)/bandit.txt
 PIPA_JSON                := $(SECURITY_REPORT_DIR)/pip-audit.json
 PIPA_TXT                 := $(SECURITY_REPORT_DIR)/pip-audit.txt
 
-SECURITY_IGNORE_IDS      ?= PYSEC-2022-42969
+SECURITY_IGNORE_IDS      ?=
 SECURITY_IGNORE_FLAGS     = $(foreach V,$(SECURITY_IGNORE_IDS),--ignore-vuln $(V))
 PIP_AUDIT_CONSOLE_FLAGS  ?= --skip-editable --progress-spinner off
 PIP_AUDIT_INPUTS         ?=
@@ -33,13 +33,9 @@ security-bandit:
 security-audit:
 	@mkdir -p "$(SECURITY_REPORT_DIR)"
 	@echo "→ Pip-audit (dependency vulnerability scan)"
-	@set -e; RC=0; \
-	$(PIP_AUDIT) $(SECURITY_IGNORE_FLAGS) $(PIP_AUDIT_CONSOLE_FLAGS) $(PIP_AUDIT_INPUTS) \
-	  -f json -o "$(PIPA_JSON)" >/dev/null 2>&1 || RC=$$?; \
-	if [ $$RC -ne 0 ]; then \
-	  echo "!  pip-audit invocation failed (rc=$$RC)"; \
-	  if [ "$(SECURITY_STRICT)" = "1" ]; then exit $$RC; fi; \
-	fi
+	@$(PIP_AUDIT) $(SECURITY_IGNORE_FLAGS) $(PIP_AUDIT_CONSOLE_FLAGS) $(PIP_AUDIT_INPUTS) \
+	  -f json -o "$(PIPA_JSON)" >/dev/null 2>&1 || \
+	  echo "!  pip-audit invocation failed (rc=$$?)"
 	@set -o pipefail; \
 	PIPA_JSON="$(PIPA_JSON)" \
 	SECURITY_STRICT="$(SECURITY_STRICT)" \
