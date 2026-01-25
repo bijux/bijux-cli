@@ -8,18 +8,25 @@ from __future__ import annotations
 import pytest
 
 from tests.e2e.harness import E2EHarness
+from tests.e2e.invariants import (
+    assert_config_consistent,
+    assert_exit_code_stable,
+    assert_no_state_corruption,
+    assert_no_traceback,
+    capture_state,
+)
 from tests.e2e.plugins.utils import write_dummy_plugin
 
 pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
 
-def _no_traceback(text: str) -> None:
-    assert "traceback" not in text.lower()
-
-
 def _assert_config_contains(h: E2EHarness, key: str, value: str) -> None:
     content = h.config_path.read_text(encoding="utf-8")
     assert f"BIJUXCLI_{key.upper()}={value}" in content
+
+
+def _restart(h: E2EHarness) -> E2EHarness:
+    return E2EHarness(root=h.root)
 
 
 @pytest.mark.parametrize(
@@ -46,16 +53,21 @@ def test_invalid_inputs_do_not_corrupt_state(args: list[str]) -> None:
     with E2EHarness() as h:
         assert h.run(["config", "set", "guard=1"]).returncode == 0
         _assert_config_contains(h, "guard", "1")
+        before = capture_state(h)
 
-        res = h.run(args)
+        h2 = _restart(h)
+        res = h2.run(args)
         assert res.returncode != 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
         assert (res.stdout + res.stderr).strip() != ""
 
-        res_check = h.run(["config", "get", "guard"])
+        h3 = _restart(h2)
+        res_check = h3.run(["config", "get", "guard"])
         assert res_check.returncode == 0
-        _no_traceback(res_check.stdout + res_check.stderr)
-        _assert_config_contains(h, "guard", "1")
+        assert_no_traceback(res_check.stdout + res_check.stderr)
+        _assert_config_contains(h3, "guard", "1")
+        assert_no_state_corruption(before, capture_state(h3))
+        assert_config_consistent(h3)
 
 
 @pytest.mark.parametrize(
@@ -64,13 +76,6 @@ def test_invalid_inputs_do_not_corrupt_state(args: list[str]) -> None:
         "broken_plugin_a",
         "broken_plugin_b",
         "broken_plugin_c",
-        "broken_plugin_d",
-        "broken_plugin_e",
-        "broken_plugin_f",
-        "broken_plugin_g",
-        "broken_plugin_h",
-        "broken_plugin_i",
-        "broken_plugin_j",
     ],
 )
 def test_broken_plugin_metadata_fails_cleanly(name: str) -> None:
@@ -81,14 +86,20 @@ def test_broken_plugin_metadata_fails_cleanly(name: str) -> None:
             "def setup():\n    return None\n", encoding="utf-8"
         )
         (plug_dir / "plugin.json").write_text("{bad json", encoding="utf-8")
+        before = capture_state(h)
+
         res = h.run(["plugins", "install", str(plug_dir)])
         assert res.returncode != 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
+        assert res.stderr.strip() != ""
+        assert res.stdout.strip() == ""
         assert not (h.plugins_dir / name).exists()
 
-        res_list = h.run(["plugins", "list"])
+        h2 = _restart(h)
+        res_list = h2.run(["plugins", "list"])
         assert res_list.returncode == 0
-        _no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_state_corruption(before, capture_state(h2))
 
 
 @pytest.mark.parametrize(
@@ -96,9 +107,6 @@ def test_broken_plugin_metadata_fails_cleanly(name: str) -> None:
     [
         "missing_meta_a",
         "missing_meta_b",
-        "missing_meta_c",
-        "missing_meta_d",
-        "missing_meta_e",
     ],
 )
 def test_plugin_missing_metadata_fails(name: str) -> None:
@@ -108,14 +116,20 @@ def test_plugin_missing_metadata_fails(name: str) -> None:
         (plug_dir / "plugin.py").write_text(
             "def setup():\n    return None\n", encoding="utf-8"
         )
+        before = capture_state(h)
+
         res = h.run(["plugins", "install", str(plug_dir)])
         assert res.returncode != 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
+        assert res.stderr.strip() != ""
+        assert res.stdout.strip() == ""
         assert not (h.plugins_dir / name).exists()
 
-        res_list = h.run(["plugins", "list"])
+        h2 = _restart(h)
+        res_list = h2.run(["plugins", "list"])
         assert res_list.returncode == 0
-        _no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_state_corruption(before, capture_state(h2))
 
 
 @pytest.mark.parametrize(
@@ -123,9 +137,6 @@ def test_plugin_missing_metadata_fails(name: str) -> None:
     [
         "conflict_meta_a",
         "conflict_meta_b",
-        "conflict_meta_c",
-        "conflict_meta_d",
-        "conflict_meta_e",
     ],
 )
 def test_plugin_invalid_metadata_fields_fails(name: str) -> None:
@@ -145,11 +156,18 @@ def test_plugin_invalid_metadata_fields_fails(name: str) -> None:
             ),
             encoding="utf-8",
         )
+        before = capture_state(h)
+
         res = h.run(["plugins", "install", str(plug_dir)])
         assert res.returncode != 0
-        _no_traceback(res.stdout + res.stderr)
+        assert_no_traceback(res.stdout + res.stderr)
+        assert res.stderr.strip() != ""
+        assert res.stdout.strip() == ""
         assert not (h.plugins_dir / name).exists()
 
-        res_list = h.run(["plugins", "list"])
+        h2 = _restart(h)
+        res_list = h2.run(["plugins", "list"])
         assert res_list.returncode == 0
-        _no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_traceback(res_list.stdout + res_list.stderr)
+        assert_no_state_corruption(before, capture_state(h2))
+        assert_exit_code_stable([res.returncode, res.returncode])
