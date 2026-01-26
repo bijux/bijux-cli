@@ -49,7 +49,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import (
+from bijux_cli.cli.core.command import (
     ascii_safe,
     normalize_format,
     validate_common_flags,
@@ -263,7 +263,7 @@ def dev_di_graph(
                 )
             p.parent.mkdir(parents=True, exist_ok=True)
             try:
-                from bijux_cli.cli.core.emit import resolve_serializer
+                from bijux_cli.cli.core.command import resolve_serializer
 
                 rendered = resolve_serializer().dumps(
                     payload, fmt=fmt_lower, pretty=effective_pretty

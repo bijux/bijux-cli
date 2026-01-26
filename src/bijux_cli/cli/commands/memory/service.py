@@ -40,7 +40,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import (
+from bijux_cli.cli.core.command import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,

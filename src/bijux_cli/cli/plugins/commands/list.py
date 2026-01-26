@@ -39,7 +39,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.cli.core.command import validate_common_flags
 from bijux_cli.cli.plugins.commands.validation import refuse_on_symlink
 from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins import get_plugins_dir

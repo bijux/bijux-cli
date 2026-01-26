@@ -10,7 +10,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 import platform
 
-from bijux_cli.cli.core.validation import ascii_safe
+from bijux_cli.cli.core.command import ascii_safe
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.version import __version__
 

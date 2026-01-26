@@ -52,7 +52,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import ascii_safe, validate_common_flags
+from bijux_cli.cli.core.command import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.precedence import current_execution_policy
@@ -249,7 +249,7 @@ def _export_history(
     """Export history data and return a payload."""
     try:
         entries = history_svc.list()
-        from bijux_cli.cli.core.emit import resolve_serializer
+        from bijux_cli.cli.core.command import resolve_serializer
 
         rendered = resolve_serializer().dumps(entries, fmt=intent.fmt, pretty=True)
         Path(intent.export_path or "").write_text(

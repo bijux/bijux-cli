@@ -16,7 +16,7 @@ import pytest
 import typer
 
 from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
-from bijux_cli.cli.core.validation import (
+from bijux_cli.cli.core.command import (
     ascii_safe,
     contains_non_ascii_env,
     normalize_format,
@@ -165,7 +165,7 @@ def test_validate_common_flags_invalid() -> None:
 def test_validate_common_flags_non_ascii(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test common flag validation when non-ASCII environment is detected."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.validation.contains_non_ascii_env", lambda: True
+        "bijux_cli.cli.core.command.contains_non_ascii_env", lambda: True
     )
     with pytest.raises(ExitIntentError) as exc:
         validate_common_flags("json", "cmd", False)
@@ -184,7 +184,7 @@ def test_validate_common_flags_quiet() -> None:
 def test_validate_common_flags_include_runtime() -> None:
     """Test that runtime info is included in error payload when requested."""
     with (
-        patch("bijux_cli.cli.core.validation.contains_non_ascii_env", lambda: True),
+        patch("bijux_cli.cli.core.command.contains_non_ascii_env", lambda: True),
         pytest.raises(ExitIntentError) as exc,
     ):
         validate_common_flags("json", "cmd", False, include_runtime=True)

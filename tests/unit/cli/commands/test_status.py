@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import signal
 import time
 from types import SimpleNamespace
@@ -18,7 +19,7 @@ from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ColorMode, ExitCode, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntent, ExitIntentError
 from bijux_cli.core.precedence import ExecutionPolicy, resolve_log_policy
-from bijux_cli.infra.contracts import Emitter
+from bijux_cli.infra.contracts import Emitter, Serializer
 from bijux_cli.services.contracts import TelemetryProtocol
 
 
@@ -109,6 +110,7 @@ class FakeDI:
         """Initialize the fake DI container with specific fakes."""
         self._e = emitter
         self._t = telemetry
+        self._s = _BasicSerializer()
 
     def resolve(self, key: Any) -> Emitter | TelemetryProtocol:
         """Resolve a dependency to its fake implementation."""
@@ -116,7 +118,30 @@ class FakeDI:
             return self._e
         if key is TelemetryProtocol:
             return self._t
+        if key is Serializer:
+            return self._s
         raise KeyError(key)
+
+
+class _BasicSerializer:
+    """Minimal JSON serializer for tests."""
+
+    def dumps(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> str:
+        _ = fmt
+        return json.dumps(obj, indent=2 if pretty else None)
+
+    def dumps_bytes(self, obj: Any, *, fmt: OutputFormat, pretty: bool) -> bytes:
+        return self.dumps(obj, fmt=fmt, pretty=pretty).encode("utf-8")
+
+    def loads(self, data: str | bytes, *, fmt: OutputFormat, pretty: bool) -> Any:
+        _ = (fmt, pretty)
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
+        return json.loads(data)
+
+    def emit(self, payload: Any, *, fmt: OutputFormat, pretty: bool) -> None:
+        _ = (payload, fmt, pretty)
+        return None
 
 
 def test_build_payload_minimal(monkeypatch: pytest.MonkeyPatch) -> None:

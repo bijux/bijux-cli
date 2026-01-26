@@ -67,7 +67,7 @@ def _invoke(tokens: list[str], *, repl_quiet: bool) -> int:
             data = json.loads(result.stdout or "{}")
             if data.get("entries", []) == []:
                 if should_print:
-                    from bijux_cli.cli.core.emit import resolve_serializer
+                    from bijux_cli.cli.core.command import resolve_serializer
 
                     pretty = (
                         resolve_serializer()
@@ -170,7 +170,7 @@ def _run_piped(repl_quiet: bool) -> None:
                         "command": f"config {subcommand[0] if subcommand else ''}".strip(),
                         "format": "json",
                     }
-                    from bijux_cli.cli.core.emit import resolve_serializer
+                    from bijux_cli.cli.core.command import resolve_serializer
 
                     print(
                         resolve_serializer().dumps(
