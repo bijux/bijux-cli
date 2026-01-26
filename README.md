@@ -383,6 +383,13 @@ Track progress and suggest features via [Issues](https://github.com/bijux/bijux-
 ## Docs & Resources
 
 * **Site**: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
+* **Docs navigation**:
+  - Concepts: [docs/concepts/architecture.md](https://github.com/bijux/bijux-cli/blob/main/docs/concepts/architecture.md)
+  - Guides: [docs/guides/cli_usage.md](https://github.com/bijux/bijux-cli/blob/main/docs/guides/cli_usage.md)
+  - Reference: [docs/reference/commands.md](https://github.com/bijux/bijux-cli/blob/main/docs/reference/commands.md)
+  - Examples: [docs/examples/basic_example.md](https://github.com/bijux/bijux-cli/blob/main/docs/examples/basic_example.md)
+  - FAQ: [docs/faq.md](https://github.com/bijux/bijux-cli/blob/main/docs/faq.md)
+  - Glossary: [docs/glossary.md](https://github.com/bijux/bijux-cli/blob/main/docs/glossary.md)
 * **Changelog**: [https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md](https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md)
 * **Repository**: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 * **Issues**: [https://github.com/bijux/bijux-cli/issues](https://github.com/bijux/bijux-cli/issues)

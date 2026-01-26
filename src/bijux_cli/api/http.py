@@ -39,6 +39,7 @@ from fastapi import (
     Response,
     status,
 )
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.params import Depends as DependsMarker
 from fastapi.responses import JSONResponse
@@ -106,6 +107,12 @@ class ItemIn(BaseModel):
         Raises:
             ValueError: If the name is empty or contains only whitespace.
         """
+        for ch in v:
+            codepoint = ord(ch)
+            if codepoint < 0x20 or 0x7F <= codepoint <= 0x9F:
+                raise ValueError("name must not contain control characters")
+            if 0xD800 <= codepoint <= 0xDFFF:
+                raise ValueError("name must not contain surrogate code points")
         stripped_v = v.strip()
         if not stripped_v:
             raise ValueError("name must not be empty or contain only whitespace")
@@ -728,14 +735,15 @@ async def validation_exception_handler(
     Returns:
         JSONResponse: A JSON response detailing the validation error.
     """
-    logger.warning("Validation error: %s", exc.errors())
+    errors = jsonable_encoder(exc.errors())
+    logger.warning("Validation error: %s", errors)
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=Problem(
             type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
             title="Validation error",
             status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=json.dumps(exc.errors()),
+            detail=json.dumps(errors),
             instance=str(request.url),
         ).model_dump(mode="json"),
     )
