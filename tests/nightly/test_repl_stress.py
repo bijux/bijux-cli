@@ -13,7 +13,7 @@ from tests.e2e.harness import E2EHarness
 from tests.e2e.invariants import assert_config_consistent, assert_no_traceback
 from tests.regression.test_functional import run_repl_script
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 def test_repl_long_session() -> None:

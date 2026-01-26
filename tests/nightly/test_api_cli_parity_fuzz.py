@@ -15,7 +15,7 @@ from bijux_cli.services.config.contracts import ConfigProtocol
 from tests.e2e.harness import E2EHarness
 from tests.e2e.invariants import assert_config_consistent, assert_no_traceback
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 def _sync_api_env(monkeypatch: pytest.MonkeyPatch, h: E2EHarness) -> None:

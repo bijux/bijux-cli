@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import io
 import sys
 import time
 
@@ -150,6 +151,34 @@ def _emit_human_help(
     )
 
 
+def _capture_help_text(help_text_provider: Callable[[], str]) -> str:
+    """Capture help text without leaking human output to stdout."""
+    buf = io.StringIO()
+    original = sys.stdout
+    sys.stdout = buf
+    try:
+        text = help_text_provider()
+    finally:
+        sys.stdout = original
+    captured = buf.getvalue()
+    if text.strip():
+        return text
+    return captured
+
+
+def _override_fmt_from_argv(fmt: str) -> str:
+    """Prefer an explicit --format/-f value when provided on the CLI."""
+    if fmt.strip().lower() != _HUMAN:
+        return fmt
+    argv = sys.argv[1:]
+    if "help" in argv:
+        argv = argv[argv.index("help") + 1 :]
+    for idx, arg in enumerate(argv):
+        if arg in OPT_FORMAT and idx + 1 < len(argv):
+            return argv[idx + 1]
+    return fmt
+
+
 help_app = AsyncTyper(
     name="help",
     add_completion=False,
@@ -179,6 +208,7 @@ def help_callback(
     started_at = time.perf_counter()
     effective, output = _resolve_help_config()
     emit_output = not effective.flags.quiet
+    fmt = _override_fmt_from_argv(fmt)
 
     if "-h" in sys.argv or "--help" in sys.argv:
         all_args = sys.argv[2:]
@@ -316,7 +346,9 @@ def help_callback(
             help_text_provider=lambda: _get_formatted_help(target_cmd, target_ctx),
         )
 
-    help_text = _get_formatted_help(target_cmd, target_ctx)
+    help_text = _capture_help_text(
+        lambda: _get_formatted_help(target_cmd, target_ctx)
+    )
     try:
         payload = _build_help_payload(help_text, intent.include_runtime, started_at)
     except ValueError as exc:

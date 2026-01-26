@@ -13,7 +13,7 @@ from tests.e2e.harness import E2EHarness
 from tests.e2e.invariants import assert_no_traceback, assert_plugins_consistent
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 @settings(max_examples=20, deadline=None)

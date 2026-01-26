@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import importlib.util as _importlib_util
 import json
-import sys
 from types import ModuleType
 from typing import Any, Final, cast
 
@@ -95,19 +94,6 @@ class OrjsonSerializer:
             return _YAML.safe_load(data)
         raise SerializationError(f"Unsupported format: {fmt}")
 
-    def emit(
-        self,
-        payload: Any,
-        *,
-        fmt: OutputFormat,
-        pretty: bool,
-    ) -> None:
-        """Serialize and print to stdout."""
-        text = self.dumps(payload, fmt=fmt, pretty=pretty)
-        print(text.rstrip("\n"), file=sys.stdout, flush=True)
-        if self._telemetry is not None:
-            self._telemetry.event("serializer_emit", {"format": fmt.value})
-
 
 class PyYAMLSerializer:
     """Serializer restricted to YAML format."""
@@ -139,19 +125,6 @@ class PyYAMLSerializer:
         if fmt is not OutputFormat.YAML:
             raise SerializationError("PyYAMLSerializer only supports YAML")
         return _YAML.safe_load(data) if _YAML is not None else None
-
-    def emit(
-        self,
-        payload: Any,
-        *,
-        fmt: OutputFormat,
-        pretty: bool,
-    ) -> None:
-        """Serialize and print to stdout."""
-        text = self.dumps(payload, fmt=fmt, pretty=pretty)
-        print(text.rstrip("\n"), file=sys.stdout, flush=True)
-        if self._telemetry is not None:
-            self._telemetry.event("serializer_emit", {"format": fmt.value})
 
 
 def serializer_for(

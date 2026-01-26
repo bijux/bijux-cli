@@ -26,10 +26,6 @@ class Serializer(Protocol):
         """Deserialize data into a value."""
         ...
 
-    def emit(self, payload: Any, *, fmt: OutputFormat, pretty: bool) -> None:
-        """Serialize and emit a payload."""
-        ...
-
 
 @runtime_checkable
 class RetryPolicy(Protocol):
