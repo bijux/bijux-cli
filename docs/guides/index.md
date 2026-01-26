@@ -1,30 +1,21 @@
 # Guides
 
 ## Purpose
-This section guarantees task-oriented instructions.
+Guides provide task-oriented instructions for common workflows. They exist to help you complete a specific job with bijux-cli without wading through conceptual material first.
 
 ## Scope
-It does not duplicate reference tables or concepts.
+This section focuses on doing things: using commands, configuring the CLI, installing plugins, and embedding the API. It does not duplicate the conceptual guarantees or reference tables.
 
-## Core Concepts
-- Each guide covers one task.
+## Audience
+Engineers who want to accomplish a concrete task quickly should start here. Each guide is written as a focused path from goal to result.
 
-## Invariants
-- Guides are actionable and minimal.
+## What You Will Find
+Each guide explains a single workflow, its prerequisites, the exact commands to run, and the expected outcomes. The goal is to keep each guide short, precise, and actionable.
 
-## Execution
-- CLI usage: cli-usage.md
-- Configuration: configuration.md
-- Plugins: plugins.md
-- API usage: api-usage.md
-- Development: development.md
-
-## Failure Modes
-- Missing prerequisites cause command failures.
-
-## Design Rationale
-- Alternatives: narrative tutorials.
-- Rejected because they hide action steps.
-
-## Non-Goals
-- Exhaustive reference tables.
+## Index
+- [CLI usage](cli-usage.md)
+- [Configuration](configuration.md)
+- [Plugins](plugins.md)
+- [API usage](api-usage.md)
+- [Development](development.md)
+- [Contributor mental model](contributor-mental-model.md)

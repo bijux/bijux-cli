@@ -1,68 +1,67 @@
-# Plugins
+# Plugin Examples
 
 ## Purpose
-This document shows a minimal plugin lifecycle and explains the consequences.
+These examples demonstrate how plugin operations behave in practice. They are designed to show how installation, inspection, and removal interact with the registry and filesystem.
 
 ## Scope
-It covers install, list, info, and uninstall only.
+The examples assume a local plugin directory with minimal metadata. They do not cover plugin authoring or complex dependency resolution.
 
-## What problem this solves
-Plugin examples often skip validation and cleanup.
-This example shows the full lifecycle with explicit cleanup.
+## Example 1: Install a Local Plugin
+This example shows a basic local install workflow.
 
-## Why you should care
-If you install plugins in CI, you need a predictable lifecycle and no residue.
+### Setup
+Create a minimal plugin directory with metadata and a module file.
 
-## What confusion this removes
-It removes uncertainty about when a plugin is registered and removed.
+```bash
+mkdir -p ./my_plugin
+cat > ./my_plugin/plugin.json <<'JSON'
+{
+  "name": "my_plugin",
+  "version": "1.0.0",
+  "bijux_cli_version": ">=0",
+  "schema_version": "1"
+}
+JSON
+printf '# plugin\n' > ./my_plugin/plugin.py
+```
 
-## Guarantees
-Bijux guarantees:
-1. Invalid plugins never activate.
-2. Registry state matches filesystem state.
-
-## How to Think About This
-Treat plugins as lifecycle-managed commands, not arbitrary code.
-
-## Common Misunderstandings
-- "Install means activate immediately." It does not.
-
-## Execution
-Setup:
-
+### Command
 ```bash
 bijux plugin install ./my_plugin
 ```
 
-Command:
+### Expected Output
+The command reports a successful install and exits with code 0. The plugin is added to the registry and becomes available to the CLI.
 
+### Why This Matters
+Install validates metadata before activation, which prevents partial or broken plugins from entering the registry.
+
+## Example 2: Inspect Installed Plugins
+This example verifies that the registry reflects the installed plugin.
+
+### Command
 ```bash
+bijux plugin list
+bijux plugin info my_plugin
+```
+
+### Expected Output
+`list` includes `my_plugin`, and `info` prints metadata about the plugin. If the plugin is not present, the command fails with a stable error.
+
+### Why This Matters
+The registry is the single source of truth for installed plugins. Listing and inspecting confirm consistency with filesystem state.
+
+## Example 3: Uninstall and Verify Cleanup
+This example shows removal and validation that the registry is clean.
+
+### Command
+```bash
+bijux plugin uninstall my_plugin
 bijux plugin list
 ```
 
-Output:
+### Expected Output
+Uninstall succeeds and `list` no longer shows the plugin. If removal fails, the CLI emits a structured error and preserves registry integrity.
 
-```json
-{"plugins":["my_plugin"]}
-```
-
-Implication:
-
-Listing plugins is a registry view, not a filesystem scan.
-If a plugin is listed, it passed metadata checks.
-
-Cleanup:
-
-```bash
-bijux plugin uninstall my_plugin
-```
-
-## Failure Modes
-- Invalid metadata exits with code 2.
-
-## Design Rationale
-We deliberately chose a full lifecycle example to show cleanup.
-Why not only install? It hides removal behavior.
-
-## Non-Goals
-- Plugin scaffolding details.
+### Why This Matters
+Uninstall must be symmetric with install. Consistent cleanup prevents registry drift and avoids manual cleanup work.

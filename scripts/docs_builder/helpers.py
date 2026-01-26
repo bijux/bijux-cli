@@ -89,7 +89,7 @@ _DOT_SEG = re.compile(r"^(?:\./|\../)+")
 _ANCH_RE = re.compile(r"[^a-z0-9]+")
 
 
-def _mkdocs_open():
+def _open_mkdocs_fs():
     """Lazily import and return `mkdocs_gen_files.open` if available.
 
     This function attempts to import `mkdocs_gen_files` only when called. It
@@ -109,7 +109,7 @@ def _mkdocs_open():
         return None
 
 
-def _use_disk_fallback() -> bool:
+def _should_use_disk_fallback() -> bool:
     """Check if a disk fallback for file writing is explicitly requested.
 
     Returns:
@@ -118,7 +118,7 @@ def _use_disk_fallback() -> bool:
     return os.environ.get("GEN_FILES_DISK_FALLBACK") == "1"
 
 
-def _disk_base_dir() -> Path:
+def _disk_fallback_dir() -> Path:
     """Determine the base directory for disk-based file generation.
 
     This path is used when `mkdocs_gen_files` is not available or when a disk
@@ -167,8 +167,8 @@ def write_if_changed(
     is_bytes = "b" in mode
     read_mode = "rb" if is_bytes else "r"
 
-    if _use_disk_fallback():
-        out = _disk_base_dir() / rel_path
+    if _should_use_disk_fallback():
+        out = _disk_fallback_dir() / rel_path
         out.parent.mkdir(parents=True, exist_ok=True)
         existing = (
             out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
@@ -179,7 +179,7 @@ def write_if_changed(
             ) if not is_bytes else out.write_bytes(content)
         return
 
-    opener = _mkdocs_open()
+    opener = _open_mkdocs_fs()
     if opener is not None:
         try:
             try:
@@ -194,7 +194,7 @@ def write_if_changed(
         except Exception:
             pass
 
-    out = _disk_base_dir() / rel_path
+    out = _disk_fallback_dir() / rel_path
     out.parent.mkdir(parents=True, exist_ok=True)
     existing = (
         out.read_text(encoding="utf-8") if not is_bytes and out.exists() else None
@@ -341,8 +341,9 @@ def _rewrite_url(url: str, target_map: dict[str, str]) -> str:
     if re.match(r"^[a-zA-Z][a-zA-Z0-9+\-.]*:", base):
         return url
     base_norm = _normalize_rel(base)
-    base_norm = target_map.get(base_norm, base_norm)
-    return base_norm + (sep + frag if frag else "")
+    mapped = target_map.get(base_norm)
+    resolved = mapped if mapped is not None else base
+    return resolved + (sep + frag if frag else "")
 
 
 def rewrite_links_general(md: str) -> str:

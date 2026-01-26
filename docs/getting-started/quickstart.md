@@ -1,32 +1,37 @@
 # Quickstart
 
 ## Purpose
-This document guarantees a complete config cycle.
+This document gives you a minimal end-to-end run of bijux-cli so you can see the execution model in action. It is designed to validate that the CLI is working and to show you the shape of its output.
 
 ## Scope
-It covers a minimal CLI workflow only.
+Quickstart uses a small set of commands and basic output formats. It does not introduce configuration files or plugin behavior.
 
-## Core Concepts
-- Set, get, list, and unset a config value.
+## First Command
+Run `bijux --help` to verify that the CLI responds and that the help system is available.
 
-## Invariants
-- Structured output respects `--format`.
-- Exit codes are stable.
-
-## Execution
 ```bash
-bijux config set foo=bar
-bijux config get foo
-bijux config list --format json
-bijux config unset foo
+bijux --help
 ```
 
-## Failure Modes
-- Invalid key syntax exits with code 2.
+You should see command categories and a short description of each primary command.
 
-## Design Rationale
-- Alternatives: status-only example.
-- Rejected because it does not mutate state.
+## A Simple Status Check
+Next, run a simple command that exercises the normal execution path.
 
-## Non-Goals
-- Plugin usage.
+```bash
+bijux status
+```
+
+This command provides a lightweight health check and shows standard output formatting.
+
+## Structured Output
+To see machine-readable output, request JSON format explicitly.
+
+```bash
+bijux status --format json
+```
+
+The output will be valid JSON. This is the same output you should use in scripts and automation.
+
+## What This Proves
+If these commands succeed, you have validated installation, argument parsing, policy resolution, runtime initialization, and output emission.

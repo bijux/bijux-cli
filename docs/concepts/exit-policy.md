@@ -1,55 +1,30 @@
-# Exit policy
+# Exit Policy
 
 ## Purpose
-This document tells you which exit code and output stream a failure uses.
+This document defines the exit policy for bijux-cli. It describes how exit codes are assigned and what guarantees users can rely on when integrating bijux-cli into automation.
 
 ## Scope
-It covers CLI exit codes and error routing only.
+It covers exit code mapping and error classification. It does not cover command output formatting or logging details beyond what is needed to explain exit behavior.
 
-## What problem this solves
-If exit codes shift, scripts break. This policy prevents that drift.
-
-## Why you should care
-You can build automation that depends on stable numeric outcomes.
-
-## What confusion this removes
-It removes doubt about whether output format or quiet mode changes exit codes.
-
-## Guarantees
-Bijux guarantees:
-1. Each error class maps to a stable exit code.
-2. Quiet suppresses output but never changes exit codes.
-3. Output format never changes exit codes.
+## Core Concepts
+Exit policy is a contract: each error class maps to a stable exit code, and successful commands always return zero. The policy applies uniformly across CLI commands.
 
 ## How to Think About This
-Treat exit codes as part of the interface, not an implementation detail.
-If you need a different exit behavior, change policy in one place.
+Treat exit codes as part of the public API. If a command fails, the exit code is the authoritative signal for automation, and output is supplemental. The policy exists to ensure scripts remain stable even as internal implementations change.
 
-## Common Misunderstandings
-- "Quiet mode hides errors by changing exit codes." It does not.
-- "JSON output uses different exit codes." It does not.
-
-## Execution
-- Success exits with code 0.
-- Usage or user input errors exit with code 2.
-- ASCII or encoding errors exit with code 3.
-- Internal errors exit with code 1.
-- User abort exits with code 130.
+## Invariants
+- Success returns exit code 0.
+- Known error classes map to fixed exit codes.
+- Formatting flags do not alter exit codes.
 
 ## Failure Modes
-- Invalid command: exit 2 with structured error.
-- Internal exception: exit 1 with structured error.
-- Encoding failure: exit 3 with structured error.
-
-No retries occur at the exit policy layer.
+If an unexpected exception occurs, the CLI emits a structured error and returns a general failure exit code. This preserves a deterministic signal even when the underlying error is not classified.
 
 ## Design Rationale
-We deliberately chose a centralized policy to keep exit codes stable.
-Why not let each command choose? That creates inconsistent scripting behavior.
+Stable exit codes are essential for CI and automation. By fixing the mapping, we reduce the risk of silent behavioral changes and make failures debuggable.
 
 ## Non-Goals
-- Retrying failed commands.
-- Plugin-specific exit codes.
+This document does not define error payload formats. It focuses only on exit behavior.
 
 ## References
 - Implementation: `src/bijux_cli/core/exit_policy.py`

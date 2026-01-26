@@ -1,47 +1,22 @@
-# Decision rules
+# Decision Rules
 
 ## Purpose
-This document tells you where decisions are made and where they are forbidden.
+This document defines the architectural rules that preserve bijux-cli invariants. It exists to prevent accidental design drift as the codebase evolves.
 
 ## Scope
-It covers policy, exit behavior, and output routing.
+It covers decision ownership and forbidden behaviors. It does not specify implementation details or coding style.
 
-## What problem this solves
-Policy decisions hidden in commands cause inconsistent behavior.
-These rules prevent that drift.
+## Core Rules
+Decisions about policy, output routing, and exit behavior must occur in core. Infra components must execute explicit instructions and never guess or normalize values.
 
-## Why you should care
-If you violate these rules, you break tests and user guarantees.
-
-## What confusion this removes
-It removes ambiguity about which module owns each decision.
-
-## Guarantees
-Bijux guarantees:
-1. No policy resolution outside `core/precedence.py`.
-2. No exit decisions outside `core/exit_policy.py`.
-3. No output routing outside core policy resolution.
-
-## How to Think About This
-Treat policy as a single decision point. Everything else is execution.
-
-## Common Misunderstandings
-- "Commands can override routing." They cannot.
-
-## Execution
-- Command handlers build payloads only.
-- Emitters write exactly what policy dictates.
+## Why These Rules Exist
+These rules prevent late overrides and inconsistent behavior across different entry points. They are enforced by tests and are considered part of the public contract.
 
 ## Failure Modes
-- Raw flag strings or ad-hoc routing fail architecture tests.
+When rules are violated, behavior becomes nondeterministic and tests may pass locally while failing in automation. These violations are treated as regressions and must be corrected, not documented away.
 
 ## Design Rationale
-We deliberately chose centralized policy to keep behavior deterministic.
-Why not let each command decide? It creates divergence and hard-to-find bugs.
+By centralizing decisions, we make the system predictable and testable. This also makes it easier to reason about failure handling and exit codes.
 
 ## Non-Goals
-- CLI UX design guidance.
-
-## References
-- Enforcement tests: `tests/unit/core/test_architecture.py`
-- Policy implementation: `src/bijux_cli/core/precedence.py`
+This document does not define project process or governance.

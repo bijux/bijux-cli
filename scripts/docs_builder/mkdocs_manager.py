@@ -43,7 +43,7 @@ from scripts.docs_builder.helpers import write_if_changed
 PAGE_META_NO_EDIT = "---\nhide:\n  - edit\n---\n\n"
 
 
-def _materialize_root_docs() -> None:
+def _stage_root_docs() -> None:
     """Copy key project files into the docs site; create fallbacks if absent."""
     pairs: List[Tuple[Path, Path, Callable[[str], str]]] = [
         (REPO_ROOT / "docs" / "index.md", Path("index.md"), rewrite_links_general),
@@ -87,7 +87,7 @@ def _materialize_root_docs() -> None:
         write_if_changed("index.md", fallback)
 
 
-def _materialize_docs_tree() -> None:
+def _stage_docs_tree() -> None:
     """Copy the curated docs tree into the generated filesystem."""
     docs_root = REPO_ROOT / "docs"
     for rel_dir in (
@@ -110,7 +110,7 @@ def _materialize_docs_tree() -> None:
             write_if_changed(dst, md)
 
 
-def _compose_nav() -> None:
+def _build_nav() -> None:
     """Programmatically composes the entire site navigation in `nav.md`.
 
     This function builds a Markdown list that `mkdocs-literate-nav` uses to
@@ -140,17 +140,20 @@ def _compose_nav() -> None:
             f"{INDENT1}* [Plugins](guides/plugins.md)",
             f"{INDENT1}* [API usage](guides/api-usage.md)",
             f"{INDENT1}* [Development](guides/development.md)",
+            f"{INDENT1}* [Contributor mental model](guides/contributor-mental-model.md)",
             "* [Reference](reference/index.md)",
             f"{INDENT1}* [Commands](reference/commands.md)",
             f"{INDENT1}* [Config schema](reference/config-schema.md)",
             f"{INDENT1}* [Environment](reference/environment.md)",
             f"{INDENT1}* [Exit codes](reference/exit-codes.md)",
             f"{INDENT1}* [Glossary](reference/glossary.md)",
+            f"{INDENT1}* [Pre-1.0 change policy](reference/pre-1.0.md)",
             "* [Examples](examples/index.md)",
             f"{INDENT1}* [Workflows](examples/workflows.md)",
             f"{INDENT1}* [Plugins](examples/plugins.md)",
             "* [Architecture](architecture/index.md)",
             f"{INDENT1}* [Decision rules](architecture/decision-rules.md)",
+            f"{INDENT1}* [Walk-through](architecture/walkthrough.md)",
         ],
     )
 
@@ -208,8 +211,8 @@ def main() -> None:
     3. Build all artifact-specific documentation pages.
     4. Compose the final site navigation file.
     """
-    _materialize_root_docs()
-    _materialize_docs_tree()
+    _stage_root_docs()
+    _stage_docs_tree()
     TestArtifactPage().build()
     LintArtifactPage().build()
     QualityArtifactPage().build()
@@ -217,7 +220,7 @@ def main() -> None:
     APIArtifactPage().build()
     SBOMArtifactPage().build()
     CitationArtifactPage().build()
-    _compose_nav()
+    _build_nav()
 
 
 if __name__ == "__main__":

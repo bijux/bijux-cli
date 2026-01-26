@@ -1,28 +1,13 @@
-# Getting started
+# Getting Started
 
 ## Purpose
-This section guarantees a minimal path from install to first command.
+This section provides a short, reliable path to a working bijux-cli install. It focuses on practical steps and removes guesswork so you can verify the tool is working before you invest time in deeper concepts.
 
 ## Scope
-It does not explain internals or plugin development.
+Getting Started covers installation, basic verification, and a minimal first run. It does not cover configuration strategy, advanced flags, or plugin development.
 
-## Core Concepts
-- Install the CLI.
-- Run a basic command sequence.
+## Audience
+Engineers who want to get bijux-cli running quickly, including CI or local development environments, will find the steps here sufficient to reach a known-good baseline.
 
-## Invariants
-- Commands shown are stable and supported.
-
-## Execution
-- Installation: installation.md
-- Quickstart: quickstart.md
-
-## Failure Modes
-- Missing binary or invalid PATH yields a shell error.
-
-## Design Rationale
-- Alternatives: embed quickstart in the README.
-- Rejected because it buries onboarding steps.
-
-## Non-Goals
-- Advanced configuration.
+## What You Will Do
+You will install the CLI, confirm the binary is reachable, and run a first command that demonstrates successful execution and output routing.

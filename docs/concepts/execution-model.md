@@ -1,60 +1,33 @@
-# Execution model
+# Execution Model
 
 ## Purpose
-This document tells you exactly how a command runs, from argv to exit.
+This document defines the execution model of bijux-cli. It states where decisions are made, where they are forbidden, and what invariants are preserved across every run.
 
 ## Scope
-It covers the CLI process only. It does not cover the API or plugin internals.
+It covers the CLI execution path from argument parsing through exit. It does not cover internal APIs beyond what is needed to explain the model.
 
-## What problem this solves
-When a command fails, you need to know where the decision was made and why.
-You also need to know which step is allowed to change output or exit codes.
-
-## Why you should care
-If you can trace a failure to one step, you fix bugs fast and avoid regressions.
-If you understand the order, you stop accidental side effects from creeping in.
-
-## What confusion this removes
-It removes the guesswork about when policy is resolved and when output is chosen.
-
-## Guarantees
-Bijux guarantees:
-1. Intent is built once and never mutated.
-2. Policy is resolved once before runtime initialization.
-3. Runtime initialization happens before command dispatch.
-4. ExitIntent is the only way the CLI exits.
+## Core Concepts
+The CLI is a deterministic pipeline: argv becomes a CLI intent, intent becomes a resolved policy, policy gates runtime initialization, commands execute within that runtime, and output is emitted once using a single routing decision.
 
 ## How to Think About This
-Think of the CLI as a single, linear pipeline.
-Each step consumes input and produces a new, immutable artifact.
-If a decision is not made in its step, it is forbidden elsewhere.
+Think of each stage as a contract boundary. Parsing must be pure, policy resolution must be definitive, runtime initialization must be late and deliberate, and emission must be final and unambiguous. If you are debugging behavior, identify which boundary the behavior should belong to and verify it does not leak across boundaries.
 
-## Common Misunderstandings
-- "Commands can decide output format." They cannot. Output is decided in policy resolution.
-- "Runtime can re-read flags." It cannot. Intent and policy are already fixed.
+## Invariants
+- Policy is resolved exactly once and never mutated later.
+- Runtime initialization does not occur on fast paths like `--help` or `--version`.
+- Output routing is decided once in core and enforced uniformly.
 
-## Execution
-1. Parse argv into a CLI intent.
-2. Resolve policy for output routing and formatting.
-3. Initialize runtime: DI, services, plugins.
-4. Dispatch the command.
-5. Emit output and exit via ExitIntent.
+## Execution Flow
+Execution always follows this sequence: parse arguments, build an intent, resolve policy, initialize runtime services, dispatch the command, and emit output. Fast paths exit early after intent resolution, without initializing runtime services.
 
 ## Failure Modes
-- Invalid flags: exit 2 with structured error.
-- Unknown command: exit 2 with structured error.
-- Runtime init failure: exit 1.
-- Command failure: exit determined by exit policy.
-
-No recovery happens inside the CLI. The process exits deterministically.
+Parsing errors return a user-facing error and a stable exit code. Policy resolution failures return a structured error and prevent runtime initialization. Dispatch failures emit an error payload and exit according to the exit policy.
 
 ## Design Rationale
-We deliberately chose a single linear flow because it prevents late overrides.
-Why not resolve policy inside each command? That creates drift and hidden side effects.
+This model prevents subtle ordering bugs and guarantees consistent behavior across different environments. By limiting where decisions can happen, it keeps the system predictable and testable.
 
 ## Non-Goals
-- REPL internals.
-- Plugin metadata format.
+This document does not describe how commands are implemented. It only defines the required execution boundaries.
 
 ## References
 - Implementation: `src/bijux_cli/core/bootstrap_flow.py`

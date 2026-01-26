@@ -1,68 +1,63 @@
-# Workflows
+# Workflow Examples
 
 ## Purpose
-This document shows a stateful workflow and explains why each step matters.
+These examples show how bijux-cli behaves in realistic workflows. Each scenario focuses on a single outcome so you can see how configuration, output formatting, and exit behavior combine in practice.
 
 ## Scope
-It covers core config and status flows only.
+The examples here use core commands only. They do not require plugins or custom configuration files unless explicitly stated.
 
-## What problem this solves
-Examples without consequences teach syntax, not behavior.
-This workflow teaches how output format and state changes interact.
+## Example 1: Script‑Safe Status Check
+This example demonstrates how to obtain machine‑readable output for automation.
 
-## Why you should care
-If you script bijux-cli, you must know which output is safe for machines.
+### Setup
+No configuration changes are required.
 
-## What confusion this removes
-It removes the guesswork about when output is styled versus structured.
-
-## Guarantees
-Bijux guarantees:
-1. `--format json` produces machine-readable output.
-2. Config changes are reversible.
-
-## How to Think About This
-Treat each command as a state transition with a visible effect.
-
-## Common Misunderstandings
-- "Status output is always human-readable." It is not.
-
-## Execution
-Setup:
-
-```bash
-bijux config set mode=strict
-```
-
-Command:
-
+### Command
 ```bash
 bijux status --format json
 ```
 
-Output:
+### Expected Output
+A JSON payload with a top‑level status value. Exact keys may evolve, but the payload is valid JSON and the exit code is 0 on success.
 
-```json
-{"version":"...","status":"ok"}
-```
+### Why This Matters
+Explicit JSON output makes the command safe for CI and scripts. It also guarantees that terminal styling will not interfere with parsing.
 
-Implication:
+## Example 2: Deterministic Precedence Resolution
+This example shows how CLI flags override environment values and config files.
 
-Running with `--format json` disables styling and produces stable machine output.
-This guarantees your parser sees only JSON, not terminal decorations.
-
-Cleanup:
+### Setup
+Set an environment variable and a config value for the same key.
 
 ```bash
-bijux config unset mode
+bijux config set foo=from_config
+export BIJUXCLI_FOO=from_env
 ```
 
-## Failure Modes
-- Invalid config keys exit with code 2.
+### Command
+```bash
+bijux config get foo
+```
 
-## Design Rationale
-We deliberately chose a stateful example because it reveals consequences.
-Why not a one-line example? It hides the mutation and cleanup steps.
+### Expected Output
+The output should reflect the environment value, because env overrides config. If you pass a CLI flag that sets the same value, the CLI value wins.
 
-## Non-Goals
-- Plugin workflows.
+### Why This Matters
+Understanding precedence prevents confusion when multiple sources define the same key. It also keeps automation predictable when environments differ.
+
+## Example 3: Exit Policy in Failure Conditions
+This example demonstrates stable exit codes for invalid inputs.
+
+### Setup
+None.
+
+### Command
+```bash
+bijux config get missing_key
+```
+
+### Expected Output
+The command fails with a structured error message and a stable non‑zero exit code. Scripts should rely on the exit code rather than parsing the error text.
+
+### Why This Matters
+Stable exit codes are the CLI’s contract with automation. They provide a reliable failure signal even when output formats change.

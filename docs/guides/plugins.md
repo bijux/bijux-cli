@@ -1,51 +1,36 @@
 # Plugins
 
 ## Purpose
-This document tells you how to install and remove plugins safely.
+This guide explains how to install, inspect, and remove plugins safely. It exists to prevent partial installs and registry inconsistencies by making the lifecycle steps explicit.
 
 ## Scope
-It covers install, list, info, and uninstall only.
+It covers install, list, info, and uninstall workflows. It does not teach plugin authoring; use the reference and concept docs for lifecycle guarantees.
 
-## What problem this solves
-Unsafe plugin installs can leave residue and corrupt registry state.
-This guide keeps the lifecycle explicit.
+## Installation
+Install a plugin by pointing to its package or local path. Installation validates metadata before activation so failures are caught early.
 
-## Why you should care
-A predictable lifecycle prevents broken CI and manual cleanup.
-
-## What confusion this removes
-It removes ambiguity about when a plugin is registered and removed.
-
-## Guarantees
-Bijux guarantees:
-1. Invalid metadata fails before activation.
-2. Registry and filesystem remain consistent after failures.
-
-## How to Think About This
-Treat plugins as lifecycle-managed commands, not arbitrary code.
-
-## Common Misunderstandings
-- "Install means activate immediately." It does not.
-
-## Execution
 ```bash
 bijux plugin install ./my_plugin
+```
+
+## Listing and Inspecting
+List all installed plugins to confirm registry state, then request detailed information for a specific plugin.
+
+```bash
 bijux plugin list
 bijux plugin info my_plugin
+```
+
+## Removal
+Uninstall removes the plugin and updates the registry in a single, consistent operation.
+
+```bash
 bijux plugin uninstall my_plugin
 ```
 
-## Failure Modes
-- Missing metadata exits with code 2.
-- Uninstall failures exit with code 1.
-
-## Design Rationale
-We deliberately chose early validation to prevent partial activation.
-Why not validate on first use? It delays failures into production.
-
-## Non-Goals
-- Plugin auto-update.
+## Why This Matters
+Plugin state must remain consistent with the filesystem. These commands are designed to keep the registry and disk in sync, even when failures occur.
 
 ## References
-- Lifecycle contract: `concepts/plugin-lifecycle.md`
-- Commands: `reference/commands.md`
+- [Lifecycle contract](../concepts/plugin-lifecycle.md)
+- [Command list](../reference/commands.md)

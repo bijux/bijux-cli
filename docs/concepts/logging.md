@@ -1,48 +1,30 @@
 # Logging
 
 ## Purpose
-This document tells you how log level affects output and diagnostics.
+This document explains the logging semantics of bijux-cli. It defines log levels, routing, and how logging relates to output formatting.
 
 ## Scope
-It covers CLI logging only.
+It covers log level selection and the relationship between logs and command output. It does not define the internal logging implementation details.
 
-## What problem this solves
-If logs leak into structured output, automation breaks. This policy prevents it.
-
-## Why you should care
-You can enable diagnostics without corrupting machine-readable output.
-
-## What confusion this removes
-It removes ambiguity about where logs go and when they appear.
-
-## Guarantees
-Bijux guarantees:
-1. Quiet suppresses logs and output.
-2. Log level never changes exit codes.
-3. Structured output is never mixed with styled logs.
+## Core Concepts
+Logging is diagnostic, not output. Logs follow the configured log level and are routed separately from structured command output. Output format flags control command responses, not logs.
 
 ## How to Think About This
-Logs are a separate stream with a separate purpose.
-They explain behavior, but they never alter command results.
+Think of logs as a parallel channel for operators. Structured output is for machines and should remain stable regardless of logging settings. If you need stable automation, parse structured output and treat logs as optional context.
 
-## Common Misunderstandings
-- "Debug logs can appear in JSON output." They must not.
-- "Log level changes exit codes." It does not.
-
-## Execution
-- `info` is the default.
-- `debug` and `trace` emit diagnostics to stderr.
+## Invariants
+- Output format does not change logging behavior.
+- Log level controls verbosity but does not change command results.
+- Logs must never override or mutate structured outputs.
 
 ## Failure Modes
-- Invalid log level exits with code 2.
+If logging is misconfigured, the CLI still emits command output correctly. Logging failures must not prevent command execution or alter exit codes.
 
 ## Design Rationale
-We deliberately chose policy-driven logging to keep output stable.
-Why not log inside commands? It leaks logs into structured output.
+Separating logs from output preserves machine-readable behavior and prevents accidental coupling between diagnostics and results.
 
 ## Non-Goals
-- Persistent log storage.
+This document does not specify logging backends or third-party logging integration.
 
 ## References
-- Implementation: `src/bijux_cli/core/precedence.py`
-- Unit coverage: `tests/unit/cli/core/test_validation.py`
+- Implementation: `src/bijux_cli/services/diagnostics/`
