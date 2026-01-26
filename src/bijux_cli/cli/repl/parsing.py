@@ -69,9 +69,9 @@ def _known_commands() -> list[str]:
 def _suggest(cmd: str) -> str | None:
     """Suggests a command based on fuzzy matching."""
     choices = _known_commands()
-    result = rf_process.extractOne(cmd, choices)
-    if not result:
+    if not choices:
         return None
+    result = rf_process.extractOne(cmd, choices)
     best, score, _ = result
     if score >= 60 and best != cmd:
         return f" Did you mean '{best}'?"

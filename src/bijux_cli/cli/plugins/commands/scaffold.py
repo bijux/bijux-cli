@@ -271,6 +271,7 @@ def _scaffold_project(intent: ScaffoldIntent) -> dict[str, str]:
             isinstance(meta, dict)
             and meta.get("name")
             and (meta.get("desc") or meta.get("description"))
+            and meta.get("schema_version")
             and meta.get("bijux_cli_version")
         ):
             raise ValueError("Missing required fields")

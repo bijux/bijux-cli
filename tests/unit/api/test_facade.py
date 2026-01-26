@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from bijux_cli.api import facade as fac
 from bijux_cli.api.facade import BijuxAPI, _consume_task
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.engine import Engine
@@ -208,6 +209,36 @@ def test_register_replace(bijux_api: BijuxAPI, monkeypatch: pytest.MonkeyPatch) 
     name, wrapper = seen["reg_args"]
     assert name == "cmd"
     assert hasattr(wrapper, "execute")
+
+
+def test_api_io_guard_blocks_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BIJUXCLI_API_GUARD", "1")
+    with (
+        pytest.raises(BijuxError, match="API purity guard"),
+        fac._api_io_guard(),
+    ):
+        print("leak")
+
+
+def test_run_sync_system_exit_guard(
+    bijux_api: BijuxAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        fac, "run_command", lambda *_a, **_k: (_ for _ in ()).throw(SystemExit(2))
+    )
+    with pytest.raises(BijuxError, match="SystemExit"):
+        bijux_api.run_sync("noop")
+
+
+def test_run_async_system_exit_guard(
+    bijux_api: BijuxAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def _raise(*_a: Any, **_k: Any) -> Any:
+        raise SystemExit(3)
+
+    monkeypatch.setattr(bijux_api._engine, "run_command", _raise)
+    with pytest.raises(BijuxError, match="SystemExit"):
+        asyncio.run(bijux_api.run_async("noop"))
 
 
 def test_register_error(bijux_api: BijuxAPI, monkeypatch: pytest.MonkeyPatch) -> None:

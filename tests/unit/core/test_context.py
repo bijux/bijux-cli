@@ -57,3 +57,23 @@ async def test_async_context_manager(context: Context) -> None:
     async with context:
         assert _current_context.get() == context._data
     assert _current_context.get() is None or _current_context.get() == {}
+
+
+def test_current_data_initializes_when_empty() -> None:
+    _current_context.set(None)
+    data = Context.current_data()
+    assert data == {}
+    assert _current_context.get() == {}
+
+
+def test_set_current_data_overrides() -> None:
+    payload = {"k": "v"}
+    Context.set_current_data(payload)
+    assert _current_context.get() == payload
+
+
+def test_use_context_restores_previous() -> None:
+    Context.set_current_data({"a": 1})
+    with Context.use_context({"b": 2}):
+        assert Context.current_data() == {"b": 2}
+    assert Context.current_data() == {"a": 1}

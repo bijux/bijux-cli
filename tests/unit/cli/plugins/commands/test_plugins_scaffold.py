@@ -319,6 +319,7 @@ def test_success(cap: dict[str, Any], runner: CliRunner, tmp_path: Path) -> None
                 {
                     "name": extra_context["project_name"],
                     "desc": "some description",
+                    "schema_version": "1",
                     "bijux_cli_version": ">=0.1.0",
                 }
             )
@@ -353,6 +354,7 @@ def _stub_cookiecutter_creates_good_dir() -> None:
                 {
                     "name": extra_context["project_name"],
                     "desc": "valid description",
+                    "schema_version": "1",
                     "version": "0.1.0",
                     "bijux_cli_version": ">=0.1.0",
                 }
@@ -492,6 +494,7 @@ def test_force_removes_existing_file(
                 {
                     "name": extra_context["project_name"],
                     "desc": "description",
+                    "schema_version": "1",
                     "bijux_cli_version": ">=0.1.0",
                 }
             )

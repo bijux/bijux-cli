@@ -61,9 +61,15 @@ def _make_dir(
             else {
                 "name": name,
                 "desc": "d",
+                "schema_version": "1",
+                "version": "0.1.0",
                 "bijux_cli_version": ">=0.1.0",
             }
         )
+        if "schema_version" not in data:
+            data = {**data, "schema_version": "1"}
+        if "version" not in data:
+            data = {**data, "version": "0.1.0"}
         (plugin / "plugin.json").write_text(json.dumps(data))
     return root
 
@@ -89,9 +95,15 @@ def make_plugin_dir(
             else {
                 "name": name,
                 "desc": "desc",
+                "schema_version": "1",
+                "version": "0.1.0",
                 "bijux_cli_version": ">=0.1.0",
             }
         )
+        if "schema_version" not in data:
+            data = {**data, "schema_version": "1"}
+        if "version" not in data:
+            data = {**data, "version": "0.1.0"}
         (plugin_dir / "plugin.json").write_text(json.dumps(data))
     return plugin_dir
 

@@ -942,3 +942,21 @@ def test_memory_with_subcommand_does_not_call_summary() -> None:
                 log_level=LogLevel.INFO,
             )
     mock_summary.assert_not_called()
+
+
+def test_memory_quiet_short_circuits(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bijux_cli.cli.commands.memory import service as mem_service
+
+    monkeypatch.setattr(mem_service, "contains_non_ascii_env", lambda: False)
+    with pytest.raises(ExitIntentError) as exc:
+        mem_service._run_one_shot_mode(
+            command="memory",
+            fmt=OutputFormat.JSON,
+            output_format=OutputFormat.JSON,
+            quiet=True,
+            log_level=LogLevel.INFO,
+            effective_pretty=False,
+            include_runtime=False,
+            keys_count=0,
+        )
+    assert exc.value.intent.stream is None

@@ -1237,3 +1237,140 @@ def test_non_posix_skips_file_lock_block(
     assert out["status"] == "updated"
     assert out["key"] == "winkey"
     assert out["value"] == "winval"
+
+
+def test_get_config_not_found_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
+    mock_config_svc.get.side_effect = ConfigError("Config key not found: foo")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.get.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            get_config(
+                Context(MagicMock()),
+                "foo",
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )
+
+
+def test_get_config_error_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
+    mock_config_svc.get.side_effect = ConfigError("boom")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.get.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.get.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            get_config(
+                Context(MagicMock()),
+                "foo",
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )
+
+
+def test_list_config_error_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
+    mock_config_svc.list_keys.side_effect = RuntimeError("fail")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.list_cmd.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.list_cmd.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            list_config(
+                Context(MagicMock()),
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )
+
+
+def test_export_config_error_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock, tmp_path: Path
+) -> None:
+    mock_config_svc.export.side_effect = ConfigError("fail")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.export.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.export.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            export_config(
+                Context(MagicMock()),
+                path=str(tmp_path / "out.json"),
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )
+
+
+def test_unset_config_not_found_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
+    mock_config_svc.unset.side_effect = KeyError("missing")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.unset.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.unset.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            unset_config(
+                Context(MagicMock()),
+                "foo",
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )
+
+
+def test_unset_config_error_raises_exit(
+    mock_flags: ExecutionPolicy, mock_config_svc: MagicMock
+) -> None:
+    mock_config_svc.unset.side_effect = RuntimeError("boom")
+    with (
+        patch(
+            "bijux_cli.cli.commands.config.unset.current_execution_policy",
+            return_value=mock_flags,
+        ),
+        patch("bijux_cli.cli.commands.config.unset.DIContainer.current") as current,
+    ):
+        current.return_value.resolve.return_value = mock_config_svc
+        with pytest.raises(ExitIntentError):
+            unset_config(
+                Context(MagicMock()),
+                "foo",
+                fmt="json",
+                quiet=False,
+                pretty=True,
+                log_level="info",
+            )

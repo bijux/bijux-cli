@@ -35,6 +35,7 @@ class PluginMetadata:
     enabled: bool
     source: str
     requires_cli: str
+    schema_version: str = "1"
     dist_name: str | None = None
     entrypoint: im.EntryPoint | None = None
     path: Path | None = None
@@ -109,6 +110,7 @@ def _plugin_meta_from_dist(ep: im.EntryPoint) -> PluginMetadata:
         enabled=True,
         source="entrypoint",
         requires_cli=spec,
+        schema_version="1",
         dist_name=dist_name,
         entrypoint=ep,
     )
@@ -135,10 +137,17 @@ def _plugin_meta_from_local(plug_dir: Path) -> PluginMetadata:
     version = meta.get("version")
     requires = meta.get("bijux_cli_version")
     enabled = bool(meta.get("enabled", True))
+    schema_version = meta.get("schema_version")
 
-    if not name or not version or not requires:
+    if not name or not version or not requires or not schema_version:
         raise PluginMetadataError(
             f"Plugin {plug_dir.name!r} missing required metadata fields",
+            http_status=400,
+        )
+
+    if str(schema_version) != "1":
+        raise PluginMetadataError(
+            f"Plugin {plug_dir.name!r} has unsupported schema version {schema_version!r}",
             http_status=400,
         )
 
@@ -162,6 +171,7 @@ def _plugin_meta_from_local(plug_dir: Path) -> PluginMetadata:
         enabled=enabled,
         source="local",
         requires_cli=str(requires),
+        schema_version=str(schema_version),
         path=plug_dir,
     )
 
@@ -181,6 +191,16 @@ def validate_plugin_metadata(meta: PluginMetadata) -> None:
     if not meta.requires_cli:
         raise PluginMetadataError(
             f"Plugin {meta.name!r} missing bijux-cli requirement",
+            http_status=400,
+        )
+    if str(meta.schema_version or "").strip() == "":
+        raise PluginMetadataError(
+            f"Plugin {meta.name!r} missing schema version",
+            http_status=400,
+        )
+    if str(meta.schema_version) != "1":
+        raise PluginMetadataError(
+            f"Plugin {meta.name!r} has unsupported schema version {meta.schema_version!r}",
             http_status=400,
         )
     _require_cli_spec(meta.requires_cli, name=meta.name)

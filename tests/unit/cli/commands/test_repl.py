@@ -93,6 +93,11 @@ def test_split_segments_handles_quotes_and_semicolons() -> None:
     ]
 
 
+def test_split_words_invalid_quotes() -> None:
+    """Invalid quotes should return no words."""
+    assert completion._split_words('open "quote') == []
+
+
 def test_suggest() -> None:
     """Suggest nearest known command."""
     orig = parsing._known_commands
@@ -108,6 +113,118 @@ def test_suggest() -> None:
         assert parsing._suggest("zzzz") is None
     finally:
         parsing._known_commands = orig
+
+
+def test_suggest_with_empty_commands() -> None:
+    """Return no suggestion when no commands are available."""
+    orig = parsing._known_commands
+    parsing._known_commands = lambda: []
+    try:
+        assert parsing._suggest("status") is None
+    finally:
+        parsing._known_commands = orig
+
+
+def test_collect_completions_for_flags() -> None:
+    """Flag prefix should yield global options."""
+    completions = completion._collect_completions(["--q"], {}, completion._BUILTINS)
+    assert any(val == "--quiet" for val, _, _ in completions)
+
+
+def test_collect_completions_empty_words() -> None:
+    assert completion._collect_completions([], {}, ()) == []
+
+
+def test_collect_completions_for_builtins_and_dummy() -> None:
+    completions = completion._collect_completions([""], {}, ("exit", "quit"))
+    assert any(val == "exit" for val, _, _ in completions)
+    completions = completion._collect_completions([""], {}, ())
+    assert any(val == "DUMMY" for val, _, _ in completions)
+
+
+def test_collect_completions_for_config_set_key_value() -> None:
+    completions = completion._collect_completions(["config", "set", ""], {}, ())
+    assert any(val == "KEY=VALUE" for val, _, _ in completions)
+
+
+def test_collect_completions_for_group() -> None:
+    """Group commands should surface subcommands."""
+
+    class _Cmd:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+    class _Group:
+        registered_commands = [_Cmd("child")]
+        registered_groups: list[Any] = []
+
+    completions = completion._collect_completions(
+        ["parent", ""],
+        {("parent",): _Group()},
+        ("exit",),
+    )
+    assert any(val == "child" for val, _, _ in completions)
+
+
+def test_collect_completions_for_params() -> None:
+    """Command params should surface option flags."""
+
+    class _Param:
+        opts = ("--verbose",)
+        secondary_opts = ()
+
+    class _Cmd:
+        params = [_Param()]
+
+    completions = completion._collect_completions(
+        ["status", "--v"],
+        {("status",): _Cmd()},
+        ("exit",),
+    )
+    assert any(val == "--verbose" for val, _, _ in completions)
+
+
+def test_command_completer_find_miss() -> None:
+    app = typer.Typer()
+    completer = completion.CommandCompleter(app)
+    assert completer._find(["missing"]) == (None, ["missing"])
+
+
+def test_command_completer_display_completion() -> None:
+    app = typer.Typer()
+    completer = completion.CommandCompleter(app)
+    completer._BUILTINS = ("exit", "help")
+    doc = Document(text="config set ")
+    items = list(completer.get_completions(doc, CompleteEvent()))
+    assert any(item.display_text == "KEY=VALUE" for item in items)
+
+
+def test_collect_completions_known_config_set_fallback() -> None:
+    """Known config set should suggest KEY=VALUE when empty."""
+
+    class _Cmd:
+        params: list[Any] = []
+
+    completions = completion._collect_completions(
+        ["config", "set", ""],
+        {("config", "set"): _Cmd()},
+        (),
+    )
+    assert any(val == "KEY=VALUE" for val, _, _ in completions)
+
+
+def test_collect_completions_known_command_dummy() -> None:
+    """Known command should fall back to DUMMY on empty input."""
+
+    class _Cmd:
+        params: list[Any] = []
+
+    completions = completion._collect_completions(
+        ["status", ""],
+        {("status",): _Cmd()},
+        (),
+    )
+    assert any(val == "DUMMY" for val, _, _ in completions)
 
 
 def build_fake_root_app() -> Any:
@@ -1194,3 +1311,92 @@ def test_run_piped_prints_prompt_for_pure_blank_or_comment(
         sys.stdin = old_stdin
     s = err.getvalue()
     assert "bijux>" in s
+
+
+def test_run_repl_session_uses_run_command(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[Callable[..., Any]] = []
+    monkeypatch.setattr(mod, "run_command", lambda func: calls.append(func))
+    mod._run_repl_session(quiet=False, stdin_isatty=True)
+    assert calls == [mod._run_interactive]
+
+
+def test_run_repl_session_piped(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[bool] = []
+    monkeypatch.setattr(mod, "_run_piped", lambda quiet: called.append(quiet))
+    mod._run_repl_session(quiet=True, stdin_isatty=True)
+    assert called == [True]
+
+
+def test_repl_run_piped_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[bool] = []
+    monkeypatch.setattr(mod, "_exec_run_piped", lambda quiet: called.append(quiet))
+    mod._run_piped(True)
+    assert called == [True]
+
+
+def test_run_interactive_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def _noop() -> None:
+        return None
+
+    monkeypatch.setattr("bijux_cli.cli.repl.ui._run_interactive", _noop)
+    asyncio.run(mod._run_interactive())
+
+
+def test_run_piped_skips_segment_comments(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(execution, "_invoke", lambda *_a, **_k: 0)
+    monkeypatch.setattr(execution, "_split_segments", lambda _line: ["# comment"])
+    monkeypatch.setattr(sys, "stdin", io.StringIO("config list\n"))
+    with pytest.raises(ExitIntentError):
+        execution._run_piped(repl_quiet=False)
+    assert capsys.readouterr().out == ""
+
+
+def test_run_piped_config_missing_key(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    class _Serializer:
+        def dumps(self, payload: object, *, fmt: object, pretty: bool) -> str:
+            _ = (fmt, pretty)
+            return json.dumps(payload)
+
+    monkeypatch.setattr(execution, "_invoke", lambda *_a, **_k: 0)
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.command.resolve_serializer", lambda: _Serializer()
+    )
+    monkeypatch.setattr(sys, "stdin", io.StringIO("config get\n"))
+    with pytest.raises(ExitIntentError):
+        execution._run_piped(repl_quiet=False)
+    out = capsys.readouterr().out
+    assert "missing_argument" in out
+
+
+def test_run_piped_config_unset_missing_key(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    class _Serializer:
+        def dumps(self, payload: object, *, fmt: object, pretty: bool) -> str:
+            _ = (fmt, pretty)
+            return json.dumps(payload)
+
+    monkeypatch.setattr(execution, "_invoke", lambda *_a, **_k: 0)
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.command.resolve_serializer", lambda: _Serializer()
+    )
+    monkeypatch.setattr(sys, "stdin", io.StringIO("config unset\n"))
+    with pytest.raises(ExitIntentError):
+        execution._run_piped(repl_quiet=False)
+    out = capsys.readouterr().out
+    assert "missing_argument" in out
+
+
+def test_execution_run_repl_session_routes(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+    monkeypatch.setattr(
+        execution, "_run_piped", lambda quiet: calls.append(f"p:{quiet}")
+    )
+    monkeypatch.setattr(execution, "run_command", lambda func: calls.append("run"))
+    execution.run_repl_session(quiet=True, stdin_isatty=True)
+    execution.run_repl_session(quiet=False, stdin_isatty=True)
+    assert calls == ["p:True", "run"]

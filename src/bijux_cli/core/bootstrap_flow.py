@@ -371,9 +371,18 @@ def main() -> int:
         return fast_exit
 
     # Phase: policy resolution + runtime init.
-    DIContainer.set_log_policy(intent.log_policy)
-    setup_structlog(intent.log_level)
-    set_color_mode(intent.color)
+    try:
+        DIContainer.set_log_policy(intent.log_policy)
+        setup_structlog(intent.log_level)
+        set_color_mode(intent.color)
+    except Exception as exc:
+        return _emit_fast_error(
+            f"Startup failed: {exc}",
+            error_type=ErrorType.INTERNAL,
+            quiet=intent.quiet,
+            fmt=intent.output_format,
+            log_policy=intent.log_policy,
+        )
 
     # Phase: execution + emission + exit.
     return run_runtime(intent)

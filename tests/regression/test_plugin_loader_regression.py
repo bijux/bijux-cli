@@ -35,6 +35,20 @@ def _write_local_plugin(path: Path, name: str) -> None:
         ),
         encoding="utf-8",
     )
+    (path / "plugin.json").write_text(
+        "\n".join(
+            [
+                "{",
+                f'  "name": "{name}",',
+                '  "schema_version": "1",',
+                '  "version": "0.1.0",',
+                '  "bijux_cli_version": ">=0",',
+                '  "enabled": true',
+                "}",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_local_module_loader(tmp_path: Path) -> None:
@@ -95,6 +109,41 @@ def test_entrypoint_missing_metadata() -> None:
         source="entrypoint",
         requires_cli=">=0",
         entrypoint=None,
+    )
+    with pytest.raises(PluginMetadataError):
+        load_command_for(meta)
+
+
+def test_local_loader_broken_symlink(tmp_path: Path) -> None:
+    plugin_dir = tmp_path / "broken_link"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    (plugin_dir / "plugin.json").write_text(
+        "\n".join(
+            [
+                "{",
+                '  "name": "broken_link",',
+                '  "schema_version": "1",',
+                '  "version": "0.1.0",',
+                '  "bijux_cli_version": ">=0",',
+                '  "enabled": true',
+                "}",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    target = plugin_dir / "missing.py"
+    try:
+        (plugin_dir / "plugin.py").symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks not supported on this platform")
+
+    meta = PluginMetadata(
+        name="broken_link",
+        version="0.1.0",
+        enabled=True,
+        source="local",
+        requires_cli=">=0",
+        path=plugin_dir,
     )
     with pytest.raises(PluginMetadataError):
         load_command_for(meta)

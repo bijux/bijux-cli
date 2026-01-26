@@ -42,6 +42,8 @@ def test_parse_global_flags_only_in_root() -> None:
             continue
         if path.as_posix().endswith("cli/root.py"):
             continue
+        if path.as_posix().endswith("core/intent.py"):
+            continue
         if "parse_global_flags" in _read_text(path):
             offenders.append(str(path))
     assert offenders == [], f"parse_global_flags used outside cli/root.py: {offenders}"

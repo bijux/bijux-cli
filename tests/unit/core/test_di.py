@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import asyncio
 import builtins
-from collections.abc import Awaitable, Generator
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import suppress
 import logging
-from typing import Any, cast
+from typing import Any, Never, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -693,3 +693,118 @@ def test_static_log_key_error_fallback_and_name_mapping(
         )
 
     assert "Failed to log with extra=" in caplog.text
+
+
+def test_key_name_fallback_for_objects() -> None:
+    assert _key_name(type("Tmp", (), {})) != ""
+
+
+def test_reset_async_clears_instance() -> None:
+    DIContainer.current()
+    asyncio.run(DIContainer.reset_async())
+    assert DIContainer._instance is None
+
+
+def test_resolve_with_running_loop_without_run_until_complete(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    c = DIContainer.current()
+
+    async def _factory() -> str:
+        return "ok"
+
+    c.register("loopless", cast(Callable[[], Awaitable[Never]], _factory))
+
+    class _Loop:
+        pass
+
+    monkeypatch.setattr(asyncio, "get_running_loop", lambda: _Loop())
+
+    with pytest.raises(RuntimeError, match="Cannot sync-resolve"):
+        c.resolve("loopless")
+
+
+def test_resolve_with_running_loop_and_awaitable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    c = DIContainer.current()
+
+    class _Awaitable:
+        def __await__(self) -> Any:
+            async def _inner() -> str:
+                return "ok"
+
+            return _inner().__await__()
+
+    c.register("awaitable", lambda: _Awaitable())
+
+    class _Loop:
+        def run_until_complete(self, _coro: Any) -> Any:
+            loop = asyncio.new_event_loop()
+            try:
+                return loop.run_until_complete(_coro)
+            finally:
+                loop.close()
+
+    monkeypatch.setattr(asyncio, "get_running_loop", lambda: _Loop())
+    assert c.resolve("awaitable") == "ok"
+
+
+def test_resolve_without_loop_uses_run_awaitable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    c = DIContainer.current()
+
+    async def _factory() -> str:
+        return "ok"
+
+    c.register("nolooop", cast(Callable[[], Awaitable[Never]], _factory))
+
+    def _raise() -> None:
+        raise RuntimeError()
+
+    monkeypatch.setattr(asyncio, "get_running_loop", _raise)
+    assert c.resolve("nolooop") == "ok"
+
+
+def test_resolve_awaitable_without_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    c = DIContainer.current()
+
+    class _Awaitable:
+        def __await__(self) -> Any:
+            async def _inner() -> str:
+                return "ok"
+
+            return _inner().__await__()
+
+    c.register("awaitable-no-loop", lambda: _Awaitable())
+
+    def _raise() -> None:
+        raise RuntimeError()
+
+    monkeypatch.setattr(asyncio, "get_running_loop", _raise)
+    assert c.resolve("awaitable-no-loop") == "ok"
+
+
+def test_reset_async_clears_instance_fields() -> None:
+    c = DIContainer.current()
+    DIContainer._obs = object()  # type: ignore[assignment]
+    c.register("tmp", object())
+    asyncio.run(DIContainer.reset_async())
+    assert DIContainer._instance is None
+
+
+def test_log_static_uses_observability() -> None:
+    calls: list[tuple[str, str]] = []
+
+    class _Obs:
+        def log(self, level: str, msg: str, *, extra: dict[str, Any]) -> None:
+            _ = extra
+            calls.append((level, msg))
+
+    DIContainer._obs = cast(ObservabilityProtocol, _Obs())
+    DIContainer.set_log_policy(resolve_log_policy(LogLevel.DEBUG))
+    DIContainer._log_static(logging.DEBUG, "via-obs", extra={})
+    assert calls == [("debug", "via-obs")]
