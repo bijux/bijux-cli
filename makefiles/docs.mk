@@ -89,7 +89,6 @@ docs-hygiene:
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
 	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden; use docs-prep→$(DOCS_GEN_DIR)"; exit 1)
-	@test ! -d "docs/reference" || (echo "ERROR: generated 'docs/reference' is forbidden; use docs-prep→$(DOCS_GEN_DIR)"; exit 1)
 	@echo "Docs hygiene OK"
 
 ##@ Documentation

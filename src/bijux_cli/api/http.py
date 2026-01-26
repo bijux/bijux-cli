@@ -418,11 +418,11 @@ def reject_duplicate_query_params(*params: str) -> DependsMarker:
         if duplicates:
             detail = f"Duplicate query params found: {', '.join(sorted(duplicates))}"
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=422,
                 detail=Problem(
                     type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
                     title="Validation error",
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status=422,
                     detail=detail,
                     instance=str(request.url),
                 ).model_dump(mode="json"),
@@ -491,11 +491,11 @@ def allow_only(*allowed: str) -> Callable[[Request], Awaitable[None]]:
         extras = set(request.query_params.keys()) - allowed_set
         if extras:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=422,
                 detail=Problem(
                     type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
                     title="Validation error",
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status=422,
                     detail=f"Unknown query params: {', '.join(sorted(extras))}",
                     instance=str(request.url),
                 ).model_dump(mode="json"),
@@ -738,14 +738,14 @@ async def validation_exception_handler(
     errors = jsonable_encoder(exc.errors())
     logger.warning("Validation error: %s", errors)
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=Problem(
-            type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
-            title="Validation error",
-            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=json.dumps(errors),
-            instance=str(request.url),
-        ).model_dump(mode="json"),
+        status_code=422,
+        content={
+            "type": "https://bijux-cli.dev/docs/errors/validation-error",
+            "title": "Validation error",
+            "status": 422,
+            "detail": json.dumps(errors),
+            "instance": str(request.url),
+        },
     )
 
 
