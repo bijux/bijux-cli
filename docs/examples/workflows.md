@@ -1,24 +1,37 @@
 # Workflows
 
 ## Purpose
-This document guarantees a complete CLI workflow with consequences.
+This document shows a stateful workflow and explains why each step matters.
 
 ## Scope
 It covers core config and status flows only.
 
-## Core Concepts
-- Structured output is explicit.
-- Config mutations are reversible.
+## What problem this solves
+Examples without consequences teach syntax, not behavior.
+This workflow teaches how output format and state changes interact.
 
-## Invariants
-- `--format json` produces machine-readable output.
-- Exit codes are stable.
+## Why you should care
+If you script bijux-cli, you must know which output is safe for machines.
+
+## What confusion this removes
+It removes the guesswork about when output is styled versus structured.
+
+## Guarantees
+Bijux guarantees:
+1. `--format json` produces machine-readable output.
+2. Config changes are reversible.
+
+## How to Think About This
+Treat each command as a state transition with a visible effect.
+
+## Common Misunderstandings
+- "Status output is always human-readable." It is not.
 
 ## Execution
 Setup:
 
 ```bash
-bijux config set mode strict
+bijux config set mode=strict
 ```
 
 Command:
@@ -35,7 +48,8 @@ Output:
 
 Implication:
 
-- JSON output disables styling and is safe for scripts.
+Running with `--format json` disables styling and produces stable machine output.
+This guarantees your parser sees only JSON, not terminal decorations.
 
 Cleanup:
 
@@ -47,8 +61,8 @@ bijux config unset mode
 - Invalid config keys exit with code 2.
 
 ## Design Rationale
-- Alternatives: status-only examples.
-- Rejected because they do not show state changes.
+We deliberately chose a stateful example because it reveals consequences.
+Why not a one-line example? It hides the mutation and cleanup steps.
 
 ## Non-Goals
 - Plugin workflows.

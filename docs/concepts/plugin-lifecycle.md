@@ -1,48 +1,51 @@
 # Plugin lifecycle
 
 ## Purpose
-This document guarantees plugin state transitions and validation rules.
+This document tells you when a plugin can load and what must be validated first.
 
 ## Scope
-This covers discovery, installation, activation, and removal within the CLI.
+It covers discovery, install, activation, deactivation, and removal.
 
-## Core Concepts
-- States: discovered, installed, active, inactive, removed.
-- Metadata validation happens before activation.
+## What problem this solves
+Plugins can corrupt state if they load with bad metadata or fail mid-activation.
+This contract prevents partial activation and hidden residue.
 
-## Invariants
-- Invalid metadata never reaches activation.
-- Registry state and filesystem state remain consistent after failures.
-- Activation and deactivation are symmetric operations.
+## Why you should care
+If you extend the CLI, you need to know exactly when a plugin is allowed to run.
+
+## What confusion this removes
+It removes ambiguity about when metadata is checked and how rollback works.
+
+## Guarantees
+Bijux guarantees:
+1. Invalid metadata never reaches activation.
+2. Registry and filesystem remain consistent after failures.
+3. Activation and deactivation are symmetric.
+
+## How to Think About This
+Treat plugin lifecycle as a state machine with explicit transitions.
+If a transition fails, rollback must restore the previous state.
+
+## Common Misunderstandings
+- "Plugins can activate before metadata validation." They cannot.
+- "Uninstall can leave files behind." It must not.
 
 ## Lifecycle
-### Discover
-Finds candidate plugins and validates metadata.
-
-### Install
-Installs a plugin into the registry and filesystem.
-
-### Activate
-Loads plugin code and registers commands.
-
-### Deactivate
-Unloads plugin commands and releases resources.
-
-### Remove
-Deletes plugin records and files.
+- Discover: find candidates and validate metadata.
+- Install: record plugin and place files.
+- Activate: load code and register commands.
+- Deactivate: remove commands and release resources.
+- Remove: delete records and files.
 
 ## Failure Modes
-- Missing metadata: plugin rejected before activation.
-- Compatibility mismatch: plugin rejected before activation.
+- Missing metadata: reject before activation.
+- Compatibility mismatch: reject before activation.
 - Import failure: activation fails and registry is rolled back.
-- Uninstall failure: registry entry is preserved with error exit.
-
-The CLI does not attempt recovery beyond rollback.
+- Uninstall failure: registry entry remains and exit code 1 is returned.
 
 ## Design Rationale
-- Alternatives: lazy validation at first use.
-- Rejected because it allows partial activation and inconsistent state.
-- Chosen: validate early and fail fast.
+We deliberately chose early validation to avoid partial activation.
+Why not validate on first use? It hides failures until runtime.
 
 ## Non-Goals
 - Plugin auto-update.

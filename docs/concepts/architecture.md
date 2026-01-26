@@ -1,39 +1,51 @@
 # Architecture
 
 ## Purpose
-This document guarantees the dependency direction and responsibility boundaries.
+This document tells you which module is allowed to make which decision.
 
 ## Scope
-This covers core, infra, services, and CLI layers only.
+It covers core, infra, services, and CLI boundaries.
 
-## Core Concepts
-- Core owns policy, intent, and exit decisions.
-- Infra provides concrete adapters only.
-- Services compose infra into CLI-facing behavior.
-- CLI builds intents and dispatches commands.
+## What problem this solves
+Without strict boundaries, policy decisions leak into random files.
+That makes behavior inconsistent and hard to test.
 
-## Invariants
-- Core never depends on infra or services.
-- Infra never depends on services.
-- Services depend on core and infra only.
-- CLI depends on services only.
+## Why you should care
+If you touch a boundary, you can break guarantees across the CLI.
+This document tells you where that line is.
+
+## What confusion this removes
+It removes doubt about which module owns policy and exit behavior.
+
+## Guarantees
+Bijux guarantees:
+1. Core never depends on infra or services.
+2. Infra never depends on services.
+3. Services depend on core and infra only.
+4. CLI depends on services only.
+
+## How to Think About This
+Treat boundaries as enforcement points, not suggestions.
+If a decision crosses the line, it is a defect.
+
+## Common Misunderstandings
+- "Infra can pick defaults." It cannot.
+- "CLI can decide output routing." It cannot.
 
 ## Execution
-- Intent is built in the CLI layer.
+- Intent is built in the CLI command layer.
 - Policy is resolved in core.
 - Runtime is assembled from services and infra.
 
 ## Failure Modes
-- Boundary violation is rejected in review or tests.
-- Missing adapter is a runtime error with exit code 1.
+- Boundary violations are rejected by architecture tests.
+- Missing adapters fail at runtime with exit code 1.
 
 ## Design Rationale
-- Alternatives: flat module graph.
-- Rejected because it collapses boundaries and hides policy decisions.
-- Chosen: strict layering with explicit ownership.
+We deliberately chose strict boundaries to keep decisions centralized.
+Why not a flat module graph? It hides decisions and breaks tests.
 
 ## Non-Goals
-- Microservice decomposition.
 - Cross-process orchestration.
 
 ## References

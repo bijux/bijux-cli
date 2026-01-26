@@ -1,18 +1,31 @@
 # CLI usage
 
 ## Purpose
-This document guarantees how to run CLI commands with predictable output.
+This document tells you how to run commands with predictable output.
 
 ## Scope
 It covers usage patterns, not internal behavior.
 
-## Core Concepts
-- Output formats are explicit.
-- Quiet suppresses output only.
+## What problem this solves
+Ad-hoc flags produce inconsistent output across machines.
+This guide shows the stable patterns.
 
-## Invariants
-- `--format` controls structured output.
-- `--quiet` never changes exit codes.
+## Why you should care
+Predictable output keeps scripts stable.
+
+## What confusion this removes
+It removes ambiguity about format, quiet, and log level.
+
+## Guarantees
+Bijux guarantees:
+1. `--format` controls structured output.
+2. `--quiet` never changes exit codes.
+
+## How to Think About This
+Treat output format as an explicit decision, not a default guess.
+
+## Common Misunderstandings
+- "Debug output can appear in JSON." It must not.
 
 ## Execution
 Quick commands:
@@ -54,8 +67,8 @@ bijux --show-completion
 - Invalid log level exits with code 2.
 
 ## Design Rationale
-- Alternatives: auto-detected formats.
-- Rejected because they are non-deterministic.
+We deliberately chose explicit flags to avoid hidden behavior.
+Why not auto-detect output? It breaks scripting consistency.
 
 ## Non-Goals
 - Command-by-command reference.

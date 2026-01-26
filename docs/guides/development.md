@@ -1,18 +1,31 @@
 # Development
 
 ## Purpose
-This document guarantees how to run developer workflows and gates.
+This document tells you how to run developer workflows and gates.
 
 ## Scope
 It covers repository layout and tooling, not product behavior.
 
-## Core Concepts
-- Make targets are the single source of truth.
-- Artifacts are written under `artifacts/` only.
+## What problem this solves
+If local runs diverge from CI, bugs slip in.
+This guide keeps local and CI commands identical.
 
-## Invariants
-- CI runs the same Make targets as local workflows.
-- Generated output never lands in the repo root.
+## Why you should care
+If you use the same gates as CI, your changes pass on the first try.
+
+## What confusion this removes
+It removes doubt about where outputs go and which command to run.
+
+## Guarantees
+Bijux guarantees:
+1. CI runs the same Make targets as local workflows.
+2. Generated output never lands in the repo root.
+
+## How to Think About This
+Treat Make targets as the API for developer work.
+
+## Common Misunderstandings
+- "I can run tools directly." You can, but CI uses Make targets.
 
 ## Execution
 Repository layout:
@@ -41,8 +54,8 @@ make api
 - Writing outside `artifacts/` is a build error.
 
 ## Design Rationale
-- Alternatives: per-tool scripts.
-- Rejected because they drift from CI.
+We deliberately chose Make targets to keep CI and local in sync.
+Why not per-tool scripts? They drift and hide missing steps.
 
 ## Non-Goals
 - OS-specific package management.
