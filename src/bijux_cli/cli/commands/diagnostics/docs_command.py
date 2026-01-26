@@ -17,7 +17,12 @@ from bijux_cli.cli.commands.diagnostics.docs import (
     _resolve_output_target,
     _spec_mapping,
 )
-from bijux_cli.cli.core.command import raise_exit_intent, record_history
+from bijux_cli.cli.core.command import (
+    contains_non_ascii_env,
+    raise_exit_intent,
+    record_history,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     ENV_DOCS_OUT,
     ENV_TEST_IO_FAIL,
@@ -32,7 +37,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.command import contains_non_ascii_env, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import (
     ErrorType,

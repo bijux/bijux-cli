@@ -25,7 +25,11 @@ import platform
 
 import typer
 
-from bijux_cli.cli.core.command import new_run_command
+from bijux_cli.cli.core.command import (
+    ascii_safe,
+    new_run_command,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -38,7 +42,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.command import ascii_safe, validate_common_flags
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.errors import ConfigError

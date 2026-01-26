@@ -33,7 +33,11 @@ import unicodedata
 
 import typer
 
-from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
+from bijux_cli.cli.core.command import (
+    new_run_command,
+    raise_exit_intent,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -46,7 +50,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.command import validate_common_flags
 from bijux_cli.cli.plugins.commands.validation import refuse_on_symlink
 from bijux_cli.core.enums import ErrorType
 from bijux_cli.core.precedence import current_execution_policy

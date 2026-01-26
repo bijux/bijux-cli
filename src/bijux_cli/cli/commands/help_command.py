@@ -20,7 +20,12 @@ from bijux_cli.cli.commands.help import (
     _find_target_command,
     _get_formatted_help,
 )
-from bijux_cli.cli.core.command import raise_exit_intent, record_history
+from bijux_cli.cli.core.command import (
+    contains_non_ascii_env,
+    raise_exit_intent,
+    record_history,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -32,10 +37,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-)
-from bijux_cli.cli.core.command import (
-    contains_non_ascii_env,
-    validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import (

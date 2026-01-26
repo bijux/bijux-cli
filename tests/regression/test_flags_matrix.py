@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
 from bijux_cli.cli.core.command import normalize_format
+from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import FlagLayer, Flags, resolve_effective_config
 
@@ -23,7 +23,8 @@ from bijux_cli.core.precedence import FlagLayer, Flags, resolve_effective_config
 )
 def test_collect_missing_flag_values(argv: list[str], expected: str) -> None:
     errors = collect_global_flag_errors(argv)
-    assert errors and errors[0].failure == expected
+    assert errors
+    assert errors[0].failure == expected
 
 
 @pytest.mark.parametrize(
@@ -36,7 +37,8 @@ def test_collect_missing_flag_values(argv: list[str], expected: str) -> None:
 )
 def test_collect_invalid_flag_values(argv: list[str], failure: str) -> None:
     errors = collect_global_flag_errors(argv)
-    assert errors and errors[0].failure == failure
+    assert errors
+    assert errors[0].failure == failure
 
 
 def test_parse_global_flags_extracts_values() -> None:
@@ -101,5 +103,7 @@ def test_quiet_normalizes_log_level() -> None:
         ("toml", None),
     ],
 )
-def test_format_normalization_edge_cases(raw: str, expected: OutputFormat | None) -> None:
+def test_format_normalization_edge_cases(
+    raw: str, expected: OutputFormat | None
+) -> None:
     assert normalize_format(raw) == expected

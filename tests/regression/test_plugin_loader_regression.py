@@ -5,12 +5,18 @@
 
 from __future__ import annotations
 
+import importlib.metadata as im
 from pathlib import Path
+from typing import cast
 
 import pytest
 import typer
 
-from bijux_cli.plugins.loader import activate_plugin, deactivate_plugin, load_command_for
+from bijux_cli.plugins.loader import (
+    activate_plugin,
+    deactivate_plugin,
+    load_command_for,
+)
 from bijux_cli.plugins.metadata import PluginMetadata, PluginMetadataError
 
 
@@ -59,7 +65,7 @@ def test_entrypoint_loader() -> None:
         enabled=True,
         source="entrypoint",
         requires_cli=">=0",
-        entrypoint=_FakeEntryPoint(),
+        entrypoint=cast(im.EntryPoint, _FakeEntryPoint()),
     )
     app = load_command_for(meta)
     assert isinstance(app, typer.Typer)
@@ -78,7 +84,7 @@ def test_activation_and_deactivation(tmp_path: Path) -> None:
     )
     app = activate_plugin(meta)
     assert isinstance(app, typer.Typer)
-    assert deactivate_plugin(meta) is None
+    deactivate_plugin(meta)
 
 
 def test_entrypoint_missing_metadata() -> None:

@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-import io
 from contextlib import redirect_stdout
+import io
 
 import pytest
 

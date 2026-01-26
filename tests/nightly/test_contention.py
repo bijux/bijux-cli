@@ -18,8 +18,12 @@ pytestmark = [pytest.mark.e2e, pytest.mark.night]
 def test_parallel_reads_do_not_corrupt_state() -> None:
     with E2EHarness() as h:
         cmd = [str(h.bin), "config", "get", "missing_key"]
-        p1 = subprocess.Popen(cmd, env=h.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)  # noqa: S603
-        p2 = subprocess.Popen(cmd, env=h.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)  # noqa: S603
+        p1 = subprocess.Popen(  # noqa: S603 # nosec B603
+            cmd, env=h.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        p2 = subprocess.Popen(  # noqa: S603 # nosec B603
+            cmd, env=h.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
         out1, err1 = p1.communicate(timeout=20)
         out2, err2 = p2.communicate(timeout=20)

@@ -27,7 +27,12 @@ import platform
 import typer
 
 from bijux_cli.cli.commands.payloads import DevStatusPayload
-from bijux_cli.cli.core.command import new_run_command
+from bijux_cli.cli.core.command import (
+    ascii_safe,
+    new_run_command,
+    normalize_format,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     ENV_DEV_MODE,
     OPT_FORMAT,
@@ -40,11 +45,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-)
-from bijux_cli.cli.core.command import (
-    ascii_safe,
-    normalize_format,
-    validate_common_flags,
 )
 from bijux_cli.core.enums import OutputFormat
 from bijux_cli.core.precedence import current_execution_policy

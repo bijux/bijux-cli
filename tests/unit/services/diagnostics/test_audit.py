@@ -100,7 +100,7 @@ def test_dryrun_cli_audit(mock_log: Mock, mock_tel: Mock) -> None:
 
 def test_real_log(mock_log: Mock, mock_tel: Mock) -> None:
     """Test the log method of the RealAudit class."""
-    audit = RealAudit(mock_log, mock_tel)
+    audit = RealAudit(mock_log, mock_tel, allowed_commands=["echo"])
     cmd = ["cmd", "arg"]
     audit.log(cmd, executor="exec")
     assert audit._commands == [{"cmd": cmd, "executor": "exec"}]
@@ -112,7 +112,7 @@ def test_real_log(mock_log: Mock, mock_tel: Mock) -> None:
 
 def test_real_run_success(mock_log: Mock, mock_tel: Mock) -> None:
     """Test the successful execution path of the RealAudit run method."""
-    audit = RealAudit(mock_log, mock_tel)
+    audit = RealAudit(mock_log, mock_tel, allowed_commands=["echo"])
     cmd = ["echo", "test"]
     safe_cmd = cmd
     mock_proc = Mock()
@@ -146,7 +146,7 @@ def test_real_run_success(mock_log: Mock, mock_tel: Mock) -> None:
 
 def test_real_run_validate_fail(mock_log: Mock, mock_tel: Mock) -> None:
     """Test that a command validation failure is handled correctly."""
-    audit = RealAudit(mock_log, mock_tel)
+    audit = RealAudit(mock_log, mock_tel, allowed_commands=["echo"])
     cmd = ["bad"]
     with (
         patch(
@@ -163,7 +163,7 @@ def test_real_run_validate_fail(mock_log: Mock, mock_tel: Mock) -> None:
 
 def test_real_run_exec_fail(mock_log: Mock, mock_tel: Mock) -> None:
     """Test that a subprocess execution failure is handled correctly."""
-    audit = RealAudit(mock_log, mock_tel)
+    audit = RealAudit(mock_log, mock_tel, allowed_commands=["echo"])
     cmd = ["cmd"]
     safe_cmd = cmd
     with (
@@ -182,7 +182,7 @@ def test_real_run_exec_fail(mock_log: Mock, mock_tel: Mock) -> None:
 
 def test_real_cli_audit(mock_log: Mock, mock_tel: Mock) -> None:
     """Test the cli_audit method of the RealAudit class."""
-    audit = RealAudit(mock_log, mock_tel)
+    audit = RealAudit(mock_log, mock_tel, allowed_commands=["echo"])
     audit._commands = [1, 2]  # type: ignore[list-item]
     audit.cli_audit()
     mock_log.log.assert_called_with("info", "CLI audit (real)", extra={"commands": 2})

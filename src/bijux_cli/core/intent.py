@@ -5,18 +5,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 import os
-from typing import Mapping
 
 from bijux_cli.cli.color import resolve_color_mode
-from bijux_cli.cli.core.constants import ENV_COLOR, ENV_LOG_LEVEL, ENV_NO_COLOR, OPT_HELP
+from bijux_cli.cli.core.constants import (
+    ENV_COLOR,
+    ENV_LOG_LEVEL,
+    ENV_NO_COLOR,
+    OPT_HELP,
+)
 from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import (
     EffectiveConfig,
-    FlagLayer,
     FlagError,
+    FlagLayer,
     Flags,
     GlobalCLIConfig,
     LogPolicy,
@@ -156,8 +161,9 @@ def build_cli_intent(
 
 def current_cli_intent() -> CLIIntent:
     """Resolve the current CLI intent from DI or fallback to argv/env."""
-    from bijux_cli.core.di import DIContainer
     import sys
+
+    from bijux_cli.core.di import DIContainer
 
     try:
         intent: object = DIContainer.current().resolve(CLIIntent)

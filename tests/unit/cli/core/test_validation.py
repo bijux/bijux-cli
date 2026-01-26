@@ -15,11 +15,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 import typer
 
-from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
 from bijux_cli.cli.core.command import (
     ascii_safe,
     contains_non_ascii_env,
+    new_run_command,
     normalize_format,
+    raise_exit_intent,
     validate_common_flags,
     validate_env_file_if_present,
 )

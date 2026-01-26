@@ -15,6 +15,7 @@ appropriate implementation based on a `dry_run` flag.
 from __future__ import annotations
 
 from contextlib import suppress
+import os
 import subprocess  # nosec B404
 from typing import Any
 
@@ -161,14 +162,22 @@ class DryRunAudit(_BaseAudit):
 class RealAudit(_BaseAudit):
     """An audit service that validates, logs, and executes real commands."""
 
-    def __init__(self, log: ObservabilityProtocol, tel: TelemetryProtocol) -> None:
+    def __init__(
+        self,
+        log: ObservabilityProtocol,
+        tel: TelemetryProtocol,
+        *,
+        allowed_commands: list[str],
+    ) -> None:
         """Initializes the `RealAudit` service.
 
         Args:
             log (ObservabilityProtocol): The service for structured logging.
             tel (TelemetryProtocol): The service for event tracking.
+            allowed_commands (list[str]): Explicit allowlist for audited commands.
         """
         super().__init__(log, tel)
+        self._allowed_commands = allowed_commands
 
     def log(self, cmd: list[str], *, executor: str) -> None:
         """Logs a command with the intent to execute it.
@@ -201,7 +210,7 @@ class RealAudit(_BaseAudit):
                 occurs during execution.
         """
         try:
-            safe_cmd = validate_command(cmd)
+            safe_cmd = validate_command(cmd, allowed_commands=self._allowed_commands)
             self.log(safe_cmd, executor=executor)
             proc = subprocess.run(  # noqa: S603 # nosec B603
                 safe_cmd,
@@ -255,11 +264,10 @@ def get_audit_service(
     Returns:
         AuditProtocol: An instance of the appropriate audit service.
     """
-    return (
-        DryRunAudit(observability, telemetry)
-        if dry_run
-        else RealAudit(observability, telemetry)
-    )
+    if dry_run:
+        return DryRunAudit(observability, telemetry)
+    allowed = os.getenv("BIJUXCLI_ALLOWED_COMMANDS", "echo,ls,cat,grep").split(",")
+    return RealAudit(observability, telemetry, allowed_commands=allowed)
 
 
 __all__ = [
