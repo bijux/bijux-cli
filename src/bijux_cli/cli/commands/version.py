@@ -53,7 +53,7 @@ from bijux_cli.core.version import __version__ as cli_version
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 version_app = AsyncTyper(
     name="version",

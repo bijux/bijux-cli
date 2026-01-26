@@ -53,6 +53,13 @@ _BASE_BEHAVIOR: dict[ErrorType, ExitBehavior] = {
     ErrorType.INTERNAL: ExitBehavior(ExitCode.ERROR, "stderr", True),
     ErrorType.ABORTED: ExitBehavior(ExitCode.ABORTED, "stderr", False),
 }
+_EXPECTED_ERROR_TYPES = set(ErrorType)
+if set(_BASE_BEHAVIOR) != _EXPECTED_ERROR_TYPES:
+    missing = _EXPECTED_ERROR_TYPES - set(_BASE_BEHAVIOR)
+    extra = set(_BASE_BEHAVIOR) - _EXPECTED_ERROR_TYPES
+    raise RuntimeError(
+        f"Exit policy is incomplete. missing={sorted(missing)} extra={sorted(extra)}"
+    )
 
 
 def resolve_exit_behavior(

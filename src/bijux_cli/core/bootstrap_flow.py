@@ -288,6 +288,7 @@ def run_runtime(intent: CLIIntent) -> int:
             fmt=intent.output_format,
             log_policy=intent.log_policy,
         )
+        # Invariant: exit behavior is resolved once; emission just executes.
         code = int(behavior.code)
         if behavior.stream is None:
             return code

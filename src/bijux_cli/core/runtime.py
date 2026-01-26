@@ -136,6 +136,7 @@ def execute_exit_intent(intent: Any) -> None:
 
     if intent.stream is not None and intent.payload is not None:
         serializer = resolve_serializer()
+        # Invariant: output routing was resolved in core; infra only executes.
         emit_payload(
             intent.payload,
             serializer=serializer,

@@ -52,7 +52,7 @@ from bijux_cli.core.precedence import (
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.services.diagnostics.contracts import DocsProtocol
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 docs_app = AsyncTyper(
     name="docs",

@@ -37,7 +37,7 @@ from bijux_cli.cli.plugins.commands.scaffold import scaffold_plugin
 from bijux_cli.cli.plugins.commands.uninstall import uninstall_plugin
 from bijux_cli.core.runtime import AsyncTyper
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 plugins_app = AsyncTyper(
     name="plugins",

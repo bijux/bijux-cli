@@ -16,6 +16,7 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONUNBUFFERED: "1"
+  BIJUXCLI_API_GUARD: "1"
 
 jobs:
   # 1) Test matrix (3.11, 3.12, 3.13) — parallel

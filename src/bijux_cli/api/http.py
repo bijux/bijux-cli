@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+import json
 import logging
 import threading
 from typing import Annotated, Any, Protocol, runtime_checkable
@@ -734,7 +735,7 @@ async def validation_exception_handler(
             type=AnyUrl("https://bijux-cli.dev/docs/errors/validation-error"),
             title="Validation error",
             status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
+            detail=json.dumps(exc.errors()),
             instance=str(request.url),
         ).model_dump(mode="json"),
     )

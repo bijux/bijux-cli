@@ -37,7 +37,7 @@ from bijux_cli.cli.commands.memory.service import memory
 from bijux_cli.cli.commands.memory.set import set_memory
 from bijux_cli.core.runtime import AsyncTyper
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 memory_app = AsyncTyper(
     name="memory",

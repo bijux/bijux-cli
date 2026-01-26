@@ -42,7 +42,7 @@ from bijux_cli.cli.commands.config.set import set_config
 from bijux_cli.cli.commands.config.unset import unset_config
 from bijux_cli.core.runtime import AsyncTyper
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 config_app = AsyncTyper(
     name="config",
