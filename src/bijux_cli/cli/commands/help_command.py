@@ -54,7 +54,7 @@ from bijux_cli.core.precedence import (
 )
 from bijux_cli.core.runtime import AsyncTyper
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 
 def _resolve_help_config() -> tuple[EffectiveConfig, OutputConfig]:
@@ -167,7 +167,7 @@ def _capture_help_text(help_text_provider: Callable[[], str]) -> str:
 
 
 def _override_fmt_from_argv(fmt: str) -> str:
-    """Prefer an explicit --format/-f value when provided on the CLI."""
+    """Prefer an explicit format flag value when provided on the CLI."""
     if fmt.strip().lower() != _HUMAN:
         return fmt
     argv = sys.argv[1:]
@@ -346,9 +346,7 @@ def help_callback(
             help_text_provider=lambda: _get_formatted_help(target_cmd, target_ctx),
         )
 
-    help_text = _capture_help_text(
-        lambda: _get_formatted_help(target_cmd, target_ctx)
-    )
+    help_text = _capture_help_text(lambda: _get_formatted_help(target_cmd, target_ctx))
     try:
         payload = _build_help_payload(help_text, intent.include_runtime, started_at)
     except ValueError as exc:

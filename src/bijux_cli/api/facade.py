@@ -16,10 +16,11 @@ within another Python application.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
-from contextlib import suppress
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager, suppress
 import importlib
 import inspect
+import io
 import os
 from pathlib import Path
 import sys
@@ -36,6 +37,32 @@ from bijux_cli.services.contracts import ObservabilityProtocol, TelemetryProtoco
 from bijux_cli.services.errors import ServiceError
 
 IGNORE = {"PS1", "LS_COLORS", "PROMPT_COMMAND", "GIT_PS1_FORMAT"}
+_API_GUARD_ENV = "BIJUXCLI_API_GUARD"
+
+
+def _api_guard_enabled() -> bool:
+    """Return True when strict API guardrails are enabled."""
+    return os.environ.get(_API_GUARD_ENV) == "1"
+
+
+@contextmanager
+def _api_io_guard() -> Iterator[None]:
+    """Ensure API calls do not write to stdout/stderr when guarded."""
+    if not _api_guard_enabled():
+        yield
+        return
+    out_buf = io.StringIO()
+    err_buf = io.StringIO()
+    with suppress(Exception):
+        from contextlib import redirect_stderr, redirect_stdout
+
+        with redirect_stdout(out_buf), redirect_stderr(err_buf):
+            yield
+    if out_buf.getvalue().strip() or err_buf.getvalue().strip():
+        raise BijuxError(
+            "API purity guard: stdout/stderr output is not allowed",
+            http_status=500,
+        )
 
 
 def _consume_task(task: asyncio.Future[Any]) -> None:
@@ -188,16 +215,23 @@ class BijuxAPI:
         Returns:
             Any: The result of the command's execution.
         """
-        return run_command(
-            self.run_async,
-            name,
-            *args,
-            quiet=quiet,
-            fmt=fmt,
-            pretty=pretty,
-            log_level=log_level,
-            **kwargs,
-        )
+        try:
+            with _api_io_guard():
+                return run_command(
+                    self.run_async,
+                    name,
+                    *args,
+                    quiet=quiet,
+                    fmt=fmt,
+                    pretty=pretty,
+                    log_level=log_level,
+                    **kwargs,
+                )
+        except SystemExit as exc:
+            raise BijuxError(
+                f"API purity guard: unexpected SystemExit({exc.code})",
+                http_status=500,
+            ) from exc
 
     async def run_async(
         self,
@@ -262,7 +296,8 @@ class BijuxAPI:
                         "Non-ASCII characters in environment", http_status=400
                     )
 
-            result = await self._engine.run_command(name, *args, **kwargs)
+            with _api_io_guard():
+                result = await self._engine.run_command(name, *args, **kwargs)
             self._schedule_event("api.run", {"name": name})
             return result
 
@@ -280,6 +315,12 @@ class BijuxAPI:
 
         except BijuxError:
             raise
+
+        except SystemExit as exc:
+            raise BijuxError(
+                f"API purity guard: unexpected SystemExit({exc.code})",
+                http_status=500,
+            ) from exc
 
         except Exception as exc:
             self._schedule_event("api.run.error", {"name": name, "error": str(exc)})

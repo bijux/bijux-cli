@@ -30,7 +30,7 @@ from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 from bijux_cli.core.runtime import AsyncTyper
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 dev_app = AsyncTyper(
     name="dev",

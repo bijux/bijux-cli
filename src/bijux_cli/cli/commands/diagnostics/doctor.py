@@ -51,7 +51,7 @@ from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 doctor_app = AsyncTyper(
     name="doctor",

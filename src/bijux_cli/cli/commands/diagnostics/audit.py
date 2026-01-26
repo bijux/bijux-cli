@@ -58,7 +58,7 @@ from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.infra.contracts import Emitter
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 audit_app = AsyncTyper(
     name="audit",

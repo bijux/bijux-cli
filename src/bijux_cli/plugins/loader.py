@@ -137,6 +137,7 @@ def lazy_command_for(meta: PluginMetadata) -> typer.Typer:
 
 def load_command_for(meta: PluginMetadata) -> typer.Typer:
     """Load a plugin Typer app immediately."""
+    # Invariant: metadata validation happens before any activation attempt.
     validate_plugin_metadata(meta)
     if meta.source == "entrypoint":
         return _entrypoint_loader(meta)

@@ -51,7 +51,7 @@ from bijux_cli.core.precedence import current_execution_policy, resolve_exit_int
 from bijux_cli.core.runtime import AsyncTyper
 from bijux_cli.services.config.contracts import ConfigProtocol
 
-typer.core.rich = None  # type: ignore[attr-defined,assignment]
+typer.core.rich = None  # type: ignore[attr-defined]
 
 sleep_app = AsyncTyper(
     name="sleep",

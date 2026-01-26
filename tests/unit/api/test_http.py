@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-import ast
+import json
 from typing import Any
 from unittest.mock import patch
 
@@ -130,13 +130,13 @@ def test_validation_handler_422_for_body_and_path() -> None:
     with _client() as client:
         r = client.post("/v1/items", json={"name": "", "description": "x"})
         assert r.status_code == 422
-        errors = ast.literal_eval(r.json()["detail"])
+        errors = json.loads(r.json()["detail"])
         assert isinstance(errors, list)
         assert any(e.get("type") == "string_too_short" for e in errors)
 
         r = client.get("/v1/items/0")
         assert r.status_code == 422
-        errors = ast.literal_eval(r.json()["detail"])
+        errors = json.loads(r.json()["detail"])
         assert isinstance(errors, list)
         assert any(e.get("type") == "greater_than_equal" for e in errors)
 
