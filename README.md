@@ -188,7 +188,7 @@ Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
 ## Platform Support
 
 * **Supported**: Linux, macOS
-* **Not supported**: Windows
+r* **Not supported**: Windows
 
 Bijux relies on POSIX filesystem and process semantics.
 
@@ -394,7 +394,7 @@ tests/          All test layers
 
 ## Roadmap
 
-* **v0.4** — Plugin ergonomics improvements, async-first examples, registry tooling.
+* **v0.3** — Plugin ergonomics improvements, async-first examples, registry tooling.
 * **v1.0** — Plugin compatibility guarantees, long-term stability contract.
 
 ---
