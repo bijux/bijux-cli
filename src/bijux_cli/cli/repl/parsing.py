@@ -10,6 +10,7 @@ from contextlib import suppress
 import json
 from pathlib import Path
 import re
+from typing import cast
 
 from rapidfuzz import process as rf_process
 
@@ -71,7 +72,7 @@ def _suggest(cmd: str) -> str | None:
     choices = _known_commands()
     if not choices:
         return None
-    result = rf_process.extractOne(cmd, choices)
+    result = cast(tuple[str, int, object], rf_process.extractOne(cmd, choices))
     best, score, _ = result
     if score >= 60 and best != cmd:
         return f" Did you mean '{best}'?"
