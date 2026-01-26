@@ -1,19 +1,37 @@
 # Architecture
 
-Bijux CLI is built around a small set of core components:
+## Components
 
-- CLI entry: parses arguments and builds a CLI intent
+- CLI entry: parses args into an intent
 - Policy resolution: computes effective flags and output rules
-- Runtime: initializes DI, plugins, and command dispatch
-- Emission: outputs payloads according to the resolved policy
-- Services: config, history, diagnostics, and plugin registry
+- Runtime: DI, plugins, and command dispatch
+- Emission: writes payloads via resolved routing
+- Services: config, history, diagnostics, plugin registry
 
-The execution path is linear: intent -> policy -> runtime -> dispatch -> emit.
-There are no hidden fallbacks or IO during parsing.
+The execution path is linear: Intent -> Policy -> Runtime -> Exit.
 
-Key design goals:
+## Dependency direction
 
-- Strict separation of parsing vs execution
-- Explicit output routing (stdout/stderr) in core
-- Predictable exit codes and errors
-- Plugins are validated and activated explicitly
+- Core depends on nothing
+- Infra depends on core only
+- Services depend on core and infra
+- CLI depends on services only
+- App wires everything
+
+## Contract ownership
+
+- Core: cross-cutting behavior and infra-facing interfaces
+- Services: service protocols and expectations
+- Infra: concrete adapters for core interfaces
+
+## Plugin pipeline
+
+Ordered stages:
+
+1. Discover
+2. Validate metadata
+3. Register
+4. Activate (lazy)
+5. Unload if applicable
+
+This order is enforced in code and reviews.

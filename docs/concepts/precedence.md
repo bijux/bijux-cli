@@ -1,28 +1,24 @@
 # Precedence
 
-Bijux CLI resolves configuration in a strict order. Higher layers override lower
-layers.
+Guarantee: higher layers override lower layers.
 
-Order (highest to lowest):
+## Resolution order
 
 1. CLI flags
-2. Environment variables
+2. Environment
 3. Config file
 4. Defaults
 
-Rules:
+## Flag precedence (global)
+
+1. `--help`: short-circuits, exit 0
+2. `--quiet`: suppress output, preserve exit code
+3. `--log-level debug`: diagnostics, forces pretty output
+4. `--format json|yaml`: structured output, invalid value exits 2
+5. `--pretty` / `--no-pretty`: indentation only
+
+## Invariants
 
 - Explicit inputs always win
-- Defaults never override explicit values
-- Unrelated outputs must not change ordering
-
-Example
-
-```
-config file: format=yaml
-env: BIJUXCLI_FORMAT=json
-cli: --format json
-result: json
-```
-
-See reference/config_sources.md for the full matrix.
+- Defaults never override explicit inputs
+- Output format never changes precedence

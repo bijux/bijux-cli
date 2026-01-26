@@ -27,7 +27,6 @@ Key Features:
 Attributes:
     REPO_ROOT (Path): The absolute path to the repository's root directory.
     SRC_DIR (Path): The path to the main source code directory (`src/bijux_cli`).
-    ADR_DIR (Path): The path to the Architecture Decision Records directory.
     NAV_FILE (Path): The conventional name for the literate navigation file.
     INDENT1 (str): A string representing one level of indentation (4 spaces).
     INDENT2 (str): A string representing two levels of indentation (8 spaces).
@@ -45,7 +44,6 @@ from typing import Iterable, Match
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 SRC_DIR: Path = Path("src/bijux_cli")
-ADR_DIR: Path = Path("ADR")
 NAV_FILE: Path = Path("nav.md")
 
 INDENT1 = "    "
@@ -56,7 +54,6 @@ INDENT4 = INDENT1 * 4
 __all__ = [
     "REPO_ROOT",
     "SRC_DIR",
-    "ADR_DIR",
     "NAV_FILE",
     "INDENT1",
     "INDENT2",
@@ -352,7 +349,7 @@ def rewrite_links_general(md: str) -> str:
     """Perform general-purpose link rewriting in a Markdown string.
 
     This function rewrites links based on a predefined mapping for common
-    project files (e.g., `TESTS.md`). It handles various Markdown link
+    project files (e.g., `docs/index.md`). It handles various Markdown link
     formats, including inline links, reference-style links, and autolinks.
 
     Args:
@@ -362,9 +359,6 @@ def rewrite_links_general(md: str) -> str:
         The Markdown content with links rewritten.
     """
     target_map = {
-        "TESTS.md": "tests.md",
-        "PROJECT_TREE.md": "project_tree.md",
-        "TOOLING.md": "tooling.md",
         "docs/index.md": "index.md",
     }
     md = _INLINE_LINK.sub(
@@ -419,11 +413,6 @@ def final_fixups(md: str) -> str:
     Returns:
         The cleaned-up Markdown content.
     """
-    md = md.replace("](../TESTS.md)", "](tests.md)")
-    md = md.replace("](../PROJECT_TREE.md)", "](project_tree.md)")
-    md = md.replace("../TESTS.md", "tests.md")
-    md = md.replace("../PROJECT_TREE.md", "project_tree.md")
-    md = md.replace("../TOOLING.md", "tooling.md")
     return md
 
 

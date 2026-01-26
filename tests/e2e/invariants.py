@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+import re
 
 from tests.e2e.harness import E2EHarness
 
@@ -45,9 +46,12 @@ def assert_exit_code_stable(codes: Iterable[int]) -> None:
     assert all(code == codes[0] for code in codes)
 
 
+_TRACEBACK_RE = re.compile(r"traceback \(most recent call last\)", re.IGNORECASE)
+
+
 def assert_no_traceback(text: str) -> None:
-    """Ensure CLI output does not contain a traceback."""
-    assert "traceback" not in text.lower()
+    """Ensure CLI output does not contain a Python traceback."""
+    assert not _TRACEBACK_RE.search(text)
 
 
 def assert_config_consistent(h: E2EHarness) -> None:

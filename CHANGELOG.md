@@ -6,18 +6,44 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 <a id="unreleased"></a>
-## Unreleased (v0.2.0)
-
-* Removed tooling: pre-commit, pyright, pytype, and GitLab CI remnants.
-* Dropped Windows support; Linux/macOS only, with Windows-specific paths removed.
-* Test restructuring: added night tests, markers, and split CI fast vs night.
-* Python policy frozen at **>= 3.11** across docs, packaging, and CI.
-
-[Back to top](#top)
 
 ---
 
 <!-- towncrier start -->
+
+
+<a id="v0-2-0"></a>
+
+## [0.2.0] – 2026-01-26
+
+### Added
+- Linear bootstrap flow with explicit phase boundaries and a first-class `CLIIntent`
+- Rebuilt E2E suite with domain taxonomy, invariants, and a subprocess harness
+- Nightly fuzz and stress suites under `tests/nightly` with dedicated markers
+- Expanded regression coverage for bootstrap paths, flags matrix, plugin loader/metadata, and real serializer roundtrips
+- Benchmarks with thresholds for startup, discovery (cold/warm), config load, REPL, and help/version fast paths
+- API contract gating with stricter schema validation and schemathesis checks
+- Docs rebuilt into concepts/guides/reference/examples with section indexes
+- API purity guard enabled in CI to prevent IO in API calls
+
+### Changed
+- Centralized CLI policy resolution for routing, exit intent, and precedence
+- Infra strictness: explicit formats/targets required; no guessing
+- Plugin lifecycle contract with explicit states and early metadata validation
+- Test organization aligned to `src/` with merged regression suite and nightly rename
+- MkDocs generator and nav rebuilt to match the new docs tree
+
+### Fixed
+- Help output routing for structured formats
+- Exit-policy invariants to detect real Python tracebacks only
+- API validation error payloads now JSON-encoded with stable schema
+
+### Removed
+- Legacy root docs pages and ADR directory (decisions moved into canonical docs)
+- Thin CLI core wrappers (emit/validation) consolidated
+
+
+[Back to top](#top)
 
 <a id="v0-1-3"></a>
 
@@ -206,7 +232,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 [Back to top](#top)
 
-[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/bijux/bijux-cli/compare/v0.2.1...HEAD
+[0.2.0]: https://github.com/bijux/bijux-cli/compare/v0.2.0...v0.2.0
 [0.1.3]: https://github.com/bijux/bijux-cli/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bijux/bijux-cli/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bijux/bijux-cli/compare/v0.1.0...v0.1.1
