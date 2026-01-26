@@ -146,8 +146,9 @@ def register_default_services(
             ),
             telemetry=di.resolve(TelemetryProtocol),
             max_workers=int(os.getenv("BIJUXCLI_MAX_WORKERS", "4")),
-            allowed_commands=os.getenv("BIJUXCLI_ALLOWED_COMMANDS", "echo,ls,cat,grep")
-            .split(","),
+            allowed_commands=os.getenv(
+                "BIJUXCLI_ALLOWED_COMMANDS", "echo,ls,cat,grep"
+            ).split(","),
         ),
     )
     di.register(ProcessRunner, lambda: di.resolve(bijux_cli.infra.process.ProcessPool))
@@ -198,6 +199,9 @@ def register_default_services(
         lambda: bijux_cli.services.diagnostics.audit.RealAudit(
             di.resolve(bijux_cli.services.logging.observability.Observability),
             di.resolve(TelemetryProtocol),
+            allowed_commands=os.getenv(
+                "BIJUXCLI_ALLOWED_COMMANDS", "echo,ls,cat,grep"
+            ).split(","),
         ),
     )
     di.register(

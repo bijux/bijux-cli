@@ -29,7 +29,15 @@ import platform
 
 import typer
 
-from bijux_cli.cli.core.command import new_run_command, raise_exit_intent
+from bijux_cli.cli.core.command import (
+    ascii_safe,
+    contains_non_ascii_env,
+    new_run_command,
+    normalize_format,
+    raise_exit_intent,
+    validate_common_flags,
+    validate_env_file_if_present,
+)
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
     OPT_FORMAT,
@@ -42,13 +50,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-)
-from bijux_cli.cli.core.command import (
-    ascii_safe,
-    contains_non_ascii_env,
-    normalize_format,
-    validate_common_flags,
-    validate_env_file_if_present,
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat

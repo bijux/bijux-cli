@@ -62,6 +62,16 @@ class FakeRegistry(RegistryProtocol):
         """Return dummy metadata."""
         return {}
 
+    def state(self, name: str) -> None:
+        """Return no state for fake registry."""
+        _ = name
+        return None
+
+    def transition(self, name: str, state: Any) -> None:
+        """No-op transition for fake registry."""
+        _ = (name, state)
+        return None
+
     async def call_hook(self, hook: str, *args: Any, **kwargs: Any) -> Any:
         """No-op async hook caller."""
         return None

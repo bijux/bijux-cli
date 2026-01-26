@@ -112,7 +112,7 @@ class FakeDI:
         self._t = telemetry
         self._s = _BasicSerializer()
 
-    def resolve(self, key: Any) -> Emitter | TelemetryProtocol:
+    def resolve(self, key: Any) -> object:
         """Resolve a dependency to its fake implementation."""
         if key is Emitter:
             return self._e

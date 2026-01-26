@@ -69,6 +69,8 @@ class PluginConfig:
 
 
 __all__ = ["PluginConfig", "PluginState", "RegistryProtocol"]
+
+
 class PluginState(str, Enum):
     """Lifecycle states for plugins."""
 

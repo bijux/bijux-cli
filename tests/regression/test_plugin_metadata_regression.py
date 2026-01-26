@@ -69,7 +69,9 @@ def _write_plugin(tmp_path: Path, name: str, meta: dict[str, object]) -> Path:
     return plug_dir
 
 
-def test_local_missing_required_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_local_missing_required_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
     _write_plugin(tmp_path, "missing_meta", {"name": "missing_meta"})
     invalidate_plugin_cache()
@@ -106,7 +108,9 @@ def test_entrypoint_missing_cli_requirement(
 ) -> None:
     monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
     meta = _FakeMeta("entrypkg", ["some-lib>=1.0"])
-    ep = _FakeEntryPoint("entry_plugin", "entrypkg.mod", _FakeDist("entrypkg", "1.0", meta))
+    ep = _FakeEntryPoint(
+        "entry_plugin", "entrypkg.mod", _FakeDist("entrypkg", "1.0", meta)
+    )
     monkeypatch.setattr(
         "importlib.metadata.entry_points", lambda: _FakeEntryPoints([ep])
     )

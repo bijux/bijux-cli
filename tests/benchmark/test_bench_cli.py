@@ -124,9 +124,7 @@ def test_config_load_benchmark(benchmark: BenchmarkFixture, tmp_path: Path) -> N
     assert benchmark.stats.stats.mean < 2.0
 
 
-def test_help_fast_path_benchmark(
-    benchmark: BenchmarkFixture, tmp_path: Path
-) -> None:
+def test_help_fast_path_benchmark(benchmark: BenchmarkFixture, tmp_path: Path) -> None:
     env = _base_env(tmp_path)
 
     def _run() -> subprocess.CompletedProcess[str]:

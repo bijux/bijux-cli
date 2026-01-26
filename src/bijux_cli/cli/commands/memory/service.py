@@ -27,7 +27,14 @@ import typer
 
 from bijux_cli.cli.color import resolve_click_color
 from bijux_cli.cli.commands.memory.resolve import resolve_memory_service
-from bijux_cli.cli.core.command import raise_exit_intent, record_history
+from bijux_cli.cli.core.command import (
+    ascii_safe,
+    contains_non_ascii_env,
+    normalize_format,
+    raise_exit_intent,
+    record_history,
+    validate_common_flags,
+)
 from bijux_cli.cli.core.constants import (
     OPT_FORMAT,
     OPT_LOG_LEVEL,
@@ -39,12 +46,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-)
-from bijux_cli.cli.core.command import (
-    ascii_safe,
-    contains_non_ascii_env,
-    normalize_format,
-    validate_common_flags,
 )
 from bijux_cli.core.enums import ErrorType, ExitCode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import current_execution_policy

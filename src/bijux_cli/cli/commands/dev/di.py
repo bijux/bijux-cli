@@ -30,9 +30,12 @@ from typing import Any
 import typer
 
 from bijux_cli.cli.core.command import (
+    ascii_safe,
     new_run_command,
+    normalize_format,
     raise_exit_intent,
     record_history,
+    validate_common_flags,
 )
 from bijux_cli.cli.core.constants import (
     ENV_CONFIG,
@@ -48,11 +51,6 @@ from bijux_cli.cli.core.help_text import (
     HELP_LOG_LEVEL,
     HELP_NO_PRETTY,
     HELP_QUIET,
-)
-from bijux_cli.cli.core.command import (
-    ascii_safe,
-    normalize_format,
-    validate_common_flags,
 )
 from bijux_cli.core.di import DIContainer
 from bijux_cli.core.enums import ErrorType, ExitCode, OutputFormat

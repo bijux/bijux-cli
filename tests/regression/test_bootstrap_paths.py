@@ -45,7 +45,9 @@ def test_fast_version_skips_di_init(monkeypatch: pytest.MonkeyPatch) -> None:
     assert called == {"default": 0, "plugins": 0, "engine": 0}
 
 
-def test_runtime_path_initializes_di(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_runtime_path_initializes_di(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     called = {"default": 0, "plugins": 0, "engine": 0}
     original_default = bootstrap_flow.register_default_services
     original_plugins = bootstrap_flow.register_plugin_services
@@ -53,15 +55,15 @@ def test_runtime_path_initializes_di(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 
     def _mark_default(*_args: object, **_kwargs: object) -> None:
         called["default"] += 1
-        original_default(*_args, **_kwargs)
+        original_default(*_args, **_kwargs)  # type: ignore[arg-type]
 
     def _mark_plugins(*_args: object, **_kwargs: object) -> None:
         called["plugins"] += 1
-        original_plugins(*_args, **_kwargs)
+        original_plugins(*_args, **_kwargs)  # type: ignore[arg-type]
 
     def _mark_engine(*_args: object, **_kwargs: object) -> None:
         called["engine"] += 1
-        original_engine(*_args, **_kwargs)
+        original_engine(*_args, **_kwargs)  # type: ignore[arg-type]
 
     _isolate_env(monkeypatch, tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
