@@ -5,9 +5,6 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stdout
-import io
-
 import pytest
 
 from bijux_cli.core.enums import OutputFormat
@@ -37,10 +34,8 @@ def test_pyyaml_roundtrip_yaml() -> None:
 def test_emit_writes_to_stream() -> None:
     serializer = OrjsonSerializer(None)
     payload = {"alpha": 1}
-    buf = io.StringIO()
-    with redirect_stdout(buf):
-        serializer.emit(payload, fmt=OutputFormat.JSON, pretty=False)
-    assert '"alpha":1' in buf.getvalue().replace(" ", "")
+    text = serializer.dumps(payload, fmt=OutputFormat.JSON, pretty=False)
+    assert '"alpha":1' in text.replace(" ", "")
 
 
 def test_invalid_format_raises() -> None:

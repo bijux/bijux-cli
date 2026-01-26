@@ -40,6 +40,7 @@ import structlog
 import typer
 
 from bijux_cli.cli.color import set_color_mode
+from bijux_cli.cli.core.command import emit_payload, resolve_emitter, resolve_serializer
 from bijux_cli.cli.core.constants import ENV_DISABLE_HISTORY, ENV_TEST_MODE
 from bijux_cli.cli.root import build_app
 from bijux_cli.core.di import DIContainer
@@ -238,7 +239,7 @@ def _handle_help_request(args: list[str], intent: CLIIntent) -> int | None:
 
 def run_runtime(intent: CLIIntent) -> int:
     """Run the DI/runtime execution path."""
-    # IO: suppress stderr in quiet mode.
+    # Phase: runtime init (logging config + DI graph).
     if intent.quiet:
         with contextlib.suppress(Exception):
             sys.stderr = open(os.devnull, "w")  # noqa: SIM115
@@ -250,33 +251,55 @@ def run_runtime(intent: CLIIntent) -> int:
     )
 
     container = DIContainer.current()
-    effective = EffectiveConfig(flags=intent.flags)
-    policy = ExecutionPolicy(
-        output_format=intent.output_format,
-        color=intent.color,
-        quiet=intent.quiet,
-        log_level=intent.log_level,
-        pretty=intent.pretty,
-        include_runtime=intent.include_runtime,
-    )
     container.register(CLIIntent, intent)
-    container.register(EffectiveConfig, effective)
-    container.register(ExecutionPolicy, policy)
+    container.register(EffectiveConfig, EffectiveConfig(flags=intent.flags))
+    container.register(
+        ExecutionPolicy,
+        ExecutionPolicy(
+            output_format=intent.output_format,
+            color=intent.color,
+            quiet=intent.quiet,
+            log_level=intent.log_level,
+            pretty=intent.pretty,
+            include_runtime=intent.include_runtime,
+        ),
+    )
+
     register_default_services(
         container,
         logging_config=logging_config,
-        output_format=OutputFormat.YAML
-        if intent.output_format == OutputFormat.YAML
-        else OutputFormat.JSON,
+        output_format=intent.output_format,
     )
     register_plugin_services(container)
 
     Engine()
     app = build_app()
+    serializer = resolve_serializer()
+    emitter = resolve_emitter()
 
+    # Phase: execution + emission.
     command_line = list(intent.args)
     start = time.time()
-    exit_code = 0
+
+    def emit_error(error_type: ErrorType, message: str) -> int:
+        behavior = resolve_exit_behavior(
+            error_type,
+            quiet=intent.quiet,
+            fmt=intent.output_format,
+            log_policy=intent.log_policy,
+        )
+        code = int(behavior.code)
+        if behavior.stream is None:
+            return code
+        emit_payload(
+            {"error": message, "code": code},
+            serializer=serializer,
+            emitter=emitter,
+            fmt=intent.output_format,
+            pretty=intent.pretty,
+            stream=behavior.stream,
+        )
+        return code
 
     try:
         result = app(args=command_line, standalone_mode=False)
@@ -284,83 +307,17 @@ def run_runtime(intent: CLIIntent) -> int:
     except typer.Exit as exc:
         exit_code = exc.exit_code
     except NoSuchOption as exc:
-        behavior = resolve_exit_behavior(
-            ErrorType.USAGE,
-            quiet=intent.quiet,
-            fmt=intent.output_format,
-            log_policy=intent.log_policy,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps(
-                    {
-                        "error": f"No such option: {exc.option_name}",
-                        "code": int(behavior.code),
-                    }
-                ),
-                file=stream,
-            )
-        exit_code = int(behavior.code)
+        exit_code = emit_error(ErrorType.USAGE, f"No such option: {exc.option_name}")
     except UsageError as exc:
-        behavior = resolve_exit_behavior(
-            ErrorType.USAGE,
-            quiet=intent.quiet,
-            fmt=intent.output_format,
-            log_policy=intent.log_policy,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps({"error": str(exc), "code": int(behavior.code)}),
-                file=stream,
-            )
-        exit_code = int(behavior.code)
+        exit_code = emit_error(ErrorType.USAGE, str(exc))
     except UserInputError as exc:
-        behavior = resolve_exit_behavior(
-            ErrorType.USER_INPUT,
-            quiet=intent.quiet,
-            fmt=intent.output_format,
-            log_policy=intent.log_policy,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps({"error": str(exc), "code": int(behavior.code)}),
-                file=stream,
-            )
-        exit_code = int(behavior.code)
+        exit_code = emit_error(ErrorType.USER_INPUT, str(exc))
     except KeyboardInterrupt:
-        behavior = resolve_exit_behavior(
-            ErrorType.ABORTED,
-            quiet=intent.quiet,
-            fmt=intent.output_format,
-            log_policy=intent.log_policy,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps({"error": "Aborted by user", "code": int(behavior.code)}),
-                file=stream,
-            )
-        exit_code = int(behavior.code)
+        exit_code = emit_error(ErrorType.ABORTED, "Aborted by user")
     except Exception as exc:
-        behavior = resolve_exit_behavior(
-            ErrorType.INTERNAL,
-            quiet=intent.quiet,
-            fmt=intent.output_format,
-            log_policy=intent.log_policy,
-        )
-        if behavior.stream is not None:
-            stream = sys.stdout if behavior.stream == "stdout" else sys.stderr
-            print(
-                json.dumps(
-                    {"error": f"Unexpected error: {exc}", "code": int(behavior.code)}
-                ),
-                file=stream,
-            )
-        exit_code = int(behavior.code)
+        exit_code = emit_error(ErrorType.INTERNAL, f"Unexpected error: {exc}")
 
+    # Phase: history recording.
     if should_record_command_history(command_line):
         try:
             history_service = container.resolve(History)
@@ -391,14 +348,9 @@ def main() -> int:
             * `2`: A usage error or invalid option was provided.
             * `130`: The process was interrupted by the user (Ctrl+C).
     """
-    # IO: read CLI argv tokens.
+    # Phase: intent building (no side effects).
     args = sys.argv[1:]
-
-    intent = build_cli_intent(
-        args,
-        env=os.environ,
-        tty=sys.stdout.isatty(),
-    )
+    intent = build_cli_intent(args, env=os.environ, tty=sys.stdout.isatty())
     if intent.errors:
         err = intent.errors[0]
         return _emit_fast_error(
@@ -409,6 +361,7 @@ def main() -> int:
             log_policy=intent.log_policy,
         )
 
+    # Phase: explicit fast paths.
     fast_exit = _handle_version_request(args, intent)
     if fast_exit is not None:
         return fast_exit
@@ -416,10 +369,12 @@ def main() -> int:
     if fast_exit is not None:
         return fast_exit
 
+    # Phase: policy resolution + runtime init.
     DIContainer.set_log_policy(intent.log_policy)
     setup_structlog(intent.log_level)
     set_color_mode(intent.color)
 
+    # Phase: execution + emission + exit.
     return run_runtime(intent)
 
 

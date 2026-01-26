@@ -14,7 +14,7 @@ import pytest
 from tests.e2e.harness import E2EHarness
 from tests.e2e.invariants import assert_config_consistent, assert_no_traceback
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 def _mutate_config_lines(lines: list[str]) -> list[str]:

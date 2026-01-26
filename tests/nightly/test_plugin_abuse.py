@@ -18,7 +18,7 @@ from tests.e2e.invariants import (
 )
 from tests.e2e.plugins.utils import write_dummy_plugin
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 @settings(max_examples=10, deadline=None)

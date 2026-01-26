@@ -21,7 +21,7 @@ from tests.e2e.invariants import (
     capture_state,
 )
 
-pytestmark = [pytest.mark.e2e, pytest.mark.night]
+pytestmark = [pytest.mark.e2e, pytest.mark.nightly]
 
 
 def _extract_json_payload(text: str) -> str:
