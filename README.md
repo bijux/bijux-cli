@@ -1,7 +1,24 @@
 # Bijux CLI
+
 <a id="top"></a>
 
-**A modern, predictable CLI framework for Python** — strict global flag precedence, first-class **plugins**, a **DI kernel**, and an interactive **REPL**. Build robust, extensible command-line tools that are easy to test, maintain, and scale.
+**Bijux CLI is a framework for building long-lived, complex command-line tools in Python.**
+
+It is designed for CLIs that **grow**, accumulate features, gain plugins, and must remain **predictable, testable, and understandable** years after their first release.
+
+Bijux is not a wrapper around argument parsing.
+It is an **execution framework** for serious tools.
+
+Bijux is built for engineers who care about:
+
+* deterministic global flags (no ambiguity, no surprises),
+* first-class plugins with explicit lifecycles,
+* a real dependency-injection kernel,
+* structured output for automation,
+* a unified synchronous **and asynchronous** execution model,
+* and an interactive REPL for exploration and debugging.
+
+If you have ever watched a CLI become fragile as it scaled, Bijux exists to prevent that.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
@@ -10,18 +27,19 @@
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
 [![CI Status](https://github.com/bijux/bijux-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/bijux-cli/actions)
 
-> **At a glance:** Plugin-driven • deterministic flags • DI for testability • REPL • structured JSON/YAML  
-> **Quality:** **2,600+ tests** across layers with **98%+ coverage** (see
-> [Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/)
-> and
-> [HTML coverage](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)).
-> Multi-version CI. Docs build enforced. No telemetry.
+> **At a glance**
+> Plugin-driven · Deterministic flags · Dependency Injection · Sync + Async · REPL · JSON/YAML output
+> **Quality**
+> 1,800+ tests across all layers · 98%+ coverage · Multi-Python CI
+> → See [Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/) and
+> [HTML coverage](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)
 
 ---
 
 ## Table of Contents
 
 * [Why Bijux CLI?](#why-bijux-cli)
+* [How to Think About Bijux](#how-to-think-about-bijux)
 * [Try It in 20 Seconds](#try-it-in-20-seconds)
 * [Key Features](#key-features)
 * [Installation](#installation)
@@ -31,159 +49,203 @@
 * [Plugin Non-Goals](#plugin-non-goals)
 * [Structured Output](#structured-output)
 * [Developer Introspection](#developer-introspection)
-* [Global Flags: Strict Precedence](#global-flags-strict-precedence)
+* [Global Flags & Strict Precedence](#global-flags--strict-precedence)
 * [Built-in Commands](#built-in-commands)
 * [When to Use (and Not Use)](#when-to-use-and-not-use)
 * [Shell Completion](#shell-completion)
 * [Configuration & Paths](#configuration--paths)
 * [Tests & Quality](#tests--quality)
 * [Project Tree](#project-tree)
+* [Stability Notes](#stability-notes)
 * [Roadmap](#roadmap)
 * [Docs & Resources](#docs--resources)
 * [Contributing](#contributing)
 * [Acknowledgments](#acknowledgments)
 * [License](#license)
 
-[Back to top](#top)
-
 ---
 
-<a id="why-bijux-cli"></a>
 ## Why Bijux CLI?
 
-Click and Typer excel at simple tools. Bijux emphasizes **predictability and modularity** for complex ones:
+Click and Typer are excellent for **small or simple tools**.
 
-* **Deterministic flags** for reliable CI/scripting.
-* **Dependency Injection kernel** for testable, decoupled services.
-* **First-class plugins** to extend without touching the core.
-* **Interactive REPL** for exploration and debugging.
+Bijux is for **complex CLIs** where:
 
-[Back to top](#top)
+* global flags must behave consistently in CI and automation,
+* commands may be synchronous or asynchronous,
+* features and plugins are added incrementally,
+* internal state must be observable and testable,
+* and regressions must be caught early.
+
+Bijux deliberately trades a small amount of upfront structure for **long-term clarity and stability**.
 
 ---
 
-<a id="try-it-in-20-seconds"></a>
+## How to Think About Bijux
+
+A Bijux command flows through a **fixed, explicit pipeline**:
+
+```
+intent → policy resolution → (sync | async) execution → emission → exit
+```
+
+Key principles:
+
+* **Flags never compete** — precedence is strict and deterministic.
+* **Decisions are made once**, early in execution.
+* **Services are injected**, never hidden behind globals.
+* **Commands do not format output** — emission is centralized.
+* **Async and sync commands share the same semantics**.
+* **The REPL uses the exact same execution path as the CLI**.
+
+If you reason about Bijux in these terms, the framework becomes predictable rather than magical.
+
+---
+
 ## Try It in 20 Seconds
 
 ```bash
-pipx install bijux-cli  # Or: pip install bijux-cli
+pipx install bijux-cli   # or: pip install bijux-cli
+
 bijux --version
 bijux doctor
 bijux status -f json --no-pretty
 ```
 
-[Back to top](#top)
-
 ---
-
-<a id="key-features"></a>
 
 ## Key Features
 
-* **Plugin-Driven Extensibility** — Scaffold, install, validate; plugins become top-level commands.
-* **Deterministic Behavior** ⚖ — Strict flag precedence (see [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)).
-* **DI Kernel** — Decouple internals; inspect graphs for debugging/tests.
-* **REPL Shell** — Persistent session with history; great for exploration/demos.
-* **Structured Output** — JSON/YAML (+ pretty/compact, verbosity, consistent errors).
-* **Diagnostics** — Built-in `doctor`, `audit`, `docs` for workflows.
-* **Shell Completion** — Bash, Zsh, Fish, PowerShell support.
+### Deterministic Global Flags
 
-[Back to top](#top)
+Global flags follow **strict precedence**, eliminating ambiguity and unexpected behavior in scripts and CI pipelines.
+
+### Unified Sync + Async Execution
+
+Commands may be implemented as synchronous or `async` functions.
+Bijux runs both through the same execution pipeline, guaranteeing identical behavior for:
+
+* flag precedence,
+* output formatting,
+* logging,
+* and exit codes.
+
+Async support is part of the core runtime — not a bolt-on.
+
+### Dependency Injection (DI)
+
+All services are explicit and injectable:
+
+* no hidden globals,
+* easy mocking,
+* inspectable dependency graphs.
+
+### First-Class Plugins
+
+Plugins are treated as real system components:
+
+* scaffolded from templates,
+* validated before loading,
+* dynamically exposed as top-level commands.
+
+### Interactive REPL
+
+Explore and debug using a persistent shell:
+
+* identical semantics to CLI execution,
+* history and introspection built in.
+
+### Structured Output
+
+Every command can emit:
+
+* JSON or YAML,
+* pretty or compact,
+* consistent error envelopes suitable for automation.
+
+### Built-in Diagnostics
+
+Commands like `doctor`, `audit`, and `docs` help verify environments and workflows.
 
 ---
 
-<a id="installation"></a>
-
 ## Installation
 
-Requires **Python >= 3.11** (3.11–3.13 tested).
+Requires **Python ≥ 3.11** (3.11–3.13 tested).
 
 ```bash
-# Isolated install (recommended)
+# Recommended (isolated)
 pipx install bijux-cli
 
 # Standard
 pip install bijux-cli
 ```
 
-Upgrade: `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
-
-[Back to top](#top)
+Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
 
 ---
 
 ## Platform Support
 
-Supported: **Linux**, **macOS**  
-Not supported: **Windows** — the CLI depends on POSIX filesystem and process semantics that Windows does not provide.
+* **Supported**: Linux, macOS
+* **Not supported**: Windows
 
-[Back to top](#top)
+Bijux relies on POSIX filesystem and process semantics.
 
 ---
-
-<a id="quick-start"></a>
 
 ## Quick Start
 
 ```bash
-# Discover commands/flags
 bijux --help
-
-# Health check
 bijux doctor
 
-# REPL mode
+# Enter REPL
 bijux
 bijux> help
 bijux> status
 bijux> exit
 ```
 
-[Back to top](#top)
-
 ---
-
-<a id="plugins-in-60-seconds"></a>
 
 ## Plugins in 60 Seconds
 
 ```bash
-# Scaffold from a real template (local dir or Git URL), then install
-# Option A: local template (example uses repo's cookiecutter template)
+# Scaffold a plugin
 bijux plugins scaffold my_plugin --template ./plugin_template --force
 
-# Option B: cookiecutter-compatible Git URL
-# bijux plugins scaffold my_plugin --template https://github.com/bijux/bijux-plugin-template.git --force
-
-# Install & explore
+# Install and explore
 bijux plugins install ./my_plugin --force
 bijux plugins list
 bijux my_plugin --help
 
-# Validate & remove
+# Validate and remove
 bijux plugins check my_plugin
 bijux plugins uninstall my_plugin
 ```
 
-Plugins dynamically add top-level commands.
-
-[Back to top](#top)
+Plugins dynamically add **top-level commands** without modifying the core.
 
 ---
 
 ## Plugin Non-Goals
 
-No sandboxing. No security guarantees. Use trusted plugins only.
+Bijux plugins are **not sandboxed**.
 
-[Back to top](#top)
+There are:
+
+* no security guarantees,
+* no isolation,
+* no permission model.
+
+Only install plugins you trust.
 
 ---
 
-<a id="structured-output"></a>
-
 ## Structured Output
 
-For automation:
+For automation and scripting:
 
 ```bash
 # Compact JSON
@@ -193,251 +255,173 @@ bijux status -f json --no-pretty | jq
 bijux status -f yaml --pretty
 ```
 
-[Back to top](#top)
-
 ---
-
-<a id="developer-introspection"></a>
 
 ## Developer Introspection
 
 ```bash
-# DI graph
+# Inspect the DI graph
 bijux dev di -f json
 
-# Loaded plugins
+# List loaded plugins
 bijux dev list-plugins
 ```
 
-[Back to top](#top)
-
 ---
 
-<a id="global-flags-strict-precedence"></a>
+## Global Flags & Strict Precedence
 
-## Global Flags: Strict Precedence
+Flags short-circuit in a fixed order.
+Once a higher-priority flag applies, lower-priority inputs are ignored.
 
-Fixed ordering eliminates ambiguity.
+| Priority | Flag                         | Effect                                 |
+| -------: | ---------------------------- | -------------------------------------- |
+|        1 | `-h`, `--help`               | Immediate exit with usage              |
+|        2 | `-q`, `--quiet`              | Suppress stdout/stderr                 |
+|        3 | `--log-level debug`          | Full diagnostics; forces pretty output |
+|        4 | `-f`, `--format json / yaml` | Structured output                      |
+|        5 | `--pretty / --no-pretty`     | Formatting toggle                      |
+|        6 | `--log-level <level>`        | Logging threshold                      |
 
-| Priority | Flag                          | Effect                                                    |
-| -------: |-------------------------------| --------------------------------------------------------- |
-|        1 | `-h`, `--help`                | Immediate exit (code 0) with usage; ignores all.          |
-|        2 | `-q`, `--quiet`               | Suppress stdout/stderr; preserves exit code.              |
-|        3 | `--log-level debug`               | Full diagnostics; implies `--log-level debug`, forces `--pretty`. |
-|        4 | `-f`, `--format <json\|yaml>` | Structured output; invalid → code 2.                      |
-|        5 | `--pretty` / `--no-pretty`    | Indentation toggle (default: `--pretty`).                 |
-|        6 | `-v`, `--log-level debug`             | Runtime metadata; implied by `--log-level debug`.                   |
-
-Rationale: [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)
-
-[Back to top](#top)
+See the full rationale in the [Precedence docs](https://bijux.github.io/bijux-cli/concepts/precedence/).
 
 ---
-
-<a id="built-in-commands"></a>
 
 ## Built-in Commands
 
-| Command   | Description                 | Example                           |
-| --------- | --------------------------- | --------------------------------- |
-| `doctor`  | Environment diagnostics     | `bijux doctor`                    |
-| `status`  | CLI snapshot                | `bijux status -f json`            |
-| `repl`    | Interactive shell           | `bijux repl`                      |
-| `plugins` | Manage plugins              | `bijux plugins list`              |
-| `config`  | Key-value settings          | `bijux config set core_timeout=5` |
-| `history` | REPL history                | `bijux history --limit 10`        |
-| `audit`   | Security checks             | `bijux audit --dry-run`           |
-| `docs`    | Generate specs/docs         | `bijux docs --out spec.json`      |
-| `dev`     | Introspection (DI, plugins) | `bijux dev di`                    |
-| `sleep`   | Pause                       | `bijux sleep -s 5`                |
-| `version` | Version info                | `bijux version`                   |
-
-[Back to top](#top)
+| Command   | Purpose                 |
+| --------- | ----------------------- |
+| `doctor`  | Environment diagnostics |
+| `status`  | CLI snapshot            |
+| `repl`    | Interactive shell       |
+| `plugins` | Manage plugins          |
+| `config`  | Key-value settings      |
+| `history` | REPL history            |
+| `audit`   | Security checks         |
+| `docs`    | Generate specs/docs     |
+| `dev`     | Introspection tools     |
+| `sleep`   | Pause execution         |
+| `version` | Version info            |
 
 ---
-
-<a id="when-to-use-and-not-use"></a>
 
 ## When to Use (and Not Use)
 
-**Use if you need:**
+**Use Bijux if you need:**
 
-* Plugins for extensibility.
-* Deterministic flags for CI/scripts. [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)
-* REPL for interactive workflows.
-* DI for modular, testable design.
+* extensibility via plugins,
+* deterministic behavior in CI,
+* sync + async commands under one model,
+* structured output,
+* testable internals.
 
-**Overkill if:**
+**It may be overkill if:**
 
-* You’re building a tiny one-off script (Click/Typer may be simpler).
-* You don’t need plugins/DI.
-
-[Back to top](#top)
+* you are writing a one-off script,
+* your CLI will never grow,
+* plugins and DI provide no value.
 
 ---
-
-<a id="shell-completion"></a>
 
 ## Shell Completion
 
 ```bash
-# Install (writes to your shell’s completion dir)
 bijux --install-completion
-
-# Or print the script for manual setup
 bijux --show-completion
 ```
 
-*Zsh tip:* Ensure `compinit` runs and your `fpath` includes the completion directory.
-
-[Back to top](#top)
+Supports Bash, Zsh, Fish, and PowerShell.
 
 ---
-
-<a id="configuration--paths"></a>
 
 ## Configuration & Paths
 
-Precedence: **flags > env > config > defaults**.
+Precedence: **flags → env → config → defaults**
 
-* Config: `~/.bijux/.env` (`BIJUXCLI_CONFIG`)
-* History: `~/.bijux/.history` (`BIJUXCLI_HISTORY_FILE`)
-* Plugins: `~/.bijux/.plugins` (`BIJUXCLI_PLUGINS_DIR`)
-
-Example:
-
-```bash
-export BIJUXCLI_PLUGINS_DIR=./custom-plugins
-```
-
-[Back to top](#top)
+| Purpose | Path                | Env                     |
+| ------- | ------------------- | ----------------------- |
+| Config  | `~/.bijux/.env`     | `BIJUXCLI_CONFIG`       |
+| History | `~/.bijux/.history` | `BIJUXCLI_HISTORY_FILE` |
+| Plugins | `~/.bijux/.plugins` | `BIJUXCLI_PLUGINS_DIR`  |
 
 ---
-
-<a id="tests--quality"></a>
 
 ## Tests & Quality
 
-* **Depth:** 2,600+ tests across unit, integration, functional, and E2E layers.
-* **Coverage:** **98%+** code coverage (measured via `pytest-cov` in CI).
-* **Determinism:** CI runs the full suite on multiple Python versions (3.11+).
-* **Artifacts:** JSON/YAML fixtures validate structured outputs; E2E simulates real usage (REPL, plugins, DI).
-* **Docs:** Read the full testing guide → **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**.
+Bijux is tested to **protect users from regressions**, not to discourage contribution.
 
-Quick commands:
+* 1,800+ tests across unit, integration, functional, E2E, and nightly layers
+* 98%+ coverage enforced in CI
+* Property-based and stateful tests
+* Benchmarks with thresholds
+
+Run locally:
 
 ```bash
-make test         # all tests
-make test-unit    # unit tests only
-make test-night   # night-only tests
+make test
+make test-unit
+make test-night
 ```
 
-**Artifacts:**
-[Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/) ·
-[JUnit report](https://bijux.github.io/bijux-cli/artifacts/test/#junit-xml) ·
-[HTML coverage report](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)
-
-[Back to top](#top)
+Artifacts:
+[https://bijux.github.io/bijux-cli/artifacts/](https://bijux.github.io/bijux-cli/artifacts/)
 
 ---
-
-<a id="project-tree"></a>
 
 ## Project Tree
 
-A guided map of the repository (what lives where, and why).
-See the **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)** for the full breakdown.
-
-Quick glance:
-
+```text
+api/            OpenAPI schemas
+config/         Lint/type/security configs
+docs/           Documentation (MkDocs)
+makefiles/      Task modules
+plugin_template/Plugin scaffold
+scripts/        Helper scripts
+src/bijux_cli/  Core implementation
+tests/          All test layers
 ```
-api/            # OpenAPI schemas
-config/         # Lint/type/security configs
-docs/           # MkDocs site (Material)
-makefiles/      # Task modules (docs, test, lint, etc.)
-plugin_template/# Cookiecutter-ready plugin scaffold
-scripts/        # Helper scripts (hooks, docs generation)
-src/bijux_cli/  # CLI + library implementation
-tests/          # unit / integration / functional / e2e
-```
-
-[Back to top](#top)
 
 ---
 
-<a id="roadmap"></a>
+## Stability Notes
+
+* Core CLI semantics (flags, precedence, exit behavior) are stable.
+* The async execution model is stable and supported.
+* Plugin metadata and loader internals may evolve before v1.0.
+* Breaking changes, when unavoidable, will be documented clearly.
+
+---
 
 ## Roadmap
 
-* **v0.2** — Async command support, richer plugin registry.
-* **v1.0** — Community plugin marketplace, benchmarks vs. alternatives.
-
-Track progress and suggest features via [Issues](https://github.com/bijux/bijux-cli/issues).
-
-[Back to top](#top)
+* **v0.4** — Plugin ergonomics improvements, async-first examples, registry tooling.
+* **v1.0** — Plugin compatibility guarantees, long-term stability contract.
 
 ---
-
-<a id="docs--resources"></a>
 
 ## Docs & Resources
 
-* **Site**: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
-* **Docs navigation**:
-  - Getting started: [docs/getting-started/installation.md](https://github.com/bijux/bijux-cli/blob/main/docs/getting-started/installation.md)
-  - Concepts: [docs/concepts/architecture.md](https://github.com/bijux/bijux-cli/blob/main/docs/concepts/architecture.md)
-  - Guides: [docs/guides/cli-usage.md](https://github.com/bijux/bijux-cli/blob/main/docs/guides/cli-usage.md)
-  - Reference: [docs/reference/commands.md](https://github.com/bijux/bijux-cli/blob/main/docs/reference/commands.md)
-  - Examples: [docs/examples/workflows.md](https://github.com/bijux/bijux-cli/blob/main/docs/examples/workflows.md)
-  - Glossary: [docs/glossary.md](https://github.com/bijux/bijux-cli/blob/main/docs/glossary.md)
-* **Changelog**: [https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md](https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md)
-* **Repository**: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
-* **Issues**: [https://github.com/bijux/bijux-cli/issues](https://github.com/bijux/bijux-cli/issues)
-* **Security** (private reports): [https://github.com/bijux/bijux-cli/security/advisories/new](https://github.com/bijux/bijux-cli/security/advisories/new)
-* **Tests:** **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**
-* **Project Tree:** **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**
-* **Artifacts:** Browse all reports & logs — [index](https://bijux.github.io/bijux-cli/artifacts/)
-  · [Tests](https://bijux.github.io/bijux-cli/artifacts/test/) · [Lint](https://bijux.github.io/bijux-cli/artifacts/lint/)
-  · [Quality](https://bijux.github.io/bijux-cli/artifacts/quality/) · [Security](https://bijux.github.io/bijux-cli/artifacts/security/)
-  · [SBOM](https://bijux.github.io/bijux-cli/artifacts/sbom/) · [API](https://bijux.github.io/bijux-cli/artifacts/api/) · [Citation](https://bijux.github.io/bijux-cli/artifacts/citation/)
-
-*When filing issues, include `--log-level debug` output where possible.*
-
-[Back to top](#top)
+* Documentation: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
+* Artifacts: [https://bijux.github.io/bijux-cli/artifacts/](https://bijux.github.io/bijux-cli/artifacts/)
+* Repository: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 
 ---
-
-<a id="contributing"></a>
 
 ## Contributing
 
-Welcome! See **[CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CONTRIBUTING.md)** for setup, style, and tests. We label **good first issue** to help you get started.
-
-[Back to top](#top)
+Contributions are welcome.
+See [CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CONTRIBUTING.md).
 
 ---
-
-<a id="acknowledgments"></a>
 
 ## Acknowledgments
 
-* Built on [Typer](https://typer.tiangolo.com/) (CLI), [FastAPI](https://fastapi.tiangolo.com/) (HTTP API), and [Injector](https://github.com/python-injector/injector) (DI).
-* Inspired by Click, Typer, and Cobra.
-* Thanks to early contributors and testers!
-
-[Back to top](#top)
+Built on Typer, FastAPI, and Injector.  
+Inspired by Click, Typer, and Cobra.  
 
 ---
 
-<a id="license"></a>
-
 ## License
 
-Apache-2.0 — see **[LICENSES/Apache-2.0.txt](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/Apache-2.0.txt)**.
+Apache-2.0.
 © 2025 Bijan Mousavi.
-
-Migration note: This project moved from MIT to Apache-2.0.
-
-Dependency license audit (declared dependencies): checked available local metadata; no Apache-2.0 incompatibilities identified in that set.
-
-[Back to top](#top)

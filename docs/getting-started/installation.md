@@ -1,44 +1,26 @@
 # Installation
 
 ## Purpose
-This document guarantees how to install bijux-cli.
+This document explains how to install bijux-cli in a way that is reproducible and easy to validate. It exists so you can reach a known-good install quickly and avoid environment-specific confusion.
 
 ## Scope
-It covers pip and developer installs only.
+It covers supported installation methods and the minimal verification step. It does not cover upgrading, uninstallation, or system package managers.
 
-## Core Concepts
-- Install via pip for users.
-- Install editable for contributors.
-
-## Invariants
-- Python 3.11 or newer is required.
-
-## Execution
-```bash
-pip install bijux-cli
-```
-
-Developer install:
+## Recommended Installation
+Use pip or hatch to install the package into an isolated environment. This keeps dependency resolution predictable and makes it easier to reproduce issues.
 
 ```bash
-hatch shell
-pip install -e .
+python -m pip install bijux-cli
 ```
 
-Verify:
+## Verification
+After installation, confirm the binary is on your path and responds correctly.
 
 ```bash
-bijux --help
-bijux version
+bijux --version
 ```
 
-## Failure Modes
-- Missing Python 3.11+ prevents install.
-- Missing PATH entry prevents `bijux` execution.
+If the command prints a version and exits with code 0, the installation is valid.
 
-## Design Rationale
-- Alternatives: system package managers.
-- Rejected because release cadence is Python-first.
-
-## Non-Goals
-- OS package manager instructions.
+## Alternatives
+System package managers may be convenient, but they can introduce version skew. We recommend pip or hatch because they align with how bijux-cli is published and tested.

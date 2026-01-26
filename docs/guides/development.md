@@ -1,64 +1,23 @@
 # Development
 
 ## Purpose
-This document tells you how to run developer workflows and gates.
+This guide provides practical guidance for contributors working on bijux-cli. It exists to reduce accidental violations of core invariants and to help new contributors make changes safely.
 
 ## Scope
-It covers repository layout and tooling, not product behavior.
+It covers where to add commands, how to test, and how to avoid breaking core guarantees. It does not cover project governance or release processes.
 
-## What problem this solves
-If local runs diverge from CI, bugs slip in.
-This guide keeps local and CI commands identical.
+## Where to Add Commands
+Add new CLI commands under `src/bijux_cli/cli/commands/` and keep command handlers thin. Core logic should live in services so it can be tested independently of CLI wiring.
 
-## Why you should care
-If you use the same gates as CI, your changes pass on the first try.
+## Where Not to Add Logic
+Do not add policy decisions or output routing in infra modules. Those decisions must remain in core so tests can enforce invariants consistently.
 
-## What confusion this removes
-It removes doubt about where outputs go and which command to run.
+## Testing Expectations
+Run unit and regression tests for the areas you touched, and confirm that core invariants remain intact. If you change behavior, add or update tests that assert the new guarantees.
 
-## Guarantees
-Bijux guarantees:
-1. CI runs the same Make targets as local workflows.
-2. Generated output never lands in the repo root.
-
-## How to Think About This
-Treat Make targets as the API for developer work.
-
-## Common Misunderstandings
-- "I can run tools directly." You can, but CI uses Make targets.
-
-## Execution
-Repository layout:
-
-- `src/`: production code
-- `tests/`: unit, regression, e2e, nightly, benchmark
-- `docs/`: authored documentation
-- `config/`: tool configuration
-- `makefiles/`: tool orchestration
-- `scripts/`: build helpers
-- `artifacts/`: generated output only
-
-Core commands:
-
-```bash
-make lint
-make quality
-make security
-make test
-make test-all
-make api
-```
-
-## Failure Modes
-- Missing toolchain dependencies cause Make target failures.
-- Writing outside `artifacts/` is a build error.
-
-## Design Rationale
-We deliberately chose Make targets to keep CI and local in sync.
-Why not per-tool scripts? They drift and hide missing steps.
-
-## Non-Goals
-- OS-specific package management.
+## Tooling Notes
+The project enforces linting, quality checks, and security scans. These checks are not optional; they preserve the guarantees documented in the concepts section.
 
 ## References
-- Decision rules: `architecture/decision-rules.md`
+- [Contributor mental model](contributor-mental-model.md)
+- [Architecture walk-through](../architecture/walkthrough.md)

@@ -1,58 +1,33 @@
 # Configuration
 
 ## Purpose
-This document tells you how to set configuration for CI and scripts.
+This guide explains how to configure bijux-cli safely and predictably. It exists to help you set values in a way that respects precedence and avoids hidden overrides.
 
 ## Scope
-It covers environment variables and config commands only.
+It covers configuration sources, how to set values, and how to validate results. It does not describe all possible configuration keys; use the reference for that.
 
-## What problem this solves
-Hidden config sources make troubleshooting slow.
-This guide keeps config sources explicit.
+## Configuration Sources
+Bijux reads configuration from CLI flags, environment variables, and configuration files. The precedence rules determine which value is active when multiple sources define the same key.
 
-## Why you should care
-If config sources are explicit, you can trace a bad value to one place.
-
-## What confusion this removes
-It removes ambiguity about which source overrides another.
-
-## Guarantees
-Bijux guarantees:
-1. Environment overrides config files.
-2. CLI flags override everything.
-
-## How to Think About This
-Treat config as a stack of overrides with a fixed order.
-
-## Common Misunderstandings
-- "Config file overrides environment." It does not.
-
-## Execution
-Set defaults for CI:
+## Setting a Value
+Use `bijux config set` with a `KEY=VALUE` pair to define a setting explicitly.
 
 ```bash
-export BIJUXCLI_FORMAT=json
-export BIJUXCLI_LOG_LEVEL=info
+bijux config set foo=bar
 ```
 
-Set config values:
+This updates the configuration file and makes the value visible to subsequent commands unless overridden by a higher-precedence source.
+
+## Verifying Configuration
+Use `bijux config get` to check the active value. This lets you confirm that precedence produced the expected result.
 
 ```bash
-bijux config set ci.enabled=true
-bijux config get ci.enabled
+bijux config get foo
 ```
 
-## Failure Modes
-- Invalid key syntax exits with code 2.
-- Non-ASCII values exit with code 3.
-
-## Design Rationale
-We deliberately chose explicit sources to keep precedence clear.
-Why not auto-discover configs? It hides overrides.
-
-## Non-Goals
-- Custom config file formats.
+## Why This Matters
+Configuration mistakes are a common source of confusion in automation. Explicit commands and clear precedence rules reduce this risk.
 
 ## References
-- Config schema: `reference/config-schema.md`
-- Precedence: `concepts/precedence.md`
+- [Precedence](../concepts/precedence.md)
+- [Config schema](../reference/config-schema.md)

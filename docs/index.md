@@ -1,25 +1,20 @@
-# Bijux CLI
+# Bijux CLI Documentation
 
 ## Purpose
-This documentation is written for an experienced engineer new to bijux-cli.
+This documentation set explains how to use and extend bijux-cli with confidence. It exists to give experienced engineers new to bijux-cli a clear mental model, precise guarantees, and concrete guidance without forcing them to read the code first.
 
 ## Scope
-It does not try to teach Python or CLI basics.
+These docs cover the CLI, its execution model, configuration and precedence rules, plugin lifecycle expectations, and the public contract between the CLI and the API. They do not attempt to mirror internal implementation details beyond what is needed to explain behavior and guarantees.
 
-## What problem this solves
-You need a CLI that produces stable output, predictable exit codes, and repeatable behavior in scripts.
-You also need to understand where decisions are made so you can extend the CLI without breaking it.
+## Audience
+This material is written for engineers who are comfortable with CLI tools and configuration-driven systems, but who are new to bijux-cli. It assumes you can read command-line examples and understand basic concepts like environment variables and configuration files.
 
-## Why you should care
-If you can predict the output and exit code for every command, your automation stays reliable.
-If you know where decisions are forbidden, you avoid subtle bugs during refactors.
+## How to Navigate
+Start with Getting Started if you want to install and run bijux-cli quickly. Use Concepts to understand the execution model and guarantees. Guides provide task-oriented instructions for common workflows, and Reference provides authoritative tables and lists for commands and configuration.
 
-## What confusion this removes
-It removes ambiguity about precedence, output routing, and plugin activation.
-
-## Where to go next
-- Getting Started: getting-started/index.md
-- Concepts: concepts/index.md
-- Guides: guides/index.md
-- Reference: reference/index.md
-- Examples: examples/index.md
+## Sections
+- Getting Started: a concise path from installation to your first successful commands.
+- Concepts: the guarantees, invariants, and mental models that govern behavior.
+- Guides: practical, step-by-step workflows for real usage.
+- Reference: canonical lists of commands, config schema, and exit codes.
+- Architecture: the documented decision rules and execution walk-through.

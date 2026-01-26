@@ -1,27 +1,17 @@
 # Examples
 
 ## Purpose
-This section guarantees runnable examples that explain consequences.
+This section provides runnable, real-world examples that demonstrate bijux-cli behavior and outcomes. It exists to bridge the gap between conceptual guarantees and practical usage.
 
 ## Scope
-It does not explain concepts or provide reference tables.
+Examples focus on workflows and plugin operations that you can reproduce locally. They do not attempt to document every command or configuration key.
 
-## Core Concepts
-- Examples show setup, command, output, and implication.
+## Audience
+Engineers who prefer to learn through concrete scenarios will benefit from these examples. Each example is designed to be copy‑paste friendly and to highlight why a particular choice matters.
 
-## Invariants
-- Examples are runnable and minimal.
+## What You Will Find
+Each example includes a short setup, the commands to run, the expected output shape, and a brief explanation of the consequences.
 
-## Execution
-- Workflows: workflows.md
-- Plugins: plugins.md
-
-## Failure Modes
-- Outdated examples are treated as defects.
-
-## Design Rationale
-- Alternatives: syntax-only snippets.
-- Rejected because they do not teach semantics.
-
-## Non-Goals
-- Full tutorials.
+## Index
+- [Workflows](workflows.md)
+- [Plugins](plugins.md)

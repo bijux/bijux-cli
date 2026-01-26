@@ -1,50 +1,27 @@
-# API usage
+# API Usage
 
 ## Purpose
-This document tells you how to embed bijux-cli without IO side effects.
+This guide explains how to use the bijux-cli Python API in a way that preserves the same guarantees as the CLI. It exists to prevent accidental side effects when embedding bijux-cli in applications.
 
 ## Scope
-It covers API entrypoints and error behavior only.
+It covers the core API entry points and expected behavior. It does not describe the HTTP API or the CLI command syntax.
 
-## What problem this solves
-Printing from an API call corrupts host applications.
-The API guard prevents that.
+## Using the API
+The API returns data structures and does not perform output routing or process exits. This keeps the API usable in headless environments.
 
-## Why you should care
-If you embed bijux-cli, you need pure return values and predictable errors.
+## Example
+Use the API to run a command and inspect the result directly.
 
-## What confusion this removes
-It removes doubt about whether the API writes to stdout or stderr.
-
-## Guarantees
-Bijux guarantees:
-1. API calls return data only.
-2. API guard violations raise errors.
-
-## How to Think About This
-Treat the API as a function library, not a CLI wrapper.
-
-## Common Misunderstandings
-- "API calls behave like CLI commands." They do not.
-
-## Execution
 ```python
-from bijux_cli.api import BijuxAPI
+from bijux_cli.api.facade import BijuxAPI
 
 api = BijuxAPI()
-api.run_sync("status")
+result = api.run_sync("status")
+print(result)
 ```
 
-## Failure Modes
-- Invalid command raises a BijuxError.
-- API guard violations raise a guard error.
-
-## Design Rationale
-We deliberately chose purity to make embedding safe.
-Why not allow printing? It breaks host process output.
-
-## Non-Goals
-- Web API usage.
+## Why This Matters
+Keeping the API side-effect free ensures that calling code remains in control of output, logging, and exit behavior. This is critical for embedding in servers or long-running processes.
 
 ## References
-- API purity guard: `src/bijux_cli/api/facade.py`
+- API facade: `src/bijux_cli/api/facade.py`
