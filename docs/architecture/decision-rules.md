@@ -1,28 +1,37 @@
-# Decision Rules (Behavior Constitution)
+# Decision rules
 
-Purpose: define where CLI behavior is decided and where it must not be decided.
+## Purpose
+This document guarantees where decisions are made and where they are forbidden.
 
-## What decides behavior
-- `core/precedence.py` is the single source of truth for resolving flags, env, and defaults into an `ExecutionPolicy`.
-- `core/exit_policy.py` is the single source of truth for exit codes, streams, and error shape.
-- `cli/core/color.py` is the single source of truth for color/styling decisions.
-- Command handlers are responsible only for building intent/payload and invoking emitters.
+## Scope
+This covers policy, exit behavior, and output routing.
 
-## What must not decide behavior
-- Individual commands must not re-derive output policy (quiet/format/pretty/log policy).
-- Individual commands must not hardcode raw flag strings or env var names.
-- Helper utilities must not short-circuit output/error contracts outside `exit_policy`.
-- DI/services must not invent new verbosity switches or logging rules.
+## Core Concepts
+- Policy resolution lives in core.
+- Exit policy lives in core.
+- Infra executes decisions, never makes them.
 
-## Enforcement
-- Architecture tests forbid raw flag strings outside `cli/core/constants.py`.
-- Property tests lock `LogLevel` ordering and parsing semantics.
-- CI gates ensure policy changes only flow through the core policy modules.
+## Invariants
+- No policy resolution outside `core/precedence.py`.
+- No exit decisions outside `core/exit_policy.py`.
+- No output routing outside core policy resolution.
 
-## Artifacts-only outputs
+## Execution
+- Command handlers build payloads only.
+- Emitters write exactly what policy dictates.
 
-Generated output must live under `artifacts/`.
+## Failure Modes
+- Raw flag strings or ad-hoc routing are rejected by architecture tests.
+- Policy changes outside core are considered defects.
 
-- Tests, coverage, and benchmarks write to `artifacts/test`.
-- Docs build from `artifacts/docs/docs` to `artifacts/docs/site`.
-- CI uploads only `artifacts/**`.
+## Design Rationale
+- Alternatives: per-command decisions.
+- Rejected because it creates inconsistent behavior.
+- Chosen: centralized policy for determinism.
+
+## Non-Goals
+- CLI UX design guidance.
+
+## References
+- Enforcement tests: `tests/unit/core/test_architecture.py`
+- Policy implementation: `src/bijux_cli/core/precedence.py`

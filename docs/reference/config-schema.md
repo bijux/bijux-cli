@@ -1,8 +1,20 @@
 # Config schema
 
-Keys are stored in the config file and resolved by precedence.
-Keys are uppercased with a `BIJUXCLI_` prefix and use alphanumeric or underscore.
+## Purpose
+This document guarantees the configuration key space and contracts.
 
+## Scope
+It covers config keys and contract ownership only.
+
+## Core Concepts
+- Keys are stored in a dotenv-style file.
+- Keys are uppercased with a `BIJUXCLI_` prefix.
+
+## Invariants
+- Keys use alphanumeric or underscore only.
+- Duplicate keys are invalid.
+
+## Execution
 Common keys:
 
 | Key | Type | Notes |
@@ -11,8 +23,18 @@ Common keys:
 | log_level | string | trace, debug, info |
 | color | string | auto, always, never |
 
-## Contracts
+## Failure Modes
+- Invalid keys exit with code 2.
+- Non-ASCII values exit with code 3.
 
+## Design Rationale
+- Alternatives: arbitrary key formats.
+- Rejected because they break validation.
+
+## Non-Goals
+- Dynamic schema discovery.
+
+## Contracts
 Core contracts:
 
 - Execution: `ContextProtocol`
@@ -36,9 +58,9 @@ Service contracts:
 
 Infra adapters:
 
-- `EmitterProtocol` → `ConsoleEmitter`
-- `SerializerProtocol` → `OrjsonSerializer`, `PyYAMLSerializer`
-- `RetryPolicyProtocol` → `TimeoutRetryPolicy`, `ExponentialBackoffRetryPolicy`
-- `ProcessPoolProtocol` → `ProcessPool`
-- `TerminalProtocol` → `Terminal`
-- `TelemetryProtocol` → `NoopTelemetry`, `LoggingTelemetry`
+- `EmitterProtocol` -> `ConsoleEmitter`
+- `SerializerProtocol` -> `OrjsonSerializer`, `PyYAMLSerializer`
+- `RetryPolicyProtocol` -> `TimeoutRetryPolicy`, `ExponentialBackoffRetryPolicy`
+- `ProcessPoolProtocol` -> `ProcessPool`
+- `TerminalProtocol` -> `Terminal`
+- `TelemetryProtocol` -> `NoopTelemetry`, `LoggingTelemetry`

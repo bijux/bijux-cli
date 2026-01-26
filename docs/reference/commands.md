@@ -1,6 +1,19 @@
 # Commands
 
-## Top-level commands
+## Purpose
+This document guarantees the canonical command list.
+
+## Scope
+It lists commands and subcommands only.
+
+## Core Concepts
+- Each command appears once.
+
+## Invariants
+- The list is exhaustive.
+
+## Execution
+### Top-level commands
 
 | Command | Purpose |
 | --- | --- |
@@ -18,7 +31,7 @@
 | status | CLI status probe |
 | version | CLI version |
 
-## Config subcommands
+### Config subcommands
 
 | Subcommand | Purpose |
 | --- | --- |
@@ -31,7 +44,7 @@
 | reload | Reload config from disk |
 | clear | Remove all config keys |
 
-## Plugins subcommands
+### Plugins subcommands
 
 | Subcommand | Purpose |
 | --- | --- |
@@ -42,14 +55,14 @@
 | uninstall | Remove a plugin |
 | scaffold | Generate a plugin from a template |
 
-## History subcommands
+### History subcommands
 
 | Subcommand | Purpose |
 | --- | --- |
 | clear | Clear history entries |
 | service | History service info |
 
-## Memory subcommands
+### Memory subcommands
 
 | Subcommand | Purpose |
 | --- | --- |
@@ -60,7 +73,7 @@
 | set | Set a key/value pair |
 | service | Memory service info |
 
-## Dev subcommands
+### Dev subcommands
 
 | Subcommand | Purpose |
 | --- | --- |
@@ -68,4 +81,12 @@
 | list-plugins | List plugin discovery results |
 | service | Dev service info |
 
-Use `bijux <command> --help` for details.
+## Failure Modes
+- Missing entries indicate documentation defects.
+
+## Design Rationale
+- Alternatives: command lists embedded in guides.
+- Rejected because they go stale.
+
+## Non-Goals
+- Full command usage text.

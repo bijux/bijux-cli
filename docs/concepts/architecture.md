@@ -1,37 +1,40 @@
 # Architecture
 
-## Components
+## Purpose
+This document guarantees the dependency direction and responsibility boundaries.
 
-- CLI entry: parses args into an intent
-- Policy resolution: computes effective flags and output rules
-- Runtime: DI, plugins, and command dispatch
-- Emission: writes payloads via resolved routing
-- Services: config, history, diagnostics, plugin registry
+## Scope
+This covers core, infra, services, and CLI layers only.
 
-The execution path is linear: Intent -> Policy -> Runtime -> Exit.
+## Core Concepts
+- Core owns policy, intent, and exit decisions.
+- Infra provides concrete adapters only.
+- Services compose infra into CLI-facing behavior.
+- CLI builds intents and dispatches commands.
 
-## Dependency direction
+## Invariants
+- Core never depends on infra or services.
+- Infra never depends on services.
+- Services depend on core and infra only.
+- CLI depends on services only.
 
-- Core depends on nothing
-- Infra depends on core only
-- Services depend on core and infra
-- CLI depends on services only
-- App wires everything
+## Execution
+- Intent is built in the CLI layer.
+- Policy is resolved in core.
+- Runtime is assembled from services and infra.
 
-## Contract ownership
+## Failure Modes
+- Boundary violation is rejected in review or tests.
+- Missing adapter is a runtime error with exit code 1.
 
-- Core: cross-cutting behavior and infra-facing interfaces
-- Services: service protocols and expectations
-- Infra: concrete adapters for core interfaces
+## Design Rationale
+- Alternatives: flat module graph.
+- Rejected because it collapses boundaries and hides policy decisions.
+- Chosen: strict layering with explicit ownership.
 
-## Plugin pipeline
+## Non-Goals
+- Microservice decomposition.
+- Cross-process orchestration.
 
-Ordered stages:
-
-1. Discover
-2. Validate metadata
-3. Register
-4. Activate (lazy)
-5. Unload if applicable
-
-This order is enforced in code and reviews.
+## References
+- Enforcement tests: `tests/unit/core/test_architecture.py`

@@ -1,81 +1,53 @@
 # Plugin lifecycle
 
-Lifecycle states:
+## Purpose
+This document guarantees plugin state transitions and validation rules.
 
-- discovered
-- installed
-- active
-- inactive
-- removed
+## Scope
+This covers discovery, installation, activation, and removal within the CLI.
 
-Transition rules:
+## Core Concepts
+- States: discovered, installed, active, inactive, removed.
+- Metadata validation happens before activation.
 
-- discovered -> installed -> active
-- active <-> inactive
-- active/inactive -> removed
+## Invariants
+- Invalid metadata never reaches activation.
+- Registry state and filesystem state remain consistent after failures.
+- Activation and deactivation are symmetric operations.
 
-Rollback guarantees:
-
-- Failed activation leaves registry and filesystem clean
-- Invalid metadata fails before activation
-
-Compatibility rules:
-
-- Plugins must declare CLI compatibility
-- Incompatible plugins are rejected
-
-Plugins may NOT:
-
-- mutate core policy resolution
-- bypass output routing rules
-
-## Contracts
-
-Plugin contracts are enforced before activation.
-
-- Registry: `RegistryProtocol`
-- Plugin config: `PluginConfig`
-- Plugin interface: `RegistryProtocol` command registration rules
-
-## Stage contract
+## Lifecycle
+### Discover
+Finds candidate plugins and validates metadata.
 
 ### Install
+Installs a plugin into the registry and filesystem.
 
-- Input: plugin directory or package name
-- Output: structured payload with status and plugin list
-- Failures: invalid name, install failure, missing entry point, incompatible CLI
+### Activate
+Loads plugin code and registers commands.
 
-### Verify
+### Deactivate
+Unloads plugin commands and releases resources.
 
-- Validates metadata (`plugin.json` or entry points)
-- Rejects duplicates or incompatible versions
+### Remove
+Deletes plugin records and files.
 
-### List
+## Failure Modes
+- Missing metadata: plugin rejected before activation.
+- Compatibility mismatch: plugin rejected before activation.
+- Import failure: activation fails and registry is rolled back.
+- Uninstall failure: registry entry is preserved with error exit.
 
-- Output: structured list of installed plugins
-- Failures: invalid format flag, inaccessible plugins dir
+The CLI does not attempt recovery beyond rollback.
 
-### Info
+## Design Rationale
+- Alternatives: lazy validation at first use.
+- Rejected because it allows partial activation and inconsistent state.
+- Chosen: validate early and fail fast.
 
-- Output: structured metadata for a single plugin
-- Failures: missing plugin, invalid metadata, invalid format flag
+## Non-Goals
+- Plugin auto-update.
+- Plugin sandboxing.
 
-### Check
-
-- Output: healthy or unhealthy status
-- Failures: missing plugin, invalid health hook, invalid format flag
-
-### Load
-
-- Imports plugin code and registers commands
-- Failures: import or initialization errors
-
-### Unload
-
-- Removes plugin from active registry
-- Failures: cleanup errors are logged only
-
-### Uninstall
-
-- Output: structured payload with uninstall status
-- Failures: missing plugin, uninstall failure, filesystem errors
+## References
+- Implementation: `src/bijux_cli/plugins/registry.py`
+- Regression coverage: `tests/regression/test_plugin_loader_regression.py`

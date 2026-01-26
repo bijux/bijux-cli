@@ -1,13 +1,21 @@
 # CLI usage
 
-Use this guide to run commands with stable, scriptable output.
+## Purpose
+This document guarantees how to run CLI commands with predictable output.
 
-## Platform support
+## Scope
+It covers usage patterns, not internal behavior.
 
-Supported: Linux and macOS.
-Not supported: Windows (POSIX locks and filesystem behavior required).
+## Core Concepts
+- Output formats are explicit.
+- Quiet suppresses output only.
 
-## Quick commands
+## Invariants
+- `--format` controls structured output.
+- `--quiet` never changes exit codes.
+
+## Execution
+Quick commands:
 
 ```bash
 bijux --help
@@ -15,41 +23,43 @@ bijux --version
 bijux doctor
 ```
 
-## Output formats
+Output formats:
 
 ```bash
 bijux status --format json
 bijux status --format yaml
 ```
 
-## Quiet mode
+Quiet mode:
 
 ```bash
 bijux status --quiet
 ```
 
-## Log level
+Log level:
 
 ```bash
 bijux status --log-level debug
 ```
 
-## Shell completion
+Shell completion:
 
 ```bash
 bijux --install-completion
 bijux --show-completion
 ```
 
-## Global precedence
+## Failure Modes
+- Invalid format exits with code 2.
+- Invalid log level exits with code 2.
 
-Global flags resolve in strict order. See `concepts/precedence.md`.
+## Design Rationale
+- Alternatives: auto-detected formats.
+- Rejected because they are non-deterministic.
 
-## Command reference
+## Non-Goals
+- Command-by-command reference.
 
-Full command list and flags live in `reference/commands.md`.
-
-## Errors and exit codes
-
-Structured errors follow the selected output format unless `--quiet`.
-Exit codes are listed in `reference/exit-codes.md`.
+## References
+- Precedence rules: `concepts/precedence.md`
+- Exit codes: `reference/exit-codes.md`

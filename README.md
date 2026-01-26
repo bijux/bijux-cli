@@ -436,7 +436,7 @@ Welcome! See **[CONTRIBUTING.md](https://github.com/bijux/bijux-cli/blob/main/CO
 Apache-2.0 — see **[LICENSES/Apache-2.0.txt](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/Apache-2.0.txt)**.
 © 2025 Bijan Mousavi.
 
-Migration note: This project moved from MIT to Apache-2.0; see `NOTICE` for attribution.
+Migration note: This project moved from MIT to Apache-2.0.
 
 Dependency license audit (declared dependencies): checked available local metadata; no Apache-2.0 incompatibilities identified in that set.
 
