@@ -44,7 +44,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.cli.core.command import validate_common_flags
 from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.precedence import current_execution_policy
 from bijux_cli.plugins.catalog import PLUGIN_NAME_RE

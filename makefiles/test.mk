@@ -3,7 +3,7 @@
 TEST_PATHS            ?= tests
 TEST_PATHS_UNIT       ?= tests/unit
 TEST_PATHS_E2E        ?= tests/e2e
-TEST_PATHS_NIGHT      ?= tests/night
+TEST_PATHS_NIGHTLY    ?= tests/nightly
 TEST_PATHS_REGRESSION ?= tests/regression
 TEST_PATHS_BENCHMARK  ?= tests/benchmark
 
@@ -11,7 +11,7 @@ TEST_ARTIFACTS_DIR    ?= artifacts/test
 JUNIT_XML             ?= $(TEST_ARTIFACTS_DIR)/junit.xml
 JUNIT_XML_UNIT        ?= $(TEST_ARTIFACTS_DIR)/junit-test-unit.xml
 JUNIT_XML_E2E         ?= $(TEST_ARTIFACTS_DIR)/junit-test-e2e.xml
-JUNIT_XML_NIGHT       ?= $(TEST_ARTIFACTS_DIR)/junit-test-night.xml
+JUNIT_XML_NIGHTLY     ?= $(TEST_ARTIFACTS_DIR)/junit-test-nightly.xml
 JUNIT_XML_REGRESSION  ?= $(TEST_ARTIFACTS_DIR)/junit-test-regression.xml
 JUNIT_XML_BENCHMARK   ?= $(TEST_ARTIFACTS_DIR)/junit-test-benchmark.xml
 TMP_DIR               ?= $(TEST_ARTIFACTS_DIR)/tmp
@@ -38,7 +38,7 @@ COV_XML_ABS           := $(abspath $(TEST_ARTIFACTS_DIR)/coverage.xml)
 TEST_PATHS_ABS        := $(abspath $(TEST_PATHS))
 TEST_PATHS_UNIT_ABS   := $(abspath $(TEST_PATHS_UNIT))
 TEST_PATHS_E2E_ABS    := $(abspath $(TEST_PATHS_E2E))
-TEST_PATHS_NIGHT_ABS  := $(abspath $(TEST_PATHS_NIGHT))
+TEST_PATHS_NIGHTLY_ABS := $(abspath $(TEST_PATHS_NIGHTLY))
 TEST_PATHS_REGRESSION_ABS := $(abspath $(TEST_PATHS_REGRESSION))
 TEST_PATHS_BENCHMARK_ABS := $(abspath $(TEST_PATHS_BENCHMARK))
 SRC_ABS               := $(abspath src)
@@ -65,7 +65,7 @@ PYTEST_FLAGS_NOCOV = \
   $(PYTEST_ADDOPTS_EXTRA)
 
 
-.PHONY: test test-all test-unit test-e2e test-night test-regression test-benchmark test-clean
+.PHONY: test test-all test-unit test-e2e test-nightly test-regression test-benchmark test-clean
 
 test:
 	@echo "→ Running full test suite on $(TEST_PATHS)"
@@ -73,7 +73,7 @@ test:
 	@rm -rf .hypothesis .benchmarks || true
 
 test-all:
-	@echo "→ Running full test suite (including slow/night/bench)"
+	@echo "→ Running full test suite (including slow/nightly/bench)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
 	@echo "   • JUnit XML → $(JUNIT_XML_ABS)"
@@ -160,9 +160,9 @@ test-e2e:
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
-test-night: JUNIT_XML=$(JUNIT_XML_NIGHT)
-test-night:
-	@echo "→ Running night tests only"
+test-nightly: JUNIT_XML=$(JUNIT_XML_NIGHTLY)
+test-nightly:
+	@echo "→ Running nightly tests only"
 	@$(PYTEST) --version
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)" "$(HYPOTHESIS_DB_DIR)" "$(BENCHMARK_DIR)" "$(TMP_DIR)"
 	@rm -rf .hypothesis .benchmarks || true
@@ -176,13 +176,13 @@ test-night:
 	else \
 	  echo "   • pytest-benchmark disabled or not installed"; \
 	fi; \
-	if [ -d "$(TEST_PATHS_NIGHT)" ] && find "$(TEST_PATHS_NIGHT)" -type f -name 'test_*.py' | grep -q .; then \
+	if [ -d "$(TEST_PATHS_NIGHTLY)" ] && find "$(TEST_PATHS_NIGHTLY)" -type f -name 'test_*.py' | grep -q .; then \
 	  ( cd "$(TEST_ARTIFACTS_DIR)" && \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    BIJUX_NIGHTLY=1 sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_NIGHT_ABS)" -m "night" -q -o addopts= -o timeout=10 $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
+	    BIJUX_NIGHTLY=1 sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_NIGHTLY_ABS)" -m "nightly" -q -o addopts= -o timeout=10 $(PYTEST_FLAGS) '"$$BENCH_FLAGS" ); \
 	else \
-	  echo "   • no $(TEST_PATHS_NIGHT); nothing to run"; \
+	  echo "   • no $(TEST_PATHS_NIGHTLY); nothing to run"; \
 	fi
 	@rm -rf .hypothesis .benchmarks || true
 
@@ -209,7 +209,7 @@ test-regression:
 	    BIJUX_PYTHON="$(PYTHON_311)" \
 	    PYTHONPATH="$(SRC_ABS)$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	    HYPOTHESIS_DATABASE_DIRECTORY="$(HYPOTHESIS_DB_ABS)" \
-	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_REGRESSION_ABS)" -m "not night and not slow" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
+	    sh -c '$(PYTEST) -c "$(PYTEST_INI_ABS)" "$(TEST_PATHS_REGRESSION_ABS)" -m "not nightly and not slow" -q -o addopts= $(PYTEST_FLAGS_NOCOV) '"$$BENCH_FLAGS" ); \
 	else \
 	  echo "   • no $(TEST_PATHS_REGRESSION); nothing to run"; \
 	fi
@@ -249,9 +249,9 @@ test-clean:
 
 ##@ Test
 test: ## Run full test suite; all side-effects contained in artifacts_pages/test/ (JUnit, htmlcov, tmp, hypothesis DB, benchmarks)
-test-all: ## Run all tests including slow, night, and benchmarks
+test-all: ## Run all tests including slow, nightly, and benchmarks
 test-unit: ## Run unit tests only; same containment; fallback excludes e2e/integration/functional/slow
 test-e2e: ## Run e2e tests only (marked), not recommended for quick runs
-test-night: ## Run night tests only (marked), excluded from default runs
+test-nightly: ## Run nightly tests only (marked), excluded from default runs
 test-regression: ## Run functional + integration tests
 test-clean: ## Remove stray root .hypothesis/.benchmarks and coverage files

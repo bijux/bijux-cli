@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from bijux_cli.cli.core.flags import collect_global_flag_errors, parse_global_flags
-from bijux_cli.cli.core.validation import normalize_format
+from bijux_cli.cli.core.command import normalize_format
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import FlagLayer, Flags, resolve_effective_config
 

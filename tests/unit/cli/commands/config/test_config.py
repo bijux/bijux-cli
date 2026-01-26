@@ -40,7 +40,7 @@ from bijux_cli.core.runtime import execute_exit_intent
 def _force_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep ASCII env checks from failing unit tests."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.validation.contains_non_ascii_env", lambda: False
+        "bijux_cli.cli.core.command.contains_non_ascii_env", lambda: False
     )
 
 
@@ -48,7 +48,7 @@ def _force_ascii_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def _stub_validate_common_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep CLI format validation from failing on OptionInfo defaults."""
     monkeypatch.setattr(
-        "bijux_cli.cli.core.validation.validate_common_flags",
+        "bijux_cli.cli.core.command.validate_common_flags",
         lambda fmt, cmd, quiet, **_kwargs: OutputFormat.JSON,
     )
 

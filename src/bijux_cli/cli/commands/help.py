@@ -17,7 +17,7 @@ import time
 import click
 import typer
 
-from bijux_cli.cli.core.validation import ascii_safe, normalize_format
+from bijux_cli.cli.core.command import ascii_safe, normalize_format
 from bijux_cli.core.enums import LogLevel, OutputFormat
 from bijux_cli.core.precedence import EffectiveConfig, OutputConfig
 

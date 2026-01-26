@@ -247,7 +247,7 @@ def test_audit_unexpected_error(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda v: None,
     )
     monkeypatch.setattr(
-        "bijux_cli.cli.core.emit.resolve_serializer", lambda: _BasicSerializer()
+        "bijux_cli.cli.core.command.resolve_serializer", lambda: _BasicSerializer()
     )
     monkeypatch.setattr(
         "bijux_cli.cli.commands.diagnostics.audit.current_execution_policy",

@@ -37,7 +37,7 @@ from bijux_cli.cli.core.help_text import (
     HELP_NO_PRETTY,
     HELP_QUIET,
 )
-from bijux_cli.cli.core.validation import validate_common_flags
+from bijux_cli.cli.core.command import validate_common_flags
 from bijux_cli.cli.repl.execution import _run_piped as _exec_run_piped
 from bijux_cli.cli.repl.ui import register_signal_handlers
 from bijux_cli.core.enums import ErrorType
