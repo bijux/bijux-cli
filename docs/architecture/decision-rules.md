@@ -18,3 +18,11 @@ Purpose: define where CLI behavior is decided and where it must not be decided.
 - Architecture tests forbid raw flag strings outside `cli/core/constants.py`.
 - Property tests lock `LogLevel` ordering and parsing semantics.
 - CI gates ensure policy changes only flow through the core policy modules.
+
+## Artifacts-only outputs
+
+Generated output must live under `artifacts/`.
+
+- Tests, coverage, and benchmarks write to `artifacts/test`.
+- Docs build from `artifacts/docs/docs` to `artifacts/docs/site`.
+- CI uploads only `artifacts/**`.

@@ -75,7 +75,6 @@ docs-prep:
 	@echo "Preparing docs → $(DOCS_GEN_DIR)"
 	@rm -rf "$(DOCS_GEN_DIR)"
 	@mkdir -p "$(DOCS_GEN_DIR)"
-	@if [ -d docs/ADR ]; then rsync -a --delete docs/ADR/ "$(DOCS_GEN_DIR)/ADR/"; fi
 	@if [ -d docs/assets ]; then rsync -a --delete docs/assets/ "$(DOCS_GEN_DIR)/assets/"; fi
 	@GEN_FILES_DISK_FALLBACK=1 GEN_FILES_DISK_DIR="$(DOCS_GEN_DIR)" \
 	  $(PY) scripts/docs_builder/mkdocs_manager.py

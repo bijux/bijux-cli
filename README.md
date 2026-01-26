@@ -4,7 +4,7 @@
 **A modern, predictable CLI framework for Python** — strict global flag precedence, first-class **plugins**, a **DI kernel**, and an interactive **REPL**. Build robust, extensible command-line tools that are easy to test, maintain, and scale.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
 [![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://raw.githubusercontent.com/bijux/bijux-cli/main/LICENSES/Apache-2.0.txt)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/bijux-cli/)
@@ -81,7 +81,7 @@ bijux status -f json --no-pretty
 ## Key Features
 
 * **Plugin-Driven Extensibility** — Scaffold, install, validate; plugins become top-level commands.
-* **Deterministic Behavior** ⚖ — Strict flag precedence (see ADR-0002).
+* **Deterministic Behavior** ⚖ — Strict flag precedence (see [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)).
 * **DI Kernel** — Decouple internals; inspect graphs for debugging/tests.
 * **REPL Shell** — Persistent session with history; great for exploration/demos.
 * **Structured Output** — JSON/YAML (+ pretty/compact, verbosity, consistent errors).
@@ -228,7 +228,7 @@ Fixed ordering eliminates ambiguity.
 |        5 | `--pretty` / `--no-pretty`    | Indentation toggle (default: `--pretty`).                 |
 |        6 | `-v`, `--log-level debug`             | Runtime metadata; implied by `--log-level debug`.                   |
 
-Rationale: [ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
+Rationale: [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)
 
 [Back to top](#top)
 
@@ -263,7 +263,7 @@ Rationale: [ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-pr
 **Use if you need:**
 
 * Plugins for extensibility.
-* Deterministic flags for CI/scripts. [ADR-0002](https://bijux.github.io/bijux-cli/ADR/0002-global-flags-precedence)
+* Deterministic flags for CI/scripts. [Precedence](https://bijux.github.io/bijux-cli/concepts/precedence/)
 * REPL for interactive workflows.
 * DI for modular, testable design.
 
@@ -322,7 +322,7 @@ export BIJUXCLI_PLUGINS_DIR=./custom-plugins
 * **Coverage:** **98%+** code coverage (measured via `pytest-cov` in CI).
 * **Determinism:** CI runs the full suite on multiple Python versions (3.11+).
 * **Artifacts:** JSON/YAML fixtures validate structured outputs; E2E simulates real usage (REPL, plugins, DI).
-* **Docs:** Read the full testing guide → **[TESTS.md](https://github.com/bijux/bijux-cli/blob/main/TESTS.md)**.
+* **Docs:** Read the full testing guide → **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**.
 
 Quick commands:
 
@@ -346,7 +346,7 @@ make test-night   # night-only tests
 ## Project Tree
 
 A guided map of the repository (what lives where, and why).
-See **[PROJECT\_TREE.md](https://github.com/bijux/bijux-cli/blob/main/PROJECT_TREE.md)** for the full breakdown.
+See the **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)** for the full breakdown.
 
 Quick glance:
 
@@ -384,18 +384,18 @@ Track progress and suggest features via [Issues](https://github.com/bijux/bijux-
 
 * **Site**: [https://bijux.github.io/bijux-cli/](https://bijux.github.io/bijux-cli/)
 * **Docs navigation**:
+  - Getting started: [docs/getting-started/installation.md](https://github.com/bijux/bijux-cli/blob/main/docs/getting-started/installation.md)
   - Concepts: [docs/concepts/architecture.md](https://github.com/bijux/bijux-cli/blob/main/docs/concepts/architecture.md)
-  - Guides: [docs/guides/cli_usage.md](https://github.com/bijux/bijux-cli/blob/main/docs/guides/cli_usage.md)
+  - Guides: [docs/guides/cli-usage.md](https://github.com/bijux/bijux-cli/blob/main/docs/guides/cli-usage.md)
   - Reference: [docs/reference/commands.md](https://github.com/bijux/bijux-cli/blob/main/docs/reference/commands.md)
-  - Examples: [docs/examples/basic_example.md](https://github.com/bijux/bijux-cli/blob/main/docs/examples/basic_example.md)
-  - FAQ: [docs/faq.md](https://github.com/bijux/bijux-cli/blob/main/docs/faq.md)
+  - Examples: [docs/examples/workflows.md](https://github.com/bijux/bijux-cli/blob/main/docs/examples/workflows.md)
   - Glossary: [docs/glossary.md](https://github.com/bijux/bijux-cli/blob/main/docs/glossary.md)
 * **Changelog**: [https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md](https://github.com/bijux/bijux-cli/blob/main/CHANGELOG.md)
 * **Repository**: [https://github.com/bijux/bijux-cli](https://github.com/bijux/bijux-cli)
 * **Issues**: [https://github.com/bijux/bijux-cli/issues](https://github.com/bijux/bijux-cli/issues)
 * **Security** (private reports): [https://github.com/bijux/bijux-cli/security/advisories/new](https://github.com/bijux/bijux-cli/security/advisories/new)
-* **Tests:** **[TESTS.md](https://github.com/bijux/bijux-cli/blob/main/TESTS.md)**
-* **Project Tree:** **[PROJECT\_TREE.md](https://github.com/bijux/bijux-cli/blob/main/PROJECT_TREE.md)**
+* **Tests:** **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**
+* **Project Tree:** **[development guide](https://github.com/bijux/bijux-cli/blob/main/docs/guides/development.md)**
 * **Artifacts:** Browse all reports & logs — [index](https://bijux.github.io/bijux-cli/artifacts/)
   · [Tests](https://bijux.github.io/bijux-cli/artifacts/test/) · [Lint](https://bijux.github.io/bijux-cli/artifacts/lint/)
   · [Quality](https://bijux.github.io/bijux-cli/artifacts/quality/) · [Security](https://bijux.github.io/bijux-cli/artifacts/security/)

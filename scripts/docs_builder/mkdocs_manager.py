@@ -5,9 +5,7 @@
 
 This script serves as the entrypoint for the `mkdocs-gen-files` plugin. It
 orchestrates the entire documentation generation process, including:
-- Materializing top-level project Markdown files (e.g., README, USAGE).
-- Materializing focused guides (plugins, examples).
-- Finding and processing Architecture Decision Records (ADRs).
+- Materializing curated documentation pages from `docs/`.
 - Creating index pages for all documentation sections.
 - Building detailed pages for CI/CD artifacts (linting, testing, etc.).
 - Composing a complete `nav.md` file for the `literate-nav` plugin to
@@ -19,7 +17,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Callable
 
@@ -33,7 +30,6 @@ from scripts.docs_builder.artifacts_pages.sbom_page import SBOMArtifactPage
 from scripts.docs_builder.artifacts_pages.security_page import SecurityArtifactPage
 from scripts.docs_builder.artifacts_pages.test_page import TestArtifactPage
 from scripts.docs_builder.helpers import INDENT1
-from scripts.docs_builder.helpers import INDENT2
 from scripts.docs_builder.helpers import NAV_FILE
 from scripts.docs_builder.helpers import REPO_ROOT
 from scripts.docs_builder.helpers import ensure_top_anchor
@@ -42,91 +38,15 @@ from scripts.docs_builder.helpers import fs_read_text
 from scripts.docs_builder.helpers import nav_add_bullets
 from scripts.docs_builder.helpers import nav_header
 from scripts.docs_builder.helpers import rewrite_links_general
-from scripts.docs_builder.helpers import rewrite_links_tree
 from scripts.docs_builder.helpers import write_if_changed
 
-ADR_SRC_PRIMARY = REPO_ROOT / "ADR"
-ADR_SRC_FALLBACK = REPO_ROOT / "docs" / "ADR"
-ADR_DEST_DIR = Path("ADR")
-
 PAGE_META_NO_EDIT = "---\nhide:\n  - edit\n---\n\n"
-
-
-def _pick_adr_source() -> Optional[Path]:
-    """Selects the source directory for Architecture Decision Records (ADRs).
-
-    It prefers the top-level `ADR/` directory. If that does not exist, it
-    falls back to `docs/ADR/`.
-
-    Returns:
-        The path to the ADR source directory, or None if neither exists.
-    """
-    if ADR_SRC_PRIMARY.is_dir():
-        return ADR_SRC_PRIMARY
-    if ADR_SRC_FALLBACK.is_dir():
-        return ADR_SRC_FALLBACK
-    return None
-
-
-def _iter_adr_files(src_root: Path) -> List[Path]:
-    """Lists all ADR Markdown files in a directory, sorted by name.
-
-    It excludes any `index.md` file from the list.
-
-    Args:
-        src_root: The directory to search for ADR files.
-
-    Returns:
-        A sorted list of paths to the ADR files.
-    """
-    return sorted(
-        [p for p in src_root.glob("*.md") if p.is_file() and p.name != "index.md"],
-        key=lambda p: p.name,
-    )
-
-
-def _adr_display_name(filename: str) -> str:
-    """Formats a user-friendly title from an ADR filename.
-
-    For example, "0001-some-decision.md" becomes "ADR 0001: Some Decision".
-
-    Args:
-        filename: The name of the ADR file.
-
-    Returns:
-        A formatted, human-readable title string.
-    """
-    stem = filename[:-3]
-    parts = stem.split("-", 1)
-    if len(parts) == 2 and parts[0].isdigit():
-        adr_num, title_raw = parts
-        return f"ADR {adr_num.zfill(4)}: {title_raw.replace('-', ' ').title()}"
-    return stem.replace("-", " ").title()
 
 
 def _materialize_root_docs() -> None:
     """Copy key project files into the docs site; create fallbacks if absent."""
     pairs: List[Tuple[Path, Path, Callable[[str], str]]] = [
-        (REPO_ROOT / "README.md", Path("index.md"), rewrite_links_general),
-        (REPO_ROOT / "docs" / "USAGE.md", Path("usage.md"), rewrite_links_general),
-        (REPO_ROOT / "docs" / "examples.md", Path("examples.md"), rewrite_links_general),
-        (
-            REPO_ROOT / "docs" / "plugins" / "index.md",
-            Path("plugins/index.md"),
-            rewrite_links_general,
-        ),
-        (
-            REPO_ROOT / "docs" / "plugins" / "lifecycle.md",
-            Path("plugins/lifecycle.md"),
-            rewrite_links_general,
-        ),
-        (REPO_ROOT / "docs" / "TESTS.md", Path("tests.md"), rewrite_links_general),
-        (
-            REPO_ROOT / "docs" / "PROJECT_TREE.md",
-            Path("project_tree.md"),
-            rewrite_links_tree,
-        ),
-        (REPO_ROOT / "docs" / "TOOLING.md", Path("tooling.md"), rewrite_links_general),
+        (REPO_ROOT / "docs" / "index.md", Path("index.md"), rewrite_links_general),
         (REPO_ROOT / "SECURITY.md", Path("security.md"), rewrite_links_general),
         (
             REPO_ROOT / "CODE_OF_CONDUCT.md",
@@ -157,51 +77,37 @@ def _materialize_root_docs() -> None:
         fallback = PAGE_META_NO_EDIT + (
             "# Bijux CLI {#top}\n\n"
             "_Auto-generated skeleton page._\n\n"
-            "- [Usage](usage.md)\n"
-            "- [Plugins](plugins/index.md)\n"
-            "- [Examples](examples.md)\n"
+            "- [Getting Started](getting-started/index.md)\n"
+            "- [Concepts](concepts/index.md)\n"
+            "- [Guides](guides/index.md)\n"
+            "- [Reference](reference/index.md)\n"
+            "- [Examples](examples/index.md)\n"
             "- [Artifacts](artifacts/index.md)\n"
-            "- [Architecture Decision Records](ADR/index.md)\n"
         )
         write_if_changed("index.md", fallback)
 
 
-def _materialize_adrs() -> None:
-    """Copies ADRs from the source directory into the virtual docs filesystem.
-
-    This step is skipped if the ADRs are already located in the on-disk
-    `docs/ADR/` directory, as `mkdocs-gen-files` will pick them up automatically.
-    """
-    src_root = _pick_adr_source()
-    if not src_root or src_root == ADR_SRC_FALLBACK:
-        return
-
-    for src in _iter_adr_files(src_root):
-        dst = ADR_DEST_DIR / src.name
-        raw = fs_read_text(src)
-        md = ensure_top_anchor(rewrite_links_general(raw))
-        md = final_fixups(md)
-        md = PAGE_META_NO_EDIT + md
-        write_if_changed(dst, md)
-
-
-def _generate_adr_index() -> None:
-    """Generates the `ADR/index.md` file in the virtual docs filesystem.
-
-    This ensures a correct and up-to-date index is always available,
-    regardless of whether an index file exists in the source directory.
-    """
-    src_root = _pick_adr_source()
-    if not src_root:
-        return
-    files = _iter_adr_files(src_root)
-    if not files:
-        return
-
-    lines = [PAGE_META_NO_EDIT, "# Architecture Decision Records {#top}\n\n"]
-    for p in files:
-        lines.append(f"- [{_adr_display_name(p.name)}](./{p.name})\n")
-    write_if_changed(ADR_DEST_DIR / "index.md", "".join(lines))
+def _materialize_docs_tree() -> None:
+    """Copy the curated docs tree into the generated filesystem."""
+    docs_root = REPO_ROOT / "docs"
+    for rel_dir in (
+        "getting-started",
+        "concepts",
+        "guides",
+        "reference",
+        "examples",
+        "architecture",
+    ):
+        src_dir = docs_root / rel_dir
+        if not src_dir.is_dir():
+            continue
+        for src in sorted(src_dir.rglob("*.md")):
+            dst = Path(rel_dir) / src.relative_to(src_dir)
+            raw = fs_read_text(src)
+            md = ensure_top_anchor(rewrite_links_general(raw))
+            md = final_fixups(md)
+            md = PAGE_META_NO_EDIT + md
+            write_if_changed(dst, md)
 
 
 def _compose_nav() -> None:
@@ -209,8 +115,8 @@ def _compose_nav() -> None:
 
     This function builds a Markdown list that `mkdocs-literate-nav` uses to
     create the site's navigation tree. The structure is highly ordered and
-    builds several main sections, including top-level pages, a nested API
-    Reference section, ADRs, and artifact reports.
+    builds several main sections, including top-level pages and artifact
+    reports.
     """
 
     nav = nav_header()
@@ -218,25 +124,35 @@ def _compose_nav() -> None:
         nav,
         [
             "* [Home](index.md)",
-            "* [Usage](usage.md)",
-            "* [Plugins](plugins/index.md)",
-            f"{INDENT1}* [Lifecycle](plugins/lifecycle.md)",
-            "* [Examples](examples.md)",
-            "* [Project Overview](project_tree.md)",
-            "* [Tests](tests.md)",
-            "* [Tooling](tooling.md)",
+            "* [Getting Started](getting-started/index.md)",
+            f"{INDENT1}* [Installation](getting-started/installation.md)",
+            f"{INDENT1}* [Quickstart](getting-started/quickstart.md)",
+            "* [Concepts](concepts/index.md)",
+            f"{INDENT1}* [Architecture](concepts/architecture.md)",
+            f"{INDENT1}* [Execution model](concepts/execution-model.md)",
+            f"{INDENT1}* [Precedence](concepts/precedence.md)",
+            f"{INDENT1}* [Exit policy](concepts/exit-policy.md)",
+            f"{INDENT1}* [Logging](concepts/logging.md)",
+            f"{INDENT1}* [Plugin lifecycle](concepts/plugin-lifecycle.md)",
+            "* [Guides](guides/index.md)",
+            f"{INDENT1}* [CLI usage](guides/cli-usage.md)",
+            f"{INDENT1}* [Configuration](guides/configuration.md)",
+            f"{INDENT1}* [Plugins](guides/plugins.md)",
+            f"{INDENT1}* [API usage](guides/api-usage.md)",
+            f"{INDENT1}* [Development](guides/development.md)",
+            "* [Reference](reference/index.md)",
+            f"{INDENT1}* [Commands](reference/commands.md)",
+            f"{INDENT1}* [Config schema](reference/config-schema.md)",
+            f"{INDENT1}* [Environment](reference/environment.md)",
+            f"{INDENT1}* [Exit codes](reference/exit-codes.md)",
+            f"{INDENT1}* [Glossary](reference/glossary.md)",
+            "* [Examples](examples/index.md)",
+            f"{INDENT1}* [Workflows](examples/workflows.md)",
+            f"{INDENT1}* [Plugins](examples/plugins.md)",
+            "* [Architecture](architecture/index.md)",
+            f"{INDENT1}* [Decision rules](architecture/decision-rules.md)",
         ],
     )
-
-    src_root = _pick_adr_source()
-    if src_root and (files := _iter_adr_files(src_root)):
-        nav = nav_add_bullets(
-            nav, ["* Architecture", f"{INDENT1}* [Decision Records](ADR/index.md)"]
-        )
-        for p in files:
-            nav = nav_add_bullets(
-                nav, [f"{INDENT2}* [{_adr_display_name(p.name)}](ADR/{p.name})"]
-            )
 
     nav = nav_add_bullets(nav, ["* [Changelog](changelog.md)"])
 
@@ -288,14 +204,12 @@ def main() -> None:
 
     Orchestrates the entire build process by calling functions in sequence to:
     1. Materialize root documentation files.
-    2. Materialize and index ADRs.
-    3. Generate API reference pages and their indexes.
-    4. Build all artifact-specific documentation pages.
-    5. Compose the final site navigation file.
+    2. Materialize the docs tree.
+    3. Build all artifact-specific documentation pages.
+    4. Compose the final site navigation file.
     """
     _materialize_root_docs()
-    _materialize_adrs()
-    _generate_adr_index()
+    _materialize_docs_tree()
     TestArtifactPage().build()
     LintArtifactPage().build()
     QualityArtifactPage().build()

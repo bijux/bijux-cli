@@ -1,6 +1,6 @@
-# Plugin example
+# Plugins
 
-Minimal plugin lifecycle:
+Minimal lifecycle:
 
 ```bash
 bijux plugin install ./my_plugin
