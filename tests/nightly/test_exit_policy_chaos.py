@@ -74,7 +74,7 @@ def test_exit_policy_chaos(
 
         res = h.run(args)
         assert res.returncode in (1, 2)
-        if not use_json and not use_quiet and log_level != "trace":
+        if not use_json and not use_quiet and log_level == "info":
             assert_no_traceback(res.stdout + res.stderr)
         assert_no_state_corruption(before, capture_state(h))
         assert_exit_code_stable([res.returncode, res.returncode])

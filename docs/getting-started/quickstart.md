@@ -15,7 +15,7 @@ It covers a minimal CLI workflow only.
 
 ## Execution
 ```bash
-bijux config set foo bar
+bijux config set foo=bar
 bijux config get foo
 bijux config list --format json
 bijux config unset foo

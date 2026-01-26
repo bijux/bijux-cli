@@ -1,18 +1,31 @@
 # Plugins
 
 ## Purpose
-This document guarantees a minimal plugin lifecycle workflow.
+This document tells you how to install and remove plugins safely.
 
 ## Scope
 It covers install, list, info, and uninstall only.
 
-## Core Concepts
-- Plugins are validated before activation.
-- Plugin metadata controls compatibility.
+## What problem this solves
+Unsafe plugin installs can leave residue and corrupt registry state.
+This guide keeps the lifecycle explicit.
 
-## Invariants
-- Invalid metadata fails before activation.
-- Registry and filesystem stay consistent after failures.
+## Why you should care
+A predictable lifecycle prevents broken CI and manual cleanup.
+
+## What confusion this removes
+It removes ambiguity about when a plugin is registered and removed.
+
+## Guarantees
+Bijux guarantees:
+1. Invalid metadata fails before activation.
+2. Registry and filesystem remain consistent after failures.
+
+## How to Think About This
+Treat plugins as lifecycle-managed commands, not arbitrary code.
+
+## Common Misunderstandings
+- "Install means activate immediately." It does not.
 
 ## Execution
 ```bash
@@ -24,12 +37,11 @@ bijux plugin uninstall my_plugin
 
 ## Failure Modes
 - Missing metadata exits with code 2.
-- Incompatible plugins exit with code 2.
 - Uninstall failures exit with code 1.
 
 ## Design Rationale
-- Alternatives: auto-activation without validation.
-- Rejected because it risks partial loads.
+We deliberately chose early validation to prevent partial activation.
+Why not validate on first use? It delays failures into production.
 
 ## Non-Goals
 - Plugin auto-update.

@@ -1,36 +1,46 @@
 # Logging
 
 ## Purpose
-This document guarantees how log levels affect CLI output and diagnostics.
+This document tells you how log level affects output and diagnostics.
 
 ## Scope
-This covers CLI logging behavior and routing only.
+It covers CLI logging only.
 
-## Core Concepts
-- Log level is part of the resolved policy.
-- Diagnostics are emitted only when policy allows it.
+## What problem this solves
+If logs leak into structured output, automation breaks. This policy prevents it.
 
-## Invariants
-- Quiet suppresses logs and output.
-- Log level never changes exit codes.
-- Structured output is not mixed with styled logs.
+## Why you should care
+You can enable diagnostics without corrupting machine-readable output.
+
+## What confusion this removes
+It removes ambiguity about where logs go and when they appear.
+
+## Guarantees
+Bijux guarantees:
+1. Quiet suppresses logs and output.
+2. Log level never changes exit codes.
+3. Structured output is never mixed with styled logs.
+
+## How to Think About This
+Logs are a separate stream with a separate purpose.
+They explain behavior, but they never alter command results.
+
+## Common Misunderstandings
+- "Debug logs can appear in JSON output." They must not.
+- "Log level changes exit codes." It does not.
 
 ## Execution
-- `info` is the default log level.
-- `debug` and `trace` enable diagnostics and extra context.
-- Diagnostics are routed to stderr.
+- `info` is the default.
+- `debug` and `trace` emit diagnostics to stderr.
 
 ## Failure Modes
-- Invalid log level value: exit code 2.
-- Unsupported configuration: exit code 2.
+- Invalid log level exits with code 2.
 
 ## Design Rationale
-- Alternatives: ad-hoc logging per command.
-- Rejected because it produces inconsistent diagnostics.
-- Chosen: policy-driven logging.
+We deliberately chose policy-driven logging to keep output stable.
+Why not log inside commands? It leaks logs into structured output.
 
 ## Non-Goals
-- External log aggregation.
 - Persistent log storage.
 
 ## References

@@ -1,31 +1,40 @@
 # Architecture
 
 ## Purpose
-This section defines architectural rules and frozen guarantees.
+This section tells you where decisions are allowed and where they are forbidden.
 
 ## Scope
-This covers decision boundaries and policy ownership only.
+It covers decision boundaries and policy ownership only.
 
-## Core Concepts
-- Decision rules are binding constraints.
-- Violations are treated as defects.
+## What problem this solves
+Without written rules, policy moves into random files and tests become brittle.
 
-## Invariants
-- Policy is resolved only in core.
-- Exit behavior is resolved only in core.
+## Why you should care
+If you extend bijux-cli, you must know which file owns each decision.
+
+## What confusion this removes
+It removes ambiguity about where policy and exit behavior live.
+
+## Guarantees
+Bijux guarantees:
+1. Policy is resolved only in core.
+2. Exit behavior is resolved only in core.
+
+## How to Think About This
+Treat these rules as enforcement, not guidance.
+
+## Common Misunderstandings
+- "Rules are suggestions." They are not.
 
 ## Execution
-- Use decision rules when adding or refactoring modules.
+- Decision rules: decision-rules.md
 
 ## Failure Modes
 - Boundary violations block review or break tests.
 
 ## Design Rationale
-- Alternatives: permissive boundaries.
-- Rejected because they cause policy drift.
+We deliberately chose strict boundaries to prevent drift.
+Why not allow exceptions? Exceptions become the new normal.
 
 ## Non-Goals
 - Feature documentation.
-
-## References
-- Decision rules: decision-rules.md

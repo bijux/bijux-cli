@@ -1,17 +1,31 @@
 # API usage
 
 ## Purpose
-This document guarantees safe embedding of bijux-cli via the Python API.
+This document tells you how to embed bijux-cli without IO side effects.
 
 ## Scope
-It covers API entrypoints and output behavior only.
+It covers API entrypoints and error behavior only.
 
-## Core Concepts
-- API returns data only.
-- API does not write to stdout or stderr.
+## What problem this solves
+Printing from an API call corrupts host applications.
+The API guard prevents that.
 
-## Invariants
-- API purity is enforced when the guard is enabled.
+## Why you should care
+If you embed bijux-cli, you need pure return values and predictable errors.
+
+## What confusion this removes
+It removes doubt about whether the API writes to stdout or stderr.
+
+## Guarantees
+Bijux guarantees:
+1. API calls return data only.
+2. API guard violations raise errors.
+
+## How to Think About This
+Treat the API as a function library, not a CLI wrapper.
+
+## Common Misunderstandings
+- "API calls behave like CLI commands." They do not.
 
 ## Execution
 ```python
@@ -26,8 +40,8 @@ api.run_sync("status")
 - API guard violations raise a guard error.
 
 ## Design Rationale
-- Alternatives: API that prints by default.
-- Rejected because it breaks embedding.
+We deliberately chose purity to make embedding safe.
+Why not allow printing? It breaks host process output.
 
 ## Non-Goals
 - Web API usage.

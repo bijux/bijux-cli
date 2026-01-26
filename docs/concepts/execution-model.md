@@ -1,45 +1,59 @@
 # Execution model
 
 ## Purpose
-This document guarantees how bijux-cli executes a command from argv to exit.
+This document tells you exactly how a command runs, from argv to exit.
 
 ## Scope
-This is the CLI execution flow only. It does not describe API usage or plugin internals.
+It covers the CLI process only. It does not cover the API or plugin internals.
 
-## Core Concepts
-- Intent: parsed command name, arguments, and resolved flags.
-- Policy: effective routing and formatting rules resolved once.
-- Runtime: initialized services, DI container, and plugin registry.
-- ExitIntent: structured decision for code and output.
+## What problem this solves
+When a command fails, you need to know where the decision was made and why.
+You also need to know which step is allowed to change output or exit codes.
 
-## Invariants
-- Intent is built once and never mutated.
-- Policy is resolved once before runtime initialization.
-- Runtime initialization happens before command dispatch.
-- ExitIntent is the only way to exit the CLI.
+## Why you should care
+If you can trace a failure to one step, you fix bugs fast and avoid regressions.
+If you understand the order, you stop accidental side effects from creeping in.
+
+## What confusion this removes
+It removes the guesswork about when policy is resolved and when output is chosen.
+
+## Guarantees
+Bijux guarantees:
+1. Intent is built once and never mutated.
+2. Policy is resolved once before runtime initialization.
+3. Runtime initialization happens before command dispatch.
+4. ExitIntent is the only way the CLI exits.
+
+## How to Think About This
+Think of the CLI as a single, linear pipeline.
+Each step consumes input and produces a new, immutable artifact.
+If a decision is not made in its step, it is forbidden elsewhere.
+
+## Common Misunderstandings
+- "Commands can decide output format." They cannot. Output is decided in policy resolution.
+- "Runtime can re-read flags." It cannot. Intent and policy are already fixed.
 
 ## Execution
-1. Argument parsing builds a CLI intent.
-2. Policy resolution computes output routing and formats.
-3. Runtime initializes DI, services, and plugins.
-4. Command dispatch executes the intent.
-5. ExitIntent emission writes output and exits.
+1. Parse argv into a CLI intent.
+2. Resolve policy for output routing and formatting.
+3. Initialize runtime: DI, services, plugins.
+4. Dispatch the command.
+5. Emit output and exit via ExitIntent.
 
 ## Failure Modes
-- Invalid flags: return exit code 2 with structured error.
-- Unknown command: return exit code 2 with structured error.
-- Runtime init failure: return exit code 1.
-- Command failure: return exit code based on exit policy.
+- Invalid flags: exit 2 with structured error.
+- Unknown command: exit 2 with structured error.
+- Runtime init failure: exit 1.
+- Command failure: exit determined by exit policy.
 
-No recovery occurs inside the CLI. The process exits deterministically.
+No recovery happens inside the CLI. The process exits deterministically.
 
 ## Design Rationale
-- Alternatives: late policy resolution in commands.
-- Rejected because it creates inconsistent behavior and hidden side effects.
-- Chosen: single policy resolution to guarantee determinism.
+We deliberately chose a single linear flow because it prevents late overrides.
+Why not resolve policy inside each command? That creates drift and hidden side effects.
 
 ## Non-Goals
-- Interactive REPL lifecycle details.
+- REPL internals.
 - Plugin metadata format.
 
 ## References

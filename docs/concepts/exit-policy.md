@@ -1,23 +1,37 @@
 # Exit policy
 
 ## Purpose
-This document guarantees exit codes and output routing for failures.
+This document tells you which exit code and output stream a failure uses.
 
 ## Scope
-This covers CLI exit codes, stdout/stderr routing, and structured error payloads.
+It covers CLI exit codes and error routing only.
 
-## Core Concepts
-- ExitIntent encodes the final exit decision.
-- Routing is decided once in core policy resolution.
+## What problem this solves
+If exit codes shift, scripts break. This policy prevents that drift.
 
-## Invariants
-- A given error class always maps to a stable exit code.
-- Quiet mode suppresses output but never changes the exit code.
-- Output format never changes the exit code.
+## Why you should care
+You can build automation that depends on stable numeric outcomes.
+
+## What confusion this removes
+It removes doubt about whether output format or quiet mode changes exit codes.
+
+## Guarantees
+Bijux guarantees:
+1. Each error class maps to a stable exit code.
+2. Quiet suppresses output but never changes exit codes.
+3. Output format never changes exit codes.
+
+## How to Think About This
+Treat exit codes as part of the interface, not an implementation detail.
+If you need a different exit behavior, change policy in one place.
+
+## Common Misunderstandings
+- "Quiet mode hides errors by changing exit codes." It does not.
+- "JSON output uses different exit codes." It does not.
 
 ## Execution
 - Success exits with code 0.
-- User input or usage errors exit with code 2.
+- Usage or user input errors exit with code 2.
 - ASCII or encoding errors exit with code 3.
 - Internal errors exit with code 1.
 - User abort exits with code 130.
@@ -30,9 +44,8 @@ This covers CLI exit codes, stdout/stderr routing, and structured error payloads
 No retries occur at the exit policy layer.
 
 ## Design Rationale
-- Alternatives: command-level exit logic.
-- Rejected because it diverges across commands.
-- Chosen: centralized exit policy for stable scripting behavior.
+We deliberately chose a centralized policy to keep exit codes stable.
+Why not let each command choose? That creates inconsistent scripting behavior.
 
 ## Non-Goals
 - Retrying failed commands.
