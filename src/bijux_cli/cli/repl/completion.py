@@ -77,7 +77,7 @@ def _collect_completions(
             for key in cmd_map
             if len(key) == 1 and key[0].startswith(current)
         )
-        if not completions and words[:3] == ["config", "set", ""]:
+        if words[:3] == ["config", "set", ""]:
             completions.append(("KEY=VALUE", 0, "KEY=VALUE"))
         elif not completions and current == "":
             completions.append(("DUMMY", 0, "DUMMY"))
@@ -100,7 +100,7 @@ def _collect_completions(
                 if opt.startswith(current)
             )
 
-    if "--help".startswith(current):
+    if current and "--help".startswith(current):
         completions.append(("--help", -len(current), None))
 
     if not completions and words[:3] == ["config", "set", ""]:

@@ -168,3 +168,22 @@ def test_dynamic_plugins_discovery_bails_on_getdir_exception(
     register_dynamic_plugins(root)
     after = set(list_registered_command_names())
     assert before == after
+
+
+def test_register_dynamic_plugins_rejects_name_collision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = Typer()
+    monkeypatch.setattr(root, "add_typer", lambda *a, **k: None)
+
+    class _Meta:
+        name = "dup"
+
+    monkeypatch.setattr(
+        "bijux_cli.plugins.metadata.discover_plugins", lambda: [_Meta()]
+    )
+    monkeypatch.setattr("bijux_cli.plugins.loader.activate_plugin", lambda _m: Typer())
+    monkeypatch.setattr("bijux_cli.cli.commands._REGISTERED_COMMANDS", {"dup"})
+
+    with pytest.raises(RuntimeError, match="Plugin name collision"):
+        register_dynamic_plugins(root)

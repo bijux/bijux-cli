@@ -143,6 +143,28 @@ def test_all_flags(
     assert caps["run"]["log_level"] == "error"
 
 
+def test_payload_builder_includes_runtime(
+    caps: dict[str, Any], runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        list_mod,
+        "current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=True,
+        ),
+    )
+    result = runner.invoke(cli_app, ["plugins", "list"])
+    assert result.exit_code == 0
+    payload = caps["run"]["payload_builder"](True)
+    assert "python" in payload
+    assert "platform" in payload
+
+
 def test_validate_error(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:
     """Test that a SystemExit from flag validation is propagated."""
     monkeypatch.setattr(

@@ -9,7 +9,9 @@ import json
 from typing import Any
 from unittest.mock import patch
 
+from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
+import pytest
 
 import bijux_cli.api.http as api
 
@@ -181,3 +183,52 @@ def test_update_item_same_name_different_description() -> None:
         r_get = client.get("/v1/items/1")
         assert r_get.status_code == 200
         assert r_get.json()["description"] == "An updated description"
+
+
+def test_item_name_validation_errors() -> None:
+    with pytest.raises(ValueError, match="control characters"):
+        api.ItemIn.validate_and_normalize_name("bad\u0001")
+    with pytest.raises(ValueError, match="surrogate"):
+        api.ItemIn.validate_and_normalize_name("\ud800")
+    with pytest.raises(ValueError, match="empty"):
+        api.ItemIn.validate_and_normalize_name("   ")
+
+
+def test_store_conflict_paths() -> None:
+    store = api.InMemoryItemStore()
+    created = store.create(api.ItemIn(name="Alpha", description=None))
+    with pytest.raises(HTTPException) as excinfo:
+        store.create(api.ItemIn(name="Alpha", description=None))
+    assert excinfo.value.status_code == status.HTTP_409_CONFLICT
+
+    with pytest.raises(HTTPException) as excinfo:
+        store.update(999, api.ItemIn(name="Beta", description=None))
+    assert excinfo.value.status_code == status.HTTP_404_NOT_FOUND
+
+    store.create(api.ItemIn(name="Beta", description=None))
+    with pytest.raises(HTTPException) as excinfo:
+        store.update(created.id, api.ItemIn(name="Beta", description=None))
+    assert excinfo.value.status_code == status.HTTP_409_CONFLICT
+
+    with pytest.raises(HTTPException) as excinfo:
+        store.delete(999)
+    assert excinfo.value.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_query_param_validation_and_accept_header() -> None:
+    with _client() as client:
+        r = client.get("/v1/items?limit=1&limit=2")
+        assert r.status_code == 422
+
+        r = client.get("/v1/items?extra=1")
+        assert r.status_code == 422
+
+        r = client.get("/v1/items", headers={"accept": "text/plain"})
+        assert r.status_code == 406
+
+
+def test_health_endpoint() -> None:
+    with _client() as client:
+        r = client.get("/health")
+        assert r.status_code == 200
+        assert r.json() == {"status": "ok"}

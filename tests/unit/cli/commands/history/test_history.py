@@ -1525,3 +1525,85 @@ def test_history_positive_limit_slicing_and_successful_completion(
 
     assert len(_entries(result_payload)) == 2
     assert _entries(result_payload) == history_entries[-2:]
+
+
+def test_import_history_includes_runtime(tmp_path: Path) -> None:
+    from bijux_cli.cli.commands.history import service as hist_service
+
+    path = tmp_path / "history.json"
+    path.write_text('[{"command": "status"}]', encoding="utf-8")
+    intent = hist_service.HistoryIntent(
+        command="history",
+        action="import",
+        limit=0,
+        group_by=None,
+        filter_cmd=None,
+        sort=None,
+        export_path=None,
+        import_path=str(path),
+        quiet=False,
+        include_runtime=True,
+        log_level=LogLevel.INFO,
+        fmt=OutputFormat.JSON,
+    )
+    payload = hist_service._import_history(intent, MagicMock())
+    assert payload["status"] == "imported"
+    assert "python" in payload
+
+
+def test_export_history_includes_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bijux_cli.cli.commands.history import service as hist_service
+
+    class _Serializer:
+        def dumps(self, payload: object, *, fmt: object, pretty: bool) -> str:
+            _ = (fmt, pretty)
+            return json.dumps(payload)
+
+    monkeypatch.setattr(
+        "bijux_cli.cli.core.command.resolve_serializer", lambda: _Serializer()
+    )
+    out_path = tmp_path / "out.json"
+    intent = hist_service.HistoryIntent(
+        command="history",
+        action="export",
+        limit=0,
+        group_by=None,
+        filter_cmd=None,
+        sort=None,
+        export_path=str(out_path),
+        import_path=None,
+        quiet=False,
+        include_runtime=True,
+        log_level=LogLevel.INFO,
+        fmt=OutputFormat.JSON,
+    )
+    svc = MagicMock()
+    svc.list.return_value = []
+    payload = hist_service._export_history(intent, svc)
+    assert payload["status"] == "exported"
+    assert "python" in payload
+
+
+def test_list_history_includes_runtime() -> None:
+    from bijux_cli.cli.commands.history import service as hist_service
+
+    intent = hist_service.HistoryIntent(
+        command="history",
+        action="list",
+        limit=0,
+        group_by=None,
+        filter_cmd=None,
+        sort=None,
+        export_path=None,
+        import_path=None,
+        quiet=False,
+        include_runtime=True,
+        log_level=LogLevel.INFO,
+        fmt=OutputFormat.JSON,
+    )
+    svc = MagicMock()
+    svc.list.return_value = [{"command": "status"}]
+    payload = hist_service._list_history(intent, svc)
+    assert "python" in payload

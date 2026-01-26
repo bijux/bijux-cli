@@ -5,12 +5,17 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
 from bijux_cli.core.precedence import (
     FlagLayer,
     Flags,
+    GlobalCLIConfig,
     resolve_effective_config,
+    resolve_log_policy,
     resolve_output_flags,
+    validate_cli_flags,
 )
 
 
@@ -63,3 +68,35 @@ def test_resolve_effective_config_prefers_cli_layer() -> None:
     )
     assert effective.flags.format is OutputFormat.JSON
     assert effective.flags.color is ColorMode.ALWAYS
+
+
+def test_resolve_log_policy_thresholds() -> None:
+    policy = resolve_log_policy(LogLevel.WARNING)
+    assert policy.telemetry_verbosity == 1
+    assert policy.show_traceback is False
+
+
+def test_validate_cli_flags_reports_invalid_format() -> None:
+    config = FlagLayer(format=OutputFormat("json"))
+    errors = validate_cli_flags(
+        GlobalCLIConfig(
+            help=False,
+            flags=config,
+            args=("--format", "toml"),
+            errors=(),
+        )
+    )
+    assert errors == ()
+
+
+def test_validate_cli_flags_rejects_unknown_format() -> None:
+    config = FlagLayer(format=cast(OutputFormat, "toml"))
+    errors = validate_cli_flags(
+        GlobalCLIConfig(
+            help=False,
+            flags=config,
+            args=("--format", "toml"),
+            errors=(),
+        )
+    )
+    assert any(err.failure == "invalid_format" for err in errors)

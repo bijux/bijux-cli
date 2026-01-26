@@ -42,3 +42,15 @@ def test_invalid_format_raises() -> None:
     serializer = PyYAMLSerializer(None)
     with pytest.raises(SerializationError):
         serializer.dumps({"alpha": 1}, fmt=OutputFormat.JSON, pretty=False)
+
+
+def test_orjson_rejects_unserializable_payload() -> None:
+    serializer = OrjsonSerializer(None)
+    with pytest.raises(SerializationError):
+        serializer.dumps(object(), fmt=OutputFormat.JSON, pretty=False)
+
+
+def test_orjson_loads_rejects_invalid_json() -> None:
+    serializer = OrjsonSerializer(None)
+    with pytest.raises(SerializationError):
+        serializer.loads("{not json}", fmt=OutputFormat.JSON, pretty=False)

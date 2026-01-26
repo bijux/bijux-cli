@@ -19,6 +19,7 @@ def write_dummy_plugin(root: Path, *, name: str) -> Path:
             [
                 "{",
                 f'  "name": "{name}",',
+                '  "schema_version": "1",',
                 '  "version": "0.1.0",',
                 '  "bijux_cli_version": ">=0.0.0",',
                 '  "enabled": true',

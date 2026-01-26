@@ -34,6 +34,7 @@ def _write_dummy_plugin(root: Path, name: str) -> None:
             [
                 "{",
                 f'  "name": "{name}",',
+                '  "schema_version": "1",',
                 '  "version": "0.1.0",',
                 '  "bijux_cli_version": ">=0",',
                 '  "enabled": true',

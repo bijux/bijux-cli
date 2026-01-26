@@ -653,6 +653,46 @@ def test_dev_list_plugins_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> Non
     assert called["run"]["log_level"] == LogLevel.INFO
 
 
+def test_dev_list_plugins_payload_includes_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_plugins.current_execution_policy",
+        lambda: ExecutionPolicy(
+            output_format=OutputFormat.JSON,
+            color=ColorMode.AUTO,
+            quiet=False,
+            log_level=LogLevel.INFO,
+            pretty=True,
+            include_runtime=True,
+        ),
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_plugins.validate_common_flags",
+        lambda fmt, cmd, quiet, **kwargs: "json",
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_plugins.list_installed_plugins",
+        lambda: [{"name": "p1"}],
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_plugins.new_run_command",
+        lambda **kw: captured.update(kw),
+    )
+
+    dev_list_plugins(
+        quiet=False,
+        fmt="json",
+        pretty=True,
+        log_level=LogLevel.INFO,
+    )
+
+    payload = captured["payload_builder"](True)
+    assert "python" in payload
+    assert "platform" in payload
+
+
 def test_dev_callback_returns_when_subcommand(
     ctx: Context, monkeypatch: pytest.MonkeyPatch
 ) -> None:

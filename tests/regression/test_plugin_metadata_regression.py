@@ -63,6 +63,7 @@ def _write_plugin(tmp_path: Path, name: str, meta: dict[str, object]) -> Path:
     (plug_dir / "plugin.py").write_text(
         "import typer\napp = typer.Typer()\n", encoding="utf-8"
     )
+    meta = {**meta, "schema_version": meta.get("schema_version", "1")}
     (plug_dir / "plugin.json").write_text(
         __import__("json").dumps(meta), encoding="utf-8"
     )
@@ -103,6 +104,44 @@ def test_incompatible_cli_spec(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         discover_plugins()
 
 
+def test_schema_version_required(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
+    _write_plugin(
+        tmp_path,
+        "no_schema",
+        {
+            "name": "no_schema",
+            "version": "0.1.0",
+            "bijux_cli_version": ">=0",
+            "schema_version": "",
+        },
+    )
+    invalidate_plugin_cache()
+    with pytest.raises(PluginMetadataError):
+        discover_plugins()
+
+
+def test_schema_version_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
+    _write_plugin(
+        tmp_path,
+        "bad_schema",
+        {
+            "name": "bad_schema",
+            "version": "0.1.0",
+            "bijux_cli_version": ">=0",
+            "schema_version": "2",
+        },
+    )
+    invalidate_plugin_cache()
+    with pytest.raises(PluginMetadataError):
+        discover_plugins()
+
+
 def test_entrypoint_missing_cli_requirement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -117,6 +156,63 @@ def test_entrypoint_missing_cli_requirement(
     invalidate_plugin_cache()
     with pytest.raises(PluginMetadataError):
         discover_plugins()
+
+
+def test_entrypoint_duplicate_name(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
+    _write_plugin(
+        tmp_path,
+        "dupe",
+        {"name": "dupe", "version": "0.1.0", "bijux_cli_version": ">=0"},
+    )
+    meta = _FakeMeta("entrypkg", ["bijux-cli>=0"])
+    ep = _FakeEntryPoint("dupe", "entrypkg.mod", _FakeDist("entrypkg", "1.0", meta))
+    monkeypatch.setattr(
+        "importlib.metadata.entry_points", lambda: _FakeEntryPoints([ep])
+    )
+    invalidate_plugin_cache()
+    with pytest.raises(PluginMetadataError):
+        discover_plugins()
+
+
+def test_unknown_fields_are_ignored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
+    _write_plugin(
+        tmp_path,
+        "extra",
+        {
+            "name": "extra",
+            "version": "0.1.0",
+            "bijux_cli_version": ">=0",
+            "extra_field": "ok",
+        },
+    )
+    invalidate_plugin_cache()
+    plugins = discover_plugins()
+    assert [p.name for p in plugins] == ["extra"]
+
+
+def test_discovery_order_is_sorted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BIJUXCLI_PLUGINS_DIR", str(tmp_path))
+    _write_plugin(
+        tmp_path,
+        "zeta",
+        {"name": "zeta", "version": "0.1.0", "bijux_cli_version": ">=0"},
+    )
+    _write_plugin(
+        tmp_path,
+        "alpha",
+        {"name": "alpha", "version": "0.1.0", "bijux_cli_version": ">=0"},
+    )
+    invalidate_plugin_cache()
+    plugins = discover_plugins()
+    assert [p.name for p in plugins] == ["alpha", "zeta"]
 
 
 def test_cache_invalidation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

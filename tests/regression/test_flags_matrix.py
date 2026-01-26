@@ -48,6 +48,16 @@ def test_parse_global_flags_extracts_values() -> None:
     assert flags.color is ColorMode.NEVER
 
 
+def test_unknown_flags_do_not_raise_errors() -> None:
+    errors = collect_global_flag_errors(["--unknown", "--quiet"])
+    assert errors == ()
+
+
+def test_unknown_flags_are_ignored_in_parsing() -> None:
+    flags = parse_global_flags(["--unknown", "--quiet"])
+    assert flags.quiet is True
+
+
 def test_env_overrides_config_in_precedence() -> None:
     effective = resolve_effective_config(
         cli=FlagLayer(),

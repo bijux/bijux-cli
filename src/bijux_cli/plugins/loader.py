@@ -28,7 +28,12 @@ def _load_module_from_path(path: str, module_name: str) -> ModuleType:
         raise PluginMetadataError(f"Cannot import plugin: {path}", http_status=400)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    except (FileNotFoundError, OSError) as exc:
+        raise PluginMetadataError(
+            f"Cannot import plugin: {path}", http_status=400
+        ) from exc
     return module
 
 

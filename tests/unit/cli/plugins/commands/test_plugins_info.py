@@ -64,6 +64,7 @@ def test_info_success(monkeypatch: pytest.MonkeyPatch) -> None:
         enabled=True,
         source="entrypoint",
         requires_cli=">=0.1.0",
+        schema_version="1",
         dist_name="foo-plugin",
     )
     monkeypatch.setattr(plugins_info, "get_plugin_metadata", lambda _: meta)
@@ -86,3 +87,65 @@ def test_info_success(monkeypatch: pytest.MonkeyPatch) -> None:
     assert payload["version"] == "1.0.0"
     assert payload["enabled"] is True
     assert payload["source"] == "entrypoint"
+
+
+def test_info_includes_runtime_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    meta = PluginMetadata(
+        name="bar",
+        version="1.0.0",
+        enabled=True,
+        source="entrypoint",
+        requires_cli=">=0.1.0",
+        schema_version="1",
+    )
+    monkeypatch.setattr(plugins_info, "get_plugin_metadata", lambda _: meta)
+
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        plugins_info, "new_run_command", lambda **kw: captured.update(kw)
+    )
+
+    info_plugin(
+        "bar",
+        fmt="json",
+        quiet=False,
+        pretty=True,
+        log_level=LogLevel.INFO,
+    )
+
+    payload = captured["payload_builder"](True)
+    assert "python" in payload
+    assert "platform" in payload
+
+
+def test_info_reads_plugin_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    plugin_dir = tmp_path / "plug"
+    plugin_dir.mkdir()
+    meta_path = plugin_dir / "plugin.json"
+    meta_path.write_text('{"name":"plug","schema_version":"1"}', encoding="utf-8")
+    meta = PluginMetadata(
+        name="plug",
+        version="1.0.0",
+        enabled=True,
+        source="local",
+        requires_cli=">=0.1.0",
+        schema_version="1",
+        path=plugin_dir,
+    )
+    monkeypatch.setattr(plugins_info, "get_plugin_metadata", lambda _: meta)
+
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        plugins_info, "new_run_command", lambda **kw: captured.update(kw)
+    )
+
+    info_plugin(
+        "plug",
+        fmt="json",
+        quiet=False,
+        pretty=True,
+        log_level=LogLevel.INFO,
+    )
+
+    payload = captured["payload_builder"](False)
+    assert payload["path"] == str(plugin_dir)

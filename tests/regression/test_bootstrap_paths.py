@@ -10,6 +10,9 @@ from pathlib import Path
 import pytest
 
 from bijux_cli.core import bootstrap_flow
+from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
+from bijux_cli.core.intent import CLIIntent
+from bijux_cli.core.precedence import FlagError, Flags, resolve_log_policy
 
 
 def _isolate_env(monkeypatch: pytest.MonkeyPatch, root: Path) -> None:
@@ -87,3 +90,78 @@ def test_runtime_path_initializes_di(
     assert called["default"] >= 1
     assert called["plugins"] >= 1
     assert called["engine"] >= 1
+
+
+def test_intent_error_short_circuits_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    err = FlagError(
+        message="bad flag",
+        failure="invalid_flag",
+        flag="--bad",
+    )
+    intent = CLIIntent(
+        command=None,
+        args=("--bad",),
+        flags=Flags(
+            quiet=False,
+            log_level=LogLevel.INFO,
+            color=ColorMode.AUTO,
+            format=OutputFormat.JSON,
+        ),
+        output_format=OutputFormat.JSON,
+        log_level=LogLevel.INFO,
+        quiet=False,
+        color=ColorMode.AUTO,
+        pretty=True,
+        include_runtime=False,
+        log_policy=resolve_log_policy(LogLevel.INFO),
+        help=False,
+        errors=(err,),
+    )
+    monkeypatch.setattr(bootstrap_flow, "build_cli_intent", lambda *_a, **_k: intent)
+    monkeypatch.setattr(bootstrap_flow, "_emit_fast_error", lambda *_a, **_k: 2)
+    monkeypatch.setattr(
+        bootstrap_flow,
+        "run_runtime",
+        lambda _intent: pytest.fail("runtime should not execute on intent errors"),
+    )
+    monkeypatch.setattr(bootstrap_flow.sys, "argv", ["bijux", "--bad"])
+    assert bootstrap_flow.main() == 2
+
+
+def test_policy_init_failure_returns_internal_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _boom(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(bootstrap_flow, "setup_structlog", _boom)
+    monkeypatch.setattr(bootstrap_flow.sys, "argv", ["bijux", "status"])
+    exit_code = bootstrap_flow.main()
+    assert exit_code == 1
+
+
+def test_dispatch_failure_emits_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _isolate_env(monkeypatch, tmp_path)
+    monkeypatch.setattr(bootstrap_flow.sys, "argv", ["bijux", "status"])
+
+    class _Boom:
+        def __call__(self, *args: object, **kwargs: object) -> None:
+            raise RuntimeError("boom")
+
+    emitted: dict[str, object] = {}
+    monkeypatch.setattr(bootstrap_flow, "build_app", lambda *args, **kwargs: _Boom())
+    monkeypatch.setattr(bootstrap_flow, "resolve_serializer", lambda: object())
+    monkeypatch.setattr(bootstrap_flow, "resolve_emitter", lambda: object())
+
+    def _emit_payload(payload: object, **_kwargs: object) -> None:
+        emitted["payload"] = payload
+
+    monkeypatch.setattr(bootstrap_flow, "emit_payload", _emit_payload)
+
+    exit_code = bootstrap_flow.main()
+    assert exit_code == 1
+    assert emitted["payload"]
