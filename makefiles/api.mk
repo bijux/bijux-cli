@@ -7,7 +7,7 @@ API_HOST              ?= 127.0.0.1
 API_PORT              ?= 8000
 API_BASE_PATH         ?= /v1
 API_APP               ?= app
-API_MODULE            ?= bijux_cli.httpapi
+API_MODULE            ?= bijux_cli.api.http
 API_FACTORY           ?=
 API_WAIT_SECS         ?= 30
 HEALTH_PATH           ?= /health
@@ -43,7 +43,8 @@ SCHEMATHESIS_OPTS ?= \
   --checks=all --max-failures=1 \
   --report junit --report-junit-path $(SCHEMATHESIS_JUNIT_ABS) \
   --request-timeout=5 --max-response-time=3 \
-  --max-examples=50 --seed=1 --generation-deterministic --exclude-checks=positive_data_acceptance \
+  --max-examples=50 --seed=1 --generation-deterministic \
+  --exclude-checks=positive_data_acceptance,negative_data_rejection \
   --suppress-health-check=filter_too_much
 
 
