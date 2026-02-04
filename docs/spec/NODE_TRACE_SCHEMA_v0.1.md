@@ -14,6 +14,7 @@ Optional:
 - `resources` (object)
 - `inputs_index` (string)
 - `resolved_params` (json)
+- `container` (object)
 - `cache_proof` (object)
 - `failure` (object)
 
@@ -36,5 +37,14 @@ Optional:
   "code": "string",
   "message": "string",
   "details": <json>?
+}
+```
+
+## container
+```
+{
+  "image": "string",
+  "image_digest": "string?",
+  "engine": "docker|podman"
 }
 ```

@@ -4,7 +4,10 @@
 ```
 run-<id>/
   manifest.json
+  provenance.json
   graph.snapshot.json
+  outputs/
+    index.json
   nodes/
     <node_id>/
       trace.json
@@ -46,6 +49,28 @@ run-<id>/
   "started_unix_ms": number,
   "finished_unix_ms": number,
   "fingerprint": "sha256"
+}
+```
+
+## provenance.json
+```
+{
+  "os": "string",
+  "arch": "string",
+  "rustc": "string",
+  "tool_version": "string",
+  "adapters": [...],
+  "policy": {...},
+  "time_source": "system_clock"
+}
+```
+
+## run outputs/index.json
+```
+{
+  "files": [
+    {"node_id": "id", "node_fingerprint": "...", "sha256": "...", "path": "nodes/<id>/outputs/file"}
+  ]
 }
 ```
 

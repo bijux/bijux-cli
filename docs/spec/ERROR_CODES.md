@@ -18,6 +18,8 @@ These codes are globally stable across bijux-dag versions.
 - `E1020` Unknown graph input reference
 - `E1021` Unknown node output reference
 - `E1022` Forward node output reference
+- `E1023` Missing container spec for container node
+- `E1024` Invalid container mount spec
 
 ## Warnings
 - `W2001` Unreachable node

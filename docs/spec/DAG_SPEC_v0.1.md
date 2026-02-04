@@ -16,12 +16,14 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
 ```
 {
   "id": "string",
-  "kind": "const|shell",
+  "kind": "const|shell|container",
   "inputs": ["string"],
   "outputs": ["string"],
   "params": <ParamValue>,
+  "container": <ContainerSpec>,
   "effects": ["filesystem|network|env"],
-  "env_allowlist": ["ENV_VAR"]
+  "env_allowlist": ["ENV_VAR"],
+  "container": <ContainerSpec>
 }
 ```
 - `id` must be unique and match `[a-zA-Z0-9_-]+`.
@@ -30,6 +32,7 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
 - `params` is executor-specific.
 - `effects` is required for `shell` nodes.
 - `env_allowlist` lists env vars allowed for `shell` nodes.
+- `container` is required for `container` nodes.
 
 ### const params
 ```
@@ -39,6 +42,18 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
 ### shell params
 ```
 {"argv": ["cmd", "arg1", ...]}
+```
+
+## ContainerSpec
+```
+{
+  "image": "string",
+  "command": ["string"],
+  "args": ["string"],
+  "env_allowlist": ["ENV_VAR"],
+  "mounts": [{"source": "inputs/...", "target": "/bijux/node/...", "read_only": bool}],
+  "workdir": "/bijux/node/work"
+}
 ```
 
 ## ParamValue
