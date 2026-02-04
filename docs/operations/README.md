@@ -3,29 +3,29 @@
 ## Running
 Use the CLI to validate and run DAGs:
 ```
-bijux-dag validate examples/hello.dag.json
-bijux-dag run examples/hello.dag.json --out runs/
+bijux dag validate examples/hello.dag.json
+bijux dag run examples/hello.dag.json --out runs/
 ```
 
 ## Selectors
 Run subsets with selectors:
 ```
-bijux-dag run dag.json --out runs/ --select tag:etl
-bijux-dag run dag.json --out runs/ --exclude tag:gpu
-bijux-dag run dag.json --out runs/ --select kind:shell
-bijux-dag run dag.json --out runs/ --select id:etl_
+bijux dag run dag.json --out runs/ --select tag:etl
+bijux dag run dag.json --out runs/ --exclude tag:gpu
+bijux dag run dag.json --out runs/ --select kind:shell
+bijux dag run dag.json --out runs/ --select id:etl_
 ```
 Filtered nodes are marked `skipped` with reason `filtered`.
 
 ## Init & Lint
 Create a starter DAG:
 ```
-bijux-dag init
+bijux dag init
 ```
 
 Lint suggestions:
 ```
-bijux-dag lint dag.json
+bijux dag lint dag.json
 ```
 
 ## Artifacts
@@ -44,41 +44,41 @@ Per-node layout:
 ## Replay
 Replay a run from its embedded graph snapshot:
 ```
-bijux-dag replay runs/run-123 --out runs/
+bijux dag replay runs/run-123 --out runs/
 ```
 
 ## Diff
 Compare two runs:
 ```
-bijux-dag diff runs/run-123 runs/run-456
+bijux dag diff runs/run-123 runs/run-456
 ```
 
 ## Graph Export
 ```
-bijux-dag graph dag.json --format dot
+bijux dag graph dag.json --format dot
 ```
 
 ## Adapters
 List adapters:
 ```
-bijux-dag adapters ls
+bijux dag adapters ls
 ```
 
 ## Doctor
 Check environment health:
 ```
-bijux-dag doctor
+bijux dag doctor
 ```
 
 ## Export/Import
 ```
-bijux-dag export runs/run-123 --format json
-bijux-dag import export.json
+bijux dag export runs/run-123 --out export.json
+bijux dag import export.json
 ```
 
 ## Compatibility Suite
 ```
-bijux-dag compat
+bijux dag compat
 ```
 
 ## Caching
@@ -88,12 +88,12 @@ Cache modes:
 - `readwrite`
 
 ```
-bijux-dag run dag.json --out runs/ --cache readwrite
+bijux dag run dag.json --out runs/ --cache readwrite
 ```
 
 Verify cache integrity:
 ```
-bijux-dag cache verify
+bijux dag cache verify
 ```
 
 ## Resources
@@ -101,7 +101,7 @@ Use `--jobs` and `--cpu-budget` to control concurrency and CPU aggregate.
 
 ## Inputs Materialization
 ```
-bijux-dag run dag.json --out runs/ --materialize-inputs copy
+bijux dag run dag.json --out runs/ --materialize-inputs copy
 ```
 
 ## Failures

@@ -146,8 +146,10 @@ fn diff_golden() {
         .unwrap();
     assert!(out.status.success());
     let val: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    let nodes = val["nodes"].as_object().unwrap();
+    assert!(val["ok"].as_bool().unwrap_or(false));
+    let data = &val["data"];
+    let nodes = data["nodes"].as_object().unwrap();
     assert!(nodes.contains_key("a"));
-    let outputs = val["outputs"].as_object().unwrap();
+    let outputs = data["outputs"].as_object().unwrap();
     assert!(outputs.contains_key("a"));
 }

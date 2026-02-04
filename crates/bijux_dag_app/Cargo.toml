@@ -1,0 +1,21 @@
+[package]
+name = "bijux_dag_app"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Bijan Mousavi"]
+
+[dependencies]
+clap = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+bijux_dag_core = { path = "../bijux_dag_core" }
+bijux_dag_runtime = { path = "../bijux_dag_runtime" }
+bijux_dag_artifacts = { path = "../bijux_dag_artifacts" }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+base64 = { workspace = true }
+tar = { workspace = true }
+flate2 = { workspace = true }
+tempfile = { workspace = true }

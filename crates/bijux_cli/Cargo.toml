@@ -1,17 +1,14 @@
 [package]
-name = "bijux_dag_cli"
+name = "bijux_cli"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["Bijan Mousavi"]
 
 [dependencies]
+clap = { workspace = true }
 bijux_dag_app = { path = "../bijux_dag_app" }
 
 [[bin]]
-name = "bijux-dag"
+name = "bijux"
 path = "src/main.rs"
-
-[dev-dependencies]
-tempfile = { workspace = true }
-serde_json = { workspace = true }

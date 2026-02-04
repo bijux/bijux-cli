@@ -4,7 +4,9 @@ members = [
   "crates/bijux_dag_core",
   "crates/bijux_dag_artifacts",
   "crates/bijux_dag_runtime",
+  "crates/bijux_dag_app",
   "crates/bijux_dag_cli",
+  "crates/bijux_cli",
 ]
 
 [workspace.package]

@@ -34,7 +34,7 @@ fn verify_run_detects_corruption() {
         .unwrap();
 
     let out = Command::new(bin)
-        .args(["verify-run", run_dir.to_str().unwrap()])
+        .args(["verify", run_dir.to_str().unwrap()])
         .output()
         .unwrap();
     assert!(out.status.success());
@@ -47,7 +47,7 @@ fn verify_run_detects_corruption() {
     fs::write(&corrupt_path, b"corrupt").unwrap();
 
     let out = Command::new(bin)
-        .args(["verify-run", run_dir.to_str().unwrap()])
+        .args(["verify", run_dir.to_str().unwrap()])
         .output()
         .unwrap();
     assert!(!out.status.success());

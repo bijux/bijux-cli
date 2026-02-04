@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-BIN=(cargo run -p bijux_dag_cli --)
+BIN=(cargo run -p bijux_cli -- dag)
 TMP=$(mktemp -d)
 RUNS="$TMP/runs"
 mkdir -p "$RUNS"
@@ -18,10 +18,12 @@ python3 - "$TMP/diff.json" <<'PY'
 import json,sys
 with open(sys.argv[1]) as f:
     d=json.load(f)
-assert d.get("manifest") == {}, d
-assert d.get("graph_fingerprint") is None, d
-assert d.get("nodes") == {}, d
-assert d.get("outputs") == {}, d
+assert d.get("ok") is True, d
+payload=d.get("data", {})
+assert payload.get("manifest") == {}, payload
+assert payload.get("graph_fingerprint") is None, payload
+assert payload.get("nodes") == {}, payload
+assert payload.get("outputs") == {}, payload
 PY
 
 "${BIN[@]}" replay "$RUN2" --out "$RUNS" >/dev/null
@@ -31,8 +33,10 @@ python3 - "$TMP/diff_replay.json" <<'PY'
 import json,sys
 with open(sys.argv[1]) as f:
     d=json.load(f)
-assert d.get("manifest") == {}, d
-assert d.get("graph_fingerprint") is None, d
-assert d.get("nodes") == {}, d
-assert d.get("outputs") == {}, d
+assert d.get("ok") is True, d
+payload=d.get("data", {})
+assert payload.get("manifest") == {}, payload
+assert payload.get("graph_fingerprint") is None, payload
+assert payload.get("nodes") == {}, payload
+assert payload.get("outputs") == {}, payload
 PY

@@ -31,54 +31,54 @@ make lint
 make security
 
 # build
-cargo build -p bijux_dag_cli
+cargo build -p bijux_cli
 
 # validate
-cargo run -p bijux_dag_cli -- validate examples/hello.dag.json
+cargo run -p bijux_cli -- dag validate examples/hello.dag.json
 
 # validate with explain
-cargo run -p bijux_dag_cli -- validate examples/hello.dag.json --explain
+cargo run -p bijux_cli -- dag validate examples/hello.dag.json --explain
 
 # run
-cargo run -p bijux_dag_cli -- run examples/hello.dag.json --out runs/
+cargo run -p bijux_cli -- dag run examples/hello.dag.json --out runs/
 
 # run with selectors
-cargo run -p bijux_dag_cli -- run examples/hello.dag.json --out runs/ --select tag:etl
+cargo run -p bijux_cli -- dag run examples/hello.dag.json --out runs/ --select tag:etl
 
 # init
-cargo run -p bijux_dag_cli -- init
+cargo run -p bijux_cli -- dag init
 
 # lint
-cargo run -p bijux_dag_cli -- lint examples/hello.dag.json
+cargo run -p bijux_cli -- dag lint examples/hello.dag.json
 
 # graph (dot)
-cargo run -p bijux_dag_cli -- graph examples/hello.dag.json --format dot
+cargo run -p bijux_cli -- dag graph examples/hello.dag.json --format dot
 
 # replay
-cargo run -p bijux_dag_cli -- replay runs/run-<id> --out runs/
+cargo run -p bijux_cli -- dag replay runs/run-<id> --out runs/
 
 # diff
-cargo run -p bijux_dag_cli -- diff runs/run-<id-a> runs/run-<id-b>
+cargo run -p bijux_cli -- dag diff runs/run-<id-a> runs/run-<id-b>
 
 # export/import
-cargo run -p bijux_dag_cli -- export runs/run-<id> --format json > run.json
-cargo run -p bijux_dag_cli -- import run.json
+cargo run -p bijux_cli -- dag export runs/run-<id> --out run.json
+cargo run -p bijux_cli -- dag import run.json
 
 # adapters
-cargo run -p bijux_dag_cli -- adapters ls
+cargo run -p bijux_cli -- dag adapters ls
 
 # explain a run
-cargo run -p bijux_dag_cli -- explain runs/run-<id>
+cargo run -p bijux_cli -- dag explain runs/run-<id>
 
 # explain a node
-cargo run -p bijux_dag_cli -- explain runs/run-<id> --node <node-id>
+cargo run -p bijux_cli -- dag explain runs/run-<id> --node <node-id>
 
 # cache verify
-cargo run -p bijux_dag_cli -- cache verify
+cargo run -p bijux_cli -- dag cache verify
 ```
 
-See `docs/spec/` for formal definitions, `docs/operations/README.md` for runtime usage,
-and `docs/ADAPTERS.md` / `docs/EFFECTS.md` for adapter/effects guidance.
+See `docs/CLI.md` for the command taxonomy, `docs/spec/` for formal definitions,
+`docs/operations/README.md` for runtime usage, and `docs/ADAPTERS.md` / `docs/EFFECTS.md` for adapter/effects guidance.
 
 ## License
 Apache-2.0. See `LICENSE` and `NOTICE`.
