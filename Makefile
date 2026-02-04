@@ -1,4 +1,4 @@
-.PHONY: test lint security fmt
+.PHONY: test lint security fmt golden
 
 test:
 	cargo test --workspace
@@ -12,3 +12,6 @@ fmt:
 
 security:
 	cargo audit
+
+golden:
+	./scripts/golden.sh
