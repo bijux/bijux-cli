@@ -5,22 +5,50 @@
       "id": "const1",
       "kind": "const",
       "inputs": [],
-      "outputs": ["out_const"],
-      "params": {"value": "hello"}
+      "outputs": [
+        {
+          "name": "out_const",
+          "path": "out_const"
+        }
+      ],
+      "params": {
+        "value": "hello"
+      }
     },
     {
       "id": "echo",
       "kind": "shell",
-      "inputs": ["in"],
-      "outputs": ["out_echo"],
-      "params": {"argv": ["echo", "from", "shell"]},
-      "effects": ["filesystem"]
+      "inputs": [
+        "in"
+      ],
+      "outputs": [
+        {
+          "name": "out_echo",
+          "path": "out_echo"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "echo from shell > ../outputs/out_echo"
+        ]
+      },
+      "effects": [
+        "filesystem"
+      ]
     }
   ],
   "edges": [
     {
-      "from": {"node_id": "const1", "port": "out_const"},
-      "to": {"node_id": "echo", "port": "in"}
+      "from": {
+        "node_id": "const1",
+        "port": "out_const"
+      },
+      "to": {
+        "node_id": "echo",
+        "port": "in"
+      }
     }
   ]
 }

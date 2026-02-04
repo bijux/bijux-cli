@@ -2,12 +2,74 @@
   "spec": "bijux-dag/v0.1",
   "inputs": {},
   "nodes": [
-    {"id": "a", "kind": "const", "inputs": [], "outputs": ["out"], "params": {}},
-    {"id": "b", "kind": "const", "inputs": ["in"], "outputs": ["out"], "params": {"x": {"node_output": {"node_id": "c", "path": "out"}}}},
-    {"id": "c", "kind": "const", "inputs": ["in"], "outputs": ["out"], "params": {}}
+    {
+      "id": "a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {}
+    },
+    {
+      "id": "b",
+      "kind": "const",
+      "inputs": [
+        "in"
+      ],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "x": {
+          "node_output": {
+            "node_id": "c",
+            "path": "out"
+          }
+        }
+      }
+    },
+    {
+      "id": "c",
+      "kind": "const",
+      "inputs": [
+        "in"
+      ],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {}
+    }
   ],
   "edges": [
-    {"from": {"node_id": "a", "port": "out"}, "to": {"node_id": "b", "port": "in"}},
-    {"from": {"node_id": "b", "port": "out"}, "to": {"node_id": "c", "port": "in"}}
+    {
+      "from": {
+        "node_id": "a",
+        "port": "out"
+      },
+      "to": {
+        "node_id": "b",
+        "port": "in"
+      }
+    },
+    {
+      "from": {
+        "node_id": "b",
+        "port": "out"
+      },
+      "to": {
+        "node_id": "c",
+        "port": "in"
+      }
+    }
   ]
 }

@@ -5,9 +5,21 @@
       "id": "s",
       "kind": "shell",
       "inputs": [],
-      "outputs": ["out"],
-      "params": {"argv": ["echo", "x"]},
-      "effects": ["network"]
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "argv": [
+          "echo",
+          "x"
+        ]
+      },
+      "effects": [
+        "network"
+      ]
     }
   ],
   "edges": []

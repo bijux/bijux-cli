@@ -2,7 +2,22 @@
   "spec": "bijux-dag/v0.1",
   "inputs": {},
   "nodes": [
-    {"id": "a", "kind": "const", "inputs": [], "outputs": ["out"], "params": {"x": {"graph_input": "nope"}}}
+    {
+      "id": "a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "x": {
+          "graph_input": "nope"
+        }
+      }
+    }
   ],
   "edges": []
 }

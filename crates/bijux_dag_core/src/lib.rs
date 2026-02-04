@@ -10,6 +10,8 @@ pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub struct Graph {
     pub spec: String,
     #[serde(default)]
+    pub meta: Option<GraphMeta>,
+    #[serde(default)]
     pub inputs: serde_json::Map<String, Value>,
     #[serde(default)]
     pub nondeterminism_allowed: bool,
@@ -23,7 +25,7 @@ pub struct Node {
     pub id: String,
     pub kind: NodeKind,
     pub inputs: Vec<String>,
-    pub outputs: Vec<String>,
+    pub outputs: Vec<FileOutput>,
     #[serde(default)]
     pub params: ParamValue,
     #[serde(default)]
@@ -40,6 +42,27 @@ pub struct Node {
     pub effects: Vec<Effect>,
     #[serde(default)]
     pub env_allowlist: Vec<String>,
+    #[serde(default)]
+    pub group: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GraphMeta {
+    pub name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub owners: Vec<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct FileOutput {
+    pub name: String,
+    pub path: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,12 +102,48 @@ pub struct ResolvedGraph {
     pub resolved_params: BTreeMap<String, Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NodeKind {
     Const,
     Shell,
     Container,
+    External(String),
+}
+
+impl NodeKind {
+    pub fn as_str(&self) -> &str {
+        match self {
+            NodeKind::Const => "const",
+            NodeKind::Shell => "shell",
+            NodeKind::Container => "container",
+            NodeKind::External(s) => s.as_str(),
+        }
+    }
+}
+
+impl Serialize for NodeKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for NodeKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let kind = match s.as_str() {
+            "const" => NodeKind::Const,
+            "shell" => NodeKind::Shell,
+            "container" => NodeKind::Container,
+            _ => NodeKind::External(s),
+        };
+        Ok(kind)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -322,7 +381,7 @@ impl Graph {
             let from_node = from_node.unwrap();
             let to_node = to_node.unwrap();
 
-            if !from_node.outputs.iter().any(|p| p == &edge.from.port) {
+            if !from_node.outputs.iter().any(|p| p.name == edge.from.port) {
                 diags.push(error(
                     "E1003",
                     format!(
@@ -359,18 +418,37 @@ impl Graph {
             }
         }
 
-        let mut output_names: HashMap<&str, &str> = HashMap::new();
         for node in &self.nodes {
+            let mut seen = BTreeSet::new();
             for out in &node.outputs {
-                if let Some(prev) = output_names.insert(out.as_str(), node.id.as_str()) {
+                if !is_valid_output_path(&out.path) {
+                    diags.push(error(
+                        "E1025",
+                        format!("invalid output path: {}", out.path),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Use relative paths without '..'".to_string()),
+                    ));
+                }
+                if !seen.insert(out.name.as_str()) {
                     diags.push(error(
                         "E1008",
-                        format!(
-                            "output collision: {} and {} both declare {}",
-                            prev, node.id, out
-                        ),
+                        format!("duplicate output name: {}", out.name),
                         format!("/nodes/{}/outputs", node.id),
-                        Some("Make output names unique across nodes".to_string()),
+                        Some("Make output names unique per node".to_string()),
+                    ));
+                }
+            }
+        }
+
+        let mut output_paths = BTreeSet::new();
+        for node in &self.nodes {
+            for out in &node.outputs {
+                if !output_paths.insert(out.path.as_str()) {
+                    diags.push(error(
+                        "E1008",
+                        format!("output collision: {}", out.path),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Avoid duplicate output paths across nodes".to_string()),
                     ));
                 }
             }
@@ -408,7 +486,7 @@ impl Graph {
         for node in &mut nodes {
             sort_param_value(&mut node.params);
             node.inputs.sort();
-            node.outputs.sort();
+            node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
             node.tags.sort();
@@ -431,6 +509,7 @@ impl Graph {
         }
         Graph {
             spec: self.spec.clone(),
+            meta: self.meta.clone(),
             inputs,
             nondeterminism_allowed: self.nondeterminism_allowed,
             nodes,
@@ -509,9 +588,10 @@ impl Graph {
         sort_value_maps(&mut params);
         node.params = ParamValue::Literal(params);
         node.inputs.sort();
-        node.outputs.sort();
+        node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
         node.effects.sort_by_key(effect_order);
         node.env_allowlist.sort();
+        node.group = None;
         let json = serde_json::to_string_pretty(&node)?;
         Ok(hash_bytes(json.as_bytes()))
     }
@@ -648,15 +728,13 @@ fn resolve_ref(spec: &RefSpec, graph: &Graph) -> Result<Value, GraphError> {
         return Err(GraphError::ValidationFailed);
     }
     if let Some(node_out) = &spec.node_output {
-        let mut inner = serde_json::Map::new();
-        inner.insert(
-            "node_id".to_string(),
-            Value::String(node_out.node_id.clone()),
-        );
-        inner.insert("path".to_string(), Value::String(node_out.path.clone()));
-        let mut obj = serde_json::Map::new();
-        obj.insert("node_output".to_string(), Value::Object(inner));
-        return Ok(Value::Object(obj));
+        let target = graph.nodes.iter().find(|n| n.id == node_out.node_id);
+        if let Some(node) = target {
+            if let Some(out) = node.outputs.iter().find(|o| o.name == node_out.path) {
+                return Ok(Value::String(out.path.clone()));
+            }
+        }
+        return Err(GraphError::ValidationFailed);
     }
     Err(GraphError::ValidationFailed)
 }
@@ -683,7 +761,12 @@ fn validate_param_value(
             }
             if let Some(node_out) = &spec.node_output {
                 let target = graph.nodes.iter().find(|n| n.id == node_out.node_id);
-                if target.is_none() || !target.unwrap().outputs.iter().any(|p| p == &node_out.path)
+                if target.is_none()
+                    || !target
+                        .unwrap()
+                        .outputs
+                        .iter()
+                        .any(|p| p.name == node_out.path)
                 {
                     diags.push(error(
                         "E1021",
@@ -822,6 +905,13 @@ fn is_valid_mount_source(path: &str) -> bool {
         || path.starts_with("work/")
 }
 
+fn is_valid_output_path(path: &str) -> bool {
+    if path.contains("..") {
+        return false;
+    }
+    !path.starts_with('/') && !path.starts_with('\\')
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -829,6 +919,7 @@ mod tests {
     fn base_graph() -> Graph {
         Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![
@@ -836,7 +927,10 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out".to_string(),
+                    }],
                     params: ParamValue::default(),
                     container: None,
                     timeout_ms: None,
@@ -845,12 +939,16 @@ mod tests {
                     retry: RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec!["in".to_string()],
-                    outputs: vec!["out".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out".to_string(),
+                    }],
                     params: ParamValue::default(),
                     container: None,
                     timeout_ms: None,
@@ -859,6 +957,7 @@ mod tests {
                     retry: RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
             ],
             edges: vec![Edge {
@@ -882,6 +981,33 @@ mod tests {
         let a = graph.graph_fingerprint().unwrap();
         let b = graph2.graph_fingerprint().unwrap();
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn canonicalization_stable_over_many_reorders() {
+        let graph = base_graph();
+        let canonical = graph.to_canonical_json().unwrap();
+        let fp = graph.graph_fingerprint().unwrap();
+        for seed in 0..50u64 {
+            let mut g = base_graph();
+            shuffle_with_seed(&mut g.nodes[..], seed + 1);
+            shuffle_with_seed(&mut g.edges[..], seed + 101);
+            let c = g.to_canonical_json().unwrap();
+            let f = g.graph_fingerprint().unwrap();
+            assert_eq!(c, canonical);
+            assert_eq!(f, fp);
+        }
+    }
+
+    fn shuffle_with_seed<T>(items: &mut [T], mut seed: u64) {
+        if items.len() <= 1 {
+            return;
+        }
+        for i in (1..items.len()).rev() {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            let j = (seed % (i as u64 + 1)) as usize;
+            items.swap(i, j);
+        }
     }
 
     #[test]

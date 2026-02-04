@@ -1,5 +1,6 @@
 {
   "spec": "bijux-dag/v0.1",
+  "meta": null,
   "inputs": {},
   "nondeterminism_allowed": false,
   "nodes": [
@@ -8,7 +9,10 @@
       "kind": "const",
       "inputs": [],
       "outputs": [
-        "out_a"
+        {
+          "name": "out_a",
+          "path": "out_a"
+        }
       ],
       "params": {
         "value": 1
@@ -22,7 +26,8 @@
         "backoff_ms": 0
       },
       "effects": [],
-      "env_allowlist": []
+      "env_allowlist": [],
+      "group": null
     },
     {
       "id": "b",
@@ -31,7 +36,10 @@
         "in"
       ],
       "outputs": [
-        "out_b"
+        {
+          "name": "out_b",
+          "path": "out_b"
+        }
       ],
       "params": {
         "value": 2
@@ -45,7 +53,8 @@
         "backoff_ms": 0
       },
       "effects": [],
-      "env_allowlist": []
+      "env_allowlist": [],
+      "group": null
     }
   ],
   "edges": [

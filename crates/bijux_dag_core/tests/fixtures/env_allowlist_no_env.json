@@ -5,10 +5,24 @@
       "id": "s",
       "kind": "shell",
       "inputs": [],
-      "outputs": ["out"],
-      "params": {"argv": ["echo", "x"]},
-      "effects": ["filesystem"],
-      "env_allowlist": ["HOME"]
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "argv": [
+          "echo",
+          "x"
+        ]
+      },
+      "effects": [
+        "filesystem"
+      ],
+      "env_allowlist": [
+        "HOME"
+      ]
     }
   ],
   "edges": []
