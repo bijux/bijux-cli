@@ -2,9 +2,10 @@ mod adapter;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
-    now_unix_ms, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
-    FailureInfo, InputFile, InputsIndex, Manifest, NodeCounts, NodeTrace, OutputSummary,
-    OutputsIndex, Resources as TraceResources, RunDir,
+    now_unix_ms, write_inputs_index, write_outputs_index, write_provenance,
+    write_run_outputs_index, AdapterInfo, ArtifactError, CacheProof, ContainerTrace, FailureInfo,
+    InputFile, InputsIndex, Manifest, NodeCounts, NodeTrace, OutputSummary, OutputsIndex,
+    Provenance, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_core::{
     Effect, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity, SPEC_VERSION,
@@ -59,6 +60,7 @@ pub struct NodeResult {
     pub failure: Option<FailureInfo>,
     pub attempts: u32,
     pub attempt_events: Vec<AttemptEvent>,
+    pub container_meta: Option<bijux_dag_artifacts::ContainerTrace>,
 }
 
 #[derive(Debug, Clone)]
@@ -119,6 +121,7 @@ impl Adapter for ConstAdapter {
             failure: None,
             attempts: 1,
             attempt_events: Vec::new(),
+            container_meta: None,
         })
     }
 }
@@ -195,6 +198,7 @@ impl Adapter for ShellAdapter {
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
+                container_meta: None,
             });
         }
         let fp = exec
@@ -228,6 +232,135 @@ impl Adapter for ShellAdapter {
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
+            container_meta: None,
+        })
+    }
+}
+
+#[derive(Clone)]
+pub struct ContainerAdapter;
+
+impl Adapter for ContainerAdapter {
+    fn id(&self) -> AdapterId {
+        AdapterId {
+            id: "container".to_string(),
+            version: "0.1".to_string(),
+        }
+    }
+
+    fn required_effects(&self) -> EffectSet {
+        EffectSet {
+            filesystem: true,
+            env: false,
+            network: false,
+            clock: false,
+        }
+    }
+
+    fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
+        let node = ctx.node;
+        let exec = ctx.exec;
+        let spec = node
+            .container
+            .as_ref()
+            .ok_or_else(|| RuntimeError::Executor("missing container spec".to_string()))?;
+
+        let node_dir = exec.run_dir.node_dir(&node.id);
+        let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
+        let work_dir = exec.run_dir.node_work_dir(&node.id);
+        fs::create_dir_all(&outputs_dir)?;
+        fs::create_dir_all(&node_dir)?;
+        fs::create_dir_all(&work_dir)?;
+        let stdout_path = exec.run_dir.node_stdout_path(&node.id);
+        let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+
+        let mut cmd = Command::new("docker");
+        cmd.arg("run").arg("--rm");
+
+        if !node.effects.contains(&Effect::Network) {
+            cmd.args(["--network", "none"]);
+        }
+
+        cmd.args(["-v", &format!("{}:/bijux/node", node_dir.display())]);
+
+        let workdir = spec
+            .workdir
+            .clone()
+            .unwrap_or_else(|| "/bijux/node/work".to_string());
+        cmd.args(["--workdir", &workdir]);
+
+        for mount in &spec.mounts {
+            let host_path = node_dir.join(&mount.source);
+            let mut mount_spec = format!("{}:{}", host_path.display(), mount.target);
+            if mount.read_only {
+                mount_spec.push_str(":ro");
+            }
+            cmd.args(["-v", &mount_spec]);
+        }
+
+        for key in &spec.env_allowlist {
+            if let Ok(val) = std::env::var(key) {
+                cmd.arg("-e").arg(format!("{}={}", key, val));
+            }
+        }
+
+        cmd.arg(&spec.image);
+        for part in &spec.command {
+            cmd.arg(part);
+        }
+        for part in &spec.args {
+            cmd.arg(part);
+        }
+
+        let output = cmd.output()?;
+
+        fs::write(&stdout_path, &output.stdout)?;
+        fs::write(&stderr_path, &output.stderr)?;
+        fs::write(outputs_dir.join("stdout.log"), &output.stdout)?;
+        if let Some(failure) = validate_outputs_dir(&outputs_dir) {
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                failure: Some(failure),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: Some(container_trace(spec, "docker")),
+            });
+        }
+        let fp = exec
+            .graph_fingerprint
+            .get(&node.id)
+            .cloned()
+            .unwrap_or_default();
+        write_outputs_index(&outputs_dir, &node.id, &fp)?;
+
+        let success = output.status.success();
+        let failure = if success {
+            None
+        } else {
+            Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "EXEC_FAIL".to_string(),
+                message: "container command failed".to_string(),
+                details: None,
+            })
+        };
+
+        Ok(NodeResult {
+            status: if success {
+                NodeStatus::Success
+            } else {
+                NodeStatus::Failed
+            },
+            stdout_path: stdout_path.display().to_string(),
+            stderr_path: stderr_path.display().to_string(),
+            outputs_dir: outputs_dir.display().to_string(),
+            failure,
+            attempts: 1,
+            attempt_events: Vec::new(),
+            container_meta: Some(container_trace(spec, "docker")),
         })
     }
 }
@@ -251,6 +384,7 @@ pub struct RuntimeOptions {
     pub node_timeout_ms: Option<u64>,
     pub cache_mode: CacheMode,
     pub cache_dir: Option<PathBuf>,
+    pub remote_cache_dir: Option<PathBuf>,
     pub run_id: Option<String>,
     pub latest_symlink: Option<PathBuf>,
     pub policy: Policy,
@@ -267,6 +401,7 @@ impl Default for RuntimeOptions {
             node_timeout_ms: None,
             cache_mode: CacheMode::Off,
             cache_dir: None,
+            remote_cache_dir: None,
             run_id: None,
             latest_symlink: None,
             policy: Policy::default(),
@@ -292,6 +427,7 @@ impl Runtime {
         let mut adapters: HashMap<NodeKind, Arc<dyn Adapter>> = HashMap::new();
         adapters.insert(NodeKind::Const, Arc::new(ConstAdapter));
         adapters.insert(NodeKind::Shell, Arc::new(ShellAdapter));
+        adapters.insert(NodeKind::Container, Arc::new(ContainerAdapter));
         Self { adapters }
     }
 
@@ -360,6 +496,21 @@ impl Runtime {
             run_timeout_ms: options.run_timeout_ms,
         };
         run_dir.write_manifest(&manifest)?;
+
+        let prov = Provenance {
+            os: std::env::consts::OS.to_string(),
+            arch: std::env::consts::ARCH.to_string(),
+            rustc: rustc_version(),
+            tool_version: tool_version(),
+            adapters: registered_adapters(),
+            policy: bijux_dag_artifacts::PolicyInfo {
+                deny_network: options.policy.deny_network,
+                deny_env: options.policy.deny_env,
+                deny_clock: options.policy.deny_clock,
+            },
+            time_source: "system_clock".to_string(),
+        };
+        write_provenance(run_dir.provenance_path(), &prov)?;
 
         let cancel = Arc::new(AtomicBool::new(false));
         let cancel_flag = cancel.clone();
@@ -492,10 +643,10 @@ impl Runtime {
                         "retry not allowed for nondeterministic node".to_string(),
                     ));
                 }
-                if node.kind == NodeKind::Shell {
+                if node.kind == NodeKind::Shell || node.kind == NodeKind::Container {
                     if !node.effects.contains(&Effect::Filesystem) {
                         return Err(RuntimeError::Executor(
-                            "shell node missing filesystem effect".to_string(),
+                            "node missing filesystem effect".to_string(),
                         ));
                     }
                     if options.policy.deny_network && node.effects.contains(&Effect::Network) {
@@ -567,6 +718,7 @@ impl Runtime {
                     None,
                     &aid,
                     &aver,
+                    None,
                 )?;
                 append_event(
                     &mut run_log,
@@ -631,6 +783,7 @@ impl Runtime {
                     Some(cache_proof.clone()),
                     &aid,
                     &aver,
+                    None,
                 )?;
                 append_event(
                     &mut run_log,
@@ -730,6 +883,7 @@ impl Runtime {
                             cache_proof,
                             &aid,
                             &aver,
+                            result.container_meta.clone(),
                         )?;
                         append_event(
                             &mut run_log,
@@ -768,6 +922,7 @@ impl Runtime {
                             cache_proof,
                             &aid,
                             &aver,
+                            None,
                         )?;
                         append_event(
                             &mut run_log,
@@ -814,6 +969,7 @@ impl Runtime {
                         None,
                         &aid,
                         &aver,
+                        None,
                     )?;
                 }
             }
@@ -828,6 +984,8 @@ impl Runtime {
         manifest.finished_unix_ms = finished_unix_ms;
         manifest.node_counts = count_nodes(&status_map);
         manifest.outputs = collect_outputs_summary(&ctx.run_dir)?;
+        let run_index = build_run_outputs_index(&manifest.outputs)?;
+        write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
         run_dir.write_manifest(&manifest)?;
         append_event(
             &mut run_log,
@@ -866,6 +1024,7 @@ fn write_trace(
     cache_proof: Option<CacheProof>,
     adapter_id: &str,
     adapter_version: &str,
+    container_meta: Option<ContainerTrace>,
 ) -> Result<(), RuntimeError> {
     let node = graph
         .nodes
@@ -898,6 +1057,7 @@ fn write_trace(
         }),
         inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
+        container: container_meta,
         cache_proof,
         failure,
     };
@@ -1040,7 +1200,11 @@ fn tool_version() -> String {
 }
 
 pub fn registered_adapters() -> Vec<AdapterInfo> {
-    let adapters: Vec<Arc<dyn Adapter>> = vec![Arc::new(ConstAdapter), Arc::new(ShellAdapter)];
+    let adapters: Vec<Arc<dyn Adapter>> = vec![
+        Arc::new(ConstAdapter),
+        Arc::new(ShellAdapter),
+        Arc::new(ContainerAdapter),
+    ];
     let mut list = Vec::new();
     for a in adapters {
         let id = a.id();
@@ -1072,6 +1236,7 @@ fn adapter_meta_for_kind(kind: &NodeKind) -> (String, String) {
     match kind {
         NodeKind::Const => ("const".to_string(), "0.1".to_string()),
         NodeKind::Shell => ("shell".to_string(), "0.1".to_string()),
+        NodeKind::Container => ("container".to_string(), "0.1".to_string()),
     }
 }
 
@@ -1229,6 +1394,47 @@ fn try_cache_read(
                     corrupt_detected: false,
                 }),
             });
+        }
+        if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
+            let remote_entry = remote_dir.join(&key);
+            if remote_entry.exists() {
+                let (aid, aver) = adapter_meta_for_kind(&node.kind);
+                if !verify_cache_entry(&remote_entry, &key, &aid, &aver)? {
+                    return Ok(CacheRead {
+                        hit: false,
+                        proof: Some(CacheProof {
+                            hit: false,
+                            key,
+                            source: "remote".to_string(),
+                            verified: false,
+                            reason: "remote_corrupt".to_string(),
+                            corrupt_detected: true,
+                        }),
+                    });
+                }
+                let node_dir = ctx.run_dir.node_dir(&node.id);
+                fs::create_dir_all(&node_dir)?;
+                copy_dir_all(
+                    remote_entry.join("outputs"),
+                    ctx.run_dir.node_outputs_dir(&node.id),
+                )?;
+                copy_dir_all(remote_entry.join("logs"), node_dir.clone())?;
+                if let Some(local_dir) = options.cache_dir.as_ref() {
+                    let local_entry = local_dir.join(&key);
+                    let _ = copy_dir_all(&remote_entry, &local_entry);
+                }
+                return Ok(CacheRead {
+                    hit: true,
+                    proof: Some(CacheProof {
+                        hit: true,
+                        key,
+                        source: "remote".to_string(),
+                        verified: true,
+                        reason: format!("fetched:{}", remote_dir.display()),
+                        corrupt_detected: false,
+                    }),
+                });
+            }
         }
     }
     Ok(CacheRead {
@@ -1390,6 +1596,30 @@ fn validate_outputs_dir(dir: &Path) -> Option<FailureInfo> {
     None
 }
 
+fn container_trace(spec: &bijux_dag_core::ContainerSpec, engine: &str) -> ContainerTrace {
+    let image_digest = Command::new(engine)
+        .args(["image", "inspect", "--format", "{{.Id}}", &spec.image])
+        .output()
+        .ok()
+        .and_then(|out| {
+            if out.status.success() {
+                let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if s.is_empty() {
+                    None
+                } else {
+                    Some(s)
+                }
+            } else {
+                None
+            }
+        });
+    ContainerTrace {
+        image: spec.image.clone(),
+        image_digest,
+        engine: engine.to_string(),
+    }
+}
+
 fn collect_outputs_summary(run_dir: &RunDir) -> Result<Vec<OutputSummary>, RuntimeError> {
     let mut out = Vec::new();
     let nodes_dir = run_dir.staging_path().join("nodes");
@@ -1415,6 +1645,30 @@ fn collect_outputs_summary(run_dir: &RunDir) -> Result<Vec<OutputSummary>, Runti
         (a.node_id.clone(), a.file.clone()).cmp(&(b.node_id.clone(), b.file.clone()))
     });
     Ok(out)
+}
+
+fn build_run_outputs_index(outputs: &[OutputSummary]) -> Result<RunOutputsIndex, RuntimeError> {
+    let mut files = Vec::new();
+    for out in outputs {
+        let rel = format!("nodes/{}/outputs/{}", out.node_id, out.file);
+        files.push(RunOutputFile {
+            node_id: out.node_id.clone(),
+            node_fingerprint: out.node_fingerprint.clone(),
+            sha256: out.sha256.clone(),
+            path: rel,
+        });
+    }
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(RunOutputsIndex { files })
+}
+
+fn rustc_version() -> String {
+    if let Ok(out) = Command::new("rustc").arg("--version").output() {
+        if out.status.success() {
+            return String::from_utf8_lossy(&out.stdout).trim().to_string();
+        }
+    }
+    "unknown".to_string()
 }
 
 fn count_nodes(status_map: &HashMap<String, NodeStatus>) -> NodeCounts {
@@ -1455,7 +1709,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bijux_dag_core::{Edge, Effect, ParamValue, PortRef, Severity};
+    use bijux_dag_core::{ContainerSpec, Edge, Effect, MountSpec, ParamValue, PortRef, Severity};
     use std::collections::BTreeMap;
 
     fn param_object(items: Vec<(&str, Value)>) -> ParamValue {
@@ -1464,6 +1718,14 @@ mod tests {
             map.insert(k.to_string(), ParamValue::Literal(v));
         }
         ParamValue::Object(map)
+    }
+
+    fn docker_available() -> bool {
+        Command::new("docker")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
     }
 
     fn sample_graph() -> Graph {
@@ -1478,6 +1740,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_a".to_string()],
                     params: param_object(vec![("value", Value::from(1))]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1494,6 +1757,7 @@ mod tests {
                         "argv",
                         Value::Array(vec![Value::from("echo"), Value::from("ok")]),
                     )]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1590,8 +1854,10 @@ mod tests {
             .unwrap();
         let expected = vec![
             "manifest.json",
+            "provenance.json",
             "graph.snapshot.json",
             "run.log.jsonl",
+            "outputs/index.json",
             "nodes/a/trace.json",
             "nodes/a/stdout.log",
             "nodes/a/stderr.log",
@@ -1667,6 +1933,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out".to_string()],
                     params: param_object(vec![("value", Value::from(1))]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1680,6 +1947,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_a".to_string()],
                     params: param_object(vec![("value", Value::from(2))]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1702,6 +1970,7 @@ mod tests {
         let opt = RuntimeOptions {
             cache_mode: CacheMode::ReadWrite,
             cache_dir: Some(cache_dir.path().to_path_buf()),
+            remote_cache_dir: None,
             ..RuntimeOptions::default()
         };
         let run1 = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
@@ -1720,6 +1989,7 @@ mod tests {
         let opt2 = RuntimeOptions {
             cache_mode: CacheMode::Read,
             cache_dir: Some(cache_dir.path().to_path_buf()),
+            remote_cache_dir: None,
             ..RuntimeOptions::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
@@ -1738,6 +2008,90 @@ mod tests {
     }
 
     #[test]
+    fn remote_cache_hit() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_cache = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let opt = RuntimeOptions {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(remote_cache.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeOptions::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
+
+        let opt2 = RuntimeOptions {
+            cache_mode: CacheMode::Read,
+            cache_dir: Some(local_cache.path().to_path_buf()),
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeOptions::default()
+        };
+        let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
+        let trace_a: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap())
+                .unwrap();
+        let trace_b: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap())
+                .unwrap();
+        let src_a = trace_a.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
+        let src_b = trace_b.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
+        assert!(src_a == Some("remote") || src_b == Some("remote"));
+    }
+
+    #[test]
+    fn remote_cache_corruption_reexecutes() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_cache = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let opt = RuntimeOptions {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(remote_cache.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeOptions::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
+
+        let entries: Vec<_> = fs::read_dir(remote_cache.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        let entry = entries[0].path();
+        let out_file = entry.join("outputs").join("stdout.log");
+        if out_file.exists() {
+            fs::remove_file(out_file).unwrap();
+        }
+
+        let opt2 = RuntimeOptions {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(local_cache.path().to_path_buf()),
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeOptions::default()
+        };
+        let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
+        let trace_a: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap())
+                .unwrap();
+        let trace_b: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap())
+                .unwrap();
+        let bad_a = trace_a
+            .get("cache_proof")
+            .and_then(|v| v.get("corrupt_detected"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let bad_b = trace_b
+            .get("cache_proof")
+            .and_then(|v| v.get("corrupt_detected"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        assert!(bad_a || bad_b);
+    }
+
+    #[test]
     fn downstream_reads_upstream_file() {
         let dir = tempfile::tempdir().unwrap();
         let graph = Graph {
@@ -1751,6 +2105,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_a".to_string()],
                     params: param_object(vec![("value", Value::from("hello"))]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1771,6 +2126,7 @@ mod tests {
                             Value::from("cat ../inputs/a/value.json > ../outputs/out.txt"),
                         ]),
                     )]),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1865,6 +2221,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_a".to_string()],
                     params: param_object(vec![("value", Value::from(1))]),
+                    container: None,
                     timeout_ms: None,
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
@@ -1878,6 +2235,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_b".to_string()],
                     params: param_object(vec![("value", Value::from(2))]),
+                    container: None,
                     timeout_ms: None,
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
@@ -1891,6 +2249,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out_c".to_string()],
                     params: param_object(vec![("value", Value::from(3))]),
+                    container: None,
                     timeout_ms: None,
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
@@ -1919,5 +2278,54 @@ mod tests {
             }
         }
         assert_eq!(scheduled, vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn container_node_writes_output() {
+        if !docker_available() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "c1".to_string(),
+                kind: NodeKind::Container,
+                inputs: vec![],
+                outputs: vec!["out_c".to_string()],
+                params: ParamValue::default(),
+                container: Some(ContainerSpec {
+                    image: "alpine:3.19".to_string(),
+                    command: vec!["sh".to_string(), "-c".to_string()],
+                    args: vec!["echo hi > /bijux/node/outputs/out.txt".to_string()],
+                    env_allowlist: vec![],
+                    mounts: vec![MountSpec {
+                        source: "work".to_string(),
+                        target: "/bijux/node/work".to_string(),
+                        read_only: false,
+                    }],
+                    workdir: Some("/bijux/node/work".to_string()),
+                }),
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeOptions::default())
+            .unwrap();
+        let out = final_path
+            .join("nodes")
+            .join("c1")
+            .join("outputs")
+            .join("out.txt");
+        assert!(out.exists());
     }
 }

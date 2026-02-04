@@ -61,6 +61,8 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_params: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub container: Option<ContainerTrace>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_proof: Option<CacheProof>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureInfo>,
@@ -122,6 +124,30 @@ pub struct OutputSummary {
     pub sha256: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunOutputsIndex {
+    pub files: Vec<RunOutputFile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunOutputFile {
+    pub node_id: String,
+    pub node_fingerprint: String,
+    pub sha256: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Provenance {
+    pub os: String,
+    pub arch: String,
+    pub rustc: String,
+    pub tool_version: String,
+    pub adapters: Vec<AdapterInfo>,
+    pub policy: PolicyInfo,
+    pub time_source: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OutputsIndex {
     pub files: Vec<OutputFile>,
@@ -133,6 +159,14 @@ pub struct OutputFile {
     pub sha256: String,
     pub node_id: String,
     pub node_fingerprint: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ContainerTrace {
+    pub image: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_digest: Option<String>,
+    pub engine: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -219,6 +253,14 @@ impl RunDir {
         self.staging_path.join("run.log.jsonl")
     }
 
+    pub fn run_outputs_index_path(&self) -> PathBuf {
+        self.staging_path.join("outputs").join("index.json")
+    }
+
+    pub fn provenance_path(&self) -> PathBuf {
+        self.staging_path.join("provenance.json")
+    }
+
     pub fn node_outputs_index_path(&self, node_id: &str) -> PathBuf {
         self.node_outputs_dir(node_id).join("index.json")
     }
@@ -280,6 +322,19 @@ pub fn write_outputs_index(
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let index = OutputsIndex { files };
     write_json(dir.as_ref().join("index.json"), &index)
+}
+
+pub fn write_run_outputs_index(
+    dir: impl AsRef<Path>,
+    index: &RunOutputsIndex,
+) -> Result<(), ArtifactError> {
+    let dir = dir.as_ref();
+    fs::create_dir_all(dir)?;
+    write_json(dir.join("index.json"), index)
+}
+
+pub fn write_provenance(path: impl AsRef<Path>, prov: &Provenance) -> Result<(), ArtifactError> {
+    write_json(path, prov)
 }
 
 pub fn write_inputs_index(dir: impl AsRef<Path>, index: &InputsIndex) -> Result<(), ArtifactError> {
