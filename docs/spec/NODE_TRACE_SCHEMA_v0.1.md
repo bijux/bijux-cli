@@ -11,11 +11,13 @@ Required keys:
 - `adapter_version` (string)
 
 Optional:
+- `adapter_binary_sha256` (string)
 - `resources` (object)
 - `inputs_index` (string)
 - `resolved_params` (json)
 - `container` (object)
 - `cache_proof` (object)
+- `skip_reason` (object)
 - `failure` (object)
 
 ## cache_proof
@@ -37,6 +39,13 @@ Optional:
   "code": "string",
   "message": "string",
   "details": <json>?
+}
+```
+
+## skip_reason
+```
+{
+  "reason": "string"
 }
 ```
 

@@ -3,11 +3,13 @@
 ## Graph Fingerprint
 - Compute canonical JSON for the entire graph.
 - Hash with SHA256 of the UTF-8 bytes.
+- Graph metadata is included when present.
 
 ## Node Fingerprint
 - Compute canonical JSON for the node only.
-- Use resolved params (graph inputs substituted; output refs remain explicit).
+- Use resolved params (graph inputs substituted; node output refs resolve to declared output paths).
 - Hash with SHA256 of the UTF-8 bytes.
 
 ## Exclusions
 - Runtime-only fields such as timestamps or execution status are excluded.
+- `group` is excluded from node fingerprints.

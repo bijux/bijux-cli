@@ -43,7 +43,16 @@ cargo run -p bijux_dag_cli -- validate examples/hello.dag.json --explain
 cargo run -p bijux_dag_cli -- run examples/hello.dag.json --out runs/
 
 # run with selectors
-cargo run -p bijux_dag_cli -- run examples/hello.dag.json --out runs/ --only-tag etl
+cargo run -p bijux_dag_cli -- run examples/hello.dag.json --out runs/ --select tag:etl
+
+# init
+cargo run -p bijux_dag_cli -- init
+
+# lint
+cargo run -p bijux_dag_cli -- lint examples/hello.dag.json
+
+# graph (dot)
+cargo run -p bijux_dag_cli -- graph examples/hello.dag.json --format dot
 
 # replay
 cargo run -p bijux_dag_cli -- replay runs/run-<id> --out runs/
@@ -69,7 +78,7 @@ cargo run -p bijux_dag_cli -- cache verify
 ```
 
 See `docs/spec/` for formal definitions, `docs/operations/README.md` for runtime usage,
-and `docs/architecture/ADAPTERS.md` / `docs/architecture/EFFECTS.md` for adapter/effects guidance.
+and `docs/ADAPTERS.md` / `docs/EFFECTS.md` for adapter/effects guidance.
 
 ## License
 Apache-2.0. See `LICENSE` and `NOTICE`.

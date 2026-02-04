@@ -14,10 +14,13 @@ write outputs only to the node sandbox.
 
 - `const` v0.1
   - Effects required: none
-  - Writes `outputs/value.json` from `params.value`.
+  - Writes `params.value` to the declared output file.
 - `shell` v0.1
   - Effects required: `filesystem`
   - Executes an argv list in the node's `work/` directory with a cleared env.
+- `container` v0.1
+  - Effects required: `filesystem`
+  - Runs a container with the node sandbox mounted at `/bijux/node`.
 
 ## Example: Shell Node
 
@@ -26,7 +29,7 @@ write outputs only to the node sandbox.
   "id": "compile",
   "kind": "shell",
   "inputs": ["src"],
-  "outputs": ["bin"],
+  "outputs": [{"name": "bin", "path": "bin"}],
   "params": {
     "argv": ["/usr/bin/cc", "-o", "out.bin", "in.c"]
   },
@@ -41,3 +44,21 @@ write outputs only to the node sandbox.
 2. Declare required effects explicitly.
 3. Ensure outputs are written only under `nodes/<id>/outputs/`.
 4. Add adapter metadata to traces and manifest via runtime registration.
+
+## External Adapter Protocol (v0.1)
+
+If `BIJUX_DAG_ADAPTERS_DIR` is set, bijux-dag discovers executables in that directory.
+Each adapter binary must implement:
+
+- `adapter info --json` returning:
+```
+{
+  "id": "string",
+  "version": "string",
+  "required_effects": {"filesystem": true, "env": false, "network": false, "clock": false},
+  "supported_kinds": ["kind-name"]
+}
+```
+- `adapter execute --node-spec <json> --workdir <dir> --outdir <dir>`
+
+Node traces include the adapter id/version plus a SHA256 of the adapter binary.

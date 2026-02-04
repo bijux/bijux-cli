@@ -29,7 +29,7 @@ Shell nodes must declare `env` if they use `env_allowlist`:
   "id": "build",
   "kind": "shell",
   "inputs": ["src"],
-  "outputs": ["bin"],
+  "outputs": [{"name": "bin", "path": "bin"}],
   "params": {"argv": ["make"]},
   "effects": ["filesystem", "env"],
   "env_allowlist": ["PATH", "MAKEFLAGS"]
