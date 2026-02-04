@@ -27,6 +27,8 @@ pub struct Node {
     #[serde(default)]
     pub params: ParamValue,
     #[serde(default)]
+    pub container: Option<ContainerSpec>,
+    #[serde(default)]
     pub timeout_ms: Option<u64>,
     #[serde(default)]
     pub resources: Option<Resources>,
@@ -82,6 +84,7 @@ pub struct ResolvedGraph {
 pub enum NodeKind {
     Const,
     Shell,
+    Container,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -112,6 +115,30 @@ pub struct PortRef {
 pub struct Resources {
     pub cpu: u32,
     pub mem_mb: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContainerSpec {
+    pub image: String,
+    pub command: Vec<String>,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub env_allowlist: Vec<String>,
+    #[serde(default)]
+    pub mounts: Vec<MountSpec>,
+    #[serde(default)]
+    pub workdir: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MountSpec {
+    pub source: String,
+    pub target: String,
+    #[serde(default)]
+    pub read_only: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -193,6 +220,22 @@ impl Graph {
                     Some("Include filesystem effect for shell nodes".to_string()),
                 ));
             }
+            if node.kind == NodeKind::Container && node.container.is_none() {
+                diags.push(error(
+                    "E1023",
+                    format!("missing container spec for node: {}", node.id),
+                    format!("/nodes/{}/container", node.id),
+                    Some("Provide container spec for container nodes".to_string()),
+                ));
+            }
+            if node.kind == NodeKind::Container && !node.effects.contains(&Effect::Filesystem) {
+                diags.push(error(
+                    "E1009",
+                    format!("container node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for container nodes".to_string()),
+                ));
+            }
             if node.retry.max_attempts > 0
                 && (node.effects.contains(&Effect::Clock)
                     || node.effects.contains(&Effect::Network))
@@ -217,6 +260,39 @@ impl Graph {
                     format!("/nodes/{}/env_allowlist", node.id),
                     Some("Add env effect when using env_allowlist".to_string()),
                 ));
+            }
+            if node.kind == NodeKind::Container {
+                if let Some(ref spec) = node.container {
+                    if !spec.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
+                        diags.push(error(
+                            "E1010",
+                            format!("container env_allowlist without env effect: {}", node.id),
+                            format!("/nodes/{}/container/env_allowlist", node.id),
+                            Some("Add env effect when using env_allowlist".to_string()),
+                        ));
+                    }
+                    for (idx, mnt) in spec.mounts.iter().enumerate() {
+                        if !is_valid_mount_source(&mnt.source) {
+                            diags.push(error(
+                                "E1024",
+                                format!("invalid mount source: {}", mnt.source),
+                                format!("/nodes/{}/container/mounts/{}", node.id, idx),
+                                Some(
+                                    "Use inputs/, outputs/, or work/ paths without '..'"
+                                        .to_string(),
+                                ),
+                            ));
+                        }
+                        if !mnt.target.starts_with("/bijux/node/") {
+                            diags.push(error(
+                                "E1024",
+                                format!("invalid mount target: {}", mnt.target),
+                                format!("/nodes/{}/container/mounts/{}", node.id, idx),
+                                Some("Mount targets must be under /bijux/node/".to_string()),
+                            ));
+                        }
+                    }
+                }
             }
             node_map.insert(node.id.as_str(), node);
         }
@@ -736,6 +812,16 @@ fn effect_order(effect: &Effect) -> u8 {
     }
 }
 
+fn is_valid_mount_source(path: &str) -> bool {
+    if path.contains("..") {
+        return false;
+    }
+    path.starts_with("inputs/")
+        || path.starts_with("outputs/")
+        || path == "work"
+        || path.starts_with("work/")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -752,6 +838,7 @@ mod tests {
                     inputs: vec![],
                     outputs: vec!["out".to_string()],
                     params: ParamValue::default(),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -765,6 +852,7 @@ mod tests {
                     inputs: vec!["in".to_string()],
                     outputs: vec!["out".to_string()],
                     params: ParamValue::default(),
+                    container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
