@@ -55,6 +55,8 @@ pub struct NodeTrace {
     pub adapter_id: String,
     pub adapter_version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub adapter_binary_sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resources: Option<Resources>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inputs_index: Option<String>,
@@ -64,6 +66,8 @@ pub struct NodeTrace {
     pub container: Option<ContainerTrace>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_proof: Option<CacheProof>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub skip_reason: Option<SkipReason>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureInfo>,
 }
@@ -86,6 +90,11 @@ pub struct CacheProof {
     pub reason: String,
     #[serde(default)]
     pub corrupt_detected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkipReason {
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -179,6 +188,8 @@ pub struct InputFile {
     pub path: String,
     pub sha256: String,
     pub from_node: String,
+    pub from_node_fingerprint: String,
+    pub from_output: String,
 }
 
 impl RunDir {
@@ -297,27 +308,22 @@ pub fn write_outputs_index(
     dir: impl AsRef<Path>,
     node_id: &str,
     node_fingerprint: &str,
+    output_paths: &[String],
 ) -> Result<(), ArtifactError> {
     let mut files = Vec::new();
-    if dir.as_ref().exists() {
-        for entry in fs::read_dir(&dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
-                continue;
-            }
-            if path.is_file() {
-                let data = fs::read(&path)?;
-                let sha = sha256_bytes(&data);
-                let rel = path.file_name().unwrap().to_string_lossy().to_string();
-                files.push(OutputFile {
-                    path: rel,
-                    sha256: sha,
-                    node_id: node_id.to_string(),
-                    node_fingerprint: node_fingerprint.to_string(),
-                });
-            }
+    for rel in output_paths {
+        let path = dir.as_ref().join(rel);
+        if !path.is_file() {
+            continue;
         }
+        let data = fs::read(&path)?;
+        let sha = sha256_bytes(&data);
+        files.push(OutputFile {
+            path: rel.clone(),
+            sha256: sha,
+            node_id: node_id.to_string(),
+            node_fingerprint: node_fingerprint.to_string(),
+        });
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let index = OutputsIndex { files };

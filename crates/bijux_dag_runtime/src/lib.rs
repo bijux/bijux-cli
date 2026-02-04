@@ -8,8 +8,9 @@ use bijux_dag_artifacts::{
     Provenance, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_core::{
-    Effect, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity, SPEC_VERSION,
+    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity, SPEC_VERSION,
 };
+use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -61,6 +62,7 @@ pub struct NodeResult {
     pub attempts: u32,
     pub attempt_events: Vec<AttemptEvent>,
     pub container_meta: Option<bijux_dag_artifacts::ContainerTrace>,
+    pub adapter_binary_sha256: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -82,6 +84,10 @@ impl Adapter for ConstAdapter {
         }
     }
 
+    fn supported_kinds(&self) -> Vec<String> {
+        vec!["const".to_string()]
+    }
+
     fn required_effects(&self) -> EffectSet {
         EffectSet::default()
     }
@@ -100,10 +106,17 @@ impl Adapter for ConstAdapter {
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
 
         let value = params.get("value").cloned().unwrap_or(Value::Null);
-        fs::write(
-            outputs_dir.join("value.json"),
-            serde_json::to_vec_pretty(&value)?,
-        )?;
+        let target = node
+            .outputs
+            .iter()
+            .find(|o| o.name == "value")
+            .or_else(|| node.outputs.first())
+            .ok_or_else(|| RuntimeError::Executor("no outputs declared".to_string()))?;
+        let out_path = outputs_dir.join(&target.path);
+        if let Some(parent) = out_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(out_path, serde_json::to_vec_pretty(&value)?)?;
         fs::write(&stdout_path, b"")?;
         fs::write(&stderr_path, b"")?;
         let fp = exec
@@ -111,7 +124,8 @@ impl Adapter for ConstAdapter {
             .get(&node.id)
             .cloned()
             .unwrap_or_default();
-        write_outputs_index(&outputs_dir, &node.id, &fp)?;
+        let output_paths = declared_output_paths(node);
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         Ok(NodeResult {
             status: NodeStatus::Success,
@@ -122,6 +136,7 @@ impl Adapter for ConstAdapter {
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: None,
+            adapter_binary_sha256: None,
         })
     }
 }
@@ -135,6 +150,10 @@ impl Adapter for ShellAdapter {
             id: "shell".to_string(),
             version: "0.1".to_string(),
         }
+    }
+
+    fn supported_kinds(&self) -> Vec<String> {
+        vec!["shell".to_string()]
     }
 
     fn required_effects(&self) -> EffectSet {
@@ -188,8 +207,8 @@ impl Adapter for ShellAdapter {
 
         fs::write(&stdout_path, &output.stdout)?;
         fs::write(&stderr_path, &output.stderr)?;
-        fs::write(outputs_dir.join("stdout.log"), &output.stdout)?;
-        if let Some(failure) = validate_outputs_dir(&outputs_dir) {
+        let output_paths = declared_output_paths(node);
+        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
@@ -199,6 +218,7 @@ impl Adapter for ShellAdapter {
                 attempts: 1,
                 attempt_events: Vec::new(),
                 container_meta: None,
+                adapter_binary_sha256: None,
             });
         }
         let fp = exec
@@ -206,7 +226,7 @@ impl Adapter for ShellAdapter {
             .get(&node.id)
             .cloned()
             .unwrap_or_default();
-        write_outputs_index(&outputs_dir, &node.id, &fp)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
         let failure = if success {
@@ -233,6 +253,7 @@ impl Adapter for ShellAdapter {
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: None,
+            adapter_binary_sha256: None,
         })
     }
 }
@@ -246,6 +267,10 @@ impl Adapter for ContainerAdapter {
             id: "container".to_string(),
             version: "0.1".to_string(),
         }
+    }
+
+    fn supported_kinds(&self) -> Vec<String> {
+        vec!["container".to_string()]
     }
 
     fn required_effects(&self) -> EffectSet {
@@ -316,8 +341,8 @@ impl Adapter for ContainerAdapter {
 
         fs::write(&stdout_path, &output.stdout)?;
         fs::write(&stderr_path, &output.stderr)?;
-        fs::write(outputs_dir.join("stdout.log"), &output.stdout)?;
-        if let Some(failure) = validate_outputs_dir(&outputs_dir) {
+        let output_paths = declared_output_paths(node);
+        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
@@ -327,6 +352,7 @@ impl Adapter for ContainerAdapter {
                 attempts: 1,
                 attempt_events: Vec::new(),
                 container_meta: Some(container_trace(spec, "docker")),
+                adapter_binary_sha256: None,
             });
         }
         let fp = exec
@@ -334,7 +360,7 @@ impl Adapter for ContainerAdapter {
             .get(&node.id)
             .cloned()
             .unwrap_or_default();
-        write_outputs_index(&outputs_dir, &node.id, &fp)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
         let failure = if success {
@@ -361,6 +387,144 @@ impl Adapter for ContainerAdapter {
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: Some(container_trace(spec, "docker")),
+            adapter_binary_sha256: None,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalAdapterInfo {
+    id: String,
+    version: String,
+    required_effects: ExternalEffectSet,
+    supported_kinds: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalEffectSet {
+    filesystem: bool,
+    env: bool,
+    network: bool,
+    clock: bool,
+}
+
+#[derive(Clone)]
+struct ExternalAdapter {
+    path: PathBuf,
+    info: ExternalAdapterInfo,
+    binary_hash: Option<String>,
+}
+
+impl Adapter for ExternalAdapter {
+    fn id(&self) -> AdapterId {
+        AdapterId {
+            id: self.info.id.clone(),
+            version: self.info.version.clone(),
+        }
+    }
+
+    fn supported_kinds(&self) -> Vec<String> {
+        self.info.supported_kinds.clone()
+    }
+
+    fn required_effects(&self) -> EffectSet {
+        EffectSet {
+            filesystem: self.info.required_effects.filesystem,
+            env: self.info.required_effects.env,
+            network: self.info.required_effects.network,
+            clock: self.info.required_effects.clock,
+        }
+    }
+
+    fn binary_hash(&self) -> Option<String> {
+        self.binary_hash.clone()
+    }
+
+    fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
+        let node = ctx.node;
+        let exec = ctx.exec;
+
+        let node_dir = exec.run_dir.node_dir(&node.id);
+        let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
+        let work_dir = exec.run_dir.node_work_dir(&node.id);
+        fs::create_dir_all(&outputs_dir)?;
+        fs::create_dir_all(&node_dir)?;
+        fs::create_dir_all(&work_dir)?;
+        let stdout_path = exec.run_dir.node_stdout_path(&node.id);
+        let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+
+        let node_spec = serde_json::to_string(node)?;
+        let mut cmd = Command::new(&self.path);
+        cmd.args([
+            "execute",
+            "--node-spec",
+            &node_spec,
+            "--workdir",
+            &work_dir.display().to_string(),
+            "--outdir",
+            &outputs_dir.display().to_string(),
+        ]);
+        cmd.current_dir(&work_dir);
+        cmd.env_clear();
+        for key in &node.env_allowlist {
+            if let Ok(val) = std::env::var(key) {
+                cmd.env(key, val);
+            }
+        }
+        let output = cmd.output()?;
+
+        fs::write(&stdout_path, &output.stdout)?;
+        fs::write(&stderr_path, &output.stderr)?;
+
+        let output_paths = declared_output_paths(node);
+        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                failure: Some(failure),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: None,
+                adapter_binary_sha256: self.binary_hash.clone(),
+            });
+        }
+        let fp = exec
+            .graph_fingerprint
+            .get(&node.id)
+            .cloned()
+            .unwrap_or_default();
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
+
+        let success = output.status.success();
+        let failure = if success {
+            None
+        } else {
+            Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "EXEC_FAIL".to_string(),
+                message: "adapter command failed".to_string(),
+                details: None,
+            })
+        };
+
+        Ok(NodeResult {
+            status: if success {
+                NodeStatus::Success
+            } else {
+                NodeStatus::Failed
+            },
+            stdout_path: stdout_path.display().to_string(),
+            stderr_path: stderr_path.display().to_string(),
+            outputs_dir: outputs_dir.display().to_string(),
+            failure,
+            attempts: 1,
+            attempt_events: Vec::new(),
+            container_meta: None,
+            adapter_binary_sha256: self.binary_hash.clone(),
         })
     }
 }
@@ -382,14 +546,14 @@ pub struct RuntimeOptions {
     pub cpu_budget: Option<u32>,
     pub run_timeout_ms: Option<u64>,
     pub node_timeout_ms: Option<u64>,
+    pub materialize_inputs: MaterializeMode,
     pub cache_mode: CacheMode,
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
     pub run_id: Option<String>,
     pub latest_symlink: Option<PathBuf>,
     pub policy: Policy,
-    pub only_tag: Option<String>,
-    pub skip_tag: Option<String>,
+    pub selectors: SelectorSet,
 }
 
 impl Default for RuntimeOptions {
@@ -399,16 +563,36 @@ impl Default for RuntimeOptions {
             cpu_budget: None,
             run_timeout_ms: None,
             node_timeout_ms: None,
+            materialize_inputs: MaterializeMode::Copy,
             cache_mode: CacheMode::Off,
             cache_dir: None,
             remote_cache_dir: None,
             run_id: None,
             latest_symlink: None,
             policy: Policy::default(),
-            only_tag: None,
-            skip_tag: None,
+            selectors: SelectorSet::default(),
         }
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SelectorSet {
+    pub include: Vec<Selector>,
+    pub exclude: Vec<Selector>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Selector {
+    IdPrefix(String),
+    Tag(String),
+    Kind(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MaterializeMode {
+    Copy,
+    Hardlink,
+    Symlink,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -419,16 +603,36 @@ pub struct Policy {
 }
 
 pub struct Runtime {
-    adapters: HashMap<NodeKind, Arc<dyn Adapter>>,
+    adapters: HashMap<String, Arc<dyn Adapter>>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
-        let mut adapters: HashMap<NodeKind, Arc<dyn Adapter>> = HashMap::new();
-        adapters.insert(NodeKind::Const, Arc::new(ConstAdapter));
-        adapters.insert(NodeKind::Shell, Arc::new(ShellAdapter));
-        adapters.insert(NodeKind::Container, Arc::new(ContainerAdapter));
+        let mut adapters: HashMap<String, Arc<dyn Adapter>> = HashMap::new();
+        register_adapter(&mut adapters, Arc::new(ConstAdapter));
+        register_adapter(&mut adapters, Arc::new(ShellAdapter));
+        register_adapter(&mut adapters, Arc::new(ContainerAdapter));
+        for adapter in discover_external_adapters().unwrap_or_default() {
+            register_adapter(&mut adapters, adapter);
+        }
         Self { adapters }
+    }
+
+    fn adapter_for_kind(&self, kind: &NodeKind) -> Result<Arc<dyn Adapter>, RuntimeError> {
+        self.adapters
+            .get(kind.as_str())
+            .map(Arc::clone)
+            .ok_or_else(|| RuntimeError::Executor("missing adapter".to_string()))
+    }
+
+    fn adapter_meta_for_kind(&self, kind: &NodeKind) -> (String, String) {
+        self.adapters
+            .get(kind.as_str())
+            .map(|a| {
+                let id = a.id();
+                (id.id, id.version)
+            })
+            .unwrap_or_else(|| ("unknown".to_string(), "unknown".to_string()))
     }
 
     pub fn run(
@@ -643,32 +847,22 @@ impl Runtime {
                         "retry not allowed for nondeterministic node".to_string(),
                     ));
                 }
-                if node.kind == NodeKind::Shell || node.kind == NodeKind::Container {
-                    if !node.effects.contains(&Effect::Filesystem) {
-                        return Err(RuntimeError::Executor(
-                            "node missing filesystem effect".to_string(),
-                        ));
-                    }
-                    if options.policy.deny_network && node.effects.contains(&Effect::Network) {
-                        return Err(RuntimeError::Executor(
-                            "network effect denied by policy".to_string(),
-                        ));
-                    }
-                    if options.policy.deny_env && node.effects.contains(&Effect::Env) {
-                        return Err(RuntimeError::Executor(
-                            "env effect denied by policy".to_string(),
-                        ));
-                    }
-                    if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
-                        return Err(RuntimeError::Executor(
-                            "clock effect denied by policy".to_string(),
-                        ));
-                    }
+                if options.policy.deny_network && node.effects.contains(&Effect::Network) {
+                    return Err(RuntimeError::Executor(
+                        "network effect denied by policy".to_string(),
+                    ));
                 }
-                let adapter = self
-                    .adapters
-                    .get(&node.kind)
-                    .ok_or_else(|| RuntimeError::Executor("missing adapter".to_string()))?;
+                if options.policy.deny_env && node.effects.contains(&Effect::Env) {
+                    return Err(RuntimeError::Executor(
+                        "env effect denied by policy".to_string(),
+                    ));
+                }
+                if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
+                    return Err(RuntimeError::Executor(
+                        "clock effect denied by policy".to_string(),
+                    ));
+                }
+                let adapter = self.adapter_for_kind(&node.kind)?;
                 let required = adapter.required_effects();
                 let declared = EffectSet::from_effects(&node.effects);
                 if required.filesystem && !declared.filesystem
@@ -681,7 +875,15 @@ impl Runtime {
                     ));
                 }
 
-                let cache_read = try_cache_read(&options, &node, &ctx, graph)?;
+                let adapter_id = adapter.id();
+                let cache_read = try_cache_read(
+                    &options,
+                    &node,
+                    &ctx,
+                    graph,
+                    &adapter_id.id,
+                    &adapter_id.version,
+                )?;
                 if let Some(proof) = cache_read.proof.clone() {
                     if !cache_read.hit {
                         cache_proofs.insert(node_id.clone(), proof);
@@ -704,7 +906,11 @@ impl Runtime {
                     .find(|n| n.id == *node_id)
                     .map(|n| n.kind.clone())
                     .unwrap_or(NodeKind::Const);
-                let (aid, aver) = adapter_meta_for_kind(&node_kind);
+                let (aid, aver) = self.adapter_meta_for_kind(&node_kind);
+                let adapter_hash = self
+                    .adapter_for_kind(&node_kind)
+                    .ok()
+                    .and_then(|a| a.binary_hash());
                 let started = now_unix_ms();
                 write_trace(
                     &ctx,
@@ -719,6 +925,10 @@ impl Runtime {
                     &aid,
                     &aver,
                     None,
+                    adapter_hash,
+                    Some(bijux_dag_artifacts::SkipReason {
+                        reason: reason.clone(),
+                    }),
                 )?;
                 append_event(
                     &mut run_log,
@@ -769,7 +979,11 @@ impl Runtime {
 
             for (node_id, node, cache_proof) in &cached {
                 status_map.insert(node_id.clone(), NodeStatus::Cached);
-                let (aid, aver) = adapter_meta_for_kind(&node.kind);
+                let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
+                let adapter_hash = self
+                    .adapter_for_kind(&node.kind)
+                    .ok()
+                    .and_then(|a| a.binary_hash());
                 let started = now_unix_ms();
                 write_trace(
                     &ctx,
@@ -784,6 +998,8 @@ impl Runtime {
                     &aid,
                     &aver,
                     None,
+                    adapter_hash,
+                    None,
                 )?;
                 append_event(
                     &mut run_log,
@@ -794,16 +1010,13 @@ impl Runtime {
                         "status": "cached",
                     }),
                 )?;
-                try_cache_write(&options, node, &ctx, graph)?;
+                let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
+                try_cache_write(&options, node, &ctx, graph, &aid, &aver)?;
             }
 
             for (node_id, node, params) in &to_start {
-                materialize_inputs(&ctx, graph, node_id)?;
-                let adapter = self
-                    .adapters
-                    .get(&node.kind)
-                    .ok_or_else(|| RuntimeError::Executor("missing adapter".to_string()))?;
-                let adapter = Arc::clone(adapter);
+                materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
+                let adapter = self.adapter_for_kind(&node.kind)?;
                 let ctx_clone = ExecutionContext {
                     run_dir: Arc::clone(&ctx.run_dir),
                     graph_fingerprint: ctx.graph_fingerprint.clone(),
@@ -847,7 +1060,11 @@ impl Runtime {
             for (node_id, node, started, finished, res) in results {
                 match res {
                     Ok(result) => {
-                        let (aid, aver) = adapter_meta_for_kind(&node.kind);
+                        let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
+                        let adapter_hash = self
+                            .adapter_for_kind(&node.kind)
+                            .ok()
+                            .and_then(|a| a.binary_hash());
                         let trace_failure = result.failure.clone();
                         let cache_proof = cache_proofs.get(&node_id).cloned();
                         for attempt in &result.attempt_events {
@@ -884,6 +1101,8 @@ impl Runtime {
                             &aid,
                             &aver,
                             result.container_meta.clone(),
+                            adapter_hash,
+                            None,
                         )?;
                         append_event(
                             &mut run_log,
@@ -898,13 +1117,18 @@ impl Runtime {
                             status_map.insert(node_id.clone(), NodeStatus::Failed);
                         } else {
                             status_map.insert(node_id.clone(), result.status.clone());
-                            try_cache_write(&options, &node, &ctx, graph)?;
+                            let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
+                            try_cache_write(&options, &node, &ctx, graph, &aid, &aver)?;
                         }
                     }
                     Err(err) => {
-                        let (aid, aver) = adapter_meta_for_kind(&node.kind);
+                        let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
                         status_map.insert(node_id.clone(), NodeStatus::Failed);
                         let cache_proof = cache_proofs.get(&node_id).cloned();
+                        let adapter_hash = self
+                            .adapter_for_kind(&node.kind)
+                            .ok()
+                            .and_then(|a| a.binary_hash());
                         write_trace(
                             &ctx,
                             graph,
@@ -922,6 +1146,8 @@ impl Runtime {
                             cache_proof,
                             &aid,
                             &aver,
+                            None,
+                            adapter_hash,
                             None,
                         )?;
                         append_event(
@@ -955,7 +1181,7 @@ impl Runtime {
             for node in &graph.nodes {
                 if !status_map.contains_key(&node.id) {
                     status_map.insert(node.id.clone(), NodeStatus::Skipped);
-                    let (aid, aver) = adapter_meta_for_kind(&node.kind);
+                    let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
                     let started = now_unix_ms();
                     write_trace(
                         &ctx,
@@ -970,6 +1196,12 @@ impl Runtime {
                         &aid,
                         &aver,
                         None,
+                        self.adapter_for_kind(&node.kind)
+                            .ok()
+                            .and_then(|a| a.binary_hash()),
+                        Some(bijux_dag_artifacts::SkipReason {
+                            reason: "cancelled".to_string(),
+                        }),
                     )?;
                 }
             }
@@ -1025,6 +1257,8 @@ fn write_trace(
     adapter_id: &str,
     adapter_version: &str,
     container_meta: Option<ContainerTrace>,
+    adapter_binary_sha256: Option<String>,
+    skip_reason: Option<bijux_dag_artifacts::SkipReason>,
 ) -> Result<(), RuntimeError> {
     let node = graph
         .nodes
@@ -1051,6 +1285,7 @@ fn write_trace(
         )?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
+        adapter_binary_sha256,
         resources: node.resources.as_ref().map(|r| TraceResources {
             cpu: r.cpu,
             mem_mb: r.mem_mb,
@@ -1059,6 +1294,7 @@ fn write_trace(
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         container: container_meta,
         cache_proof,
+        skip_reason,
         failure,
     };
     let data = serde_json::to_vec_pretty(&trace)?;
@@ -1110,17 +1346,32 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
 
 fn filter_reason(graph: &Graph, node_id: &str, options: &RuntimeOptions) -> Option<String> {
     let node = graph.nodes.iter().find(|n| n.id == node_id)?;
-    if let Some(ref only) = options.only_tag {
-        if !node.tags.iter().any(|t| t == only) {
-            return Some("filtered".to_string());
-        }
+    if !options.selectors.include.is_empty()
+        && !options
+            .selectors
+            .include
+            .iter()
+            .any(|sel| selector_matches(node, sel))
+    {
+        return Some("filtered".to_string());
     }
-    if let Some(ref skip) = options.skip_tag {
-        if node.tags.iter().any(|t| t == skip) {
-            return Some("filtered".to_string());
-        }
+    if options
+        .selectors
+        .exclude
+        .iter()
+        .any(|sel| selector_matches(node, sel))
+    {
+        return Some("filtered".to_string());
     }
     None
+}
+
+fn selector_matches(node: &Node, selector: &Selector) -> bool {
+    match selector {
+        Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
+        Selector::Tag(tag) => node.tags.iter().any(|t| t == tag),
+        Selector::Kind(kind) => node.kind.as_str() == kind,
+    }
 }
 
 fn execute_with_retries(
@@ -1199,12 +1450,58 @@ fn tool_version() -> String {
     base.to_string()
 }
 
+fn register_adapter(map: &mut HashMap<String, Arc<dyn Adapter>>, adapter: Arc<dyn Adapter>) {
+    for kind in adapter.supported_kinds() {
+        map.entry(kind).or_insert_with(|| Arc::clone(&adapter));
+    }
+}
+
+fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
+    let dir = match std::env::var("BIJUX_DAG_ADAPTERS_DIR") {
+        Ok(v) if !v.is_empty() => PathBuf::from(v),
+        _ => return Ok(Vec::new()),
+    };
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let mut entries: Vec<_> = fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
+    entries.sort_by_key(|e| e.file_name());
+    let mut adapters: Vec<Arc<dyn Adapter>> = Vec::new();
+    for entry in entries {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let info = match Command::new(&path).args(["info", "--json"]).output() {
+            Ok(out) if out.status.success() => {
+                serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout).ok()
+            }
+            _ => None,
+        };
+        let info = match info {
+            Some(i) => i,
+            None => continue,
+        };
+        let binary_hash = fs::read(&path).ok().map(|b| sha256_bytes(&b));
+        let adapter = ExternalAdapter {
+            path: path.clone(),
+            info,
+            binary_hash,
+        };
+        adapters.push(Arc::new(adapter));
+    }
+    Ok(adapters)
+}
+
 pub fn registered_adapters() -> Vec<AdapterInfo> {
-    let adapters: Vec<Arc<dyn Adapter>> = vec![
+    let mut adapters: Vec<Arc<dyn Adapter>> = vec![
         Arc::new(ConstAdapter),
         Arc::new(ShellAdapter),
         Arc::new(ContainerAdapter),
     ];
+    if let Ok(mut external) = discover_external_adapters() {
+        adapters.append(&mut external);
+    }
     let mut list = Vec::new();
     for a in adapters {
         let id = a.id();
@@ -1230,14 +1527,6 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     }
     list.sort_by(|a, b| a.adapter_id.cmp(&b.adapter_id));
     list
-}
-
-fn adapter_meta_for_kind(kind: &NodeKind) -> (String, String) {
-    match kind {
-        NodeKind::Const => ("const".to_string(), "0.1".to_string()),
-        NodeKind::Shell => ("shell".to_string(), "0.1".to_string()),
-        NodeKind::Container => ("container".to_string(), "0.1".to_string()),
-    }
 }
 
 fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {
@@ -1274,66 +1563,67 @@ fn materialize_inputs(
     ctx: &ExecutionContext,
     graph: &Graph,
     node_id: &str,
+    mode: MaterializeMode,
 ) -> Result<(), RuntimeError> {
     let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
     fs::create_dir_all(&inputs_dir)?;
+    let mut files = Vec::new();
     for edge in &graph.edges {
         if edge.to.node_id != node_id {
             continue;
         }
-        let src_dir = ctx.run_dir.node_outputs_dir(&edge.from.node_id);
-        let dst_dir = inputs_dir.join(&edge.from.node_id);
-        if src_dir.exists() {
-            copy_dir_all(src_dir, dst_dir)?;
+        let from_node = graph
+            .nodes
+            .iter()
+            .find(|n| n.id == edge.from.node_id)
+            .ok_or_else(|| RuntimeError::Executor("missing source node".to_string()))?;
+        let out = from_node
+            .outputs
+            .iter()
+            .find(|o| o.name == edge.from.port)
+            .ok_or_else(|| RuntimeError::Executor("missing output port".to_string()))?;
+        let src_path = ctx
+            .run_dir
+            .node_outputs_dir(&edge.from.node_id)
+            .join(&out.path);
+        let dst_dir = inputs_dir.join(&edge.from.node_id).join(&edge.to.port);
+        fs::create_dir_all(&dst_dir)?;
+        let dst_path = dst_dir.join(&out.path);
+        if let Some(parent) = dst_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        if src_path.exists() {
+            materialize_file(&src_path, &dst_path, mode)?;
+            let data = fs::read(&dst_path)?;
+            let sha = sha256_bytes(&data);
+            let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
+            let rel_str = rel.to_string_lossy().to_string();
+            let from_fp = ctx
+                .graph_fingerprint
+                .get(&edge.from.node_id)
+                .cloned()
+                .unwrap_or_default();
+            files.push(InputFile {
+                path: rel_str,
+                sha256: sha,
+                from_node: edge.from.node_id.clone(),
+                from_node_fingerprint: from_fp,
+                from_output: edge.from.port.clone(),
+            });
         }
     }
-    let index = build_inputs_index(&inputs_dir)?;
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    let index = InputsIndex { files };
     write_inputs_index(&inputs_dir, &index)?;
     Ok(())
 }
 
-fn build_inputs_index(dir: &Path) -> Result<InputsIndex, RuntimeError> {
-    let mut files = Vec::new();
-    if !dir.exists() {
-        return Ok(InputsIndex { files });
-    }
-    let mut stack = vec![dir.to_path_buf()];
-    while let Some(cur) = stack.pop() {
-        let mut entries: Vec<_> = fs::read_dir(&cur)?.filter_map(|e| e.ok()).collect();
-        entries.sort_by_key(|e| e.file_name());
-        for entry in entries {
-            let path = entry.path();
-            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
-                continue;
-            }
-            if path.is_dir() {
-                stack.push(path);
-                continue;
-            }
-            if path.is_file() {
-                let data = fs::read(&path)?;
-                let sha = sha256_bytes(&data);
-                let rel = path.strip_prefix(dir).unwrap_or(&path);
-                let rel_str = rel.to_string_lossy().to_string();
-                let from_node = rel
-                    .components()
-                    .next()
-                    .map(|c| c.as_os_str().to_string_lossy().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
-                files.push(InputFile {
-                    path: rel_str,
-                    sha256: sha,
-                    from_node,
-                });
-            }
-        }
-    }
-    files.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(InputsIndex { files })
-}
-
 fn cache_dir_from_env() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
+}
+
+fn declared_output_paths(node: &Node) -> Vec<String> {
+    node.outputs.iter().map(|o| o.path.clone()).collect()
 }
 
 fn try_cache_read(
@@ -1341,6 +1631,8 @@ fn try_cache_read(
     node: &Node,
     ctx: &ExecutionContext,
     graph: &Graph,
+    adapter_id: &str,
+    adapter_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     if options.cache_mode == CacheMode::Off {
         return Ok(CacheRead {
@@ -1362,8 +1654,7 @@ fn try_cache_read(
         let key = graph.node_fingerprint(node)?;
         let entry = cache_dir.join(&key);
         if entry.exists() {
-            let (aid, aver) = adapter_meta_for_kind(&node.kind);
-            if !verify_cache_entry(&entry, &key, &aid, &aver)? {
+            if !verify_cache_entry(&entry, &key, adapter_id, adapter_version)? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -1398,8 +1689,7 @@ fn try_cache_read(
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
             if remote_entry.exists() {
-                let (aid, aver) = adapter_meta_for_kind(&node.kind);
-                if !verify_cache_entry(&remote_entry, &key, &aid, &aver)? {
+                if !verify_cache_entry(&remote_entry, &key, adapter_id, adapter_version)? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -1448,6 +1738,8 @@ fn try_cache_write(
     node: &Node,
     ctx: &ExecutionContext,
     graph: &Graph,
+    adapter_id: &str,
+    adapter_version: &str,
 ) -> Result<(), RuntimeError> {
     if options.cache_mode != CacheMode::ReadWrite {
         return Ok(());
@@ -1464,8 +1756,8 @@ fn try_cache_write(
     let meta = serde_json::json!({
         "node_id": node.id,
         "node_fingerprint": key,
-        "adapter_id": adapter_meta_for_kind(&node.kind).0,
-        "adapter_version": adapter_meta_for_kind(&node.kind).1,
+        "adapter_id": adapter_id,
+        "adapter_version": adapter_version,
         "created_unix_ms": now_unix_ms(),
         "schema_version": "v0.1",
     });
@@ -1561,36 +1853,32 @@ fn sort_value_maps(value: &mut Value) {
     }
 }
 
-fn validate_outputs_dir(dir: &Path) -> Option<FailureInfo> {
-    if !dir.exists() {
-        return None;
-    }
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
-                continue;
-            }
-            if let Ok(ft) = entry.file_type() {
-                if ft.is_dir() || ft.is_symlink() {
-                    return Some(FailureInfo {
-                        kind: "Execution".to_string(),
-                        code: "OUTPUT_PATH_INVALID".to_string(),
-                        message: "outputs must be flat files".to_string(),
-                        details: None,
-                    });
-                }
-            }
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name.contains("..") || name.contains('/') || name.contains('\\') {
-                    return Some(FailureInfo {
-                        kind: "Execution".to_string(),
-                        code: "OUTPUT_PATH_INVALID".to_string(),
-                        message: "invalid output path".to_string(),
-                        details: None,
-                    });
-                }
-            }
+fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
+    for out in outputs {
+        if out.path.contains("..") || out.path.starts_with('/') || out.path.starts_with('\\') {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_PATH_INVALID".to_string(),
+                message: "invalid output path".to_string(),
+                details: None,
+            });
+        }
+        let path = dir.join(&out.path);
+        if !path.exists() {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_MISSING".to_string(),
+                message: format!("missing output file: {}", out.path),
+                details: None,
+            });
+        }
+        if path.is_dir() || path.is_symlink() {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_PATH_INVALID".to_string(),
+                message: format!("output must be a file: {}", out.path),
+                details: None,
+            });
         }
     }
     None
@@ -1706,6 +1994,36 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
     Ok(())
 }
 
+fn materialize_file(src: &Path, dst: &Path, mode: MaterializeMode) -> io::Result<()> {
+    if dst.exists() {
+        fs::remove_file(dst)?;
+    }
+    match mode {
+        MaterializeMode::Copy => {
+            fs::copy(src, dst)?;
+        }
+        MaterializeMode::Hardlink => {
+            if fs::hard_link(src, dst).is_err() {
+                fs::copy(src, dst)?;
+            }
+        }
+        MaterializeMode::Symlink => {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::symlink;
+                if symlink(src, dst).is_err() {
+                    fs::copy(src, dst)?;
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                fs::copy(src, dst)?;
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1731,6 +2049,7 @@ mod tests {
     fn sample_graph() -> Graph {
         Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![
@@ -1738,7 +2057,10 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_a".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_a".to_string(),
+                        path: "out_a".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -1747,15 +2069,23 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
                     inputs: vec!["in".to_string()],
-                    outputs: vec!["out_b".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_b".to_string(),
+                        path: "out_b".to_string(),
+                    }],
                     params: param_object(vec![(
                         "argv",
-                        Value::Array(vec![Value::from("echo"), Value::from("ok")]),
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("echo ok > ../outputs/out_b"),
+                        ]),
                     )]),
                     container: None,
                     timeout_ms: None,
@@ -1764,6 +2094,7 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
+                    group: None,
                 },
             ],
             edges: vec![Edge {
@@ -1842,7 +2173,7 @@ mod tests {
                 .join("index.json"),
         )
         .unwrap();
-        assert!(index.contains("stdout.log"));
+        assert!(index.contains("out_b"));
     }
 
     #[test]
@@ -1864,7 +2195,7 @@ mod tests {
             "nodes/a/resolved_params.json",
             "nodes/a/inputs/index.json",
             "nodes/a/outputs/index.json",
-            "nodes/a/outputs/value.json",
+            "nodes/a/outputs/out_a",
             "nodes/b/trace.json",
             "nodes/b/stdout.log",
             "nodes/b/stderr.log",
@@ -1924,6 +2255,7 @@ mod tests {
     fn scheduler_order_stable() {
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![
@@ -1931,7 +2263,10 @@ mod tests {
                     id: "b".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -1940,12 +2275,16 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_a".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_a".to_string(),
+                        path: "out_a".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(2))]),
                     container: None,
                     timeout_ms: None,
@@ -1954,6 +2293,7 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
             ],
             edges: vec![],
@@ -1981,9 +2321,16 @@ mod tests {
             .filter_map(|e| e.ok())
             .collect();
         let entry = entries[0].path();
-        let out_file = entry.join("outputs").join("stdout.log");
-        if out_file.exists() {
-            fs::remove_file(out_file).unwrap();
+        let index_path = entry.join("outputs").join("index.json");
+        if let Ok(data) = fs::read_to_string(&index_path) {
+            if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
+                if let Some(file) = index.files.first() {
+                    let out_file = entry.join("outputs").join(&file.path);
+                    if out_file.exists() {
+                        fs::remove_file(out_file).unwrap();
+                    }
+                }
+            }
         }
 
         let opt2 = RuntimeOptions {
@@ -1994,9 +2341,11 @@ mod tests {
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
 
-        let trace = fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap();
-        assert!(trace.contains("\"cache_proof\""));
-        assert!(trace.contains("\"corrupt_detected\""));
+        let trace_a = fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap();
+        let trace_b = fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap();
+        let has_corrupt =
+            trace_a.contains("\"corrupt_detected\"") || trace_b.contains("\"corrupt_detected\"");
+        assert!(has_corrupt);
 
         // ensure outputs still exist
         assert!(run1
@@ -2029,14 +2378,22 @@ mod tests {
             ..RuntimeOptions::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
-        let trace_a: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap())
-                .unwrap();
-        let trace_b: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap())
-                .unwrap();
-        let src_a = trace_a.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
-        let src_b = trace_b.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
+        let trace_a: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        let trace_b: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        let src_a = trace_a
+            .get("cache_proof")
+            .and_then(|v| v.get("source"))
+            .and_then(|v| v.as_str());
+        let src_b = trace_b
+            .get("cache_proof")
+            .and_then(|v| v.get("source"))
+            .and_then(|v| v.as_str());
         assert!(src_a == Some("remote") || src_b == Some("remote"));
     }
 
@@ -2060,9 +2417,16 @@ mod tests {
             .filter_map(|e| e.ok())
             .collect();
         let entry = entries[0].path();
-        let out_file = entry.join("outputs").join("stdout.log");
-        if out_file.exists() {
-            fs::remove_file(out_file).unwrap();
+        let index_path = entry.join("outputs").join("index.json");
+        if let Ok(data) = fs::read_to_string(&index_path) {
+            if let Ok(index) = serde_json::from_str::<OutputsIndex>(&data) {
+                if let Some(file) = index.files.first() {
+                    let out_file = entry.join("outputs").join(&file.path);
+                    if out_file.exists() {
+                        fs::remove_file(out_file).unwrap();
+                    }
+                }
+            }
         }
 
         let opt2 = RuntimeOptions {
@@ -2072,12 +2436,14 @@ mod tests {
             ..RuntimeOptions::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
-        let trace_a: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap())
-                .unwrap();
-        let trace_b: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap())
-                .unwrap();
+        let trace_a: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run2.join("nodes").join("a").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        let trace_b: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap(),
+        )
+        .unwrap();
         let bad_a = trace_a
             .get("cache_proof")
             .and_then(|v| v.get("corrupt_detected"))
@@ -2096,6 +2462,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![
@@ -2103,7 +2470,10 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_a".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_a".to_string(),
+                        path: "out_a".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from("hello"))]),
                     container: None,
                     timeout_ms: None,
@@ -2112,18 +2482,22 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
                     inputs: vec!["in".to_string()],
-                    outputs: vec!["out_b".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_b".to_string(),
+                        path: "out_b".to_string(),
+                    }],
                     params: param_object(vec![(
                         "argv",
                         Value::Array(vec![
                             Value::from("/bin/sh"),
                             Value::from("-c"),
-                            Value::from("cat ../inputs/a/value.json > ../outputs/out.txt"),
+                            Value::from("cat ../inputs/a/in/out_a > ../outputs/out_b"),
                         ]),
                     )]),
                     container: None,
@@ -2133,6 +2507,7 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
+                    group: None,
                 },
             ],
             edges: vec![Edge {
@@ -2164,7 +2539,7 @@ mod tests {
                 .join("nodes")
                 .join("b")
                 .join("outputs")
-                .join("out.txt"),
+                .join("out_b"),
         )
         .unwrap();
         assert!(out.contains("hello"));
@@ -2176,7 +2551,7 @@ mod tests {
                 .join("index.json"),
         )
         .unwrap();
-        assert!(inputs_index.contains("a/value.json"));
+        assert!(inputs_index.contains("a/in/out_a"));
     }
 
     #[test]
@@ -2193,7 +2568,7 @@ mod tests {
                 Value::from("/bin/sh"),
                 Value::from("-c"),
                 Value::from(
-                    "if [ ! -f marker ]; then touch marker; exit 1; fi; echo ok > ../outputs/out.txt",
+                    "if [ ! -f marker ]; then touch marker; exit 1; fi; echo ok > ../outputs/out_b",
                 ),
             ]),
         )]);
@@ -2212,6 +2587,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![
@@ -2219,7 +2595,10 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_a".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_a".to_string(),
+                        path: "out_a".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -2228,12 +2607,16 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_b".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_b".to_string(),
+                        path: "out_b".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(2))]),
                     container: None,
                     timeout_ms: None,
@@ -2242,12 +2625,16 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
                 Node {
                     id: "c".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out_c".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_c".to_string(),
+                        path: "out_c".to_string(),
+                    }],
                     params: param_object(vec![("value", Value::from(3))]),
                     container: None,
                     timeout_ms: None,
@@ -2256,6 +2643,7 @@ mod tests {
                     retry: bijux_dag_core::RetryPolicy::default(),
                     effects: vec![],
                     env_allowlist: vec![],
+                    group: None,
                 },
             ],
             edges: vec![],
@@ -2288,18 +2676,22 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
+            meta: None,
             inputs: serde_json::Map::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "c1".to_string(),
                 kind: NodeKind::Container,
                 inputs: vec![],
-                outputs: vec!["out_c".to_string()],
+                outputs: vec![FileOutput {
+                    name: "out_c".to_string(),
+                    path: "out_c".to_string(),
+                }],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
                     command: vec!["sh".to_string(), "-c".to_string()],
-                    args: vec!["echo hi > /bijux/node/outputs/out.txt".to_string()],
+                    args: vec!["echo hi > /bijux/node/outputs/out_c".to_string()],
                     env_allowlist: vec![],
                     mounts: vec![MountSpec {
                         source: "work".to_string(),
@@ -2314,6 +2706,7 @@ mod tests {
                 retry: bijux_dag_core::RetryPolicy::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
+                group: None,
             }],
             edges: vec![],
         };
@@ -2325,7 +2718,62 @@ mod tests {
             .join("nodes")
             .join("c1")
             .join("outputs")
-            .join("out.txt");
+            .join("out_c");
         assert!(out.exists());
+    }
+
+    #[test]
+    fn external_adapter_executes() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter_dir = dir.path().join("adapters");
+        fs::create_dir_all(&adapter_dir).unwrap();
+        let adapter_path = adapter_dir.join("fake-adapter");
+        fs::write(&adapter_path, include_str!("../tests/bin/fake_adapter.sh")).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&adapter_path).unwrap().permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&adapter_path, perms).unwrap();
+        }
+        std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::External("fake".to_string()),
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeOptions::default())
+            .unwrap();
+        let out = final_path
+            .join("nodes")
+            .join("n1")
+            .join("outputs")
+            .join("out");
+        assert!(out.exists());
+        std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     }
 }

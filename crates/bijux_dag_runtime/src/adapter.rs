@@ -38,6 +38,10 @@ pub struct NodeCtx<'a> {
 
 pub trait Adapter: Send + Sync {
     fn id(&self) -> AdapterId;
+    fn supported_kinds(&self) -> Vec<String>;
     fn required_effects(&self) -> EffectSet;
+    fn binary_hash(&self) -> Option<String> {
+        None
+    }
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError>;
 }
