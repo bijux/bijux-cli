@@ -276,6 +276,10 @@ impl RunDir {
         self.node_outputs_dir(node_id).join("index.json")
     }
 
+    pub fn node_output_relpath(&self, node_id: &str, file: &str) -> String {
+        format!("nodes/{}/outputs/{}", node_id, file)
+    }
+
     pub fn node_inputs_index_path(&self, node_id: &str) -> PathBuf {
         self.node_inputs_dir(node_id).join("index.json")
     }

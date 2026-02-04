@@ -1,0 +1,623 @@
+use crate::{
+    build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
+    count_nodes, execute_with_retries, materialize_inputs, registered_adapters, try_cache_read,
+    try_cache_write, write_trace, CacheProof, EffectSet, NodeResult, NodeStatus, RunContext,
+    Runtime, RuntimeConfig, RuntimeError,
+};
+use bijux_dag_artifacts::{
+    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
+    RunDir,
+};
+use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
+use serde_json::Value;
+use std::collections::{BTreeSet, HashMap};
+use std::path::{Path, PathBuf};
+use std::sync::{atomic::Ordering, Arc};
+use std::time::{Duration, Instant};
+
+pub fn execute(
+    runtime: &Runtime,
+    graph: &Graph,
+    plan: crate::planner::ExecutionPlan,
+    out_dir: impl AsRef<Path>,
+    options: RuntimeConfig,
+) -> Result<PathBuf, RuntimeError> {
+    let run_dir = if let Some(ref run_id) = options.run_id {
+        RunDir::create_with_id(out_dir, run_id)?
+    } else {
+        RunDir::create(out_dir)?
+    };
+    let graph_fp = graph.graph_fingerprint()?;
+    let graph_json = serde_json::json!({
+        "graph": graph.canonicalize(),
+        "graph_fingerprint": graph_fp,
+    });
+    run_dir.write_graph_snapshot(&serde_json::to_string_pretty(&graph_json)?)?;
+
+    let run_id = options.run_id.clone().unwrap_or_else(|| {
+        run_dir
+            .final_path()
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
+    });
+
+    let started_unix_ms = runtime.clock.now_unix_ms();
+    let effective_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
+    let mut manifest = Manifest {
+        run_id,
+        created_unix_ms: runtime.clock.now_unix_ms(),
+        started_unix_ms,
+        finished_unix_ms: started_unix_ms,
+        graph_snapshot: "graph.snapshot.json".to_string(),
+        status: "success".to_string(),
+        spec: SPEC_VERSION.to_string(),
+        graph_fingerprint: graph_fp,
+        tool_version: crate::tool_version(),
+        jobs: options.jobs.max(1),
+        adapters: registered_adapters(),
+        outputs: Vec::new(),
+        node_counts: NodeCounts {
+            success: 0,
+            failed: 0,
+            skipped: 0,
+            cached: 0,
+        },
+        policy: bijux_dag_artifacts::PolicyInfo {
+            deny_network: options.policy.deny_network,
+            deny_env: options.policy.deny_env,
+            deny_clock: options.policy.deny_clock,
+        },
+        cache_mode: cache_mode_string(&options.cache_mode),
+        cache_dir: effective_cache_dir
+            .as_ref()
+            .map(|p| p.display().to_string()),
+        run_timeout_ms: options.run_timeout_ms,
+    };
+    run_dir.write_manifest(&manifest)?;
+
+    let prov = Provenance {
+        os: std::env::consts::OS.to_string(),
+        arch: std::env::consts::ARCH.to_string(),
+        rustc: crate::rustc_version(),
+        tool_version: crate::tool_version(),
+        adapters: registered_adapters(),
+        policy: bijux_dag_artifacts::PolicyInfo {
+            deny_network: options.policy.deny_network,
+            deny_env: options.policy.deny_env,
+            deny_clock: options.policy.deny_clock,
+        },
+        time_source: "system_clock".to_string(),
+    };
+    write_provenance(run_dir.provenance_path(), &prov)?;
+
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let cancel_flag = cancel.clone();
+    let _ = ctrlc::set_handler(move || {
+        cancel_flag.store(true, Ordering::SeqCst);
+    });
+
+    let mut run_log = runtime.fs.open_append(run_dir.run_log_path().as_path())?;
+    crate::append_event(
+        &mut run_log,
+        serde_json::json!({
+            "event": "run_started",
+            "ts": started_unix_ms,
+        }),
+    )?;
+
+    let resolved = graph.resolve_graph()?;
+    let mut node_fps = HashMap::new();
+    for node in &graph.nodes {
+        let params = resolved
+            .resolved_params
+            .get(&node.id)
+            .cloned()
+            .unwrap_or(Value::Null);
+        node_fps.insert(
+            node.id.clone(),
+            graph.node_fingerprint_with_params(node, &params)?,
+        );
+    }
+    let resolved_params: HashMap<String, Value> = resolved.resolved_params.into_iter().collect();
+    let ctx = RunContext {
+        run_dir: Arc::new(run_dir.clone()),
+        graph_fingerprint: node_fps,
+        resolved_params,
+        fs: Arc::clone(&runtime.fs),
+        clock: Arc::clone(&runtime.clock),
+    };
+    let start = Instant::now();
+    let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
+    let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
+    let dep_map = plan.dep_map;
+    let mut indegree = plan.indegree;
+    let adj = plan.adj;
+    let mut ready: BTreeSet<String> = indegree
+        .iter()
+        .filter_map(|(id, &deg)| if deg == 0 { Some(id.clone()) } else { None })
+        .collect();
+
+    let cpu_budget = options.cpu_budget.unwrap_or(options.jobs.max(1) as u32);
+    while !ready.is_empty() {
+        let mut batch: Vec<String> = Vec::new();
+        let mut used_cpu: u32 = 0;
+        let mut to_remove: Vec<String> = Vec::new();
+        for id in ready.iter() {
+            if batch.len() >= options.jobs.max(1) {
+                break;
+            }
+            let cpu = crate::node_cpu(graph, id);
+            if used_cpu + cpu > cpu_budget {
+                continue;
+            }
+            used_cpu += cpu;
+            batch.push(id.clone());
+            to_remove.push(id.clone());
+        }
+        if batch.is_empty() {
+            if let Some(id) = ready.iter().next().cloned() {
+                batch.push(id.clone());
+                to_remove.push(id);
+            }
+        }
+        let forced_batch = batch.len() == 1 && used_cpu == 0;
+        for id in to_remove {
+            ready.remove(&id);
+        }
+
+        let mut handles = Vec::new();
+        let mut skipped: Vec<(String, String)> = Vec::new();
+        let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
+        let mut to_start: Vec<(String, Node, Value)> = Vec::new();
+
+        for node_id in &batch {
+            if let Some(reason) = plan.filter_reasons.get(node_id) {
+                skipped.push((node_id.clone(), reason.clone()));
+                continue;
+            }
+            if cancel.load(Ordering::SeqCst) {
+                skipped.push((node_id.clone(), "cancelled".to_string()));
+                continue;
+            }
+            if let Some(limit) = options.run_timeout_ms {
+                if start.elapsed() > Duration::from_millis(limit) {
+                    skipped.push((node_id.clone(), "run_timeout".to_string()));
+                    continue;
+                }
+            }
+
+            if let Some(deps) = dep_map.get(node_id) {
+                if deps.iter().any(|d| {
+                    matches!(
+                        status_map.get(d),
+                        Some(NodeStatus::Failed) | Some(NodeStatus::Skipped)
+                    )
+                }) {
+                    skipped.push((node_id.clone(), "upstream_failed".to_string()));
+                    continue;
+                }
+            }
+
+            let node = graph
+                .nodes
+                .iter()
+                .find(|n| n.id == *node_id)
+                .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
+                .clone();
+            let resolved_params = ctx
+                .resolved_params
+                .get(&node.id)
+                .cloned()
+                .unwrap_or(Value::Null);
+
+            if node.retry.max_attempts > 0
+                && (node.effects.contains(&Effect::Clock)
+                    || node.effects.contains(&Effect::Network))
+                && !graph.inputs.contains_key("random_seed")
+                && !graph.nondeterminism_allowed
+            {
+                return Err(RuntimeError::Executor(
+                    "retry not allowed for nondeterministic node".to_string(),
+                ));
+            }
+            if options.policy.deny_network && node.effects.contains(&Effect::Network) {
+                return Err(RuntimeError::Executor(
+                    "network effect denied by policy".to_string(),
+                ));
+            }
+            if options.policy.deny_env && node.effects.contains(&Effect::Env) {
+                return Err(RuntimeError::Executor(
+                    "env effect denied by policy".to_string(),
+                ));
+            }
+            if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
+                return Err(RuntimeError::Executor(
+                    "clock effect denied by policy".to_string(),
+                ));
+            }
+            let adapter = runtime.adapter_for_kind(&node.kind)?;
+            let required = adapter.required_effects();
+            let declared = EffectSet::from_effects(&node.effects);
+            if required.filesystem && !declared.filesystem
+                || required.env && !declared.env
+                || required.network && !declared.network
+                || required.clock && !declared.clock
+            {
+                return Err(RuntimeError::Executor(
+                    "missing required effects".to_string(),
+                ));
+            }
+
+            let adapter_id = adapter.id();
+            let cache_read = try_cache_read(
+                &options,
+                &node,
+                &ctx,
+                graph,
+                ctx.fs.as_ref(),
+                &adapter_id.id,
+                &adapter_id.version,
+            )?;
+            if let Some(proof) = cache_read.proof.clone() {
+                if !cache_read.hit {
+                    cache_proofs.insert(node_id.clone(), proof);
+                }
+            }
+            if cache_read.hit {
+                cached.push((node_id.clone(), node, cache_read.proof.unwrap()));
+                continue;
+            }
+
+            to_start.push((node_id.clone(), node, resolved_params));
+        }
+
+        skipped.sort_by(|a, b| a.0.cmp(&b.0));
+        for (node_id, reason) in &skipped {
+            status_map.insert(node_id.clone(), NodeStatus::Skipped);
+            let node_kind = graph
+                .nodes
+                .iter()
+                .find(|n| n.id == *node_id)
+                .map(|n| n.kind.clone())
+                .unwrap_or(NodeKind::Const);
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node_kind);
+            let adapter_hash = runtime
+                .adapter_for_kind(&node_kind)
+                .ok()
+                .and_then(|a| a.binary_hash());
+            let started = ctx.clock.now_unix_ms();
+            write_trace(
+                &ctx,
+                graph,
+                node_id,
+                NodeStatus::Skipped,
+                None,
+                started,
+                started,
+                1,
+                None,
+                &aid,
+                &aver,
+                None,
+                adapter_hash,
+                Some(bijux_dag_artifacts::SkipReason {
+                    reason: reason.clone(),
+                }),
+            )?;
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_skipped",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "reason": reason,
+                }),
+            )?;
+        }
+
+        let mut started_ids: Vec<String> = Vec::new();
+        for (node_id, _, _) in &to_start {
+            started_ids.push(node_id.clone());
+        }
+        for (node_id, _, _) in &cached {
+            started_ids.push(node_id.clone());
+        }
+        started_ids.sort();
+        let schedule_reason = if forced_batch {
+            "ready"
+        } else {
+            "budget_available"
+        };
+        for node_id in &started_ids {
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_scheduled",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "reason": schedule_reason,
+                }),
+            )?;
+        }
+        for node_id in &started_ids {
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_started",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                }),
+            )?;
+        }
+
+        for (node_id, node, cache_proof) in &cached {
+            status_map.insert(node_id.clone(), NodeStatus::Cached);
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let adapter_hash = runtime
+                .adapter_for_kind(&node.kind)
+                .ok()
+                .and_then(|a| a.binary_hash());
+            let started = ctx.clock.now_unix_ms();
+            write_trace(
+                &ctx,
+                graph,
+                node_id,
+                NodeStatus::Cached,
+                None,
+                started,
+                started,
+                1,
+                Some(cache_proof.clone()),
+                &aid,
+                &aver,
+                None,
+                adapter_hash,
+                None,
+            )?;
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_finished",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "status": "cached",
+                }),
+            )?;
+            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            try_cache_write(&options, node, &ctx, graph, ctx.fs.as_ref(), &aid, &aver)?;
+        }
+
+        for (node_id, node, params) in &to_start {
+            materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
+            let adapter = runtime.adapter_for_kind(&node.kind)?;
+            let ctx_clone = RunContext {
+                run_dir: Arc::clone(&ctx.run_dir),
+                graph_fingerprint: ctx.graph_fingerprint.clone(),
+                resolved_params: ctx.resolved_params.clone(),
+                fs: Arc::clone(&ctx.fs),
+                clock: Arc::clone(&ctx.clock),
+            };
+            let node_id_clone = node_id.clone();
+            let node_for_thread = node.clone();
+            let params_for_thread = params.clone();
+            let retry = node.retry.clone();
+            handles.push((
+                node_id_clone,
+                node.clone(),
+                std::thread::spawn(move || {
+                    let started = ctx_clone.clock.now_unix_ms();
+                    let result = execute_with_retries(
+                        adapter.as_ref(),
+                        &node_for_thread,
+                        &params_for_thread,
+                        &ctx_clone,
+                        &retry,
+                    );
+                    let finished = ctx_clone.clock.now_unix_ms();
+                    (started, finished, result)
+                }),
+            ));
+        }
+
+        type ResultItem = (String, Node, u128, u128, Result<NodeResult, RuntimeError>);
+        let mut results: Vec<ResultItem> = Vec::new();
+        for (node_id, node, handle) in handles {
+            let res = handle.join().unwrap_or_else(|_| {
+                (
+                    ctx.clock.now_unix_ms(),
+                    ctx.clock.now_unix_ms(),
+                    Err(RuntimeError::Executor("thread panicked".to_string())),
+                )
+            });
+            results.push((node_id, node, res.0, res.1, res.2));
+        }
+        results.sort_by(|a, b| a.0.cmp(&b.0));
+        for (node_id, node, started, finished, res) in results {
+            match res {
+                Ok(result) => {
+                    let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                    let adapter_hash = runtime
+                        .adapter_for_kind(&node.kind)
+                        .ok()
+                        .and_then(|a| a.binary_hash());
+                    let trace_failure = result.failure.clone();
+                    let cache_proof = cache_proofs.get(&node_id).cloned();
+                    for attempt in &result.attempt_events {
+                        crate::append_event(
+                            &mut run_log,
+                            serde_json::json!({
+                                "event": "node_attempt_started",
+                                "ts": attempt.started_unix_ms,
+                                "node_id": node_id,
+                                "attempt": attempt.attempt,
+                            }),
+                        )?;
+                        crate::append_event(
+                            &mut run_log,
+                            serde_json::json!({
+                                "event": "node_attempt_finished",
+                                "ts": attempt.finished_unix_ms,
+                                "node_id": node_id,
+                                "attempt": attempt.attempt,
+                                "status": crate::status_string(&attempt.status),
+                            }),
+                        )?;
+                    }
+                    write_trace(
+                        &ctx,
+                        graph,
+                        &node_id,
+                        result.status.clone(),
+                        trace_failure,
+                        started,
+                        finished,
+                        result.attempts,
+                        cache_proof,
+                        &aid,
+                        &aver,
+                        result.container_meta.clone(),
+                        adapter_hash,
+                        None,
+                    )?;
+                    crate::append_event(
+                        &mut run_log,
+                        serde_json::json!({
+                            "event": "node_finished",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "status": crate::status_string(&result.status),
+                        }),
+                    )?;
+                    if result.status == NodeStatus::Failed {
+                        status_map.insert(node_id.clone(), NodeStatus::Failed);
+                    } else {
+                        status_map.insert(node_id.clone(), result.status.clone());
+                        let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                        try_cache_write(
+                            &options,
+                            &node,
+                            &ctx,
+                            graph,
+                            ctx.fs.as_ref(),
+                            &aid,
+                            &aver,
+                        )?;
+                    }
+                }
+                Err(err) => {
+                    let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                    status_map.insert(node_id.clone(), NodeStatus::Failed);
+                    let cache_proof = cache_proofs.get(&node_id).cloned();
+                    let adapter_hash = runtime
+                        .adapter_for_kind(&node.kind)
+                        .ok()
+                        .and_then(|a| a.binary_hash());
+                    write_trace(
+                        &ctx,
+                        graph,
+                        &node_id,
+                        NodeStatus::Failed,
+                        Some(FailureInfo {
+                            kind: "Internal".to_string(),
+                            code: "INTERNAL".to_string(),
+                            message: err.to_string(),
+                            details: None,
+                        }),
+                        started,
+                        finished,
+                        1,
+                        cache_proof,
+                        &aid,
+                        &aver,
+                        None,
+                        adapter_hash,
+                        None,
+                    )?;
+                    crate::append_event(
+                        &mut run_log,
+                        serde_json::json!({
+                            "event": "node_finished",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "status": "failed",
+                        }),
+                    )?;
+                }
+            }
+        }
+
+        for node_id in batch {
+            if let Some(neighbors) = adj.get(&node_id) {
+                for n in neighbors {
+                    if let Some(d) = indegree.get_mut(n) {
+                        *d -= 1;
+                        if *d == 0 {
+                            ready.insert(n.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if cancel.load(Ordering::SeqCst) {
+        for node in &graph.nodes {
+            if !status_map.contains_key(&node.id) {
+                status_map.insert(node.id.clone(), NodeStatus::Skipped);
+                let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                let started = ctx.clock.now_unix_ms();
+                write_trace(
+                    &ctx,
+                    graph,
+                    &node.id,
+                    NodeStatus::Skipped,
+                    None,
+                    started,
+                    started,
+                    1,
+                    None,
+                    &aid,
+                    &aver,
+                    None,
+                    runtime
+                        .adapter_for_kind(&node.kind)
+                        .ok()
+                        .and_then(|a| a.binary_hash()),
+                    Some(bijux_dag_artifacts::SkipReason {
+                        reason: "cancelled".to_string(),
+                    }),
+                )?;
+            }
+        }
+    }
+
+    let finished_unix_ms = ctx.clock.now_unix_ms();
+    if cancel.load(Ordering::SeqCst) {
+        manifest.status = "cancelled".to_string();
+    } else if status_map.values().any(|s| *s == NodeStatus::Failed) {
+        manifest.status = "failed".to_string();
+    }
+    manifest.finished_unix_ms = finished_unix_ms;
+    manifest.node_counts = count_nodes(&status_map);
+    manifest.outputs = collect_outputs_summary(ctx.fs.as_ref(), &ctx.run_dir)?;
+    let run_index = build_run_outputs_index(&ctx.run_dir, &manifest.outputs)?;
+    write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
+    run_dir.write_manifest(&manifest)?;
+    crate::append_event(
+        &mut run_log,
+        serde_json::json!({
+            "event": "run_finished",
+            "ts": finished_unix_ms,
+            "status": manifest.status,
+        }),
+    )?;
+
+    let final_path = run_dir.finalize()?;
+    if let Some(latest) = options.latest_symlink {
+        let _ = runtime.fs.remove_file(&latest);
+        let _ = runtime.fs.symlink(&final_path, &latest);
+    }
+    Ok(final_path)
+}

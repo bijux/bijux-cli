@@ -1,4 +1,4 @@
-use crate::{ExecutionContext, NodeResult, RuntimeError};
+use crate::{NodeResult, RunContext, RuntimeError};
 use bijux_dag_core::{Effect, Node};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +32,7 @@ impl EffectSet {
 
 pub struct NodeCtx<'a> {
     pub node: &'a Node,
-    pub exec: &'a ExecutionContext,
+    pub exec: &'a RunContext,
     pub params: &'a serde_json::Value,
 }
 

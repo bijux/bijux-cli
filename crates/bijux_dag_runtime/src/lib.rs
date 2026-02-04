@@ -1,28 +1,30 @@
 mod adapter;
+mod clock;
+mod engine;
+mod fs;
+mod planner;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
-    now_unix_ms, write_inputs_index, write_outputs_index, write_provenance,
-    write_run_outputs_index, AdapterInfo, ArtifactError, CacheProof, ContainerTrace, FailureInfo,
-    InputFile, InputsIndex, Manifest, NodeCounts, NodeTrace, OutputSummary, OutputsIndex,
-    Provenance, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
+    write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
+    ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
+    OutputsIndex, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_core::{
-    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity, SPEC_VERSION,
+    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
 };
+use clock::{Clock, SystemClock};
+use fs::{Fs, StdFs};
+use planner::build_plan;
 use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::fs;
+use std::collections::{BTreeMap, HashMap};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
-use std::time::{Duration, Instant};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
@@ -46,10 +48,12 @@ pub enum NodeStatus {
     Cached,
 }
 
-pub struct ExecutionContext {
+pub struct RunContext {
     pub run_dir: Arc<RunDir>,
     pub graph_fingerprint: HashMap<String, String>,
     pub resolved_params: HashMap<String, Value>,
+    pub fs: Arc<dyn Fs>,
+    pub clock: Arc<dyn Clock>,
 }
 
 #[derive(Debug, Clone)]
@@ -98,9 +102,10 @@ impl Adapter for ConstAdapter {
         let params = ctx.params;
         let node_dir = exec.run_dir.node_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
-        fs::create_dir_all(exec.run_dir.node_outputs_dir(&node.id))?;
-        fs::create_dir_all(&node_dir)?;
-        fs::create_dir_all(&work_dir)?;
+        exec.fs
+            .create_dir_all(exec.run_dir.node_outputs_dir(&node.id).as_path())?;
+        exec.fs.create_dir_all(&node_dir)?;
+        exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
@@ -114,11 +119,12 @@ impl Adapter for ConstAdapter {
             .ok_or_else(|| RuntimeError::Executor("no outputs declared".to_string()))?;
         let out_path = outputs_dir.join(&target.path);
         if let Some(parent) = out_path.parent() {
-            fs::create_dir_all(parent)?;
+            exec.fs.create_dir_all(parent)?;
         }
-        fs::write(out_path, serde_json::to_vec_pretty(&value)?)?;
-        fs::write(&stdout_path, b"")?;
-        fs::write(&stderr_path, b"")?;
+        exec.fs
+            .write(&out_path, &serde_json::to_vec_pretty(&value)?)?;
+        exec.fs.write(&stdout_path, b"")?;
+        exec.fs.write(&stderr_path, b"")?;
         let fp = exec
             .graph_fingerprint
             .get(&node.id)
@@ -187,9 +193,9 @@ impl Adapter for ShellAdapter {
         let node_dir = exec.run_dir.node_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
-        fs::create_dir_all(&outputs_dir)?;
-        fs::create_dir_all(&node_dir)?;
-        fs::create_dir_all(&work_dir)?;
+        exec.fs.create_dir_all(&outputs_dir)?;
+        exec.fs.create_dir_all(&node_dir)?;
+        exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
@@ -205,8 +211,8 @@ impl Adapter for ShellAdapter {
 
         let output = cmd.output()?;
 
-        fs::write(&stdout_path, &output.stdout)?;
-        fs::write(&stderr_path, &output.stderr)?;
+        exec.fs.write(&stdout_path, &output.stdout)?;
+        exec.fs.write(&stderr_path, &output.stderr)?;
         let output_paths = declared_output_paths(node);
         if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
             return Ok(NodeResult {
@@ -293,9 +299,9 @@ impl Adapter for ContainerAdapter {
         let node_dir = exec.run_dir.node_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
-        fs::create_dir_all(&outputs_dir)?;
-        fs::create_dir_all(&node_dir)?;
-        fs::create_dir_all(&work_dir)?;
+        exec.fs.create_dir_all(&outputs_dir)?;
+        exec.fs.create_dir_all(&node_dir)?;
+        exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
@@ -339,8 +345,8 @@ impl Adapter for ContainerAdapter {
 
         let output = cmd.output()?;
 
-        fs::write(&stdout_path, &output.stdout)?;
-        fs::write(&stderr_path, &output.stderr)?;
+        exec.fs.write(&stdout_path, &output.stdout)?;
+        exec.fs.write(&stderr_path, &output.stderr)?;
         let output_paths = declared_output_paths(node);
         if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
             return Ok(NodeResult {
@@ -449,9 +455,9 @@ impl Adapter for ExternalAdapter {
         let node_dir = exec.run_dir.node_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
-        fs::create_dir_all(&outputs_dir)?;
-        fs::create_dir_all(&node_dir)?;
-        fs::create_dir_all(&work_dir)?;
+        exec.fs.create_dir_all(&outputs_dir)?;
+        exec.fs.create_dir_all(&node_dir)?;
+        exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
@@ -475,8 +481,8 @@ impl Adapter for ExternalAdapter {
         }
         let output = cmd.output()?;
 
-        fs::write(&stdout_path, &output.stdout)?;
-        fs::write(&stderr_path, &output.stderr)?;
+        exec.fs.write(&stdout_path, &output.stdout)?;
+        exec.fs.write(&stderr_path, &output.stderr)?;
 
         let output_paths = declared_output_paths(node);
         if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
@@ -541,7 +547,7 @@ struct CacheRead {
     proof: Option<CacheProof>,
 }
 
-pub struct RuntimeOptions {
+pub struct RuntimeConfig {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
     pub run_timeout_ms: Option<u64>,
@@ -552,11 +558,11 @@ pub struct RuntimeOptions {
     pub remote_cache_dir: Option<PathBuf>,
     pub run_id: Option<String>,
     pub latest_symlink: Option<PathBuf>,
-    pub policy: Policy,
+    pub policy: PolicyConfig,
     pub selectors: SelectorSet,
 }
 
-impl Default for RuntimeOptions {
+impl Default for RuntimeConfig {
     fn default() -> Self {
         Self {
             jobs: 1,
@@ -569,7 +575,7 @@ impl Default for RuntimeOptions {
             remote_cache_dir: None,
             run_id: None,
             latest_symlink: None,
-            policy: Policy::default(),
+            policy: PolicyConfig::default(),
             selectors: SelectorSet::default(),
         }
     }
@@ -596,7 +602,7 @@ pub enum MaterializeMode {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct Policy {
+pub struct PolicyConfig {
     pub deny_network: bool,
     pub deny_env: bool,
     pub deny_clock: bool,
@@ -604,6 +610,8 @@ pub struct Policy {
 
 pub struct Runtime {
     adapters: HashMap<String, Arc<dyn Adapter>>,
+    fs: Arc<dyn Fs>,
+    clock: Arc<dyn Clock>,
 }
 
 impl Runtime {
@@ -615,7 +623,19 @@ impl Runtime {
         for adapter in discover_external_adapters().unwrap_or_default() {
             register_adapter(&mut adapters, adapter);
         }
-        Self { adapters }
+        Self {
+            adapters,
+            fs: Arc::new(StdFs),
+            clock: Arc::new(SystemClock),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn with_io(fs: Arc<dyn Fs>, clock: Arc<dyn Clock>) -> Self {
+        let mut runtime = Self::new();
+        runtime.fs = fs;
+        runtime.clock = clock;
+        runtime
     }
 
     fn adapter_for_kind(&self, kind: &NodeKind) -> Result<Arc<dyn Adapter>, RuntimeError> {
@@ -639,601 +659,14 @@ impl Runtime {
         &self,
         graph: &Graph,
         out_dir: impl AsRef<Path>,
-        options: RuntimeOptions,
+        options: RuntimeConfig,
     ) -> Result<PathBuf, RuntimeError> {
         let diags = graph.validate_with_warnings();
         if diags.iter().any(|d| d.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed.into());
         }
-
-        let run_dir = if let Some(ref run_id) = options.run_id {
-            RunDir::create_with_id(out_dir, run_id)?
-        } else {
-            RunDir::create(out_dir)?
-        };
-        let graph_fp = graph.graph_fingerprint()?;
-        let graph_json = serde_json::json!({
-            "graph": graph.canonicalize(),
-            "graph_fingerprint": graph_fp,
-        });
-        run_dir.write_graph_snapshot(&serde_json::to_string_pretty(&graph_json)?)?;
-
-        let run_id = options.run_id.clone().unwrap_or_else(|| {
-            run_dir
-                .final_path()
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string()
-        });
-
-        let started_unix_ms = now_unix_ms();
-        let effective_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
-        let mut manifest = Manifest {
-            run_id,
-            created_unix_ms: now_unix_ms(),
-            started_unix_ms,
-            finished_unix_ms: started_unix_ms,
-            graph_snapshot: "graph.snapshot.json".to_string(),
-            status: "success".to_string(),
-            spec: SPEC_VERSION.to_string(),
-            graph_fingerprint: graph_fp,
-            tool_version: tool_version(),
-            jobs: options.jobs.max(1),
-            adapters: registered_adapters(),
-            outputs: Vec::new(),
-            node_counts: NodeCounts {
-                success: 0,
-                failed: 0,
-                skipped: 0,
-                cached: 0,
-            },
-            policy: bijux_dag_artifacts::PolicyInfo {
-                deny_network: options.policy.deny_network,
-                deny_env: options.policy.deny_env,
-                deny_clock: options.policy.deny_clock,
-            },
-            cache_mode: cache_mode_string(&options.cache_mode),
-            cache_dir: effective_cache_dir
-                .as_ref()
-                .map(|p| p.display().to_string()),
-            run_timeout_ms: options.run_timeout_ms,
-        };
-        run_dir.write_manifest(&manifest)?;
-
-        let prov = Provenance {
-            os: std::env::consts::OS.to_string(),
-            arch: std::env::consts::ARCH.to_string(),
-            rustc: rustc_version(),
-            tool_version: tool_version(),
-            adapters: registered_adapters(),
-            policy: bijux_dag_artifacts::PolicyInfo {
-                deny_network: options.policy.deny_network,
-                deny_env: options.policy.deny_env,
-                deny_clock: options.policy.deny_clock,
-            },
-            time_source: "system_clock".to_string(),
-        };
-        write_provenance(run_dir.provenance_path(), &prov)?;
-
-        let cancel = Arc::new(AtomicBool::new(false));
-        let cancel_flag = cancel.clone();
-        let _ = ctrlc::set_handler(move || {
-            cancel_flag.store(true, Ordering::SeqCst);
-        });
-
-        let mut run_log = fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(run_dir.run_log_path())?;
-        append_event(
-            &mut run_log,
-            serde_json::json!({
-                "event": "run_started",
-                "ts": started_unix_ms,
-            }),
-        )?;
-
-        let resolved = graph.resolve_graph()?;
-        let mut node_fps = HashMap::new();
-        for node in &graph.nodes {
-            let params = resolved
-                .resolved_params
-                .get(&node.id)
-                .cloned()
-                .unwrap_or(Value::Null);
-            node_fps.insert(
-                node.id.clone(),
-                graph.node_fingerprint_with_params(node, &params)?,
-            );
-        }
-        let resolved_params: HashMap<String, Value> =
-            resolved.resolved_params.into_iter().collect();
-        let ctx = ExecutionContext {
-            run_dir: Arc::new(run_dir.clone()),
-            graph_fingerprint: node_fps,
-            resolved_params,
-        };
-        let start = Instant::now();
-        let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
-        let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
-        let dep_map = build_dep_map(graph);
-        let (mut indegree, adj) = build_graph_index(graph);
-        let mut ready: BTreeSet<String> = indegree
-            .iter()
-            .filter_map(|(id, &deg)| if deg == 0 { Some(id.clone()) } else { None })
-            .collect();
-
-        let cpu_budget = options.cpu_budget.unwrap_or(options.jobs.max(1) as u32);
-        while !ready.is_empty() {
-            let mut batch: Vec<String> = Vec::new();
-            let mut used_cpu: u32 = 0;
-            let mut to_remove: Vec<String> = Vec::new();
-            for id in ready.iter() {
-                if batch.len() >= options.jobs.max(1) {
-                    break;
-                }
-                let cpu = node_cpu(graph, id);
-                if used_cpu + cpu > cpu_budget {
-                    continue;
-                }
-                used_cpu += cpu;
-                batch.push(id.clone());
-                to_remove.push(id.clone());
-            }
-            if batch.is_empty() {
-                if let Some(id) = ready.iter().next().cloned() {
-                    batch.push(id.clone());
-                    to_remove.push(id);
-                }
-            }
-            let forced_batch = batch.len() == 1 && used_cpu == 0;
-            for id in to_remove {
-                ready.remove(&id);
-            }
-
-            let mut handles = Vec::new();
-            let mut skipped: Vec<(String, String)> = Vec::new();
-            let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
-            let mut to_start: Vec<(String, Node, Value)> = Vec::new();
-
-            for node_id in &batch {
-                if let Some(reason) = filter_reason(graph, node_id, &options) {
-                    skipped.push((node_id.clone(), reason));
-                    continue;
-                }
-                if cancel.load(Ordering::SeqCst) {
-                    skipped.push((node_id.clone(), "cancelled".to_string()));
-                    continue;
-                }
-                if let Some(limit) = options.run_timeout_ms {
-                    if start.elapsed() > Duration::from_millis(limit) {
-                        skipped.push((node_id.clone(), "run_timeout".to_string()));
-                        continue;
-                    }
-                }
-
-                if let Some(deps) = dep_map.get(node_id) {
-                    if deps.iter().any(|d| {
-                        matches!(
-                            status_map.get(d),
-                            Some(NodeStatus::Failed) | Some(NodeStatus::Skipped)
-                        )
-                    }) {
-                        skipped.push((node_id.clone(), "upstream_failed".to_string()));
-                        continue;
-                    }
-                }
-
-                let node = graph
-                    .nodes
-                    .iter()
-                    .find(|n| n.id == *node_id)
-                    .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
-                    .clone();
-                let resolved_params = ctx
-                    .resolved_params
-                    .get(&node.id)
-                    .cloned()
-                    .unwrap_or(Value::Null);
-
-                if node.retry.max_attempts > 0
-                    && (node.effects.contains(&Effect::Clock)
-                        || node.effects.contains(&Effect::Network))
-                    && !graph.inputs.contains_key("random_seed")
-                    && !graph.nondeterminism_allowed
-                {
-                    return Err(RuntimeError::Executor(
-                        "retry not allowed for nondeterministic node".to_string(),
-                    ));
-                }
-                if options.policy.deny_network && node.effects.contains(&Effect::Network) {
-                    return Err(RuntimeError::Executor(
-                        "network effect denied by policy".to_string(),
-                    ));
-                }
-                if options.policy.deny_env && node.effects.contains(&Effect::Env) {
-                    return Err(RuntimeError::Executor(
-                        "env effect denied by policy".to_string(),
-                    ));
-                }
-                if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
-                    return Err(RuntimeError::Executor(
-                        "clock effect denied by policy".to_string(),
-                    ));
-                }
-                let adapter = self.adapter_for_kind(&node.kind)?;
-                let required = adapter.required_effects();
-                let declared = EffectSet::from_effects(&node.effects);
-                if required.filesystem && !declared.filesystem
-                    || required.env && !declared.env
-                    || required.network && !declared.network
-                    || required.clock && !declared.clock
-                {
-                    return Err(RuntimeError::Executor(
-                        "missing required effects".to_string(),
-                    ));
-                }
-
-                let adapter_id = adapter.id();
-                let cache_read = try_cache_read(
-                    &options,
-                    &node,
-                    &ctx,
-                    graph,
-                    &adapter_id.id,
-                    &adapter_id.version,
-                )?;
-                if let Some(proof) = cache_read.proof.clone() {
-                    if !cache_read.hit {
-                        cache_proofs.insert(node_id.clone(), proof);
-                    }
-                }
-                if cache_read.hit {
-                    cached.push((node_id.clone(), node, cache_read.proof.unwrap()));
-                    continue;
-                }
-
-                to_start.push((node_id.clone(), node, resolved_params));
-            }
-
-            skipped.sort_by(|a, b| a.0.cmp(&b.0));
-            for (node_id, reason) in &skipped {
-                status_map.insert(node_id.clone(), NodeStatus::Skipped);
-                let node_kind = graph
-                    .nodes
-                    .iter()
-                    .find(|n| n.id == *node_id)
-                    .map(|n| n.kind.clone())
-                    .unwrap_or(NodeKind::Const);
-                let (aid, aver) = self.adapter_meta_for_kind(&node_kind);
-                let adapter_hash = self
-                    .adapter_for_kind(&node_kind)
-                    .ok()
-                    .and_then(|a| a.binary_hash());
-                let started = now_unix_ms();
-                write_trace(
-                    &ctx,
-                    graph,
-                    node_id,
-                    NodeStatus::Skipped,
-                    None,
-                    started,
-                    started,
-                    1,
-                    None,
-                    &aid,
-                    &aver,
-                    None,
-                    adapter_hash,
-                    Some(bijux_dag_artifacts::SkipReason {
-                        reason: reason.clone(),
-                    }),
-                )?;
-                append_event(
-                    &mut run_log,
-                    serde_json::json!({
-                        "event": "node_skipped",
-                        "ts": now_unix_ms(),
-                        "node_id": node_id,
-                        "reason": reason,
-                    }),
-                )?;
-                let _reason = reason;
-            }
-
-            let mut started_ids: Vec<String> = Vec::new();
-            for (node_id, _, _) in &to_start {
-                started_ids.push(node_id.clone());
-            }
-            for (node_id, _, _) in &cached {
-                started_ids.push(node_id.clone());
-            }
-            started_ids.sort();
-            let schedule_reason = if forced_batch {
-                "ready"
-            } else {
-                "budget_available"
-            };
-            for node_id in &started_ids {
-                append_event(
-                    &mut run_log,
-                    serde_json::json!({
-                        "event": "node_scheduled",
-                        "ts": now_unix_ms(),
-                        "node_id": node_id,
-                        "reason": schedule_reason,
-                    }),
-                )?;
-            }
-            for node_id in &started_ids {
-                append_event(
-                    &mut run_log,
-                    serde_json::json!({
-                        "event": "node_started",
-                        "ts": now_unix_ms(),
-                        "node_id": node_id,
-                    }),
-                )?;
-            }
-
-            for (node_id, node, cache_proof) in &cached {
-                status_map.insert(node_id.clone(), NodeStatus::Cached);
-                let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                let adapter_hash = self
-                    .adapter_for_kind(&node.kind)
-                    .ok()
-                    .and_then(|a| a.binary_hash());
-                let started = now_unix_ms();
-                write_trace(
-                    &ctx,
-                    graph,
-                    node_id,
-                    NodeStatus::Cached,
-                    None,
-                    started,
-                    started,
-                    1,
-                    Some(cache_proof.clone()),
-                    &aid,
-                    &aver,
-                    None,
-                    adapter_hash,
-                    None,
-                )?;
-                append_event(
-                    &mut run_log,
-                    serde_json::json!({
-                        "event": "node_finished",
-                        "ts": now_unix_ms(),
-                        "node_id": node_id,
-                        "status": "cached",
-                    }),
-                )?;
-                let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                try_cache_write(&options, node, &ctx, graph, &aid, &aver)?;
-            }
-
-            for (node_id, node, params) in &to_start {
-                materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
-                let adapter = self.adapter_for_kind(&node.kind)?;
-                let ctx_clone = ExecutionContext {
-                    run_dir: Arc::clone(&ctx.run_dir),
-                    graph_fingerprint: ctx.graph_fingerprint.clone(),
-                    resolved_params: ctx.resolved_params.clone(),
-                };
-                let node_id_clone = node_id.clone();
-                let node_for_thread = node.clone();
-                let params_for_thread = params.clone();
-                let retry = node.retry.clone();
-                handles.push((
-                    node_id_clone,
-                    node.clone(),
-                    std::thread::spawn(move || {
-                        let started = now_unix_ms();
-                        let result = execute_with_retries(
-                            adapter.as_ref(),
-                            &node_for_thread,
-                            &params_for_thread,
-                            &ctx_clone,
-                            &retry,
-                        );
-                        let finished = now_unix_ms();
-                        (started, finished, result)
-                    }),
-                ));
-            }
-
-            type ResultItem = (String, Node, u128, u128, Result<NodeResult, RuntimeError>);
-            let mut results: Vec<ResultItem> = Vec::new();
-            for (node_id, node, handle) in handles {
-                let res = handle.join().unwrap_or_else(|_| {
-                    (
-                        now_unix_ms(),
-                        now_unix_ms(),
-                        Err(RuntimeError::Executor("thread panicked".to_string())),
-                    )
-                });
-                results.push((node_id, node, res.0, res.1, res.2));
-            }
-            results.sort_by(|a, b| a.0.cmp(&b.0));
-            for (node_id, node, started, finished, res) in results {
-                match res {
-                    Ok(result) => {
-                        let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                        let adapter_hash = self
-                            .adapter_for_kind(&node.kind)
-                            .ok()
-                            .and_then(|a| a.binary_hash());
-                        let trace_failure = result.failure.clone();
-                        let cache_proof = cache_proofs.get(&node_id).cloned();
-                        for attempt in &result.attempt_events {
-                            append_event(
-                                &mut run_log,
-                                serde_json::json!({
-                                    "event": "node_attempt_started",
-                                    "ts": attempt.started_unix_ms,
-                                    "node_id": node_id,
-                                    "attempt": attempt.attempt,
-                                }),
-                            )?;
-                            append_event(
-                                &mut run_log,
-                                serde_json::json!({
-                                    "event": "node_attempt_finished",
-                                    "ts": attempt.finished_unix_ms,
-                                    "node_id": node_id,
-                                    "attempt": attempt.attempt,
-                                    "status": status_string(&attempt.status),
-                                }),
-                            )?;
-                        }
-                        write_trace(
-                            &ctx,
-                            graph,
-                            &node_id,
-                            result.status.clone(),
-                            trace_failure,
-                            started,
-                            finished,
-                            result.attempts,
-                            cache_proof,
-                            &aid,
-                            &aver,
-                            result.container_meta.clone(),
-                            adapter_hash,
-                            None,
-                        )?;
-                        append_event(
-                            &mut run_log,
-                            serde_json::json!({
-                                "event": "node_finished",
-                                "ts": now_unix_ms(),
-                                "node_id": node_id,
-                                "status": status_string(&result.status),
-                            }),
-                        )?;
-                        if result.status == NodeStatus::Failed {
-                            status_map.insert(node_id.clone(), NodeStatus::Failed);
-                        } else {
-                            status_map.insert(node_id.clone(), result.status.clone());
-                            let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                            try_cache_write(&options, &node, &ctx, graph, &aid, &aver)?;
-                        }
-                    }
-                    Err(err) => {
-                        let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                        status_map.insert(node_id.clone(), NodeStatus::Failed);
-                        let cache_proof = cache_proofs.get(&node_id).cloned();
-                        let adapter_hash = self
-                            .adapter_for_kind(&node.kind)
-                            .ok()
-                            .and_then(|a| a.binary_hash());
-                        write_trace(
-                            &ctx,
-                            graph,
-                            &node_id,
-                            NodeStatus::Failed,
-                            Some(FailureInfo {
-                                kind: "Internal".to_string(),
-                                code: "INTERNAL".to_string(),
-                                message: err.to_string(),
-                                details: None,
-                            }),
-                            started,
-                            finished,
-                            1,
-                            cache_proof,
-                            &aid,
-                            &aver,
-                            None,
-                            adapter_hash,
-                            None,
-                        )?;
-                        append_event(
-                            &mut run_log,
-                            serde_json::json!({
-                                "event": "node_finished",
-                                "ts": now_unix_ms(),
-                                "node_id": node_id,
-                                "status": "failed",
-                            }),
-                        )?;
-                    }
-                }
-            }
-
-            for node_id in batch {
-                if let Some(neighbors) = adj.get(&node_id) {
-                    for n in neighbors {
-                        if let Some(d) = indegree.get_mut(n) {
-                            *d -= 1;
-                            if *d == 0 {
-                                ready.insert(n.clone());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if cancel.load(Ordering::SeqCst) {
-            for node in &graph.nodes {
-                if !status_map.contains_key(&node.id) {
-                    status_map.insert(node.id.clone(), NodeStatus::Skipped);
-                    let (aid, aver) = self.adapter_meta_for_kind(&node.kind);
-                    let started = now_unix_ms();
-                    write_trace(
-                        &ctx,
-                        graph,
-                        &node.id,
-                        NodeStatus::Skipped,
-                        None,
-                        started,
-                        started,
-                        1,
-                        None,
-                        &aid,
-                        &aver,
-                        None,
-                        self.adapter_for_kind(&node.kind)
-                            .ok()
-                            .and_then(|a| a.binary_hash()),
-                        Some(bijux_dag_artifacts::SkipReason {
-                            reason: "cancelled".to_string(),
-                        }),
-                    )?;
-                }
-            }
-        }
-
-        let finished_unix_ms = now_unix_ms();
-        if cancel.load(Ordering::SeqCst) {
-            manifest.status = "cancelled".to_string();
-        } else if status_map.values().any(|s| *s == NodeStatus::Failed) {
-            manifest.status = "failed".to_string();
-        }
-        manifest.finished_unix_ms = finished_unix_ms;
-        manifest.node_counts = count_nodes(&status_map);
-        manifest.outputs = collect_outputs_summary(&ctx.run_dir)?;
-        let run_index = build_run_outputs_index(&manifest.outputs)?;
-        write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
-        run_dir.write_manifest(&manifest)?;
-        append_event(
-            &mut run_log,
-            serde_json::json!({
-                "event": "run_finished",
-                "ts": finished_unix_ms,
-                "status": manifest.status,
-            }),
-        )?;
-
-        let final_path = run_dir.finalize()?;
-        if let Some(latest) = options.latest_symlink {
-            let _ = fs::remove_file(&latest);
-            let _ = std::os::unix::fs::symlink(&final_path, &latest);
-        }
-        Ok(final_path)
+        let plan = build_plan(graph, &options);
+        engine::execute(self, graph, plan, out_dir, options)
     }
 }
 
@@ -1245,7 +678,7 @@ impl Default for Runtime {
 
 #[allow(clippy::too_many_arguments)]
 fn write_trace(
-    ctx: &ExecutionContext,
+    ctx: &RunContext,
     graph: &Graph,
     node_id: &str,
     status: NodeStatus,
@@ -1266,9 +699,13 @@ fn write_trace(
         .find(|n| n.id == node_id)
         .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?;
     let node_dir = ctx.run_dir.node_dir(node_id);
-    fs::create_dir_all(&node_dir)?;
+    ctx.fs.create_dir_all(&node_dir)?;
     write_resolved_params(ctx, node_id)?;
-    let inputs_index = if ctx.run_dir.node_inputs_index_path(node_id).exists() {
+    let inputs_index = if ctx
+        .fs
+        .metadata(ctx.run_dir.node_inputs_index_path(node_id).as_path())
+        .is_ok()
+    {
         Some("inputs/index.json".to_string())
     } else {
         None
@@ -1298,7 +735,8 @@ fn write_trace(
         failure,
     };
     let data = serde_json::to_vec_pretty(&trace)?;
-    fs::write(ctx.run_dir.node_trace_path(node_id), data)?;
+    ctx.fs
+        .write(ctx.run_dir.node_trace_path(node_id).as_path(), &data)?;
     Ok(())
 }
 
@@ -1311,7 +749,7 @@ fn status_string(status: &NodeStatus) -> String {
     }
 }
 
-fn write_resolved_params(ctx: &ExecutionContext, node_id: &str) -> Result<(), RuntimeError> {
+fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
     let mut params = ctx
         .resolved_params
         .get(node_id)
@@ -1319,7 +757,10 @@ fn write_resolved_params(ctx: &ExecutionContext, node_id: &str) -> Result<(), Ru
         .unwrap_or(Value::Null);
     sort_value_maps(&mut params);
     let data = serde_json::to_vec_pretty(&params)?;
-    fs::write(ctx.run_dir.node_resolved_params_path(node_id), data)?;
+    ctx.fs.write(
+        ctx.run_dir.node_resolved_params_path(node_id).as_path(),
+        &data,
+    )?;
     Ok(())
 }
 
@@ -1344,41 +785,11 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
         .max(1)
 }
 
-fn filter_reason(graph: &Graph, node_id: &str, options: &RuntimeOptions) -> Option<String> {
-    let node = graph.nodes.iter().find(|n| n.id == node_id)?;
-    if !options.selectors.include.is_empty()
-        && !options
-            .selectors
-            .include
-            .iter()
-            .any(|sel| selector_matches(node, sel))
-    {
-        return Some("filtered".to_string());
-    }
-    if options
-        .selectors
-        .exclude
-        .iter()
-        .any(|sel| selector_matches(node, sel))
-    {
-        return Some("filtered".to_string());
-    }
-    None
-}
-
-fn selector_matches(node: &Node, selector: &Selector) -> bool {
-    match selector {
-        Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
-        Selector::Tag(tag) => node.tags.iter().any(|t| t == tag),
-        Selector::Kind(kind) => node.kind.as_str() == kind,
-    }
-}
-
 fn execute_with_retries(
     adapter: &dyn Adapter,
     node: &Node,
     params: &Value,
-    ctx: &ExecutionContext,
+    ctx: &RunContext,
     retry: &RetryPolicy,
 ) -> Result<NodeResult, RuntimeError> {
     let mut attempt = 0u32;
@@ -1386,14 +797,14 @@ fn execute_with_retries(
     let mut attempt_events = Vec::new();
     loop {
         attempt += 1;
-        let started = now_unix_ms();
+        let started = ctx.clock.now_unix_ms();
         let node_ctx = NodeCtx {
             node,
             exec: ctx,
             params,
         };
         let mut result = adapter.execute(&node_ctx)?;
-        let finished = now_unix_ms();
+        let finished = ctx.clock.now_unix_ms();
         attempt_events.push(AttemptEvent {
             attempt,
             started_unix_ms: started,
@@ -1420,7 +831,7 @@ fn execute_with_retries(
     }
 }
 
-fn append_event(file: &mut fs::File, value: serde_json::Value) -> Result<(), RuntimeError> {
+fn append_event(file: &mut std::fs::File, value: serde_json::Value) -> Result<(), RuntimeError> {
     let line = serde_json::to_string(&value)?;
     writeln!(file, "{}", line)?;
     Ok(())
@@ -1464,7 +875,7 @@ fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
     if !dir.exists() {
         return Ok(Vec::new());
     }
-    let mut entries: Vec<_> = fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
+    let mut entries: Vec<_> = std::fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
     entries.sort_by_key(|e| e.file_name());
     let mut adapters: Vec<Arc<dyn Adapter>> = Vec::new();
     for entry in entries {
@@ -1482,7 +893,7 @@ fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
             Some(i) => i,
             None => continue,
         };
-        let binary_hash = fs::read(&path).ok().map(|b| sha256_bytes(&b));
+        let binary_hash = std::fs::read(&path).ok().map(|b| sha256_bytes(&b));
         let adapter = ExternalAdapter {
             path: path.clone(),
             info,
@@ -1529,44 +940,14 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     list
 }
 
-fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {
-    let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
-    for edge in &graph.edges {
-        map.entry(edge.to.node_id.clone())
-            .or_default()
-            .insert(edge.from.node_id.clone());
-    }
-    map
-}
-
-fn build_graph_index(graph: &Graph) -> (HashMap<String, usize>, HashMap<String, Vec<String>>) {
-    let mut indegree: HashMap<String, usize> = HashMap::new();
-    let mut adj: HashMap<String, Vec<String>> = HashMap::new();
-    for node in &graph.nodes {
-        indegree.insert(node.id.clone(), 0);
-        adj.insert(node.id.clone(), Vec::new());
-    }
-    for edge in &graph.edges {
-        let from = edge.from.node_id.clone();
-        let to = edge.to.node_id.clone();
-        if let Some(v) = adj.get_mut(&from) {
-            v.push(to.clone());
-        }
-        if let Some(d) = indegree.get_mut(&to) {
-            *d += 1;
-        }
-    }
-    (indegree, adj)
-}
-
 fn materialize_inputs(
-    ctx: &ExecutionContext,
+    ctx: &RunContext,
     graph: &Graph,
     node_id: &str,
     mode: MaterializeMode,
 ) -> Result<(), RuntimeError> {
     let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
-    fs::create_dir_all(&inputs_dir)?;
+    ctx.fs.create_dir_all(&inputs_dir)?;
     let mut files = Vec::new();
     for edge in &graph.edges {
         if edge.to.node_id != node_id {
@@ -1587,14 +968,14 @@ fn materialize_inputs(
             .node_outputs_dir(&edge.from.node_id)
             .join(&out.path);
         let dst_dir = inputs_dir.join(&edge.from.node_id).join(&edge.to.port);
-        fs::create_dir_all(&dst_dir)?;
+        ctx.fs.create_dir_all(&dst_dir)?;
         let dst_path = dst_dir.join(&out.path);
         if let Some(parent) = dst_path.parent() {
-            fs::create_dir_all(parent)?;
+            ctx.fs.create_dir_all(parent)?;
         }
-        if src_path.exists() {
-            materialize_file(&src_path, &dst_path, mode)?;
-            let data = fs::read(&dst_path)?;
+        if ctx.fs.metadata(&src_path).is_ok() {
+            materialize_file(ctx.fs.as_ref(), &src_path, &dst_path, mode)?;
+            let data = ctx.fs.read(&dst_path)?;
             let sha = sha256_bytes(&data);
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
@@ -1627,10 +1008,11 @@ fn declared_output_paths(node: &Node) -> Vec<String> {
 }
 
 fn try_cache_read(
-    options: &RuntimeOptions,
+    options: &RuntimeConfig,
     node: &Node,
-    ctx: &ExecutionContext,
+    ctx: &RunContext,
     graph: &Graph,
+    fs: &dyn Fs,
     adapter_id: &str,
     adapter_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
@@ -1653,8 +1035,8 @@ fn try_cache_read(
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
         let key = graph.node_fingerprint(node)?;
         let entry = cache_dir.join(&key);
-        if entry.exists() {
-            if !verify_cache_entry(&entry, &key, adapter_id, adapter_version)? {
+        if fs.metadata(&entry).is_ok() {
+            if !verify_cache_entry(fs, &entry, &key, adapter_id, adapter_version)? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -1668,12 +1050,13 @@ fn try_cache_read(
                 });
             }
             let node_dir = ctx.run_dir.node_dir(&node.id);
-            fs::create_dir_all(&node_dir)?;
+            fs.create_dir_all(&node_dir)?;
             copy_dir_all(
+                fs,
                 entry.join("outputs"),
                 ctx.run_dir.node_outputs_dir(&node.id),
             )?;
-            copy_dir_all(entry.join("logs"), node_dir.clone())?;
+            copy_dir_all(fs, entry.join("logs"), node_dir.clone())?;
             return Ok(CacheRead {
                 hit: true,
                 proof: Some(CacheProof {
@@ -1688,8 +1071,8 @@ fn try_cache_read(
         }
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
-            if remote_entry.exists() {
-                if !verify_cache_entry(&remote_entry, &key, adapter_id, adapter_version)? {
+            if fs.metadata(&remote_entry).is_ok() {
+                if !verify_cache_entry(fs, &remote_entry, &key, adapter_id, adapter_version)? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -1703,15 +1086,16 @@ fn try_cache_read(
                     });
                 }
                 let node_dir = ctx.run_dir.node_dir(&node.id);
-                fs::create_dir_all(&node_dir)?;
+                fs.create_dir_all(&node_dir)?;
                 copy_dir_all(
+                    fs,
                     remote_entry.join("outputs"),
                     ctx.run_dir.node_outputs_dir(&node.id),
                 )?;
-                copy_dir_all(remote_entry.join("logs"), node_dir.clone())?;
+                copy_dir_all(fs, remote_entry.join("logs"), node_dir.clone())?;
                 if let Some(local_dir) = options.cache_dir.as_ref() {
                     let local_entry = local_dir.join(&key);
-                    let _ = copy_dir_all(&remote_entry, &local_entry);
+                    let _ = copy_dir_all(fs, &remote_entry, &local_entry);
                 }
                 return Ok(CacheRead {
                     hit: true,
@@ -1734,10 +1118,11 @@ fn try_cache_read(
 }
 
 fn try_cache_write(
-    options: &RuntimeOptions,
+    options: &RuntimeConfig,
     node: &Node,
-    ctx: &ExecutionContext,
+    ctx: &RunContext,
     graph: &Graph,
+    fs: &dyn Fs,
     adapter_id: &str,
     adapter_version: &str,
 ) -> Result<(), RuntimeError> {
@@ -1751,52 +1136,57 @@ fn try_cache_write(
     };
     let key = graph.node_fingerprint(node)?;
     let entry = cache_dir.join(&key);
-    fs::create_dir_all(entry.join("outputs"))?;
-    fs::create_dir_all(entry.join("logs"))?;
+    fs.create_dir_all(entry.join("outputs").as_path())?;
+    fs.create_dir_all(entry.join("logs").as_path())?;
     let meta = serde_json::json!({
         "node_id": node.id,
         "node_fingerprint": key,
         "adapter_id": adapter_id,
         "adapter_version": adapter_version,
-        "created_unix_ms": now_unix_ms(),
+        "created_unix_ms": ctx.clock.now_unix_ms(),
         "schema_version": "v0.1",
     });
-    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta)?)?;
+    fs.write(
+        entry.join("meta.json").as_path(),
+        &serde_json::to_vec_pretty(&meta)?,
+    )?;
     copy_dir_all(
+        fs,
         ctx.run_dir.node_outputs_dir(&node.id),
         entry.join("outputs"),
     )?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
-    let _ = fs::copy(
-        node_dir.join("stdout.log"),
-        entry.join("logs").join("stdout.log"),
+    let _ = fs.copy(
+        node_dir.join("stdout.log").as_path(),
+        entry.join("logs").join("stdout.log").as_path(),
     );
-    let _ = fs::copy(
-        node_dir.join("stderr.log"),
-        entry.join("logs").join("stderr.log"),
+    let _ = fs.copy(
+        node_dir.join("stderr.log").as_path(),
+        entry.join("logs").join("stderr.log").as_path(),
     );
-    let _ = fs::copy(
-        node_dir.join("trace.json"),
-        entry.join("logs").join("trace.json"),
+    let _ = fs.copy(
+        node_dir.join("trace.json").as_path(),
+        entry.join("logs").join("trace.json").as_path(),
     );
     Ok(())
 }
 
 fn verify_cache_entry(
+    fs: &dyn Fs,
     entry: &Path,
     expected_key: &str,
     adapter_id: &str,
     adapter_version: &str,
 ) -> Result<bool, RuntimeError> {
     let index_path = entry.join("outputs").join("index.json");
-    if !index_path.exists() {
+    if fs.metadata(&index_path).is_err() {
         return Ok(false);
     }
     let meta_path = entry.join("meta.json");
-    if !meta_path.exists() {
+    if fs.metadata(&meta_path).is_err() {
         return Ok(false);
     }
-    let meta: serde_json::Value = serde_json::from_str(&fs::read_to_string(meta_path)?)?;
+    let meta: serde_json::Value = serde_json::from_str(&fs.read_to_string(&meta_path)?)?;
     if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(expected_key) {
         return Ok(false);
     }
@@ -1806,14 +1196,14 @@ fn verify_cache_entry(
     if meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version) {
         return Ok(false);
     }
-    let data = fs::read_to_string(index_path)?;
+    let data = fs.read_to_string(&index_path)?;
     let index: OutputsIndex = serde_json::from_str(&data)?;
     for file in index.files {
         let path = entry.join("outputs").join(&file.path);
-        if !path.exists() {
+        if fs.metadata(&path).is_err() {
             return Ok(false);
         }
-        let bytes = fs::read(path)?;
+        let bytes = fs.read(&path)?;
         let sha = sha256_bytes(&bytes);
         if sha != file.sha256 {
             return Ok(false);
@@ -1908,15 +1298,17 @@ fn container_trace(spec: &bijux_dag_core::ContainerSpec, engine: &str) -> Contai
     }
 }
 
-fn collect_outputs_summary(run_dir: &RunDir) -> Result<Vec<OutputSummary>, RuntimeError> {
+fn collect_outputs_summary(
+    fs: &dyn Fs,
+    run_dir: &RunDir,
+) -> Result<Vec<OutputSummary>, RuntimeError> {
     let mut out = Vec::new();
     let nodes_dir = run_dir.staging_path().join("nodes");
-    if nodes_dir.exists() {
-        for entry in fs::read_dir(nodes_dir)? {
-            let entry = entry?;
+    if fs.metadata(&nodes_dir).is_ok() {
+        for entry in fs.read_dir(&nodes_dir)? {
             let index_path = entry.path().join("outputs").join("index.json");
-            if index_path.exists() {
-                let data = fs::read_to_string(index_path)?;
+            if fs.metadata(&index_path).is_ok() {
+                let data = fs.read_to_string(&index_path)?;
                 let index: OutputsIndex = serde_json::from_str(&data)?;
                 for f in index.files {
                     out.push(OutputSummary {
@@ -1935,10 +1327,13 @@ fn collect_outputs_summary(run_dir: &RunDir) -> Result<Vec<OutputSummary>, Runti
     Ok(out)
 }
 
-fn build_run_outputs_index(outputs: &[OutputSummary]) -> Result<RunOutputsIndex, RuntimeError> {
+fn build_run_outputs_index(
+    run_dir: &RunDir,
+    outputs: &[OutputSummary],
+) -> Result<RunOutputsIndex, RuntimeError> {
     let mut files = Vec::new();
     for out in outputs {
-        let rel = format!("nodes/{}/outputs/{}", out.node_id, out.file);
+        let rel = run_dir.node_output_relpath(&out.node_id, &out.file);
         files.push(RunOutputFile {
             node_id: out.node_id.clone(),
             node_fingerprint: out.node_fingerprint.clone(),
@@ -1977,47 +1372,38 @@ fn count_nodes(status_map: &HashMap<String, NodeStatus>) -> NodeCounts {
     counts
 }
 
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+fn copy_dir_all(fs: &dyn Fs, src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     let src = src.as_ref();
     let dst = dst.as_ref();
-    fs::create_dir_all(dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
+    fs.create_dir_all(dst)?;
+    for entry in fs.read_dir(src)? {
         let ty = entry.file_type()?;
         let dst_path = dst.join(entry.file_name());
         if ty.is_dir() {
-            copy_dir_all(entry.path(), dst_path)?;
+            copy_dir_all(fs, entry.path(), dst_path)?;
         } else {
-            fs::copy(entry.path(), dst_path)?;
+            let _ = fs.copy(entry.path().as_path(), dst_path.as_path())?;
         }
     }
     Ok(())
 }
 
-fn materialize_file(src: &Path, dst: &Path, mode: MaterializeMode) -> io::Result<()> {
-    if dst.exists() {
-        fs::remove_file(dst)?;
+fn materialize_file(fs: &dyn Fs, src: &Path, dst: &Path, mode: MaterializeMode) -> io::Result<()> {
+    if fs.metadata(dst).is_ok() {
+        let _ = fs.remove_file(dst);
     }
     match mode {
         MaterializeMode::Copy => {
-            fs::copy(src, dst)?;
+            let _ = fs.copy(src, dst)?;
         }
         MaterializeMode::Hardlink => {
-            if fs::hard_link(src, dst).is_err() {
-                fs::copy(src, dst)?;
+            if fs.hard_link(src, dst).is_err() {
+                let _ = fs.copy(src, dst)?;
             }
         }
         MaterializeMode::Symlink => {
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::symlink;
-                if symlink(src, dst).is_err() {
-                    fs::copy(src, dst)?;
-                }
-            }
-            #[cfg(not(unix))]
-            {
-                fs::copy(src, dst)?;
+            if fs.symlink(src, dst).is_err() {
+                let _ = fs.copy(src, dst)?;
             }
         }
     }
@@ -2027,8 +1413,11 @@ fn materialize_file(src: &Path, dst: &Path, mode: MaterializeMode) -> io::Result
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bijux_dag_core::{ContainerSpec, Edge, Effect, MountSpec, ParamValue, PortRef, Severity};
+    use bijux_dag_core::{
+        ContainerSpec, Edge, Effect, MountSpec, ParamValue, PortRef, Severity, SPEC_VERSION,
+    };
     use std::collections::BTreeMap;
+    use std::fs;
 
     fn param_object(items: Vec<(&str, Value)>) -> ParamValue {
         let mut map = BTreeMap::new();
@@ -2121,7 +1510,7 @@ mod tests {
             diags
         );
         let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeOptions::default())
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
             .unwrap();
         assert!(final_path.join("manifest.json").exists());
         assert!(final_path.join("graph.snapshot.json").exists());
@@ -2163,7 +1552,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
         let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeOptions::default())
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
             .unwrap();
         let index = fs::read_to_string(
             final_path
@@ -2181,7 +1570,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
         let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeOptions::default())
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
             .unwrap();
         let expected = vec![
             "manifest.json",
@@ -2222,7 +1611,7 @@ mod tests {
             diags
         );
         graph.resolve_graph().unwrap();
-        let result = runtime.run(&graph, dir.path(), RuntimeOptions::default());
+        let result = runtime.run(&graph, dir.path(), RuntimeConfig::default());
         if let Err(err) = &result {
             panic!("{:?}", err);
         }
@@ -2236,14 +1625,14 @@ mod tests {
     fn jobs_consistent() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let opt1 = RuntimeOptions {
+        let opt1 = RuntimeConfig {
             jobs: 1,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run1 = runtime.run(&sample_graph(), dir.path(), opt1).unwrap();
-        let opt2 = RuntimeOptions {
+        let opt2 = RuntimeConfig {
             jobs: 4,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
         let snap1 = fs::read_to_string(run1.join("graph.snapshot.json")).unwrap();
@@ -2307,11 +1696,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let cache_dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let opt = RuntimeOptions {
+        let opt = RuntimeConfig {
             cache_mode: CacheMode::ReadWrite,
             cache_dir: Some(cache_dir.path().to_path_buf()),
             remote_cache_dir: None,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run1 = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
@@ -2333,11 +1722,11 @@ mod tests {
             }
         }
 
-        let opt2 = RuntimeOptions {
+        let opt2 = RuntimeConfig {
             cache_mode: CacheMode::Read,
             cache_dir: Some(cache_dir.path().to_path_buf()),
             remote_cache_dir: None,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
 
@@ -2363,19 +1752,19 @@ mod tests {
         let remote_cache = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
 
-        let opt = RuntimeOptions {
+        let opt = RuntimeConfig {
             cache_mode: CacheMode::ReadWrite,
             cache_dir: Some(remote_cache.path().to_path_buf()),
             remote_cache_dir: None,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
-        let opt2 = RuntimeOptions {
+        let opt2 = RuntimeConfig {
             cache_mode: CacheMode::Read,
             cache_dir: Some(local_cache.path().to_path_buf()),
             remote_cache_dir: Some(remote_cache.path().to_path_buf()),
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
         let trace_a: serde_json::Value = serde_json::from_str(
@@ -2404,11 +1793,11 @@ mod tests {
         let remote_cache = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
 
-        let opt = RuntimeOptions {
+        let opt = RuntimeConfig {
             cache_mode: CacheMode::ReadWrite,
             cache_dir: Some(remote_cache.path().to_path_buf()),
             remote_cache_dir: None,
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
 
@@ -2429,11 +1818,11 @@ mod tests {
             }
         }
 
-        let opt2 = RuntimeOptions {
+        let opt2 = RuntimeConfig {
             cache_mode: CacheMode::ReadWrite,
             cache_dir: Some(local_cache.path().to_path_buf()),
             remote_cache_dir: Some(remote_cache.path().to_path_buf()),
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
         let trace_a: serde_json::Value = serde_json::from_str(
@@ -2529,7 +1918,7 @@ mod tests {
             diags
         );
         graph.resolve_graph().unwrap();
-        let result = runtime.run(&graph, dir.path(), RuntimeOptions::default());
+        let result = runtime.run(&graph, dir.path(), RuntimeConfig::default());
         if let Err(err) = &result {
             panic!("{:?}", err);
         }
@@ -2574,7 +1963,7 @@ mod tests {
         )]);
         let runtime = Runtime::new();
         let final_path = runtime
-            .run(&graph, dir.path(), RuntimeOptions::default())
+            .run(&graph, dir.path(), RuntimeConfig::default())
             .unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
@@ -2649,10 +2038,10 @@ mod tests {
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let opt = RuntimeOptions {
+        let opt = RuntimeConfig {
             jobs: 3,
             cpu_budget: Some(2),
-            ..RuntimeOptions::default()
+            ..RuntimeConfig::default()
         };
         let final_path = runtime.run(&graph, dir.path(), opt).unwrap();
         let log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
@@ -2712,7 +2101,7 @@ mod tests {
         };
         let runtime = Runtime::new();
         let final_path = runtime
-            .run(&graph, dir.path(), RuntimeOptions::default())
+            .run(&graph, dir.path(), RuntimeConfig::default())
             .unwrap();
         let out = final_path
             .join("nodes")
@@ -2766,7 +2155,7 @@ mod tests {
 
         let runtime = Runtime::new();
         let final_path = runtime
-            .run(&graph, dir.path(), RuntimeOptions::default())
+            .run(&graph, dir.path(), RuntimeConfig::default())
             .unwrap();
         let out = final_path
             .join("nodes")
