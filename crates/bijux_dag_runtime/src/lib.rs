@@ -2,16 +2,16 @@ mod adapter;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
-    now_unix_ms, write_outputs_index, AdapterInfo, ArtifactError, CacheProof, FailureInfo,
-    Manifest, NodeCounts, NodeTrace, OutputSummary, OutputsIndex, Resources as TraceResources,
-    RunDir,
+    now_unix_ms, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
+    FailureInfo, InputFile, InputsIndex, Manifest, NodeCounts, NodeTrace, OutputSummary,
+    OutputsIndex, Resources as TraceResources, RunDir,
 };
 use bijux_dag_core::{
     Effect, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity, SPEC_VERSION,
 };
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -58,6 +58,15 @@ pub struct NodeResult {
     pub outputs_dir: String,
     pub failure: Option<FailureInfo>,
     pub attempts: u32,
+    pub attempt_events: Vec<AttemptEvent>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AttemptEvent {
+    pub attempt: u32,
+    pub started_unix_ms: u128,
+    pub finished_unix_ms: u128,
+    pub status: NodeStatus,
 }
 
 #[derive(Clone)]
@@ -78,6 +87,7 @@ impl Adapter for ConstAdapter {
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
         let node = ctx.node;
         let exec = ctx.exec;
+        let params = ctx.params;
         let node_dir = exec.run_dir.node_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
         fs::create_dir_all(exec.run_dir.node_outputs_dir(&node.id))?;
@@ -87,7 +97,7 @@ impl Adapter for ConstAdapter {
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
 
-        let value = node.params.get("value").cloned().unwrap_or(Value::Null);
+        let value = params.get("value").cloned().unwrap_or(Value::Null);
         fs::write(
             outputs_dir.join("value.json"),
             serde_json::to_vec_pretty(&value)?,
@@ -108,6 +118,7 @@ impl Adapter for ConstAdapter {
             outputs_dir: outputs_dir.display().to_string(),
             failure: None,
             attempts: 1,
+            attempt_events: Vec::new(),
         })
     }
 }
@@ -135,8 +146,8 @@ impl Adapter for ShellAdapter {
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
         let node = ctx.node;
         let exec = ctx.exec;
-        let argv = node
-            .params
+        let params = ctx.params;
+        let argv = params
             .get("argv")
             .and_then(|v| v.as_array())
             .ok_or_else(|| RuntimeError::Executor("missing argv".to_string()))?;
@@ -175,6 +186,17 @@ impl Adapter for ShellAdapter {
         fs::write(&stdout_path, &output.stdout)?;
         fs::write(&stderr_path, &output.stderr)?;
         fs::write(outputs_dir.join("stdout.log"), &output.stdout)?;
+        if let Some(failure) = validate_outputs_dir(&outputs_dir) {
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                failure: Some(failure),
+                attempts: 1,
+                attempt_events: Vec::new(),
+            });
+        }
         let fp = exec
             .graph_fingerprint
             .get(&node.id)
@@ -205,6 +227,7 @@ impl Adapter for ShellAdapter {
             outputs_dir: outputs_dir.display().to_string(),
             failure,
             attempts: 1,
+            attempt_events: Vec::new(),
         })
     }
 }
@@ -356,12 +379,21 @@ impl Runtime {
             }),
         )?;
 
+        let resolved = graph.resolve_graph()?;
         let mut node_fps = HashMap::new();
         for node in &graph.nodes {
-            node_fps.insert(node.id.clone(), graph.node_fingerprint(node)?);
+            let params = resolved
+                .resolved_params
+                .get(&node.id)
+                .cloned()
+                .unwrap_or(Value::Null);
+            node_fps.insert(
+                node.id.clone(),
+                graph.node_fingerprint_with_params(node, &params)?,
+            );
         }
-        let resolved_params = graph.resolve_params()?;
-        let resolved_params: HashMap<String, Value> = resolved_params.into_iter().collect();
+        let resolved_params: HashMap<String, Value> =
+            resolved.resolved_params.into_iter().collect();
         let ctx = ExecutionContext {
             run_dir: Arc::new(run_dir.clone()),
             graph_fingerprint: node_fps,
@@ -400,6 +432,7 @@ impl Runtime {
                     to_remove.push(id);
                 }
             }
+            let forced_batch = batch.len() == 1 && used_cpu == 0;
             for id in to_remove {
                 ready.remove(&id);
             }
@@ -407,7 +440,7 @@ impl Runtime {
             let mut handles = Vec::new();
             let mut skipped: Vec<(String, String)> = Vec::new();
             let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
-            let mut to_start: Vec<(String, Node)> = Vec::new();
+            let mut to_start: Vec<(String, Node, Value)> = Vec::new();
 
             for node_id in &batch {
                 if let Some(reason) = filter_reason(graph, node_id, &options) {
@@ -437,16 +470,28 @@ impl Runtime {
                     }
                 }
 
-                let mut node = graph
+                let node = graph
                     .nodes
                     .iter()
                     .find(|n| n.id == *node_id)
                     .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
                     .clone();
-                if let Some(r) = ctx.resolved_params.get(&node.id) {
-                    node.params = r.clone();
-                }
+                let resolved_params = ctx
+                    .resolved_params
+                    .get(&node.id)
+                    .cloned()
+                    .unwrap_or(Value::Null);
 
+                if node.retry.max_attempts > 0
+                    && (node.effects.contains(&Effect::Clock)
+                        || node.effects.contains(&Effect::Network))
+                    && !graph.inputs.contains_key("random_seed")
+                    && !graph.nondeterminism_allowed
+                {
+                    return Err(RuntimeError::Executor(
+                        "retry not allowed for nondeterministic node".to_string(),
+                    ));
+                }
                 if node.kind == NodeKind::Shell {
                     if !node.effects.contains(&Effect::Filesystem) {
                         return Err(RuntimeError::Executor(
@@ -496,7 +541,7 @@ impl Runtime {
                     continue;
                 }
 
-                to_start.push((node_id.clone(), node));
+                to_start.push((node_id.clone(), node, resolved_params));
             }
 
             skipped.sort_by(|a, b| a.0.cmp(&b.0));
@@ -523,17 +568,42 @@ impl Runtime {
                     &aid,
                     &aver,
                 )?;
+                append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "node_skipped",
+                        "ts": now_unix_ms(),
+                        "node_id": node_id,
+                        "reason": reason,
+                    }),
+                )?;
                 let _reason = reason;
             }
 
             let mut started_ids: Vec<String> = Vec::new();
-            for (node_id, _) in &to_start {
+            for (node_id, _, _) in &to_start {
                 started_ids.push(node_id.clone());
             }
             for (node_id, _, _) in &cached {
                 started_ids.push(node_id.clone());
             }
             started_ids.sort();
+            let schedule_reason = if forced_batch {
+                "ready"
+            } else {
+                "budget_available"
+            };
+            for node_id in &started_ids {
+                append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "node_scheduled",
+                        "ts": now_unix_ms(),
+                        "node_id": node_id,
+                        "reason": schedule_reason,
+                    }),
+                )?;
+            }
             for node_id in &started_ids {
                 append_event(
                     &mut run_log,
@@ -574,7 +644,8 @@ impl Runtime {
                 try_cache_write(&options, node, &ctx, graph)?;
             }
 
-            for (node_id, node) in &to_start {
+            for (node_id, node, params) in &to_start {
+                materialize_inputs(&ctx, graph, node_id)?;
                 let adapter = self
                     .adapters
                     .get(&node.kind)
@@ -587,6 +658,7 @@ impl Runtime {
                 };
                 let node_id_clone = node_id.clone();
                 let node_for_thread = node.clone();
+                let params_for_thread = params.clone();
                 let retry = node.retry.clone();
                 handles.push((
                     node_id_clone,
@@ -596,6 +668,7 @@ impl Runtime {
                         let result = execute_with_retries(
                             adapter.as_ref(),
                             &node_for_thread,
+                            &params_for_thread,
                             &ctx_clone,
                             &retry,
                         );
@@ -624,6 +697,27 @@ impl Runtime {
                         let (aid, aver) = adapter_meta_for_kind(&node.kind);
                         let trace_failure = result.failure.clone();
                         let cache_proof = cache_proofs.get(&node_id).cloned();
+                        for attempt in &result.attempt_events {
+                            append_event(
+                                &mut run_log,
+                                serde_json::json!({
+                                    "event": "node_attempt_started",
+                                    "ts": attempt.started_unix_ms,
+                                    "node_id": node_id,
+                                    "attempt": attempt.attempt,
+                                }),
+                            )?;
+                            append_event(
+                                &mut run_log,
+                                serde_json::json!({
+                                    "event": "node_attempt_finished",
+                                    "ts": attempt.finished_unix_ms,
+                                    "node_id": node_id,
+                                    "attempt": attempt.attempt,
+                                    "status": status_string(&attempt.status),
+                                }),
+                            )?;
+                        }
                         write_trace(
                             &ctx,
                             graph,
@@ -780,19 +874,29 @@ fn write_trace(
         .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?;
     let node_dir = ctx.run_dir.node_dir(node_id);
     fs::create_dir_all(&node_dir)?;
+    write_resolved_params(ctx, node_id)?;
+    let inputs_index = if ctx.run_dir.node_inputs_index_path(node_id).exists() {
+        Some("inputs/index.json".to_string())
+    } else {
+        None
+    };
     let trace = NodeTrace {
         node_id: node_id.to_string(),
         status: status_string(&status),
         started_unix_ms,
         finished_unix_ms,
         attempt,
-        fingerprint: graph.node_fingerprint(node)?,
+        fingerprint: graph.node_fingerprint_with_params(
+            node,
+            ctx.resolved_params.get(node_id).unwrap_or(&Value::Null),
+        )?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
         resources: node.resources.as_ref().map(|r| TraceResources {
             cpu: r.cpu,
             mem_mb: r.mem_mb,
         }),
+        inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         cache_proof,
         failure,
@@ -811,9 +915,25 @@ fn status_string(status: &NodeStatus) -> String {
     }
 }
 
+fn write_resolved_params(ctx: &ExecutionContext, node_id: &str) -> Result<(), RuntimeError> {
+    let mut params = ctx
+        .resolved_params
+        .get(node_id)
+        .cloned()
+        .unwrap_or(Value::Null);
+    sort_value_maps(&mut params);
+    let data = serde_json::to_vec_pretty(&params)?;
+    fs::write(ctx.run_dir.node_resolved_params_path(node_id), data)?;
+    Ok(())
+}
+
 #[allow(dead_code)]
-fn node_timeout_ms(node: &Node, default_ms: Option<u64>) -> Option<Duration> {
-    let param_timeout = node.params.get("timeout_ms").and_then(|v| v.as_u64());
+fn node_timeout_ms(
+    node: &Node,
+    resolved_params: &Value,
+    default_ms: Option<u64>,
+) -> Option<Duration> {
+    let param_timeout = resolved_params.get("timeout_ms").and_then(|v| v.as_u64());
     let ms = node.timeout_ms.or(param_timeout).or(default_ms);
     ms.map(Duration::from_millis)
 }
@@ -846,23 +966,45 @@ fn filter_reason(graph: &Graph, node_id: &str, options: &RuntimeOptions) -> Opti
 fn execute_with_retries(
     adapter: &dyn Adapter,
     node: &Node,
+    params: &Value,
     ctx: &ExecutionContext,
     retry: &RetryPolicy,
 ) -> Result<NodeResult, RuntimeError> {
     let mut attempt = 0u32;
+    let max = retry.max_attempts;
+    let mut attempt_events = Vec::new();
     loop {
         attempt += 1;
-        let node_ctx = NodeCtx { node, exec: ctx };
+        let started = now_unix_ms();
+        let node_ctx = NodeCtx {
+            node,
+            exec: ctx,
+            params,
+        };
         let mut result = adapter.execute(&node_ctx)?;
+        let finished = now_unix_ms();
+        attempt_events.push(AttemptEvent {
+            attempt,
+            started_unix_ms: started,
+            finished_unix_ms: finished,
+            status: result.status.clone(),
+        });
         result.attempts = attempt;
         if result.status != NodeStatus::Failed {
+            result.attempt_events = attempt_events;
             return Ok(result);
         }
-        if attempt > retry.max_attempts {
+        if attempt > max {
+            result.attempt_events = attempt_events;
             return Ok(result);
         }
         if retry.backoff_ms > 0 {
-            std::thread::sleep(Duration::from_millis(retry.backoff_ms));
+            let wait = retry
+                .backoff_ms
+                .saturating_mul(attempt.saturating_sub(1) as u64);
+            if wait > 0 {
+                std::thread::sleep(Duration::from_millis(wait));
+            }
         }
     }
 }
@@ -963,6 +1105,68 @@ fn build_graph_index(graph: &Graph) -> (HashMap<String, usize>, HashMap<String, 
     (indegree, adj)
 }
 
+fn materialize_inputs(
+    ctx: &ExecutionContext,
+    graph: &Graph,
+    node_id: &str,
+) -> Result<(), RuntimeError> {
+    let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
+    fs::create_dir_all(&inputs_dir)?;
+    for edge in &graph.edges {
+        if edge.to.node_id != node_id {
+            continue;
+        }
+        let src_dir = ctx.run_dir.node_outputs_dir(&edge.from.node_id);
+        let dst_dir = inputs_dir.join(&edge.from.node_id);
+        if src_dir.exists() {
+            copy_dir_all(src_dir, dst_dir)?;
+        }
+    }
+    let index = build_inputs_index(&inputs_dir)?;
+    write_inputs_index(&inputs_dir, &index)?;
+    Ok(())
+}
+
+fn build_inputs_index(dir: &Path) -> Result<InputsIndex, RuntimeError> {
+    let mut files = Vec::new();
+    if !dir.exists() {
+        return Ok(InputsIndex { files });
+    }
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(cur) = stack.pop() {
+        let mut entries: Vec<_> = fs::read_dir(&cur)?.filter_map(|e| e.ok()).collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let path = entry.path();
+            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
+                continue;
+            }
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.is_file() {
+                let data = fs::read(&path)?;
+                let sha = sha256_bytes(&data);
+                let rel = path.strip_prefix(dir).unwrap_or(&path);
+                let rel_str = rel.to_string_lossy().to_string();
+                let from_node = rel
+                    .components()
+                    .next()
+                    .map(|c| c.as_os_str().to_string_lossy().to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                files.push(InputFile {
+                    path: rel_str,
+                    sha256: sha,
+                    from_node,
+                });
+            }
+        }
+    }
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(InputsIndex { files })
+}
+
 fn cache_dir_from_env() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
 }
@@ -1056,6 +1260,8 @@ fn try_cache_write(
         "node_fingerprint": key,
         "adapter_id": adapter_meta_for_kind(&node.kind).0,
         "adapter_version": adapter_meta_for_kind(&node.kind).1,
+        "created_unix_ms": now_unix_ms(),
+        "schema_version": "v0.1",
     });
     fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta)?)?;
     copy_dir_all(
@@ -1125,6 +1331,65 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     hex::encode(result)
 }
 
+fn sort_value_maps(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            let mut sorted: BTreeMap<String, Value> = BTreeMap::new();
+            let entries = std::mem::take(map);
+            for (k, mut v) in entries {
+                sort_value_maps(&mut v);
+                sorted.insert(k, v);
+            }
+            let mut new_map = serde_json::Map::new();
+            for (k, v) in sorted {
+                new_map.insert(k, v);
+            }
+            *map = new_map;
+        }
+        Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                sort_value_maps(v);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn validate_outputs_dir(dir: &Path) -> Option<FailureInfo> {
+    if !dir.exists() {
+        return None;
+    }
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
+                continue;
+            }
+            if let Ok(ft) = entry.file_type() {
+                if ft.is_dir() || ft.is_symlink() {
+                    return Some(FailureInfo {
+                        kind: "Execution".to_string(),
+                        code: "OUTPUT_PATH_INVALID".to_string(),
+                        message: "outputs must be flat files".to_string(),
+                        details: None,
+                    });
+                }
+            }
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if name.contains("..") || name.contains('/') || name.contains('\\') {
+                    return Some(FailureInfo {
+                        kind: "Execution".to_string(),
+                        code: "OUTPUT_PATH_INVALID".to_string(),
+                        message: "invalid output path".to_string(),
+                        details: None,
+                    });
+                }
+            }
+        }
+    }
+    None
+}
+
 fn collect_outputs_summary(run_dir: &RunDir) -> Result<Vec<OutputSummary>, RuntimeError> {
     let mut out = Vec::new();
     let nodes_dir = run_dir.staging_path().join("nodes");
@@ -1190,7 +1455,16 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bijux_dag_core::{Edge, Effect, PortRef};
+    use bijux_dag_core::{Edge, Effect, ParamValue, PortRef, Severity};
+    use std::collections::BTreeMap;
+
+    fn param_object(items: Vec<(&str, Value)>) -> ParamValue {
+        let mut map = BTreeMap::new();
+        for (k, v) in items {
+            map.insert(k.to_string(), ParamValue::Literal(v));
+        }
+        ParamValue::Object(map)
+    }
 
     fn sample_graph() -> Graph {
         Graph {
@@ -1202,8 +1476,8 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out".to_string()],
-                    params: serde_json::json!({"value": 1}),
+                    outputs: vec!["out_a".to_string()],
+                    params: param_object(vec![("value", Value::from(1))]),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1216,7 +1490,10 @@ mod tests {
                     kind: NodeKind::Shell,
                     inputs: vec!["in".to_string()],
                     outputs: vec!["out_b".to_string()],
-                    params: serde_json::json!({"argv": ["echo", "ok"]}),
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![Value::from("echo"), Value::from("ok")]),
+                    )]),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1228,7 +1505,7 @@ mod tests {
             edges: vec![Edge {
                 from: PortRef {
                     node_id: "a".to_string(),
-                    port: "out".to_string(),
+                    port: "out_a".to_string(),
                 },
                 to: PortRef {
                     node_id: "b".to_string(),
@@ -1242,6 +1519,12 @@ mod tests {
     fn run_produces_artifacts() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
+        let diags = sample_graph().validate_with_warnings();
+        assert!(
+            !diags.iter().any(|d| d.severity == Severity::Error),
+            "{:?}",
+            diags
+        );
         let final_path = runtime
             .run(&sample_graph(), dir.path(), RuntimeOptions::default())
             .unwrap();
@@ -1250,6 +1533,16 @@ mod tests {
         assert!(final_path
             .join("nodes")
             .join("a")
+            .join("resolved_params.json")
+            .exists());
+        assert!(final_path
+            .join("nodes")
+            .join("b")
+            .join("resolved_params.json")
+            .exists());
+        assert!(final_path
+            .join("nodes")
+            .join("b")
             .join("trace.json")
             .exists());
         assert!(final_path
@@ -1302,11 +1595,15 @@ mod tests {
             "nodes/a/trace.json",
             "nodes/a/stdout.log",
             "nodes/a/stderr.log",
+            "nodes/a/resolved_params.json",
+            "nodes/a/inputs/index.json",
             "nodes/a/outputs/index.json",
             "nodes/a/outputs/value.json",
             "nodes/b/trace.json",
             "nodes/b/stdout.log",
             "nodes/b/stderr.log",
+            "nodes/b/resolved_params.json",
+            "nodes/b/inputs/index.json",
             "nodes/b/outputs/index.json",
         ];
         for e in expected {
@@ -1318,11 +1615,21 @@ mod tests {
     fn failing_node_writes_failure() {
         let dir = tempfile::tempdir().unwrap();
         let mut graph = sample_graph();
-        graph.nodes[1].params = serde_json::json!({"argv": ["false"]});
+        graph.nodes[1].params =
+            param_object(vec![("argv", Value::Array(vec![Value::from("false")]))]);
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeOptions::default())
-            .unwrap();
+        let diags = graph.validate_with_warnings();
+        assert!(
+            !diags.iter().any(|d| d.severity == Severity::Error),
+            "{:?}",
+            diags
+        );
+        graph.resolve_graph().unwrap();
+        let result = runtime.run(&graph, dir.path(), RuntimeOptions::default());
+        if let Err(err) = &result {
+            panic!("{:?}", err);
+        }
+        let final_path = result.unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace.contains("\"failure\""));
@@ -1359,7 +1666,7 @@ mod tests {
                     kind: NodeKind::Const,
                     inputs: vec![],
                     outputs: vec!["out".to_string()],
-                    params: serde_json::json!({"value": 1}),
+                    params: param_object(vec![("value", Value::from(1))]),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1371,8 +1678,8 @@ mod tests {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     inputs: vec![],
-                    outputs: vec!["out".to_string()],
-                    params: serde_json::json!({"value": 2}),
+                    outputs: vec!["out_a".to_string()],
+                    params: param_object(vec![("value", Value::from(2))]),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -1428,5 +1735,189 @@ mod tests {
             .join("outputs")
             .join("index.json")
             .exists());
+    }
+
+    #[test]
+    fn downstream_reads_upstream_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "a".to_string(),
+                    kind: NodeKind::Const,
+                    inputs: vec![],
+                    outputs: vec!["out_a".to_string()],
+                    params: param_object(vec![("value", Value::from("hello"))]),
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                },
+                Node {
+                    id: "b".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec!["in".to_string()],
+                    outputs: vec!["out_b".to_string()],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("cat ../inputs/a/value.json > ../outputs/out.txt"),
+                        ]),
+                    )]),
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                },
+            ],
+            edges: vec![Edge {
+                from: PortRef {
+                    node_id: "a".to_string(),
+                    port: "out_a".to_string(),
+                },
+                to: PortRef {
+                    node_id: "b".to_string(),
+                    port: "in".to_string(),
+                },
+            }],
+        };
+        let runtime = Runtime::new();
+        let diags = graph.validate_with_warnings();
+        assert!(
+            !diags.iter().any(|d| d.severity == Severity::Error),
+            "{:?}",
+            diags
+        );
+        graph.resolve_graph().unwrap();
+        let result = runtime.run(&graph, dir.path(), RuntimeOptions::default());
+        if let Err(err) = &result {
+            panic!("{:?}", err);
+        }
+        let final_path = result.unwrap();
+        let out = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("b")
+                .join("outputs")
+                .join("out.txt"),
+        )
+        .unwrap();
+        assert!(out.contains("hello"));
+        let inputs_index = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("b")
+                .join("inputs")
+                .join("index.json"),
+        )
+        .unwrap();
+        assert!(inputs_index.contains("a/value.json"));
+    }
+
+    #[test]
+    fn retry_succeeds_on_second_attempt() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut graph = sample_graph();
+        graph.nodes[1].retry = bijux_dag_core::RetryPolicy {
+            max_attempts: 1,
+            backoff_ms: 0,
+        };
+        graph.nodes[1].params = param_object(vec![(
+            "argv",
+            Value::Array(vec![
+                Value::from("/bin/sh"),
+                Value::from("-c"),
+                Value::from(
+                    "if [ ! -f marker ]; then touch marker; exit 1; fi; echo ok > ../outputs/out.txt",
+                ),
+            ]),
+        )]);
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeOptions::default())
+            .unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
+        assert!(trace.contains("\"attempt\": 2"));
+        assert!(trace.contains("\"status\": \"success\""));
+    }
+
+    #[test]
+    fn cpu_budget_schedules_deterministically() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "a".to_string(),
+                    kind: NodeKind::Const,
+                    inputs: vec![],
+                    outputs: vec!["out_a".to_string()],
+                    params: param_object(vec![("value", Value::from(1))]),
+                    timeout_ms: None,
+                    resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                },
+                Node {
+                    id: "b".to_string(),
+                    kind: NodeKind::Const,
+                    inputs: vec![],
+                    outputs: vec!["out_b".to_string()],
+                    params: param_object(vec![("value", Value::from(2))]),
+                    timeout_ms: None,
+                    resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                },
+                Node {
+                    id: "c".to_string(),
+                    kind: NodeKind::Const,
+                    inputs: vec![],
+                    outputs: vec!["out_c".to_string()],
+                    params: param_object(vec![("value", Value::from(3))]),
+                    timeout_ms: None,
+                    resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                },
+            ],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let opt = RuntimeOptions {
+            jobs: 3,
+            cpu_budget: Some(2),
+            ..RuntimeOptions::default()
+        };
+        let final_path = runtime.run(&graph, dir.path(), opt).unwrap();
+        let log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
+        let mut scheduled = Vec::new();
+        for line in log.lines() {
+            let v: serde_json::Value = serde_json::from_str(line).unwrap();
+            if v.get("event") == Some(&Value::String("node_scheduled".to_string())) {
+                if let Some(id) = v.get("node_id").and_then(|v| v.as_str()) {
+                    scheduled.push(id.to_string());
+                }
+            }
+        }
+        assert_eq!(scheduled, vec!["a", "b", "c"]);
     }
 }

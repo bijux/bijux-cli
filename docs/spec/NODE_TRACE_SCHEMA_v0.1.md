@@ -12,6 +12,7 @@ Required keys:
 
 Optional:
 - `resources` (object)
+- `inputs_index` (string)
 - `resolved_params` (json)
 - `cache_proof` (object)
 - `failure` (object)

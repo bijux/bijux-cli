@@ -33,6 +33,7 @@ impl EffectSet {
 pub struct NodeCtx<'a> {
     pub node: &'a Node,
     pub exec: &'a ExecutionContext,
+    pub params: &'a serde_json::Value,
 }
 
 pub trait Adapter: Send + Sync {

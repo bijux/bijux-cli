@@ -57,6 +57,8 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resources: Option<Resources>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub inputs_index: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_params: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_proof: Option<CacheProof>,
@@ -133,6 +135,18 @@ pub struct OutputFile {
     pub node_fingerprint: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InputsIndex {
+    pub files: Vec<InputFile>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InputFile {
+    pub path: String,
+    pub sha256: String,
+    pub from_node: String,
+}
+
 impl RunDir {
     pub fn create(out_base: impl AsRef<Path>) -> Result<Self, ArtifactError> {
         let run_id = generate_run_id();
@@ -177,6 +191,10 @@ impl RunDir {
         self.node_dir(node_id).join("outputs")
     }
 
+    pub fn node_inputs_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("inputs")
+    }
+
     pub fn node_work_dir(&self, node_id: &str) -> PathBuf {
         self.node_dir(node_id).join("work")
     }
@@ -193,12 +211,20 @@ impl RunDir {
         self.node_dir(node_id).join("trace.json")
     }
 
+    pub fn node_resolved_params_path(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("resolved_params.json")
+    }
+
     pub fn run_log_path(&self) -> PathBuf {
         self.staging_path.join("run.log.jsonl")
     }
 
     pub fn node_outputs_index_path(&self, node_id: &str) -> PathBuf {
         self.node_outputs_dir(node_id).join("index.json")
+    }
+
+    pub fn node_inputs_index_path(&self, node_id: &str) -> PathBuf {
+        self.node_inputs_dir(node_id).join("index.json")
     }
 
     pub fn finalize(self) -> Result<PathBuf, ArtifactError> {
@@ -254,6 +280,10 @@ pub fn write_outputs_index(
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let index = OutputsIndex { files };
     write_json(dir.as_ref().join("index.json"), &index)
+}
+
+pub fn write_inputs_index(dir: impl AsRef<Path>, index: &InputsIndex) -> Result<(), ArtifactError> {
+    write_json(dir.as_ref().join("index.json"), index)
 }
 
 pub fn now_unix_ms() -> u128 {

@@ -8,8 +8,12 @@ run-<id>/
   nodes/
     <node_id>/
       trace.json
+      resolved_params.json
       stdout.log
       stderr.log
+      inputs/
+        index.json
+        <files>
       outputs/
         index.json
         <files>
@@ -42,6 +46,18 @@ run-<id>/
   "started_unix_ms": number,
   "finished_unix_ms": number,
   "fingerprint": "sha256"
+}
+```
+
+## resolved_params.json
+Resolved parameters for the node with deterministic key ordering.
+
+## inputs/index.json
+```
+{
+  "files": [
+    {"path": "upstream/file", "sha256": "...", "from_node": "id"}
+  ]
 }
 ```
 
