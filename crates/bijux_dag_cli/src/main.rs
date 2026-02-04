@@ -71,6 +71,8 @@ enum Commands {
         #[arg(long)]
         deny_clock: bool,
         #[arg(long)]
+        hermetic: bool,
+        #[arg(long)]
         only_tag: Option<String>,
         #[arg(long)]
         skip_tag: Option<String>,
@@ -90,11 +92,17 @@ enum Commands {
         #[arg(long, default_value_t = 1)]
         jobs: usize,
         #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long)]
+        cpu_budget: Option<u32>,
+        #[arg(long)]
         deny_network: bool,
         #[arg(long)]
         deny_env: bool,
         #[arg(long)]
         deny_clock: bool,
+        #[arg(long)]
+        hermetic: bool,
     },
     Diff {
         run_a: PathBuf,
@@ -230,8 +238,13 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 if print_fingerprints {
                     out["graph_fingerprint"] = json!(graph.graph_fingerprint().unwrap());
                     let mut nodes = serde_json::Map::new();
+                    let resolved = graph.resolve_graph().ok().map(|g| g.resolved_params);
                     for n in &graph.nodes {
-                        let fp = graph.node_fingerprint(n).unwrap();
+                        let fp = resolved
+                            .as_ref()
+                            .and_then(|m| m.get(&n.id))
+                            .and_then(|p| graph.node_fingerprint_with_params(n, p).ok())
+                            .unwrap_or_else(|| graph.node_fingerprint(n).unwrap());
                         nodes.insert(n.id.clone(), json!(fp));
                     }
                     out["node_fingerprints"] = json!(nodes);
@@ -244,11 +257,19 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                         .map(|n| n.id.clone())
                         .collect::<Vec<_>>();
                     out["canonical_order"] = json!(order);
-                    out["resolved_params"] = json!(graph.resolve_params().unwrap_or_default());
+                    out["resolved_params"] = json!(graph
+                        .resolve_graph()
+                        .map(|g| g.resolved_params)
+                        .unwrap_or_default());
                     out["graph_fingerprint"] = json!(graph.graph_fingerprint().unwrap());
                     let mut nodes = serde_json::Map::new();
+                    let resolved = graph.resolve_graph().ok().map(|g| g.resolved_params);
                     for n in &graph.nodes {
-                        let fp = graph.node_fingerprint(n).unwrap();
+                        let fp = resolved
+                            .as_ref()
+                            .and_then(|m| m.get(&n.id))
+                            .and_then(|p| graph.node_fingerprint_with_params(n, p).ok())
+                            .unwrap_or_else(|| graph.node_fingerprint(n).unwrap());
                         nodes.insert(n.id.clone(), json!(fp));
                     }
                     out["node_fingerprints"] = json!(nodes);
@@ -260,8 +281,13 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 }
                 if print_fingerprints {
                     println!("graph_fingerprint={}", graph.graph_fingerprint().unwrap());
+                    let resolved = graph.resolve_graph().ok().map(|g| g.resolved_params);
                     for n in &graph.nodes {
-                        let fp = graph.node_fingerprint(n).unwrap();
+                        let fp = resolved
+                            .as_ref()
+                            .and_then(|m| m.get(&n.id))
+                            .and_then(|p| graph.node_fingerprint_with_params(n, p).ok())
+                            .unwrap_or_else(|| graph.node_fingerprint(n).unwrap());
                         println!("node_fingerprint {}={}", n.id, fp);
                     }
                 }
@@ -275,12 +301,22 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                     println!("canonical_order: {:?}", order);
                     println!(
                         "resolved_params: {}",
-                        serde_json::to_string_pretty(&graph.resolve_params().unwrap_or_default())
-                            .unwrap()
+                        serde_json::to_string_pretty(
+                            &graph
+                                .resolve_graph()
+                                .map(|g| g.resolved_params)
+                                .unwrap_or_default()
+                        )
+                        .unwrap()
                     );
                     println!("graph_fingerprint={}", graph.graph_fingerprint().unwrap());
+                    let resolved = graph.resolve_graph().ok().map(|g| g.resolved_params);
                     for n in &graph.nodes {
-                        let fp = graph.node_fingerprint(n).unwrap();
+                        let fp = resolved
+                            .as_ref()
+                            .and_then(|m| m.get(&n.id))
+                            .and_then(|p| graph.node_fingerprint_with_params(n, p).ok())
+                            .unwrap_or_else(|| graph.node_fingerprint(n).unwrap());
                         println!("node_fingerprint {}={}", n.id, fp);
                     }
                 }
@@ -317,9 +353,12 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             reuse_cache,
             cache,
             jobs,
+            run_id,
+            cpu_budget,
             deny_network,
             deny_env,
             deny_clock,
+            hermetic,
         } => {
             let snapshot = load_snapshot(&run_dir)?;
             let runtime = Runtime::new();
@@ -334,14 +373,20 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 CacheModeArg::Read => CacheMode::Read,
                 CacheModeArg::Readwrite => CacheMode::ReadWrite,
             };
+            let mut deny_network = deny_network;
+            let mut deny_clock = deny_clock;
+            if hermetic {
+                deny_network = true;
+                deny_clock = true;
+            }
             let options = RuntimeOptions {
                 jobs,
-                cpu_budget: None,
+                cpu_budget,
                 run_timeout_ms: None,
                 node_timeout_ms: None,
                 cache_mode,
                 cache_dir: None,
-                run_id: None,
+                run_id,
                 latest_symlink: None,
                 policy: bijux_dag_runtime::Policy {
                     deny_network,
@@ -405,6 +450,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             deny_network,
             deny_env,
             deny_clock,
+            hermetic,
             only_tag,
             skip_tag,
             cache,
@@ -413,6 +459,12 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             let input = read_file(&dag)?;
             let graph = parse_graph(&input)?;
             let runtime = Runtime::new();
+            let mut deny_network = deny_network;
+            let mut deny_clock = deny_clock;
+            if hermetic {
+                deny_network = true;
+                deny_clock = true;
+            }
             let options = RuntimeOptions {
                 jobs,
                 cpu_budget,
@@ -480,6 +532,13 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                         .join("index.json"),
                 )
                 .ok();
+                let resolved_params = read_file(
+                    &run_dir
+                        .join("nodes")
+                        .join(&node_id)
+                        .join("resolved_params.json"),
+                )
+                .ok();
                 let outputs = node_info.outputs.clone();
                 let inputs = node_info.inputs.clone();
                 if json {
@@ -491,7 +550,10 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                             "deps": deps,
                             "inputs": inputs,
                             "outputs": outputs,
+                            "effects": node_info.effects,
+                            "env_allowlist": node_info.env_allowlist,
                             "outputs_index": outputs_index.and_then(|v| serde_json::from_str::<serde_json::Value>(&v).ok()),
+                            "resolved_params": resolved_params.and_then(|v| serde_json::from_str::<serde_json::Value>(&v).ok()),
                             "trace": serde_json::from_str::<serde_json::Value>(&trace).ok(),
                             "fingerprint": snapshot.graph.node_fingerprint(node_info).ok(),
                         }))
@@ -502,6 +564,11 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                     println!("deps: {:?}", deps);
                     println!("inputs: {:?}", inputs);
                     println!("outputs: {:?}", outputs);
+                    println!("effects: {:?}", node_info.effects);
+                    println!("env_allowlist: {:?}", node_info.env_allowlist);
+                    if let Some(r) = resolved_params {
+                        println!("resolved_params:\n{}", r);
+                    }
                     if let Some(o) = outputs_index {
                         println!("outputs_index:\n{}", o);
                     }
@@ -628,6 +695,11 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 } else {
                     println!("checked: {}", report["checked"]);
                     println!("corrupt: {}", report["corrupt"]);
+                    if let Some(keys) = report["corrupt_keys"].as_array() {
+                        if !keys.is_empty() {
+                            println!("corrupt_keys: {}", report["corrupt_keys"]);
+                        }
+                    }
                 }
                 if corrupt > 0 {
                     return Err(ExitCode::from(3));
@@ -809,16 +881,16 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
 }
 
 fn print_human_diff(diff: &serde_json::Value) {
-    println!("manifest differs");
+    let manifest = diff["manifest"].as_object().map(|o| o.len()).unwrap_or(0);
+    let graph_fp = diff["graph_fingerprint"].is_null();
+    let nodes = diff["nodes"].as_object().map(|o| o.len()).unwrap_or(0);
+    let outputs = diff["outputs"].as_object().map(|o| o.len()).unwrap_or(0);
+    if manifest == 0 && graph_fp && nodes == 0 && outputs == 0 {
+        println!("no differences");
+        return;
+    }
+    println!("manifest changes: {}", manifest);
     println!("graph_fingerprint: {}", diff["graph_fingerprint"]);
-    let nodes = diff["node_changes"]
-        .as_object()
-        .map(|o| o.len())
-        .unwrap_or(0);
-    let outputs = diff["output_changes"]
-        .as_object()
-        .map(|o| o.len())
-        .unwrap_or(0);
     println!("nodes changed: {}", nodes);
     println!("outputs changed: {}", outputs);
 }
@@ -854,20 +926,24 @@ fn collect_output_files(
 fn verify_cache_dir(dir: &Path) -> Result<serde_json::Value, ExitCode> {
     let mut checked = 0u64;
     let mut corrupt = 0u64;
+    let mut corrupt_keys: Vec<String> = Vec::new();
     if dir.exists() {
         for entry in fs::read_dir(dir).map_err(|_| ExitCode::from(3))? {
             let entry = entry.map_err(|_| ExitCode::from(3))?;
             let path = entry.path();
             if path.is_dir() {
                 checked += 1;
+                let key = entry.file_name().to_string_lossy().to_string();
                 let index_path = path.join("outputs").join("index.json");
                 let meta_path = path.join("meta.json");
                 if !index_path.exists() {
                     corrupt += 1;
+                    corrupt_keys.push(key);
                     continue;
                 }
                 if !meta_path.exists() {
                     corrupt += 1;
+                    corrupt_keys.push(key);
                     continue;
                 }
                 let data = fs::read_to_string(&index_path).map_err(|_| ExitCode::from(3))?;
@@ -877,19 +953,23 @@ fn verify_cache_dir(dir: &Path) -> Result<serde_json::Value, ExitCode> {
                     let fpath = path.join("outputs").join(&file.path);
                     if !fpath.exists() {
                         corrupt += 1;
+                        corrupt_keys.push(key.clone());
                         break;
                     }
                     let bytes = fs::read(&fpath).map_err(|_| ExitCode::from(3))?;
                     let sha = sha256_bytes(&bytes);
                     if sha != file.sha256 {
                         corrupt += 1;
+                        corrupt_keys.push(key.clone());
                         break;
                     }
                 }
             }
         }
     }
-    Ok(json!({ "checked": checked, "corrupt": corrupt }))
+    corrupt_keys.sort();
+    corrupt_keys.dedup();
+    Ok(json!({ "checked": checked, "corrupt": corrupt, "corrupt_keys": corrupt_keys }))
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {

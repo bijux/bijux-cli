@@ -72,13 +72,23 @@ fn replay_golden() {
     let snap_b = fs::read_to_string(replay_run.join("graph.snapshot.json")).unwrap();
     assert_eq!(snap_a, snap_b);
 
-    let trace_a = fs::read_to_string(run_dir.join("nodes").join("a").join("trace.json")).unwrap();
-    let trace_b =
-        fs::read_to_string(replay_run.join("nodes").join("a").join("trace.json")).unwrap();
-    let va: serde_json::Value = serde_json::from_str(&trace_a).unwrap();
-    let vb: serde_json::Value = serde_json::from_str(&trace_b).unwrap();
-    assert_eq!(va["fingerprint"], vb["fingerprint"]);
-    assert_eq!(va["status"], vb["status"]);
+    let out_a = fs::read_to_string(
+        run_dir
+            .join("nodes")
+            .join("a")
+            .join("outputs")
+            .join("index.json"),
+    )
+    .unwrap();
+    let out_b = fs::read_to_string(
+        replay_run
+            .join("nodes")
+            .join("a")
+            .join("outputs")
+            .join("index.json"),
+    )
+    .unwrap();
+    assert_eq!(out_a, out_b);
 }
 
 #[test]
@@ -136,6 +146,8 @@ fn diff_golden() {
         .unwrap();
     assert!(out.status.success());
     let val: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    let nodes = val["node_changes"].as_object().unwrap();
+    let nodes = val["nodes"].as_object().unwrap();
     assert!(nodes.contains_key("a"));
+    let outputs = val["outputs"].as_object().unwrap();
+    assert!(outputs.contains_key("a"));
 }
