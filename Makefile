@@ -1,4 +1,4 @@
-.PHONY: test lint security fmt golden
+.PHONY: test lint security fmt golden compat
 
 test:
 	cargo test --workspace
@@ -15,3 +15,6 @@ security:
 
 golden:
 	./scripts/golden.sh
+
+compat:
+	cargo run -p bijux_dag_cli -- compat

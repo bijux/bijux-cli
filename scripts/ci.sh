@@ -7,6 +7,7 @@ make fmt
 make lint
 make test
 make golden
+cargo run -p bijux_dag_cli -- compat >/dev/null
 
 TMP=$(mktemp -d)
 RUNS="$TMP/runs"

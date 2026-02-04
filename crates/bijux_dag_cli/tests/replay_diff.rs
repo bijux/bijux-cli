@@ -7,8 +7,8 @@ fn write_dag(path: &std::path::Path, value: i32) {
         r#"{{
   "spec": "bijux-dag/v0.1",
   "nodes": [
-    {{"id": "a", "kind": "const", "inputs": [], "outputs": ["out"], "params": {{"value": {}}}}},
-    {{"id": "b", "kind": "shell", "inputs": ["in"], "outputs": ["out_b"], "params": {{"argv": ["echo", "ok"]}}, "effects": ["filesystem"]}}
+    {{"id": "a", "kind": "const", "inputs": [], "outputs": [{{"name": "out", "path": "out"}}], "params": {{"value": {}}}}},
+    {{"id": "b", "kind": "shell", "inputs": ["in"], "outputs": [{{"name": "out_b", "path": "out_b"}}], "params": {{"argv": ["/bin/sh", "-c", "echo ok > ../outputs/out_b"]}}, "effects": ["filesystem"]}}
   ],
   "edges": [
     {{"from": {{"node_id": "a", "port": "out"}}, "to": {{"node_id": "b", "port": "in"}}}}

@@ -4,11 +4,14 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
-use bijux_dag_runtime::{registered_adapters, CacheMode, Runtime, RuntimeOptions};
+use bijux_dag_runtime::{
+    registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeOptions, Selector, SelectorSet,
+};
 use clap::{Parser, Subcommand, ValueEnum};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use serde::Serialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
@@ -31,6 +34,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Init {
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
     Validate {
         dag: PathBuf,
         #[arg(long)]
@@ -48,6 +55,11 @@ enum Commands {
     },
     Canonicalize {
         dag: PathBuf,
+    },
+    Lint {
+        dag: PathBuf,
+        #[arg(long)]
+        strict: bool,
     },
     Fingerprint {
         dag: PathBuf,
@@ -76,10 +88,12 @@ enum Commands {
         deny_clock: bool,
         #[arg(long)]
         hermetic: bool,
-        #[arg(long)]
-        only_tag: Option<String>,
-        #[arg(long)]
-        skip_tag: Option<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        exclude: Vec<String>,
+        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+        materialize_inputs: MaterializeModeArg,
         #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
         cache: CacheModeArg,
         #[arg(long)]
@@ -109,8 +123,19 @@ enum Commands {
         deny_clock: bool,
         #[arg(long)]
         hermetic: bool,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        exclude: Vec<String>,
+        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+        materialize_inputs: MaterializeModeArg,
         #[arg(long)]
         remote_cache_dir: Option<PathBuf>,
+    },
+    Graph {
+        dag: PathBuf,
+        #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
+        format: GraphFormatArg,
     },
     Diff {
         run_a: PathBuf,
@@ -136,6 +161,12 @@ enum Commands {
     VerifyRun {
         run_dir: PathBuf,
     },
+    Doctor,
+    Migrate {
+        #[command(subcommand)]
+        command: MigrateCommands,
+    },
+    Compat,
     Cache {
         #[command(subcommand)]
         command: CacheCommands,
@@ -191,11 +222,49 @@ enum AdaptersCommands {
     Doctor,
 }
 
+#[derive(Subcommand)]
+enum MigrateCommands {
+    Dag {
+        file: PathBuf,
+        #[arg(long)]
+        from: String,
+        #[arg(long)]
+        to: String,
+    },
+    Run {
+        run_dir: PathBuf,
+        #[arg(long)]
+        from: String,
+        #[arg(long)]
+        to: String,
+    },
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum CacheModeArg {
     Off,
     Read,
     Readwrite,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+enum MaterializeModeArg {
+    Copy,
+    Hardlink,
+    Symlink,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+enum GraphFormatArg {
+    Dot,
+}
+
+#[derive(Debug, Serialize)]
+struct LintDiagnostic {
+    code: String,
+    message: String,
+    path: String,
+    hint: Option<String>,
 }
 
 fn main() -> ExitCode {
@@ -208,6 +277,63 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
     match cli.command {
+        Commands::Init { dir } => {
+            let base = dir.unwrap_or_else(|| PathBuf::from("."));
+            fs::create_dir_all(&base).map_err(|_| ExitCode::from(3))?;
+            let dag_path = base.join("dag.json");
+            if dag_path.exists() {
+                return Err(ExitCode::from(3));
+            }
+            let runs_dir = base.join("runs");
+            fs::create_dir_all(&runs_dir).map_err(|_| ExitCode::from(3))?;
+            let docs_spec_dir = base.join("docs").join("spec");
+            fs::create_dir_all(&docs_spec_dir).ok();
+            let dag = json!({
+              "spec": SPEC_VERSION,
+              "meta": {
+                "name": "hello-bijux-dag",
+                "description": "Starter Bijux DAG",
+                "owners": [],
+                "tags": []
+              },
+              "nodes": [
+                {
+                  "id": "const1",
+                  "kind": "const",
+                  "inputs": [],
+                  "outputs": [{"name": "out", "path": "out"}],
+                  "params": {"value": "hello"}
+                },
+                {
+                  "id": "echo",
+                  "kind": "shell",
+                  "inputs": ["in"],
+                  "outputs": [{"name": "out", "path": "out"}],
+                  "params": {"argv": ["/bin/sh","-c","cat ../inputs/const1/in/out > ../outputs/out"]},
+                  "effects": ["filesystem"]
+                }
+              ],
+              "edges": [
+                {"from": {"node_id": "const1", "port": "out"}, "to": {"node_id": "echo", "port": "in"}}
+              ]
+            });
+            fs::write(&dag_path, serde_json::to_vec_pretty(&dag).unwrap())
+                .map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json!({
+                        "dag": dag_path,
+                        "runs": runs_dir
+                    }))
+                    .unwrap()
+                );
+            } else if !cli.quiet {
+                println!("created {}", dag_path.display());
+                println!("created {}", runs_dir.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::Validate {
             dag,
             strict,
@@ -357,6 +483,26 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             println!("{}", json);
             Ok(ExitCode::SUCCESS)
         }
+        Commands::Lint { dag, strict } => {
+            let input = read_file(&dag)?;
+            let graph = parse_graph(&input)?;
+            let lint = lint_graph(&graph);
+            let has_warnings = !lint.is_empty();
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json!({ "warnings": lint })).unwrap()
+                );
+            } else {
+                for warn in &lint {
+                    println!("WARN {} {} {}", warn.code, warn.path, warn.message);
+                }
+            }
+            if strict && has_warnings {
+                return Err(ExitCode::from(2));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::Fingerprint { dag } => {
             let input = read_file(&dag)?;
             let graph = parse_graph(&input)?;
@@ -368,6 +514,16 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 );
             } else {
                 println!("{}", fp);
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Graph { dag, format } => {
+            let input = read_file(&dag)?;
+            let graph = parse_graph(&input)?;
+            match format {
+                GraphFormatArg::Dot => {
+                    println!("{}", graph_to_dot(&graph));
+                }
             }
             Ok(ExitCode::SUCCESS)
         }
@@ -383,6 +539,9 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             deny_env,
             deny_clock,
             hermetic,
+            select,
+            exclude,
+            materialize_inputs,
             remote_cache_dir,
         } => {
             let snapshot = load_snapshot(&run_dir)?;
@@ -404,11 +563,13 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 deny_network = true;
                 deny_clock = true;
             }
+            let selectors = parse_selectors(&select, &exclude)?;
             let options = RuntimeOptions {
                 jobs,
                 cpu_budget,
                 run_timeout_ms: None,
                 node_timeout_ms: None,
+                materialize_inputs: map_materialize_mode(materialize_inputs),
                 cache_mode,
                 cache_dir: None,
                 remote_cache_dir,
@@ -419,8 +580,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                     deny_env,
                     deny_clock,
                 },
-                only_tag: None,
-                skip_tag: None,
+                selectors,
             };
             let run_path = runtime
                 .run(&snapshot.graph, out, options)
@@ -477,8 +637,9 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             deny_env,
             deny_clock,
             hermetic,
-            only_tag,
-            skip_tag,
+            select,
+            exclude,
+            materialize_inputs,
             cache,
             cache_dir,
             remote_cache_dir,
@@ -492,11 +653,13 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 deny_network = true;
                 deny_clock = true;
             }
+            let selectors = parse_selectors(&select, &exclude)?;
             let options = RuntimeOptions {
                 jobs,
                 cpu_budget,
                 run_timeout_ms,
                 node_timeout_ms,
+                materialize_inputs: map_materialize_mode(materialize_inputs),
                 cache_mode: match cache {
                     CacheModeArg::Off => CacheMode::Off,
                     CacheModeArg::Read => CacheMode::Read,
@@ -511,8 +674,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                     deny_env,
                     deny_clock,
                 },
-                only_tag,
-                skip_tag,
+                selectors,
             };
             let run_path = runtime
                 .run(&graph, out, options)
@@ -700,6 +862,46 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
         }
         Commands::VerifyRun { run_dir } => {
             let report = verify_run(&run_dir)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("status: {}", report["status"]);
+            }
+            if report["status"] != "ok" {
+                return Err(ExitCode::from(3));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Doctor => {
+            let report = doctor_report()?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("status: {}", report["status"]);
+            }
+            if report["status"] != "ok" {
+                return Err(ExitCode::from(3));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Migrate { command } => {
+            let msg = match command {
+                MigrateCommands::Dag { file, from, to } => migrate_dag(&file, &from, &to)?,
+                MigrateCommands::Run { run_dir, from, to } => migrate_run(&run_dir, &from, &to)?,
+            };
+            if cli.json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json!({ "status": "ok", "message": msg }))
+                        .unwrap()
+                );
+            } else if !cli.quiet {
+                println!("{}", msg);
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Compat => {
+            let report = run_compat_suite()?;
             if cli.json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
             } else {
@@ -898,7 +1100,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
     }
 }
 
-fn read_file(path: &PathBuf) -> Result<String, ExitCode> {
+fn read_file(path: &Path) -> Result<String, ExitCode> {
     fs::read_to_string(path).map_err(|_| ExitCode::from(3))
 }
 
@@ -1254,6 +1456,248 @@ fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
         }
     }
 
+    let status = if errors.is_empty() { "ok" } else { "error" };
+    Ok(json!({ "status": status, "errors": errors }))
+}
+
+fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
+    match arg {
+        MaterializeModeArg::Copy => MaterializeMode::Copy,
+        MaterializeModeArg::Hardlink => MaterializeMode::Hardlink,
+        MaterializeModeArg::Symlink => MaterializeMode::Symlink,
+    }
+}
+
+fn parse_selectors(include: &[String], exclude: &[String]) -> Result<SelectorSet, ExitCode> {
+    let mut set = SelectorSet {
+        include: Vec::new(),
+        exclude: Vec::new(),
+    };
+    for raw in include {
+        set.include.push(parse_selector(raw)?);
+    }
+    for raw in exclude {
+        set.exclude.push(parse_selector(raw)?);
+    }
+    Ok(set)
+}
+
+fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
+    if let Some(rest) = raw.strip_prefix("id:") {
+        return Ok(Selector::IdPrefix(rest.to_string()));
+    }
+    if let Some(rest) = raw.strip_prefix("tag:") {
+        return Ok(Selector::Tag(rest.to_string()));
+    }
+    if let Some(rest) = raw.strip_prefix("kind:") {
+        return Ok(Selector::Kind(rest.to_string()));
+    }
+    Err(ExitCode::from(2))
+}
+
+fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
+    let mut out = Vec::new();
+    for diag in graph.validate_with_warnings() {
+        if diag.severity == Severity::Warning {
+            out.push(LintDiagnostic {
+                code: diag.code,
+                message: diag.message,
+                path: diag.path,
+                hint: diag.hint,
+            });
+        }
+    }
+    let mut used_outputs: std::collections::BTreeSet<(String, String)> =
+        std::collections::BTreeSet::new();
+    for edge in &graph.edges {
+        used_outputs.insert((edge.from.node_id.clone(), edge.from.port.clone()));
+    }
+    for node in &graph.nodes {
+        for outp in &node.outputs {
+            if !used_outputs.contains(&(node.id.clone(), outp.name.clone())) {
+                out.push(LintDiagnostic {
+                    code: "L1001".to_string(),
+                    message: format!("unused output: {}", outp.name),
+                    path: format!("/nodes/{}/outputs", node.id),
+                    hint: Some("Remove or connect this output".to_string()),
+                });
+            }
+        }
+        if node.resources.is_none() {
+            out.push(LintDiagnostic {
+                code: "L1002".to_string(),
+                message: "missing resource hints".to_string(),
+                path: format!("/nodes/{}/resources", node.id),
+                hint: Some("Set resources.cpu/mem_mb for scheduling".to_string()),
+            });
+        }
+        if node.effects.iter().any(|e| {
+            matches!(
+                e,
+                bijux_dag_core::Effect::Network
+                    | bijux_dag_core::Effect::Env
+                    | bijux_dag_core::Effect::Clock
+            )
+        }) {
+            out.push(LintDiagnostic {
+                code: "L1003".to_string(),
+                message: "broad effects declared".to_string(),
+                path: format!("/nodes/{}/effects", node.id),
+                hint: Some("Use minimal effects required".to_string()),
+            });
+        }
+    }
+    out
+}
+
+fn graph_to_dot(graph: &Graph) -> String {
+    let g = graph.canonicalize();
+    let mut out = String::from("digraph bijux {\n");
+    for node in &g.nodes {
+        out.push_str(&format!("  \"{}\";\n", node.id));
+    }
+    for edge in &g.edges {
+        out.push_str(&format!(
+            "  \"{}\" -> \"{}\" [label=\"{}->{}\"];\n",
+            edge.from.node_id, edge.to.node_id, edge.from.port, edge.to.port
+        ));
+    }
+    out.push_str("}\n");
+    out
+}
+
+fn doctor_report() -> Result<serde_json::Value, ExitCode> {
+    let cache_dir = env_cache_dir();
+    let cache_status = if let Some(dir) = cache_dir.as_ref() {
+        if fs::create_dir_all(dir).is_ok() {
+            let test = dir.join(".__bijux_write_test");
+            let writable = fs::write(&test, b"ok").is_ok();
+            let _ = fs::remove_file(&test);
+            if writable {
+                json!({"status":"ok","path":dir})
+            } else {
+                json!({"status":"error","path":dir})
+            }
+        } else {
+            json!({"status":"error","path":dir})
+        }
+    } else {
+        json!({"status":"missing"})
+    };
+
+    let docker = check_engine("docker");
+    let podman = check_engine("podman");
+    let adapters = registered_adapters();
+
+    let hardlink_ok = {
+        let dir = tempfile::tempdir().map_err(|_| ExitCode::from(3))?;
+        let a = dir.path().join("a");
+        let b = dir.path().join("b");
+        let _ = fs::write(&a, b"ok");
+        fs::hard_link(&a, &b).is_ok()
+    };
+
+    let status = if cache_status["status"] == "error" {
+        "error"
+    } else {
+        "ok"
+    };
+
+    Ok(json!({
+        "status": status,
+        "cache": cache_status,
+        "container": { "docker": docker, "podman": podman },
+        "adapters": adapters,
+        "filesystem": { "hardlink": hardlink_ok },
+        "policy": { "clock": "allowed_by_default" }
+    }))
+}
+
+fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
+    let input = read_file(path)?;
+    let graph = parse_graph(&input)?;
+    if graph.spec != from {
+        return Err(ExitCode::from(3));
+    }
+    if from == to {
+        return Ok("no migration needed".to_string());
+    }
+    Err(ExitCode::from(3))
+}
+
+fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
+    let snapshot = load_snapshot(path)?;
+    if snapshot.graph.spec != from {
+        return Err(ExitCode::from(3));
+    }
+    if from == to {
+        return Ok("no migration needed".to_string());
+    }
+    Err(ExitCode::from(3))
+}
+
+fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
+    let base = PathBuf::from("tests/compat/v0.1");
+    if !base.exists() {
+        return Ok(json!({"status":"ok","errors":[]}));
+    }
+    let mut errors = Vec::new();
+    let mut entries: Vec<_> = fs::read_dir(&base)
+        .map_err(|_| ExitCode::from(3))?
+        .filter_map(|e| e.ok())
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let path = entry.path();
+        if !path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .map(|s| s.ends_with(".dag.json"))
+            .unwrap_or(false)
+        {
+            continue;
+        }
+        let stem = path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .replace(".dag.json", "");
+        let canonical_path = base.join(format!("{}.canonical.json", stem));
+        let graph_fp_path = base.join(format!("{}.graph_fingerprint", stem));
+        let node_fp_path = base.join(format!("{}.node_fingerprints.json", stem));
+
+        let input = read_file(&path)?;
+        let graph = parse_graph(&input)?;
+        let canonical = graph.to_canonical_json().map_err(|_| ExitCode::from(3))?;
+        let expected = read_file(&canonical_path).unwrap_or_default();
+        if canonical.trim() != expected.trim() {
+            errors.push(format!("canonical mismatch: {}", stem));
+        }
+        let fp = graph.graph_fingerprint().map_err(|_| ExitCode::from(3))?;
+        let expected_fp = read_file(&graph_fp_path)
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        if fp != expected_fp {
+            errors.push(format!("graph fingerprint mismatch: {}", stem));
+        }
+        let resolved = graph.resolve_graph().ok().map(|g| g.resolved_params);
+        let mut nodes = serde_json::Map::new();
+        for n in &graph.nodes {
+            let fp = resolved
+                .as_ref()
+                .and_then(|m| m.get(&n.id))
+                .and_then(|p| graph.node_fingerprint_with_params(n, p).ok())
+                .unwrap_or_else(|| graph.node_fingerprint(n).unwrap());
+            nodes.insert(n.id.clone(), json!(fp));
+        }
+        let expected_nodes = read_file(&node_fp_path).unwrap_or_default();
+        let expected_val: serde_json::Value =
+            serde_json::from_str(&expected_nodes).unwrap_or_else(|_| json!({}));
+        if json!(nodes) != expected_val {
+            errors.push(format!("node fingerprint mismatch: {}", stem));
+        }
+    }
     let status = if errors.is_empty() { "ok" } else { "error" };
     Ok(json!({ "status": status, "errors": errors }))
 }

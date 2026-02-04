@@ -43,7 +43,7 @@ fn verify_run_detects_corruption() {
         .join("nodes")
         .join("const1")
         .join("outputs")
-        .join("value.json");
+        .join("out_const");
     fs::write(&corrupt_path, b"corrupt").unwrap();
 
     let out = Command::new(bin)
