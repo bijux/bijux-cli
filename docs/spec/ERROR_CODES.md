@@ -14,8 +14,10 @@ These codes are globally stable across bijux-dag versions.
 - `E1009` Missing effects declaration
 - `E1010` Env allowlist without env effect
 - `E1011` Retry disallowed for nondeterministic effects
-- `E1012` Invalid parameter reference
 - `E1013` Effect denied by policy (network/env/clock)
+- `E1020` Unknown graph input reference
+- `E1021` Unknown node output reference
+- `E1022` Forward node output reference
 
 ## Warnings
 - `W2001` Unreachable node

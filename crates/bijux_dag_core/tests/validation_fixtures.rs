@@ -103,7 +103,7 @@ fn fixture_invalid_ref() {
     let input = fixture("invalid_ref.json");
     let graph = parse_graph_strict(&input).unwrap();
     let diags = graph.validate_with_warnings();
-    assert!(has_code(&diags, "E1012"));
+    assert!(has_code(&diags, "E1020"));
 }
 
 #[test]
@@ -112,4 +112,20 @@ fn fixture_retry_nondet() {
     let graph = parse_graph_strict(&input).unwrap();
     let diags = graph.validate_with_warnings();
     assert!(has_code(&diags, "E1011"));
+}
+
+#[test]
+fn fixture_unknown_node_output() {
+    let input = fixture("unknown_node_output.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1021"));
+}
+
+#[test]
+fn fixture_forward_ref() {
+    let input = fixture("forward_ref.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1022"));
 }

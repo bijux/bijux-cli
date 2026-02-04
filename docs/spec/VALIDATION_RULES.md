@@ -12,8 +12,10 @@
 - `E1009` Missing effects declaration
 - `E1010` Env allowlist without env effect
 - `E1011` Retry disallowed for nondeterministic effects
-- `E1012` Invalid parameter reference
 - `E1013` Effect denied by policy (network/env/clock)
+- `E1020` Unknown graph input reference
+- `E1021` Unknown node output reference
+- `E1022` Forward node output reference
 
 ## Warning Codes
 - `W2001` Unreachable node
@@ -31,7 +33,10 @@
 9. Shell nodes must declare effects and include filesystem. (`E1009`)
 10. env_allowlist requires env effect. (`E1010`)
 11. Retry with clock/network requires random_seed or nondeterminism_allowed. (`E1011`)
-12. Parameter references must point to valid inputs/outputs. (`E1012`)
+12. Parameter references must be valid graph inputs or node outputs. (`E1020`, `E1021`, `E1022`)
 13. Effect denied by policy when `--deny-network`, `--deny-env`, or `--deny-clock` used. (`E1013`)
+14. Graph input ref must exist. (`E1020`)
+15. Node output ref must exist. (`E1021`)
+16. Node output ref must not point to downstream node. (`E1022`)
 14. Nodes not reachable from any root emit a warning. (`W2001`)
 15. Nodes with no edges emit a warning. (`W2002`)

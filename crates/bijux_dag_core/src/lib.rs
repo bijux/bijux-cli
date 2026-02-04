@@ -25,7 +25,7 @@ pub struct Node {
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
     #[serde(default)]
-    pub params: Value,
+    pub params: ParamValue,
     #[serde(default)]
     pub timeout_ms: Option<u64>,
     #[serde(default)]
@@ -38,6 +38,43 @@ pub struct Node {
     pub effects: Vec<Effect>,
     #[serde(default)]
     pub env_allowlist: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ParamValue {
+    Ref(RefSpec),
+    Array(Vec<ParamValue>),
+    Object(BTreeMap<String, ParamValue>),
+    Literal(Value),
+}
+
+impl Default for ParamValue {
+    fn default() -> Self {
+        ParamValue::Literal(Value::Null)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RefSpec {
+    #[serde(default)]
+    pub graph_input: Option<String>,
+    #[serde(default)]
+    pub node_output: Option<NodeOutputRef>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NodeOutputRef {
+    pub node_id: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResolvedGraph {
+    pub graph: Graph,
+    pub resolved_params: BTreeMap<String, Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -293,7 +330,7 @@ impl Graph {
 
         nodes.sort_by(|a, b| a.id.cmp(&b.id));
         for node in &mut nodes {
-            sort_value_maps(&mut node.params);
+            sort_param_value(&mut node.params);
             node.inputs.sort();
             node.outputs.sort();
             node.effects.sort_by_key(effect_order);
@@ -382,8 +419,19 @@ impl Graph {
     }
 
     pub fn node_fingerprint(&self, node: &Node) -> Result<String, GraphError> {
+        let resolved = resolve_param_value(&node.params, self)?;
+        self.node_fingerprint_with_params(node, &resolved)
+    }
+
+    pub fn node_fingerprint_with_params(
+        &self,
+        node: &Node,
+        resolved_params: &Value,
+    ) -> Result<String, GraphError> {
         let mut node = node.clone();
-        sort_value_maps(&mut node.params);
+        let mut params = resolved_params.clone();
+        sort_value_maps(&mut params);
+        node.params = ParamValue::Literal(params);
         node.inputs.sort();
         node.outputs.sort();
         node.effects.sort_by_key(effect_order);
@@ -392,13 +440,17 @@ impl Graph {
         Ok(hash_bytes(json.as_bytes()))
     }
 
-    pub fn resolve_params(&self) -> Result<BTreeMap<String, Value>, GraphError> {
+    pub fn resolve_graph(&self) -> Result<ResolvedGraph, GraphError> {
         let mut resolved = BTreeMap::new();
         for node in &self.nodes {
-            let val = resolve_value(&node.params, self);
+            let mut val = resolve_param_value(&node.params, self)?;
+            sort_value_maps(&mut val);
             resolved.insert(node.id.clone(), val);
         }
-        Ok(resolved)
+        Ok(ResolvedGraph {
+            graph: self.clone(),
+            resolved_params: resolved,
+        })
     }
 
     fn has_cycle(&self) -> bool {
@@ -470,105 +522,132 @@ impl Graph {
 
     fn validate_param_refs(&self) -> Vec<ValidationDiagnostic> {
         let mut diags = Vec::new();
-        for node in &self.nodes {
-            let mut stack = vec![&node.params];
-            while let Some(v) = stack.pop() {
-                match v {
-                    Value::String(s) => {
-                        if let Some(inner) = parse_ref(s) {
-                            if inner.starts_with("graph.inputs.") {
-                                let key = inner.trim_start_matches("graph.inputs.");
-                                if !self.inputs.contains_key(key) {
-                                    diags.push(error(
-                                        "E1012",
-                                        format!("unknown graph input ref: {}", key),
-                                        format!("/nodes/{}/params", node.id),
-                                        None,
-                                    ));
-                                }
-                            } else if inner.starts_with("node:") {
-                                let rest = inner.trim_start_matches("node:");
-                                let parts: Vec<&str> = rest.split(".outputs.").collect();
-                                if parts.len() != 2 {
-                                    diags.push(error(
-                                        "E1012",
-                                        format!("invalid node output ref: {}", inner),
-                                        format!("/nodes/{}/params", node.id),
-                                        None,
-                                    ));
-                                } else {
-                                    let node_id = parts[0];
-                                    let port = parts[1];
-                                    let target = self.nodes.iter().find(|n| n.id == node_id);
-                                    if target.is_none()
-                                        || !target.unwrap().outputs.iter().any(|p| p == port)
-                                    {
-                                        diags.push(error(
-                                            "E1012",
-                                            format!("unknown node output ref: {}", inner),
-                                            format!("/nodes/{}/params", node.id),
-                                            None,
-                                        ));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Value::Array(arr) => {
-                        for x in arr {
-                            stack.push(x);
-                        }
-                    }
-                    Value::Object(map) => {
-                        for v in map.values() {
-                            stack.push(v);
-                        }
-                    }
-                    _ => {}
-                }
+        let order = self.topo_order().ok();
+        let mut index: HashMap<&str, usize> = HashMap::new();
+        if let Some(order) = order.as_ref() {
+            for (i, id) in order.iter().enumerate() {
+                index.insert(id.as_str(), i);
             }
+        }
+        for node in &self.nodes {
+            validate_param_value(
+                &node.params,
+                self,
+                node,
+                &index,
+                &mut diags,
+                &format!("/nodes/{}/params", node.id),
+            );
         }
         diags
     }
 }
 
-fn parse_ref(s: &str) -> Option<&str> {
-    if s.starts_with("${") && s.ends_with('}') {
-        return Some(&s[2..s.len() - 1]);
-    }
-    None
-}
-
-fn resolve_value(value: &Value, graph: &Graph) -> Value {
+fn resolve_param_value(value: &ParamValue, graph: &Graph) -> Result<Value, GraphError> {
     match value {
-        Value::String(s) => {
-            if let Some(inner) = parse_ref(s) {
-                if inner.starts_with("graph.inputs.") {
-                    let key = inner.trim_start_matches("graph.inputs.");
-                    if let Some(v) = graph.inputs.get(key) {
-                        return v.clone();
-                    }
-                } else if inner.starts_with("node:") {
-                    return serde_json::json!({ "ref": inner });
-                }
-            }
-            Value::String(s.clone())
-        }
-        Value::Array(arr) => {
+        ParamValue::Literal(v) => Ok(v.clone()),
+        ParamValue::Array(arr) => {
             let mut out = Vec::new();
             for v in arr {
-                out.push(resolve_value(v, graph));
+                out.push(resolve_param_value(v, graph)?);
             }
-            Value::Array(out)
+            Ok(Value::Array(out))
         }
-        Value::Object(map) => {
+        ParamValue::Object(map) => {
             let mut out = serde_json::Map::new();
             for (k, v) in map {
-                out.insert(k.clone(), resolve_value(v, graph));
+                out.insert(k.clone(), resolve_param_value(v, graph)?);
             }
-            Value::Object(out)
+            Ok(Value::Object(out))
         }
-        _ => value.clone(),
+        ParamValue::Ref(spec) => resolve_ref(spec, graph),
+    }
+}
+
+fn resolve_ref(spec: &RefSpec, graph: &Graph) -> Result<Value, GraphError> {
+    if let Some(input) = &spec.graph_input {
+        if let Some(v) = graph.inputs.get(input) {
+            return Ok(v.clone());
+        }
+        return Err(GraphError::ValidationFailed);
+    }
+    if let Some(node_out) = &spec.node_output {
+        let mut inner = serde_json::Map::new();
+        inner.insert(
+            "node_id".to_string(),
+            Value::String(node_out.node_id.clone()),
+        );
+        inner.insert("path".to_string(), Value::String(node_out.path.clone()));
+        let mut obj = serde_json::Map::new();
+        obj.insert("node_output".to_string(), Value::Object(inner));
+        return Ok(Value::Object(obj));
+    }
+    Err(GraphError::ValidationFailed)
+}
+
+fn validate_param_value(
+    value: &ParamValue,
+    graph: &Graph,
+    node: &Node,
+    order: &HashMap<&str, usize>,
+    diags: &mut Vec<ValidationDiagnostic>,
+    path: &str,
+) {
+    match value {
+        ParamValue::Ref(spec) => {
+            if let Some(input) = &spec.graph_input {
+                if !graph.inputs.contains_key(input) {
+                    diags.push(error(
+                        "E1020",
+                        format!("unknown graph input ref: {}", input),
+                        path.to_string(),
+                        None,
+                    ));
+                }
+            }
+            if let Some(node_out) = &spec.node_output {
+                let target = graph.nodes.iter().find(|n| n.id == node_out.node_id);
+                if target.is_none() || !target.unwrap().outputs.iter().any(|p| p == &node_out.path)
+                {
+                    diags.push(error(
+                        "E1021",
+                        format!(
+                            "unknown node output ref: {}.{}",
+                            node_out.node_id, node_out.path
+                        ),
+                        path.to_string(),
+                        None,
+                    ));
+                }
+                if let (Some(&src), Some(&cur)) = (
+                    order.get(node_out.node_id.as_str()),
+                    order.get(node.id.as_str()),
+                ) {
+                    if src >= cur {
+                        diags.push(error(
+                            "E1022",
+                            format!(
+                                "forward node output ref: {}.{}",
+                                node_out.node_id, node_out.path
+                            ),
+                            path.to_string(),
+                            None,
+                        ));
+                    }
+                }
+            }
+        }
+        ParamValue::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                validate_param_value(v, graph, node, order, diags, &format!("{}/{}", path, i));
+            }
+        }
+        ParamValue::Object(map) => {
+            for (k, v) in map {
+                validate_param_value(v, graph, node, order, diags, &format!("{}/{}", path, k));
+            }
+        }
+        ParamValue::Literal(_) => {}
     }
 }
 
@@ -600,6 +679,26 @@ fn sort_value_maps(value: &mut Value) {
             }
         }
         _ => {}
+    }
+}
+
+fn sort_param_value(value: &mut ParamValue) {
+    match value {
+        ParamValue::Array(arr) => {
+            for v in arr.iter_mut() {
+                sort_param_value(v);
+            }
+        }
+        ParamValue::Object(map) => {
+            let mut sorted: BTreeMap<String, ParamValue> = BTreeMap::new();
+            let entries = std::mem::take(map);
+            for (k, mut v) in entries {
+                sort_param_value(&mut v);
+                sorted.insert(k, v);
+            }
+            *map = sorted;
+        }
+        ParamValue::Ref(_) | ParamValue::Literal(_) => {}
     }
 }
 
@@ -652,7 +751,7 @@ mod tests {
                     kind: NodeKind::Const,
                     inputs: vec![],
                     outputs: vec!["out".to_string()],
-                    params: Value::Null,
+                    params: ParamValue::default(),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -665,7 +764,7 @@ mod tests {
                     kind: NodeKind::Const,
                     inputs: vec!["in".to_string()],
                     outputs: vec!["out".to_string()],
-                    params: Value::Null,
+                    params: ParamValue::default(),
                     timeout_ms: None,
                     resources: None,
                     tags: vec![],
@@ -700,9 +799,17 @@ mod tests {
     #[test]
     fn fingerprint_changes_on_param() {
         let mut graph = base_graph();
-        graph.nodes[0].params = serde_json::json!({"x": 1});
+        graph.nodes[0].params = ParamValue::Object(
+            [("x".to_string(), ParamValue::Literal(Value::from(1)))]
+                .into_iter()
+                .collect(),
+        );
         let a = graph.graph_fingerprint().unwrap();
-        graph.nodes[0].params = serde_json::json!({"x": 2});
+        graph.nodes[0].params = ParamValue::Object(
+            [("x".to_string(), ParamValue::Literal(Value::from(2)))]
+                .into_iter()
+                .collect(),
+        );
         let b = graph.graph_fingerprint().unwrap();
         assert_ne!(a, b);
     }
@@ -719,12 +826,43 @@ mod tests {
     }
 
     #[test]
+    fn canonicalization_stable_under_random_ordering() {
+        let graph = base_graph();
+        let canonical = graph.to_canonical_json().unwrap();
+        let fp = graph.graph_fingerprint().unwrap();
+        for seed in 1..25u64 {
+            let mut g = base_graph();
+            shuffle(&mut g.nodes, seed);
+            shuffle(&mut g.edges, seed.wrapping_mul(7));
+            let cur = g.to_canonical_json().unwrap();
+            let cur_fp = g.graph_fingerprint().unwrap();
+            assert_eq!(canonical, cur);
+            assert_eq!(fp, cur_fp);
+        }
+    }
+
+    #[test]
     fn resolver_determinism() {
         let mut graph = base_graph();
         graph.inputs.insert("x".to_string(), serde_json::json!(1));
-        graph.nodes[0].params = serde_json::json!({"ref": "${graph.inputs.x}"});
-        let a = serde_json::to_string(&graph.resolve_params().unwrap()).unwrap();
-        let b = serde_json::to_string(&graph.resolve_params().unwrap()).unwrap();
+        graph.nodes[0].params = ParamValue::Ref(RefSpec {
+            graph_input: Some("x".to_string()),
+            node_output: None,
+        });
+        let a = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
+        let b = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
         assert_eq!(a, b);
+    }
+
+    fn shuffle<T>(items: &mut [T], mut seed: u64) {
+        let len = items.len();
+        if len < 2 {
+            return;
+        }
+        for i in (1..len).rev() {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            let j = (seed as usize) % (i + 1);
+            items.swap(i, j);
+        }
     }
 }

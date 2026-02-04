@@ -19,7 +19,7 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
   "kind": "const|shell",
   "inputs": ["string"],
   "outputs": ["string"],
-  "params": <json>,
+  "params": <ParamValue>,
   "effects": ["filesystem|network|env"],
   "env_allowlist": ["ENV_VAR"]
 }
@@ -39,6 +39,18 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
 ### shell params
 ```
 {"argv": ["cmd", "arg1", ...]}
+```
+
+## ParamValue
+Params can be literal JSON values or explicit references. No string templating is allowed in v0.1.
+
+```
+<ParamValue> =
+  <literal json>
+  | {"graph_input": "name"}
+  | {"node_output": {"node_id": "id", "path": "output_port"}}
+  | {"key": <ParamValue>, ...}
+  | [<ParamValue>, ...]
 ```
 
 ## Edge
