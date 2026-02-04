@@ -1,0 +1,8 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id": "root", "kind": "const", "inputs": [], "outputs": ["out"], "params": {}},
+    {"id": "isolated", "kind": "const", "inputs": ["in"], "outputs": ["out"], "params": {}}
+  ],
+  "edges": []
+}

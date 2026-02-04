@@ -1,0 +1,28 @@
+# Contributing
+
+Thanks for helping with bijux-dag.
+
+## Workflow
+1. Create a branch.
+2. Make focused changes with tests.
+3. Ensure formatting and tests pass.
+4. Open a PR with a clear summary.
+
+## Code Style
+- Prefer small, readable modules.
+- Keep JSON parsing strict.
+- Keep scheduling deterministic.
+
+## Tests
+Run all tests with:
+```
+cargo test --workspace
+```
+
+## Make Targets
+- `make test`
+- `make lint`
+- `make security`
+
+## License
+By contributing, you agree your contributions are licensed under Apache-2.0.

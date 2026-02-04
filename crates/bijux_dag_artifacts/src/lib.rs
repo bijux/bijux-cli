@@ -1,0 +1,289 @@
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, thiserror::Error)]
+pub enum ArtifactError {
+    #[error("io error: {0}")]
+    Io(#[from] io::Error),
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
+#[derive(Debug, Clone)]
+pub struct RunDir {
+    staging_path: PathBuf,
+    final_path: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Manifest {
+    pub run_id: String,
+    pub created_unix_ms: u128,
+    pub started_unix_ms: u128,
+    pub finished_unix_ms: u128,
+    pub graph_snapshot: String,
+    pub status: String,
+    pub spec: String,
+    pub graph_fingerprint: String,
+    pub tool_version: String,
+    pub jobs: usize,
+    pub adapters: Vec<AdapterInfo>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub outputs: Vec<OutputSummary>,
+    pub node_counts: NodeCounts,
+    pub policy: PolicyInfo,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_mode: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_dir: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NodeTrace {
+    pub node_id: String,
+    pub status: String,
+    pub started_unix_ms: u128,
+    pub finished_unix_ms: u128,
+    pub attempt: u32,
+    pub fingerprint: String,
+    pub adapter_id: String,
+    pub adapter_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resources: Option<Resources>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolved_params: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_proof: Option<CacheProof>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure: Option<FailureInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FailureInfo {
+    pub kind: String,
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheProof {
+    pub hit: bool,
+    pub key: String,
+    pub source: String,
+    pub verified: bool,
+    pub reason: String,
+    #[serde(default)]
+    pub corrupt_detected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NodeCounts {
+    pub success: u32,
+    pub failed: u32,
+    pub skipped: u32,
+    pub cached: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PolicyInfo {
+    pub deny_network: bool,
+    pub deny_env: bool,
+    pub deny_clock: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AdapterInfo {
+    pub adapter_id: String,
+    pub adapter_version: String,
+    pub effects: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Resources {
+    pub cpu: u32,
+    pub mem_mb: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OutputSummary {
+    pub node_id: String,
+    pub node_fingerprint: String,
+    pub file: String,
+    pub sha256: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OutputsIndex {
+    pub files: Vec<OutputFile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OutputFile {
+    pub path: String,
+    pub sha256: String,
+    pub node_id: String,
+    pub node_fingerprint: String,
+}
+
+impl RunDir {
+    pub fn create(out_base: impl AsRef<Path>) -> Result<Self, ArtifactError> {
+        let run_id = generate_run_id();
+        Self::create_with_id(out_base, &run_id)
+    }
+
+    pub fn create_with_id(out_base: impl AsRef<Path>, run_id: &str) -> Result<Self, ArtifactError> {
+        let staging = out_base.as_ref().join(format!("run.tmp-{}", run_id));
+        let final_path = out_base.as_ref().join(format!("run-{}", run_id));
+        fs::create_dir_all(staging.join("nodes"))?;
+        Ok(Self {
+            staging_path: staging,
+            final_path,
+        })
+    }
+
+    pub fn staging_path(&self) -> &Path {
+        &self.staging_path
+    }
+
+    pub fn final_path(&self) -> &Path {
+        &self.final_path
+    }
+
+    pub fn write_manifest(&self, manifest: &Manifest) -> Result<(), ArtifactError> {
+        let path = self.staging_path.join("manifest.json");
+        write_json_atomic(path, manifest)
+    }
+
+    pub fn write_graph_snapshot(&self, graph_json: &str) -> Result<(), ArtifactError> {
+        let path = self.staging_path.join("graph.snapshot.json");
+        let mut f = fs::File::create(path)?;
+        f.write_all(graph_json.as_bytes())?;
+        Ok(())
+    }
+
+    pub fn node_dir(&self, node_id: &str) -> PathBuf {
+        self.staging_path.join("nodes").join(node_id)
+    }
+
+    pub fn node_outputs_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("outputs")
+    }
+
+    pub fn node_work_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("work")
+    }
+
+    pub fn node_stdout_path(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("stdout.log")
+    }
+
+    pub fn node_stderr_path(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("stderr.log")
+    }
+
+    pub fn node_trace_path(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("trace.json")
+    }
+
+    pub fn run_log_path(&self) -> PathBuf {
+        self.staging_path.join("run.log.jsonl")
+    }
+
+    pub fn node_outputs_index_path(&self, node_id: &str) -> PathBuf {
+        self.node_outputs_dir(node_id).join("index.json")
+    }
+
+    pub fn finalize(self) -> Result<PathBuf, ArtifactError> {
+        if let Some(parent) = self.final_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::rename(&self.staging_path, &self.final_path)?;
+        Ok(self.final_path)
+    }
+}
+
+fn write_json<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<(), ArtifactError> {
+    let data = serde_json::to_vec_pretty(value)?;
+    let mut f = fs::File::create(path)?;
+    f.write_all(&data)?;
+    Ok(())
+}
+
+fn write_json_atomic<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<(), ArtifactError> {
+    let path = path.as_ref();
+    let tmp = path.with_extension("tmp");
+    write_json(&tmp, value)?;
+    fs::rename(tmp, path)?;
+    Ok(())
+}
+
+pub fn write_outputs_index(
+    dir: impl AsRef<Path>,
+    node_id: &str,
+    node_fingerprint: &str,
+) -> Result<(), ArtifactError> {
+    let mut files = Vec::new();
+    if dir.as_ref().exists() {
+        for entry in fs::read_dir(&dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.file_name().map(|n| n == "index.json").unwrap_or(false) {
+                continue;
+            }
+            if path.is_file() {
+                let data = fs::read(&path)?;
+                let sha = sha256_bytes(&data);
+                let rel = path.file_name().unwrap().to_string_lossy().to_string();
+                files.push(OutputFile {
+                    path: rel,
+                    sha256: sha,
+                    node_id: node_id.to_string(),
+                    node_fingerprint: node_fingerprint.to_string(),
+                });
+            }
+        }
+    }
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    let index = OutputsIndex { files };
+    write_json(dir.as_ref().join("index.json"), &index)
+}
+
+pub fn now_unix_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+}
+
+fn generate_run_id() -> String {
+    now_unix_ms().to_string()
+}
+
+fn sha256_bytes(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    let result = hasher.finalize();
+    hex::encode(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_and_finalize() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = RunDir::create(dir.path()).unwrap();
+        assert!(run.staging_path().exists());
+        let final_path = run.finalize().unwrap();
+        assert!(final_path.exists());
+    }
+}

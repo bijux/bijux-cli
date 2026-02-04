@@ -1,0 +1,9 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id": "n1", "kind": "const", "inputs": [], "outputs": ["out"], "params": {}}
+  ],
+  "edges": [
+    {"from": {"node_id": "n1", "port": "out"}, "to": {"node_id": "nope", "port": "in"}}
+  ]
+}
