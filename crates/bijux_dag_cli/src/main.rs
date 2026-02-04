@@ -2,16 +2,20 @@ mod diff;
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use bijux_dag_artifacts::OutputsIndex;
+use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{registered_adapters, CacheMode, Runtime, RuntimeOptions};
 use clap::{Parser, Subcommand, ValueEnum};
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use tar::{Archive, Builder};
 
 #[derive(Parser)]
 #[command(name = "bijux-dag")]
@@ -80,6 +84,8 @@ enum Commands {
         cache: CacheModeArg,
         #[arg(long)]
         cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        remote_cache_dir: Option<PathBuf>,
     },
     Replay {
         run_dir: PathBuf,
@@ -103,6 +109,8 @@ enum Commands {
         deny_clock: bool,
         #[arg(long)]
         hermetic: bool,
+        #[arg(long)]
+        remote_cache_dir: Option<PathBuf>,
     },
     Diff {
         run_a: PathBuf,
@@ -123,6 +131,9 @@ enum Commands {
         node: String,
     },
     Status {
+        run_dir: PathBuf,
+    },
+    VerifyRun {
         run_dir: PathBuf,
     },
     Cache {
@@ -152,6 +163,18 @@ enum CacheCommands {
         #[arg(long)]
         cache_dir: Option<PathBuf>,
     },
+    Pack {
+        node_fp: String,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
+    Unpack {
+        pack: PathBuf,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
     Gc {
         #[arg(long)]
         cache_dir: Option<PathBuf>,
@@ -165,6 +188,7 @@ enum CacheCommands {
 #[derive(Subcommand)]
 enum AdaptersCommands {
     Ls,
+    Doctor,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
@@ -359,6 +383,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             deny_env,
             deny_clock,
             hermetic,
+            remote_cache_dir,
         } => {
             let snapshot = load_snapshot(&run_dir)?;
             let runtime = Runtime::new();
@@ -386,6 +411,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                 node_timeout_ms: None,
                 cache_mode,
                 cache_dir: None,
+                remote_cache_dir,
                 run_id,
                 latest_symlink: None,
                 policy: bijux_dag_runtime::Policy {
@@ -455,6 +481,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             skip_tag,
             cache,
             cache_dir,
+            remote_cache_dir,
         } => {
             let input = read_file(&dag)?;
             let graph = parse_graph(&input)?;
@@ -476,6 +503,7 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                     CacheModeArg::Readwrite => CacheMode::ReadWrite,
                 },
                 cache_dir,
+                remote_cache_dir,
                 run_id,
                 latest_symlink: latest,
                 policy: bijux_dag_runtime::Policy {
@@ -670,6 +698,18 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Commands::VerifyRun { run_dir } => {
+            let report = verify_run(&run_dir)?;
+            if cli.json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!("status: {}", report["status"]);
+            }
+            if report["status"] != "ok" {
+                return Err(ExitCode::from(3));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::Cache { command } => match command {
             CacheCommands::Ls { cache_dir } => {
                 let dir = cache_dir.or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
@@ -678,6 +718,30 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                         let entry = entry.map_err(|_| ExitCode::from(3))?;
                         println!("{}", entry.file_name().to_string_lossy());
                     }
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            CacheCommands::Pack {
+                node_fp,
+                out,
+                cache_dir,
+            } => {
+                let dir = cache_dir.or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
+                let entry = dir.join(&node_fp);
+                if !entry.exists() {
+                    return Err(ExitCode::from(3));
+                }
+                pack_cache_entry(&entry, &out)?;
+                if !cli.quiet {
+                    println!("pack: {}", out.display());
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            CacheCommands::Unpack { pack, cache_dir } => {
+                let dir = cache_dir.or_else(env_cache_dir).ok_or(ExitCode::from(3))?;
+                unpack_cache_entry(&pack, &dir)?;
+                if !cli.quiet {
+                    println!("unpacked: {}", pack.display());
                 }
                 Ok(ExitCode::SUCCESS)
             }
@@ -722,6 +786,33 @@ fn run(cli: Cli) -> Result<ExitCode, ExitCode> {
                             a.adapter_id, a.adapter_version, a.effects
                         );
                     }
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            AdaptersCommands::Doctor => {
+                let docker = check_engine("docker");
+                let podman = check_engine("podman");
+                if cli.json {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&json!({
+                            "docker": docker,
+                            "podman": podman
+                        }))
+                        .unwrap()
+                    );
+                } else {
+                    println!("docker: {}", docker["status"]);
+                    if let Some(v) = docker.get("version").and_then(|v| v.as_str()) {
+                        println!("docker_version: {}", v);
+                    }
+                    println!("podman: {}", podman["status"]);
+                    if let Some(v) = podman.get("version").and_then(|v| v.as_str()) {
+                        println!("podman_version: {}", v);
+                    }
+                }
+                if docker["status"] != "ok" && podman["status"] != "ok" {
+                    return Err(ExitCode::from(3));
                 }
                 Ok(ExitCode::SUCCESS)
             }
@@ -977,4 +1068,192 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     hasher.update(bytes);
     let result = hasher.finalize();
     hex::encode(result)
+}
+
+fn pack_cache_entry(entry: &Path, out: &Path) -> Result<(), ExitCode> {
+    let file = fs::File::create(out).map_err(|_| ExitCode::from(3))?;
+    let enc = GzEncoder::new(file, Compression::default());
+    let mut builder = Builder::new(enc);
+    builder
+        .append_dir_all(".", entry)
+        .map_err(|_| ExitCode::from(3))?;
+    let enc = builder.into_inner().map_err(|_| ExitCode::from(3))?;
+    enc.finish().map_err(|_| ExitCode::from(3))?;
+    Ok(())
+}
+
+fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), ExitCode> {
+    let file = fs::File::open(pack).map_err(|_| ExitCode::from(3))?;
+    let dec = GzDecoder::new(file);
+    let mut archive = Archive::new(dec);
+    let tmp = tempfile::tempdir().map_err(|_| ExitCode::from(3))?;
+    archive.unpack(tmp.path()).map_err(|_| ExitCode::from(3))?;
+    let meta_path = tmp.path().join("meta.json");
+    if !meta_path.exists() {
+        return Err(ExitCode::from(3));
+    }
+    let meta: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
+    let key = meta
+        .get("node_fingerprint")
+        .and_then(|v| v.as_str())
+        .ok_or(ExitCode::from(3))?;
+    let adapter_id = meta
+        .get("adapter_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let adapter_version = meta
+        .get("adapter_version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if !verify_cache_entry_cli(tmp.path(), key, adapter_id, adapter_version)? {
+        return Err(ExitCode::from(3));
+    }
+    let dst = cache_dir.join(key);
+    if dst.exists() {
+        let _ = fs::remove_dir_all(&dst);
+    }
+    copy_dir_all(tmp.path(), &dst).map_err(|_| ExitCode::from(3))?;
+    Ok(())
+}
+
+fn verify_cache_entry_cli(
+    entry: &Path,
+    expected_key: &str,
+    adapter_id: &str,
+    adapter_version: &str,
+) -> Result<bool, ExitCode> {
+    let index_path = entry.join("outputs").join("index.json");
+    let meta_path = entry.join("meta.json");
+    if !index_path.exists() || !meta_path.exists() {
+        return Ok(false);
+    }
+    let meta: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
+    if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(expected_key) {
+        return Ok(false);
+    }
+    if !adapter_id.is_empty() && meta.get("adapter_id").and_then(|v| v.as_str()) != Some(adapter_id)
+    {
+        return Ok(false);
+    }
+    if !adapter_version.is_empty()
+        && meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version)
+    {
+        return Ok(false);
+    }
+    let data = fs::read_to_string(&index_path).map_err(|_| ExitCode::from(3))?;
+    let index: OutputsIndex = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+    for file in index.files {
+        let fpath = entry.join("outputs").join(&file.path);
+        if !fpath.exists() {
+            return Ok(false);
+        }
+        let bytes = fs::read(&fpath).map_err(|_| ExitCode::from(3))?;
+        let sha = sha256_bytes(&bytes);
+        if sha != file.sha256 {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(dst)?;
+    let mut entries: Vec<_> = fs::read_dir(src)?.filter_map(|e| e.ok()).collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let ty = entry.file_type()?;
+        let dst_path = dst.join(entry.file_name());
+        if ty.is_dir() {
+            copy_dir_all(&entry.path(), &dst_path)?;
+        } else {
+            fs::copy(entry.path(), dst_path)?;
+        }
+    }
+    Ok(())
+}
+
+fn check_engine(bin: &str) -> serde_json::Value {
+    match std::process::Command::new(bin).arg("--version").output() {
+        Ok(out) if out.status.success() => {
+            let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            json!({"status":"ok","version":v})
+        }
+        _ => json!({"status":"missing"}),
+    }
+}
+
+fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
+    let mut errors = Vec::new();
+    let snapshot = load_snapshot(run_dir)?;
+    let computed = snapshot.graph.graph_fingerprint().unwrap_or_default();
+    if computed != snapshot.graph_fingerprint {
+        errors.push(format!(
+            "graph_fingerprint mismatch: {} != {}",
+            computed, snapshot.graph_fingerprint
+        ));
+    }
+
+    let outputs_index_path = run_dir.join("outputs").join("index.json");
+    if !outputs_index_path.exists() {
+        errors.push("missing outputs/index.json".to_string());
+    } else {
+        let data = fs::read_to_string(&outputs_index_path).map_err(|_| ExitCode::from(3))?;
+        let index: RunOutputsIndex = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+        for file in index.files {
+            let path = run_dir.join(&file.path);
+            if !path.exists() {
+                errors.push(format!("missing output file: {}", file.path));
+                continue;
+            }
+            let bytes = fs::read(&path).map_err(|_| ExitCode::from(3))?;
+            let sha = sha256_bytes(&bytes);
+            if sha != file.sha256 {
+                errors.push(format!("hash mismatch: {}", file.path));
+            }
+        }
+    }
+
+    let nodes_dir = run_dir.join("nodes");
+    if nodes_dir.exists() {
+        let mut entries: Vec<_> = fs::read_dir(nodes_dir)
+            .map_err(|_| ExitCode::from(3))?
+            .filter_map(|e| e.ok())
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let trace_path = entry.path().join("trace.json");
+            if !trace_path.exists() {
+                errors.push(format!(
+                    "missing trace: {}",
+                    entry.file_name().to_string_lossy()
+                ));
+                continue;
+            }
+            let data = fs::read_to_string(&trace_path).map_err(|_| ExitCode::from(3))?;
+            let val: serde_json::Value =
+                serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+            for key in [
+                "node_id",
+                "status",
+                "started_unix_ms",
+                "finished_unix_ms",
+                "fingerprint",
+            ] {
+                if val.get(key).is_none() {
+                    errors.push(format!(
+                        "trace missing {}: {}",
+                        key,
+                        entry.file_name().to_string_lossy()
+                    ));
+                }
+            }
+        }
+    }
+
+    let status = if errors.is_empty() { "ok" } else { "error" };
+    Ok(json!({ "status": status, "errors": errors }))
 }
