@@ -96,6 +96,11 @@ Verify cache integrity:
 bijux dag cache verify
 ```
 
+Verify cache integrity including a remote cache directory:
+```
+bijux dag cache verify --remote /path/to/remote-cache
+```
+
 ## Resources
 Use `--jobs` and `--cpu-budget` to control concurrency and CPU aggregate.
 

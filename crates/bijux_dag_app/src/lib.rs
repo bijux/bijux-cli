@@ -219,6 +219,8 @@ enum CacheCommands {
     Verify {
         #[arg(long)]
         cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        remote: Option<PathBuf>,
     },
 }
 
@@ -339,7 +341,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                   "kind": "shell",
                   "inputs": ["in"],
                   "outputs": [{"name": "out", "path": "out"}],
-                  "params": {"argv": ["/bin/sh","-c","cat ../inputs/const1/in/out > ../outputs/out"]},
+                  "params": {"argv": ["/bin/sh","-c","cat ../inputs/const1/in > ../outputs/out"]},
                   "effects": ["filesystem"]
                 }
               ],
@@ -1146,13 +1148,13 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("cache gc stub");
                 Ok(ExitCode::SUCCESS)
             }
-            CacheCommands::Verify { cache_dir } => {
+            CacheCommands::Verify { cache_dir, remote } => {
                 let dir = cache_dir
                     .clone()
                     .or_else(env_cache_dir)
                     .ok_or(ExitCode::from(3))?;
-                let report = verify_cache_dir(&dir)?;
-                let corrupt = report["corrupt"].as_u64().unwrap_or(0);
+                let report = verify_cache_dirs(&dir, remote.as_ref().map(|v| v.as_path()))?;
+                let corrupt = report["corrupt_total"].as_u64().unwrap_or(0);
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -1167,11 +1169,20 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         },
                     );
                 } else {
-                    println!("checked: {}", report["checked"]);
-                    println!("corrupt: {}", report["corrupt"]);
-                    if let Some(keys) = report["corrupt_keys"].as_array() {
+                    println!("local_checked: {}", report["local"]["checked"]);
+                    println!("local_corrupt: {}", report["local"]["corrupt"]);
+                    if let Some(keys) = report["local"]["corrupt_keys"].as_array() {
                         if !keys.is_empty() {
-                            println!("corrupt_keys: {}", report["corrupt_keys"]);
+                            println!("local_corrupt_keys: {}", report["local"]["corrupt_keys"]);
+                        }
+                    }
+                    if let Some(remote_report) = report.get("remote") {
+                        println!("remote_checked: {}", remote_report["checked"]);
+                        println!("remote_corrupt: {}", remote_report["corrupt"]);
+                        if let Some(keys) = remote_report["corrupt_keys"].as_array() {
+                            if !keys.is_empty() {
+                                println!("remote_corrupt_keys: {}", remote_report["corrupt_keys"]);
+                            }
                         }
                     }
                 }
@@ -1511,6 +1522,29 @@ fn verify_cache_dir(dir: &Path) -> Result<serde_json::Value, ExitCode> {
     Ok(json!({ "checked": checked, "corrupt": corrupt, "corrupt_keys": corrupt_keys }))
 }
 
+fn verify_cache_dirs(
+    local: &Path,
+    remote: Option<&Path>,
+) -> Result<serde_json::Value, ExitCode> {
+    let local_report = verify_cache_dir(local)?;
+    let mut checked_total = local_report["checked"].as_u64().unwrap_or(0);
+    let mut corrupt_total = local_report["corrupt"].as_u64().unwrap_or(0);
+    let mut out = json!({
+        "local": local_report,
+        "checked_total": checked_total,
+        "corrupt_total": corrupt_total,
+    });
+    if let Some(remote_dir) = remote {
+        let remote_report = verify_cache_dir(remote_dir)?;
+        checked_total += remote_report["checked"].as_u64().unwrap_or(0);
+        corrupt_total += remote_report["corrupt"].as_u64().unwrap_or(0);
+        out["remote"] = remote_report;
+        out["checked_total"] = json!(checked_total);
+        out["corrupt_total"] = json!(corrupt_total);
+    }
+    Ok(out)
+}
+
 fn sha256_bytes(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
@@ -1540,25 +1574,36 @@ fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), ExitCode> {
     if !meta_path.exists() {
         return Err(ExitCode::from(3));
     }
-    let meta: serde_json::Value =
+    let mut meta: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
             .map_err(|_| ExitCode::from(3))?;
     let key = meta
         .get("node_fingerprint")
         .and_then(|v| v.as_str())
-        .ok_or(ExitCode::from(3))?;
+        .ok_or(ExitCode::from(3))?
+        .to_string();
     let adapter_id = meta
         .get("adapter_id")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or("")
+        .to_string();
     let adapter_version = meta
         .get("adapter_version")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
-    if !verify_cache_entry_cli(tmp.path(), key, adapter_id, adapter_version)? {
+        .unwrap_or("")
+        .to_string();
+    if !verify_cache_entry_cli(tmp.path(), &key, &adapter_id, &adapter_version)? {
         return Err(ExitCode::from(3));
     }
-    let dst = cache_dir.join(key);
+    if let Some(obj) = meta.as_object_mut() {
+        obj.insert(
+            "cache_source".to_string(),
+            serde_json::Value::String("pack".to_string()),
+        );
+    }
+    fs::write(&meta_path, serde_json::to_vec_pretty(&meta).unwrap())
+        .map_err(|_| ExitCode::from(3))?;
+    let dst = cache_dir.join(&key);
     if dst.exists() {
         let _ = fs::remove_dir_all(&dst);
     }
