@@ -113,6 +113,7 @@ pub struct PolicyInfo {
     pub deny_network: bool,
     pub deny_env: bool,
     pub deny_clock: bool,
+    pub clean_env: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

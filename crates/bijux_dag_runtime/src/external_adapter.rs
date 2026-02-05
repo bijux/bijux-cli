@@ -96,7 +96,9 @@ impl Adapter for ExternalAdapter {
             &outputs_dir.display().to_string(),
         ]);
         cmd.current_dir(&work_dir);
-        cmd.env_clear();
+        if exec.policy.clean_env {
+            cmd.env_clear();
+        }
         for key in &node.env_allowlist {
             if let Ok(val) = std::env::var(key) {
                 cmd.env(key, val);

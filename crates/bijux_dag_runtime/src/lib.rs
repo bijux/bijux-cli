@@ -59,6 +59,7 @@ pub struct RunContext {
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
     pub store: ArtifactStore,
+    pub policy: PolicyConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -215,7 +216,9 @@ impl Adapter for ShellAdapter {
         let mut cmd = Command::new(&args[0]);
         cmd.args(&args[1..]);
         cmd.current_dir(&work_dir);
-        cmd.env_clear();
+        if exec.policy.clean_env {
+            cmd.env_clear();
+        }
         for key in &node.env_allowlist {
             if let Ok(val) = std::env::var(key) {
                 cmd.env(key, val);
@@ -481,11 +484,23 @@ pub enum MaterializeMode {
     Symlink,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct PolicyConfig {
     pub deny_network: bool,
     pub deny_env: bool,
     pub deny_clock: bool,
+    pub clean_env: bool,
+}
+
+impl Default for PolicyConfig {
+    fn default() -> Self {
+        Self {
+            deny_network: false,
+            deny_env: false,
+            deny_clock: false,
+            clean_env: true,
+        }
+    }
 }
 
 pub struct Runtime {
@@ -1977,6 +1992,53 @@ mod tests {
             .join("outputs")
             .join("out_c");
         assert!(out.exists());
+    }
+
+    #[test]
+    fn shell_env_is_clean_except_allowlist() {
+        let dir = tempfile::tempdir().unwrap();
+        std::env::set_var("BIJUX_TEST_FOO", "allowed");
+        std::env::set_var("BIJUX_TEST_BAR", "blocked");
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "env".to_string(),
+                kind: NodeKind::Shell,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: param_object(vec![(
+                    "argv",
+                    Value::Array(vec![
+                        Value::from("/bin/sh"),
+                        Value::from("-c"),
+                        Value::from("env"),
+                    ]),
+                )]),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem, Effect::Env],
+                env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let stdout =
+            fs::read_to_string(final_path.join("nodes").join("env").join("stdout.log")).unwrap();
+        assert!(stdout.contains("BIJUX_TEST_FOO=allowed"));
+        assert!(!stdout.contains("BIJUX_TEST_BAR=blocked"));
     }
 
     #[test]

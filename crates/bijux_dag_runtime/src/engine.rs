@@ -68,6 +68,7 @@ pub fn execute(
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
             deny_clock: options.policy.deny_clock,
+            clean_env: options.policy.clean_env,
         },
         cache_mode: cache_mode_string(&options.cache_mode),
         cache_dir: effective_cache_dir
@@ -87,6 +88,7 @@ pub fn execute(
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
             deny_clock: options.policy.deny_clock,
+            clean_env: options.policy.clean_env,
         },
         time_source: "system_clock".to_string(),
     };
@@ -130,6 +132,7 @@ pub fn execute(
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
         store,
+        policy: options.policy.clone(),
     };
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
@@ -144,15 +147,29 @@ pub fn execute(
 
     let cpu_budget = options.cpu_budget.unwrap_or(options.jobs.max(1) as u32);
     while !ready.is_empty() {
+        let ready_vec: Vec<String> = ready.iter().cloned().collect();
+        for node_id in &ready_vec {
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_eligible",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                }),
+            )?;
+        }
         let mut batch: Vec<String> = Vec::new();
         let mut used_cpu: u32 = 0;
         let mut to_remove: Vec<String> = Vec::new();
+        let mut blocked_by_budget: Vec<String> = Vec::new();
         for id in ready.iter() {
             if batch.len() >= options.jobs.max(1) {
-                break;
+                blocked_by_budget.push(id.clone());
+                continue;
             }
             let cpu = crate::node_cpu(graph, id);
             if used_cpu + cpu > cpu_budget {
+                blocked_by_budget.push(id.clone());
                 continue;
             }
             used_cpu += cpu;
@@ -162,8 +179,20 @@ pub fn execute(
         if batch.is_empty() {
             if let Some(id) = ready.iter().next().cloned() {
                 batch.push(id.clone());
-                to_remove.push(id);
+                to_remove.push(id.clone());
+                blocked_by_budget.retain(|b| b != &id);
             }
+        }
+        blocked_by_budget.sort();
+        for node_id in &blocked_by_budget {
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "blocked_by_budget",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                }),
+            )?;
         }
         let forced_batch = batch.len() == 1 && used_cpu == 0;
         for id in to_remove {
@@ -226,16 +255,43 @@ pub fn execute(
                 ));
             }
             if options.policy.deny_network && node.effects.contains(&Effect::Network) {
+                crate::append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "policy_denied",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node.id,
+                        "reason": "network",
+                    }),
+                )?;
                 return Err(RuntimeError::Executor(
                     "network effect denied by policy".to_string(),
                 ));
             }
             if options.policy.deny_env && node.effects.contains(&Effect::Env) {
+                crate::append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "policy_denied",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node.id,
+                        "reason": "env",
+                    }),
+                )?;
                 return Err(RuntimeError::Executor(
                     "env effect denied by policy".to_string(),
                 ));
             }
             if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
+                crate::append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "policy_denied",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node.id,
+                        "reason": "clock",
+                    }),
+                )?;
                 return Err(RuntimeError::Executor(
                     "clock effect denied by policy".to_string(),
                 ));
@@ -418,6 +474,7 @@ pub fn execute(
                 fs: Arc::clone(&ctx.fs),
                 clock: Arc::clone(&ctx.clock),
                 store: ctx.store.clone(),
+                policy: ctx.policy.clone(),
             };
             let node_id_clone = node_id.clone();
             let node_for_thread = node.clone();

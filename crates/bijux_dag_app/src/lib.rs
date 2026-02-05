@@ -89,6 +89,8 @@ enum Commands {
         #[arg(long)]
         deny_clock: bool,
         #[arg(long)]
+        clean_env: bool,
+        #[arg(long)]
         hermetic: bool,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
@@ -123,6 +125,8 @@ enum Commands {
         deny_env: bool,
         #[arg(long)]
         deny_clock: bool,
+        #[arg(long)]
+        clean_env: bool,
         #[arg(long)]
         hermetic: bool,
         #[arg(long, action = clap::ArgAction::Append)]
@@ -567,6 +571,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             deny_network,
             deny_env,
             deny_clock,
+            clean_env,
             hermetic,
             select,
             exclude,
@@ -589,9 +594,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let mut deny_network = *deny_network;
             let mut deny_clock = *deny_clock;
             let deny_env = *deny_env;
+            let clean_env_flag = *clean_env;
+            let mut clean_env = clean_env_flag;
+            if !clean_env_flag {
+                clean_env = true;
+            }
             if *hermetic {
                 deny_network = true;
                 deny_clock = true;
+                clean_env = true;
             }
             let selectors = parse_selectors(select, exclude)?;
             let options = RuntimeConfig {
@@ -609,6 +620,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     deny_network,
                     deny_env,
                     deny_clock,
+                    clean_env,
                 },
                 selectors,
             };
@@ -684,6 +696,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             deny_network,
             deny_env,
             deny_clock,
+            clean_env,
             hermetic,
             select,
             exclude,
@@ -698,9 +711,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let mut deny_network = *deny_network;
             let mut deny_clock = *deny_clock;
             let deny_env = *deny_env;
+            let clean_env_flag = *clean_env;
+            let mut clean_env = clean_env_flag;
+            if !clean_env_flag {
+                clean_env = true;
+            }
             if *hermetic {
                 deny_network = true;
                 deny_clock = true;
+                clean_env = true;
             }
             let selectors = parse_selectors(select, exclude)?;
             let options = RuntimeConfig {
@@ -722,6 +741,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     deny_network,
                     deny_env,
                     deny_clock,
+                    clean_env,
                 },
                 selectors,
             };
@@ -1616,6 +1636,10 @@ fn check_engine(bin: &str) -> serde_json::Value {
 
 fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
     let mut errors = Vec::new();
+    let manifest_path = run_dir.join("manifest.json");
+    let manifest_data = fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?;
+    let manifest: bijux_dag_artifacts::Manifest =
+        serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
     let snapshot = load_snapshot(run_dir)?;
     let computed = snapshot.graph.graph_fingerprint().unwrap_or_default();
     if computed != snapshot.graph_fingerprint {
@@ -1623,6 +1647,17 @@ fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
             "graph_fingerprint mismatch: {} != {}",
             computed, snapshot.graph_fingerprint
         ));
+    }
+    for node in &snapshot.graph.nodes {
+        if manifest.policy.deny_network && node.effects.contains(&bijux_dag_core::Effect::Network) {
+            errors.push(format!("policy deny_network violated by node {}", node.id));
+        }
+        if manifest.policy.deny_env && node.effects.contains(&bijux_dag_core::Effect::Env) {
+            errors.push(format!("policy deny_env violated by node {}", node.id));
+        }
+        if manifest.policy.deny_clock && node.effects.contains(&bijux_dag_core::Effect::Clock) {
+            errors.push(format!("policy deny_clock violated by node {}", node.id));
+        }
     }
 
     let outputs_index_path = run_dir.join("outputs").join("index.json");
