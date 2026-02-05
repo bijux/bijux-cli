@@ -5,11 +5,11 @@ members = [
   "crates/bijux_dag_artifacts",
   "crates/bijux_dag_runtime",
   "crates/bijux_dag_app",
-  "crates/bijux_dag_cli",
   "crates/bijux_cli",
 ]
 
 [workspace.package]
+version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["Bijan Mousavi"]

@@ -34,7 +34,6 @@ All commands accept a global `--json` flag. JSON output is normalized as:
 
 `diagnostics` is used for validation/lint warnings or errors. Other commands return an empty array.
 
-## Deprecation Note
+## Note
 
-The legacy `bijux-dag` binary remains as a thin wrapper and will print a deprecation warning.
-Use `bijux dag ...` going forward.
+`bijux` is the only supported CLI entrypoint. Use `bijux dag ...` for DAG operations.

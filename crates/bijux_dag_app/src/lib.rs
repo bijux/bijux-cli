@@ -150,7 +150,7 @@ enum Commands {
         #[arg(long)]
         node: Option<String>,
     },
-    #[command(name = "node", alias = "inspect")]
+    #[command(name = "node")]
     Node {
         run_dir: PathBuf,
         #[arg(long)]
@@ -159,7 +159,7 @@ enum Commands {
     Status {
         run_dir: PathBuf,
     },
-    #[command(name = "verify", alias = "verify-run")]
+    #[command(name = "verify")]
     Verify {
         run_dir: PathBuf,
     },

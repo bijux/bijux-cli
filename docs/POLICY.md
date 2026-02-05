@@ -17,7 +17,7 @@ These are strict: if a node declares an effect that the policy denies, validatio
 ### Deny all network access
 
 ```
-bijux-dag run dag.json --out runs/ --deny-network
+bijux dag run dag.json --out runs/ --deny-network
 ```
 
 ### Enforce an env allowlist
