@@ -40,6 +40,7 @@ pub trait Adapter: Send + Sync {
     fn id(&self) -> AdapterId;
     fn supported_kinds(&self) -> Vec<String>;
     fn required_effects(&self) -> EffectSet;
+    fn produces_outputs_schema_version(&self) -> String;
     fn binary_hash(&self) -> Option<String> {
         None
     }

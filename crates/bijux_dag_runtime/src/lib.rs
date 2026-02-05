@@ -1,8 +1,11 @@
 mod adapter;
 mod clock;
 mod engine;
-mod fs;
+mod external_adapter;
+mod io;
 mod planner;
+mod registry;
+mod store;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -14,17 +17,18 @@ use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
 };
 use clock::{Clock, SystemClock};
-use fs::{Fs, StdFs};
+use io::{Fs, StdFs};
 use planner::build_plan;
-use serde::Deserialize;
+use registry::{build_registry, AdapterRegistry};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
-use std::io::{self, Write};
+use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
+use store::{ArtifactStore, CacheStore};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
@@ -33,7 +37,7 @@ pub enum RuntimeError {
     #[error("artifact error: {0}")]
     Artifact(#[from] ArtifactError),
     #[error("io error: {0}")]
-    Io(#[from] io::Error),
+    Io(#[from] std_io::Error),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
     #[error("executor error: {0}")]
@@ -54,6 +58,7 @@ pub struct RunContext {
     pub resolved_params: HashMap<String, Value>,
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
+    pub store: ArtifactStore,
 }
 
 #[derive(Debug, Clone)]
@@ -94,6 +99,10 @@ impl Adapter for ConstAdapter {
 
     fn required_effects(&self) -> EffectSet {
         EffectSet::default()
+    }
+
+    fn produces_outputs_schema_version(&self) -> String {
+        "v0.1".to_string()
     }
 
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
@@ -169,6 +178,10 @@ impl Adapter for ShellAdapter {
             network: false,
             clock: false,
         }
+    }
+
+    fn produces_outputs_schema_version(&self) -> String {
+        "v0.1".to_string()
     }
 
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
@@ -288,6 +301,10 @@ impl Adapter for ContainerAdapter {
         }
     }
 
+    fn produces_outputs_schema_version(&self) -> String {
+        "v0.1".to_string()
+    }
+
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
         let node = ctx.node;
         let exec = ctx.exec;
@@ -398,143 +415,6 @@ impl Adapter for ContainerAdapter {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ExternalAdapterInfo {
-    id: String,
-    version: String,
-    required_effects: ExternalEffectSet,
-    supported_kinds: Vec<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ExternalEffectSet {
-    filesystem: bool,
-    env: bool,
-    network: bool,
-    clock: bool,
-}
-
-#[derive(Clone)]
-struct ExternalAdapter {
-    path: PathBuf,
-    info: ExternalAdapterInfo,
-    binary_hash: Option<String>,
-}
-
-impl Adapter for ExternalAdapter {
-    fn id(&self) -> AdapterId {
-        AdapterId {
-            id: self.info.id.clone(),
-            version: self.info.version.clone(),
-        }
-    }
-
-    fn supported_kinds(&self) -> Vec<String> {
-        self.info.supported_kinds.clone()
-    }
-
-    fn required_effects(&self) -> EffectSet {
-        EffectSet {
-            filesystem: self.info.required_effects.filesystem,
-            env: self.info.required_effects.env,
-            network: self.info.required_effects.network,
-            clock: self.info.required_effects.clock,
-        }
-    }
-
-    fn binary_hash(&self) -> Option<String> {
-        self.binary_hash.clone()
-    }
-
-    fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
-        let node = ctx.node;
-        let exec = ctx.exec;
-
-        let node_dir = exec.run_dir.node_dir(&node.id);
-        let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
-        let work_dir = exec.run_dir.node_work_dir(&node.id);
-        exec.fs.create_dir_all(&outputs_dir)?;
-        exec.fs.create_dir_all(&node_dir)?;
-        exec.fs.create_dir_all(&work_dir)?;
-        let stdout_path = exec.run_dir.node_stdout_path(&node.id);
-        let stderr_path = exec.run_dir.node_stderr_path(&node.id);
-
-        let node_spec = serde_json::to_string(node)?;
-        let mut cmd = Command::new(&self.path);
-        cmd.args([
-            "execute",
-            "--node-spec",
-            &node_spec,
-            "--workdir",
-            &work_dir.display().to_string(),
-            "--outdir",
-            &outputs_dir.display().to_string(),
-        ]);
-        cmd.current_dir(&work_dir);
-        cmd.env_clear();
-        for key in &node.env_allowlist {
-            if let Ok(val) = std::env::var(key) {
-                cmd.env(key, val);
-            }
-        }
-        let output = cmd.output()?;
-
-        exec.fs.write(&stdout_path, &output.stdout)?;
-        exec.fs.write(&stderr_path, &output.stderr)?;
-
-        let output_paths = declared_output_paths(node);
-        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
-            return Ok(NodeResult {
-                status: NodeStatus::Failed,
-                stdout_path: stdout_path.display().to_string(),
-                stderr_path: stderr_path.display().to_string(),
-                outputs_dir: outputs_dir.display().to_string(),
-                failure: Some(failure),
-                attempts: 1,
-                attempt_events: Vec::new(),
-                container_meta: None,
-                adapter_binary_sha256: self.binary_hash.clone(),
-            });
-        }
-        let fp = exec
-            .graph_fingerprint
-            .get(&node.id)
-            .cloned()
-            .unwrap_or_default();
-        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
-
-        let success = output.status.success();
-        let failure = if success {
-            None
-        } else {
-            Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "EXEC_FAIL".to_string(),
-                message: "adapter command failed".to_string(),
-                details: None,
-            })
-        };
-
-        Ok(NodeResult {
-            status: if success {
-                NodeStatus::Success
-            } else {
-                NodeStatus::Failed
-            },
-            stdout_path: stdout_path.display().to_string(),
-            stderr_path: stderr_path.display().to_string(),
-            outputs_dir: outputs_dir.display().to_string(),
-            failure,
-            attempts: 1,
-            attempt_events: Vec::new(),
-            container_meta: None,
-            adapter_binary_sha256: self.binary_hash.clone(),
-        })
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CacheMode {
     Off,
@@ -609,24 +489,28 @@ pub struct PolicyConfig {
 }
 
 pub struct Runtime {
-    adapters: HashMap<String, Arc<dyn Adapter>>,
+    registry: AdapterRegistry,
     fs: Arc<dyn Fs>,
     clock: Arc<dyn Clock>,
+    init_error: Option<String>,
 }
 
 impl Runtime {
     pub fn new() -> Self {
-        let mut adapters: HashMap<String, Arc<dyn Adapter>> = HashMap::new();
-        register_adapter(&mut adapters, Arc::new(ConstAdapter));
-        register_adapter(&mut adapters, Arc::new(ShellAdapter));
-        register_adapter(&mut adapters, Arc::new(ContainerAdapter));
-        for adapter in discover_external_adapters().unwrap_or_default() {
-            register_adapter(&mut adapters, adapter);
-        }
+        let registry_result = build_registry(vec![
+            Arc::new(ConstAdapter),
+            Arc::new(ShellAdapter),
+            Arc::new(ContainerAdapter),
+        ]);
+        let (registry, init_error) = match registry_result {
+            Ok(reg) => (reg, None),
+            Err(err) => (AdapterRegistry::new(), Some(err.to_string())),
+        };
         Self {
-            adapters,
+            registry,
             fs: Arc::new(StdFs),
             clock: Arc::new(SystemClock),
+            init_error,
         }
     }
 
@@ -639,20 +523,24 @@ impl Runtime {
     }
 
     fn adapter_for_kind(&self, kind: &NodeKind) -> Result<Arc<dyn Adapter>, RuntimeError> {
-        self.adapters
-            .get(kind.as_str())
-            .map(Arc::clone)
-            .ok_or_else(|| RuntimeError::Executor("missing adapter".to_string()))
+        self.registry.resolve(kind.as_str())
     }
 
     fn adapter_meta_for_kind(&self, kind: &NodeKind) -> (String, String) {
-        self.adapters
-            .get(kind.as_str())
+        self.registry
+            .resolve(kind.as_str())
             .map(|a| {
                 let id = a.id();
                 (id.id, id.version)
             })
-            .unwrap_or_else(|| ("unknown".to_string(), "unknown".to_string()))
+            .unwrap_or_else(|_| ("unknown".to_string(), "unknown".to_string()))
+    }
+
+    fn adapter_schema_for_kind(&self, kind: &NodeKind) -> String {
+        self.registry
+            .resolve(kind.as_str())
+            .map(|a| a.produces_outputs_schema_version())
+            .unwrap_or_else(|_| "unknown".to_string())
     }
 
     pub fn run(
@@ -661,6 +549,9 @@ impl Runtime {
         out_dir: impl AsRef<Path>,
         options: RuntimeConfig,
     ) -> Result<PathBuf, RuntimeError> {
+        if let Some(err) = &self.init_error {
+            return Err(RuntimeError::Executor(err.clone()));
+        }
         let diags = graph.validate_with_warnings();
         if diags.iter().any(|d| d.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed.into());
@@ -689,6 +580,7 @@ fn write_trace(
     cache_proof: Option<CacheProof>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
@@ -698,8 +590,7 @@ fn write_trace(
         .iter()
         .find(|n| n.id == node_id)
         .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?;
-    let node_dir = ctx.run_dir.node_dir(node_id);
-    ctx.fs.create_dir_all(&node_dir)?;
+    ctx.store.ensure_node_dir(node_id)?;
     write_resolved_params(ctx, node_id)?;
     let inputs_index = if ctx
         .fs
@@ -722,6 +613,7 @@ fn write_trace(
         )?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
+        adapter_outputs_schema_version: adapter_outputs_schema_version.to_string(),
         adapter_binary_sha256,
         resources: node.resources.as_ref().map(|r| TraceResources {
             cpu: r.cpu,
@@ -735,8 +627,7 @@ fn write_trace(
         failure,
     };
     let data = serde_json::to_vec_pretty(&trace)?;
-    ctx.fs
-        .write(ctx.run_dir.node_trace_path(node_id).as_path(), &data)?;
+    ctx.store.write_trace(node_id, &data)?;
     Ok(())
 }
 
@@ -757,10 +648,7 @@ fn write_resolved_params(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeE
         .unwrap_or(Value::Null);
     sort_value_maps(&mut params);
     let data = serde_json::to_vec_pretty(&params)?;
-    ctx.fs.write(
-        ctx.run_dir.node_resolved_params_path(node_id).as_path(),
-        &data,
-    )?;
+    ctx.store.write_resolved_params(node_id, &data)?;
     Ok(())
 }
 
@@ -861,83 +749,14 @@ fn tool_version() -> String {
     base.to_string()
 }
 
-fn register_adapter(map: &mut HashMap<String, Arc<dyn Adapter>>, adapter: Arc<dyn Adapter>) {
-    for kind in adapter.supported_kinds() {
-        map.entry(kind).or_insert_with(|| Arc::clone(&adapter));
-    }
-}
-
-fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeError> {
-    let dir = match std::env::var("BIJUX_DAG_ADAPTERS_DIR") {
-        Ok(v) if !v.is_empty() => PathBuf::from(v),
-        _ => return Ok(Vec::new()),
-    };
-    if !dir.exists() {
-        return Ok(Vec::new());
-    }
-    let mut entries: Vec<_> = std::fs::read_dir(&dir)?.filter_map(|e| e.ok()).collect();
-    entries.sort_by_key(|e| e.file_name());
-    let mut adapters: Vec<Arc<dyn Adapter>> = Vec::new();
-    for entry in entries {
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
-        let info = match Command::new(&path).args(["info", "--json"]).output() {
-            Ok(out) if out.status.success() => {
-                serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout).ok()
-            }
-            _ => None,
-        };
-        let info = match info {
-            Some(i) => i,
-            None => continue,
-        };
-        let binary_hash = std::fs::read(&path).ok().map(|b| sha256_bytes(&b));
-        let adapter = ExternalAdapter {
-            path: path.clone(),
-            info,
-            binary_hash,
-        };
-        adapters.push(Arc::new(adapter));
-    }
-    Ok(adapters)
-}
-
 pub fn registered_adapters() -> Vec<AdapterInfo> {
-    let mut adapters: Vec<Arc<dyn Adapter>> = vec![
+    let registry = build_registry(vec![
         Arc::new(ConstAdapter),
         Arc::new(ShellAdapter),
         Arc::new(ContainerAdapter),
-    ];
-    if let Ok(mut external) = discover_external_adapters() {
-        adapters.append(&mut external);
-    }
-    let mut list = Vec::new();
-    for a in adapters {
-        let id = a.id();
-        let req = a.required_effects();
-        let mut effects = Vec::new();
-        if req.filesystem {
-            effects.push("filesystem".to_string());
-        }
-        if req.env {
-            effects.push("env".to_string());
-        }
-        if req.network {
-            effects.push("network".to_string());
-        }
-        if req.clock {
-            effects.push("clock".to_string());
-        }
-        list.push(AdapterInfo {
-            adapter_id: id.id,
-            adapter_version: id.version,
-            effects,
-        });
-    }
-    list.sort_by(|a, b| a.adapter_id.cmp(&b.adapter_id));
-    list
+    ])
+    .unwrap_or_else(|_| AdapterRegistry::new());
+    registry.list()
 }
 
 fn materialize_inputs(
@@ -1003,18 +822,20 @@ fn cache_dir_from_env() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
 }
 
-fn declared_output_paths(node: &Node) -> Vec<String> {
+pub(crate) fn declared_output_paths(node: &Node) -> Vec<String> {
     node.outputs.iter().map(|o| o.path.clone()).collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn try_cache_read(
     options: &RuntimeConfig,
     node: &Node,
     ctx: &RunContext,
     graph: &Graph,
-    fs: &dyn Fs,
+    fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_outputs_schema_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     if options.cache_mode == CacheMode::Off {
         return Ok(CacheRead {
@@ -1023,8 +844,8 @@ fn try_cache_read(
         });
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
-    let cache_dir = match cache_dir {
-        Some(d) => d,
+    let cache_store = match cache_dir {
+        Some(d) => Some(CacheStore::new(d, Arc::clone(&fs))),
         None => {
             return Ok(CacheRead {
                 hit: false,
@@ -1034,9 +855,17 @@ fn try_cache_read(
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
         let key = graph.node_fingerprint(node)?;
-        let entry = cache_dir.join(&key);
-        if fs.metadata(&entry).is_ok() {
-            if !verify_cache_entry(fs, &entry, &key, adapter_id, adapter_version)? {
+        let store = cache_store.as_ref().unwrap();
+        let entry = store.entry(&key);
+        if store.fs().metadata(&entry).is_ok() {
+            if !verify_cache_entry(
+                store.fs(),
+                &entry,
+                &key,
+                adapter_id,
+                adapter_version,
+                adapter_outputs_schema_version,
+            )? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -1050,13 +879,13 @@ fn try_cache_read(
                 });
             }
             let node_dir = ctx.run_dir.node_dir(&node.id);
-            fs.create_dir_all(&node_dir)?;
+            store.fs().create_dir_all(&node_dir)?;
             copy_dir_all(
-                fs,
+                store.fs(),
                 entry.join("outputs"),
                 ctx.run_dir.node_outputs_dir(&node.id),
             )?;
-            copy_dir_all(fs, entry.join("logs"), node_dir.clone())?;
+            copy_dir_all(store.fs(), entry.join("logs"), node_dir.clone())?;
             return Ok(CacheRead {
                 hit: true,
                 proof: Some(CacheProof {
@@ -1071,8 +900,15 @@ fn try_cache_read(
         }
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
-            if fs.metadata(&remote_entry).is_ok() {
-                if !verify_cache_entry(fs, &remote_entry, &key, adapter_id, adapter_version)? {
+            if store.fs().metadata(&remote_entry).is_ok() {
+                if !verify_cache_entry(
+                    store.fs(),
+                    &remote_entry,
+                    &key,
+                    adapter_id,
+                    adapter_version,
+                    adapter_outputs_schema_version,
+                )? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -1086,16 +922,16 @@ fn try_cache_read(
                     });
                 }
                 let node_dir = ctx.run_dir.node_dir(&node.id);
-                fs.create_dir_all(&node_dir)?;
+                store.fs().create_dir_all(&node_dir)?;
                 copy_dir_all(
-                    fs,
+                    store.fs(),
                     remote_entry.join("outputs"),
                     ctx.run_dir.node_outputs_dir(&node.id),
                 )?;
-                copy_dir_all(fs, remote_entry.join("logs"), node_dir.clone())?;
+                copy_dir_all(store.fs(), remote_entry.join("logs"), node_dir.clone())?;
                 if let Some(local_dir) = options.cache_dir.as_ref() {
                     let local_entry = local_dir.join(&key);
-                    let _ = copy_dir_all(fs, &remote_entry, &local_entry);
+                    let _ = copy_dir_all(store.fs(), &remote_entry, &local_entry);
                 }
                 return Ok(CacheRead {
                     hit: true,
@@ -1117,54 +953,57 @@ fn try_cache_read(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn try_cache_write(
     options: &RuntimeConfig,
     node: &Node,
     ctx: &RunContext,
     graph: &Graph,
-    fs: &dyn Fs,
+    fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_outputs_schema_version: &str,
 ) -> Result<(), RuntimeError> {
     if options.cache_mode != CacheMode::ReadWrite {
         return Ok(());
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
-    let cache_dir = match cache_dir {
-        Some(d) => d,
+    let store = match cache_dir {
+        Some(d) => CacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
     let key = graph.node_fingerprint(node)?;
-    let entry = cache_dir.join(&key);
-    fs.create_dir_all(entry.join("outputs").as_path())?;
-    fs.create_dir_all(entry.join("logs").as_path())?;
+    let entry = store.entry(&key);
+    store.fs().create_dir_all(entry.join("outputs").as_path())?;
+    store.fs().create_dir_all(entry.join("logs").as_path())?;
     let meta = serde_json::json!({
         "node_id": node.id,
         "node_fingerprint": key,
         "adapter_id": adapter_id,
         "adapter_version": adapter_version,
+        "produces_outputs_schema_version": adapter_outputs_schema_version,
         "created_unix_ms": ctx.clock.now_unix_ms(),
         "schema_version": "v0.1",
     });
-    fs.write(
+    store.fs().write(
         entry.join("meta.json").as_path(),
         &serde_json::to_vec_pretty(&meta)?,
     )?;
     copy_dir_all(
-        fs,
+        store.fs(),
         ctx.run_dir.node_outputs_dir(&node.id),
         entry.join("outputs"),
     )?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
-    let _ = fs.copy(
+    let _ = store.fs().copy(
         node_dir.join("stdout.log").as_path(),
         entry.join("logs").join("stdout.log").as_path(),
     );
-    let _ = fs.copy(
+    let _ = store.fs().copy(
         node_dir.join("stderr.log").as_path(),
         entry.join("logs").join("stderr.log").as_path(),
     );
-    let _ = fs.copy(
+    let _ = store.fs().copy(
         node_dir.join("trace.json").as_path(),
         entry.join("logs").join("trace.json").as_path(),
     );
@@ -1177,6 +1016,7 @@ fn verify_cache_entry(
     expected_key: &str,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_outputs_schema_version: &str,
 ) -> Result<bool, RuntimeError> {
     let index_path = entry.join("outputs").join("index.json");
     if fs.metadata(&index_path).is_err() {
@@ -1196,6 +1036,13 @@ fn verify_cache_entry(
     if meta.get("adapter_version").and_then(|v| v.as_str()) != Some(adapter_version) {
         return Ok(false);
     }
+    if meta
+        .get("produces_outputs_schema_version")
+        .and_then(|v| v.as_str())
+        != Some(adapter_outputs_schema_version)
+    {
+        return Ok(false);
+    }
     let data = fs.read_to_string(&index_path)?;
     let index: OutputsIndex = serde_json::from_str(&data)?;
     for file in index.files {
@@ -1212,7 +1059,7 @@ fn verify_cache_entry(
     Ok(true)
 }
 
-fn sha256_bytes(bytes: &[u8]) -> String {
+pub(crate) fn sha256_bytes(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     let result = hasher.finalize();
@@ -1243,7 +1090,7 @@ fn sort_value_maps(value: &mut Value) {
     }
 }
 
-fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
+pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
     for out in outputs {
         if out.path.contains("..") || out.path.starts_with('/') || out.path.starts_with('\\') {
             return Some(FailureInfo {
@@ -1372,7 +1219,7 @@ fn count_nodes(status_map: &HashMap<String, NodeStatus>) -> NodeCounts {
     counts
 }
 
-fn copy_dir_all(fs: &dyn Fs, src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+fn copy_dir_all(fs: &dyn Fs, src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std_io::Result<()> {
     let src = src.as_ref();
     let dst = dst.as_ref();
     fs.create_dir_all(dst)?;
@@ -1388,7 +1235,12 @@ fn copy_dir_all(fs: &dyn Fs, src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io
     Ok(())
 }
 
-fn materialize_file(fs: &dyn Fs, src: &Path, dst: &Path, mode: MaterializeMode) -> io::Result<()> {
+fn materialize_file(
+    fs: &dyn Fs,
+    src: &Path,
+    dst: &Path,
+    mode: MaterializeMode,
+) -> std_io::Result<()> {
     if fs.metadata(dst).is_ok() {
         let _ = fs.remove_file(dst);
     }
@@ -1413,6 +1265,7 @@ fn materialize_file(fs: &dyn Fs, src: &Path, dst: &Path, mode: MaterializeMode) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::clock::FixedClock;
     use bijux_dag_core::{
         ContainerSpec, Edge, Effect, MountSpec, ParamValue, PortRef, Severity, SPEC_VERSION,
     };
@@ -1844,6 +1697,21 @@ mod tests {
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
         assert!(bad_a || bad_b);
+    }
+
+    #[test]
+    fn fixed_clock_produces_stable_event_ts() {
+        let dir = tempfile::tempdir().unwrap();
+        let clock = Arc::new(FixedClock::new(123));
+        let runtime = Runtime::with_io(Arc::new(StdFs), clock);
+        let final_path = runtime
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
+        for line in log.lines() {
+            let v: serde_json::Value = serde_json::from_str(line).unwrap();
+            assert_eq!(v.get("ts").and_then(|v| v.as_u64()), Some(123));
+        }
     }
 
     #[test]

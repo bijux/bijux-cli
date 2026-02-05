@@ -98,7 +98,9 @@ pub fn execute(
         cancel_flag.store(true, Ordering::SeqCst);
     });
 
-    let mut run_log = runtime.fs.open_append(run_dir.run_log_path().as_path())?;
+    let run_dir_arc = Arc::new(run_dir.clone());
+    let store = crate::store::ArtifactStore::new(Arc::clone(&run_dir_arc), Arc::clone(&runtime.fs));
+    let mut run_log = store.open_run_log()?;
     crate::append_event(
         &mut run_log,
         serde_json::json!({
@@ -122,11 +124,12 @@ pub fn execute(
     }
     let resolved_params: HashMap<String, Value> = resolved.resolved_params.into_iter().collect();
     let ctx = RunContext {
-        run_dir: Arc::new(run_dir.clone()),
+        run_dir: Arc::clone(&run_dir_arc),
         graph_fingerprint: node_fps,
         resolved_params,
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
+        store,
     };
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
@@ -251,14 +254,16 @@ pub fn execute(
             }
 
             let adapter_id = adapter.id();
+            let adapter_schema = adapter.produces_outputs_schema_version();
             let cache_read = try_cache_read(
                 &options,
                 &node,
                 &ctx,
                 graph,
-                ctx.fs.as_ref(),
+                Arc::clone(&ctx.fs),
                 &adapter_id.id,
                 &adapter_id.version,
+                &adapter_schema,
             )?;
             if let Some(proof) = cache_read.proof.clone() {
                 if !cache_read.hit {
@@ -283,6 +288,7 @@ pub fn execute(
                 .map(|n| n.kind.clone())
                 .unwrap_or(NodeKind::Const);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node_kind);
+            let aschema = runtime.adapter_schema_for_kind(&node_kind);
             let adapter_hash = runtime
                 .adapter_for_kind(&node_kind)
                 .ok()
@@ -300,6 +306,7 @@ pub fn execute(
                 None,
                 &aid,
                 &aver,
+                &aschema,
                 None,
                 adapter_hash,
                 Some(bijux_dag_artifacts::SkipReason {
@@ -355,6 +362,7 @@ pub fn execute(
         for (node_id, node, cache_proof) in &cached {
             status_map.insert(node_id.clone(), NodeStatus::Cached);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let adapter_hash = runtime
                 .adapter_for_kind(&node.kind)
                 .ok()
@@ -372,6 +380,7 @@ pub fn execute(
                 Some(cache_proof.clone()),
                 &aid,
                 &aver,
+                &aschema,
                 None,
                 adapter_hash,
                 None,
@@ -386,7 +395,17 @@ pub fn execute(
                 }),
             )?;
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-            try_cache_write(&options, node, &ctx, graph, ctx.fs.as_ref(), &aid, &aver)?;
+            let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            try_cache_write(
+                &options,
+                node,
+                &ctx,
+                graph,
+                Arc::clone(&ctx.fs),
+                &aid,
+                &aver,
+                &aschema,
+            )?;
         }
 
         for (node_id, node, params) in &to_start {
@@ -398,6 +417,7 @@ pub fn execute(
                 resolved_params: ctx.resolved_params.clone(),
                 fs: Arc::clone(&ctx.fs),
                 clock: Arc::clone(&ctx.clock),
+                store: ctx.store.clone(),
             };
             let node_id_clone = node_id.clone();
             let node_for_thread = node.clone();
@@ -438,6 +458,7 @@ pub fn execute(
             match res {
                 Ok(result) => {
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                    let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     let adapter_hash = runtime
                         .adapter_for_kind(&node.kind)
                         .ok()
@@ -477,6 +498,7 @@ pub fn execute(
                         cache_proof,
                         &aid,
                         &aver,
+                        &aschema,
                         result.container_meta.clone(),
                         adapter_hash,
                         None,
@@ -495,19 +517,22 @@ pub fn execute(
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
                         let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                        let aschema = runtime.adapter_schema_for_kind(&node.kind);
                         try_cache_write(
                             &options,
                             &node,
                             &ctx,
                             graph,
-                            ctx.fs.as_ref(),
+                            Arc::clone(&ctx.fs),
                             &aid,
                             &aver,
+                            &aschema,
                         )?;
                     }
                 }
                 Err(err) => {
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                    let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     status_map.insert(node_id.clone(), NodeStatus::Failed);
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     let adapter_hash = runtime
@@ -531,6 +556,7 @@ pub fn execute(
                         cache_proof,
                         &aid,
                         &aver,
+                        &aschema,
                         None,
                         adapter_hash,
                         None,
@@ -567,6 +593,7 @@ pub fn execute(
             if !status_map.contains_key(&node.id) {
                 status_map.insert(node.id.clone(), NodeStatus::Skipped);
                 let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                let aschema = runtime.adapter_schema_for_kind(&node.kind);
                 let started = ctx.clock.now_unix_ms();
                 write_trace(
                     &ctx,
@@ -580,6 +607,7 @@ pub fn execute(
                     None,
                     &aid,
                     &aver,
+                    &aschema,
                     None,
                     runtime
                         .adapter_for_kind(&node.kind)

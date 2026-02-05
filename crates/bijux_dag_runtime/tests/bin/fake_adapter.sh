@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ "$1" = "info" ]; then
-  echo '{"id":"fake","version":"0.1","required_effects":{"filesystem":true,"env":false,"network":false,"clock":false},"supported_kinds":["fake"]}'
+  echo '{"id":"fake","version":"0.1","required_effects":{"filesystem":true,"env":false,"network":false,"clock":false},"supported_kinds":["fake"],"produces_outputs_schema_version":"v0.1"}'
   exit 0
 fi
 if [ "$1" = "execute" ]; then

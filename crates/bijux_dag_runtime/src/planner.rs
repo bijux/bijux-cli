@@ -90,3 +90,72 @@ fn selector_matches(node: &Node, selector: &Selector) -> bool {
         Selector::Kind(kind) => node.kind.as_str() == kind,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bijux_dag_core::{FileOutput, Graph, Node, NodeKind, RetryPolicy};
+
+    fn sample_graph() -> Graph {
+        Graph {
+            spec: "bijux-dag/v0.1".to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "a".to_string(),
+                    kind: NodeKind::Const,
+                    inputs: vec![],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out".to_string(),
+                    }],
+                    params: Default::default(),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec!["etl".to_string()],
+                    retry: RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+                Node {
+                    id: "b".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec![],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out".to_string(),
+                    }],
+                    params: Default::default(),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec!["gpu".to_string()],
+                    retry: RetryPolicy::default(),
+                    effects: vec![],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+            ],
+            edges: vec![],
+        }
+    }
+
+    #[test]
+    fn planner_filters_by_tag() {
+        let graph = sample_graph();
+        let options = RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![Selector::Tag("etl".to_string())],
+                exclude: vec![],
+            },
+            ..RuntimeConfig::default()
+        };
+        let plan = build_plan(&graph, &options);
+        assert!(plan.filter_reasons.contains_key("b"));
+        assert!(!plan.filter_reasons.contains_key("a"));
+    }
+}

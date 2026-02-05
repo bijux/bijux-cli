@@ -1,6 +1,8 @@
+pub mod fs;
+
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::fs;
+use std::fs as std_fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -54,6 +56,7 @@ pub struct NodeTrace {
     pub fingerprint: String,
     pub adapter_id: String,
     pub adapter_version: String,
+    pub adapter_outputs_schema_version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub adapter_binary_sha256: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -201,7 +204,7 @@ impl RunDir {
     pub fn create_with_id(out_base: impl AsRef<Path>, run_id: &str) -> Result<Self, ArtifactError> {
         let staging = out_base.as_ref().join(format!("run.tmp-{}", run_id));
         let final_path = out_base.as_ref().join(format!("run-{}", run_id));
-        fs::create_dir_all(staging.join("nodes"))?;
+        std_fs::create_dir_all(staging.join("nodes"))?;
         Ok(Self {
             staging_path: staging,
             final_path,
@@ -223,7 +226,7 @@ impl RunDir {
 
     pub fn write_graph_snapshot(&self, graph_json: &str) -> Result<(), ArtifactError> {
         let path = self.staging_path.join("graph.snapshot.json");
-        let mut f = fs::File::create(path)?;
+        let mut f = std_fs::File::create(path)?;
         f.write_all(graph_json.as_bytes())?;
         Ok(())
     }
@@ -277,7 +280,7 @@ impl RunDir {
     }
 
     pub fn node_output_relpath(&self, node_id: &str, file: &str) -> String {
-        format!("nodes/{}/outputs/{}", node_id, file)
+        fs::node_output_relpath(node_id, file)
     }
 
     pub fn node_inputs_index_path(&self, node_id: &str) -> PathBuf {
@@ -286,16 +289,16 @@ impl RunDir {
 
     pub fn finalize(self) -> Result<PathBuf, ArtifactError> {
         if let Some(parent) = self.final_path.parent() {
-            fs::create_dir_all(parent)?;
+            std_fs::create_dir_all(parent)?;
         }
-        fs::rename(&self.staging_path, &self.final_path)?;
+        std_fs::rename(&self.staging_path, &self.final_path)?;
         Ok(self.final_path)
     }
 }
 
 fn write_json<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<(), ArtifactError> {
     let data = serde_json::to_vec_pretty(value)?;
-    let mut f = fs::File::create(path)?;
+    let mut f = std_fs::File::create(path)?;
     f.write_all(&data)?;
     Ok(())
 }
@@ -304,7 +307,7 @@ fn write_json_atomic<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<
     let path = path.as_ref();
     let tmp = path.with_extension("tmp");
     write_json(&tmp, value)?;
-    fs::rename(tmp, path)?;
+    std_fs::rename(tmp, path)?;
     Ok(())
 }
 
@@ -320,7 +323,7 @@ pub fn write_outputs_index(
         if !path.is_file() {
             continue;
         }
-        let data = fs::read(&path)?;
+        let data = std_fs::read(&path)?;
         let sha = sha256_bytes(&data);
         files.push(OutputFile {
             path: rel.clone(),
@@ -339,7 +342,7 @@ pub fn write_run_outputs_index(
     index: &RunOutputsIndex,
 ) -> Result<(), ArtifactError> {
     let dir = dir.as_ref();
-    fs::create_dir_all(dir)?;
+    std_fs::create_dir_all(dir)?;
     write_json(dir.join("index.json"), index)
 }
 
