@@ -1,0 +1,43 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": null,
+  "inputs": {},
+  "nondeterminism_allowed": false,
+  "nodes": [
+    {
+      "id": "env1",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "echo ok > ../outputs/out"
+        ]
+      },
+      "container": null,
+      "timeout_ms": null,
+      "resources": null,
+      "tags": [],
+      "retry": {
+        "max_attempts": 0,
+        "backoff_ms": 0
+      },
+      "effects": [
+        "filesystem",
+        "env"
+      ],
+      "env_allowlist": [
+        "HOME"
+      ],
+      "group": null
+    }
+  ],
+  "edges": []
+}

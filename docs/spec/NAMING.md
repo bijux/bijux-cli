@@ -17,6 +17,11 @@
 - Modules should map to a domain (e.g., `planner`, `cache`, `adapter`, `artifacts`).
 - Keep modules small and focused; split by domain when they grow.
 
+## Banned Names
+- `utils`, `common`, `helpers`, `ops`
+- Generic `Context` without a prefix (use `RunContext`, `ParseContext`, etc.)
+- Generic `Config` without a prefix (use `RuntimeConfig`, `PolicyConfig`, etc.)
+
 ## Types
 - Prefer explicit names: `RuntimeConfig`, `PolicyConfig`, `RunContext`.
 - Avoid ambiguous `Config`, `Context`, `Result` in public APIs.

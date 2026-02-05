@@ -1,0 +1,39 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": null,
+  "inputs": {
+    "greeting": "hello"
+  },
+  "nondeterminism_allowed": false,
+  "nodes": [
+    {
+      "id": "const1",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "out"
+        }
+      ],
+      "params": {
+        "value": {
+          "graph_input": "greeting",
+          "node_output": null
+        }
+      },
+      "container": null,
+      "timeout_ms": null,
+      "resources": null,
+      "tags": [],
+      "retry": {
+        "max_attempts": 0,
+        "backoff_ms": 0
+      },
+      "effects": [],
+      "env_allowlist": [],
+      "group": null
+    }
+  ],
+  "edges": []
+}
