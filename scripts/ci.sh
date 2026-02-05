@@ -5,6 +5,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 make fmt
 make lint
+./scripts/dep_guard.sh
 make test
 make golden
 cargo run -p bijux_cli -- dag compat >/dev/null
