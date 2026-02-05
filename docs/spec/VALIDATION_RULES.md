@@ -17,7 +17,7 @@
 - `E1021` Unknown node output reference
 - `E1022` Forward node output reference
 - `E1023` Missing container spec for container node
-- `E1024` Invalid container mount spec
+- `E1024` Invalid container spec
 - `E1025` Invalid output file path
 
 ## Warning Codes
@@ -42,7 +42,7 @@
 15. Node output ref must exist. (`E1021`)
 16. Node output ref must not point to downstream node. (`E1022`)
 17. Container nodes must include a container spec. (`E1023`)
-18. Container mount specs must be under node sandbox. (`E1024`)
+18. Container spec must be valid (engine and argv). (`E1024`)
 19. Output file paths must be relative and not contain `..`. (`E1025`)
 14. Nodes not reachable from any root emit a warning. (`W2001`)
 15. Nodes with no edges emit a warning. (`W2002`)

@@ -21,6 +21,7 @@ write outputs only to the node sandbox.
 - `container` v0.1
   - Effects required: `filesystem`
   - Runs a container with the node sandbox mounted at `/bijux/node`.
+  - Uses `container.engine` (`docker` or `podman`) and `container.argv`.
 
 ## Example: Shell Node
 

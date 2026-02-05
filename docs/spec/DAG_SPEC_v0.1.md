@@ -51,11 +51,10 @@ A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed o
 ```
 {
   "image": "string",
-  "command": ["string"],
-  "args": ["string"],
+  "argv": ["string"],
   "env_allowlist": ["ENV_VAR"],
-  "mounts": [{"source": "inputs/...", "target": "/bijux/node/...", "read_only": bool}],
-  "workdir": "/bijux/node/work"
+  "workdir": "/bijux/node/work",
+  "engine": "docker|podman"
 }
 ```
 
@@ -78,7 +77,7 @@ Params can be literal JSON values or explicit references. No string templating i
   "to": {"node_id": "string", "port": "string"}
 }
 ```
-Edges map a named output port to a named input port. Only the referenced output file is materialized for downstream nodes.
+Edges map a named output port to a named input port. Only the referenced output file is materialized for downstream nodes, under `nodes/<id>/inputs/<upstream>/<input_name>`.
 
 ## PortRef
 ```

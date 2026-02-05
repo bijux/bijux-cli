@@ -25,7 +25,7 @@ Optional:
 {
   "hit": bool,
   "key": "string",
-  "source": "local",
+  "source": "local|remote|pack",
   "verified": bool,
   "reason": "string",
   "corrupt_detected": bool
@@ -54,6 +54,8 @@ Optional:
 {
   "image": "string",
   "image_digest": "string?",
-  "engine": "docker|podman"
+  "engine": "docker|podman",
+  "engine_version": "string?",
+  "exit_code": "number?"
 }
 ```

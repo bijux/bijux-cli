@@ -180,24 +180,12 @@ pub struct Resources {
 #[serde(deny_unknown_fields)]
 pub struct ContainerSpec {
     pub image: String,
-    pub command: Vec<String>,
-    #[serde(default)]
-    pub args: Vec<String>,
+    pub argv: Vec<String>,
     #[serde(default)]
     pub env_allowlist: Vec<String>,
     #[serde(default)]
-    pub mounts: Vec<MountSpec>,
-    #[serde(default)]
     pub workdir: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct MountSpec {
-    pub source: String,
-    pub target: String,
-    #[serde(default)]
-    pub read_only: bool,
+    pub engine: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -330,26 +318,21 @@ impl Graph {
                             Some("Add env effect when using env_allowlist".to_string()),
                         ));
                     }
-                    for (idx, mnt) in spec.mounts.iter().enumerate() {
-                        if !is_valid_mount_source(&mnt.source) {
-                            diags.push(error(
-                                "E1024",
-                                format!("invalid mount source: {}", mnt.source),
-                                format!("/nodes/{}/container/mounts/{}", node.id, idx),
-                                Some(
-                                    "Use inputs/, outputs/, or work/ paths without '..'"
-                                        .to_string(),
-                                ),
-                            ));
-                        }
-                        if !mnt.target.starts_with("/bijux/node/") {
-                            diags.push(error(
-                                "E1024",
-                                format!("invalid mount target: {}", mnt.target),
-                                format!("/nodes/{}/container/mounts/{}", node.id, idx),
-                                Some("Mount targets must be under /bijux/node/".to_string()),
-                            ));
-                        }
+                    if spec.engine != "docker" && spec.engine != "podman" {
+                        diags.push(error(
+                            "E1024",
+                            format!("invalid container engine: {}", spec.engine),
+                            format!("/nodes/{}/container/engine", node.id),
+                            Some("Use engine \"docker\" or \"podman\"".to_string()),
+                        ));
+                    }
+                    if spec.argv.is_empty() {
+                        diags.push(error(
+                            "E1024",
+                            format!("container argv must not be empty: {}", node.id),
+                            format!("/nodes/{}/container/argv", node.id),
+                            Some("Provide argv for container nodes".to_string()),
+                        ));
                     }
                 }
             }
@@ -893,16 +876,6 @@ fn effect_order(effect: &Effect) -> u8 {
         Effect::Env => 2,
         Effect::Clock => 3,
     }
-}
-
-fn is_valid_mount_source(path: &str) -> bool {
-    if path.contains("..") {
-        return false;
-    }
-    path.starts_with("inputs/")
-        || path.starts_with("outputs/")
-        || path == "work"
-        || path.starts_with("work/")
 }
 
 fn is_valid_output_path(path: &str) -> bool {

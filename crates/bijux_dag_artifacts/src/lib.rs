@@ -180,6 +180,10 @@ pub struct ContainerTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image_digest: Option<String>,
     pub engine: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub engine_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]

@@ -81,7 +81,7 @@ Resolved parameters for the node with deterministic key ordering.
 ```
 {
   "files": [
-    {"path": "upstream/file", "sha256": "...", "from_node": "id", "from_node_fingerprint": "...", "from_output": "port"}
+    {"path": "upstream/input_name", "sha256": "...", "from_node": "id", "from_node_fingerprint": "...", "from_output": "port"}
   ]
 }
 ```

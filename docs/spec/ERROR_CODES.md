@@ -19,7 +19,7 @@ These codes are globally stable across bijux-dag versions.
 - `E1021` Unknown node output reference
 - `E1022` Forward node output reference
 - `E1023` Missing container spec for container node
-- `E1024` Invalid container mount spec
+- `E1024` Invalid container spec
 - `E1025` Invalid output file path
 
 ## Warnings
