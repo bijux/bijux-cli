@@ -26,7 +26,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use store::{ArtifactStore, CacheStore};
 
@@ -54,7 +54,7 @@ pub enum NodeStatus {
 
 pub struct RunContext {
     pub run_dir: Arc<RunDir>,
-    pub graph_fingerprint: HashMap<String, String>,
+    pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
     pub resolved_params: HashMap<String, Value>,
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
@@ -135,11 +135,7 @@ impl Adapter for ConstAdapter {
             .write(&out_path, &serde_json::to_vec_pretty(&value)?)?;
         exec.fs.write(&stdout_path, b"")?;
         exec.fs.write(&stderr_path, b"")?;
-        let fp = exec
-            .graph_fingerprint
-            .get(&node.id)
-            .cloned()
-            .unwrap_or_default();
+        let fp = node_fingerprint_from_ctx(exec, &node.id);
         let output_paths = declared_output_paths(node);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
@@ -243,11 +239,7 @@ impl Adapter for ShellAdapter {
                 adapter_binary_sha256: None,
             });
         }
-        let fp = exec
-            .graph_fingerprint
-            .get(&node.id)
-            .cloned()
-            .unwrap_or_default();
+        let fp = node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
@@ -325,10 +317,31 @@ impl Adapter for ContainerAdapter {
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
-        let mut cmd = Command::new("docker");
+        let engine = spec.engine.as_str();
+        let engine_version = engine_version(engine);
+        if engine_version.is_none() {
+            exec.fs.write(&stdout_path, b"")?;
+            exec.fs.write(
+                &stderr_path,
+                format!("container engine not available: {}", engine).as_bytes(),
+            )?;
+            return Ok(NodeResult {
+                status: NodeStatus::Skipped,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                failure: None,
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: Some(container_trace(spec, engine, None, engine_version)),
+                adapter_binary_sha256: None,
+            });
+        }
+
+        let mut cmd = Command::new(engine);
         cmd.arg("run").arg("--rm");
 
-        if !node.effects.contains(&Effect::Network) {
+        if !node.effects.contains(&Effect::Network) || exec.policy.deny_network {
             cmd.args(["--network", "none"]);
         }
 
@@ -340,15 +353,6 @@ impl Adapter for ContainerAdapter {
             .unwrap_or_else(|| "/bijux/node/work".to_string());
         cmd.args(["--workdir", &workdir]);
 
-        for mount in &spec.mounts {
-            let host_path = node_dir.join(&mount.source);
-            let mut mount_spec = format!("{}:{}", host_path.display(), mount.target);
-            if mount.read_only {
-                mount_spec.push_str(":ro");
-            }
-            cmd.args(["-v", &mount_spec]);
-        }
-
         for key in &spec.env_allowlist {
             if let Ok(val) = std::env::var(key) {
                 cmd.arg("-e").arg(format!("{}={}", key, val));
@@ -356,14 +360,12 @@ impl Adapter for ContainerAdapter {
         }
 
         cmd.arg(&spec.image);
-        for part in &spec.command {
-            cmd.arg(part);
-        }
-        for part in &spec.args {
+        for part in &spec.argv {
             cmd.arg(part);
         }
 
         let output = cmd.output()?;
+        let exit_code = output.status.code();
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
@@ -377,15 +379,11 @@ impl Adapter for ContainerAdapter {
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
-                container_meta: Some(container_trace(spec, "docker")),
+                container_meta: Some(container_trace(spec, engine, exit_code, engine_version.clone())),
                 adapter_binary_sha256: None,
             });
         }
-        let fp = exec
-            .graph_fingerprint
-            .get(&node.id)
-            .cloned()
-            .unwrap_or_default();
+        let fp = node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
@@ -396,7 +394,7 @@ impl Adapter for ContainerAdapter {
                 kind: "Execution".to_string(),
                 code: "EXEC_FAIL".to_string(),
                 message: "container command failed".to_string(),
-                details: None,
+                details: Some(serde_json::json!({ "exit_code": exit_code })),
             })
         };
 
@@ -412,7 +410,7 @@ impl Adapter for ContainerAdapter {
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
-            container_meta: Some(container_trace(spec, "docker")),
+            container_meta: Some(container_trace(spec, engine, exit_code, engine_version)),
             adapter_binary_sha256: None,
         })
     }
@@ -622,10 +620,7 @@ fn write_trace(
         started_unix_ms,
         finished_unix_ms,
         attempt,
-        fingerprint: graph.node_fingerprint_with_params(
-            node,
-            ctx.resolved_params.get(node_id).unwrap_or(&Value::Null),
-        )?,
+        fingerprint: node_fingerprint_from_ctx(ctx, node_id),
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
         adapter_outputs_schema_version: adapter_outputs_schema_version.to_string(),
@@ -779,7 +774,7 @@ fn materialize_inputs(
     graph: &Graph,
     node_id: &str,
     mode: MaterializeMode,
-) -> Result<(), RuntimeError> {
+) -> Result<InputsIndex, RuntimeError> {
     let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
     ctx.fs.create_dir_all(&inputs_dir)?;
     let mut files = Vec::new();
@@ -801,9 +796,9 @@ fn materialize_inputs(
             .run_dir
             .node_outputs_dir(&edge.from.node_id)
             .join(&out.path);
-        let dst_dir = inputs_dir.join(&edge.from.node_id).join(&edge.to.port);
+        let dst_dir = inputs_dir.join(&edge.from.node_id);
         ctx.fs.create_dir_all(&dst_dir)?;
-        let dst_path = dst_dir.join(&out.path);
+        let dst_path = dst_dir.join(&edge.to.port);
         if let Some(parent) = dst_path.parent() {
             ctx.fs.create_dir_all(parent)?;
         }
@@ -813,11 +808,7 @@ fn materialize_inputs(
             let sha = sha256_bytes(&data);
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
-            let from_fp = ctx
-                .graph_fingerprint
-                .get(&edge.from.node_id)
-                .cloned()
-                .unwrap_or_default();
+            let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
             files.push(InputFile {
                 path: rel_str,
                 sha256: sha,
@@ -830,7 +821,7 @@ fn materialize_inputs(
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let index = InputsIndex { files };
     write_inputs_index(&inputs_dir, &index)?;
-    Ok(())
+    Ok(index)
 }
 
 fn cache_dir_from_env() -> Option<PathBuf> {
@@ -845,8 +836,8 @@ pub(crate) fn declared_output_paths(node: &Node) -> Vec<String> {
 fn try_cache_read(
     options: &RuntimeConfig,
     node: &Node,
+    node_fingerprint: &str,
     ctx: &RunContext,
-    graph: &Graph,
     fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
@@ -869,7 +860,7 @@ fn try_cache_read(
         }
     };
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
-        let key = graph.node_fingerprint(node)?;
+        let key = node_fingerprint.to_string();
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
@@ -893,6 +884,8 @@ fn try_cache_read(
                     }),
                 });
             }
+            let source = cache_source_from_meta(store.fs(), &entry)
+                .unwrap_or_else(|| "local".to_string());
             let node_dir = ctx.run_dir.node_dir(&node.id);
             store.fs().create_dir_all(&node_dir)?;
             copy_dir_all(
@@ -906,7 +899,7 @@ fn try_cache_read(
                 proof: Some(CacheProof {
                     hit: true,
                     key,
-                    source: "local".to_string(),
+                    source,
                     verified: true,
                     reason: "hit".to_string(),
                     corrupt_detected: false,
@@ -955,7 +948,7 @@ fn try_cache_read(
                         key,
                         source: "remote".to_string(),
                         verified: true,
-                        reason: format!("fetched:{}", remote_dir.display()),
+                        reason: format!("fetched:{}", cache_dir_id(remote_dir)),
                         corrupt_detected: false,
                     }),
                 });
@@ -972,8 +965,8 @@ fn try_cache_read(
 fn try_cache_write(
     options: &RuntimeConfig,
     node: &Node,
+    node_fingerprint: &str,
     ctx: &RunContext,
-    graph: &Graph,
     fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
@@ -987,7 +980,7 @@ fn try_cache_write(
         Some(d) => CacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
-    let key = graph.node_fingerprint(node)?;
+    let key = node_fingerprint.to_string();
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
@@ -998,6 +991,7 @@ fn try_cache_write(
         "adapter_version": adapter_version,
         "produces_outputs_schema_version": adapter_outputs_schema_version,
         "created_unix_ms": ctx.clock.now_unix_ms(),
+        "cache_source": "local",
         "schema_version": "v0.1",
     });
     store.fs().write(
@@ -1081,6 +1075,43 @@ pub(crate) fn sha256_bytes(bytes: &[u8]) -> String {
     hex::encode(result)
 }
 
+fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
+    ctx.graph_fingerprint
+        .lock()
+        .ok()
+        .and_then(|map| map.get(node_id).cloned())
+        .unwrap_or_default()
+}
+
+fn set_node_fingerprint(ctx: &RunContext, node_id: &str, fp: String) {
+    if let Ok(mut map) = ctx.graph_fingerprint.lock() {
+        map.insert(node_id.to_string(), fp);
+    }
+}
+
+fn node_fingerprint_with_inputs(base_fp: &str, inputs: &InputsIndex) -> Result<String, RuntimeError> {
+    let value = serde_json::json!({
+        "base": base_fp,
+        "inputs": &inputs.files,
+    });
+    Ok(sha256_bytes(&serde_json::to_vec_pretty(&value)?))
+}
+
+fn cache_dir_id(path: &Path) -> String {
+    path.file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.display().to_string())
+}
+
+fn cache_source_from_meta(fs: &dyn Fs, entry: &Path) -> Option<String> {
+    let meta_path = entry.join("meta.json");
+    let data = fs.read_to_string(&meta_path).ok()?;
+    let meta: serde_json::Value = serde_json::from_str(&data).ok()?;
+    meta.get("cache_source")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
 fn sort_value_maps(value: &mut Value) {
     match value {
         Value::Object(map) => {
@@ -1136,7 +1167,12 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
     None
 }
 
-fn container_trace(spec: &bijux_dag_core::ContainerSpec, engine: &str) -> ContainerTrace {
+fn container_trace(
+    spec: &bijux_dag_core::ContainerSpec,
+    engine: &str,
+    exit_code: Option<i32>,
+    engine_version: Option<String>,
+) -> ContainerTrace {
     let image_digest = Command::new(engine)
         .args(["image", "inspect", "--format", "{{.Id}}", &spec.image])
         .output()
@@ -1157,7 +1193,28 @@ fn container_trace(spec: &bijux_dag_core::ContainerSpec, engine: &str) -> Contai
         image: spec.image.clone(),
         image_digest,
         engine: engine.to_string(),
+        engine_version,
+        exit_code,
     }
+}
+
+fn engine_version(engine: &str) -> Option<String> {
+    Command::new(engine)
+        .arg("--version")
+        .output()
+        .ok()
+        .and_then(|out| {
+            if out.status.success() {
+                let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if v.is_empty() {
+                    None
+                } else {
+                    Some(v)
+                }
+            } else {
+                None
+            }
+        })
 }
 
 fn collect_outputs_summary(
@@ -1281,9 +1338,7 @@ fn materialize_file(
 mod tests {
     use super::*;
     use crate::clock::FixedClock;
-    use bijux_dag_core::{
-        ContainerSpec, Edge, Effect, MountSpec, ParamValue, PortRef, Severity, SPEC_VERSION,
-    };
+    use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
     use std::collections::BTreeMap;
     use std::fs;
 
@@ -1769,7 +1824,7 @@ mod tests {
                         Value::Array(vec![
                             Value::from("/bin/sh"),
                             Value::from("-c"),
-                            Value::from("cat ../inputs/a/in/out_a > ../outputs/out_b"),
+                            Value::from("cat ../inputs/a/in > ../outputs/out_b"),
                         ]),
                     )]),
                     container: None,
@@ -1823,7 +1878,116 @@ mod tests {
                 .join("index.json"),
         )
         .unwrap();
-        assert!(inputs_index.contains("a/in/out_a"));
+        assert!(inputs_index.contains("a/in"));
+    }
+
+    #[test]
+    fn file_wiring_only_materializes_bound_output() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "a".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec![],
+                    outputs: vec![
+                        FileOutput {
+                            name: "a".to_string(),
+                            path: "a.txt".to_string(),
+                        },
+                        FileOutput {
+                            name: "b".to_string(),
+                            path: "b.txt".to_string(),
+                        },
+                    ],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("echo a > ../outputs/a.txt; echo b > ../outputs/b.txt"),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+                Node {
+                    id: "b".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec!["in".to_string()],
+                    outputs: vec![FileOutput {
+                        name: "out_b".to_string(),
+                        path: "out_b".to_string(),
+                    }],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("if [ ! -f ../inputs/a/in ]; then exit 1; fi; if [ -e ../inputs/a/b ]; then exit 1; fi; cat ../inputs/a/in > ../outputs/out_b"),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+            ],
+            edges: vec![Edge {
+                from: PortRef {
+                    node_id: "a".to_string(),
+                    port: "a".to_string(),
+                },
+                to: PortRef {
+                    node_id: "b".to_string(),
+                    port: "in".to_string(),
+                },
+            }],
+        };
+        let runtime = Runtime::new();
+        let diags = graph.validate_with_warnings();
+        assert!(
+            !diags.iter().any(|d| d.severity == Severity::Error),
+            "{:?}",
+            diags
+        );
+        graph.resolve_graph().unwrap();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let out = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("b")
+                .join("outputs")
+                .join("out_b"),
+        )
+        .unwrap();
+        assert!(out.contains("a"));
+        let inputs_index = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("b")
+                .join("inputs")
+                .join("index.json"),
+        )
+        .unwrap();
+        assert!(inputs_index.contains("a/in"));
+        assert!(!inputs_index.contains("a/b"));
     }
 
     #[test]
@@ -1962,15 +2126,14 @@ mod tests {
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
-                    command: vec!["sh".to_string(), "-c".to_string()],
-                    args: vec!["echo hi > /bijux/node/outputs/out_c".to_string()],
+                    argv: vec![
+                        "sh".to_string(),
+                        "-c".to_string(),
+                        "echo hi > /bijux/node/outputs/out_c".to_string(),
+                    ],
                     env_allowlist: vec![],
-                    mounts: vec![MountSpec {
-                        source: "work".to_string(),
-                        target: "/bijux/node/work".to_string(),
-                        read_only: false,
-                    }],
                     workdir: Some("/bijux/node/work".to_string()),
+                    engine: "docker".to_string(),
                 }),
                 timeout_ms: None,
                 resources: None,

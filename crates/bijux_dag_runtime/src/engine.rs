@@ -1,6 +1,7 @@
 use crate::{
     build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
-    count_nodes, execute_with_retries, materialize_inputs, registered_adapters, try_cache_read,
+    count_nodes, execute_with_retries, materialize_inputs, node_fingerprint_from_ctx,
+    node_fingerprint_with_inputs, registered_adapters, set_node_fingerprint, try_cache_read,
     try_cache_write, write_trace, CacheProof, EffectSet, NodeResult, NodeStatus, RunContext,
     Runtime, RuntimeConfig, RuntimeError,
 };
@@ -12,7 +13,7 @@ use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
 use serde_json::Value;
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{atomic::Ordering, Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub fn execute(
@@ -112,22 +113,23 @@ pub fn execute(
     )?;
 
     let resolved = graph.resolve_graph()?;
-    let mut node_fps = HashMap::new();
+    let mut base_fps = HashMap::new();
     for node in &graph.nodes {
         let params = resolved
             .resolved_params
             .get(&node.id)
             .cloned()
             .unwrap_or(Value::Null);
-        node_fps.insert(
+        base_fps.insert(
             node.id.clone(),
             graph.node_fingerprint_with_params(node, &params)?,
         );
     }
     let resolved_params: HashMap<String, Value> = resolved.resolved_params.into_iter().collect();
+    let graph_fingerprint = Arc::new(Mutex::new(base_fps.clone()));
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
-        graph_fingerprint: node_fps,
+        graph_fingerprint: Arc::clone(&graph_fingerprint),
         resolved_params,
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
@@ -311,11 +313,16 @@ pub fn execute(
 
             let adapter_id = adapter.id();
             let adapter_schema = adapter.produces_outputs_schema_version();
+            let inputs_index =
+                materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
+            let base_fp = base_fps.get(&node.id).cloned().unwrap_or_default();
+            let node_fp = node_fingerprint_with_inputs(&base_fp, &inputs_index)?;
+            set_node_fingerprint(&ctx, &node.id, node_fp.clone());
             let cache_read = try_cache_read(
                 &options,
                 &node,
+                &node_fp,
                 &ctx,
-                graph,
                 Arc::clone(&ctx.fs),
                 &adapter_id.id,
                 &adapter_id.version,
@@ -452,11 +459,12 @@ pub fn execute(
             )?;
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
+            let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
             try_cache_write(
                 &options,
                 node,
+                &node_fp,
                 &ctx,
-                graph,
                 Arc::clone(&ctx.fs),
                 &aid,
                 &aver,
@@ -465,7 +473,6 @@ pub fn execute(
         }
 
         for (node_id, node, params) in &to_start {
-            materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let ctx_clone = RunContext {
                 run_dir: Arc::clone(&ctx.run_dir),
@@ -573,16 +580,17 @@ pub fn execute(
                         status_map.insert(node_id.clone(), NodeStatus::Failed);
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
-                        let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-                        let aschema = runtime.adapter_schema_for_kind(&node.kind);
-                        try_cache_write(
-                            &options,
-                            &node,
-                            &ctx,
-                            graph,
-                            Arc::clone(&ctx.fs),
-                            &aid,
-                            &aver,
+                    let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                    let aschema = runtime.adapter_schema_for_kind(&node.kind);
+                    let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
+                    try_cache_write(
+                        &options,
+                        &node,
+                        &node_fp,
+                        &ctx,
+                        Arc::clone(&ctx.fs),
+                        &aid,
+                        &aver,
                             &aschema,
                         )?;
                     }

@@ -123,11 +123,7 @@ impl Adapter for ExternalAdapter {
                 adapter_binary_sha256: self.binary_hash.clone(),
             });
         }
-        let fp = exec
-            .graph_fingerprint
-            .get(&node.id)
-            .cloned()
-            .unwrap_or_default();
+        let fp = crate::node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
 
         let success = output.status.success();
