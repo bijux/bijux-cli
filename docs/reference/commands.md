@@ -17,6 +17,7 @@ It lists commands and subcommands only.
 
 | Command | Purpose |
 | --- | --- |
+| atlas | Bijux Atlas runtime command proxy |
 | audit | Diagnostics audit report |
 | config | Configuration management |
 | dev | Developer tools |
@@ -77,6 +78,7 @@ It lists commands and subcommands only.
 
 | Subcommand | Purpose |
 | --- | --- |
+| atlas | Bijux Atlas control-plane proxy |
 | di | DI graph summary |
 | list-plugins | List plugin discovery results |
 | service | Dev service info |
