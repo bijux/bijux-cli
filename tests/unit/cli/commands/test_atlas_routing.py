@@ -49,3 +49,18 @@ def test_dev_atlas_routes_args(monkeypatch: pytest.MonkeyPatch) -> None:
         dev_atlas(ctx)  # type: ignore[arg-type]
     assert exc.value.code == 9
     assert captured["args"] == ["doctor"]
+
+
+def test_atlas_legacy_dev_route_redirects(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _unexpected_run_external(binary: object, args: list[str]) -> int:
+        raise AssertionError("run_external must not be called for legacy redirect")
+
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.atlas.service.run_external",
+        _unexpected_run_external,
+    )
+
+    ctx = SimpleNamespace(invoked_subcommand=None, args=["dev-atlas", "doctor"])
+    with pytest.raises(SystemExit) as exc:
+        atlas(ctx)  # type: ignore[arg-type]
+    assert exc.value.code == 2

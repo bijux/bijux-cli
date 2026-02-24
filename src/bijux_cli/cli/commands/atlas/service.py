@@ -29,6 +29,12 @@ def atlas(ctx: typer.Context) -> None:
 
     if ctx.invoked_subcommand:
         return
+    if ctx.args and ctx.args[0] == "dev-atlas":
+        typer.echo(
+            "legacy route removed: use `bijux dev atlas ...` instead of `bijux atlas dev-atlas ...`",
+            err=True,
+        )
+        raise typer.Exit(2)
     exit_code = run_external(
         ExternalBinaryCommand(
             bin_name="bijux-atlas",
