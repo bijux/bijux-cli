@@ -20,6 +20,7 @@ from bijux_cli.cli.commands.dev.di import (
     _key_to_name,
     dev_di_graph,
 )
+from bijux_cli.cli.commands.dev.list_products import dev_list_products
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 from bijux_cli.core.enums import ColorMode, LogLevel, OutputFormat
@@ -53,7 +54,7 @@ def test_dev_package_import_and_app_wiring() -> None:
     assert app.info.help == "Developer tools and diagnostics."
 
     names = {cmd.name for cmd in app.registered_commands}
-    assert {"di", "list-plugins"}.issubset(names)
+    assert {"di", "list-plugins", "list-products"}.issubset(names)
 
 
 def test_key_to_name_with_string() -> None:
@@ -691,6 +692,41 @@ def test_dev_list_plugins_payload_includes_runtime(
     payload = captured["payload_builder"](True)
     assert "python" in payload
     assert "platform" in payload
+
+
+def test_dev_list_products_calls_handlers(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: dict[str, Any] = {}
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_products.current_execution_policy",
+        lambda: default_execution_policy(),
+    )
+
+    def fake_validate(fmt: str, command: str, quiet: bool, **_kwargs: Any) -> str:
+        called["validated"] = (fmt, command, quiet)
+        return "json"
+
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_products.validate_common_flags",
+        fake_validate,
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_products.required_product_binaries",
+        lambda: {"atlas": ("bijux-atlas", "bijux-dev-atlas")},
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_products.probe_product_binaries",
+        lambda *_args, **_kwargs: [],
+    )
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.dev.list_products.new_run_command",
+        lambda **kwargs: called.update(kwargs=kwargs),
+    )
+
+    dev_list_products(quiet=False, fmt="json", pretty=True, log_level=LogLevel.INFO)
+    assert called["validated"] == ("json", "dev list-products", False)
+    assert called["kwargs"]["command_name"] == "dev list-products"
+    payload = called["kwargs"]["payload_builder"](False)
+    assert "products" in payload
 
 
 def test_dev_callback_returns_when_subcommand(

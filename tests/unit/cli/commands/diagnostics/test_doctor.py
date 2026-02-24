@@ -12,6 +12,7 @@ import pytest
 from typer import Context
 
 from bijux_cli.cli.commands.diagnostics.doctor import _build_payload, doctor
+from bijux_cli.cli.external_binaries import ProductBinaryProbe
 from bijux_cli.core.enums import ColorMode, ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.precedence import ExecutionPolicy
 
@@ -76,6 +77,10 @@ def test_build_payload_all_healthy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the payload structure for a healthy system with and without runtime info."""
     monkeypatch.setenv("PATH", "/usr/bin")
     monkeypatch.delenv("BIJUXCLI_TEST_FORCE_UNHEALTHY", raising=False)
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.doctor.probe_product_binaries",
+        lambda *_a, **_k: [],
+    )
 
     payload = _build_payload(include_runtime=False)
     assert payload["status"] == "healthy"
@@ -88,6 +93,23 @@ def test_build_payload_all_healthy(monkeypatch: pytest.MonkeyPatch) -> None:
     assert payload_rt["summary"] == ["All core checks passed"]
     assert isinstance(payload_rt["python"], str)
     assert isinstance(payload_rt["platform"], str)
+
+
+def test_build_payload_warns_when_runtime_binary_present_without_dev_binary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PATH", "/usr/bin")
+    monkeypatch.setattr(
+        "bijux_cli.cli.commands.diagnostics.doctor.probe_product_binaries",
+        lambda *_a, **_k: [
+            ProductBinaryProbe("bijux-atlas", "/tmp/bijux-atlas", "bijux-atlas 0.1.0", None),
+            ProductBinaryProbe("bijux-dev-atlas", None, None, None),
+        ],
+    )
+    payload = _build_payload(include_runtime=False)
+    products = cast(dict[str, object], payload["products"])
+    warnings = cast(list[str], products["warnings"])
+    assert any("bijux-dev-atlas is missing" in msg for msg in warnings)
 
 
 def test_build_payload_detects_empty_path_and_forced_unhealthy(

@@ -152,8 +152,10 @@ def test_build_payload_minimal(monkeypatch: pytest.MonkeyPatch) -> None:
         called["ascii"] += 1
 
     monkeypatch.setattr(mod, "ascii_safe", _fake_ascii)
+    monkeypatch.setattr(mod, "probe_product_binaries", lambda *_a, **_k: [])
     p = mod._build_payload(include_runtime=False)
     assert p["status"] == "ok"
+    assert "products" in p
     assert called["ascii"] == 0
 
 
@@ -164,6 +166,7 @@ def test_build_payload_with_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
         return v
 
     monkeypatch.setattr(mod, "ascii_safe", fake_ascii_safe)
+    monkeypatch.setattr(mod, "probe_product_binaries", lambda *_a, **_k: [])
     p = mod._build_payload(include_runtime=True)
     assert p["status"] == "ok"
     assert isinstance(p["python"], str)
