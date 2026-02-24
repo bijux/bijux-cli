@@ -9,6 +9,7 @@ import logging
 
 from typer import Typer
 
+from bijux_cli.cli.commands.atlas import atlas_app
 from bijux_cli.cli.commands.config import config_app
 from bijux_cli.cli.commands.dev import dev_app
 from bijux_cli.cli.commands.diagnostics.audit import audit_app
@@ -26,6 +27,7 @@ from bijux_cli.cli.plugins.commands import plugins_app
 logger = logging.getLogger(__name__)
 
 _CORE_COMMANDS = {
+    "atlas": atlas_app,
     "audit": audit_app,
     "config": config_app,
     "dev": dev_app,
