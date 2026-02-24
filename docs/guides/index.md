@@ -18,4 +18,5 @@ Each guide explains a single workflow, its prerequisites, the exact commands to 
 - [Plugins](plugins.md)
 - [API usage](api-usage.md)
 - [Development](development.md)
+- [Atlas local routing](atlas-local-routing.md)
 - [Contributor mental model](contributor-mental-model.md)

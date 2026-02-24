@@ -14,6 +14,7 @@ It does not teach workflows or concepts.
 
 ## Execution
 - [Commands](commands.md)
+- [Product binaries](product-binaries.md)
 - [Config schema](config-schema.md)
 - [Environment](environment.md)
 - [Exit codes](exit-codes.md)

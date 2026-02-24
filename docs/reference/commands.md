@@ -80,6 +80,7 @@ It lists commands and subcommands only.
 | --- | --- |
 | atlas | Bijux Atlas control-plane proxy |
 | di | DI graph summary |
+| list-products | List required product binaries and resolved paths |
 | list-plugins | List plugin discovery results |
 | service | Dev service info |
 
