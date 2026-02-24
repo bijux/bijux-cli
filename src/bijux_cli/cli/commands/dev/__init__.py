@@ -27,6 +27,7 @@ import typer
 
 from bijux_cli.cli.commands.dev.di import dev_di_graph
 from bijux_cli.cli.commands.dev.atlas import dev_atlas_app
+from bijux_cli.cli.commands.dev.list_products import dev_list_products
 from bijux_cli.cli.commands.dev.list_plugins import dev_list_plugins
 from bijux_cli.cli.commands.dev.service import dev
 from bijux_cli.core.runtime import AsyncTyper
@@ -44,6 +45,7 @@ dev_app = AsyncTyper(
 dev_app.callback(invoke_without_command=True)(dev)
 dev_app.add_typer(dev_atlas_app, name="atlas", invoke_without_command=True)
 dev_app.command("di")(dev_di_graph)
+dev_app.command("list-products")(dev_list_products)
 dev_app.command("list-plugins")(dev_list_plugins)
 
 __all__ = ["dev_app"]

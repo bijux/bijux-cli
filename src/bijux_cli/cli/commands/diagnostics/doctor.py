@@ -25,6 +25,7 @@ import platform
 
 import typer
 
+from bijux_cli.cli.external_binaries import probe_product_binaries
 from bijux_cli.cli.core.command import (
     ascii_safe,
     new_run_command,
@@ -97,10 +98,34 @@ def _build_payload(include_runtime: bool) -> dict[str, object]:
         "summary": summary,
     }
 
+    atlas_bins = probe_product_binaries("atlas")
+    atlas_installed = any(item.binary == "bijux-atlas" and item.path for item in atlas_bins)
+    dev_installed = any(
+        item.binary == "bijux-dev-atlas" and item.path for item in atlas_bins
+    )
+    product_warnings: list[str] = []
+    if atlas_installed and not dev_installed:
+        product_warnings.append(
+            "bijux-atlas is installed but bijux-dev-atlas is missing; install both binaries"
+        )
+    payload["products"] = {
+        "atlas": [
+            {
+                "binary": item.binary,
+                "path": item.path,
+                "version": item.version,
+                "compatible_major": item.compatible_major,
+            }
+            for item in atlas_bins
+        ],
+        "warnings": product_warnings,
+    }
+
     if include_runtime:
         return {
             "status": payload["status"],
             "summary": payload["summary"],
+            "products": payload["products"],
             "python": ascii_safe(platform.python_version(), "python_version"),
             "platform": ascii_safe(platform.platform(), "platform"),
         }

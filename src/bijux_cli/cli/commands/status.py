@@ -32,6 +32,7 @@ from typing import Any
 
 import typer
 
+from bijux_cli.cli.external_binaries import probe_product_binaries
 from bijux_cli.cli.core.command import (
     ascii_safe,
     new_run_command,
@@ -54,6 +55,7 @@ from bijux_cli.core.enums import ErrorType, LogLevel, OutputFormat
 from bijux_cli.core.exit_policy import ExitIntentError
 from bijux_cli.core.precedence import current_execution_policy, resolve_exit_intent
 from bijux_cli.core.runtime import AsyncTyper
+from bijux_cli.core.version import __version__ as bijux_cli_version
 from bijux_cli.infra.contracts import Emitter
 from bijux_cli.services.contracts import TelemetryProtocol
 
@@ -80,6 +82,18 @@ def _build_payload(include_runtime: bool) -> dict[str, object]:
             runtime details.
     """
     payload: dict[str, object] = {"status": "ok"}
+    atlas_bins = probe_product_binaries("atlas", host_version=bijux_cli_version)
+    payload["products"] = {
+        "atlas": [
+            {
+                "binary": item.binary,
+                "path": item.path,
+                "version": item.version,
+                "compatible_major": item.compatible_major,
+            }
+            for item in atlas_bins
+        ]
+    }
     if include_runtime:
         payload.update(
             {
