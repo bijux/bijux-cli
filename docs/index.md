@@ -10,6 +10,8 @@
 - [CLI backward-compat policy](./CLI_BACKWARD_COMPAT.md)
 - [Changelog](../CHANGELOG.md)
 - [Adapter SDK contracts](./ADAPTER_SDK.md)
+- [Plugin ecosystem contracts](./PLUGIN_ECOSYSTEM_CONTRACTS.md)
+- [Plugin SDK examples](./PLUGIN_SDK_EXAMPLES.md)
 
 ## Behavior domains
 
@@ -52,6 +54,7 @@
 - [Experience surfaces](./EXPERIENCE_SURFACES.md)
 - [DAG explain and preview workflows](./DAG_EXPLAIN_AND_PREVIEW.md)
 - [Elite MVP scorecard](./ELITE_MVP_SCORECARD.md)
+- [Platform maturity scorecard](./PLATFORM_MATURITY_SCORECARD.md)
 - [Examples governance](./EXAMPLES.md)
 - [Make and dev command relationship](./MAKE_DEV_RELATIONSHIP.md)
 - [Release process](./RELEASE_PROCESS.md)
