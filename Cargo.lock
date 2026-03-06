@@ -71,21 +71,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "bijux_cli"
-version = "0.1.0"
-dependencies = [
- "bijux_dag_app",
- "clap",
-]
-
-[[package]]
-name = "bijux_dag_app"
+name = "bijux-dag-app"
 version = "0.1.0"
 dependencies = [
  "base64",
- "bijux_dag_artifacts",
- "bijux_dag_core",
- "bijux_dag_runtime",
+ "bijux-dag-artifacts",
+ "bijux-dag-core",
+ "bijux-dag-runtime",
  "clap",
  "flate2",
  "hex",
@@ -98,7 +90,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bijux_dag_artifacts"
+name = "bijux-dag-artifacts"
 version = "0.1.0"
 dependencies = [
  "hex",
@@ -110,7 +102,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "bijux_dag_core"
+name = "bijux-dag-cli"
+version = "0.1.0"
+dependencies = [
+ "bijux-dag-app",
+ "clap",
+]
+
+[[package]]
+name = "bijux-dag-core"
 version = "0.1.0"
 dependencies = [
  "hex",
@@ -122,11 +122,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "bijux_dag_runtime"
+name = "bijux-dag-runtime"
 version = "0.1.0"
 dependencies = [
- "bijux_dag_artifacts",
- "bijux_dag_core",
+ "bijux-dag-artifacts",
+ "bijux-dag-core",
  "ctrlc",
  "hex",
  "serde",
@@ -134,6 +134,14 @@ dependencies = [
  "sha2",
  "tempfile",
  "thiserror",
+]
+
+[[package]]
+name = "bijux-dev-dag"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "serde_json",
 ]
 
 [[package]]
