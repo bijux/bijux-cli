@@ -11,6 +11,7 @@ mod infrastructure;
 mod local_executor;
 mod observability;
 mod planner;
+mod planner_intelligence;
 mod remote_executor;
 mod registry;
 mod run_state;
@@ -35,6 +36,13 @@ use bijux_dag_core::{
 use clock::{Clock, SystemClock};
 use io::{Fs, StdFs};
 pub use planner::build_plan;
+pub use planner_intelligence::{
+    build_backfill_plan, build_planner_intelligence, build_replay_plan_annotations,
+    compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
+    PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
+    PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
+    PlannerResourceEstimate,
+};
 use registry::{build_registry, AdapterRegistry};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
