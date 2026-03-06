@@ -11,6 +11,7 @@ mod distributed;
 mod engine;
 mod execution_plan;
 mod external_adapter;
+mod geo_federation;
 mod ha_scheduler;
 mod io;
 mod infrastructure;
@@ -148,6 +149,15 @@ pub use auth_identity::{
 };
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use geo_federation::{
+    build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
+    geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
+    CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
+    GeoSimulationScenario, InterRegionReplicationPolicy, RegionAffinityPolicy, RegionAwareDagActivation,
+    RegionBackendRegistry, RegionId, RegionLineageRecord, RegionMigrationWorkflow,
+    RegionObservabilityPartition, RegionPolicyOverlay, RegionQueuePartition,
+    RegionalReplicaOwnership, RegionScheduleRule, SplitBrainMitigationPlan, WriteRoutingRule,
+};
 pub use ha_scheduler::{
     clock_within_assumption, conformance_no_duplicate_runs, deduplicate_across_replicas,
     evaluate_ha_conformance, failover_recovery_passes, fence_allows_mutation, idempotent_run_creation,
