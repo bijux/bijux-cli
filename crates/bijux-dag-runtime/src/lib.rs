@@ -44,6 +44,7 @@ mod task_types;
 mod tenancy;
 mod upgrade_compatibility;
 mod performance_capacity;
+mod workflow_product;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -131,6 +132,17 @@ pub use tenancy::{
     TenantProvisioningSpec, TenantQueueIsolationPolicy, TenantRegistryPartition,
     TenantResourceBudget, TenantRetentionPolicy, TenantSchedulerAdmission, TenantScopedDagName,
     TenantSecretScope,
+};
+pub use workflow_product::{
+    approval_gate_ready, critical_workflow_ready, innovation_roadmap_valid, portfolio_observability,
+    product_positioning_note, rollout_is_progressive, wait_state_resumable,
+    workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
+    world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, HumanWaitState,
+    InnovationRoadmap, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
+    ProductPositioningNote, RolloutWorkflow, SubworkflowInvocation, WorkflowContractInheritance,
+    WorkflowEvent, WorkflowFamilyImpactAnalysis, WorkflowPortfolio, WorkflowProductMetadata,
+    WorkflowQualityGate, WorkflowScenarioTest, WorkflowTemplate, WorkflowTemplateKind,
+    WorkflowVerificationPlan, WorldClassPlatformScorecard,
 };
 pub use async_adapter::AsyncAdapter;
 pub use backend_cluster::{
