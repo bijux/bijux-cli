@@ -87,6 +87,29 @@ fn dag_root_help_lists_umbrella_commands() {
 }
 
 #[test]
+fn dag_command_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag"])
+        .output()
+        .expect("dag help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in [
+        "validate",
+        "run",
+        "replay",
+        "diff",
+        "explain",
+        "status",
+        "cache",
+        "adapters",
+    ] {
+        assert!(text.contains(token));
+    }
+}
+
+#[test]
 fn dag_run_help_surface_contract() {
     let output = Command::new(dag_binary())
         .args(["dag", "run", "--help"])
