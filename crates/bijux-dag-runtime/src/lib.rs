@@ -56,9 +56,14 @@ pub use run_state::{
     RunState, RunSummaryV2, RunTransition, TransitionCause,
 };
 pub use scheduler::{
-    build_scheduler, DependencyCounter, DeterministicScheduler, ExecutionCheckpoint,
-    FailurePropagationMode, NoopSchedulerEventHook, QueueIsolationPolicy, ReadyQueue, Scheduler,
-    SchedulerEventHook, SchedulerFairness, SchedulerPolicy, ThroughputScheduler,
+    build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
+    validate_cron_expression, validate_schedule_policy_combination, validate_schedule_registry,
+    BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter,
+    DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest, FailurePropagationMode,
+    NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
+    ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview, ScheduleRegistry,
+    ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerEventHook,
+    SchedulerFairness, SchedulerPolicy, ThroughputScheduler, TriggerSpec,
 };
 
 #[derive(Debug, thiserror::Error)]

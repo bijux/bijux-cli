@@ -15,6 +15,108 @@ pub struct SchedulerPolicy {
     pub prefer_throughput_scheduler: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TriggerSpec {
+    Manual,
+    Cron { expression: String, timezone: String },
+    Event { event_type: String, source: String },
+    Dependency { dag_name: String, on_status: String },
+    Signal { signal_name: String, payload_schema: Option<String> },
+    Backfill(BackfillRequest),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct QueueIdentity {
+    pub queue_name: String,
+    pub tenant: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum PriorityClass {
+    Critical,
+    High,
+    Standard,
+    Low,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ConcurrencyPolicyLayers {
+    pub per_dag: Option<u32>,
+    pub per_queue: Option<u32>,
+    pub per_tenant: Option<u32>,
+    pub per_node_group: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatchUpPolicy {
+    pub enabled: bool,
+    pub max_catch_up_runs: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillRequest {
+    pub window_start_unix_ms: u128,
+    pub window_end_unix_ms: u128,
+    pub partition_by: Option<String>,
+    pub max_parallelism: u32,
+    pub failure_policy: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleDefinition {
+    pub id: String,
+    pub dag_name: String,
+    pub dag_version_policy: String,
+    pub trigger: TriggerSpec,
+    pub queue: QueueIdentity,
+    pub priority: PriorityClass,
+    pub concurrency: ConcurrencyPolicyLayers,
+    pub catch_up: CatchUpPolicy,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleRegistry {
+    pub definitions: Vec<ScheduleDefinition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ScheduleSubmissionStatus {
+    Pending,
+    Running,
+    Completed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduledSubmission {
+    pub schedule_id: String,
+    pub run_id: String,
+    pub created_unix_ms: u128,
+    pub status: ScheduleSubmissionStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleAuditRecord {
+    pub schedule_id: String,
+    pub evaluated_unix_ms: u128,
+    pub decision: String,
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleDryRunPreview {
+    pub schedule_id: String,
+    pub next_fire_unix_ms: Option<u128>,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ExecutionSubmissionRequest {
+    pub schedule_id: String,
+    pub dag_name: String,
+    pub dag_version_policy: String,
+    pub requested_unix_ms: u128,
+}
+
 impl Default for SchedulerPolicy {
     fn default() -> Self {
         Self {
@@ -314,6 +416,126 @@ pub fn build_scheduler(policy: &SchedulerPolicy) -> Box<dyn Scheduler + Send> {
     } else {
         Box::new(DeterministicScheduler)
     }
+}
+
+pub fn validate_cron_expression(expression: &str) -> Result<(), String> {
+    let fields: Vec<&str> = expression.split_whitespace().collect();
+    if fields.len() != 5 {
+        return Err("cron expression must have exactly five fields".to_string());
+    }
+    for field in fields {
+        if field == "*" {
+            continue;
+        }
+        if field.chars().all(|c| c.is_ascii_digit()) {
+            continue;
+        }
+        return Err(format!("unsupported cron token '{field}'"));
+    }
+    Ok(())
+}
+
+pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), String> {
+    let mut ids = BTreeSet::new();
+    for definition in &registry.definitions {
+        if definition.id.is_empty() {
+            return Err("schedule id must not be empty".to_string());
+        }
+        if !ids.insert(definition.id.clone()) {
+            return Err(format!("duplicate schedule id '{}'", definition.id));
+        }
+        if let TriggerSpec::Cron { expression, .. } = &definition.trigger {
+            validate_cron_expression(expression)?;
+        }
+        validate_schedule_policy_combination(definition)?;
+    }
+    Ok(())
+}
+
+pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> Result<(), String> {
+    if definition.catch_up.enabled && definition.catch_up.max_catch_up_runs == 0 {
+        return Err(format!(
+            "schedule '{}' enables catch-up but max_catch_up_runs is zero",
+            definition.id
+        ));
+    }
+    if matches!(definition.trigger, TriggerSpec::Backfill(_)) {
+        let TriggerSpec::Backfill(backfill) = &definition.trigger else {
+            unreachable!();
+        };
+        if backfill.max_parallelism == 0 {
+            return Err(format!(
+                "schedule '{}' backfill requires max_parallelism > 0",
+                definition.id
+            ));
+        }
+        if definition.concurrency.per_queue.is_none() {
+            return Err(format!(
+                "schedule '{}' backfill requires queue concurrency cap",
+                definition.id
+            ));
+        }
+    }
+    Ok(())
+}
+
+pub fn dry_run_schedule(definition: &ScheduleDefinition, now_unix_ms: u128) -> ScheduleDryRunPreview {
+    match &definition.trigger {
+        TriggerSpec::Manual => ScheduleDryRunPreview {
+            schedule_id: definition.id.clone(),
+            next_fire_unix_ms: None,
+            reason: "manual trigger has no automatic fire time".to_string(),
+        },
+        TriggerSpec::Cron { expression, .. } => {
+            if validate_cron_expression(expression).is_ok() {
+                ScheduleDryRunPreview {
+                    schedule_id: definition.id.clone(),
+                    next_fire_unix_ms: Some(now_unix_ms + 60_000),
+                    reason: "preview uses one-minute horizon for valid cron expression".to_string(),
+                }
+            } else {
+                ScheduleDryRunPreview {
+                    schedule_id: definition.id.clone(),
+                    next_fire_unix_ms: None,
+                    reason: "cron expression is invalid".to_string(),
+                }
+            }
+        }
+        TriggerSpec::Event { .. } | TriggerSpec::Dependency { .. } | TriggerSpec::Signal { .. } => {
+            ScheduleDryRunPreview {
+                schedule_id: definition.id.clone(),
+                next_fire_unix_ms: None,
+                reason: "external trigger evaluated on signal arrival".to_string(),
+            }
+        }
+        TriggerSpec::Backfill(backfill) => ScheduleDryRunPreview {
+            schedule_id: definition.id.clone(),
+            next_fire_unix_ms: Some(backfill.window_start_unix_ms),
+            reason: "backfill preview points to window start".to_string(),
+        },
+    }
+}
+
+pub fn compile_submission_request(
+    definition: &ScheduleDefinition,
+    requested_unix_ms: u128,
+) -> ExecutionSubmissionRequest {
+    ExecutionSubmissionRequest {
+        schedule_id: definition.id.clone(),
+        dag_name: definition.dag_name.clone(),
+        dag_version_policy: definition.dag_version_policy.clone(),
+        requested_unix_ms,
+    }
+}
+
+pub fn deterministic_tick_order(mut submissions: Vec<ScheduledSubmission>) -> Vec<ScheduledSubmission> {
+    submissions.sort_by(|a, b| {
+        a.created_unix_ms
+            .cmp(&b.created_unix_ms)
+            .then_with(|| a.schedule_id.cmp(&b.schedule_id))
+            .then_with(|| a.run_id.cmp(&b.run_id))
+    });
+    submissions
 }
 
 fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
