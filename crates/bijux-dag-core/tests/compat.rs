@@ -4,8 +4,6 @@ use std::path::PathBuf;
 
 fn compat_path(name: &str) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.pop();
-    path.pop();
     path.push("tests");
     path.push("compat");
     path.push("v0.1");

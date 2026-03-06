@@ -1943,7 +1943,8 @@ fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
 }
 
 fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
-    let base = PathBuf::from("tests/compat/v0.1");
+    let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../bijux-dag-core/tests/compat/v0.1");
     if !base.exists() {
         return Ok(json!({"status":"ok","errors":[]}));
     }
