@@ -1,5 +1,6 @@
 mod adapter;
 mod adapter_sdk;
+mod auth_identity;
 mod authz_policy;
 mod async_adapter;
 mod clock;
@@ -117,6 +118,17 @@ pub use tenancy::{
 };
 pub use async_adapter::AsyncAdapter;
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
+pub use auth_identity::{
+    can_renew_credential, credential_is_expired, credential_scopes_matrix, local_dev_bypass_allowed,
+    migrate_identity_provider_compatible, readiness_for_federation, revoked_principals_set,
+    trust_health_report, ArtifactSigningIdentity, AuthProvider, AuthenticationBoundary,
+    AuthenticationEvent, AuthenticationEventKind, CredentialLifecycle, CredentialProvenanceRecord,
+    CredentialRevocation, CredentialScope, CredentialStorageGuideline, IdentityFederationReadiness,
+    IdentityPrincipal, IdentityPrincipalKind, IdentityProviderCompatibilityRule,
+    LocalDevAuthBypassRule, MutualAuthDesignNote, PluginTrustRegistration,
+    SchedulerBootstrapTrustFlow, TrustDomain, TrustHealthReport, WorkerBootstrapTrustFlow,
+    WorkerCredentialBinding,
+};
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
 pub use infrastructure::{
