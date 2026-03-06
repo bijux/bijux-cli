@@ -1,6 +1,7 @@
 mod adapter;
 mod async_adapter;
 mod clock;
+mod control_plane;
 mod engine;
 mod execution_plan;
 mod external_adapter;
@@ -50,6 +51,14 @@ pub use task_contract::{
 pub use async_adapter::AsyncAdapter;
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use control_plane::{
+    register_dag_version, resolve_environment_values, select_dag_version, AuthorizationDecision,
+    AuthorizationRequest, AuthorizationSubject, CompatibilityDecision, DagRegistry, DagRegistryEntry,
+    DagRegistryStore, DagVersionRecord, DagVersionSelectionPolicy, DagVersionStatus,
+    EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision, PolicyDomain,
+    PolicyEngine, RunControlOperation, TypedControlPlaneRequest, TypedControlPlaneResponse,
+    ValidationRequest, ValidationResponse, ValidationService,
+};
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes, summarize_failure_root_causes,
     write_timeline_export, EventCategory, EventRecord, EventSink, FileEventSink,
