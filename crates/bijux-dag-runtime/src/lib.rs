@@ -30,6 +30,7 @@ mod registry;
 mod run_state;
 mod scheduler;
 mod scheduler_enterprise;
+mod semantic_lineage;
 mod secrets_security;
 mod store;
 mod supply_chain_trust;
@@ -265,6 +266,15 @@ pub use scheduler::{
     ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview, ScheduleRegistry,
     ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerEventHook,
     SchedulerFairness, SchedulerPolicy, ThroughputScheduler, TriggerSpec,
+};
+pub use semantic_lineage::{
+    detect_lineage_conflicts, export_lineage_format, lineage_quality_score, policy_hook_allows_operation,
+    recommended_replay_set, summarize_lineage, ArtifactRelationshipType, ArtifactSemanticTag,
+    CrossRunLineageStitch, FieldLevelLineageHook, LineageConfidence, LineageConflict,
+    LineageExportFormat, LineageImpactReport, LineageMaterializationRule, LineageQualityScore,
+    LineageReconciliationPlan, LineageSummary, LineageSummaryNode, PolicyLineageHookInput,
+    ReplayRecommendation, RetentionProtectionRule, ReverseImpactReport, SemanticDependencyClass,
+    SemanticLineageExplain, SemanticRelationship,
 };
 pub use secrets_security::{
     incident_response_actions, leak_conformance_check, redact_secret_payload, secret_readiness,
