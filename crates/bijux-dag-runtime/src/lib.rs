@@ -9,6 +9,7 @@ mod local_executor;
 mod planner;
 mod remote_executor;
 mod registry;
+mod run_state;
 mod scheduler;
 mod store;
 mod task_contract;
@@ -17,7 +18,8 @@ use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
     write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
     ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
-    OutputsIndex, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
+    OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile,
+    RunOutputsIndex,
 };
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
@@ -48,6 +50,11 @@ pub use async_adapter::AsyncAdapter;
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
 pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
+pub use run_state::{
+    validate_node_transition, validate_run_transition, NodeState, NodeTransition, ReplayNodeAction,
+    ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId, RunSnapshot,
+    RunState, RunSummaryV2, RunTransition, TransitionCause,
+};
 pub use scheduler::{
     build_scheduler, DependencyCounter, DeterministicScheduler, ExecutionCheckpoint,
     FailurePropagationMode, NoopSchedulerEventHook, QueueIsolationPolicy, ReadyQueue, Scheduler,
@@ -462,6 +469,11 @@ pub struct RuntimeConfig {
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
     pub run_id: Option<String>,
+    pub parent_run_id: Option<String>,
+    pub submission_source: String,
+    pub trigger_source: String,
+    pub operator: String,
+    pub labels: Vec<String>,
     pub latest_symlink: Option<PathBuf>,
     pub policy: PolicyConfig,
     pub selectors: SelectorSet,
@@ -482,6 +494,11 @@ impl Default for RuntimeConfig {
             cache_dir: None,
             remote_cache_dir: None,
             run_id: None,
+            parent_run_id: None,
+            submission_source: "manual".to_string(),
+            trigger_source: "cli".to_string(),
+            operator: "unknown".to_string(),
+            labels: Vec::new(),
             latest_symlink: None,
             policy: PolicyConfig::default(),
             selectors: SelectorSet::default(),
@@ -628,6 +645,8 @@ fn write_trace(
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
+    transition_cause: Option<String>,
+    replay_provenance: Option<ReplayProvenance>,
 ) -> Result<(), RuntimeError> {
     let node = graph
         .nodes
@@ -666,6 +685,8 @@ fn write_trace(
         cache_proof,
         skip_reason,
         failure,
+        transition_cause,
+        replay_provenance,
     };
     let data = serde_json::to_vec_pretty(&trace)?;
     ctx.store.write_trace(node_id, &data)?;
@@ -678,6 +699,15 @@ fn status_string(status: &NodeStatus) -> String {
         NodeStatus::Failed => "failed".to_string(),
         NodeStatus::Skipped => "skipped".to_string(),
         NodeStatus::Cached => "cached".to_string(),
+    }
+}
+
+pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
+    match status {
+        NodeStatus::Success => "ExecutionSucceeded",
+        NodeStatus::Failed => "ExecutionFailed",
+        NodeStatus::Skipped => "SelectionFiltered",
+        NodeStatus::Cached => "CachedReuse",
     }
 }
 

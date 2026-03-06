@@ -3,10 +3,12 @@ use crate::{
     count_nodes, execute_with_retries, materialize_inputs, node_fingerprint_from_ctx,
     node_fingerprint_with_inputs, registered_adapters, set_node_fingerprint, try_cache_read,
     try_cache_write, write_trace, CacheProof, DependencyCounter, EffectSet, ExecutionCheckpoint,
-    NodeResult, NodeStatus, ReadyQueue, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
+    NodeResult, NodeStatus, ReadyQueue, ReplayNodeAction, RunAttempt, RunId, RunSnapshot, Runtime,
+    RuntimeConfig, RuntimeError, SchedulerEventHook,
 };
 use bijux_dag_artifacts::{
-    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance, RunDir,
+    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
+    ReplayProvenance, RunDir, RunMetadata,
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
 use serde_json::Value;
@@ -46,6 +48,7 @@ pub fn execute(
     let started_unix_ms = runtime.clock.now_unix_ms();
     let effective_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let mut manifest = Manifest {
+        manifest_version: "run-manifest/v0.1".to_string(),
         run_id,
         created_unix_ms: runtime.clock.now_unix_ms(),
         started_unix_ms,
@@ -75,7 +78,16 @@ pub fn execute(
             .as_ref()
             .map(|p| p.display().to_string()),
         run_timeout_ms: options.run_timeout_ms,
+        run_metadata: None,
+        run_summary: None,
     };
+    manifest.run_metadata = Some(RunMetadata {
+        submission_source: options.submission_source.clone(),
+        trigger_source: options.trigger_source.clone(),
+        operator: options.operator.clone(),
+        labels: options.labels.clone(),
+        parent_run_id: options.parent_run_id.clone(),
+    });
     run_dir.write_manifest(&manifest)?;
 
     let prov = Provenance {
@@ -103,6 +115,9 @@ pub fn execute(
     let run_dir_arc = Arc::new(run_dir.clone());
     let store = crate::store::ArtifactStore::new(Arc::clone(&run_dir_arc), Arc::clone(&runtime.fs));
     let mut run_log = store.open_run_log()?;
+    let mut run_log_index: Vec<serde_json::Value> = Vec::new();
+    let mut run_audit_events: Vec<serde_json::Value> = Vec::new();
+    let mut failure_propagation_records: Vec<serde_json::Value> = Vec::new();
     crate::append_event(
         &mut run_log,
         serde_json::json!({
@@ -110,6 +125,15 @@ pub fn execute(
             "ts": started_unix_ms,
         }),
     )?;
+    run_log_index.push(serde_json::json!({
+        "event": "run_started",
+        "ts": started_unix_ms,
+    }));
+    run_audit_events.push(serde_json::json!({
+        "action": "start",
+        "ts": started_unix_ms,
+        "run_id": manifest.run_id.clone(),
+    }));
 
     let resolved = graph.resolve_graph()?;
     let mut base_fps = HashMap::new();
@@ -135,6 +159,59 @@ pub fn execute(
         store,
         policy: options.policy.clone(),
     };
+    let selected_nodes = options
+        .selectors
+        .include
+        .iter()
+        .map(|selector| match selector {
+            crate::Selector::IdPrefix(v) => format!("id_prefix:{v}"),
+            crate::Selector::Tag(v) => format!("tag:{v}"),
+            crate::Selector::Kind(v) => format!("kind:{v}"),
+        })
+        .collect();
+    let run_snapshot = RunSnapshot {
+        run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
+        graph_snapshot_path: "graph.snapshot.json".to_string(),
+        planner_config: "default".to_string(),
+        scheduler_config: "local".to_string(),
+        policy_config: "runtime-policy-v0.1".to_string(),
+        provenance: "provenance.json".to_string(),
+        submission_source: options.submission_source.clone(),
+        trigger_source: options.trigger_source.clone(),
+        operator: options.operator.clone(),
+        labels: options.labels.clone(),
+        parent_run_id: options
+            .parent_run_id
+            .as_deref()
+            .and_then(|v| RunId::parse(v).ok()),
+        selected_nodes,
+        dependency_closure_enabled: options.partial_rerun_dependency_closure,
+        replay_source_run_id: options
+            .parent_run_id
+            .as_deref()
+            .and_then(|v| RunId::parse(v).ok()),
+    };
+    let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
+    let _ = ctx
+        .fs
+        .write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?);
+    let run_attempt = RunAttempt {
+        attempt_index: 1,
+        run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
+        parent_run_id: options
+            .parent_run_id
+            .as_deref()
+            .and_then(|v| RunId::parse(v).ok()),
+        reason: if options.parent_run_id.is_some() {
+            "replay_or_retry".to_string()
+        } else {
+            "initial_submission".to_string()
+        },
+    };
+    let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
+    let _ = ctx
+        .fs
+        .write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?);
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
@@ -361,7 +438,17 @@ pub fn execute(
                 Some(bijux_dag_artifacts::SkipReason {
                     reason: reason.clone(),
                 }),
+                Some("SelectionFiltered".to_string()),
+                Some(ReplayProvenance {
+                    node_action: "skipped".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
             )?;
+            failure_propagation_records.push(serde_json::json!({
+                "node_id": node_id,
+                "status": "skipped",
+                "cause": reason,
+            }));
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -371,6 +458,12 @@ pub fn execute(
                     "reason": reason,
                 }),
             )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_skipped",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "reason": reason,
+            }));
         }
 
         let mut started_ids: Vec<String> = Vec::new();
@@ -397,6 +490,12 @@ pub fn execute(
                     "reason": schedule_reason,
                 }),
             )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_scheduled",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "reason": schedule_reason,
+            }));
         }
 
         let checkpoint = ExecutionCheckpoint {
@@ -420,6 +519,11 @@ pub fn execute(
                     "node_id": node_id,
                 }),
             )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_started",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+            }));
         }
 
         for (node_id, node, cache_proof) in &cached {
@@ -447,6 +551,11 @@ pub fn execute(
                 None,
                 adapter_hash,
                 None,
+                Some("CachedReuse".to_string()),
+                Some(ReplayProvenance {
+                    node_action: "reused".to_string(),
+                    source_run_id: options.parent_run_id.clone(),
+                }),
             )?;
             crate::append_event(
                 &mut run_log,
@@ -457,6 +566,12 @@ pub fn execute(
                     "status": "cached",
                 }),
             )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_finished",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "status": "cached",
+            }));
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
@@ -539,6 +654,12 @@ pub fn execute(
                                 "attempt": attempt.attempt,
                             }),
                         )?;
+                        run_log_index.push(serde_json::json!({
+                            "event": "node_attempt_started",
+                            "ts": attempt.started_unix_ms,
+                            "node_id": node_id,
+                            "attempt": attempt.attempt,
+                        }));
                         crate::append_event(
                             &mut run_log,
                             serde_json::json!({
@@ -549,7 +670,19 @@ pub fn execute(
                                 "status": crate::status_string(&attempt.status),
                             }),
                         )?;
+                        run_log_index.push(serde_json::json!({
+                            "event": "node_attempt_finished",
+                            "ts": attempt.finished_unix_ms,
+                            "node_id": node_id,
+                            "attempt": attempt.attempt,
+                            "status": crate::status_string(&attempt.status),
+                        }));
                     }
+                    let replay_action = match result.status {
+                        NodeStatus::Cached => ReplayNodeAction::Reused,
+                        NodeStatus::Skipped => ReplayNodeAction::Skipped,
+                        _ => ReplayNodeAction::Reexecuted,
+                    };
                     write_trace(
                         &ctx,
                         graph,
@@ -566,6 +699,17 @@ pub fn execute(
                         result.container_meta.clone(),
                         adapter_hash,
                         None,
+                        Some(crate::transition_cause_for_status(&result.status).to_string()),
+                        Some(ReplayProvenance {
+                            node_action: match replay_action {
+                                ReplayNodeAction::Reexecuted => "reexecuted",
+                                ReplayNodeAction::Reused => "reused",
+                                ReplayNodeAction::Skipped => "skipped",
+                                ReplayNodeAction::Restored => "restored",
+                            }
+                            .to_string(),
+                            source_run_id: options.parent_run_id.clone(),
+                        }),
                     )?;
                     crate::append_event(
                         &mut run_log,
@@ -576,8 +720,19 @@ pub fn execute(
                             "status": crate::status_string(&result.status),
                         }),
                     )?;
+                    run_log_index.push(serde_json::json!({
+                        "event": "node_finished",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node_id,
+                        "status": crate::status_string(&result.status),
+                    }));
                     if result.status == NodeStatus::Failed {
                         status_map.insert(node_id.clone(), NodeStatus::Failed);
+                        failure_propagation_records.push(serde_json::json!({
+                            "node_id": node_id,
+                            "status": "failed",
+                            "cause": "execution_failed",
+                        }));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
@@ -625,7 +780,17 @@ pub fn execute(
                         None,
                         adapter_hash,
                         None,
+                        Some("ExecutionFailed".to_string()),
+                        Some(ReplayProvenance {
+                            node_action: "reexecuted".to_string(),
+                            source_run_id: options.parent_run_id.clone(),
+                        }),
                     )?;
+                    failure_propagation_records.push(serde_json::json!({
+                        "node_id": node_id,
+                        "status": "failed",
+                        "cause": "internal_error",
+                    }));
                     crate::append_event(
                         &mut run_log,
                         serde_json::json!({
@@ -635,6 +800,12 @@ pub fn execute(
                             "status": "failed",
                         }),
                     )?;
+                    run_log_index.push(serde_json::json!({
+                        "event": "node_finished",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node_id,
+                        "status": "failed",
+                    }));
                 }
             }
         }
@@ -655,6 +826,11 @@ pub fn execute(
     }
 
     if cancel.load(Ordering::SeqCst) {
+        run_audit_events.push(serde_json::json!({
+            "action": "cancel",
+            "ts": ctx.clock.now_unix_ms(),
+            "run_id": manifest.run_id.clone(),
+        }));
         for node in &graph.nodes {
             if !status_map.contains_key(&node.id) {
                 status_map.insert(node.id.clone(), NodeStatus::Skipped);
@@ -682,7 +858,17 @@ pub fn execute(
                     Some(bijux_dag_artifacts::SkipReason {
                         reason: "cancelled".to_string(),
                     }),
+                    Some("CancelRequested".to_string()),
+                    Some(ReplayProvenance {
+                        node_action: "skipped".to_string(),
+                        source_run_id: options.parent_run_id.clone(),
+                    }),
                 )?;
+                failure_propagation_records.push(serde_json::json!({
+                    "node_id": node.id,
+                    "status": "skipped",
+                    "cause": "cancelled",
+                }));
             }
         }
     }
@@ -695,6 +881,16 @@ pub fn execute(
     }
     manifest.finished_unix_ms = finished_unix_ms;
     manifest.node_counts = count_nodes(&status_map);
+    manifest.run_summary = Some(bijux_dag_artifacts::RunSummary {
+        total_nodes: manifest.node_counts.success
+            + manifest.node_counts.failed
+            + manifest.node_counts.skipped
+            + manifest.node_counts.cached,
+        success: manifest.node_counts.success,
+        failed: manifest.node_counts.failed,
+        skipped: manifest.node_counts.skipped,
+        cached: manifest.node_counts.cached,
+    });
     manifest.outputs = collect_outputs_summary(ctx.fs.as_ref(), &ctx.run_dir)?;
     let run_index = build_run_outputs_index(&ctx.run_dir, &manifest.outputs)?;
     let lineage_edges = manifest
@@ -727,6 +923,29 @@ pub fn execute(
             "status": manifest.status,
         }),
     )?;
+    run_log_index.push(serde_json::json!({
+        "event": "run_finished",
+        "ts": finished_unix_ms,
+        "status": manifest.status,
+    }));
+    run_audit_events.push(serde_json::json!({
+        "action": "finish",
+        "ts": finished_unix_ms,
+        "run_id": manifest.run_id.clone(),
+        "status": manifest.status.clone(),
+    }));
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("run-log.index.json"),
+        &serde_json::to_vec_pretty(&run_log_index)?,
+    );
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("run.audit.json"),
+        &serde_json::to_vec_pretty(&run_audit_events)?,
+    );
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("failure-propagation.json"),
+        &serde_json::to_vec_pretty(&failure_propagation_records)?,
+    );
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {
