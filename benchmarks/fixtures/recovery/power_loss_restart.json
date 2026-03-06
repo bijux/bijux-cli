@@ -1,0 +1,13 @@
+{
+  "scenario_id": "power-loss-restart",
+  "injections": [
+    {
+      "boundary": "scheduler",
+      "fault_code": "process_crash"
+    },
+    {
+      "boundary": "artifact_store",
+      "fault_code": "metadata_flush_interrupted"
+    }
+  ]
+}

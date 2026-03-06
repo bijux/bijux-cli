@@ -1,0 +1,9 @@
+{
+  "suite_id": "recovery-strict-v1",
+  "required_scenarios": [
+    "power-loss-restart",
+    "worker-loss-reassignment",
+    "planner-boundary-fault"
+  ],
+  "strict": true
+}
