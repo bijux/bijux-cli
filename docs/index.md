@@ -21,6 +21,7 @@
 - [Policy gates](./POLICY.md)
 - [RBAC and authorization policy contracts](./RBAC_AUTHZ_POLICY.md)
 - [Authentication, identity, and trust bootstrap contracts](./AUTH_IDENTITY_TRUST.md)
+- [Supply-chain trust, provenance, and compliance evidence](./SUPPLY_CHAIN_TRUST.md)
 - [Backend policy overlays](./BACKEND_POLICY_OVERLAYS.md)
 - [Advanced DAG semantics](./ADVANCED_DAG_SEMANTICS.md)
 - [Task contract type system](./TASK_CONTRACT_TYPES.md)
@@ -37,6 +38,7 @@
 - [Observability model](./OBSERVABILITY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
 - [Cluster and backend execution maturity contracts](./BACKEND_EXECUTION_MATURITY.md)
+- [Regulated workflow reference](./REGULATED_WORKFLOW_REFERENCE.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
 - [DAG schema contract](./spec/dag-schema-v0.1.json)
 
