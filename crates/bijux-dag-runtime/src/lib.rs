@@ -32,6 +32,8 @@ mod supply_chain_trust;
 mod task_contract;
 mod task_types;
 mod tenancy;
+mod upgrade_compatibility;
+mod performance_capacity;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -251,6 +253,22 @@ pub use supply_chain_trust::{
     PromotionPolicy, ProvenanceCompletenessPolicy, ProvenanceDriftReport,
     RegulatedWorkflowReference, ReplayTrustWarning, RunProvenanceAttestation,
     SignedArtifactManifest, SupplyChainMaturityMatrix,
+};
+pub use upgrade_compatibility::{
+    build_compatibility_dashboard, classify_compatibility, evaluate_release_gate,
+    simulate_migration_impact, validate_upgrade_path, CompatibilityAcceptanceSuite,
+    CompatibilityClass, CompatibilityDashboard, CompatibilityPolicy, CompatibilityRule,
+    CrossVersionMatrixRow, DeprecationDiagnostic, DowngradeRiskReport,
+    DurableStateMigrationContract, FeatureFlagRecord, FeatureLifecycleState,
+    LongTermSupportPolicy, ManifestMigrationPlan, MigrationImpactEstimate, PluginVersionWindow,
+    ReleaseGateOutcome, SchedulerStateCompatibilityCheck, UpgradePathPolicy, UpgradeRolloutPlan,
+};
+pub use performance_capacity::{
+    build_cost_model, build_performance_maturity_report, compile_environment_profiles,
+    derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
+    synthetic_large_dag_profiles, ArtifactStoreBenchmarkResult, AutoscalingHint, BenchmarkResult,
+    CapacityModel, EnvironmentScaleProfile, PerformanceGate, PerformanceMaturityReport,
+    SchedulerScalabilityResult, StorageCostModel, StorageGrowthForecast, SyntheticDagProfile,
 };
 
 #[derive(Debug, thiserror::Error)]
