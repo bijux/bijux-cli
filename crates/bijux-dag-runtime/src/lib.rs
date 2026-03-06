@@ -1,5 +1,6 @@
 mod adapter;
 mod adapter_sdk;
+mod adaptive_scheduler;
 mod auth_identity;
 mod authz_policy;
 mod async_adapter;
@@ -140,6 +141,16 @@ pub use backend_cluster::{
     QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmExecutorContract,
 };
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
+pub use adaptive_scheduler::{
+    adaptive_cache_policy, adaptive_fallback_needed, adaptive_maturity_ready, adaptive_queue_throttle,
+    choose_prefetch_hints, compare_static_and_adaptive, decide_adaptive_parallelism,
+    detect_adaptive_drift, render_adaptive_explanation, AdaptiveBackfillPacingDecision,
+    AdaptiveBoundsPolicy, AdaptiveCachePolicyDecision, AdaptiveComparisonReport,
+    AdaptiveConcurrencyDecision, AdaptiveControlLoopGuard, AdaptiveDriftReport,
+    AdaptiveExplanation, AdaptiveFallbackPolicy, AdaptiveMaturityGate, AdaptiveQualityMetrics,
+    AdaptiveQueueThrottleDecision, ArtifactPrefetchHint, BackendSuitabilitySignal,
+    LearnedDurationProfile, LearningWindowPolicy, SlaDispatchTuningDecision,
+};
 pub use auth_identity::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix, local_dev_bypass_allowed,
     migrate_identity_provider_compatible, readiness_for_federation, revoked_principals_set,
