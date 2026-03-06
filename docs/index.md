@@ -45,6 +45,7 @@
 - [Spec ownership and evolution](./OWNERSHIP.md)
 - [Control plane model](./CONTROL_PLANE.md)
 - [API resource contract draft](./API_CONTRACT.md)
+- [dag-api service boundary plan](./DAG_API_SERVICE.md)
 - [Control plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
 - [Rust DAG API compatibility promise](./RUST_DAG_API_COMPATIBILITY.md)
 - [Plugin and DSL roadmap](./PLUGIN_DSL_ROADMAP.md)

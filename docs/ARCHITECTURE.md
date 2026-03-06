@@ -7,6 +7,7 @@
 - `crates/bijux-dag-app`: user-facing command behavior and orchestration for runtime operations.
 - `crates/bijux-dag-cli`: umbrella command wiring and top-level UX.
 - `crates/bijux-dev-dag`: repository control-plane for checks, tests, release workflows.
+- `dag-api` (planned boundary): service control-plane for typed registry/schedule/run/artifact APIs.
 
 ## Execution backend baseline
 
@@ -20,6 +21,7 @@
 - `app` may depend on runtime and artifacts for command implementation.
 - `cli` depends on app for command registration.
 - `dev` depends on no policy-sensitive runtime internals.
+- future `dag-api` must depend on typed runtime/control-plane contracts, not CLI internals.
 
 ## Layered command flow
 

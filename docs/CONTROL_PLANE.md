@@ -8,6 +8,8 @@
 
 `dag-api` is the planned service control plane. It will own persistent DAG registry, schedules, run submission, and policy evaluation for shared environments.
 
+Typed API resource families include DAG, DAG version, run, node attempt, artifact, schedule, queue, policy, and audit event.
+
 ## Responsibilities split
 
 - Repository control plane (`bijux-dev-dag`):
@@ -58,6 +60,8 @@ Repository control-plane execution currently persists this audit stream under `a
 
 Every public control-plane operation must map to typed request and typed response contracts.
 
+Control-plane list/query APIs use typed pagination and filter contracts, and mutable resources carry optimistic concurrency markers.
+
 ## Environment model
 
 Typed environment modes:
@@ -69,3 +73,18 @@ Typed environment modes:
 - airgapped
 
 Environment values support inheritance and explicit overrides.
+
+## Minimal control-plane MVP
+
+MVP includes:
+
+- DAG publish/inspect lifecycle
+- run submit/cancel/pause/resume/retry/replay/verify
+- schedule create/update/suspend/preview/audit
+- artifact inspect/export/verify/lineage/retention action
+- audit event persistence
+
+MVP excludes:
+
+- distributed execution orchestration
+- HA/sharded scheduler topology management
