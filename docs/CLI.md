@@ -37,3 +37,21 @@ All commands accept a global `--json` flag. JSON output is normalized as:
 ## Note
 
 `bijux` is the only supported CLI entrypoint. Use `bijux dag ...` for DAG operations.
+
+## Exit code matrix
+
+| Command surface | Command | Success | Known failure |
+| --- | --- | --- | --- |
+| DAG umbrella | `dag validate` | 0 | 2 |
+| DAG umbrella | `dag run` | 0 | 3 |
+| DAG umbrella | `dag replay` | 0 | 3 |
+| DAG umbrella | `dag diff` | 0 | 3 |
+| DAG umbrella | `dag explain` | 0 | 3 |
+| DAG umbrella | `dag status` | 0 | 3 |
+| DAG umbrella | `dag cache` | 0 | 3 |
+| DAG umbrella | `dag adapters` | 0 | 3 |
+| Top-level placeholder | `rag` | 2 | 2 |
+| Top-level placeholder | `rar` | 2 | 2 |
+
+Failure codes are stable for CLI parser and command validation errors unless a subcommand
+explicitly returns a richer status.

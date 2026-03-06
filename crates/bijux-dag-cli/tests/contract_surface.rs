@@ -73,6 +73,102 @@ fn dag_validate_json_schema_contract() {
 }
 
 #[test]
+fn dag_root_help_lists_umbrella_commands() {
+    let output = Command::new(dag_binary())
+        .arg("--help")
+        .output()
+        .expect("global help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("dag"));
+    assert!(text.contains("rag"));
+    assert!(text.contains("rar"));
+}
+
+#[test]
+fn dag_run_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "run", "--help"])
+        .output()
+        .expect("run help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in ["--out", "--hermetic", "--deny-network", "--clean-env", "run"] {
+        assert!(text.contains(token));
+    }
+}
+
+#[test]
+fn dag_replay_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "replay", "--help"])
+        .output()
+        .expect("replay help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in ["--out", "run_id", "--reuse-cache", "replay"] {
+        assert!(text.contains(token));
+    }
+}
+
+#[test]
+fn dag_diff_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "diff", "--help"])
+        .output()
+        .expect("diff help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("dag diff"));
+    assert!(text.contains("--json"));
+}
+
+#[test]
+fn dag_explain_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "explain", "--help"])
+        .output()
+        .expect("explain help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("dag explain"));
+    assert!(text.contains("--node"));
+}
+
+#[test]
+fn dag_cache_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "cache", "--help"])
+        .output()
+        .expect("cache help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    for token in ["cache", "--cache-dir", "verify", "pack"] {
+        assert!(text.contains(token));
+    }
+}
+
+#[test]
+fn dag_adapters_help_surface_contract() {
+    let output = Command::new(dag_binary())
+        .args(["dag", "adapters", "--help"])
+        .output()
+        .expect("adapters help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("adapters"));
+    assert!(text.contains("ls"));
+    assert!(text.contains("doctor"));
+}
+
+#[test]
 fn dag_validate_text_output_contract() {
     let dag = write_temp_dag();
     let output = Command::new(dag_binary())
@@ -93,6 +189,158 @@ fn dag_validate_invalid_argument_fails() {
         .expect("invalid validate arg");
 
     assert!(!output.status.success());
+}
+
+#[test]
+fn dag_run_exit_code_success() {
+    let dag = write_temp_dag();
+    let out_dir = tempfile::tempdir().expect("run out");
+
+    let output = Command::new(dag_binary())
+        .args([
+            "dag",
+            "run",
+            &dag,
+            "--out",
+            out_dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .expect("run success");
+
+    assert!(output.status.success());
+}
+
+#[test]
+fn dag_rag_is_not_implemented_with_stable_exit_code() {
+    let output = Command::new(dag_binary())
+        .arg("rag")
+        .output()
+        .expect("rag command");
+
+    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(2));
+    let text = String::from_utf8_lossy(&output.stderr);
+    assert!(text.contains("not implemented"));
+}
+
+#[test]
+fn dag_rar_is_not_implemented_with_stable_exit_code() {
+    let output = Command::new(dag_binary())
+        .arg("rar")
+        .output()
+        .expect("rar command");
+
+    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(2));
+    let text = String::from_utf8_lossy(&output.stderr);
+    assert!(text.contains("not implemented"));
+}
+
+#[test]
+fn dag_status_json_schema_contract() {
+    let dag = write_temp_dag();
+    let run_dir = tempfile::tempdir().expect("run out");
+    let run = Command::new(dag_binary())
+        .args([
+            "dag",
+            "run",
+            "--json",
+            &dag,
+            "--out",
+            run_dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .expect("run json");
+    let run_payload: serde_json::Value =
+        serde_json::from_slice(&run.stdout).expect("parse run payload");
+    let run_path = run_payload["data"]["run_dir"].as_str().unwrap();
+
+    let output = Command::new(dag_binary())
+        .args(["dag", "status", "--json", run_path])
+        .output()
+        .expect("status json");
+
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("parse status payload");
+    assert_eq!(payload["command"], "dag.status");
+    assert_eq!(payload["ok"], true);
+    assert!(payload["data"]["manifest"].is_object());
+    assert!(payload["data"]["traces"].is_array());
+}
+
+#[test]
+fn dag_diff_json_schema_contract() {
+    let dag = write_temp_dag();
+    let first_run_dir = tempfile::tempdir().expect("first run out");
+    let second_run_dir = tempfile::tempdir().expect("second run out");
+
+    let run_a = Command::new(dag_binary())
+        .args([
+            "dag",
+            "run",
+            "--json",
+            &dag,
+            "--out",
+            first_run_dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .expect("run a");
+    let run_b = Command::new(dag_binary())
+        .args([
+            "dag",
+            "run",
+            "--json",
+            &dag,
+            "--out",
+            second_run_dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .expect("run b");
+
+    let payload_a: serde_json::Value =
+        serde_json::from_slice(&run_a.stdout).expect("parse run a payload");
+    let payload_b: serde_json::Value =
+        serde_json::from_slice(&run_b.stdout).expect("parse run b payload");
+    let run_a_path = payload_a["data"]["run_dir"].as_str().unwrap();
+    let run_b_path = payload_b["data"]["run_dir"].as_str().unwrap();
+
+    let output = Command::new(dag_binary())
+        .args(["dag", "diff", "--json", run_a_path, run_b_path])
+        .output()
+        .expect("diff json");
+
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("parse diff payload");
+    assert_eq!(payload["command"], "dag.diff");
+    assert!(payload["data"]["manifest"].is_object());
+    assert!(payload["data"]["nodes"].is_object());
+    assert!(payload["data"]["outputs"].is_object());
+}
+
+#[test]
+fn dag_validate_json_exists_with_human_and_machine_contracts() {
+    let dag = write_temp_dag();
+    let output = Command::new(dag_binary())
+        .args(["dag", "validate", &dag])
+        .output()
+        .expect("validate text");
+
+    assert!(output.status.success());
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("{\"ok\""));
+
+    let output_json = Command::new(dag_binary())
+        .args(["dag", "validate", "--json", &dag])
+        .output()
+        .expect("validate json");
+
+    assert!(output_json.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output_json.stdout).expect("validate json parse");
+    assert_eq!(payload["command"], "dag.validate");
+    assert_eq!(payload["ok"], true);
+    assert!(payload["data"].is_object());
 }
 
 #[test]
@@ -118,18 +366,4 @@ fn dag_run_json_output_contract_and_exit_code() {
     assert_eq!(payload["command"], "dag.run");
     assert_eq!(payload["status"], "ok");
     assert!(payload["data"].get("run_dir").and_then(|v| v.as_str()).is_some());
-}
-
-#[test]
-fn dag_help_surfaces_all_top_level_entries() {
-    let output = Command::new(dag_binary())
-        .arg("--help")
-        .output()
-        .expect("global help");
-
-    assert!(output.status.success());
-    let text = String::from_utf8_lossy(&output.stdout);
-    for command in ["dag", "rag", "rar"] {
-        assert!(text.contains(command));
-    }
 }
