@@ -1,0 +1,5 @@
+[profile.default]
+slow-timeout = { period = "5m", terminate-after = "10m" }
+retries = 2
+failure-output = "immediate"
+failure-output-format = "color-auto"

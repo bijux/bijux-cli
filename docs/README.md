@@ -15,3 +15,4 @@ This directory contains all project documentation.
 - ADRs are named `YYYYMMDD-title.md`.
 - Build artifacts are written under `artifacts/` (local cache and generated targets).
 - `artifacts/` is not committed; generated files belong under `artifacts/` and are ignored by default via `artifacts/.gitignore`.
+- Build environment, tools, and cache policy is documented in `DEVELOPMENT.md`.
