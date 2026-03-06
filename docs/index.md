@@ -23,6 +23,7 @@
 - [Test topology](./TEST_TOPOLOGY.md)
 - [Fixture governance](./FIXTURE_GOVERNANCE.md)
 - [Compatibility policy](./COMPATIBILITY.md)
+- [Compatibility window v0.1](./COMPATIBILITY_WINDOW_v0.1.md)
 
 ## Crate contracts and ownership
 
@@ -30,8 +31,13 @@
 - [Examples governance](./EXAMPLES.md)
 - [Make and dev command relationship](./MAKE_DEV_RELATIONSHIP.md)
 - [Release process](./RELEASE_PROCESS.md)
+- [Acceptance gates](./ACCEPTANCE_GATES.md)
+- [Spec deprecation policy](./DEPRECATION_POLICY.md)
+- [Roadmap ownership](./ROADMAP_OWNERSHIP.md)
+- [Repository guardrails](./REPO_GUARDRAILS.md)
 - [Documentation generation plan](./DOCS_GENERATION_PLAN.md)
 
 ## Operations
 
 - [Operations guide](./operations/README.md)
+- [CI workflows](./operations/CI_WORKFLOWS.md)
