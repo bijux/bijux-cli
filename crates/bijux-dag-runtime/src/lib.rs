@@ -17,6 +17,7 @@ mod infrastructure;
 mod local_executor;
 mod observability;
 mod observability_deep;
+mod operations_governance;
 mod planner;
 mod planner_intelligence;
 mod plugin_ecosystem;
@@ -196,6 +197,16 @@ pub use observability::{
     write_timeline_export, EventCategory, EventRecord, EventSink, FileEventSink,
     InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
     SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
+};
+pub use operations_governance::{
+    evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
+    invariant_catalog_default, release_policy_allows, AuditReadinessChecklist,
+    ErrorBudgetPolicy, GamedayScenario, IncidentClassification, IncidentSeverity,
+    IntegratedVerificationLane, LifecycleGovernanceRule, OperatorTrainingCatalog,
+    PlatformAcceptanceBoard, PlatformHealthDashboard, PlatformInvariantCatalog,
+    PlatformOperatingModel, PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy,
+    RoadmapGovernance, RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective,
+    SloEvaluation, SupportabilityModel, SustainabilityOwnership,
 };
 pub use observability_deep::{
     build_diagnostics, build_investigation_bundle, build_topology_overlay, detect_metric_drift,
