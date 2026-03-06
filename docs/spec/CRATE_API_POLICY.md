@@ -9,6 +9,10 @@
 - `bijux-dag-cli` is a thin binary crate only.
 - Business logic is forbidden in `bijux-dag-cli`.
 
+## Core boundary
+`bijux-dag-core` exports stable model, parse, resolve, validation, topology, and fingerprint API surfaces.
+Core exports must remain deterministic and side-effect free.
+
 ## Artifact boundary
 `bijux-dag-artifacts` is an artifact model and persistence API crate.
 - It may own artifact storage operations through stable APIs.

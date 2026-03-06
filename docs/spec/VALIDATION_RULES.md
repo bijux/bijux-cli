@@ -1,5 +1,12 @@
 # Validation Rules
 
+Validation rule registry source: `crates/bijux-dag-core/src/validate.rs`.
+
+## Validation domains
+- `Schema`: structural and shape constraints.
+- `Semantic`: behavior and meaning constraints.
+- `Topology`: graph connectivity and ordering constraints.
+
 ## Error Codes
 - `E1001` Duplicate node id
 - `E1002` Dangling node reference
@@ -44,5 +51,5 @@
 17. Container nodes must include a container spec. (`E1023`)
 18. Container spec must be valid (engine and argv). (`E1024`)
 19. Output file paths must be relative and not contain `..`. (`E1025`)
-14. Nodes not reachable from any root emit a warning. (`W2001`)
-15. Nodes with no edges emit a warning. (`W2002`)
+20. Nodes not reachable from any root emit a warning. (`W2001`)
+21. Nodes with no edges emit a warning. (`W2002`)

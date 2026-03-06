@@ -5,12 +5,17 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub mod compile;
 pub mod builder;
+pub mod canonical;
 pub mod edge;
+pub mod error;
 pub mod effects;
 pub mod fingerprint;
 pub mod graph;
 pub mod meta;
+pub mod model;
 pub mod node;
+pub mod parse;
+pub mod resolve;
 pub mod resources;
 pub mod semantics;
 pub mod topology;

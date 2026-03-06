@@ -443,6 +443,15 @@ const CONTRACT_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::ReadWrite,
         run: || run_public_api(),
     },
+    SuiteDef {
+        id: "validation-rules-doc",
+        description: "core validation rule IDs are documented",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_validation_rule_docs_guard(),
+    },
 ];
 
 const DOC_SUITES: &[SuiteDef] = &[
@@ -2096,6 +2105,40 @@ fn run_docs_guarantee_guard() -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("docs guarantee guard failed: {}", violations.join(", ")))
+    }
+}
+
+fn run_validation_rule_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let validate_src = fs::read_to_string(root.join("crates/bijux-dag-core/src/validate.rs"))
+        .map_err(|err| err.to_string())?;
+    let docs = fs::read_to_string(root.join("docs/spec/VALIDATION_RULES.md"))
+        .map_err(|err| err.to_string())?;
+
+    let mut ids = BTreeSet::new();
+    for token in validate_src.split(|c: char| !c.is_ascii_alphanumeric()) {
+        if token.len() == 5
+            && (token.starts_with('E') || token.starts_with('W'))
+            && token.chars().skip(1).all(|c| c.is_ascii_digit())
+        {
+            ids.insert(token.to_string());
+        }
+    }
+
+    let mut missing = Vec::new();
+    for id in ids {
+        if !docs.contains(&id) {
+            missing.push(id);
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "validation rule IDs missing from docs/spec/VALIDATION_RULES.md: {}",
+            missing.join(", ")
+        ))
     }
 }
 
