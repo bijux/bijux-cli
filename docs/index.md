@@ -18,6 +18,7 @@
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
 - [Scheduler MVP contract](./SCHEDULER_MVP.md)
+- [Observability model](./OBSERVABILITY.md)
 
 ## Test governance
 

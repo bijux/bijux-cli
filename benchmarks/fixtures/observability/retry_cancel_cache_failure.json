@@ -1,0 +1,18 @@
+{
+  "name": "retry_cancel_cache_failure",
+  "description": "Exercises retries, cancellation, cache outcomes, and failure cascade reporting.",
+  "events": [
+    {"event": "node_attempt_started", "node_id": "extract", "attempt": 1},
+    {"event": "node_attempt_finished", "node_id": "extract", "attempt": 1, "status": "failed"},
+    {"event": "node_attempt_started", "node_id": "extract", "attempt": 2},
+    {"event": "node_attempt_finished", "node_id": "extract", "attempt": 2, "status": "success"},
+    {"event": "cache_hit", "node_id": "transform"},
+    {"event": "node_failed", "node_id": "load", "reason": "dependency_failed"},
+    {"event": "run_cancelled", "reason": "operator_request"}
+  ],
+  "expected": {
+    "root_causes_reported": true,
+    "timeline_export_present": true,
+    "metrics_export_present": true
+  }
+}
