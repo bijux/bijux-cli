@@ -3,6 +3,7 @@ mod adapter_sdk;
 mod auth_identity;
 mod authz_policy;
 mod async_adapter;
+mod backend_cluster;
 mod clock;
 mod control_plane;
 mod control_plane_api;
@@ -118,6 +119,16 @@ pub use tenancy::{
     TenantSecretScope,
 };
 pub use async_adapter::AsyncAdapter;
+pub use backend_cluster::{
+    backend_ready_for_admission, matches_placement_policy, normalize_backend_failure,
+    quota_saturation_percent, replay_allowed_across_backends, BackendCapabilityDescriptor,
+    BackendCleanupGuarantee, BackendConformanceSuite, BackendFailureMappingRule,
+    BackendLogCollectionContract, BackendMaintenanceMode, BackendOutageSimulationFixture,
+    BackendProductionReadinessChecklist, BackendQuotaMetrics, BackendReadinessProbe,
+    CrossBackendReplayRule, GenericBatchExecutorContract, ImageResolutionProvenance,
+    KubernetesExecutorContractV2, NodeAffinityHint, PlacementPolicyRule,
+    QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmExecutorContract,
+};
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
 pub use auth_identity::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix, local_dev_bypass_allowed,
