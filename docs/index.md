@@ -17,6 +17,7 @@
 
 - [Effects model](./EFFECTS.md)
 - [Policy gates](./POLICY.md)
+- [RBAC and authorization policy contracts](./RBAC_AUTHZ_POLICY.md)
 - [Backend policy overlays](./BACKEND_POLICY_OVERLAYS.md)
 - [Advanced DAG semantics](./ADVANCED_DAG_SEMANTICS.md)
 - [Task contract type system](./TASK_CONTRACT_TYPES.md)
