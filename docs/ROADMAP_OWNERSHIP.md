@@ -6,6 +6,7 @@
 - Runtime determinism and policy execution: `bijux-dag-runtime` maintainers
 - CLI contract and output schemas: `bijux-dag-cli` and `bijux-dag-app` maintainers
 - Repository governance and release checks: `bijux-dev-dag` maintainers
+- Plugin and DSL extension contracts: `bijux-dag-runtime` and `bijux-dag-core` maintainers
 
 ## Delivery tracking
 

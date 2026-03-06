@@ -9,6 +9,7 @@
 - [Security policy](./SECURITY.md)
 - [CLI backward-compat policy](./CLI_BACKWARD_COMPAT.md)
 - [Changelog](../CHANGELOG.md)
+- [Adapter SDK contracts](./ADAPTER_SDK.md)
 
 ## Behavior domains
 
@@ -22,6 +23,7 @@
 - [Observability model](./OBSERVABILITY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
+- [DAG schema contract](./spec/dag-schema-v0.1.json)
 
 ## Test governance
 
@@ -37,6 +39,11 @@
 - [Control plane model](./CONTROL_PLANE.md)
 - [API resource contract draft](./API_CONTRACT.md)
 - [Control plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
+- [Rust DAG API compatibility promise](./RUST_DAG_API_COMPATIBILITY.md)
+- [Plugin and DSL roadmap](./PLUGIN_DSL_ROADMAP.md)
+- [Experience surfaces](./EXPERIENCE_SURFACES.md)
+- [DAG explain and preview workflows](./DAG_EXPLAIN_AND_PREVIEW.md)
+- [Elite MVP scorecard](./ELITE_MVP_SCORECARD.md)
 - [Examples governance](./EXAMPLES.md)
 - [Make and dev command relationship](./MAKE_DEV_RELATIONSHIP.md)
 - [Release process](./RELEASE_PROCESS.md)
