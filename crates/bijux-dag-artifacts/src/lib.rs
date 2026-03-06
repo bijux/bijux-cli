@@ -30,6 +30,8 @@ pub struct RunDir {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Manifest {
+    #[serde(default = "default_manifest_version")]
+    pub manifest_version: String,
     pub run_id: String,
     pub created_unix_ms: u128,
     pub started_unix_ms: u128,
@@ -51,6 +53,10 @@ pub struct Manifest {
     pub cache_dir: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_timeout_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_metadata: Option<RunMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_summary: Option<RunSummary>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -80,6 +86,36 @@ pub struct NodeTrace {
     pub skip_reason: Option<SkipReason>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transition_cause: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replay_provenance: Option<ReplayProvenance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunMetadata {
+    pub submission_source: String,
+    pub trigger_source: String,
+    pub operator: String,
+    #[serde(default)]
+    pub labels: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_run_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunSummary {
+    pub total_nodes: u32,
+    pub success: u32,
+    pub failed: u32,
+    pub skipped: u32,
+    pub cached: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReplayProvenance {
+    pub node_action: String,
+    pub source_run_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -383,6 +419,10 @@ pub fn now_unix_ms() -> u128 {
 
 fn generate_run_id() -> String {
     now_unix_ms().to_string()
+}
+
+fn default_manifest_version() -> String {
+    "run-manifest/v0.1".to_string()
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
