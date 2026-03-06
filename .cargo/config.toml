@@ -1,0 +1,41 @@
+[build]
+target-dir = "artifacts/target"
+
+[term]
+verbose = false
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-z,relro",
+  "-C",
+  "link-arg=-Wl,-z,now",
+  "-C",
+  "link-arg=-Wl,-z,noexecstack"
+]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-z,relro",
+  "-C",
+  "link-arg=-Wl,-z,now",
+  "-C",
+  "link-arg=-Wl,-z,noexecstack"
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-dead_strip",
+  "-C",
+  "link-arg=-Wl,-no_dead_strip_inits_and_terms"
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-dead_strip",
+  "-C",
+  "link-arg=-Wl,-no_dead_strip_inits_and_terms"
+]

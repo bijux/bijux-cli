@@ -13,3 +13,5 @@ This directory contains all project documentation.
 ## Conventions
 - Specs are versioned files (e.g., `*_v0.1.md`).
 - ADRs are named `YYYYMMDD-title.md`.
+- Build artifacts are written under `artifacts/` (local cache and generated targets).
+- `artifacts/` is not committed; generated files belong under `artifacts/` and are ignored by default via `artifacts/.gitignore`.
