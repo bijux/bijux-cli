@@ -88,6 +88,10 @@ enum CommandLine {
     VerifyTools,
     /// Verify workspace dependencies resolve
     ResolveCheck,
+    /// Record baseline benchmark artifact
+    BenchmarkBaseline,
+    /// Record memory smoke artifact
+    MemorySmoke,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -461,6 +465,20 @@ fn run(cli: Cli) -> Result<(), String> {
         CommandLine::ResolveCheck => run_command_reported(&context, "resolve-check", CommandEffect::Validation, json!({}), || {
             run_resolve_check()
         }),
+        CommandLine::BenchmarkBaseline => run_command_reported(
+            &context,
+            "benchmark-baseline",
+            CommandEffect::ReadWrite,
+            json!({}),
+            || run_benchmark_baseline(),
+        ),
+        CommandLine::MemorySmoke => run_command_reported(
+            &context,
+            "memory-smoke",
+            CommandEffect::ReadWrite,
+            json!({}),
+            || run_memory_smoke(),
+        ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
         }),
@@ -714,6 +732,79 @@ fn run_resolve_check() -> Result<(), String> {
     } else {
         Err("cargo metadata output missing package list".into())
     }
+}
+
+fn run_benchmark_baseline() -> Result<(), String> {
+    let root = repo_root()?;
+    let out_dir = root.join("artifacts").join("benchmarks");
+    let runs_dir = out_dir.join("runs");
+    fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
+
+    let start_ms = now_millis();
+    run_with_root(
+        &root,
+        "cargo",
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "run",
+            "benchmarks/fixtures/large_dag.json",
+            "--out",
+            runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
+        ],
+    )?;
+    let end_ms = now_millis();
+    let report = json!({
+        "fixture": "benchmarks/fixtures/large_dag.json",
+        "elapsed_ms": end_ms.saturating_sub(start_ms),
+        "recorded_at_unix_ms": end_ms
+    });
+    fs::write(
+        out_dir.join("baseline.json"),
+        serde_json::to_vec_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    Ok(())
+}
+
+fn run_memory_smoke() -> Result<(), String> {
+    let root = repo_root()?;
+    let out_dir = root.join("artifacts").join("memory");
+    let runs_dir = out_dir.join("runs");
+    fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
+
+    let start_ms = now_millis();
+    run_with_root(
+        &root,
+        "cargo",
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "run",
+            "examples/hello.dag.json",
+            "--out",
+            runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
+        ],
+    )?;
+    let end_ms = now_millis();
+    let report = json!({
+        "workload": "examples/hello.dag.json",
+        "elapsed_ms": end_ms.saturating_sub(start_ms),
+        "memory_budget_note": "Track peak memory through CI runner metrics and fail on sustained regressions.",
+        "recorded_at_unix_ms": end_ms
+    });
+    fs::write(
+        out_dir.join("smoke.json"),
+        serde_json::to_vec_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    Ok(())
 }
 
 fn run_golden() -> Result<(), String> {
@@ -998,5 +1089,12 @@ fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+fn now_millis() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
         .unwrap_or(0)
 }
