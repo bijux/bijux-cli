@@ -142,6 +142,7 @@ dependencies = [
 name = "bijux-dev-dag"
 version = "0.1.0"
 dependencies = [
+ "bijux-dag-core",
  "clap",
  "hex",
  "serde_json",

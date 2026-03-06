@@ -73,6 +73,11 @@ enum CommandLine {
         #[command(subcommand)]
         command: ScheduleCommand,
     },
+    /// DAG developer-experience helpers
+    Dag {
+        #[command(subcommand)]
+        command: DagCommand,
+    },
     /// Print environment diagnostics and report status
     Doctor,
     /// Generate and verify golden run/replay contract
@@ -165,6 +170,62 @@ enum ScheduleCommand {
     Preview {
         #[arg(long, default_value = "configs/schedules/registry.json")]
         file: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+enum DagCommand {
+    /// Lint DAG style and maintainability rules
+    Lint {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Run compact unit harness checks for a DAG
+    UnitHarness {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Simulate execution ordering without running adapters
+    Simulate {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Dry-run compile and planning preview
+    DryRun {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Render graph visualization payload from run artifacts
+    Visualize {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
+    /// Debug dependency closure and blocked nodes from a graph
+    Debug {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Explain validation diagnostics for a DAG file
+    ExplainValidation {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Explain why a node did not run from run artifacts
+    ExplainNode {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        node_id: String,
+    },
+    /// Preview what a run would do under deterministic planning
+    Preview {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Export a JSON schema contract skeleton for DAG documents
+    SchemaExport {
+        #[arg(long, default_value = "docs/spec/dag-schema-v0.1.json")]
+        out: PathBuf,
     },
 }
 
@@ -480,6 +541,78 @@ fn run(cli: Cli) -> Result<(), String> {
                 || run_schedule_preview(&file),
             ),
         },
+        CommandLine::Dag { command } => match command {
+            DagCommand::Lint { graph } => run_command_reported(
+                &context,
+                "dag.lint",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_lint(&graph),
+            ),
+            DagCommand::UnitHarness { graph } => run_command_reported(
+                &context,
+                "dag.unit-harness",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_unit_harness(&graph),
+            ),
+            DagCommand::Simulate { graph } => run_command_reported(
+                &context,
+                "dag.simulate",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_simulate(&graph),
+            ),
+            DagCommand::DryRun { graph } => run_command_reported(
+                &context,
+                "dag.dry-run",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_dry_run(&graph),
+            ),
+            DagCommand::Visualize { run_dir } => run_command_reported(
+                &context,
+                "dag.visualize",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_visualize(&run_dir),
+            ),
+            DagCommand::Debug { graph } => run_command_reported(
+                &context,
+                "dag.debug",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_debug(&graph),
+            ),
+            DagCommand::ExplainValidation { graph } => run_command_reported(
+                &context,
+                "dag.explain-validation",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_explain_validation(&graph),
+            ),
+            DagCommand::ExplainNode { run_dir, node_id } => run_command_reported(
+                &context,
+                "dag.explain-node",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "node_id": node_id}),
+                || run_dag_explain_node(&run_dir, &node_id),
+            ),
+            DagCommand::Preview { graph } => run_command_reported(
+                &context,
+                "dag.preview",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_preview(&graph),
+            ),
+            DagCommand::SchemaExport { out } => run_command_reported(
+                &context,
+                "dag.schema-export",
+                CommandEffect::ReadWrite,
+                json!({"out": out}),
+                || run_dag_schema_export(&out),
+            ),
+        },
         CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
             run_env_summary()?;
             run_verify_tools()
@@ -790,6 +923,142 @@ fn run_schedule_preview(file: &Path) -> Result<(), String> {
         println!("schedule={id} trigger={kind} preview_unix_ms={preview}");
     }
     Ok(())
+}
+
+fn run_dag_lint(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let findings = bijux_dag_core::lint_graph(&parsed);
+    println!("{}", serde_json::to_string_pretty(&findings).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_unit_harness(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let preview = bijux_dag_core::DagUnitHarness::dry_run(&input).map_err(|err| err.to_string())?;
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_simulate(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let order = bijux_dag_core::simulate_graph(&parsed);
+    println!("{}", serde_json::to_string_pretty(&order).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_dry_run(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let preview = bijux_dag_core::dry_run_preview(&parsed);
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_visualize(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("observability.graph-visualization.json");
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    println!("{payload}");
+    Ok(())
+}
+
+fn run_dag_debug(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let order = bijux_dag_core::simulate_graph(&parsed);
+    let response = json!({
+        "dependency_closure_order": order,
+        "blocked_nodes": [],
+        "policy_reasons": []
+    });
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_validation(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    match bijux_dag_core::parse_graph_strict(&input) {
+        Ok(parsed) => {
+            let diagnostics = parsed.validate_with_warnings();
+            let explain = diagnostics
+                .into_iter()
+                .map(|d| {
+                    json!({
+                        "code": d.code,
+                        "message": d.message,
+                        "path": d.path,
+                        "hint": d.hint
+                    })
+                })
+                .collect::<Vec<_>>();
+            println!("{}", serde_json::to_string_pretty(&explain).map_err(|err| err.to_string())?);
+            Ok(())
+        }
+        Err(err) => Err(format!(
+            "validation parse failed for {}: {}",
+            path.display(),
+            err
+        )),
+    }
+}
+
+fn run_dag_explain_node(run_dir: &Path, node_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("failure-propagation.json");
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let rows: Value = serde_json::from_str(&input).map_err(|err| err.to_string())?;
+    let reasons = rows
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|row| row.get("node_id").and_then(|v| v.as_str()) == Some(node_id))
+        .collect::<Vec<_>>();
+    println!("{}", serde_json::to_string_pretty(&reasons).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_preview(graph: &Path) -> Result<(), String> {
+    run_dag_dry_run(graph)
+}
+
+fn run_dag_schema_export(out: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(out);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "BijuxDagV01",
+        "type": "object",
+        "required": ["spec", "nodes", "edges"],
+        "properties": {
+            "spec": {"type": "string"},
+            "meta": {"type": "object"},
+            "nodes": {"type": "array"},
+            "edges": {"type": "array"}
+        }
+    });
+    fs::write(
+        path,
+        serde_json::to_vec_pretty(&schema).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())
 }
 
 fn run_artifacts_clean() -> Result<(), String> {

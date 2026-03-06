@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BijuxDagV01",
+  "type": "object",
+  "required": ["spec", "nodes", "edges"],
+  "properties": {
+    "spec": {"type": "string"},
+    "meta": {"type": "object"},
+    "inputs": {"type": "object"},
+    "nondeterminism_allowed": {"type": "boolean"},
+    "nodes": {"type": "array"},
+    "edges": {"type": "array"}
+  }
+}
