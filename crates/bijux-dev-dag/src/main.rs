@@ -65,7 +65,7 @@ enum CommandLine {
     /// Run repo and governance policies
     Repo {
         #[command(subcommand)]
-        command: ControlCommand,
+        command: RepoCommand,
     },
     /// Print environment diagnostics and report status
     Doctor,
@@ -73,6 +73,11 @@ enum CommandLine {
     Golden,
     /// Compare cargo-public-api output with docs/api baseline
     PublicApi,
+    /// API surface commands
+    Api {
+        #[command(subcommand)]
+        command: ApiCommand,
+    },
     /// Check forbidden dependency usage in workspace Cargo manifests
     DepGuard,
     /// Remove workspace target artifacts
@@ -109,6 +114,36 @@ enum ControlCommand {
         #[arg(long)]
         suite: String,
     },
+}
+
+#[derive(Subcommand)]
+enum RepoCommand {
+    /// Run dependency policy checks
+    Deps,
+    /// Execute governance suites
+    Run {
+        #[arg(long)]
+        domain: Option<String>,
+        #[arg(long)]
+        fail_fast: bool,
+        #[arg(long)]
+        include_slow: bool,
+        #[arg(long)]
+        include_internal: bool,
+    },
+    /// Show known repo suites
+    List,
+    /// Explain a repo suite
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ApiCommand {
+    /// Verify public API surface contracts
+    PublicSurface,
 }
 
 #[derive(Subcommand)]
@@ -390,15 +425,16 @@ fn run(cli: Cli) -> Result<(), String> {
             }
         },
         CommandLine::Repo { command } => match command {
-            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+            RepoCommand::Deps => {
+                run_command_reported(&context, "repo.deps", CommandEffect::Validation, json!({}), || {
+                    run_missing_workspace_dependency_checks()
+                })
+            }
+            RepoCommand::Run { domain, fail_fast, include_slow, include_internal } => {
                 run_suite_group(&context, "repo", REPO_SUITES, &domain, fail_fast, include_slow, include_internal)
             }
-            ControlCommand::List => {
-                run_suite_list(&context, "repo", REPO_SUITES)
-            }
-            ControlCommand::Explain { suite } => {
-                run_suite_explain(&context, "repo", &suite, REPO_SUITES)
-            }
+            RepoCommand::List => run_suite_list(&context, "repo", REPO_SUITES),
+            RepoCommand::Explain { suite } => run_suite_explain(&context, "repo", &suite, REPO_SUITES),
         },
         CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
             run_env_summary()?;
@@ -431,6 +467,11 @@ fn run(cli: Cli) -> Result<(), String> {
         CommandLine::Compat => run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
             run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
         }),
+        CommandLine::Api { command } => match command {
+            ApiCommand::PublicSurface => run_command_reported(&context, "api.public-surface", CommandEffect::ReadWrite, json!({}), || {
+                run_public_api()
+            }),
+        },
     }
 }
 
