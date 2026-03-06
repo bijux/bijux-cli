@@ -1,7 +1,9 @@
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
+use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
 use sha2::Digest;
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -9,12 +11,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const FORBIDDEN_DEPS: &[(&str, &str)] = &[
-    ("crates/bijux-dag-runtime/Cargo.toml", "bijux-dag-app"),
-    ("crates/bijux-dag-core/Cargo.toml", "bijux-dag-runtime"),
-    ("crates/bijux-dag-runtime/Cargo.toml", "bijux-dag-cli"),
-    ("crates/bijux-dag-core/Cargo.toml", "bijux-dag-artifacts"),
-];
+const CLI_COMMAND_FREEZE_BASELINE: usize = 27;
+const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
 #[derive(Parser)]
 #[command(name = "bijux-dev-dag")]
@@ -327,6 +325,31 @@ struct SuiteDef {
     run: fn() -> Result<(), String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct DependencyPolicy {
+    rules: Vec<DependencyRule>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DependencyRule {
+    from: String,
+    to: String,
+    reason: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CrateOwnershipPolicy {
+    crates: Vec<CrateOwnershipEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CrateOwnershipEntry {
+    name: String,
+    path: String,
+    domains: Vec<String>,
+    public_modules: Vec<String>,
+}
+
 const CHECK_SUITES: &[SuiteDef] = &[
     SuiteDef {
         id: "fmt",
@@ -436,6 +459,15 @@ const DOC_SUITES: &[SuiteDef] = &[
             Ok(())
         },
     },
+    SuiteDef {
+        id: "guarantee-evidence",
+        description: "guarantee language requires linked proof",
+        domain: "docs",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_guarantee_guard(),
+    },
 ];
 
 const RELEASE_SUITES: &[SuiteDef] = &[SuiteDef {
@@ -460,12 +492,39 @@ const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "dep-guard",
-        description: "forbidden crate import check",
+        description: "metadata dependency boundary check",
         domain: "governance",
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_dep_guard(),
+    },
+    SuiteDef {
+        id: "ownership-public-modules",
+        description: "crate public modules match ownership contract",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_crate_ownership_guard(),
+    },
+    SuiteDef {
+        id: "cli-freeze",
+        description: "freeze new top-level CLI commands",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_cli_command_freeze(),
+    },
+    SuiteDef {
+        id: "adapter-freeze",
+        description: "freeze runtime adapter kinds until split",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_adapter_kind_freeze(),
     },
 ];
 
@@ -1766,18 +1825,205 @@ fn run_public_api() -> Result<(), String> {
 
 fn run_dep_guard() -> Result<(), String> {
     let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/dependency_rules.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: DependencyPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let edges = workspace_dependency_edges()?;
     let mut failed = false;
-    for (manifest, dep) in FORBIDDEN_DEPS {
-        if manifest_forbidden(&root.join(manifest), dep)? {
-            eprintln!("forbidden dependency: {dep} in {manifest}");
+
+    for rule in &policy.rules {
+        if edges.contains(&(rule.from.clone(), rule.to.clone())) {
+            eprintln!(
+                "forbidden dependency edge {} -> {} ({})",
+                rule.from, rule.to, rule.reason
+            );
             failed = true;
         }
     }
+
     if failed {
         Err("dependency guard failed".into())
     } else {
         Ok(())
     }
+}
+
+fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--format-version", "1"])
+        .output()
+        .map_err(|err| format!("cargo metadata failed: {err}"))?;
+    if !output.status.success() {
+        return Err(format!("cargo metadata failed with status {}", output.status));
+    }
+    let payload: Value =
+        serde_json::from_slice(&output.stdout).map_err(|err| format!("invalid metadata JSON: {err}"))?;
+    let mut edges: BTreeSet<(String, String)> = BTreeSet::new();
+    if let Some(packages) = payload.get("packages").and_then(Value::as_array) {
+        for package in packages {
+            let from = package
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            if let Some(deps) = package.get("dependencies").and_then(Value::as_array) {
+                for dep in deps {
+                    let to = dep
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string();
+                    if !from.is_empty() && !to.is_empty() {
+                        edges.insert((from.clone(), to));
+                    }
+                }
+            }
+        }
+    }
+    Ok(edges)
+}
+
+fn run_crate_ownership_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: CrateOwnershipPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let mut violations = Vec::new();
+
+    for crate_entry in policy.crates {
+        if crate_entry.domains.is_empty() {
+            violations.push(format!("{} has no declared domains", crate_entry.name));
+        }
+        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+        let actual = public_modules_from_lib(&lib_rs)?;
+        let allowed: BTreeSet<String> = crate_entry.public_modules.into_iter().collect();
+        for module in actual.difference(&allowed) {
+            violations.push(format!(
+                "{} exports undeclared public module `{}`",
+                crate_entry.name, module
+            ));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("crate ownership guard failed: {}", violations.join(", ")))
+    }
+}
+
+fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
+    if !path.exists() {
+        return Ok(BTreeSet::new());
+    }
+    let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    let mut modules = BTreeSet::new();
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub mod ") {
+            continue;
+        }
+        let raw = trimmed.trim_start_matches("pub mod ").trim();
+        let name = raw
+            .trim_end_matches(';')
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .to_string();
+        if !name.is_empty() {
+            modules.insert(name);
+        }
+    }
+    Ok(modules)
+}
+
+fn run_cli_command_freeze() -> Result<(), String> {
+    let count = Cli::command().get_subcommands().count();
+    if count > CLI_COMMAND_FREEZE_BASELINE {
+        Err(format!(
+            "cli command freeze violated: {} > baseline {}",
+            count, CLI_COMMAND_FREEZE_BASELINE
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn run_adapter_kind_freeze() -> Result<(), String> {
+    let root = repo_root()?;
+    let runtime_lib = root.join("crates/bijux-dag-runtime/src/lib.rs");
+    let content = fs::read_to_string(&runtime_lib).map_err(|err| err.to_string())?;
+    let mut kind_count = 0usize;
+    for marker in [
+        "vec![\"const\".to_string()]",
+        "vec![\"shell\".to_string()]",
+        "vec![\"container\".to_string()]",
+    ] {
+        if content.contains(marker) {
+            kind_count += 1;
+        }
+    }
+    if kind_count > ADAPTER_KIND_FREEZE_BASELINE {
+        Err(format!(
+            "adapter kind freeze violated: {} > baseline {}",
+            kind_count, ADAPTER_KIND_FREEZE_BASELINE
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn run_docs_guarantee_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut files = Vec::new();
+    files.push(root.join("README.md"));
+    collect_markdown_files(&root.join("docs"), &mut files)?;
+
+    let mut violations = Vec::new();
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        for (idx, line) in content.lines().enumerate() {
+            let lower = line.to_lowercase();
+            let has_guarantee = lower.contains("guarantee") || lower.contains("guarantees");
+            if !has_guarantee {
+                continue;
+            }
+            let has_link = line.contains("](")
+                && (line.contains("docs/spec/")
+                    || line.contains("tests/")
+                    || line.contains("benchmarks/")
+                    || line.contains("artifacts/benchmarks/")
+                    || line.contains("artifacts/memory/"));
+            if !has_link {
+                violations.push(format!("{rel}:{} guarantee claim missing proof link", idx + 1));
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("docs guarantee guard failed: {}", violations.join(", ")))
+    }
+}
+
+fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    for entry in fs::read_dir(dir).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_markdown_files(&path, out)?;
+        } else if path.extension().and_then(|ext| ext.to_str()) == Some("md") {
+            out.push(path);
+        }
+    }
+    Ok(())
 }
 
 fn run_missing_workspace_dependency_checks() -> Result<(), String> {
@@ -1806,18 +2052,6 @@ fn run_missing_workspace_dependency_checks() -> Result<(), String> {
         println!("workspace dependency references use canonical names");
         Ok(())
     }
-}
-
-fn manifest_forbidden(path: &Path, dependency: &str) -> Result<bool, String> {
-    let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
-    let quoted = format!("\"{dependency}\"");
-    for line in content.lines() {
-        let t = line.trim_start();
-        if t.starts_with(&format!("{dependency} =")) || t.contains(&quoted) {
-            return Ok(true);
-        }
-    }
-    Ok(false)
 }
 
 fn assert_empty_diff(diff: &Value) -> Result<(), String> {
