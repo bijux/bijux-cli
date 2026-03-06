@@ -3,7 +3,19 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+pub mod compile;
+pub mod edge;
+pub mod effects;
+pub mod fingerprint;
+pub mod graph;
+pub mod meta;
+pub mod node;
+pub mod resources;
+pub mod topology;
+pub mod validate;
+
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
+pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
