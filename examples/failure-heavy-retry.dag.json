@@ -1,0 +1,38 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "failure-heavy-retry",
+    "description": "Failure-oriented graph for diagnostics, retry, and explain output workflows",
+    "owners": ["platform"],
+    "tags": ["failure", "retry", "diagnostics"]
+  },
+  "nodes": [
+    {
+      "id": "input",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "input/out.json"}],
+      "params": {"value": {"payload": "baseline"}}
+    },
+    {
+      "id": "unstable",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "unstable/out.json"}],
+      "retry": {"max_attempts": 2, "backoff_ms": 10},
+      "effects": ["filesystem"],
+      "params": {"argv": ["sh", "-c", "exit 1"]}
+    },
+    {
+      "id": "downstream",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "downstream/out.json"}],
+      "params": {"argv": ["sh", "-c", "cat inputs/unstable/in > outputs/downstream.json"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "input", "port": "out"}, "to": {"node_id": "unstable", "port": "in"}},
+    {"from": {"node_id": "unstable", "port": "out"}, "to": {"node_id": "downstream", "port": "in"}}
+  ]
+}

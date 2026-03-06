@@ -1,0 +1,45 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "replay-heavy-branching",
+    "description": "Branch-heavy DAG with deterministic fan-out and merge for replay checks",
+    "owners": ["platform"],
+    "tags": ["replay", "branching"]
+  },
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "seed/out.json"}],
+      "params": {"value": {"window": "2026-03-06", "region": "eu"}}
+    },
+    {
+      "id": "left",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "left/out.json"}],
+      "params": {"argv": ["sh", "-c", "cat inputs/seed/in > outputs/left.json"]}
+    },
+    {
+      "id": "right",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "right/out.json"}],
+      "params": {"argv": ["sh", "-c", "cat inputs/seed/in > outputs/right.json"]}
+    },
+    {
+      "id": "merge",
+      "kind": "shell",
+      "inputs": ["left", "right"],
+      "outputs": [{"name": "out", "path": "merge/out.json"}],
+      "params": {"argv": ["sh", "-c", "cat inputs/left/left inputs/right/right > outputs/merged.json"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "left", "port": "in"}},
+    {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "right", "port": "in"}},
+    {"from": {"node_id": "left", "port": "out"}, "to": {"node_id": "merge", "port": "left"}},
+    {"from": {"node_id": "right", "port": "out"}, "to": {"node_id": "merge", "port": "right"}}
+  ]
+}

@@ -17,6 +17,8 @@
 - `examples/etl-constant-to-shell.dag.json`
 - `examples/cached-branched-report.dag.json`
 - `examples/multi-output-artifact.dag.json`
+- `examples/replay-heavy-branching.dag.json`
+- `examples/failure-heavy-retry.dag.json`
 
 ## Usage policy
 
