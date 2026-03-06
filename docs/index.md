@@ -19,6 +19,7 @@
 - [Advanced DAG semantics](./ADVANCED_DAG_SEMANTICS.md)
 - [Task contract type system](./TASK_CONTRACT_TYPES.md)
 - [Planner intelligence and optimization](./PLANNER_INTELLIGENCE.md)
+- [Distributed execution foundations](./DISTRIBUTED_EXECUTION_FOUNDATIONS.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
