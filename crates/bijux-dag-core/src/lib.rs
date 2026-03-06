@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub mod compile;
+pub mod builder;
 pub mod edge;
 pub mod effects;
 pub mod fingerprint;
@@ -13,6 +14,10 @@ pub mod node;
 pub mod resources;
 pub mod topology;
 pub mod validate;
+pub use builder::{
+    dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
+    DagUnitHarness, NodeBuilder,
+};
 
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
