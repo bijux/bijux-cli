@@ -1,0 +1,5 @@
+{
+  "workflow-sales-etl": true,
+  "workflow-risk-report": false,
+  "workflow-ml-train": true
+}
