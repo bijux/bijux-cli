@@ -41,7 +41,7 @@ write outputs only to the node sandbox.
 
 ## Adding a New Adapter
 
-1. Implement the `Adapter` trait (see `crates/bijux_dag_runtime/src/adapter.rs`).
+1. Implement the `Adapter` trait (see `crates/bijux-dag-runtime/src/adapter.rs`).
 2. Declare required effects explicitly.
 3. Ensure outputs are written only under `nodes/<id>/outputs/`.
 4. Add adapter metadata to traces and manifest via runtime registration.

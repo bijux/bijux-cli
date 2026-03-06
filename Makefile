@@ -1,5 +1,7 @@
 .PHONY: test lint security fmt golden compat sanity dep-guard
 
+all: test
+
 test:
 	cargo test --workspace
 
@@ -14,13 +16,19 @@ security:
 	cargo audit
 
 golden:
-	./scripts/golden.sh
+	cargo run -p bijux-dev-dag -- golden
 
 compat:
-	cargo run -p bijux_cli -- dag compat
+		cargo run -p bijux-dag-cli -- dag compat
 
 sanity:
-	./scripts/sanity.sh
+	cargo run -p bijux-dev-dag -- sanity
 
 dep-guard:
-	./scripts/dep_guard.sh
+	cargo run -p bijux-dev-dag -- dep-guard
+
+public-api:
+	cargo run -p bijux-dev-dag -- public-api
+
+ci:
+	cargo run -p bijux-dev-dag -- ci

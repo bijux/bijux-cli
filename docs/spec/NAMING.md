@@ -6,11 +6,11 @@
 - Keep names stable to avoid unnecessary churn.
 
 ## Crates
-- `bijux_dag_core`: spec, validation, canonicalization, fingerprints, resolver (pure).
-- `bijux_dag_artifacts`: run directory layout, schemas, read/write helpers.
-- `bijux_dag_runtime`: planner + engine, adapters, scheduling, cache.
-- `bijux_dag_app`: CLI wiring only (no business logic).
-- `bijux_cli`: umbrella CLI (dispatches sub-apps).
+- `bijux-dag-core`: spec, validation, canonicalization, fingerprints, resolver (pure).
+- `bijux-dag-artifacts`: run directory layout, schemas, read/write helpers.
+- `bijux-dag-runtime`: planner + engine, adapters, scheduling, cache.
+- `bijux-dag-app`: CLI wiring only (no business logic).
+- `bijux-dag-cli`: umbrella CLI (dispatches sub-apps).
 
 ## Modules
 - Avoid catch-all names like `utils`, `common`, `helpers`, `ops`.
