@@ -3,6 +3,7 @@ mod adapter_sdk;
 mod async_adapter;
 mod clock;
 mod control_plane;
+mod control_plane_api;
 mod distributed;
 mod engine;
 mod execution_plan;
@@ -103,6 +104,15 @@ pub use control_plane::{
     EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision, PolicyDomain,
     PolicyEngine, RunControlOperation, TypedControlPlaneRequest, TypedControlPlaneResponse,
     ValidationRequest, ValidationResponse, ValidationService,
+};
+pub use control_plane_api::{
+    authorize, check_api_compatibility, filter_resources, paginate, ApiCompatibilityRule,
+    ApiVersion, ArtifactApiOperation, ArtifactResource, AuditEventResource, AuthContext,
+    AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, ControlPlaneMvpDefinition,
+    DagResource, DagVersionResource, EnvironmentScopedConfiguration, EventSubscription,
+    ListFilter, NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource,
+    RegistryOperation, RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
+    ServiceArchitectureNote, TypedApiRequest, TypedApiResponse, VersionedResource,
 };
 pub use distributed::{
     check_worker_version_compatibility, should_reassign, worker_alive, DeliveryGuarantee,
