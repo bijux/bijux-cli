@@ -1,0 +1,7 @@
+{
+  "queue_pressure": 0.92,
+  "saturation": 0.74,
+  "current_parallelism": 8,
+  "baseline_score": 0.82,
+  "adaptive_score": 0.71
+}
