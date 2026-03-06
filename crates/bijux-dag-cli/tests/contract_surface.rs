@@ -73,6 +73,19 @@ fn dag_validate_json_schema_contract() {
 }
 
 #[test]
+fn dag_validate_text_output_contract() {
+    let dag = write_temp_dag();
+    let output = Command::new(dag_binary())
+        .args(["dag", "validate", &dag])
+        .output()
+        .expect("validate text");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("status:"));
+}
+
+#[test]
 fn dag_validate_invalid_argument_fails() {
     let output = Command::new(dag_binary())
         .args(["dag", "validate", "non-existent-dag.json"])
