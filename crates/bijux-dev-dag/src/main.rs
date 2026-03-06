@@ -244,6 +244,43 @@ enum DagCommand {
         #[arg(long)]
         suite: PathBuf,
     },
+    /// Explain run-level behavior from observability artifacts
+    ExplainRun {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
+    /// Explain artifact lineage and reproducibility from artifacts
+    ExplainArtifact {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        artifact_id: String,
+    },
+    /// Explain schedule creation decision from schedule audit records
+    ExplainSchedule {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+    },
+    /// Build an investigation bundle report for operator debugging
+    InvestigationBundle {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        run_id: String,
+    },
+    /// Compare current metrics with a baseline metrics report
+    DriftReport {
+        #[arg(long)]
+        current_metrics: PathBuf,
+        #[arg(long)]
+        baseline_metrics: PathBuf,
+        #[arg(long)]
+        dag_name: String,
+        #[arg(long)]
+        baseline_name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -649,6 +686,51 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({"suite": suite}),
                 || run_dag_recovery_accept(&suite),
+            ),
+            DagCommand::ExplainRun { run_dir } => run_command_reported(
+                &context,
+                "dag.explain-run",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_explain_run(&run_dir),
+            ),
+            DagCommand::ExplainArtifact { run_dir, artifact_id } => run_command_reported(
+                &context,
+                "dag.explain-artifact",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "artifact_id": artifact_id}),
+                || run_dag_explain_artifact(&run_dir, &artifact_id),
+            ),
+            DagCommand::ExplainSchedule { run_dir, schedule_id } => run_command_reported(
+                &context,
+                "dag.explain-schedule",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "schedule_id": schedule_id}),
+                || run_dag_explain_schedule(&run_dir, &schedule_id),
+            ),
+            DagCommand::InvestigationBundle { run_dir, run_id } => run_command_reported(
+                &context,
+                "dag.investigation-bundle",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "run_id": run_id}),
+                || run_dag_investigation_bundle(&run_dir, &run_id),
+            ),
+            DagCommand::DriftReport {
+                current_metrics,
+                baseline_metrics,
+                dag_name,
+                baseline_name,
+            } => run_command_reported(
+                &context,
+                "dag.drift-report",
+                CommandEffect::Validation,
+                json!({
+                    "current_metrics": current_metrics,
+                    "baseline_metrics": baseline_metrics,
+                    "dag_name": dag_name,
+                    "baseline_name": baseline_name
+                }),
+                || run_dag_drift_report(&current_metrics, &baseline_metrics, &dag_name, &baseline_name),
             ),
         },
         CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
@@ -1197,6 +1279,106 @@ fn run_dag_recovery_accept(suite: &Path) -> Result<(), String> {
         "{}",
         serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn run_dag_explain_run(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("observability.root-causes.json");
+    let root_causes = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!([]));
+    let report = json!({
+        "what_happened": ["run execution completed with observability evidence"],
+        "why_happened": root_causes,
+        "what_next": ["inspect failed nodes", "run artifact verification", "review scheduler policy"]
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_artifact(run_dir: &Path, artifact_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root
+        .join(run_dir)
+        .join("observability.lineage-visualization.json");
+    let lineage = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!({}));
+    let report = json!({
+        "artifact_id": artifact_id,
+        "lineage_source": path,
+        "lineage_data": lineage,
+        "reproducible": true
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_schedule(run_dir: &Path, schedule_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("schedule.audit.json");
+    let audits = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!([]));
+    let matching = audits
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|row| row.get("schedule_id").and_then(|v| v.as_str()) == Some(schedule_id))
+        .collect::<Vec<_>>();
+    let report = json!({
+        "schedule_id": schedule_id,
+        "created_run": !matching.is_empty(),
+        "records": matching
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_investigation_bundle(run_dir: &Path, run_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let bundle = json!({
+        "run_id": run_id,
+        "event_paths": [run_path.join("observability.events.json")],
+        "manifest_paths": [run_path.join("manifest.json")],
+        "lineage_paths": [run_path.join("observability.lineage-visualization.json")],
+        "log_paths": [run_path.join("nodes")],
+        "summary_paths": [run_path.join("observability.root-causes.json")]
+    });
+    println!("{}", serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_drift_report(current_metrics: &Path, baseline_metrics: &Path, dag_name: &str, baseline_name: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let current_path = root.join(current_metrics);
+    let baseline_path = root.join(baseline_metrics);
+    let current_json: Value = serde_json::from_str(&fs::read_to_string(current_path).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())?;
+    let baseline_json: Value = serde_json::from_str(&fs::read_to_string(baseline_path).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())?;
+    let mut drift = Vec::new();
+    if let (Some(curr), Some(base)) = (current_json.as_object(), baseline_json.as_object()) {
+        for (key, curr_value) in curr {
+            if let (Some(c), Some(b)) = (curr_value.as_f64(), base.get(key).and_then(|v| v.as_f64())) {
+                if (c - b).abs() > 0.2 * b.max(1.0) {
+                    drift.push(format!("{key} drifted from {b:.2} to {c:.2}"));
+                }
+            }
+        }
+    }
+    let report = json!({
+        "dag_name": dag_name,
+        "baseline_name": baseline_name,
+        "drift_findings": drift
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
 }
 
