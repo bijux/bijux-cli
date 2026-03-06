@@ -38,6 +38,14 @@ enum CommandLine {
     PublicApi,
     /// Check forbidden dependency usage in workspace Cargo manifests
     DepGuard,
+    /// Remove workspace target artifacts
+    ArtifactsClean,
+    /// Print build environment summary
+    EnvSummary,
+    /// Validate required cargo tools are installed
+    VerifyTools,
+    /// Verify workspace dependencies resolve
+    ResolveCheck,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -71,6 +79,10 @@ fn run(command: CommandLine) -> Result<(), String> {
         CommandLine::Golden => run_golden(),
         CommandLine::PublicApi => run_public_api(),
         CommandLine::DepGuard => run_dep_guard(),
+        CommandLine::ArtifactsClean => run_artifacts_clean()?,
+        CommandLine::EnvSummary => run_env_summary(),
+        CommandLine::VerifyTools => run_verify_tools()?,
+        CommandLine::ResolveCheck => run_resolve_check()?,
         CommandLine::Ci => run_ci(),
         CommandLine::Compat => run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
     }
@@ -80,6 +92,8 @@ fn run_ci() -> Result<(), String> {
     run_status("cargo", &["fmt", "--all"])?;
     run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])?;
     run_dep_guard()?;
+    run_resolve_check()?;
+    run_missing_workspace_dependency_checks()?;
     run_status("cargo", &["test", "--workspace"])?;
     run_golden()?;
     run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])?;
@@ -99,6 +113,94 @@ fn run_ci() -> Result<(), String> {
         "cargo",
         &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
     )
+}
+
+fn run_artifacts_clean() -> Result<(), String> {
+    let root = repo_root()?;
+    let artifacts_target = root.join("artifacts").join("target");
+    if !artifacts_target.exists() {
+        println!("artifacts target path is already clean: {}", artifacts_target.display());
+        return Ok(());
+    }
+    fs::remove_dir_all(&artifacts_target).map_err(|err| err.to_string())?;
+    println!("removed artifacts target: {}", artifacts_target.display());
+    Ok(())
+}
+
+fn run_env_summary() -> Result<(), String> {
+    println!("repo_root={}", repo_root()?.display());
+    println!("cwd={}", env::current_dir().map_err(|err| err.to_string())?.display());
+    print_command_version("rustc");
+    print_command_version("cargo");
+    print_command_version("cargo-audit");
+    print_command_version("cargo-public-api");
+    print_command_version("cargo-nextest");
+    if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
+        println!("CARGO_TARGET_DIR={target_dir}");
+    } else {
+        println!("CARGO_TARGET_DIR=<not_set>");
+    }
+    Ok(())
+}
+
+fn print_command_version(command: &str) {
+    let output = Command::new(command)
+        .arg("--version")
+        .output()
+        .ok();
+    if let Some(output) = output {
+        if output.status.success() {
+            println!(
+                "{}={}",
+                command,
+                String::from_utf8_lossy(&output.stdout).trim()
+            );
+        } else {
+            println!("{}=<unavailable>", command);
+        }
+    } else {
+        println!("{}=<unavailable>", command);
+    }
+}
+
+fn run_verify_tools() -> Result<(), String> {
+    let mut failed = false;
+    for tool in ["cargo-audit", "cargo-public-api", "cargo-nextest", "rustup"] {
+        let status = Command::new(tool).arg("--version").status();
+        match status {
+            Ok(status) if status.success() => println!("tool available: {tool}"),
+            Ok(_) => {
+                failed = true;
+                println!("tool failed to execute: {tool}");
+            }
+            Err(err) => {
+                failed = true;
+                println!("tool missing: {tool} ({err})");
+            }
+        }
+    }
+    if failed {
+        Err("required tools are missing or unavailable".into())
+    } else {
+        Ok(())
+    }
+}
+
+fn run_resolve_check() -> Result<(), String> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--no-deps", "--format-version", "1"])
+        .output()
+        .map_err(|err| format!("cargo metadata failed: {err}"))?;
+    if !output.status.success() {
+        return Err(format!("cargo metadata failed with status {}", output.status));
+    }
+    let payload = String::from_utf8_lossy(&output.stdout);
+    if payload.contains("\"packages\"") {
+        println!("workspace metadata resolved");
+        Ok(())
+    } else {
+        Err("cargo metadata output missing package list".into())
+    }
 }
 
 fn run_golden() -> Result<(), String> {
@@ -198,6 +300,34 @@ fn run_dep_guard() -> Result<(), String> {
     if failed {
         Err("dependency guard failed".into())
     } else {
+        Ok(())
+    }
+}
+
+fn run_missing_workspace_dependency_checks() -> Result<(), String> {
+    let root = repo_root()?;
+    let manifests = [
+        "crates/bijux-dag-core/Cargo.toml",
+        "crates/bijux-dag-artifacts/Cargo.toml",
+        "crates/bijux-dag-runtime/Cargo.toml",
+        "crates/bijux-dag-app/Cargo.toml",
+        "crates/bijux-dag-cli/Cargo.toml",
+        "crates/bijux-dev-dag/Cargo.toml",
+    ];
+    let mut failed = false;
+    for manifest in manifests {
+        let content = fs::read_to_string(root.join(manifest)).map_err(|err| err.to_string())?;
+        for line in content.lines() {
+            if line.contains("bijux_dag_") {
+                eprintln!("legacy workspace crate reference in {manifest}: {line}");
+                failed = true;
+            }
+        }
+    }
+    if failed {
+        Err("found legacy workspace dependency references".into())
+    } else {
+        println!("workspace dependency references use canonical names");
         Ok(())
     }
 }
