@@ -12,6 +12,10 @@ workspace = true
 clap = { workspace = true }
 bijux_dag_app = { package = "bijux-dag-app", path = "../bijux-dag-app" }
 
+[dev-dependencies]
+tempfile = { workspace = true }
+serde_json = { workspace = true }
+
 [[bin]]
 name = "bijux"
 path = "src/main.rs"

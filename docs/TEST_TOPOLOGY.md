@@ -12,3 +12,4 @@
 - `crates/bijux-dag-core/tests/compat.rs`: crate-local fixture-driven compat assertions.
 - `crates/bijux-dev-dag/tests/`: repository architecture tests.
 - `crates/bijux-dag-runtime/tests/`: runtime contract and behavior tests.
+- `docs/TEST_TAXONOMY.md`: repo-wide test-classification index.
