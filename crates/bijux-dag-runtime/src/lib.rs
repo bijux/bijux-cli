@@ -13,6 +13,7 @@ mod cost_optimization;
 mod dataset_semantics;
 mod distributed;
 mod engine;
+mod ecosystem_productization;
 mod execution_plan;
 mod external_adapter;
 mod federated_scheduling;
@@ -268,6 +269,16 @@ pub use distributed::{
     RemoteLogStreamContract, RetryLineageRecord, WorkerCapabilities, WorkerHeartbeat,
     WorkerIdentity, WorkerPool, WorkerRegistration, WorkerSandboxNegotiation,
     WorkerVersionCompatibilityRule, WorkLease,
+};
+pub use ecosystem_productization::{
+    adoption_score, conformance_passes, ecosystem_governance_ready, packaging_ready,
+    release_note_summary, upgrade_bundle_valid, CapabilityDiscoveryReport,
+    ClusterDeploymentReference, DeploymentConformanceResult, DeploymentProfileBundle,
+    DistributionSignatureRecord, EcosystemCatalog, EcosystemGovernanceRule,
+    InstallationDiagnostics, IntegrationSupportPolicy, OnboardingGuideCatalog, PackagingMode,
+    PackagingStrategy, PlatformAdoptionScorecard, ProductTierPolicy, ReferenceEnvironmentVerification,
+    ReleaseNoteRecord, ReleaseTransparencyReport, SampleDeploymentCatalog, StabilityClass,
+    StabilityMap, UpgradeBundle, VersionedCompatibilityMatrix,
 };
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes, summarize_failure_root_causes,
