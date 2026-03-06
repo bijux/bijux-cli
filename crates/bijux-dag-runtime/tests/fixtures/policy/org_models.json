@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "name": "single-team",
+      "roles": ["developer", "operator"],
+      "tenant_count": 1
+    },
+    {
+      "name": "regulated-team",
+      "roles": ["developer", "operator", "auditor"],
+      "tenant_count": 1
+    },
+    {
+      "name": "shared-platform",
+      "roles": ["tenant_admin", "platform_admin", "auditor"],
+      "tenant_count": 10
+    }
+  ]
+}
