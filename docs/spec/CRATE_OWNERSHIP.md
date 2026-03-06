@@ -7,6 +7,7 @@
 - `bijux-dag-runtime`: execution
 - `bijux-dag-app`: app orchestration
 - `bijux-dag-cli`: CLI
+- `bijux-dag-testkit`: repo governance
 - `bijux-dev-dag`: repo governance
 
 ## Public module contract

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const CLI_COMMAND_FREEZE_BASELINE: usize = 27;
+const CLI_COMMAND_FREEZE_BASELINE: usize = 28;
 const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
 #[derive(Parser)]

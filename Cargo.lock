@@ -139,6 +139,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bijux-dag-testkit"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "bijux-dev-dag"
 version = "0.1.0"
 dependencies = [

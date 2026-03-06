@@ -46,6 +46,8 @@ mod tenancy;
 mod upgrade_compatibility;
 mod performance_capacity;
 mod workflow_product;
+#[cfg(test)]
+mod test_support;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{

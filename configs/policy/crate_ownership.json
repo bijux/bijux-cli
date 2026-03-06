@@ -55,6 +55,12 @@
       "public_modules": []
     },
     {
+      "name": "bijux-dag-testkit",
+      "path": "crates/bijux-dag-testkit",
+      "domains": ["repo governance"],
+      "public_modules": []
+    },
+    {
       "name": "bijux-dev-dag",
       "path": "crates/bijux-dev-dag",
       "domains": ["repo governance"],
