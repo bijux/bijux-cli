@@ -20,6 +20,7 @@
 - [Task contract type system](./TASK_CONTRACT_TYPES.md)
 - [Planner intelligence and optimization](./PLANNER_INTELLIGENCE.md)
 - [Distributed execution foundations](./DISTRIBUTED_EXECUTION_FOUNDATIONS.md)
+- [Run recovery and resilience contracts](./RUN_RECOVERY_AND_RESILIENCE.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Artifact platform contracts](./ARTIFACT_PLATFORM.md)
