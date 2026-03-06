@@ -1,0 +1,14 @@
+{
+  "resources": ["dag", "dag_version", "run", "node_attempt", "artifact", "schedule", "queue", "policy", "audit_event"],
+  "operations": {
+    "registry": ["publish", "validate", "activate", "deprecate", "retire", "inspect"],
+    "run_control": ["submit", "cancel", "pause", "resume", "retry", "replay", "verify"],
+    "artifact": ["inspect", "export", "verify", "lineage", "retention_action"],
+    "schedule": ["create", "update", "suspend", "preview", "audit"]
+  },
+  "api_versioning": {
+    "major": 1,
+    "minor": 0,
+    "compatibility": "additive-minor-only"
+  }
+}
