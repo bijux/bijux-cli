@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use serde_json::json;
 use serde_json::Value;
 use std::env;
 use std::fs;
@@ -18,6 +19,10 @@ const FORBIDDEN_DEPS: &[(&str, &str)] = &[
 #[command(name = "bijux-dev-dag")]
 #[command(about = "Developer workflow helpers for bijux-dag")]
 struct Cli {
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    report: Option<PathBuf>,
     #[command(subcommand)]
     command: CommandLine,
 }
@@ -32,6 +37,38 @@ enum CommandLine {
     Security,
     /// Run metadata + tests + format check
     Sanity,
+    /// Run legacy style checks
+    Checks {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run legacy style tests
+    Tests {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run compatibility and runtime contracts
+    Contracts {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Produce documentation health or report views
+    Docs {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run release preparation workflows
+    Release {
+        #[command(subcommand)]
+        command: ReleaseCommand,
+    },
+    /// Run repo and governance policies
+    Repo {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Print environment diagnostics and report status
+    Doctor,
     /// Generate and verify golden run/replay contract
     Golden,
     /// Compare cargo-public-api output with docs/api baseline
@@ -52,9 +89,211 @@ enum CommandLine {
     Compat,
 }
 
+#[derive(Subcommand)]
+enum ControlCommand {
+    /// Execute suite checks
+    Run {
+        #[arg(long)]
+        domain: Option<String>,
+        #[arg(long)]
+        fail_fast: bool,
+        #[arg(long)]
+        include_slow: bool,
+        #[arg(long)]
+        include_internal: bool,
+    },
+    /// Show known suites
+    List,
+    /// Explain a suite
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ReleaseCommand {
+    /// Execute release verification
+    Verify,
+    /// List release workflows
+    List,
+    /// Explain a release workflow
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Copy, Clone)]
+enum CommandEffect {
+    Validation,
+    ReadWrite,
+}
+
+impl CommandEffect {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Validation => "validation",
+            Self::ReadWrite => "read-write",
+        }
+    }
+}
+
+struct SuiteDef {
+    id: &'static str,
+    description: &'static str,
+    domain: &'static str,
+    slow: bool,
+    internal: bool,
+    effect: CommandEffect,
+    run: fn() -> Result<(), String>,
+}
+
+const CHECK_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "fmt",
+        description: "cargo fmt check",
+        domain: "style",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["fmt", "--all", "--", "--check"]),
+    },
+    SuiteDef {
+        id: "lint",
+        description: "cargo clippy with warnings as errors",
+        domain: "quality",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || {
+            run_status("cargo", &["fmt", "--all", "--", "--check"])?;
+            run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])
+        },
+    },
+    SuiteDef {
+        id: "security",
+        description: "cargo audit policy check",
+        domain: "supply-chain",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["audit"]),
+    },
+    SuiteDef {
+        id: "dep-guard",
+        description: "forbidden dependency reference check",
+        domain: "policy",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_dep_guard(),
+    },
+];
+
+const TEST_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "unit",
+        description: "cargo test --workspace",
+        domain: "runtime",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "--workspace"]),
+    },
+    SuiteDef {
+        id: "arch",
+        description: "repository architecture tests",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "-p", "bijux-dev-dag"]),
+    },
+];
+
+const CONTRACT_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "compat",
+        description: "core compat fixture assertions",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
+    },
+    SuiteDef {
+        id: "golden",
+        description: "run/replay golden execution parity",
+        domain: "runtime",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_golden(),
+    },
+    SuiteDef {
+        id: "public-api",
+        description: "public API surface contract",
+        domain: "quality",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_public_api(),
+    },
+];
+
+const DOC_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "api",
+        description: "check documentation index files",
+        domain: "docs",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || {
+            let root = repo_root()?;
+            if !root.join("docs").join("DEVELOPMENT.md").exists() {
+                return Err("missing docs/DEVELOPMENT.md".into());
+            }
+            Ok(())
+        },
+    },
+];
+
+const RELEASE_SUITES: &[SuiteDef] = &[SuiteDef {
+    id: "verify",
+    description: "full release verification",
+    domain: "release",
+    slow: true,
+    internal: false,
+    effect: CommandEffect::ReadWrite,
+    run: || run_ci(),
+}];
+
+const REPO_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "dependency-policy",
+        description: "legacy workspace dependency reference check",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_missing_workspace_dependency_checks(),
+    },
+    SuiteDef {
+        id: "dep-guard",
+        description: "forbidden crate import check",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_dep_guard(),
+    },
+];
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    match run(cli.command) {
+    match run(cli) {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("{err}");
@@ -63,29 +302,262 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(command: CommandLine) -> Result<(), String> {
-    match command {
-        CommandLine::Fmt => run_status("cargo", &["fmt", "--all"]),
-        CommandLine::Lint => {
+struct CommandContext {
+    json: bool,
+    report: Option<PathBuf>,
+}
+
+fn run(cli: Cli) -> Result<(), String> {
+    let context = CommandContext {
+        json: cli.json,
+        report: cli.report,
+    };
+    match cli.command {
+        CommandLine::Fmt => run_command_reported(&context, "fmt", CommandEffect::Validation, json!({}), || {
+            run_status("cargo", &["fmt", "--all"])
+        }),
+        CommandLine::Lint => run_command_reported(&context, "lint", CommandEffect::Validation, json!({}), || {
             run_status("cargo", &["fmt", "--all", "--", "--check"])?;
             run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])
-        }
-        CommandLine::Security => run_status("cargo", &["audit"]),
-        CommandLine::Sanity => {
+        }),
+        CommandLine::Security => run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
+            run_status("cargo", &["audit"])
+        }),
+        CommandLine::Sanity => run_command_reported(&context, "sanity", CommandEffect::ReadWrite, json!({}), || {
             run_status("cargo", &["metadata", "--no-deps"])?;
             run_status("cargo", &["test", "-q"])?;
             run_status("cargo", &["fmt", "--all", "--", "--check"])
-        }
-        CommandLine::Golden => run_golden(),
-        CommandLine::PublicApi => run_public_api(),
-        CommandLine::DepGuard => run_dep_guard(),
-        CommandLine::ArtifactsClean => run_artifacts_clean()?,
-        CommandLine::EnvSummary => run_env_summary(),
-        CommandLine::VerifyTools => run_verify_tools()?,
-        CommandLine::ResolveCheck => run_resolve_check()?,
-        CommandLine::Ci => run_ci(),
-        CommandLine::Compat => run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
+        }),
+        CommandLine::Checks { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "checks", CHECK_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "checks", CHECK_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "checks", &suite, CHECK_SUITES)
+            }
+        },
+        CommandLine::Tests { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "tests", TEST_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "tests", TEST_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "tests", &suite, TEST_SUITES)
+            }
+        },
+        CommandLine::Contracts { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(
+                    &context,
+                    "contracts",
+                    CONTRACT_SUITES,
+                    &domain,
+                    fail_fast,
+                    include_slow,
+                    include_internal,
+                )
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "contracts", CONTRACT_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "contracts", &suite, CONTRACT_SUITES)
+            }
+        },
+        CommandLine::Docs { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "docs", DOC_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "docs", DOC_SUITES)
+            }
+            ControlCommand::Explain { suite } => run_suite_explain(&context, "docs", &suite, DOC_SUITES),
+        },
+        CommandLine::Release { command } => match command {
+            ReleaseCommand::Verify => {
+                run_command_reported(&context, "release.verify", CommandEffect::ReadWrite, json!({}), || run_ci())
+            }
+            ReleaseCommand::List => {
+                run_suite_list(&context, "release", RELEASE_SUITES)
+            }
+            ReleaseCommand::Explain { suite } => {
+                run_suite_explain(&context, "release", &suite, RELEASE_SUITES)
+            }
+        },
+        CommandLine::Repo { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "repo", REPO_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "repo", REPO_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "repo", &suite, REPO_SUITES)
+            }
+        },
+        CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
+            run_env_summary()?;
+            run_verify_tools()
+        }),
+        CommandLine::Golden => run_command_reported(&context, "golden", CommandEffect::ReadWrite, json!({}), || {
+            run_golden()
+        }),
+        CommandLine::PublicApi => run_command_reported(&context, "public-api", CommandEffect::ReadWrite, json!({}), || {
+            run_public_api()
+        }),
+        CommandLine::DepGuard => run_command_reported(&context, "dep-guard", CommandEffect::Validation, json!({}), || {
+            run_dep_guard()
+        }),
+        CommandLine::ArtifactsClean => run_command_reported(&context, "artifacts-clean", CommandEffect::ReadWrite, json!({}), || {
+            run_artifacts_clean()
+        }),
+        CommandLine::EnvSummary => run_command_reported(&context, "env-summary", CommandEffect::Validation, json!({}), || {
+            run_env_summary()
+        }),
+        CommandLine::VerifyTools => run_command_reported(&context, "verify-tools", CommandEffect::Validation, json!({}), || {
+            run_verify_tools()
+        }),
+        CommandLine::ResolveCheck => run_command_reported(&context, "resolve-check", CommandEffect::Validation, json!({}), || {
+            run_resolve_check()
+        }),
+        CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
+            run_ci()
+        }),
+        CommandLine::Compat => run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
+            run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
+        }),
     }
+}
+
+fn run_suite_group(
+    context: &CommandContext,
+    group: &str,
+    suites: &[SuiteDef],
+    domain: &Option<String>,
+    fail_fast: bool,
+    include_slow: bool,
+    include_internal: bool,
+) -> Result<(), String> {
+    let selected: Vec<&SuiteDef> = suites
+        .iter()
+        .filter(|suite| domain.as_deref().is_none_or(|d| suite.domain == d))
+        .filter(|suite| include_internal || !suite.internal)
+        .filter(|suite| include_slow || !suite.slow)
+        .collect();
+
+    let mut failed: Vec<String> = Vec::new();
+    for suite in selected {
+        if let Err(error) = run_suite(context, group, suite) {
+            failed.push(format!("{}: {error}", suite.id));
+            if fail_fast {
+                break;
+            }
+        }
+    }
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("{} failed: {}", group, failed.join(", ")))
+    }
+}
+
+fn run_suite(context: &CommandContext, group: &str, suite: &SuiteDef) -> Result<(), String> {
+    run_command_reported(context, &format!("{group}.{}", suite.id), suite.effect, json!({}), suite.run)
+}
+
+fn run_suite_list(context: &CommandContext, group: &str, suites: &[SuiteDef]) -> Result<(), String> {
+    let data = json!({
+        "group": group,
+        "suites": suites.iter().map(|s| json!({"id": s.id, "description": s.description, "domain": s.domain, "slow": s.slow, "internal": s.internal, "effect": s.effect.label()})).collect::<Vec<_>>()
+    });
+    run_text_or_json_report(
+        context,
+        group,
+        &format!("{group}.list"),
+        "read-write",
+        data,
+        || Ok(()),
+        false,
+    )
+}
+
+fn run_suite_explain(context: &CommandContext, group: &str, suite_id: &str, suites: &[SuiteDef]) -> Result<(), String> {
+    let suite = suites
+        .iter()
+        .find(|suite| suite.id == suite_id)
+        .ok_or_else(|| format!("suite '{suite_id}' is unknown"))?;
+    let data = json!({
+        "id": suite.id,
+        "group": group,
+        "description": suite.description,
+        "domain": suite.domain,
+        "slow": suite.slow,
+        "internal": suite.internal,
+        "effect": suite.effect.label(),
+    });
+    run_text_or_json_report(
+        context,
+        group,
+        &format!("{group}.explain"),
+        suite.effect.label(),
+        data,
+        || Ok(()),
+        false,
+    )
+}
+
+fn run_command_reported<F>(context: &CommandContext, command: &str, effect: CommandEffect, data: Value, run: F) -> Result<(), String>
+where
+    F: FnOnce() -> Result<(), String>,
+{
+    run_text_or_json_report(context, command, command, effect.label(), data, run, true)
+}
+
+fn run_text_or_json_report(
+    context: &CommandContext,
+    command: &str,
+    command_name: &str,
+    effect: &str,
+    data: Value,
+    run: impl FnOnce() -> Result<(), String>,
+    include_data_on_success: bool,
+) -> Result<(), String> {
+    let result = run();
+    let (status, error) = match &result {
+        Ok(_) => ("ok", None),
+        Err(err) => ("error", Some(err.clone())),
+    };
+
+    let mut report = json!({
+        "command": command_name,
+        "status": status,
+        "effect": effect,
+        "data": data,
+    });
+    if let Some(error) = error {
+        report["error"] = Value::String(error);
+    }
+
+    if context.json {
+        println!("{}", serde_json::to_string_pretty(&report).expect("json print"));
+    } else if include_data_on_success || status == "error" {
+        let value = report.to_string();
+        println!("[{command}] {status} ({effect}): {value}",);
+    } else {
+        println!("[{command}] {status} ({effect})");
+    }
+
+    if let Some(report_path) = context.report.as_ref() {
+        let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
+        fs::write(report_path, output).map_err(|err| err.to_string())?;
+    }
+
+    result
 }
 
 fn run_ci() -> Result<(), String> {
