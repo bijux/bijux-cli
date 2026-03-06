@@ -12,11 +12,21 @@ pub mod graph;
 pub mod meta;
 pub mod node;
 pub mod resources;
+pub mod semantics;
 pub mod topology;
 pub mod validate;
 pub use builder::{
     dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
     DagUnitHarness, NodeBuilder,
+};
+pub use semantics::{
+    classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
+    migration_patch, normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
+    CompatibilityClassification, ConditionalExecution, DynamicEdgeExpansionRule,
+    GraphComplexityScore, GraphCompositionContract, GraphExplainabilityModel, GraphMigrationPatch,
+    GraphTemplate, JoinSemantics, LateBindingRule, MapFanOutSemantics, NormalizedSemanticGraph,
+    ParameterBindingSemantics, PartitionSemantics, ReduceFanInSemantics, SemanticDiffClass,
+    SemanticDiffReport, StaticAnalysisReport, SubgraphEmbedding, WindowingSemantics,
 };
 
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
