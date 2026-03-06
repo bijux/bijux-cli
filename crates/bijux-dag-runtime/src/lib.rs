@@ -18,6 +18,7 @@ mod remote_executor;
 mod registry;
 mod run_state;
 mod scheduler;
+mod scheduler_enterprise;
 mod store;
 mod task_contract;
 mod task_types;
@@ -132,6 +133,17 @@ pub use scheduler::{
     ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview, ScheduleRegistry,
     ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerEventHook,
     SchedulerFairness, SchedulerPolicy, ThroughputScheduler, TriggerSpec,
+};
+pub use scheduler_enterprise::{
+    apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
+    detect_cron_conflicts, evaluate_sla_metrics, is_suppressed_by_calendar, materialize_next_runs,
+    run_batches, weighted_priority_tie_break_order, BackfillThrottlingPolicy, BlackoutWindow,
+    ConcurrencyScope, CrossSchedulerCompatibility, DagCalendar, DependencyTriggerBufferPolicy,
+    EnvironmentSuppression, FairnessAlgorithm, HolidayPolicy, MaterializedRunPreview,
+    PartitionBackfillOrchestration, QueueAdmissionPolicy, RunBatchPolicy, ScheduleOverrideRecord,
+    SchedulerAlertRule, SchedulerMaturityMatrix, SchedulerSlaMetrics, SchedulingSimulationSuite,
+    ScheduleSuppressionAnnotation, ServiceClass, SlaPolicy, StarvationPreventionPolicy,
+    TriggerDedupDecision, WeightedPriorityPolicy, CronConflict,
 };
 
 #[derive(Debug, thiserror::Error)]
