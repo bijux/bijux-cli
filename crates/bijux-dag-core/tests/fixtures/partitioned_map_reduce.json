@@ -1,0 +1,37 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "partitioned-map-reduce",
+    "owners": ["platform"],
+    "tags": ["partition", "map", "reduce"]
+  },
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "seed/out.json"}],
+      "params": {"value": {"partitions": ["p0", "p1", "p2"]}}
+    },
+    {
+      "id": "map",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "map/out.json"}],
+      "tags": ["partition-map"],
+      "params": {"argv": ["sh", "-c", "cat inputs/seed/in > outputs/map.json"]}
+    },
+    {
+      "id": "reduce",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "reduce/out.json"}],
+      "tags": ["partition-reduce"],
+      "params": {"argv": ["sh", "-c", "cat inputs/map/in > outputs/reduce.json"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "map", "port": "in"}},
+    {"from": {"node_id": "map", "port": "out"}, "to": {"node_id": "reduce", "port": "in"}}
+  ]
+}
