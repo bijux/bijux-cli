@@ -25,6 +25,7 @@ mod scheduler_enterprise;
 mod store;
 mod task_contract;
 mod task_types;
+mod tenancy;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -92,6 +93,16 @@ pub use task_types::{
     ScalarType, SchemaReference, SecretReference, TaskCompatibilityMatrixReport,
     TaskCompatibilityRelationship, TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry,
     TypeCoercionRule, VersionedTypeRule,
+};
+pub use tenancy::{
+    check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
+    resolve_tenant_overlay, scope_lineage_query, tenant_index_key, tenant_provisioning_bootstrap,
+    validate_tenant_isolation, TenantConcurrencyQuota, TenantConfigOverlay, TenantEnvironmentOverlay,
+    TenantId, TenantIsolationConformanceReport, TenantLifecycleState, TenantLineageScope,
+    TenantObservabilityView, TenantOwnershipMetadata, TenantPluginAllowlist, TenantPolicyBundleRef,
+    TenantProvisioningSpec, TenantQueueIsolationPolicy, TenantRegistryPartition,
+    TenantResourceBudget, TenantRetentionPolicy, TenantSchedulerAdmission, TenantScopedDagName,
+    TenantSecretScope,
 };
 pub use async_adapter::AsyncAdapter;
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
