@@ -1,0 +1,31 @@
+name: Rust Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: install nextest
+        run: cargo install cargo-nextest --locked
+      - name: run nextest
+        run: cargo nextest run --config-file configs/nextest/nextest.toml --profile ci --workspace
+      - name: run architecture tests
+        run: cargo run -p bijux-dev-dag -- tests run --domain governance --report artifacts/reports/tests-governance.json
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: artifacts/reports
+          if-no-files-found: warn

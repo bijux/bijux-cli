@@ -1,0 +1,23 @@
+name: Compatibility Fixture Drift
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  compat-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: check compatibility fixtures
+        run: cargo run -p bijux-dev-dag -- contracts run --domain contracts --report artifacts/reports/compatibility-fixtures.json
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-fixture-report
+          path: artifacts/reports
+          if-no-files-found: warn

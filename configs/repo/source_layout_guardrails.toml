@@ -1,0 +1,14 @@
+[layout]
+required_directories = [
+  "crates",
+  "docs",
+  "examples",
+  "configs/nextest",
+]
+
+[file_size]
+max_lines = 2200
+allowlist = [
+  "crates/bijux-dag-runtime/src/lib.rs",
+  "crates/bijux-dag-app/src/lib.rs",
+]

@@ -1,0 +1,25 @@
+name: Dependency Audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: install audit
+        run: cargo install cargo-audit --locked
+      - name: run audit
+        run: cargo run -p bijux-dev-dag -- security --report artifacts/reports/dependency-audit.json
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: artifacts/reports
+          if-no-files-found: warn
