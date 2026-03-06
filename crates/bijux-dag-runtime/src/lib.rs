@@ -3,6 +3,7 @@ mod adapter_sdk;
 mod async_adapter;
 mod clock;
 mod control_plane;
+mod distributed;
 mod engine;
 mod execution_plan;
 mod external_adapter;
@@ -89,6 +90,15 @@ pub use control_plane::{
     EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision, PolicyDomain,
     PolicyEngine, RunControlOperation, TypedControlPlaneRequest, TypedControlPlaneResponse,
     ValidationRequest, ValidationResponse, ValidationService,
+};
+pub use distributed::{
+    check_worker_version_compatibility, should_reassign, worker_alive, DeliveryGuarantee,
+    DistributedExecutionRequest, DistributedExecutionResult, DistributedFailureClass,
+    DistributedReadinessChecklist, DistributedSecurityModel, LivenessPolicy, MockRemoteBackend,
+    PlacementHint, ReassignmentRule, RemoteArtifactUploadContract, RemoteCancellationContract,
+    RemoteLogStreamContract, RetryLineageRecord, WorkerCapabilities, WorkerHeartbeat,
+    WorkerIdentity, WorkerPool, WorkerRegistration, WorkerSandboxNegotiation,
+    WorkerVersionCompatibilityRule, WorkLease,
 };
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes, summarize_failure_root_causes,
