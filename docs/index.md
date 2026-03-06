@@ -22,6 +22,7 @@
 - [Distributed execution foundations](./DISTRIBUTED_EXECUTION_FOUNDATIONS.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
+- [Artifact platform contracts](./ARTIFACT_PLATFORM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
 - [Scheduler MVP contract](./SCHEDULER_MVP.md)
 - [Observability model](./OBSERVABILITY.md)
