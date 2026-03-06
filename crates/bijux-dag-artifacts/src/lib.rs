@@ -2,6 +2,7 @@ pub mod fs;
 pub mod hash;
 pub mod index;
 pub mod lineage;
+pub mod platform;
 pub mod proof;
 pub mod promotion;
 pub mod retention;
