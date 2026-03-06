@@ -1,5 +1,7 @@
 # Run Manifest Schema v0.1
 
+Source of truth schema: `configs/schema/run_manifest.schema.json`.
+
 Required keys:
 - `run_id` (string)
 - `created_unix_ms` (number)

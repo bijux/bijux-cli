@@ -1,5 +1,7 @@
 # DAG Spec v0.1
 
+Source of truth schema: `configs/schema/dag.schema.json`.
+
 ## Overview
 A DAG is a JSON document with `spec`, `nodes`, and `edges`. Nodes define typed operations and named ports. Edges connect output ports to input ports.
 
@@ -87,6 +89,8 @@ Edges map a named output port to a named input port. Only the referenced output 
 ## Strictness
 - Unknown fields are rejected.
 - Missing required fields are rejected.
+- Output paths are rejected at parse/validation boundary if absolute or containing `..`.
+- Canonical naming grammar applies to graph name, node id, and tags.
 
 ## Canonicalization
 - Nodes are sorted by `id`.

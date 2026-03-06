@@ -1,5 +1,10 @@
 # Run Artifact Spec v0.1
 
+Schema source of truth:
+- `configs/schema/run_manifest.schema.json`
+- `configs/schema/node_trace.schema.json`
+- `configs/schema/outputs_index.schema.json`
+
 ## Run Directory Layout
 ```
 run-<id>/

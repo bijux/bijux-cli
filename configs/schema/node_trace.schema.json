@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/node-trace/v0.1",
+  "title": "BijuxNodeTrace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "node_id", "status", "started_unix_ms", "finished_unix_ms", "attempt",
+    "fingerprint", "adapter_id", "adapter_version", "adapter_outputs_schema_version"
+  ],
+  "properties": {
+    "node_id": {"type": "string"},
+    "status": {"type": "string"},
+    "started_unix_ms": {"type": "integer"},
+    "finished_unix_ms": {"type": "integer"},
+    "attempt": {"type": "integer"},
+    "fingerprint": {"type": "string"},
+    "adapter_id": {"type": "string"},
+    "adapter_version": {"type": "string"},
+    "adapter_outputs_schema_version": {"type": "string"},
+    "adapter_binary_sha256": {"type": ["string", "null"]},
+    "resources": {"type": ["object", "null"]},
+    "inputs_index": {"type": ["string", "null"]},
+    "resolved_params": {},
+    "container": {"type": ["object", "null"]},
+    "cache_proof": {"type": ["object", "null"]},
+    "skip_reason": {"type": ["object", "null"]},
+    "failure": {"type": ["object", "null"]},
+    "transition_cause": {"type": ["string", "null"]},
+    "replay_provenance": {"type": ["object", "null"]}
+  }
+}

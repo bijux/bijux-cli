@@ -1,5 +1,7 @@
 # Node Trace Schema v0.1
 
+Source of truth schema: `configs/schema/node_trace.schema.json`.
+
 Required keys:
 - `node_id` (string)
 - `status` (string: success|failed|skipped|cached)

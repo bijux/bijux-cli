@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/outputs-index/v0.1",
+  "title": "BijuxOutputsIndex",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["files"],
+  "properties": {
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "node_id", "node_fingerprint"],
+        "properties": {
+          "path": {"type": "string"},
+          "sha256": {"type": "string"},
+          "node_id": {"type": "string"},
+          "node_fingerprint": {"type": "string"}
+        }
+      }
+    }
+  }
+}

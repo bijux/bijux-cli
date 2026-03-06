@@ -76,6 +76,10 @@
 - [Regulated workflow reference](./REGULATED_WORKFLOW_REFERENCE.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
 - [DAG schema contract](./spec/dag-schema-v0.1.json)
+- [Schema compatibility policy](./spec/SCHEMA_COMPATIBILITY_POLICY.md)
+- [DAG behavior decisions](./spec/DAG_BEHAVIOR_DECISIONS.md)
+- [Path normalization policy](./spec/PATH_NORMALIZATION_POLICY.md)
+- [Outputs index schema](./spec/OUTPUTS_INDEX_SCHEMA_v0.1.md)
 
 ## Test governance
 
