@@ -3,6 +3,11 @@
 ## Core references
 
 - [README](./README.md)
+- [Workspace contract](./spec/WORKSPACE_CONTRACT.md)
+- [Boundary rules](./spec/BOUNDARY_RULES.md)
+- [Crate ownership contract](./spec/CRATE_OWNERSHIP.md)
+- [Evidence model](./spec/EVIDENCE_MODEL.md)
+- [Glossary](./spec/GLOSSARY.md)
 - [CLI contract matrix](./CLI.md)
 - [Development environment](./DEVELOPMENT.md)
 - [Architecture overview](./ARCHITECTURE.md)

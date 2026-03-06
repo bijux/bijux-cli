@@ -1,6 +1,6 @@
 # bijux-dag
 
-A minimal, deterministic DAG runner and artifact system written in Rust. This repo provides a JSON DAG IR, validation rules, a runtime with stable scheduling, and a CLI for validating and running DAGs into reproducible run directories.
+A minimal, deterministic DAG runner and artifact system written in Rust. This repo provides a JSON DAG IR, validation rules, a runtime with deterministic scheduling contracts, and a CLI for validating and running DAGs into reproducible run directories.
 
 ## Purpose
 - Define a compact DAG IR that is strict and canonicalizable.
@@ -79,6 +79,8 @@ cargo run -p bijux-dag-cli -- dag cache verify
 
 See `docs/CLI.md` for the command taxonomy, `docs/spec/` for formal definitions,
 `docs/operations/README.md` for runtime usage, and `docs/ADAPTERS.md` / `docs/EFFECTS.md` for adapter/effects guidance.
+
+Evidence and guarantee policy is defined in [docs/spec/EVIDENCE_MODEL.md](./docs/spec/EVIDENCE_MODEL.md).
 
 ## License
 Apache-2.0. See `LICENSE` and `NOTICE`.

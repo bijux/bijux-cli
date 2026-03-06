@@ -8,6 +8,8 @@ Thanks for helping with bijux-dag.
 3. Ensure formatting and tests pass.
 4. Open a PR with a clear summary.
 
+No feature work is accepted without a declared owner, a written contract, and tests.
+
 ## Code Style
 - Prefer small, readable modules.
 - Keep JSON parsing strict.

@@ -1,4 +1,4 @@
-# Performance baseline
+# Performance baseline (provisional)
 
 - Baseline command: `cargo run -p bijux-dev-dag -- benchmark-baseline`
 - Fixture families:
@@ -8,4 +8,5 @@
   - `benchmarks/fixtures/scheduler_diamond_fanout.json`
 - Output artifact: `artifacts/benchmarks/baseline.json`
 
-The benchmark baseline is deterministic and intended for trend tracking across graph families, not one fixture.
+This baseline is provisional and intended for early trend tracking across graph families.
+It is not a release guarantee until strict measured performance gates are enforced.
