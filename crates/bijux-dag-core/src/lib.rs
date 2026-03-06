@@ -24,6 +24,8 @@ pub use builder::{
     dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
     DagUnitHarness, NodeBuilder,
 };
+pub use error::GraphError;
+pub use parse::parse_graph_strict;
 pub use semantics::{
     classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
     migration_patch, normalize_semantic_graph, semantic_diff, static_analysis, BranchDecisionNode,
@@ -240,24 +242,6 @@ pub struct ValidationDiagnostic {
 pub enum Severity {
     Error,
     Warning,
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum GraphError {
-    #[error("json error: {0}")]
-    Json(#[from] serde_json::Error),
-    #[error("invalid spec version: {0}")]
-    InvalidSpec(String),
-    #[error("validation failed")]
-    ValidationFailed,
-}
-
-pub fn parse_graph_strict(input: &str) -> Result<Graph, GraphError> {
-    let graph: Graph = serde_json::from_str(input)?;
-    if graph.spec != SPEC_VERSION {
-        return Err(GraphError::InvalidSpec(graph.spec));
-    }
-    Ok(graph)
 }
 
 impl Graph {

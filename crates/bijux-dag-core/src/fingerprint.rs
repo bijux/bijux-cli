@@ -1,3 +1,5 @@
+//! Graph fingerprint entrypoints.
+
 use crate::{Graph, GraphError};
 
 pub fn graph_fingerprint(graph: &Graph) -> Result<String, GraphError> {
