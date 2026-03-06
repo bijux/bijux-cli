@@ -158,4 +158,34 @@ mod tests {
         assert!(plan.filter_reasons.contains_key("b"));
         assert!(!plan.filter_reasons.contains_key("a"));
     }
+
+    #[test]
+    fn planner_filters_by_tag_exclude() {
+        let graph = sample_graph();
+        let options = RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![],
+                exclude: vec![Selector::Tag("etl".to_string())],
+            },
+            ..RuntimeConfig::default()
+        };
+        let plan = build_plan(&graph, &options);
+        assert!(plan.filter_reasons.contains_key("a"));
+        assert!(!plan.filter_reasons.contains_key("b"));
+    }
+
+    #[test]
+    fn planner_inclusion_and_exclusion_combined() {
+        let graph = sample_graph();
+        let options = RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![Selector::Tag("etl".to_string())],
+                exclude: vec![Selector::IdPrefix("a".to_string())],
+            },
+            ..RuntimeConfig::default()
+        };
+        let plan = build_plan(&graph, &options);
+        assert!(plan.filter_reasons.contains_key("a"));
+        assert!(plan.filter_reasons.contains_key("b"));
+    }
 }

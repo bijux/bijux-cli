@@ -1615,6 +1615,146 @@ mod tests {
     }
 
     #[test]
+    fn selector_filters_inclusion_and_exclusion() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let graph = sample_graph();
+        let include = RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![Selector::Tag("etl".to_string())],
+                exclude: vec![],
+            },
+            ..RuntimeConfig::default()
+        };
+        let run = runtime.run(&graph, dir.path(), include).unwrap();
+        let trace_a = std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
+        let trace_b = std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
+        assert!(trace_a.contains("\"status\": \"skipped\""));
+        assert!(trace_b.contains("\"status\": \"success\""));
+
+        let dir = tempfile::tempdir().unwrap();
+        let exclude = RuntimeConfig {
+            selectors: SelectorSet {
+                include: vec![],
+                exclude: vec![Selector::Tag("etl".to_string())],
+            },
+            ..RuntimeConfig::default()
+        };
+        let run = runtime.run(&graph, dir.path(), exclude).unwrap();
+        let trace_b = std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
+        let trace_a = std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
+        assert!(trace_a.contains("\"status\": \"skipped\""));
+        assert!(trace_b.contains("\"status\": \"success\""));
+    }
+
+    #[test]
+    fn replay_run_outputs_are_deterministic() {
+        let graph = sample_graph();
+        let clock = Arc::new(clock::FixedClock::new(999));
+        let runtime = Runtime::with_io(Arc::new(StdFs), clock);
+
+        let run1 = tempfile::tempdir().unwrap();
+        let path_1 = runtime
+            .run(&graph, run1.path(), RuntimeConfig::default())
+            .unwrap();
+        let out1 = std::fs::read_to_string(path_1.join("outputs").join("index.json")).unwrap();
+
+        let run2 = tempfile::tempdir().unwrap();
+        let path_2 = runtime
+            .run(&graph, run2.path(), RuntimeConfig::default())
+            .unwrap();
+        let out2 = std::fs::read_to_string(path_2.join("outputs").join("index.json")).unwrap();
+
+        let log1 = std::fs::read_to_string(path_1.join("run.log.jsonl")).unwrap();
+        let log2 = std::fs::read_to_string(path_2.join("run.log.jsonl")).unwrap();
+        assert!(log1.contains("run_started"));
+        assert_eq!(out1, out2);
+    }
+
+    #[test]
+    fn run_timeout_skips_after_budget_is_reached() {
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "long_a".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec![],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out_a".to_string(),
+                    }],
+                    params: param_object(vec![
+                        (
+                            "argv",
+                            serde_json::json!(
+                                ["/bin/sh", "-c", "sleep 0.05; echo done > ../outputs/out_a"]
+                            ),
+                        ),
+                    ]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec!["timeout".to_string()],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+                Node {
+                    id: "long_b".to_string(),
+                    kind: NodeKind::Shell,
+                    inputs: vec![],
+                    outputs: vec![FileOutput {
+                        name: "out".to_string(),
+                        path: "out_b".to_string(),
+                    }],
+                    params: param_object(vec![
+                        (
+                            "argv",
+                            serde_json::json!(
+                                ["/bin/sh", "-c", "echo skipped > ../outputs/out_b"]
+                            ),
+                        ),
+                    ]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec!["timeout".to_string()],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                },
+            ],
+            edges: vec![],
+        };
+
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let run = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    run_timeout_ms: Some(10),
+                    jobs: 1,
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        let trace_a = std::fs::read_to_string(run.join("nodes").join("long_a").join("trace.json")).unwrap();
+        let trace_b = std::fs::read_to_string(run.join("nodes").join("long_b").join("trace.json")).unwrap();
+        assert!(trace_a.contains("\"status\": \"success\""));
+        assert!(trace_b.contains("\"status\": \"skipped\""));
+        assert!(trace_b.contains("run_timeout"));
+    }
+
+    #[test]
     fn cache_corruption_forces_recompute() {
         let dir = tempfile::tempdir().unwrap();
         let cache_dir = tempfile::tempdir().unwrap();
