@@ -1,7 +1,14 @@
 pub mod fs;
+pub mod hash;
+pub mod index;
+pub mod lineage;
+pub mod proof;
+pub mod promotion;
+pub mod retention;
+pub mod schema;
+pub mod store;
 
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::fs as std_fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -135,6 +142,14 @@ pub struct OutputSummary {
     pub node_fingerprint: String,
     pub file: String,
     pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArtifactSchemaInfo {
+    pub name: String,
+    pub version: String,
+    pub media_type: String,
+    pub encoding: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -371,10 +386,7 @@ fn generate_run_id() -> String {
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    let result = hasher.finalize();
-    hex::encode(result)
+    hash::sha256_hex(bytes)
 }
 
 #[cfg(test)]
