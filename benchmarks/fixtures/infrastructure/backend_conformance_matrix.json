@@ -1,0 +1,32 @@
+{
+  "schema_version": "v0.1",
+  "backends": [
+    {
+      "backend": "local",
+      "checks": [
+        "deterministic_replay",
+        "artifact_integrity",
+        "policy_enforcement",
+        "observability_coverage"
+      ]
+    },
+    {
+      "backend": "kubernetes",
+      "checks": [
+        "deterministic_replay",
+        "artifact_integrity",
+        "policy_enforcement",
+        "observability_coverage",
+        "remote_log_collection"
+      ]
+    },
+    {
+      "backend": "hpc",
+      "checks": [
+        "artifact_integrity",
+        "policy_enforcement",
+        "completion_report_serialization"
+      ]
+    }
+  ]
+}

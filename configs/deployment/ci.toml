@@ -1,0 +1,16 @@
+[deployment]
+profile = "ci"
+executor_backend = "subprocess"
+registry_backend = "filesystem"
+artifact_store_backend = "filesystem"
+
+[runtime]
+max_parallelism = 8
+queue_partitioning = "single-tenant"
+network_isolation = true
+env_allowlist_enforced = true
+
+[scheduler]
+ha_enabled = false
+leader_election = "none"
+durable_queue = "local-fs"

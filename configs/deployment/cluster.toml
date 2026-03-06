@@ -1,0 +1,16 @@
+[deployment]
+profile = "cluster"
+executor_backend = "kubernetes"
+registry_backend = "database"
+artifact_store_backend = "object-storage"
+
+[runtime]
+max_parallelism = 64
+queue_partitioning = "tenant-aware"
+network_isolation = true
+env_allowlist_enforced = true
+
+[scheduler]
+ha_enabled = true
+leader_election = "lease-lock"
+durable_queue = "database"
