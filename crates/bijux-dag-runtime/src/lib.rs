@@ -6,6 +6,7 @@ mod io;
 mod planner;
 mod registry;
 mod store;
+mod task_contract;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -29,6 +30,12 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use store::{ArtifactStore, CacheStore};
+pub use task_contract::{
+    default_forced_cleanup, build_task_contract, validate_task_contracts, ForcedCancellationCleanup,
+    IdempotencyMode, NodeProvenance, OutputMaterializationPolicy, RuntimeState,
+    SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
+    TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
@@ -569,6 +576,7 @@ impl Runtime {
         if diags.iter().any(|d| d.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed.into());
         }
+        let _contracts = validate_task_contracts(graph, &options)?;
         let plan = build_plan(graph, &options);
         engine::execute(self, graph, plan, out_dir, options)
     }
