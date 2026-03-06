@@ -1,0 +1,24 @@
+{
+  "schema_version": "v0.1",
+  "workers": [
+    {
+      "worker_id": "worker-a",
+      "version": "1.0.0",
+      "backend": "kubernetes",
+      "capabilities": {"cpu": 16, "memory_mb": 32768, "gpu": false}
+    },
+    {
+      "worker_id": "worker-b",
+      "version": "1.0.0",
+      "backend": "hpc",
+      "capabilities": {"cpu": 32, "memory_mb": 65536, "gpu": true}
+    }
+  ],
+  "leases": [
+    {"lease_id": "lease-1", "run_id": "run-100", "node_id": "train", "worker_id": "worker-b"}
+  ],
+  "expected": {
+    "heartbeat_timeout_reassignment": true,
+    "retry_lineage_preserved": true
+  }
+}
