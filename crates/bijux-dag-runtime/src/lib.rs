@@ -1,6 +1,7 @@
 mod adapter;
 mod adapter_sdk;
 mod adaptive_scheduler;
+mod ai_operator_assist;
 mod auth_identity;
 mod authz_policy;
 mod async_adapter;
@@ -151,6 +152,16 @@ pub use adaptive_scheduler::{
     AdaptiveExplanation, AdaptiveFallbackPolicy, AdaptiveMaturityGate, AdaptiveQualityMetrics,
     AdaptiveQueueThrottleDecision, ArtifactPrefetchHint, BackendSuitabilitySignal,
     LearnedDurationProfile, LearningWindowPolicy, SlaDispatchTuningDecision,
+};
+pub use ai_operator_assist::{
+    anomaly_detected, answer_failure_question, build_investigation_bundle, build_postmortem_seed,
+    guardrail_allows, next_maturity_level, recommend_safe_actions, redact_for_ai_export,
+    root_cause_domain_hints, suggestion_quality, AiAssistMaturityLevel, ArtifactAnomalySummary,
+    DiagnosticsAnswer, EvidenceCitation, FailureSummary, IncidentSimilarityResult,
+    InvestigationBundle, ObservabilityAnomalySignal, OperatorReviewDecision, PlannerReviewSummary,
+    PostmortemSeed, PrivacyRedactionPolicy, RecommendationSimulationResult, ReplayRecommendation,
+    RootCauseDomainHint, SafeActionGuardrail, SafeOperatorAction, ScheduleAnomalySummary,
+    SuggestedAction, WhatChangedSummary,
 };
 pub use auth_identity::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix, local_dev_bypass_allowed,
