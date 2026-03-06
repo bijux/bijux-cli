@@ -1,0 +1,35 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id":"ingest",
+      "kind":"shell",
+      "inputs":[],
+      "outputs":[{"name":"out","path":"ingest/out"}],
+      "resources":{"cpu":1,"mem_mb":256},
+      "params":{"argv":["echo","ingest"]}
+    },
+    {
+      "id":"gpu-train",
+      "kind":"container",
+      "inputs":["in"],
+      "outputs":[{"name":"out","path":"gpu-train/out"}],
+      "resources":{"cpu":4,"mem_mb":4096},
+      "tags":["gpu","critical"],
+      "params":{"image":"trainer:latest","argv":["train"]}
+    },
+    {
+      "id":"cpu-eval",
+      "kind":"shell",
+      "inputs":["in"],
+      "outputs":[{"name":"out","path":"cpu-eval/out"}],
+      "resources":{"cpu":2,"mem_mb":1024},
+      "tags":["batch"],
+      "params":{"argv":["echo","eval"]}
+    }
+  ],
+  "edges":[
+    {"from":{"node_id":"ingest","port":"out"},"to":{"node_id":"gpu-train","port":"in"}},
+    {"from":{"node_id":"gpu-train","port":"out"},"to":{"node_id":"cpu-eval","port":"in"}}
+  ]
+}
