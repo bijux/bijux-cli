@@ -1,0 +1,12 @@
+[
+  {
+    "domain_id": "eu-core",
+    "healthy": true,
+    "impairment_reason": null
+  },
+  {
+    "domain_id": "us-burst",
+    "healthy": false,
+    "impairment_reason": "artifact-store-latency"
+  }
+]
