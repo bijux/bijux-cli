@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::fs;
 use std::process::Command;
 use tempfile::{NamedTempFile, tempdir};
 
@@ -215,6 +216,25 @@ fn dag_validate_invalid_argument_fails() {
 }
 
 #[test]
+fn dag_validate_rejects_invalid_spec_with_validation_exit_code() {
+    let invalid = NamedTempFile::new().expect("temp invalid");
+    let invalid_path = invalid.path().to_path_buf();
+    std::fs::write(
+        &invalid_path,
+        r#"{"spec":"bijux-dag/v9.9","nodes":[],"edges":[]}"#,
+    )
+    .expect("write invalid spec");
+
+    let output = Command::new(dag_binary())
+        .args(["dag", "validate", invalid_path.to_str().unwrap()])
+        .output()
+        .expect("invalid validate");
+
+    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(1));
+}
+
+#[test]
 fn dag_run_exit_code_success() {
     let dag = write_temp_dag();
     let out_dir = tempfile::tempdir().expect("run out");
@@ -231,6 +251,43 @@ fn dag_run_exit_code_success() {
         .expect("run success");
 
     assert!(output.status.success());
+}
+
+#[test]
+fn dag_run_runtime_failure_returns_nonzero_exit() {
+    let dag = {
+        let mut file = NamedTempFile::new().expect("temp dag");
+        let content = r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [{
+            "id": "fail",
+            "kind": "shell",
+            "inputs": [],
+            "outputs": [{ "name": "value", "path": "value.txt" }],
+            "params": {
+              "argv": ["/bin/sh","-c","exit 7"]
+            }
+          }],
+          "edges": []
+        }"#;
+        file.write_all(content.as_bytes()).expect("write dag");
+        file.into_temp_path().to_str().unwrap().to_string()
+    };
+    let out_dir = tempfile::tempdir().expect("run out");
+
+    let output = Command::new(dag_binary())
+        .args([
+            "dag",
+            "run",
+            &dag,
+            "--out",
+            out_dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .expect("run fail");
+
+    assert!(!output.status.success());
+    assert!(output.status.code().is_some_and(|code| code != 0));
 }
 
 #[test]
