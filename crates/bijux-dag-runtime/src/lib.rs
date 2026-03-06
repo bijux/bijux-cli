@@ -1,4 +1,5 @@
 mod adapter;
+pub mod adapter_api;
 mod adapter_sdk;
 mod adaptive_scheduler;
 mod ai_operator_assist;

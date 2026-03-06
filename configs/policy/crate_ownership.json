@@ -40,7 +40,7 @@
       "name": "bijux-dag-runtime",
       "path": "crates/bijux-dag-runtime",
       "domains": ["execution"],
-      "public_modules": []
+      "public_modules": ["adapter_api"]
     },
     {
       "name": "bijux-dag-app",

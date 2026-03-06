@@ -89,6 +89,8 @@ enum CommandLine {
     },
     /// Check forbidden dependency usage in workspace Cargo manifests
     DepGuard,
+    /// Print workspace crate dependency graph from cargo metadata
+    CrateGraph,
     /// Remove workspace target artifacts
     ArtifactsClean,
     /// Print build environment summary
@@ -526,6 +528,24 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_adapter_kind_freeze(),
     },
+    SuiteDef {
+        id: "crate-manifest-policy",
+        description: "crate manifest boundary policy checks",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_workspace_manifest_policy_guard(),
+    },
+    SuiteDef {
+        id: "public-export-docs",
+        description: "public exports require crate-doc contract mention",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_public_export_docs_guard(),
+    },
 ];
 
 fn main() -> ExitCode {
@@ -804,6 +824,9 @@ fn run(cli: Cli) -> Result<(), String> {
         }),
         CommandLine::DepGuard => run_command_reported(&context, "dep-guard", CommandEffect::Validation, json!({}), || {
             run_dep_guard()
+        }),
+        CommandLine::CrateGraph => run_command_reported(&context, "crate-graph", CommandEffect::Validation, json!({}), || {
+            run_crate_graph_command()
         }),
         CommandLine::ArtifactsClean => run_command_reported(&context, "artifacts-clean", CommandEffect::ReadWrite, json!({}), || {
             run_artifacts_clean()
@@ -1849,6 +1872,16 @@ fn run_dep_guard() -> Result<(), String> {
     }
 }
 
+fn run_crate_graph_command() -> Result<(), String> {
+    let edges = workspace_dependency_edges()?;
+    for (from, to) in edges {
+        if from.starts_with("bijux-") && to.starts_with("bijux-") {
+            println!("{from} -> {to}");
+        }
+    }
+    Ok(())
+}
+
 fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
     let output = Command::new("cargo")
         .args(["metadata", "--format-version", "1"])
@@ -1882,6 +1915,59 @@ fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
         }
     }
     Ok(edges)
+}
+
+fn run_workspace_manifest_policy_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let cli_manifest = fs::read_to_string(root.join("crates/bijux-dag-cli/Cargo.toml"))
+        .map_err(|err| err.to_string())?;
+    if cli_manifest.contains("bijux-dag-runtime") || cli_manifest.contains("bijux-dag-core") {
+        return Err(
+            "bijux-dag-cli must stay thin and only depend on bijux-dag-app plus cli wiring dependencies"
+                .into(),
+        );
+    }
+
+    let app_manifest = fs::read_to_string(root.join("crates/bijux-dag-app/Cargo.toml"))
+        .map_err(|err| err.to_string())?;
+    if !app_manifest.contains("bijux_dag_runtime")
+        || !app_manifest.contains("bijux_dag_core")
+        || !app_manifest.contains("bijux_dag_artifacts")
+    {
+        return Err("bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into());
+    }
+    Ok(())
+}
+
+fn run_public_export_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: CrateOwnershipPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+        .map_err(|err| err.to_string())?;
+    let mut missing = Vec::new();
+
+    for crate_entry in policy.crates {
+        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+        let actual = public_modules_from_lib(&lib_rs)?;
+        if actual.is_empty() {
+            continue;
+        }
+        if !docs.contains(&crate_entry.name) {
+            missing.push(format!(
+                "{} has public exports but no crate mention in docs/spec/CRATE_API_POLICY.md",
+                crate_entry.name
+            ));
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(missing.join(", "))
+    }
 }
 
 fn run_crate_ownership_guard() -> Result<(), String> {
