@@ -1,5 +1,5 @@
 [package]
-name = "bijux_cli"
+name = "bijux-dag-cli"
 version.workspace = true
 edition = "2021"
 license = "Apache-2.0"
@@ -7,7 +7,7 @@ authors = ["Bijan Mousavi"]
 
 [dependencies]
 clap = { workspace = true }
-bijux_dag_app = { path = "../bijux_dag_app" }
+bijux_dag_app = { package = "bijux-dag-app", path = "../bijux-dag-app" }
 
 [[bin]]
 name = "bijux"

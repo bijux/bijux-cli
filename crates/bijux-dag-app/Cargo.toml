@@ -1,5 +1,5 @@
 [package]
-name = "bijux_dag_app"
+name = "bijux-dag-app"
 version.workspace = true
 edition = "2021"
 license = "Apache-2.0"
@@ -9,9 +9,9 @@ authors = ["Bijan Mousavi"]
 clap = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
-bijux_dag_core = { path = "../bijux_dag_core" }
-bijux_dag_runtime = { path = "../bijux_dag_runtime" }
-bijux_dag_artifacts = { path = "../bijux_dag_artifacts" }
+bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core" }
+bijux_dag_runtime = { package = "bijux-dag-runtime", path = "../bijux-dag-runtime" }
+bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts" }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }

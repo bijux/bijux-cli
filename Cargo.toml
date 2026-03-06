@@ -1,11 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/bijux_dag_core",
-  "crates/bijux_dag_artifacts",
-  "crates/bijux_dag_runtime",
-  "crates/bijux_dag_app",
-  "crates/bijux_cli",
+  "crates/bijux-dag-core",
+  "crates/bijux-dag-artifacts",
+  "crates/bijux-dag-runtime",
+  "crates/bijux-dag-app",
+  "crates/bijux-dag-cli",
+  "crates/bijux-dev-dag",
 ]
 
 [workspace.package]
@@ -23,6 +24,5 @@ tempfile = "3"
 sha2 = "0.10"
 ctrlc = "3"
 hex = "0.4"
-base64 = "0.22"
 tar = "0.4"
 flate2 = "1"
