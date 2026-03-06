@@ -1,0 +1,11 @@
+{
+  "scenario_id": "split-brain-failover",
+  "replicas": ["replica-a", "replica-b"],
+  "epochs": [4, 5],
+  "stale_leader": "replica-a",
+  "active_leader": "replica-b",
+  "expected": {
+    "stale_fenced": true,
+    "duplicate_runs": 0
+  }
+}
