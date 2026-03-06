@@ -34,6 +34,7 @@
 - [HA scheduler durable coordination contracts](./HA_SCHEDULER_COORDINATION.md)
 - [Observability model](./OBSERVABILITY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
+- [Cluster and backend execution maturity contracts](./BACKEND_EXECUTION_MATURITY.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
 - [DAG schema contract](./spec/dag-schema-v0.1.json)
 
