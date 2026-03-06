@@ -15,6 +15,7 @@ mod observability;
 mod observability_deep;
 mod planner;
 mod planner_intelligence;
+mod plugin_ecosystem;
 mod recovery;
 mod remote_executor;
 mod registry;
@@ -47,6 +48,14 @@ pub use planner_intelligence::{
     PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
     PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
     PlannerResourceEstimate,
+};
+pub use plugin_ecosystem::{
+    compute_platform_maturity, extension_discovery_inventory, negotiate_plugin_version,
+    validate_plugin_conformance, CapabilityRange, CodeGenerationHook, DslExtensionPoint,
+    EcosystemRoadmap, ExtensionDiscoveryRecord, ExtensionRegistration, OfficialPluginPolicy,
+    PlatformMaturityScorecard, PluginBoundaryKind, PluginConformanceSuiteResult,
+    PluginIsolationPolicy, PluginLifecycleState, PluginLoadingMode, PluginMetadata,
+    PluginTrustPolicy,
 };
 pub use recovery::{
     check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
