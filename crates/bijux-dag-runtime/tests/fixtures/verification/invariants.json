@@ -1,0 +1,20 @@
+[
+  {
+    "id": "dag-compile-determinism",
+    "subsystem": "planner",
+    "statement": "identical DAG and policy inputs yield identical plan fingerprint",
+    "machine_checkable": true
+  },
+  {
+    "id": "schedule-idempotence",
+    "subsystem": "scheduler",
+    "statement": "replayed trigger evaluation cannot emit duplicate run records",
+    "machine_checkable": true
+  },
+  {
+    "id": "policy-deny-finality",
+    "subsystem": "policy",
+    "statement": "deny decisions cannot be bypassed by fallback paths",
+    "machine_checkable": true
+  }
+]
