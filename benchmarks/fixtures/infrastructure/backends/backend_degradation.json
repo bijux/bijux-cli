@@ -1,0 +1,9 @@
+{
+  "fixture_id": "backend-degradation",
+  "degraded_backends": ["kubernetes"],
+  "healthy_backends": ["local", "slurm"],
+  "expected": {
+    "readiness_probe_blocks_degraded": true,
+    "routing_shift": true
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "fixture_id": "queue-buildup",
+  "backend_classes": ["local", "kubernetes", "slurm"],
+  "queued_runs": 1200,
+  "expected": {
+    "routing_policy_applied": true,
+    "admission_limited": true
+  }
+}
