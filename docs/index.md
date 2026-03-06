@@ -17,6 +17,7 @@
 - [Policy gates](./POLICY.md)
 - [Backend policy overlays](./BACKEND_POLICY_OVERLAYS.md)
 - [Advanced DAG semantics](./ADVANCED_DAG_SEMANTICS.md)
+- [Task contract type system](./TASK_CONTRACT_TYPES.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
