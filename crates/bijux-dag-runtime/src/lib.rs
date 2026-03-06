@@ -7,6 +7,7 @@ mod backend_cluster;
 mod clock;
 mod control_plane;
 mod control_plane_api;
+mod cost_optimization;
 mod dataset_semantics;
 mod distributed;
 mod engine;
@@ -206,6 +207,15 @@ pub use control_plane_api::{
     ListFilter, NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource,
     RegistryOperation, RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
     ServiceArchitectureNote, TypedApiRequest, TypedApiResponse, VersionedResource,
+};
+pub use cost_optimization::{
+    budget_policy_action, cache_reuse_score, choose_cost_profile, cost_optimization_allowed,
+    detect_cost_anomaly, run_budget_allows, scorecard_ready, ArtifactEgressEstimate,
+    BackendPricingModel, CacheReuseCostScore, CostAnomaly, CostAttributionRecord,
+    CostAwareRoutingPolicy, CostBackfillThrottle, CostForecast, CostObservabilityReport,
+    CostPerformanceProfile, CostPlacementExplanation, CostSafetyPolicy, CostSimulationScenario,
+    ExecutionCostModel, PlanCostEstimate, PlatformCostMaturityScorecard, RunBudget,
+    TenantBudgetPolicy,
 };
 pub use dataset_semantics::{
     build_dataset_provenance_report, dataset_catalog_query, dataset_consumption_satisfied,
