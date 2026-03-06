@@ -7,6 +7,7 @@ mod backend_cluster;
 mod clock;
 mod control_plane;
 mod control_plane_api;
+mod dataset_semantics;
 mod distributed;
 mod engine;
 mod execution_plan;
@@ -204,6 +205,16 @@ pub use control_plane_api::{
     ListFilter, NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource,
     RegistryOperation, RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
     ServiceArchitectureNote, TypedApiRequest, TypedApiResponse, VersionedResource,
+};
+pub use dataset_semantics::{
+    build_dataset_provenance_report, dataset_catalog_query, dataset_consumption_satisfied,
+    dataset_diff, dataset_mapping_index, dataset_ready_for_schedule, default_dataset_example_workflow,
+    DatasetArtifactMapping, DatasetBinding, DatasetCatalogEntry, DatasetCatalogQuery,
+    DatasetCompleteness, DatasetConsumptionContract, DatasetConsumptionMode, DatasetDiffReport,
+    DatasetFreshnessPolicy, DatasetId, DatasetImmutability, DatasetLineageRecord,
+    DatasetPartitionModel, DatasetPartitionStrategy, DatasetProvenanceReport,
+    DatasetPublicationWorkflow, DatasetQualityState, DatasetReadinessGate,
+    DatasetRetentionPolicy, DatasetSchemaContract, DatasetVersionId,
 };
 pub use distributed::{
     check_worker_version_compatibility, should_reassign, worker_alive, DeliveryGuarantee,
