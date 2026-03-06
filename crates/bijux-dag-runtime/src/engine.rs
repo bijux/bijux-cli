@@ -2,8 +2,8 @@ use crate::{
     build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
     count_nodes, execute_with_retries, materialize_inputs, node_fingerprint_from_ctx,
     node_fingerprint_with_inputs, registered_adapters, set_node_fingerprint, try_cache_read,
-    try_cache_write, write_trace, CacheProof, EffectSet, NodeResult, NodeStatus, RunContext,
-    Runtime, RuntimeConfig, RuntimeError,
+    try_cache_write, write_trace, CacheProof, DependencyCounter, EffectSet, ExecutionCheckpoint,
+    NodeResult, NodeStatus, ReadyQueue, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
 };
 use bijux_dag_artifacts::{
     write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
@@ -11,7 +11,7 @@ use bijux_dag_artifacts::{
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
 use serde_json::Value;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{atomic::Ordering, Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -139,18 +139,17 @@ pub fn execute(
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
-    let dep_map = plan.dep_map;
-    let mut indegree = plan.indegree;
-    let adj = plan.adj;
-    let mut ready: BTreeSet<String> = indegree
-        .iter()
-        .filter_map(|(id, &deg)| if deg == 0 { Some(id.clone()) } else { None })
-        .collect();
-
-    let cpu_budget = options.cpu_budget.unwrap_or(options.jobs.max(1) as u32);
-    while !ready.is_empty() {
-        let ready_vec: Vec<String> = ready.iter().cloned().collect();
+    let dep_map = plan.dep_map.clone();
+    let mut dependency_counter = DependencyCounter::from_plan(&plan);
+    let mut ready_queue = ReadyQueue::from_indegree(dependency_counter.indegree_map());
+    let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
+    let scheduler_hook = crate::NoopSchedulerEventHook;
+    let mut loop_index: u64 = 0;
+    while !ready_queue.is_empty() {
+        loop_index = loop_index.saturating_add(1);
+        let ready_vec: Vec<String> = ready_queue.snapshot_sorted();
         for node_id in &ready_vec {
+            scheduler_hook.on_node_eligible(node_id);
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -160,33 +159,24 @@ pub fn execute(
                 }),
             )?;
         }
-        let mut batch: Vec<String> = Vec::new();
-        let mut used_cpu: u32 = 0;
-        let mut to_remove: Vec<String> = Vec::new();
-        let mut blocked_by_budget: Vec<String> = Vec::new();
-        for id in ready.iter() {
-            if batch.len() >= options.jobs.max(1) {
-                blocked_by_budget.push(id.clone());
-                continue;
-            }
-            let cpu = crate::node_cpu(graph, id);
-            if used_cpu + cpu > cpu_budget {
-                blocked_by_budget.push(id.clone());
-                continue;
-            }
-            used_cpu += cpu;
-            batch.push(id.clone());
-            to_remove.push(id.clone());
+        let decision = scheduler.next_batch(
+            graph,
+            &mut ready_queue,
+            &options,
+            start,
+            cancel.load(Ordering::SeqCst),
+        );
+        if decision.cancelled {
+            break;
         }
-        if batch.is_empty() {
-            if let Some(id) = ready.iter().next().cloned() {
-                batch.push(id.clone());
-                to_remove.push(id.clone());
-                blocked_by_budget.retain(|b| b != &id);
-            }
+        if decision.timed_out {
+            break;
         }
+        let batch = decision.batch;
+        let mut blocked_by_budget = decision.blocked_by_budget;
         blocked_by_budget.sort();
         for node_id in &blocked_by_budget {
+            scheduler_hook.on_node_blocked_by_budget(node_id);
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -196,10 +186,7 @@ pub fn execute(
                 }),
             )?;
         }
-        let forced_batch = batch.len() == 1 && used_cpu == 0;
-        for id in to_remove {
-            ready.remove(&id);
-        }
+        let forced_batch = batch.len() == 1;
 
         let mut handles = Vec::new();
         let mut skipped: Vec<(String, String)> = Vec::new();
@@ -401,6 +388,7 @@ pub fn execute(
             "budget_available"
         };
         for node_id in &started_ids {
+            scheduler_hook.on_node_scheduled(node_id);
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -411,6 +399,19 @@ pub fn execute(
                 }),
             )?;
         }
+
+        let checkpoint = ExecutionCheckpoint {
+            loop_index,
+            ready_queue_depth: ready_queue.len(),
+            scheduled: started_ids.clone(),
+            blocked_by_budget: blocked_by_budget.clone(),
+            generated_unix_ms: ctx.clock.now_unix_ms(),
+        };
+        let checkpoint_path = ctx.run_dir.staging_path().join("scheduler.checkpoint.json");
+        let _ = ctx.fs.write(
+            &checkpoint_path,
+            &serde_json::to_vec_pretty(&checkpoint).unwrap_or_default(),
+        );
         for node_id in &started_ids {
             crate::append_event(
                 &mut run_log,
@@ -640,16 +641,17 @@ pub fn execute(
         }
 
         for node_id in batch {
-            if let Some(neighbors) = adj.get(&node_id) {
-                for n in neighbors {
-                    if let Some(d) = indegree.get_mut(n) {
-                        *d -= 1;
-                        if *d == 0 {
-                            ready.insert(n.clone());
-                        }
-                    }
-                }
+            for newly_ready in dependency_counter.mark_completed(&node_id) {
+                ready_queue.insert(newly_ready);
             }
+        }
+
+        if matches!(
+            options.failure_propagation,
+            crate::FailurePropagationMode::FailFast
+        ) && status_map.values().any(|s| *s == NodeStatus::Failed)
+        {
+            break;
         }
     }
 

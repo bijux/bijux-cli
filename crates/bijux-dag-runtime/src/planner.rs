@@ -1,17 +1,7 @@
+use crate::execution_plan::ExecutionPlan;
 use crate::{RuntimeConfig, Selector, SelectorSet};
 use bijux_dag_core::{Graph, Node};
 use std::collections::{BTreeSet, HashMap};
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct ExecutionPlan {
-    pub nodes: Vec<Node>,
-    pub order: Vec<String>,
-    pub dep_map: HashMap<String, BTreeSet<String>>,
-    pub indegree: HashMap<String, usize>,
-    pub adj: HashMap<String, Vec<String>>,
-    pub filter_reasons: HashMap<String, String>,
-}
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     let canonical = graph.canonicalize();
@@ -22,6 +12,19 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     for node in &graph.nodes {
         if let Some(reason) = filter_reason(node, &options.selectors) {
             filter_reasons.insert(node.id.clone(), reason);
+        }
+    }
+    if options.partial_rerun_dependency_closure {
+        let mut keep = BTreeSet::new();
+        for node in &graph.nodes {
+            if !filter_reasons.contains_key(&node.id) {
+                expand_dependencies(&node.id, &dep_map, &mut keep);
+            }
+        }
+        for node in &graph.nodes {
+            if !keep.contains(&node.id) {
+                filter_reasons.insert(node.id.clone(), "filtered".to_string());
+            }
         }
     }
     ExecutionPlan {
@@ -81,6 +84,21 @@ fn filter_reason(node: &Node, selectors: &SelectorSet) -> Option<String> {
         return Some("filtered".to_string());
     }
     None
+}
+
+fn expand_dependencies(
+    node_id: &str,
+    dep_map: &HashMap<String, BTreeSet<String>>,
+    keep: &mut BTreeSet<String>,
+) {
+    if !keep.insert(node_id.to_string()) {
+        return;
+    }
+    if let Some(deps) = dep_map.get(node_id) {
+        for dep in deps {
+            expand_dependencies(dep, dep_map, keep);
+        }
+    }
 }
 
 fn selector_matches(node: &Node, selector: &Selector) -> bool {

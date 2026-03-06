@@ -1,10 +1,15 @@
 mod adapter;
+mod async_adapter;
 mod clock;
 mod engine;
+mod execution_plan;
 mod external_adapter;
 mod io;
+mod local_executor;
 mod planner;
+mod remote_executor;
 mod registry;
+mod scheduler;
 mod store;
 mod task_contract;
 
@@ -19,7 +24,7 @@ use bijux_dag_core::{
 };
 use clock::{Clock, SystemClock};
 use io::{Fs, StdFs};
-use planner::build_plan;
+pub use planner::build_plan;
 use registry::{build_registry, AdapterRegistry};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -35,6 +40,15 @@ pub use task_contract::{
     IdempotencyMode, NodeProvenance, OutputMaterializationPolicy, RuntimeState,
     SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
     TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+};
+pub use async_adapter::AsyncAdapter;
+pub use execution_plan::ExecutionPlan;
+pub use local_executor::LocalExecutor;
+pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
+pub use scheduler::{
+    build_scheduler, DependencyCounter, DeterministicScheduler, ExecutionCheckpoint,
+    FailurePropagationMode, NoopSchedulerEventHook, QueueIsolationPolicy, ReadyQueue, Scheduler,
+    SchedulerEventHook, SchedulerFairness, SchedulerPolicy, ThroughputScheduler,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -448,6 +462,9 @@ pub struct RuntimeConfig {
     pub latest_symlink: Option<PathBuf>,
     pub policy: PolicyConfig,
     pub selectors: SelectorSet,
+    pub partial_rerun_dependency_closure: bool,
+    pub scheduler_policy: SchedulerPolicy,
+    pub failure_propagation: FailurePropagationMode,
 }
 
 impl Default for RuntimeConfig {
@@ -465,6 +482,9 @@ impl Default for RuntimeConfig {
             latest_symlink: None,
             policy: PolicyConfig::default(),
             selectors: SelectorSet::default(),
+            partial_rerun_dependency_closure: true,
+            scheduler_policy: SchedulerPolicy::default(),
+            failure_propagation: FailurePropagationMode::IsolateBranch,
         }
     }
 }
