@@ -7,6 +7,8 @@
 - [Development environment](./DEVELOPMENT.md)
 - [Architecture overview](./ARCHITECTURE.md)
 - [Security policy](./SECURITY.md)
+- [Secure DAG authoring patterns](./SECURE_DAG_AUTHORING.md)
+- [Secret leak incident response playbook](./SECRET_LEAK_INCIDENT_PLAYBOOK.md)
 - [CLI backward-compat policy](./CLI_BACKWARD_COMPAT.md)
 - [Changelog](../CHANGELOG.md)
 - [Adapter SDK contracts](./ADAPTER_SDK.md)
