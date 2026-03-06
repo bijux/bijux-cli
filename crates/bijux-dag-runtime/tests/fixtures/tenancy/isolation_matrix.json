@@ -1,0 +1,14 @@
+{
+  "tenant": "tenant_alpha",
+  "checks": [
+    "api_scope",
+    "scheduler_scope",
+    "artifact_scope",
+    "metrics_scope",
+    "lineage_scope"
+  ],
+  "expected": {
+    "isolated": true,
+    "violations": 0
+  }
+}

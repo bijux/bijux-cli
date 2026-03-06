@@ -46,6 +46,7 @@
 
 - [Spec ownership and evolution](./OWNERSHIP.md)
 - [Control plane model](./CONTROL_PLANE.md)
+- [Multi-tenant isolation contracts](./MULTI_TENANT_ISOLATION.md)
 - [API resource contract draft](./API_CONTRACT.md)
 - [dag-api service boundary plan](./DAG_API_SERVICE.md)
 - [Control plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
