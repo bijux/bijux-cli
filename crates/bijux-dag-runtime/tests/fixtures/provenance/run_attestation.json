@@ -1,0 +1,37 @@
+{
+  "run_id": "run-2026-03-06-001",
+  "dag_snapshot_id": "dag-snapshot-abc123",
+  "plan_fingerprint": "plan-fp-20260306",
+  "policy_bundle_version": "policy-v1.4.2",
+  "output_digests": ["sha256:aaa", "sha256:bbb"],
+  "binaries": [
+    {
+      "component": "Scheduler",
+      "version": "1.8.0",
+      "build_id": "build-scheduler-001",
+      "source_revision": "c0ffee00",
+      "build_timestamp_utc": "2026-03-06T10:00:00Z"
+    },
+    {
+      "component": "Worker",
+      "version": "1.8.0",
+      "build_id": "build-worker-101",
+      "source_revision": "c0ffee00",
+      "build_timestamp_utc": "2026-03-06T10:05:00Z"
+    }
+  ],
+  "plugins": [
+    {
+      "plugin_name": "object-store",
+      "version": "0.9.1",
+      "source": "official-registry",
+      "trust_tier": "Official",
+      "approved": true
+    }
+  ],
+  "environment": {
+    "backend": "kubernetes",
+    "capability_class": "cpu-standard",
+    "trust_domain": "prod-us"
+  }
+}
