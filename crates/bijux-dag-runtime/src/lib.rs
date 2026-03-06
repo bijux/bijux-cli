@@ -13,6 +13,7 @@ mod local_executor;
 mod observability;
 mod planner;
 mod planner_intelligence;
+mod recovery;
 mod remote_executor;
 mod registry;
 mod run_state;
@@ -43,6 +44,16 @@ pub use planner_intelligence::{
     PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
     PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
     PlannerResourceEstimate,
+};
+pub use recovery::{
+    check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
+    should_quarantine_run, validate_and_repair_run_metadata, BranchRecoveryMode,
+    CheckpointResumeContract, ConsistencyCheckReport, DegradedExecutionPolicy, InterruptionClass,
+    ManualInterventionRecord, NodeControlMode, NodeHeartbeatPolicy, OperatorRetryPolicy,
+    PersistedRunSnapshotRef, RecoveryAcceptanceSuite, RecoveryFaultBoundary,
+    RecoveryFaultInjection, RecoverySimulationScenario, ResilientLogRecord, ResumePolicy,
+    RunPauseMode, RunPausePolicy, RunQuarantineRecord, RunRepairOutcome, SchedulerRecoveryAction,
+    SchedulerRecoveryRule, StuckRunPolicy,
 };
 use registry::{build_registry, AdapterRegistry};
 use serde_json::Value;
