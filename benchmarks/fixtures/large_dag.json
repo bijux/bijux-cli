@@ -1,0 +1,22 @@
+{
+  "spec": "v0.1",
+  "meta": {
+    "name": "large-linear-benchmark",
+    "description": "Deterministic large DAG fixture for baseline scheduling performance",
+    "owners": [],
+    "tags": ["benchmark", "linear"]
+  },
+  "nodes": [
+    { "id": "n001", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 1} },
+    { "id": "n002", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 2} },
+    { "id": "n003", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 3} },
+    { "id": "n004", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 4} },
+    { "id": "n005", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 5} },
+    { "id": "n006", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 6} },
+    { "id": "n007", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 7} },
+    { "id": "n008", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 8} },
+    { "id": "n009", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 9} },
+    { "id": "n010", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": 10} }
+  ],
+  "edges": []
+}
