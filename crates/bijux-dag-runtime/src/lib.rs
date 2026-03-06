@@ -26,6 +26,7 @@ mod registry;
 mod run_state;
 mod scheduler;
 mod scheduler_enterprise;
+mod secrets_security;
 mod store;
 mod task_contract;
 mod task_types;
@@ -217,6 +218,16 @@ pub use scheduler::{
     ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview, ScheduleRegistry,
     ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerEventHook,
     SchedulerFairness, SchedulerPolicy, ThroughputScheduler, TriggerSpec,
+};
+pub use secrets_security::{
+    incident_response_actions, leak_conformance_check, redact_secret_payload, secret_readiness,
+    secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
+    should_materialize_secret_artifact, summarize_sensitive_classes, taint_from_secret_usage,
+    validate_secret_delivery_mode, SecretArtifactPolicy, SecretDeliveryPolicy,
+    SecretInjectionMode, SecretIntegrationReadiness, SecretLeakIncident, SecretMaskingPolicy,
+    SecretReference, SecretResolutionTiming, SecretRotationRule, SecretScopeRule, SecretSource,
+    SecretTaintRecord, SecretUsageAuditEvent, SecretVersionSelection, SecureExecutionMode,
+    SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
 pub use scheduler_enterprise::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
