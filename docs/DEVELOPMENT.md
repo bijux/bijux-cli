@@ -34,7 +34,7 @@
   - `cargo install cargo-audit`
   - `cargo install cargo-public-api`
   - `cargo install cargo-nextest` (for local parallelized test workflows)
-- The repository keeps a `cargo nextest` baseline in `.config/nextest.toml`.
+- The repository keeps a `cargo nextest` baseline in `configs/nextest/nextest.toml`.
 
 ## Tooling policy
 
