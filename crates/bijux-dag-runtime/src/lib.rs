@@ -15,6 +15,7 @@ mod engine;
 mod execution_plan;
 mod external_adapter;
 mod federated_scheduling;
+mod formal_verification;
 mod geo_federation;
 mod ha_scheduler;
 mod io;
@@ -164,6 +165,16 @@ pub use auth_identity::{
 };
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use formal_verification::{
+    artifact_integrity_holds, build_counterexample, invariant_catalog_default,
+    lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
+    replay_determinism_holds, verification_gate_passed, verification_maturity_label,
+    AdversarialFixtureSet, ArtifactIntegrityInvariant, CounterexampleReport, DiffSemanticSpec,
+    FormalAssuranceRoadmap, FuzzingStrategy, HaVerificationHarness, InvariantDefinition,
+    LineageInvariantProof, ModelTestSuite, PolicyInvariantProof, PropertyTestSuite,
+    ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
+    VerificationMaturityLabel, VerifiedCoreScope,
+};
 pub use federated_scheduling::{
     cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
     domain_healthy, federation_conformance_passes, select_delegation_failure_action,
