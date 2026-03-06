@@ -100,6 +100,8 @@ enum CommandLine {
     MemorySmoke,
     /// Verify artifact reproducibility and integrity for local runs
     ArtifactVerify,
+    /// Generate observability evidence report from run artifacts
+    ObservabilityReport,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -524,6 +526,13 @@ fn run(cli: Cli) -> Result<(), String> {
             json!({}),
             || run_artifact_verify(),
         ),
+        CommandLine::ObservabilityReport => run_command_reported(
+            &context,
+            "observability-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_observability_report(),
+        ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
         }),
@@ -660,8 +669,28 @@ fn run_text_or_json_report(
         let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
         fs::write(report_path, output).map_err(|err| err.to_string())?;
     }
+    let _ = append_control_plane_audit(command_name, status, effect);
 
     result
+}
+
+fn append_control_plane_audit(command_name: &str, status: &str, effect: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let audit_dir = root.join("artifacts").join("reports");
+    fs::create_dir_all(&audit_dir).map_err(|err| err.to_string())?;
+    let audit_path = audit_dir.join("control-plane-audit.jsonl");
+    let event = json!({
+        "action": command_name,
+        "status": status,
+        "effect": effect,
+        "ts_unix_ms": now_millis(),
+    });
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&audit_path)
+        .map_err(|err| err.to_string())?;
+    writeln!(file, "{event}").map_err(|err| err.to_string())
 }
 
 fn run_ci() -> Result<(), String> {
@@ -856,28 +885,39 @@ fn run_benchmark_baseline() -> Result<(), String> {
     let out_dir = root.join("artifacts").join("benchmarks");
     let runs_dir = out_dir.join("runs");
     fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
-
-    let start_ms = now_millis();
-    run_with_root(
-        &root,
-        "cargo",
-        &[
-            "run",
-            "-p",
-            "bijux-dag-cli",
-            "--",
-            "dag",
-            "run",
-            "benchmarks/fixtures/large_dag.json",
-            "--out",
-            runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
-        ],
-    )?;
-    let end_ms = now_millis();
+    let fixtures = [
+        "benchmarks/fixtures/large_dag.json",
+        "benchmarks/fixtures/scheduler_linear_32.json",
+        "benchmarks/fixtures/scheduler_parallel_64.json",
+        "benchmarks/fixtures/scheduler_diamond_fanout.json",
+    ];
+    let mut families = Vec::new();
+    for fixture in fixtures {
+        let start_ms = now_millis();
+        run_with_root(
+            &root,
+            "cargo",
+            &[
+                "run",
+                "-p",
+                "bijux-dag-cli",
+                "--",
+                "dag",
+                "run",
+                fixture,
+                "--out",
+                runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
+            ],
+        )?;
+        let end_ms = now_millis();
+        families.push(json!({
+            "fixture": fixture,
+            "elapsed_ms": end_ms.saturating_sub(start_ms),
+        }));
+    }
     let report = json!({
-        "fixture": "benchmarks/fixtures/large_dag.json",
-        "elapsed_ms": end_ms.saturating_sub(start_ms),
-        "recorded_at_unix_ms": end_ms
+        "families": families,
+        "recorded_at_unix_ms": now_millis()
     });
     fs::write(
         out_dir.join("baseline.json"),
@@ -885,6 +925,56 @@ fn run_benchmark_baseline() -> Result<(), String> {
     )
     .map_err(|err| err.to_string())?;
     Ok(())
+}
+
+fn run_observability_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let runs_root = root.join("artifacts").join("runs");
+    let report_dir = root.join("artifacts").join("reports");
+    fs::create_dir_all(&report_dir).map_err(|err| err.to_string())?;
+    if !runs_root.exists() {
+        fs::write(
+            report_dir.join("observability.json"),
+            serde_json::to_vec_pretty(&json!({"runs": [], "note": "no runs available"}))
+                .map_err(|err| err.to_string())?,
+        )
+        .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    let mut runs = Vec::new();
+    for entry in fs::read_dir(&runs_root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let run_path = entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let name = run_path
+            .file_name()
+            .and_then(|v| v.to_str())
+            .unwrap_or_default()
+            .to_string();
+        if !name.starts_with("run-") {
+            continue;
+        }
+        let metrics_path = run_path.join("observability.metrics.json");
+        let events_path = run_path.join("observability.events.json");
+        let timeline_path = run_path.join("observability.timeline.json");
+        runs.push(json!({
+            "run_dir": name,
+            "metrics_present": metrics_path.exists(),
+            "events_present": events_path.exists(),
+            "timeline_present": timeline_path.exists(),
+        }));
+    }
+    let report = json!({
+        "generated_unix_ms": now_millis(),
+        "runs": runs
+    });
+    fs::write(
+        report_dir.join("observability.json"),
+        serde_json::to_vec_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())
 }
 
 fn run_memory_smoke() -> Result<(), String> {
