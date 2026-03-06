@@ -1,0 +1,18 @@
+[
+  {
+    "tenant": "tenant-a",
+    "environment": "prod",
+    "dag_name": "sales-etl",
+    "run_id": "run-001",
+    "dataset_refs": ["sales-mart:v1"],
+    "total_cost": 182.4
+  },
+  {
+    "tenant": "tenant-a",
+    "environment": "prod",
+    "dag_name": "sales-etl",
+    "run_id": "run-002",
+    "dataset_refs": ["sales-mart:v2"],
+    "total_cost": 210.7
+  }
+]
