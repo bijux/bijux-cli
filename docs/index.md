@@ -31,6 +31,9 @@
 ## Crate contracts and ownership
 
 - [Spec ownership and evolution](./OWNERSHIP.md)
+- [Control plane model](./CONTROL_PLANE.md)
+- [API resource contract draft](./API_CONTRACT.md)
+- [Control plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
 - [Examples governance](./EXAMPLES.md)
 - [Make and dev command relationship](./MAKE_DEV_RELATIONSHIP.md)
 - [Release process](./RELEASE_PROCESS.md)
