@@ -26,6 +26,7 @@
 - [Artifact platform contracts](./ARTIFACT_PLATFORM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
 - [Scheduler MVP contract](./SCHEDULER_MVP.md)
+- [Scheduler workload management contracts](./SCHEDULER_WORKLOAD_MANAGEMENT.md)
 - [Observability model](./OBSERVABILITY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
