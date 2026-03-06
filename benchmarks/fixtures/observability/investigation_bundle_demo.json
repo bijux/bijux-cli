@@ -1,0 +1,8 @@
+{
+  "run_id": "run-obsv-001",
+  "event_paths": ["artifacts/runs/run-obsv-001/observability.events.json"],
+  "manifest_paths": ["artifacts/runs/run-obsv-001/manifest.json"],
+  "lineage_paths": ["artifacts/runs/run-obsv-001/observability.lineage-visualization.json"],
+  "log_paths": ["artifacts/runs/run-obsv-001/nodes/extract/stderr.log"],
+  "summary_paths": ["artifacts/runs/run-obsv-001/observability.root-causes.json"]
+}
