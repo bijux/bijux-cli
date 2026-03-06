@@ -48,6 +48,7 @@
 - [Test topology](./TEST_TOPOLOGY.md)
 - [Fixture governance](./FIXTURE_GOVERNANCE.md)
 - [Compatibility policy](./COMPATIBILITY.md)
+- [Upgrade and compatibility governance](./UPGRADE_COMPATIBILITY_GOVERNANCE.md)
 - [Compatibility window v0.1](./COMPATIBILITY_WINDOW_v0.1.md)
 
 ## Crate contracts and ownership
@@ -76,4 +77,6 @@
 ## Operations
 
 - [Operations guide](./operations/README.md)
+- [Performance and capacity engineering](./PERFORMANCE_CAPACITY_ENGINEERING.md)
+- [Environment scale profiles](./ENVIRONMENT_SCALE_PROFILES.md)
 - [CI workflows](./operations/CI_WORKFLOWS.md)
