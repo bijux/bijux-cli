@@ -28,6 +28,7 @@ mod scheduler;
 mod scheduler_enterprise;
 mod secrets_security;
 mod store;
+mod supply_chain_trust;
 mod task_contract;
 mod task_types;
 mod tenancy;
@@ -239,6 +240,17 @@ pub use scheduler_enterprise::{
     SchedulerAlertRule, SchedulerMaturityMatrix, SchedulerSlaMetrics, SchedulingSimulationSuite,
     ScheduleSuppressionAnnotation, ServiceClass, SlaPolicy, StarvationPreventionPolicy,
     TriggerDedupDecision, WeightedPriorityPolicy, CronConflict,
+};
+pub use supply_chain_trust::{
+    build_provenance_drift_report, can_promote_artifact, default_supply_chain_maturity_matrix,
+    evaluate_attestation_compatibility, regulated_workflow_reference_example,
+    replay_trust_warnings, require_provenance_completeness, verify_attestation_or_fail,
+    ArtifactTrustLabel, AttestationCompatibility, AttestationFormatRule,
+    AttestationVerificationResult, BinaryComponent, BinaryProvenanceRecord,
+    ComplianceEvidenceBundle, EnvironmentAttestation, PluginProvenanceRecord, PluginTrustTier,
+    PromotionPolicy, ProvenanceCompletenessPolicy, ProvenanceDriftReport,
+    RegulatedWorkflowReference, ReplayTrustWarning, RunProvenanceAttestation,
+    SignedArtifactManifest, SupplyChainMaturityMatrix,
 };
 
 #[derive(Debug, thiserror::Error)]
