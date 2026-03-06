@@ -1,9 +1,12 @@
 [package]
 name = "bijux-dev-dag"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 license = "Apache-2.0"
 authors = ["Bijan Mousavi"]
+
+[lints]
+workspace = true
 
 [dependencies]
 clap = { workspace = true }

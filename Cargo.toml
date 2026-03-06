@@ -11,6 +11,11 @@ members = [
 
 [workspace.package]
 version = "0.1.0"
+rust-version = "1.81"
+description = "A deterministic DAG runtime and artifact system with CLI tooling."
+repository = "https://github.com/bijanmousavi/bijux-dag"
+homepage = "https://github.com/bijanmousavi/bijux-dag"
+keywords = ["dag", "workflow", "runtime", "cli", "artifacts"]
 edition = "2021"
 license = "Apache-2.0"
 authors = ["Bijan Mousavi"]
@@ -26,3 +31,18 @@ ctrlc = "3"
 hex = "0.4"
 tar = "0.4"
 flate2 = "1"
+base64 = "0.22"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_crate_dependencies = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "warn"
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"

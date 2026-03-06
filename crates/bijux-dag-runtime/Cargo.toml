@@ -1,9 +1,12 @@
 [package]
 name = "bijux-dag-runtime"
 version.workspace = true
-edition = "2021"
+edition.workspace = true
 license = "Apache-2.0"
 authors = ["Bijan Mousavi"]
+
+[lints]
+workspace = true
 
 [dependencies]
 bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core" }
