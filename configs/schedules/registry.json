@@ -1,0 +1,57 @@
+{
+  "definitions": [
+    {
+      "id": "daily-core-validation",
+      "dag_name": "core-validation",
+      "dag_version_policy": "run-compatible",
+      "trigger": {
+        "kind": "cron",
+        "expression": "0 2 * * *",
+        "timezone": "UTC"
+      },
+      "queue": {
+        "queue_name": "default",
+        "tenant": "engineering"
+      },
+      "priority": "standard",
+      "concurrency": {
+        "per_dag": 2,
+        "per_queue": 10,
+        "per_tenant": 5,
+        "per_node_group": 4
+      },
+      "catch_up": {
+        "enabled": true,
+        "max_catch_up_runs": 4
+      }
+    },
+    {
+      "id": "artifact-release-backfill",
+      "dag_name": "artifact-release",
+      "dag_version_policy": "run-pinned",
+      "trigger": {
+        "kind": "backfill",
+        "window_start_unix_ms": 1735689600000,
+        "window_end_unix_ms": 1735776000000,
+        "partition_by": "hour",
+        "max_parallelism": 8,
+        "failure_policy": "continue-independent"
+      },
+      "queue": {
+        "queue_name": "release",
+        "tenant": "platform"
+      },
+      "priority": "high",
+      "concurrency": {
+        "per_dag": 3,
+        "per_queue": 12,
+        "per_tenant": 6,
+        "per_node_group": 4
+      },
+      "catch_up": {
+        "enabled": false,
+        "max_catch_up_runs": 0
+      }
+    }
+  ]
+}

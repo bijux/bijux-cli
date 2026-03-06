@@ -68,6 +68,11 @@ enum CommandLine {
         #[command(subcommand)]
         command: RepoCommand,
     },
+    /// Validate and preview scheduling definitions
+    Schedule {
+        #[command(subcommand)]
+        command: ScheduleCommand,
+    },
     /// Print environment diagnostics and report status
     Doctor,
     /// Generate and verify golden run/replay contract
@@ -144,6 +149,20 @@ enum RepoCommand {
     Explain {
         #[arg(long)]
         suite: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ScheduleCommand {
+    /// Validate schedule registry semantics
+    Validate {
+        #[arg(long, default_value = "configs/schedules/registry.json")]
+        file: PathBuf,
+    },
+    /// Preview next-fire behavior
+    Preview {
+        #[arg(long, default_value = "configs/schedules/registry.json")]
+        file: PathBuf,
     },
 }
 
@@ -443,6 +462,22 @@ fn run(cli: Cli) -> Result<(), String> {
             RepoCommand::List => run_suite_list(&context, "repo", REPO_SUITES),
             RepoCommand::Explain { suite } => run_suite_explain(&context, "repo", &suite, REPO_SUITES),
         },
+        CommandLine::Schedule { command } => match command {
+            ScheduleCommand::Validate { file } => run_command_reported(
+                &context,
+                "schedule.validate",
+                CommandEffect::Validation,
+                json!({ "file": file }),
+                || run_schedule_validate(&file),
+            ),
+            ScheduleCommand::Preview { file } => run_command_reported(
+                &context,
+                "schedule.preview",
+                CommandEffect::Validation,
+                json!({ "file": file }),
+                || run_schedule_preview(&file),
+            ),
+        },
         CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
             run_env_summary()?;
             run_verify_tools()
@@ -654,6 +689,78 @@ fn run_ci() -> Result<(), String> {
         "cargo",
         &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
     )
+}
+
+fn run_schedule_validate(file: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(file);
+    let text = fs::read_to_string(&path)
+        .map_err(|err| format!("failed to read schedule file {}: {err}", path.display()))?;
+    let payload: Value = serde_json::from_str(&text)
+        .map_err(|err| format!("failed to parse schedule file {}: {err}", path.display()))?;
+    let definitions = payload
+        .get("definitions")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "schedule registry must contain a 'definitions' array".to_string())?;
+
+    let mut seen = std::collections::BTreeSet::new();
+    for definition in definitions {
+        let id = definition
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "schedule definition is missing string 'id'".to_string())?;
+        if !seen.insert(id.to_string()) {
+            return Err(format!("duplicate schedule id '{id}'"));
+        }
+        let trigger = definition
+            .get("trigger")
+            .ok_or_else(|| format!("schedule '{id}' is missing 'trigger'"))?;
+        let trigger_kind = trigger
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("schedule '{id}' trigger is missing 'kind'"))?;
+        if trigger_kind == "cron" {
+            let expression = trigger
+                .get("expression")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| format!("schedule '{id}' cron trigger is missing 'expression'"))?;
+            let parts: Vec<&str> = expression.split_whitespace().collect();
+            if parts.len() != 5 {
+                return Err(format!(
+                    "schedule '{id}' cron expression must have exactly five fields"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn run_schedule_preview(file: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(file);
+    let text = fs::read_to_string(&path)
+        .map_err(|err| format!("failed to read schedule file {}: {err}", path.display()))?;
+    let payload: Value = serde_json::from_str(&text)
+        .map_err(|err| format!("failed to parse schedule file {}: {err}", path.display()))?;
+    let definitions = payload
+        .get("definitions")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "schedule registry must contain a 'definitions' array".to_string())?;
+    let now = now_millis();
+    for definition in definitions {
+        let id = definition
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("<unknown>");
+        let trigger = definition.get("trigger").unwrap_or(&Value::Null);
+        let kind = trigger
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let preview = if kind == "cron" { now + 60_000 } else { now };
+        println!("schedule={id} trigger={kind} preview_unix_ms={preview}");
+    }
+    Ok(())
 }
 
 fn run_artifacts_clean() -> Result<(), String> {
