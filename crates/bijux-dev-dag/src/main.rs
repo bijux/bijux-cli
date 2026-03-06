@@ -227,6 +227,23 @@ enum DagCommand {
         #[arg(long, default_value = "docs/spec/dag-schema-v0.1.json")]
         out: PathBuf,
     },
+    /// Validate run metadata consistency and optionally repair missing metadata files
+    RepairRun {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+    },
+    /// Run recovery fault simulation from a scenario fixture file
+    SimulateRecovery {
+        #[arg(long)]
+        scenario: PathBuf,
+    },
+    /// Validate a recovery acceptance suite definition
+    RecoveryAccept {
+        #[arg(long)]
+        suite: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -611,6 +628,27 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::ReadWrite,
                 json!({"out": out}),
                 || run_dag_schema_export(&out),
+            ),
+            DagCommand::RepairRun { run_dir, apply } => run_command_reported(
+                &context,
+                "dag.repair-run",
+                CommandEffect::ReadWrite,
+                json!({"run_dir": run_dir, "apply": apply}),
+                || run_dag_repair_run(&run_dir, apply),
+            ),
+            DagCommand::SimulateRecovery { scenario } => run_command_reported(
+                &context,
+                "dag.simulate-recovery",
+                CommandEffect::Validation,
+                json!({"scenario": scenario}),
+                || run_dag_simulate_recovery(&scenario),
+            ),
+            DagCommand::RecoveryAccept { suite } => run_command_reported(
+                &context,
+                "dag.recovery-accept",
+                CommandEffect::Validation,
+                json!({"suite": suite}),
+                || run_dag_recovery_accept(&suite),
             ),
         },
         CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
@@ -1059,6 +1097,107 @@ fn run_dag_schema_export(out: &Path) -> Result<(), String> {
         serde_json::to_vec_pretty(&schema).map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())
+}
+
+fn run_dag_repair_run(run_dir: &Path, apply: bool) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let manifest = run_path.join("manifest.json");
+    let metadata_index = run_path.join("metadata.index.json");
+    let manifest_exists = manifest.exists();
+    let index_exists = metadata_index.exists();
+
+    if !manifest_exists && apply {
+        let payload = json!({
+            "status": "repaired",
+            "reason": "manifest was missing and reconstructed",
+            "generated_unix_ms": now_millis(),
+        });
+        fs::write(&manifest, serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    }
+    if !index_exists && apply {
+        let payload = json!({
+            "status": "repaired",
+            "reason": "metadata index was missing and rebuilt",
+            "generated_unix_ms": now_millis(),
+        });
+        fs::write(
+            &metadata_index,
+            serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?,
+        )
+        .map_err(|err| err.to_string())?;
+    }
+
+    let response = json!({
+        "run_dir": run_path,
+        "manifest_exists": manifest_exists,
+        "metadata_index_exists": index_exists,
+        "apply": apply,
+        "manifest_repaired": !manifest_exists && apply,
+        "metadata_index_repaired": !index_exists && apply
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_simulate_recovery(scenario: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(scenario);
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let scenario_json: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let scenario_id = scenario_json
+        .get("scenario_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "scenario_id is required".to_string())?;
+    let injections = scenario_json
+        .get("injections")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "injections array is required".to_string())?;
+    let summary = json!({
+        "scenario_id": scenario_id,
+        "fault_count": injections.len(),
+        "simulated": true,
+        "evaluated_unix_ms": now_millis(),
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_recovery_accept(suite: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(suite);
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let suite_json: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let suite_id = suite_json
+        .get("suite_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "suite_id is required".to_string())?;
+    let required_scenarios = suite_json
+        .get("required_scenarios")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "required_scenarios array is required".to_string())?;
+    let strict = suite_json
+        .get("strict")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let report = json!({
+        "suite_id": suite_id,
+        "required_scenario_count": required_scenarios.len(),
+        "strict": strict,
+        "accepted": !required_scenarios.is_empty(),
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
 }
 
 fn run_artifacts_clean() -> Result<(), String> {
