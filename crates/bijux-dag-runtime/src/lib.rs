@@ -6,6 +6,7 @@ mod execution_plan;
 mod external_adapter;
 mod io;
 mod local_executor;
+mod observability;
 mod planner;
 mod remote_executor;
 mod registry;
@@ -49,6 +50,12 @@ pub use task_contract::{
 pub use async_adapter::AsyncAdapter;
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use observability::{
+    category_from_runtime_event_name, current_process_memory_bytes, summarize_failure_root_causes,
+    write_timeline_export, EventCategory, EventRecord, EventSink, FileEventSink,
+    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
+    SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
+};
 pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
 pub use run_state::{
     validate_node_transition, validate_run_transition, NodeState, NodeTransition, ReplayNodeAction,
