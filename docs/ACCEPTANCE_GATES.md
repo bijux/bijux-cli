@@ -9,6 +9,16 @@
 - Dependency audit has no blocking vulnerabilities.
 - Release verification sequence passes.
 
+## Backend production-capability gates
+
+A backend is production-capable only when all of the following are true:
+
+- deterministic replay behavior is validated against conformance fixtures
+- artifact integrity and transport checks pass
+- policy enforcement behavior is verifiable and audited
+- observability coverage includes events, metrics, and timeline exports
+- backend request/completion serialization contracts are stable
+
 ## Decision rule
 
 A release candidate is accepted only when all required gates pass without bypass.

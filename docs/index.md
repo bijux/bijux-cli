@@ -14,11 +14,14 @@
 
 - [Effects model](./EFFECTS.md)
 - [Policy gates](./POLICY.md)
+- [Backend policy overlays](./BACKEND_POLICY_OVERLAYS.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
 - [Scheduler MVP contract](./SCHEDULER_MVP.md)
 - [Observability model](./OBSERVABILITY.md)
+- [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
+- [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
 
 ## Test governance
 

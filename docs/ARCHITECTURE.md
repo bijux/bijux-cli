@@ -8,6 +8,11 @@
 - `crates/bijux-dag-cli`: umbrella command wiring and top-level UX.
 - `crates/bijux-dev-dag`: repository control-plane for checks, tests, release workflows.
 
+## Execution backend baseline
+
+- Local backend is the correctness baseline for deterministic behavior.
+- Other backends must satisfy the same execution contract and acceptance gates before production use.
+
 ## Module boundaries
 
 - `core` contains no I/O dependencies on other runtime crates.
