@@ -1,10 +1,12 @@
 use crate::{
     build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
-    count_nodes, execute_with_retries, materialize_inputs, node_fingerprint_from_ctx,
-    node_fingerprint_with_inputs, registered_adapters, set_node_fingerprint, try_cache_read,
-    try_cache_write, write_trace, CacheProof, DependencyCounter, EffectSet, ExecutionCheckpoint,
-    NodeResult, NodeStatus, ReadyQueue, ReplayNodeAction, RunAttempt, RunId, RunSnapshot, Runtime,
-    RuntimeConfig, RuntimeError, SchedulerEventHook,
+    category_from_runtime_event_name, count_nodes, current_process_memory_bytes, execute_with_retries,
+    materialize_inputs, node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters,
+    set_node_fingerprint, summarize_failure_root_causes, try_cache_read, try_cache_write,
+    write_timeline_export, write_trace, CacheProof, DependencyCounter, EffectSet, EventRecord,
+    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult,
+    NodeStatus, ReadyQueue, ReplayNodeAction, RunAttempt, RunId, RunMetrics, RunSnapshot, Runtime,
+    RuntimeConfig, RuntimeError, SchedulerEventHook, SchedulerMetrics, TimelineEntry, TimelineExport,
 };
 use bijux_dag_artifacts::{
     write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
@@ -118,6 +120,8 @@ pub fn execute(
     let mut run_log_index: Vec<serde_json::Value> = Vec::new();
     let mut run_audit_events: Vec<serde_json::Value> = Vec::new();
     let mut failure_propagation_records: Vec<serde_json::Value> = Vec::new();
+    let mut node_metric_rows: Vec<NodeMetrics> = Vec::new();
+    let mut metrics_registry = InMemoryMetricsRegistry::default();
     crate::append_event(
         &mut run_log,
         serde_json::json!({
@@ -221,6 +225,19 @@ pub fn execute(
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
+    crate::append_event(
+        &mut run_log,
+        serde_json::json!({
+            "event": "plan_built",
+            "ts": ctx.clock.now_unix_ms(),
+            "nodes": graph.nodes.len(),
+        }),
+    )?;
+    run_log_index.push(serde_json::json!({
+        "event": "plan_built",
+        "ts": ctx.clock.now_unix_ms(),
+        "nodes": graph.nodes.len(),
+    }));
     while !ready_queue.is_empty() {
         loop_index = loop_index.saturating_add(1);
         let ready_vec: Vec<String> = ready_queue.snapshot_sorted();
@@ -246,6 +263,17 @@ pub fn execute(
             break;
         }
         if decision.timed_out {
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "run_timeout",
+                    "ts": ctx.clock.now_unix_ms(),
+                }),
+            )?;
+            run_log_index.push(serde_json::json!({
+                "event": "run_timeout",
+                "ts": ctx.clock.now_unix_ms(),
+            }));
             break;
         }
         let batch = decision.batch;
@@ -397,9 +425,35 @@ pub fn execute(
                 }
             }
             if cache_read.hit {
+                crate::append_event(
+                    &mut run_log,
+                    serde_json::json!({
+                        "event": "cache_hit",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node_id,
+                    }),
+                )?;
+                run_log_index.push(serde_json::json!({
+                    "event": "cache_hit",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                }));
                 cached.push((node_id.clone(), node, cache_read.proof.unwrap()));
                 continue;
             }
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "cache_miss",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                }),
+            )?;
+            run_log_index.push(serde_json::json!({
+                "event": "cache_miss",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+            }));
 
             to_start.push((node_id.clone(), node, resolved_params));
         }
@@ -683,6 +737,17 @@ pub fn execute(
                         NodeStatus::Skipped => ReplayNodeAction::Skipped,
                         _ => ReplayNodeAction::Reexecuted,
                     };
+                    let replay_event = match replay_action {
+                        ReplayNodeAction::Reused => "replay_reused",
+                        ReplayNodeAction::Reexecuted => "replay_reexecuted",
+                        ReplayNodeAction::Skipped => "replay_reused",
+                        ReplayNodeAction::Restored => "replay_reused",
+                    };
+                    run_log_index.push(serde_json::json!({
+                        "event": replay_event,
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node_id,
+                    }));
                     write_trace(
                         &ctx,
                         graph,
@@ -749,6 +814,26 @@ pub fn execute(
                             &aschema,
                         )?;
                     }
+                    let output_bytes = match ctx
+                        .fs
+                        .metadata(&ctx.run_dir.node_outputs_dir(&node_id))
+                    {
+                        Ok(meta) => meta.len(),
+                        Err(_) => 0,
+                    };
+                    node_metric_rows.push(NodeMetrics {
+                        node_id: node_id.clone(),
+                        queue_delay_ms: 0,
+                        execution_time_ms: finished.saturating_sub(started),
+                        retries: result.attempts.saturating_sub(1),
+                        output_bytes,
+                        cache_status: crate::status_string(&result.status),
+                        effect_usage: node
+                            .effects
+                            .iter()
+                            .map(|e| format!("{e:?}").to_lowercase())
+                            .collect(),
+                    });
                 }
                 Err(err) => {
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
@@ -806,6 +891,19 @@ pub fn execute(
                         "node_id": node_id,
                         "status": "failed",
                     }));
+                    node_metric_rows.push(NodeMetrics {
+                        node_id: node_id.clone(),
+                        queue_delay_ms: 0,
+                        execution_time_ms: finished.saturating_sub(started),
+                        retries: 0,
+                        output_bytes: 0,
+                        cache_status: "failed".to_string(),
+                        effect_usage: node
+                            .effects
+                            .iter()
+                            .map(|e| format!("{e:?}").to_lowercase())
+                            .collect(),
+                    });
                 }
             }
         }
@@ -874,6 +972,7 @@ pub fn execute(
     }
 
     let finished_unix_ms = ctx.clock.now_unix_ms();
+    let memory_before_materialization = current_process_memory_bytes().unwrap_or(0);
     if cancel.load(Ordering::SeqCst) {
         manifest.status = "cancelled".to_string();
     } else if status_map.values().any(|s| *s == NodeStatus::Failed) {
@@ -892,6 +991,7 @@ pub fn execute(
         cached: manifest.node_counts.cached,
     });
     manifest.outputs = collect_outputs_summary(ctx.fs.as_ref(), &ctx.run_dir)?;
+    let memory_after_materialization = current_process_memory_bytes().unwrap_or(0);
     let run_index = build_run_outputs_index(&ctx.run_dir, &manifest.outputs)?;
     let lineage_edges = manifest
         .outputs
@@ -911,6 +1011,12 @@ pub fn execute(
     };
     let _ = bijux_dag_artifacts::lineage::write_lineage_snapshot(
         ctx.run_dir.staging_path().join("lineage.snapshot.json"),
+        &lineage_snapshot,
+    );
+    let _ = bijux_dag_artifacts::lineage::export_lineage_visualization(
+        ctx.run_dir
+            .staging_path()
+            .join("observability.lineage-visualization.json"),
         &lineage_snapshot,
     );
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
@@ -934,6 +1040,104 @@ pub fn execute(
         "run_id": manifest.run_id.clone(),
         "status": manifest.status.clone(),
     }));
+    let mut structured_events: Vec<EventRecord> = Vec::new();
+    for entry in &run_log_index {
+        let name = entry
+            .get("event")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let unix_ms = entry.get("ts").and_then(|v| v.as_u64()).unwrap_or(0) as u128;
+        let node_id = entry
+            .get("node_id")
+            .and_then(|v| v.as_str())
+            .map(ToString::to_string);
+        let details = entry.clone();
+        structured_events.push(EventRecord {
+            category: category_from_runtime_event_name(name),
+            name: name.to_string(),
+            unix_ms,
+            node_id,
+            run_id: Some(manifest.run_id.clone()),
+            details,
+        });
+    }
+    let cache_hits = status_map.values().filter(|s| matches!(s, NodeStatus::Cached)).count() as f64;
+    let total_nodes = graph.nodes.len().max(1) as f64;
+    let run_metrics = RunMetrics {
+        makespan_ms: finished_unix_ms.saturating_sub(started_unix_ms),
+        success_ratio: manifest.node_counts.success as f64 / total_nodes,
+        parallelism_utilization: (manifest.node_counts.success + manifest.node_counts.cached) as f64
+            / (options.jobs.max(1) as f64 * total_nodes).max(1.0),
+        cache_reuse_ratio: cache_hits / total_nodes,
+        artifact_volume_bytes: manifest.outputs.len() as u64,
+    };
+    let scheduler_metrics = SchedulerMetrics {
+        queue_depth: 0,
+        starvation_count: failure_propagation_records
+            .iter()
+            .filter(|v| v.get("cause").and_then(|x| x.as_str()) == Some("budget"))
+            .count() as u64,
+        dispatch_latency_ms: 0,
+        concurrency_pressure: (options.jobs.max(1) as f64) / (options.scheduler_policy.max_parallelism.max(1) as f64),
+    };
+    for row in node_metric_rows {
+        metrics_registry.record_node(row);
+    }
+    metrics_registry.record_run(run_metrics);
+    metrics_registry.record_scheduler(scheduler_metrics);
+    let timeline = TimelineExport {
+        schema_version: "v0.1".to_string(),
+        entries: structured_events
+            .iter()
+            .map(|event| TimelineEntry {
+                unix_ms: event.unix_ms,
+                category: format!("{:?}", event.category).to_lowercase(),
+                label: event.name.clone(),
+                node_id: event.node_id.clone(),
+            })
+            .collect(),
+    };
+    let _ = write_timeline_export(
+        ctx.run_dir.staging_path().join("observability.timeline.json"),
+        &timeline,
+    );
+    let root_causes = summarize_failure_root_causes(&structured_events);
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("observability.root-causes.json"),
+        &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
+    );
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("observability.events.json"),
+        &serde_json::to_vec_pretty(&structured_events)?,
+    );
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("observability.metrics.json"),
+        &serde_json::to_vec_pretty(&serde_json::json!({
+            "node": metrics_registry.node_metrics,
+            "run": metrics_registry.run_metrics,
+            "scheduler": metrics_registry.scheduler_metrics,
+            "memory": {
+                "before_materialization_bytes": memory_before_materialization,
+                "after_materialization_bytes": memory_after_materialization
+            }
+        }))?,
+    );
+    let _ = ctx.fs.write(
+        &ctx.run_dir.staging_path().join("observability.graph-visualization.json"),
+        &serde_json::to_vec_pretty(&serde_json::json!({
+            "nodes": graph.nodes.iter().map(|n| {
+                serde_json::json!({
+                    "id": n.id,
+                    "status": status_map.get(&n.id).map(crate::status_string).unwrap_or_else(|| "unknown".to_string()),
+                })
+            }).collect::<Vec<_>>(),
+            "edges": graph.edges.iter().map(|e| {
+                serde_json::json!({"from": e.from.node_id, "to": e.to.node_id})
+            }).collect::<Vec<_>>(),
+            "lineage_snapshot": "lineage.snapshot.json",
+            "timeline": "observability.timeline.json"
+        }))?,
+    );
     let _ = ctx.fs.write(
         &ctx.run_dir.staging_path().join("run-log.index.json"),
         &serde_json::to_vec_pretty(&run_log_index)?,
