@@ -1,0 +1,17 @@
+[
+  {
+    "mode": "standalone-binary",
+    "passed": true,
+    "failures": []
+  },
+  {
+    "mode": "container-image",
+    "passed": true,
+    "failures": []
+  },
+  {
+    "mode": "reference-deployment-bundle",
+    "passed": true,
+    "failures": []
+  }
+]
