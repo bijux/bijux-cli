@@ -11,6 +11,7 @@ mod distributed;
 mod engine;
 mod execution_plan;
 mod external_adapter;
+mod federated_scheduling;
 mod geo_federation;
 mod ha_scheduler;
 mod io;
@@ -149,6 +150,17 @@ pub use auth_identity::{
 };
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use federated_scheduling::{
+    cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
+    domain_healthy, federation_conformance_passes, select_delegation_failure_action,
+    trust_tier_allows_domain, CrossClusterRoutingPolicy, CrossDomainReplaySafety,
+    DelegationFailureAction, DelegationFailurePolicy, DomainCapabilityAdvertisement,
+    DomainHealthSnapshot, DomainRoutingExplanation, FederatedBackfillPlan,
+    FederatedConformanceGate, FederatedScheduleSuppression, FederatedSimulationScenario,
+    FederationConcurrencyControl, FederationDomainIdentity, FederationMaturityMatrix,
+    InterSchedulerFlowControl, PeeringObservabilityContract, RunDelegationRecord,
+    SchedulerDomainId, SchedulerPeeringRule, TrustTierRoutingRule,
+};
 pub use geo_federation::{
     build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
     geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
