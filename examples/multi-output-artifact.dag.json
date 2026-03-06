@@ -1,0 +1,38 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "multi-output-artifact",
+    "description": "Shell node emits multiple output artifacts for downstream consumers",
+    "owners": ["platform"],
+    "tags": ["outputs", "multi-artifact"]
+  },
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{ "name": "value", "path": "seed.txt" }],
+      "params": { "value": "artifact-seed" }
+    },
+    {
+      "id": "produce_outputs",
+      "kind": "shell",
+      "inputs": ["seed_input"],
+      "outputs": [
+        { "name": "primary", "path": "primary.json" },
+        { "name": "secondary", "path": "secondary.txt" }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "cat <<EOF > ../outputs/primary.json\n{\"status\":\"ready\"}\nEOF\nprintf '%s' \"$(cat ../inputs/seed/seed.txt)\" > ../outputs/secondary.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    { "from": { "node_id": "seed", "port": "value" }, "to": { "node_id": "produce_outputs", "port": "seed_input" } }
+  ]
+}

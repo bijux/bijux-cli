@@ -1,0 +1,73 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "cached-branched-report",
+    "description": "Two independent branches are merged into a single report artifact",
+    "owners": ["platform"],
+    "tags": ["cache", "branching"]
+  },
+  "nodes": [
+    {
+      "id": "seed_a",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{ "name": "value", "path": "seed_a.txt" }],
+      "params": { "value": "branch-a\n" }
+    },
+    {
+      "id": "seed_b",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{ "name": "value", "path": "seed_b.txt" }],
+      "params": { "value": "branch-b\n" }
+    },
+    {
+      "id": "branch_a_transform",
+      "kind": "shell",
+      "inputs": ["seed"],
+      "outputs": [{ "name": "value", "path": "branch_a.txt" }],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "tr '\\n' ':' < ../inputs/seed_a/seed_a.txt > ../outputs/branch_a.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "branch_b_transform",
+      "kind": "shell",
+      "inputs": ["seed"],
+      "outputs": [{ "name": "value", "path": "branch_b.txt" }],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "tr '\\n' ';' < ../inputs/seed_b/seed_b.txt > ../outputs/branch_b.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "join_report",
+      "kind": "shell",
+      "inputs": ["branch_a", "branch_b"],
+      "outputs": [{ "name": "value", "path": "report.txt" }],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a.txt)\" \"$(cat ../inputs/branch_b_transform/branch_b.txt)\" > ../outputs/report.txt"
+        ]
+      },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    { "from": { "node_id": "seed_a", "port": "value" }, "to": { "node_id": "branch_a_transform", "port": "seed" } },
+    { "from": { "node_id": "seed_b", "port": "value" }, "to": { "node_id": "branch_b_transform", "port": "seed" } },
+    { "from": { "node_id": "branch_a_transform", "port": "value" }, "to": { "node_id": "join_report", "port": "branch_a" } },
+    { "from": { "node_id": "branch_b_transform", "port": "value" }, "to": { "node_id": "join_report", "port": "branch_b" } }
+  ]
+}

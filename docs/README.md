@@ -9,6 +9,9 @@ This directory contains all project documentation.
 - `docs/operations/` — How to run, replay, diff, caching, failure semantics
 - `docs/ADAPTERS.md` — Adapter API and examples
 - `docs/POLICY.md` — Policy gates and effects enforcement
+- `docs/index.md` — Single navigation index for repository documentation
+- `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/OWNERSHIP.md` — Governance and ownership
+- `docs/CACHE_SEMANTICS.md` and `docs/REPLAY_GUARANTEES.md` — Runtime behavior contracts
 
 ## Conventions
 - Specs are versioned files (e.g., `*_v0.1.md`).
