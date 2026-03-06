@@ -17,6 +17,7 @@ mod run_state;
 mod scheduler;
 mod store;
 mod task_contract;
+mod task_types;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -49,6 +50,16 @@ pub use task_contract::{
     IdempotencyMode, NodeProvenance, OutputMaterializationPolicy, RuntimeState,
     SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
     TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+};
+pub use task_types::{
+    check_replay_adapter_compatibility, compatibility_matrix_report, compatibility_score_for_contract,
+    compute_task_contract_fingerprint, default_task_type_registry, generate_task_contract_markdown,
+    validate_cross_node_compatibility, validate_parameter_defaults, AdapterCapabilityDeclaration,
+    CollectionType, CompatibilityScore, NullabilityContract, OutputEvolutionMarker,
+    PartitionCollectionContract, PolymorphicTaskContract, PolymorphicVariant, ResourceReference,
+    ScalarType, SchemaReference, SecretReference, TaskCompatibilityMatrixReport,
+    TaskCompatibilityRelationship, TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry,
+    TypeCoercionRule, VersionedTypeRule,
 };
 pub use async_adapter::AsyncAdapter;
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
