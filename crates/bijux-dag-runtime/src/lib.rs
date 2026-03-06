@@ -1,4 +1,5 @@
 mod adapter;
+mod adapter_sdk;
 mod async_adapter;
 mod clock;
 mod control_plane;
@@ -50,6 +51,7 @@ pub use task_contract::{
     TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
 };
 pub use async_adapter::AsyncAdapter;
+pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
 pub use infrastructure::{
