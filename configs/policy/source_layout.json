@@ -1,0 +1,11 @@
+{
+  "global": {
+    "max_rust_source_lines": 600,
+    "new_file_allowlist": []
+  },
+  "transitional_ceiling": {
+    "crates/bijux-dag-runtime/src/lib.rs": 1745,
+    "crates/bijux-dag-app/src/lib.rs": 1778,
+    "crates/bijux-dev-dag/src/main.rs": 1972
+  }
+}

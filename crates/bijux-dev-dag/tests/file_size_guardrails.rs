@@ -1,5 +1,17 @@
 use std::fs;
 use std::path::Path;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct SourceLayoutPolicy {
+    global: SourceLayoutGlobal,
+    transitional_ceiling: std::collections::BTreeMap<String, usize>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SourceLayoutGlobal {
+    max_rust_source_lines: usize,
+}
 
 fn line_count(path: &Path) -> usize {
     fs::read_to_string(path)
@@ -11,30 +23,39 @@ fn line_count(path: &Path) -> usize {
 #[test]
 fn source_files_stay_under_size_budget() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let max_lines = 2200usize;
-    let allowlist = [
-        "crates/bijux-dag-runtime/src/lib.rs",
-        "crates/bijux-dag-app/src/lib.rs",
-    ];
+    let policy_path = root.join("configs/policy/source_layout.json");
+    let policy_text = fs::read_to_string(&policy_path).expect("read source layout policy");
+    let policy: SourceLayoutPolicy =
+        serde_json::from_str(&policy_text).expect("parse source layout policy");
 
     let mut violations = Vec::new();
-    for entry in [
-        "crates/bijux-dag-runtime/src/engine.rs",
-        "crates/bijux-dag-runtime/src/planner.rs",
-        "crates/bijux-dag-runtime/src/external_adapter.rs",
-        "crates/bijux-dag-app/src/diff.rs",
-        "crates/bijux-dev-dag/src/main.rs",
-    ] {
-        let path = root.join(entry);
-        let count = line_count(&path);
-        if count > max_lines {
-            violations.push(format!("{entry} has {count} lines"));
+    let mut stack = vec![root.join("crates")];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).expect("read dir") {
+            let entry = entry.expect("dir entry");
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|ext| ext.to_str()) != Some("rs") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .expect("strip prefix")
+                .to_string_lossy()
+                .replace('\\', "/");
+            let count = line_count(&path);
+            let max_lines = policy
+                .transitional_ceiling
+                .get(&rel)
+                .copied()
+                .unwrap_or(policy.global.max_rust_source_lines);
+            if count > max_lines {
+                violations.push(format!("{rel} has {count} lines (max {max_lines})"));
+            }
         }
-    }
-
-    for entry in allowlist {
-        let path = root.join(entry);
-        assert!(path.exists(), "allowlisted path missing: {entry}");
     }
 
     assert!(violations.is_empty(), "{}", violations.join(", "));
