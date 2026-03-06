@@ -10,6 +10,7 @@ mod distributed;
 mod engine;
 mod execution_plan;
 mod external_adapter;
+mod ha_scheduler;
 mod io;
 mod infrastructure;
 mod local_executor;
@@ -131,6 +132,15 @@ pub use auth_identity::{
 };
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use ha_scheduler::{
+    clock_within_assumption, conformance_no_duplicate_runs, deduplicate_across_replicas,
+    evaluate_ha_conformance, failover_recovery_passes, fence_allows_mutation, idempotent_run_creation,
+    is_stale_leader, next_epoch, ordering_during_failover, DurableInFlightDispatch,
+    DurableRunQueueEntry, DurableSchedulerTick, DurableSchedulerStateStore, HaConformanceReport,
+    HaMilestoneDefinition, HaSimulationScenario, LeaderElectionState, QueueOwnershipTransfer,
+    QueueShardLease, ScheduleDedupRecord, SchedulerAuditEvent, SchedulerAuditEventKind,
+    SchedulerClockAssumption, SchedulerEpoch, SchedulerFenceToken, SchedulerRecoveryObjectives,
+};
 pub use infrastructure::{
     negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
     ArtifactTransportMode, BackendAcceptanceGate, BackendCapabilities,
