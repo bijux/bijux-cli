@@ -1,0 +1,36 @@
+{
+  "name": "concurrency_pressure",
+  "description": "Mixed queue traffic that saturates queue and tenant caps.",
+  "queue_caps": {
+    "default": 10,
+    "release": 4
+  },
+  "tenant_caps": {
+    "engineering": 6,
+    "platform": 5
+  },
+  "incoming_submissions": [
+    {
+      "schedule_id": "eng-fast-path",
+      "queue": "default",
+      "tenant": "engineering",
+      "priority": "high"
+    },
+    {
+      "schedule_id": "eng-batch",
+      "queue": "default",
+      "tenant": "engineering",
+      "priority": "standard"
+    },
+    {
+      "schedule_id": "platform-release",
+      "queue": "release",
+      "tenant": "platform",
+      "priority": "critical"
+    }
+  ],
+  "expected": {
+    "starvation_count_tracked": true,
+    "dispatch_latency_recorded": true
+  }
+}

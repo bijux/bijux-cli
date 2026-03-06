@@ -1,0 +1,29 @@
+{
+  "name": "cron_storm_burst",
+  "description": "Multiple cron schedules firing on the same scheduler tick.",
+  "tick_unix_ms": 1735776000000,
+  "schedules": [
+    {
+      "schedule_id": "minute-analytics",
+      "expression": "* * * * *",
+      "queue": "default",
+      "priority": "high"
+    },
+    {
+      "schedule_id": "minute-health",
+      "expression": "* * * * *",
+      "queue": "default",
+      "priority": "standard"
+    },
+    {
+      "schedule_id": "minute-retention",
+      "expression": "* * * * *",
+      "queue": "maintenance",
+      "priority": "low"
+    }
+  ],
+  "expected": {
+    "deterministic_ordering": true,
+    "queue_isolation_required": true
+  }
+}

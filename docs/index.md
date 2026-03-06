@@ -17,6 +17,7 @@
 - [Cache semantics](./CACHE_SEMANTICS.md)
 - [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
+- [Scheduler MVP contract](./SCHEDULER_MVP.md)
 
 ## Test governance
 
