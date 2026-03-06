@@ -6,6 +6,7 @@ mod engine;
 mod execution_plan;
 mod external_adapter;
 mod io;
+mod infrastructure;
 mod local_executor;
 mod observability;
 mod planner;
@@ -51,6 +52,15 @@ pub use task_contract::{
 pub use async_adapter::AsyncAdapter;
 pub use execution_plan::ExecutionPlan;
 pub use local_executor::LocalExecutor;
+pub use infrastructure::{
+    negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
+    ArtifactTransportMode, BackendAcceptanceGate, BackendCapabilities,
+    BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
+    BackendPolicyOverlay, CapabilityDecision, ContainerExecutionContract, ExecutorBackend,
+    HighAvailabilitySchedulerPlan, HpcExecutorContract, KubernetesExecutorContract,
+    MultiTenantIdentity, ObjectStorageContract, QueuePartition, RegistryPersistenceBackend,
+    RuntimeSecretContract, SchedulerScalingPlan,
+};
 pub use control_plane::{
     register_dag_version, resolve_environment_values, select_dag_version, AuthorizationDecision,
     AuthorizationRequest, AuthorizationSubject, CompatibilityDecision, DagRegistry, DagRegistryEntry,
