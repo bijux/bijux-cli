@@ -1,5 +1,6 @@
 mod adapter;
 mod adapter_sdk;
+mod authz_policy;
 mod async_adapter;
 mod clock;
 mod control_plane;
@@ -57,6 +58,16 @@ pub use plugin_ecosystem::{
     PlatformMaturityScorecard, PluginBoundaryKind, PluginConformanceSuiteResult,
     PluginIsolationPolicy, PluginLifecycleState, PluginLoadingMode, PluginMetadata,
     PluginTrustPolicy,
+};
+pub use authz_policy::{
+    builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
+    evaluate_dry_run, has_permission, invalidate_decision_cache, is_action_allowed_in_environment,
+    role_catalog_by_name, validate_custom_role, Action, ActionKind, AuthorizationAcceptanceReport,
+    BuiltInRole, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
+    IdentityPermissionProfile, PermissionBoundary, PolicyDecisionCache, PolicyDecisionCacheEntry,
+    PolicyDecisionRecord, PolicyDryRunResult, PolicyEvaluationEngine, PolicyEvaluationRequest,
+    PolicyEvaluationResult, PolicyEvaluationTrace, ResourceKind, ResourceRef, ResourceScope,
+    RoleDefinition, SensitiveControlPermissions, SubjectIdentity, SubjectKind,
 };
 pub use recovery::{
     check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
