@@ -11,6 +11,7 @@ mod io;
 mod infrastructure;
 mod local_executor;
 mod observability;
+mod observability_deep;
 mod planner;
 mod planner_intelligence;
 mod recovery;
@@ -117,6 +118,15 @@ pub use observability::{
     write_timeline_export, EventCategory, EventRecord, EventSink, FileEventSink,
     InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
     SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
+};
+pub use observability_deep::{
+    build_diagnostics, build_investigation_bundle, build_topology_overlay, detect_metric_drift,
+    observability_contract_status, redact_event_details, render_timeline_text, root_cause_graph,
+    sample_events, AlertRule, DiagnosticRecord, DiagnosticsKind, DriftDetectionReport,
+    EventCorrelation, ExplainArtifactReport, ExplainNodeReport, ExplainRunReport,
+    ExplainScheduleReport, FailureCauseCode, InvestigationBundle, MetricsExportFormat,
+    ObservabilityContractStatus, RedactionPolicy, ReplaySpanLink, SamplingPolicy,
+    TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
 };
 pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
 pub use run_state::{
