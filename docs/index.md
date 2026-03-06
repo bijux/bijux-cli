@@ -15,6 +15,7 @@
 - [Effects model](./EFFECTS.md)
 - [Policy gates](./POLICY.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)
+- [Artifact system contracts](./ARTIFACT_SYSTEM.md)
 - [Replay guarantees](./REPLAY_GUARANTEES.md)
 
 ## Test governance

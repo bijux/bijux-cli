@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use serde_json::json;
 use serde_json::Value;
+use sha2::Digest;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -92,6 +93,8 @@ enum CommandLine {
     BenchmarkBaseline,
     /// Record memory smoke artifact
     MemorySmoke,
+    /// Verify artifact reproducibility and integrity for local runs
+    ArtifactVerify,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -479,6 +482,13 @@ fn run(cli: Cli) -> Result<(), String> {
             json!({}),
             || run_memory_smoke(),
         ),
+        CommandLine::ArtifactVerify => run_command_reported(
+            &context,
+            "artifact-verify",
+            CommandEffect::Validation,
+            json!({}),
+            || run_artifact_verify(),
+        ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
         }),
@@ -805,6 +815,81 @@ fn run_memory_smoke() -> Result<(), String> {
     )
     .map_err(|err| err.to_string())?;
     Ok(())
+}
+
+fn run_artifact_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let runs_root = root.join("artifacts").join("runs");
+    if !runs_root.exists() {
+        println!("no artifact runs directory found at {}", runs_root.display());
+        return Ok(());
+    }
+
+    let mut failures = Vec::new();
+    for entry in fs::read_dir(&runs_root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let run_path = entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let name = run_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default()
+            .to_string();
+        if !name.starts_with("run-") {
+            continue;
+        }
+        let manifest_path = run_path.join("manifest.json");
+        if !manifest_path.exists() {
+            failures.push(format!("{name}: missing manifest.json"));
+            continue;
+        }
+        let manifest_text = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
+        let manifest: serde_json::Value =
+            serde_json::from_str(&manifest_text).map_err(|err| err.to_string())?;
+        let outputs = manifest
+            .get("outputs")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        for output in outputs {
+            let node_id = output
+                .get("node_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let file = output
+                .get("file")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let expected_sha = output
+                .get("sha256")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let file_path = run_path.join("nodes").join(node_id).join("outputs").join(file);
+            if !file_path.exists() {
+                failures.push(format!("{name}: missing output {}", file_path.display()));
+                continue;
+            }
+            let bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
+            let mut hasher = sha2::Sha256::new();
+            hasher.update(&bytes);
+            let actual_sha = hex::encode(hasher.finalize());
+            if actual_sha != expected_sha {
+                failures.push(format!(
+                    "{name}: sha mismatch for {}",
+                    file_path.display()
+                ));
+            }
+        }
+    }
+
+    if failures.is_empty() {
+        println!("artifact verification passed");
+        Ok(())
+    } else {
+        Err(format!("artifact verification failed: {}", failures.join(", ")))
+    }
 }
 
 fn run_golden() -> Result<(), String> {

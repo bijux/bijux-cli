@@ -143,7 +143,9 @@ name = "bijux-dev-dag"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "hex",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]

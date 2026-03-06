@@ -19,6 +19,9 @@ use bijux_dag_artifacts::{
     ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
     OutputsIndex, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
 };
+use bijux_dag_artifacts::schema::{
+    validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
+};
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
 };
@@ -1166,6 +1169,21 @@ fn sort_value_maps(value: &mut Value) {
 
 pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
     for out in outputs {
+        let schema = ArtifactSchemaDescriptor {
+            name: "bijux.output.file".to_string(),
+            version: "v0.1".to_string(),
+            media_type: "application/octet-stream".to_string(),
+            encoding: "identity".to_string(),
+            validation_mode: SchemaValidationMode::Strict,
+        };
+        if let Err(message) = validate_output_schema_descriptor(&schema) {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_SCHEMA_INVALID".to_string(),
+                message,
+                details: None,
+            });
+        }
         if out.path.contains("..") || out.path.starts_with('/') || out.path.starts_with('\\') {
             return Some(FailureInfo {
                 kind: "Execution".to_string(),

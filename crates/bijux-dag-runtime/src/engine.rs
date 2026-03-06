@@ -6,8 +6,7 @@ use crate::{
     NodeResult, NodeStatus, ReadyQueue, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
 };
 use bijux_dag_artifacts::{
-    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
-    RunDir,
+    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance, RunDir,
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
 use serde_json::Value;
@@ -698,6 +697,26 @@ pub fn execute(
     manifest.node_counts = count_nodes(&status_map);
     manifest.outputs = collect_outputs_summary(ctx.fs.as_ref(), &ctx.run_dir)?;
     let run_index = build_run_outputs_index(&ctx.run_dir, &manifest.outputs)?;
+    let lineage_edges = manifest
+        .outputs
+        .iter()
+        .map(|out| bijux_dag_artifacts::lineage::ArtifactLineageEdge {
+            artifact_id: format!("{}:{}", out.node_id, out.file),
+            producer_node_id: out.node_id.clone(),
+            upstream_artifact_ids: dep_map
+                .get(&out.node_id)
+                .map(|deps| deps.iter().map(|d| format!("{d}:*")).collect())
+                .unwrap_or_default(),
+        })
+        .collect();
+    let lineage_snapshot = bijux_dag_artifacts::lineage::ArtifactLineageSnapshot {
+        schema_version: "v0.1".to_string(),
+        edges: lineage_edges,
+    };
+    let _ = bijux_dag_artifacts::lineage::write_lineage_snapshot(
+        ctx.run_dir.staging_path().join("lineage.snapshot.json"),
+        &lineage_snapshot,
+    );
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
     run_dir.write_manifest(&manifest)?;
     crate::append_event(

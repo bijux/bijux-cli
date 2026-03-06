@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: help all test checks checks-fast checks-all tests-all contracts-all release-verify
-.PHONY: lint docs fmt security compat golden repo-deps public-surface ci artifacts-clean surface-explain doctor sanity benchmark-baseline memory-smoke
+.PHONY: lint docs fmt security compat golden repo-deps public-surface ci artifacts-clean surface-explain doctor sanity benchmark-baseline memory-smoke artifact-verify
 
 DEV_TOOL := cargo run -p bijux-dev-dag --
 RUN_DIR := artifacts/runs
@@ -53,6 +53,7 @@ help:
 	@echo "  docs             - Run docs checks"
 	@echo "  benchmark-baseline - Record performance baseline through bijux-dev-dag"
 	@echo "  memory-smoke     - Record memory smoke artifact through bijux-dev-dag"
+	@echo "  artifact-verify  - Verify artifact reproducibility and integrity"
 
 all: test
 
@@ -118,3 +119,6 @@ benchmark-baseline:
 
 memory-smoke:
 	$(call run_or_fail,Record memory smoke artifact,$(DEV_TOOL) memory-smoke)
+
+artifact-verify:
+	$(call run_or_fail,Verify artifact reproducibility,$(DEV_TOOL) artifact-verify)
