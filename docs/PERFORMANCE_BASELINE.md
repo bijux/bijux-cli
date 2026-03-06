@@ -1,6 +1,6 @@
 # Performance baseline
 
-- Baseline harness: `scripts/bench/run_baseline.sh`
+- Baseline command: `cargo run -p bijux-dev-dag -- benchmark-baseline`
 - Fixture: `benchmarks/fixtures/large_dag.json`
 - Output artifact: `artifacts/benchmarks/baseline.json`
 
