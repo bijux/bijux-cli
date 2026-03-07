@@ -312,12 +312,18 @@ pub use dataset_semantics::{
     DatasetSchemaContract, DatasetVersionId,
 };
 pub use distributed::{
-    check_worker_version_compatibility, should_reassign, worker_alive, DeliveryGuarantee,
+    artifact_upload_can_commit, cancellation_delivered_in_time, check_worker_version_compatibility,
+    classify_heartbeat, classify_status_reporting, is_duplicate_dispatch, normalize_status_events,
+    recover_lost_lease, reject_worker_version_mismatch, should_reassign,
+    validate_task_lease_semantics, validate_worker_identity, verify_remote_artifact_integrity,
+    worker_alive, worker_pool_satisfies_capability_request, DeliveryGuarantee,
     DistributedExecutionRequest, DistributedExecutionResult, DistributedFailureClass,
-    DistributedReadinessChecklist, DistributedSecurityModel, LivenessPolicy, MockRemoteBackend,
-    PlacementHint, ReassignmentRule, RemoteArtifactUploadContract, RemoteCancellationContract,
-    RemoteLogStreamContract, RetryLineageRecord, WorkLease, WorkerCapabilities, WorkerHeartbeat,
-    WorkerIdentity, WorkerPool, WorkerRegistration, WorkerSandboxNegotiation,
+    DistributedReadinessChecklist, DistributedSecurityModel, HeartbeatClass,
+    HeartbeatSemantics, LivenessPolicy, MockRemoteBackend, PlacementHint, ReassignmentRule,
+    RemoteArtifactCommitContract, RemoteArtifactUploadContract, RemoteCancellationContract,
+    RemoteLogStreamContract, RemoteStatusEvent, RetryLineageRecord, StatusReportingClass,
+    TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
+    WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration, WorkerSandboxNegotiation,
     WorkerVersionCompatibilityRule,
 };
 pub use distribution_readiness::{
