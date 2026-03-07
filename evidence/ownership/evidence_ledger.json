@@ -3,14 +3,14 @@
   "generated_at": "2026-03-07",
   "entries": [
     {
-      "path": "benchmarks/scenarios/cache_heavy_canonical.json",
+      "path": "evidence/perf/scenarios/cache_heavy_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/cache_heavy_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/cache_heavy_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -24,14 +24,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/cache_heavy_lookup.json",
+      "path": "evidence/perf/scenarios/cache_heavy_lookup.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/cache_heavy_lookup.json",
+      "canonical_location": "evidence/perf/scenarios/cache_heavy_lookup.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -45,14 +45,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/cache_metadata_growth.json",
+      "path": "evidence/perf/scenarios/cache_metadata_growth.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/cache_metadata_growth.json",
+      "canonical_location": "evidence/perf/scenarios/cache_metadata_growth.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -66,14 +66,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/deep_canonical.json",
+      "path": "evidence/perf/scenarios/deep_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/deep_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/deep_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -87,14 +87,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/deep_scheduler_overhead.json",
+      "path": "evidence/perf/scenarios/deep_scheduler_overhead.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "consolidate-when-canonical-metrics-match",
       "decision": "merge",
-      "canonical_location": "benchmarks/scenarios/deep_scheduler_overhead.json",
+      "canonical_location": "evidence/perf/scenarios/deep_scheduler_overhead.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -108,14 +108,14 @@
       "retirement_date": "2026-09-30"
     },
     {
-      "path": "benchmarks/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "path": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "canonical_location": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -129,14 +129,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/manifest_trace_volume_growth.json",
+      "path": "evidence/perf/scenarios/manifest_trace_volume_growth.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/manifest_trace_volume_growth.json",
+      "canonical_location": "evidence/perf/scenarios/manifest_trace_volume_growth.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -150,14 +150,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/manifest_trace_write_amplification.json",
+      "path": "evidence/perf/scenarios/manifest_trace_write_amplification.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/manifest_trace_write_amplification.json",
+      "canonical_location": "evidence/perf/scenarios/manifest_trace_write_amplification.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -171,14 +171,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+      "path": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+      "canonical_location": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -192,14 +192,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/medium_canonical.json",
+      "path": "evidence/perf/scenarios/medium_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/medium_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/medium_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -213,14 +213,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/medium_execute_local.json",
+      "path": "evidence/perf/scenarios/medium_execute_local.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/medium_execute_local.json",
+      "canonical_location": "evidence/perf/scenarios/medium_execute_local.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -234,14 +234,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/memory_execute_many_nodes.json",
+      "path": "evidence/perf/scenarios/memory_execute_many_nodes.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/memory_execute_many_nodes.json",
+      "canonical_location": "evidence/perf/scenarios/memory_execute_many_nodes.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -255,14 +255,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/memory_import_export_path.json",
+      "path": "evidence/perf/scenarios/memory_import_export_path.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/memory_import_export_path.json",
+      "canonical_location": "evidence/perf/scenarios/memory_import_export_path.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -276,14 +276,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/memory_parse_validate_large_graph.json",
+      "path": "evidence/perf/scenarios/memory_parse_validate_large_graph.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/memory_parse_validate_large_graph.json",
+      "canonical_location": "evidence/perf/scenarios/memory_parse_validate_large_graph.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -297,14 +297,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/memory_replay_path.json",
+      "path": "evidence/perf/scenarios/memory_replay_path.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "move-to-unified-evidence-root",
       "decision": "move",
-      "canonical_location": "benchmarks/scenarios/memory_replay_path.json",
+      "canonical_location": "evidence/perf/scenarios/memory_replay_path.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -318,14 +318,14 @@
       "retirement_date": "2026-12-31"
     },
     {
-      "path": "benchmarks/scenarios/replay_canonical.json",
+      "path": "evidence/perf/scenarios/replay_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/replay_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/replay_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -339,14 +339,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/replay_verification_cost.json",
+      "path": "evidence/perf/scenarios/replay_verification_cost.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/replay_verification_cost.json",
+      "canonical_location": "evidence/perf/scenarios/replay_verification_cost.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -360,14 +360,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/resource_budgets.json",
+      "path": "evidence/perf/scenarios/resource_budgets.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/resource_budgets.json",
+      "canonical_location": "evidence/perf/scenarios/resource_budgets.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -381,14 +381,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/tiny_canonical.json",
+      "path": "evidence/perf/scenarios/tiny_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/tiny_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/tiny_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -402,14 +402,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/tiny_parse_validate.json",
+      "path": "evidence/perf/scenarios/tiny_parse_validate.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/tiny_parse_validate.json",
+      "canonical_location": "evidence/perf/scenarios/tiny_parse_validate.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -423,14 +423,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/wide_canonical.json",
+      "path": "evidence/perf/scenarios/wide_canonical.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "benchmarks/scenarios/wide_canonical.json",
+      "canonical_location": "evidence/perf/scenarios/wide_canonical.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -444,14 +444,14 @@
       "retirement_date": null
     },
     {
-      "path": "benchmarks/scenarios/wide_scheduler_overhead.json",
+      "path": "evidence/perf/scenarios/wide_scheduler_overhead.json",
       "owner": "team-performance",
       "evidence_class": "perf",
       "trust_property": "resource-accounting",
       "why_exists": "measure parse plan execute replay envelopes",
       "deletion_review": "consolidate-when-canonical-metrics-match",
       "decision": "merge",
-      "canonical_location": "benchmarks/scenarios/wide_scheduler_overhead.json",
+      "canonical_location": "evidence/perf/scenarios/wide_scheduler_overhead.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -465,14 +465,14 @@
       "retirement_date": "2026-09-30"
     },
     {
-      "path": "comparisons/scenarios/artifact_inspectability.json",
+      "path": "evidence/compare/scenarios/artifact_inspectability.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/artifact_inspectability.json",
+      "canonical_location": "evidence/compare/scenarios/artifact_inspectability.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -485,14 +485,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/cache_reuse_shape.json",
+      "path": "evidence/compare/scenarios/cache_reuse_shape.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/cache_reuse_shape.json",
+      "canonical_location": "evidence/compare/scenarios/cache_reuse_shape.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -505,14 +505,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/chain.json",
+      "path": "evidence/compare/scenarios/chain.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/chain.json",
+      "canonical_location": "evidence/compare/scenarios/chain.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -525,14 +525,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/determinism.json",
+      "path": "evidence/compare/scenarios/determinism.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/determinism.json",
+      "canonical_location": "evidence/compare/scenarios/determinism.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -545,14 +545,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/diamond.json",
+      "path": "evidence/compare/scenarios/diamond.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/diamond.json",
+      "canonical_location": "evidence/compare/scenarios/diamond.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -565,14 +565,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/failure_diagnostics.json",
+      "path": "evidence/compare/scenarios/failure_diagnostics.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/failure_diagnostics.json",
+      "canonical_location": "evidence/compare/scenarios/failure_diagnostics.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -585,14 +585,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/failure_propagation.json",
+      "path": "evidence/compare/scenarios/failure_propagation.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/failure_propagation.json",
+      "canonical_location": "evidence/compare/scenarios/failure_propagation.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -605,14 +605,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/operator_inspectability.json",
+      "path": "evidence/compare/scenarios/operator_inspectability.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/operator_inspectability.json",
+      "canonical_location": "evidence/compare/scenarios/operator_inspectability.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -625,14 +625,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/replay_equivalence.json",
+      "path": "evidence/compare/scenarios/replay_equivalence.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/replay_equivalence.json",
+      "canonical_location": "evidence/compare/scenarios/replay_equivalence.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -645,14 +645,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/retry_timeout.json",
+      "path": "evidence/compare/scenarios/retry_timeout.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/retry_timeout.json",
+      "canonical_location": "evidence/compare/scenarios/retry_timeout.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -665,14 +665,14 @@
       "retirement_date": null
     },
     {
-      "path": "comparisons/scenarios/scheduler_tiny_tasks_overhead.json",
+      "path": "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json",
       "owner": "team-architecture",
       "evidence_class": "compare",
       "trust_property": "operator-inspection",
       "why_exists": "compare bijux behavior against external orchestrators",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "comparisons/scenarios/scheduler_tiny_tasks_overhead.json",
+      "canonical_location": "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json",
       "consumer_surfaces": [
         "comparison-suite"
       ],
@@ -3434,6 +3434,89 @@
       "release_blocking": true,
       "duplicate_of": null,
       "retirement_date": null
+    },
+    {
+      "path": "evidence/perf/baselines/example_v1.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "baseline snapshot used by benchmark report examples",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/perf/baselines/example_v1.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/perf/baselines/regression_thresholds.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "regression thresholds for governed benchmark checks",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/perf/baselines/regression_thresholds.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/perf/baselines/resource_trend_v1.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "resource profiling trend baseline for longitudinal checks",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/perf/baselines/resource_trend_v1.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compare/baselines/bijux_v1.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "canonical bijux comparison baseline mapped to governed scenarios",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compare/baselines/bijux_v1.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
     }
   ],
   "fixture_families": [
@@ -3610,9 +3693,9 @@
   ],
   "retired_entries": [
     {
-      "path": "benchmarks/scenarios/replay_path.json",
+      "path": "evidence/perf/scenarios/replay_path.json",
       "decision": "delete",
-      "replacement": "benchmarks/scenarios/replay_canonical.json",
+      "replacement": "evidence/perf/scenarios/replay_canonical.json",
       "reason": "duplicate replay-path concept consolidated under canonical replay benchmark"
     },
     {
