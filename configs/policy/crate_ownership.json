@@ -45,7 +45,7 @@
       "name": "bijux-dag-runtime",
       "path": "crates/bijux-dag-runtime",
       "domains": ["execution"],
-      "public_modules": ["adapter_api", "adapter_conformance", "api", "config", "cache", "policy", "node_result", "run_context", "trace", "selectors", "subprocess", "builtins"]
+      "public_modules": ["adapter_api", "adapter_conformance", "api", "config", "cache", "policy", "node_result", "run_context", "trace", "selectors", "subprocess", "builtins", "state_machine", "invariants"]
     },
     {
       "name": "bijux-dag-app",

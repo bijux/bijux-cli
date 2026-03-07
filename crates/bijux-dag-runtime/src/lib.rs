@@ -28,6 +28,7 @@ mod ha_scheduler;
 mod io;
 pub mod policy;
 mod infrastructure;
+pub mod invariants;
 mod local_executor;
 pub mod node_result;
 mod observability;
@@ -45,6 +46,7 @@ mod scheduler;
 mod scheduler_enterprise;
 mod semantic_lineage;
 mod secrets_security;
+pub mod state_machine;
 mod store;
 mod supply_chain_trust;
 mod task_contract;
@@ -64,7 +66,11 @@ mod runtime_boundary_tests;
 #[cfg(test)]
 mod adapter_contract_tests;
 #[cfg(test)]
+mod invariants_tests;
+#[cfg(test)]
 mod runtime_policy_trace_tests;
+#[cfg(test)]
+mod state_machine_tests;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
