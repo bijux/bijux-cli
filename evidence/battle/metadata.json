@@ -718,6 +718,43 @@
         "replay_equivalence_expected": false,
         "cache_integrity_expected": false
       }
+    },
+    "container-execution-if-supported": {
+      "grade": "battle",
+      "why_exists": "Preserve canonical battle evidence coverage for this scenario identity.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "battle",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "e2e-minimal-parse-validate-run-inspect-replay": {
+      "grade": "battle",
+      "why_exists": "Preserve compact end-to-end semantic replay proof scenario identity.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "battle",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "plan-truth",
+        "replay-equivalence"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
     }
   }
 }
