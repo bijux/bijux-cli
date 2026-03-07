@@ -1498,6 +1498,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "outputs": outputs,
                 "files": files,
             });
+            let bundle_invariant_violations = verify_bundle_invariants(&bundle);
+            if !bundle_invariant_violations.is_empty() {
+                return Err(ExitCode::from(3));
+            }
             fs::write(out, serde_json::to_vec_pretty(&bundle).unwrap())
                 .map_err(|_| ExitCode::from(3))?;
             if cli.json {
@@ -1518,6 +1522,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let data = read_file(file)?;
             let val: serde_json::Value =
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+            let invariant_violations = verify_bundle_invariants(&val);
             let nodes = val
                 .get("node_traces")
                 .and_then(|v| v.as_object())
@@ -1545,7 +1550,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "has_graph_snapshot": val.get("graph_snapshot").is_some(),
                 "nodes": nodes,
                 "failed_nodes": failed,
+                "invariant_violations": invariant_violations,
             });
+            if !summary["invariant_violations"]
+                .as_array()
+                .is_some_and(|v| v.is_empty())
+            {
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.import",
+                        false,
+                        summary,
+                        Vec::new(),
+                        ExitCode::from(3),
+                    );
+                }
+                println!("import summary: {}", summary);
+                return Err(ExitCode::from(3));
+            }
             if cli.json {
                 return emit_json(
                     &cli,
@@ -2146,6 +2169,7 @@ fn check_engine(bin: &str) -> serde_json::Value {
 
 fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode> {
     let mut errors = Vec::new();
+    let mut invariant_violations = Vec::new();
     let manifest_path = run_dir.join("manifest.json");
     let manifest_data = fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?;
     let manifest: bijux_dag_artifacts::Manifest =
@@ -2206,6 +2230,7 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
     }
 
     let nodes_dir = run_dir.join("nodes");
+    let mut observed_statuses = Vec::new();
     if nodes_dir.exists() {
         let mut entries: Vec<_> = fs::read_dir(nodes_dir)
             .map_err(|_| ExitCode::from(3))?
@@ -2224,6 +2249,15 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
             let data = fs::read_to_string(&trace_path).map_err(|_| ExitCode::from(3))?;
             let val: serde_json::Value =
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+            if let Some(status) = val.get("status").and_then(|s| s.as_str()) {
+                match status {
+                    "success" => observed_statuses.push(bijux_dag_runtime::NodeStatus::Success),
+                    "failed" => observed_statuses.push(bijux_dag_runtime::NodeStatus::Failed),
+                    "skipped" => observed_statuses.push(bijux_dag_runtime::NodeStatus::Skipped),
+                    "cached" => observed_statuses.push(bijux_dag_runtime::NodeStatus::Cached),
+                    _ => {}
+                }
+            }
             if deep {
                 let typed_parse: Result<bijux_dag_artifacts::NodeTrace, _> = serde_json::from_str(&data);
                 if typed_parse.is_err() {
@@ -2248,7 +2282,34 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
                     ));
                 }
             }
+            if deep {
+                let started = val.get("started_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
+                let finished = val.get("finished_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
+                if !bijux_dag_runtime::invariants::trace_time_order_ok(started, finished) {
+                    invariant_violations.push(format!(
+                        "INV-TRACE-TIME-001 violation in {}",
+                        entry.file_name().to_string_lossy()
+                    ));
+                }
+            }
         }
+    }
+
+    let manifest_counts = bijux_dag_runtime::invariants::RunNodeCounts {
+        success: manifest.node_counts.success,
+        failed: manifest.node_counts.failed,
+        skipped: manifest.node_counts.skipped,
+        cached: manifest.node_counts.cached,
+    };
+    if !bijux_dag_runtime::invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses) {
+        invariant_violations.push("INV-RUN-COUNTS-001 manifest totals do not match node traces".to_string());
+    }
+    if manifest.status == "completed"
+        && !bijux_dag_runtime::invariants::terminal_run_has_terminal_node(&observed_statuses)
+    {
+        invariant_violations.push(
+            "INV-RUN-TERMINAL-001 completed run has no terminal node statuses".to_string(),
+        );
     }
 
     if deep {
@@ -2260,7 +2321,11 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
         }
     }
 
-    let status = if errors.is_empty() { "ok" } else { "error" };
+    let status = if errors.is_empty() && invariant_violations.is_empty() {
+        "ok"
+    } else {
+        "error"
+    };
     Ok(json!({
         "status": status,
         "mode": if deep { "deep" } else { "standard" },
@@ -2269,7 +2334,8 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
             "outputs_index": outputs_index_path.exists(),
             "outputs_files": outputs_count
         },
-        "errors": errors
+        "errors": errors,
+        "invariant_violations": invariant_violations
     }))
 }
 
@@ -2283,3 +2349,71 @@ fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
 
 
 include!("graph_helpers.in.rs");
+
+fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
+    let mut violations = Vec::new();
+    if bundle.get("manifest").is_none() {
+        violations.push("INV-EXPORT-VERIFY-001 missing manifest".to_string());
+    }
+    if bundle.get("graph_snapshot").is_none() {
+        violations.push("INV-EXPORT-VERIFY-001 missing graph_snapshot".to_string());
+    }
+    if bundle.get("node_traces").and_then(|v| v.as_object()).is_none() {
+        violations.push("INV-EXPORT-VERIFY-001 missing node_traces map".to_string());
+    }
+    if bundle.get("outputs").and_then(|v| v.as_object()).is_none() {
+        violations.push("INV-EXPORT-VERIFY-001 missing outputs map".to_string());
+    }
+    if let Some(traces) = bundle.get("node_traces").and_then(|v| v.as_object()) {
+        for (node_id, trace) in traces {
+            let trace_node_id = trace.get("node_id").and_then(|v| v.as_str());
+            if trace_node_id != Some(node_id.as_str()) {
+                violations.push(format!(
+                    "INV-TRACE-ATTEMPT-001 node_id mismatch for trace key {}",
+                    node_id
+                ));
+            }
+            if trace.get("status").and_then(|v| v.as_str()).is_none() {
+                violations.push(format!(
+                    "INV-TRACE-ATTEMPT-001 missing status for trace key {}",
+                    node_id
+                ));
+            }
+        }
+    }
+    violations
+}
+
+#[cfg(test)]
+mod invariant_bundle_tests {
+    use super::verify_bundle_invariants;
+    use serde_json::json;
+
+    #[test]
+    fn bundle_invariants_accept_well_formed_bundle() {
+        let bundle = json!({
+            "manifest": {"status":"completed"},
+            "graph_snapshot": {"nodes":[],"edges":[]},
+            "node_traces": {
+                "n1": {"node_id":"n1","status":"success"}
+            },
+            "outputs": {}
+        });
+        let violations = verify_bundle_invariants(&bundle);
+        assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn bundle_invariants_reject_missing_and_incoherent_fields() {
+        let bundle = json!({
+            "graph_snapshot": {},
+            "node_traces": {
+                "n1": {"node_id":"n2"}
+            }
+        });
+        let violations = verify_bundle_invariants(&bundle);
+        assert!(!violations.is_empty());
+        assert!(violations.iter().any(|v| v.contains("INV-EXPORT-VERIFY-001")));
+        assert!(violations.iter().any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
+    }
+}
