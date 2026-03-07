@@ -6206,9 +6206,11 @@ fn run_backend_contract_guard() -> Result<(), String> {
         "docs/spec/BACKEND_CONTRACT.md",
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
         "docs/spec/ATTEMPT_TRACE_SCHEMA_v0.1.md",
+        "docs/reports/foundation/backend_hardening_report.md",
         "docs/architecture/engine-backend-responsibilities.md",
-        "crates/bijux-dag-runtime/src/execution_backend.rs",
+        "crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs",
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
+        "crates/bijux-dev-dag/tests/backend_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -6245,9 +6247,10 @@ fn run_backend_contract_guard() -> Result<(), String> {
             ));
         }
     }
-    let backend_src =
-        fs::read_to_string(root.join("crates/bijux-dag-runtime/src/execution_backend.rs"))
-            .map_err(|err| err.to_string())?;
+    let backend_src = fs::read_to_string(
+        root.join("crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs"),
+    )
+    .map_err(|err| err.to_string())?;
     let implementation_count = backend_src.matches("impl ExecutionBackend for").count();
     if implementation_count > 2 {
         return Err(
@@ -8057,6 +8060,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "test-trust-cleanup",
         "docs-config-reduction",
         "scheduler-invariants",
+        "backend-contract",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
