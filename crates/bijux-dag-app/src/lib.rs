@@ -1128,6 +1128,79 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Commands::WhyRerun { run_a, run_b } => {
+            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
+            let payload = json!({
+                "root_cause_summary": diff.replay_equivalence.reason_report.summary,
+                "equivalent": diff.replay_equivalence.equivalent,
+                "reasons": diff.replay_equivalence.reasons,
+                "cause_groups": diff.replay_equivalence.cause_groups
+            });
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.why-rerun",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::WhyCacheMissed {
+            key,
+            expected_adapter_id,
+            expected_adapter_version,
+            cache_dir,
+        } => {
+            let dir = cache_dir
+                .clone()
+                .or_else(env_cache_dir)
+                .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
+            let report = explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
+            let payload = json!({
+                "cache_dir": dir,
+                "key": key,
+                "eligible": report["eligible"],
+                "reasons": report["reasons"],
+                "meta": report["meta"]
+            });
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.why-cache-missed",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::TraceArtifact { run_dir, artifact_id } => {
+            let details = inspect_artifact(run_dir, artifact_id)?;
+            let payload = json!({
+                "artifact_id": details["artifact_id"],
+                "path": details["path"],
+                "provenance": details["provenance"],
+                "lineage": details["lineage"]
+            });
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.trace-artifact",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::Run {
             dag,
             out,
@@ -1990,7 +2063,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "batch_hpc": "simulated"
                 },
                 "operator_commands": [
-                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","hash.artifact"
+                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.artifact","why-rerun","why-cache-missed"
                 ]
             });
             if cli.json {

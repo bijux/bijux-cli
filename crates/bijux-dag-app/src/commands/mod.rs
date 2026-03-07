@@ -160,6 +160,26 @@ pub(crate) enum Commands {
         #[arg(long)]
         explain: bool,
     },
+    #[command(name = "why-rerun")]
+    WhyRerun {
+        run_a: PathBuf,
+        run_b: PathBuf,
+    },
+    #[command(name = "why-cache-missed")]
+    WhyCacheMissed {
+        key: String,
+        #[arg(long)]
+        expected_adapter_id: String,
+        #[arg(long)]
+        expected_adapter_version: String,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
+    #[command(name = "trace-artifact")]
+    TraceArtifact {
+        run_dir: PathBuf,
+        artifact_id: String,
+    },
     Explain {
         run_dir: PathBuf,
         #[arg(long)]
