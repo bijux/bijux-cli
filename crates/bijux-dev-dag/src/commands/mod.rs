@@ -164,6 +164,8 @@ enum CommandLine {
     ExecutionModesReport,
     /// Summarize version support by versioned surface
     CompatibilityReport,
+    /// Report cache correctness coverage surfaces
+    CacheCoverageReport,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -1027,6 +1029,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_versioning_compatibility_guard(),
     },
     SuiteDef {
+        id: "cache-evolution",
+        description: "cache evolution docs fixtures and verification coverage alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_cache_evolution_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1553,6 +1564,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_compatibility_report(),
+        ),
+        CommandLine::CacheCoverageReport => run_command_reported(
+            &context,
+            "cache-coverage-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_cache_coverage_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -5205,6 +5223,45 @@ fn run_versioning_compatibility_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_cache_evolution_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/CACHE_EVOLUTION_MODEL.md",
+        "docs/spec/CACHE_PRUNE_POLICY.md",
+        "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
+        "tests/cache/fixtures/corrupt/missing_meta.json",
+        "tests/cache/fixtures/corrupt/hash_mismatch.json",
+        "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+        "tests/cache/fixtures/warm_cold/scenario.json",
+        "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "cache evolution required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let model =
+        fs::read_to_string(root.join("docs/spec/CACHE_EVOLUTION_MODEL.md")).map_err(|err| err.to_string())?;
+    for token in [
+        "Intentional cache key inputs",
+        "Metadata compatibility",
+        "Cache lineage model",
+        "Locality decision",
+    ] {
+        if !model.contains(token) {
+            return Err(format!("cache evolution model missing section `{token}`"));
+        }
+    }
+    Ok(())
+}
+
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
     let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
@@ -5332,6 +5389,31 @@ fn run_compatibility_report() -> Result<(), String> {
             "current": "export-bundle/v0.1",
             "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/v0.1"))?,
             "unsupported_past_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/unsupported_past"))?
+        }
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_cache_coverage_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let report = json!({
+        "cache_correctness": {
+            "docs": {
+                "model": root.join("docs/spec/CACHE_EVOLUTION_MODEL.md").exists(),
+                "prune_policy": root.join("docs/spec/CACHE_PRUNE_POLICY.md").exists(),
+                "coverage_ledger": root.join("docs/tracking/CACHE_CORRECTNESS_COVERAGE.md").exists()
+            },
+            "fixtures": {
+                "corruption": collect_fixture_count(&root.join("tests/cache/fixtures/corrupt"))?,
+                "warm_cold": collect_fixture_count(&root.join("tests/cache/fixtures/warm_cold"))?
+            },
+            "tests": {
+                "app_cache_evolution_contract": root.join("crates/bijux-dag-app/tests/cache_evolution_contract.rs").exists()
+            }
         }
     });
     println!(

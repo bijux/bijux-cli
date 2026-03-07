@@ -37,6 +37,7 @@ pub const IDS: &[&str] = &[
     "operator-ux",
     "authoring-ux",
     "versioning-compatibility",
+    "cache-evolution",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
