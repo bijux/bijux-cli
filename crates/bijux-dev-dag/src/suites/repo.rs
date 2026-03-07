@@ -23,6 +23,7 @@ pub const IDS: &[&str] = &[
     "contract-command-ownership",
     "contract-versioning-policy",
     "contract-coverage-report",
+    "planner-alignment",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",

@@ -234,6 +234,13 @@ enum DagCommand {
         #[arg(long)]
         graph: PathBuf,
     },
+    /// Dump lowered execution plan as structured JSON
+    PlanDump {
+        #[arg(long)]
+        graph: PathBuf,
+        #[arg(long, value_delimiter = ',')]
+        select: Vec<String>,
+    },
     /// Render graph visualization payload from run artifacts
     Visualize {
         #[arg(long)]
@@ -866,6 +873,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_contract_coverage_report(),
     },
     SuiteDef {
+        id: "planner-alignment",
+        description: "planner docs tests and schema alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_planner_alignment_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1107,6 +1123,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({"graph": graph}),
                 || run_dag_dry_run(&graph),
+            ),
+            DagCommand::PlanDump { graph, select } => run_command_reported(
+                &context,
+                "dag.plan-dump",
+                CommandEffect::Validation,
+                json!({"graph": graph, "select": select}),
+                || run_dag_plan_dump(&graph, &select),
             ),
             DagCommand::Visualize { run_dir } => run_command_reported(
                 &context,
@@ -1831,6 +1854,24 @@ fn run_dag_dry_run(graph: &Path) -> Result<(), String> {
     let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
     let preview = bijux_dag_core::dry_run_preview(&parsed);
     println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_plan_dump(graph: &Path, select: &[String]) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let options = bijux_dag_core::PlanOptions {
+        selected_nodes: select.iter().cloned().collect(),
+        ..bijux_dag_core::PlanOptions::default()
+    };
+    let plan = bijux_dag_core::lower_graph_to_execution_plan(&parsed, options)
+        .map_err(|err| err.to_string())?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&plan).map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 
@@ -4255,6 +4296,29 @@ fn run_error_code_docs_tests_guard() -> Result<(), String> {
         Ok(())
     } else {
         Err(violations.join(", "))
+    }
+}
+
+fn run_planner_alignment_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        bijux_dag_core::planner_alignment_required_doc(),
+        bijux_dag_core::planner_alignment_required_schema(),
+        bijux_dag_core::planner_alignment_required_test(),
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "planner alignment missing required surfaces: {}",
+            missing.join(", ")
+        ))
     }
 }
 
