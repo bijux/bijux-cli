@@ -59,6 +59,7 @@ pub const IDS: &[&str] = &[
     "config-drift",
     "ambient-env-guard",
     "foundation-verification",
+    "foundation-review",
     "control-plane-surfaces",
     "repo-hygiene-suite",
 ];

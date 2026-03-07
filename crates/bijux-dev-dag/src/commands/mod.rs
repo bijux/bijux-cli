@@ -185,6 +185,8 @@ enum CommandLine {
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
     CacheCoverageReport,
+    /// Generate foundation review evidence summary
+    FoundationReviewReport,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -1246,6 +1248,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_foundation_verification_guard(),
     },
     SuiteDef {
+        id: "foundation-review",
+        description: "foundation review evidence artifacts and reporting surfaces are present",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_foundation_review_guard(),
+    },
+    SuiteDef {
         id: "control-plane-surfaces",
         description: "control-plane verification command surfaces stay present",
         domain: "governance",
@@ -1801,6 +1812,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_cache_coverage_report(),
+        ),
+        CommandLine::FoundationReviewReport => run_command_reported(
+            &context,
+            "foundation-review-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_foundation_review_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -6698,6 +6716,54 @@ fn run_foundation_verification_guard() -> Result<(), String> {
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
             return Err(format!("foundation verification missing suite id: {required}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_foundation_review_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let runtime_src = root.join("crates/bijux-dag-runtime/src");
+    let mut runtime_modules = Vec::new();
+    collect_files_with_extension(&runtime_src, "rs", &mut runtime_modules)?;
+
+    let docs_root = root.join("docs");
+    let mut markdown = Vec::new();
+    collect_markdown_files(&docs_root, &mut markdown)?;
+    let docs_root_markdown_count = markdown
+        .iter()
+        .filter(|path| path.parent() == Some(docs_root.as_path()))
+        .count();
+
+    let report = json!({
+        "runtime_module_count": runtime_modules.len(),
+        "docs_root_markdown_count": docs_root_markdown_count,
+        "repo_suite_count": crate::suites::repo::IDS.len(),
+        "has_foundation_final_report": root.join("docs/reports/foundation/foundation_final_report.md").exists(),
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_foundation_review_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/FOUNDATION_READINESS_CRITERIA.md",
+        "docs/spec/ARCHITECTURE_REVIEW_CHECKLIST.md",
+        "docs/spec/FEATURE_DEVELOPMENT_FREEZE_POLICY.md",
+        "docs/reports/foundation/repository_architecture_report.md",
+        "docs/reports/foundation/runtime_module_ownership_report.md",
+        "docs/reports/foundation/artifact_contract_report.md",
+        "docs/reports/foundation/test_trust_coverage_report.md",
+        "docs/reports/foundation/cleanup_backlog.md",
+        "docs/reports/foundation/subsystem_strength_assessment.md",
+        "docs/reports/foundation/foundation_final_report.md",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing foundation review artifact: {rel}"));
         }
     }
     Ok(())
