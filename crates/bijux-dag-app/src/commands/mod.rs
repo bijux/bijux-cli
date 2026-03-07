@@ -162,6 +162,8 @@ pub(crate) enum Commands {
         run_dir: PathBuf,
         #[arg(long)]
         deep: bool,
+        #[arg(long)]
+        strict: bool,
     },
     #[command(hide = true)]
     Doctor,
@@ -182,6 +184,11 @@ pub(crate) enum Commands {
         #[arg(long)]
         out: PathBuf,
         #[arg(long)]
+        manifest_only: bool,
+        #[arg(long)]
+        with_files: bool,
+        #[arg(long)]
+        #[arg(hide = true)]
         include_files: bool,
     },
     Import {
@@ -247,6 +254,8 @@ pub(crate) enum RunsCommands {
         root: PathBuf,
         #[arg(long)]
         deep: bool,
+        #[arg(long)]
+        strict: bool,
     },
     Doctor {
         run_id: String,

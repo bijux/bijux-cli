@@ -671,9 +671,14 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 }
                 Ok(ExitCode::SUCCESS)
             }
-            RunsCommands::Verify { run_id, root, deep } => {
+            RunsCommands::Verify {
+                run_id,
+                root,
+                deep,
+                strict,
+            } => {
                 let run_dir = resolve_run_dir(root, run_id);
-                let report = verify_run(&run_dir, *deep)?;
+                let report = verify_run(&run_dir, *deep, *strict)?;
                 let ok = report
                     .get("status")
                     .and_then(|v| v.as_str())
@@ -1133,8 +1138,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Verify { run_dir, deep } => {
-            let report = verify_run(run_dir, *deep)?;
+        Commands::Verify {
+            run_dir,
+            deep,
+            strict,
+        } => {
+            let report = verify_run(run_dir, *deep, *strict)?;
             let ok = report
                 .get("status")
                 .and_then(|v| v.as_str())
@@ -1531,18 +1540,31 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Export {
             run_dir,
             out,
+            manifest_only,
+            with_files,
             include_files,
         } => {
+            let include_files_effective = *with_files || *include_files;
+            if *manifest_only && include_files_effective {
+                return Err(ExitCode::from(2));
+            }
             let manifest = read_file(&run_dir.join("manifest.json"))?;
             let snapshot = read_file(&run_dir.join("graph.snapshot.json"))?;
             let nodes = read_node_traces(run_dir)?;
             let outputs = read_outputs_indexes(run_dir)?;
-            let files = if *include_files {
+            let files = if include_files_effective {
                 Some(collect_output_files(run_dir, &outputs)?)
             } else {
                 None
             };
             let bundle = json!({
+                "bundle_version": "export-bundle/v0.1",
+                "export_mode": if include_files_effective { "with-files" } else { "manifest-only" },
+                "provenance": {
+                    "source": "native-run",
+                    "imported": false,
+                    "source_run_dir": run_dir,
+                },
                 "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
                 "graph_snapshot": serde_json::from_str::<serde_json::Value>(&snapshot).ok(),
                 "node_traces": nodes,
@@ -1573,6 +1595,29 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let data = read_file(file)?;
             let val: serde_json::Value =
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+            let bundle_version = val
+                .get("bundle_version")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            if bundle_version != "export-bundle/v0.1" {
+                let summary = json!({
+                    "error": "unsupported export bundle version",
+                    "supported": "export-bundle/v0.1",
+                    "found": bundle_version
+                });
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.import",
+                        false,
+                        summary,
+                        vec![json!({"message":"unsupported bundle version","remediation":"export with export-bundle/v0.1"})],
+                        ExitCode::from(3),
+                    );
+                }
+                println!("import summary: {}", summary);
+                return Err(ExitCode::from(3));
+            }
             let invariant_violations = verify_bundle_invariants(&val);
             let nodes = val
                 .get("node_traces")
@@ -1597,8 +1642,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 })
                 .unwrap_or_default();
             let summary = json!({
+                "bundle_version": bundle_version,
+                "export_mode": val.get("export_mode").and_then(Value::as_str).unwrap_or(""),
                 "has_manifest": val.get("manifest").is_some(),
                 "has_graph_snapshot": val.get("graph_snapshot").is_some(),
+                "provenance_source": val
+                    .get("provenance")
+                    .and_then(|v| v.get("source"))
+                    .and_then(Value::as_str)
+                    .unwrap_or(""),
                 "nodes": nodes,
                 "failed_nodes": failed,
                 "invariant_violations": invariant_violations,
@@ -2462,7 +2514,7 @@ fn check_engine(bin: &str) -> serde_json::Value {
     }
 }
 
-fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode> {
+fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Value, ExitCode> {
     let mut errors = Vec::new();
     let mut invariant_violations = Vec::new();
     let manifest_path = run_dir.join("manifest.json");
@@ -2607,12 +2659,22 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
         );
     }
 
-    if deep {
+    if deep || strict {
         if serde_json::from_str::<bijux_dag_artifacts::Manifest>(&manifest_data).is_err() {
             errors.push("manifest schema parse failed".to_string());
         }
         if !outputs_index_path.exists() {
             errors.push("deep verify requires outputs/index.json".to_string());
+        }
+    }
+    if strict {
+        for rel in ["graph.snapshot.json", "nodes"] {
+            if !run_dir.join(rel).exists() {
+                errors.push(format!("strict verify missing required run artifact: {}", rel));
+            }
+        }
+        if manifest.manifest_version != "run-manifest/v0.1" {
+            errors.push("strict verify unsupported manifest_version".to_string());
         }
     }
 
@@ -2623,7 +2685,13 @@ fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode>
     };
     Ok(json!({
         "status": status,
-        "mode": if deep { "deep" } else { "standard" },
+        "mode": if strict {
+            "strict"
+        } else if deep {
+            "deep"
+        } else {
+            "standard"
+        },
         "artifacts_checked": {
             "manifest": manifest_path.exists(),
             "outputs_index": outputs_index_path.exists(),
@@ -2647,6 +2715,17 @@ include!("graph_helpers.in.rs");
 
 fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     let mut violations = Vec::new();
+    if bundle
+        .get("bundle_version")
+        .and_then(|v| v.as_str())
+        != Some("export-bundle/v0.1")
+    {
+        violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
+    }
+    match bundle.get("export_mode").and_then(|v| v.as_str()) {
+        Some("manifest-only") | Some("with-files") => {}
+        _ => violations.push("INV-EXPORT-MODE-001 unsupported or missing export_mode".to_string()),
+    }
     if bundle.get("manifest").is_none() {
         violations.push("INV-EXPORT-VERIFY-001 missing manifest".to_string());
     }
@@ -2658,6 +2737,17 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     }
     if bundle.get("outputs").and_then(|v| v.as_object()).is_none() {
         violations.push("INV-EXPORT-VERIFY-001 missing outputs map".to_string());
+    }
+    let files = bundle.get("files");
+    if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("manifest-only")
+        && !matches!(files, None | Some(serde_json::Value::Null))
+    {
+        violations.push("INV-EXPORT-MODE-001 manifest-only bundle must not include files payload".to_string());
+    }
+    if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("with-files")
+        && !files.is_some_and(|v| v.is_object())
+    {
+        violations.push("INV-EXPORT-MODE-001 with-files bundle must include files map".to_string());
     }
     if let Some(traces) = bundle.get("node_traces").and_then(|v| v.as_object()) {
         for (node_id, trace) in traces {
@@ -2687,12 +2777,15 @@ mod invariant_bundle_tests {
     #[test]
     fn bundle_invariants_accept_well_formed_bundle() {
         let bundle = json!({
+            "bundle_version":"export-bundle/v0.1",
+            "export_mode":"manifest-only",
             "manifest": {"status":"completed"},
             "graph_snapshot": {"nodes":[],"edges":[]},
             "node_traces": {
                 "n1": {"node_id":"n1","status":"success"}
             },
-            "outputs": {}
+            "outputs": {},
+            "files": null
         });
         let violations = verify_bundle_invariants(&bundle);
         assert!(violations.is_empty());
