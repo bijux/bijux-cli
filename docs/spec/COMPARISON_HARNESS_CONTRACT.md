@@ -39,6 +39,6 @@ Comparisons are not marketing claims.
   - claims outside committed scenario scope
 
 ## Evidence policy
-- Public comparison statements must cite committed harness artifacts in `comparisons/`.
+- Public comparison statements must cite committed harness artifacts in `evidence/compare/`.
 - Interpretations must be separated from raw facts.
 - Claims using “better”, “faster”, or “superior” require scenario-scoped evidence references.

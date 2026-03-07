@@ -21,7 +21,8 @@
 ## Canonical ownership rules
 - All scenario-like assets are owned by `evidence/ownership/evidence_ledger.json`.
 - New scenario-like files outside approved evidence roots are forbidden.
-- `examples/`, `benchmarks/`, `comparisons/`, and scenario-bearing `tests/` trees are compatibility roots under evidence governance until migration is complete.
+- `examples/`, `benchmarks/`, and `comparisons/` are retired proof roots and must not be reintroduced.
+- Scenario-bearing `tests/` trees are constrained compatibility surfaces and cannot become proof-asset authorities.
 - Crate-local fixtures are consumers of evidence authority and cannot define independent truth.
 
 ## Metadata requirements

@@ -5,7 +5,7 @@ Defines benchmark classes, canonical system scenarios, evidence requirements, an
 
 ## Allowed claims
 - Performance language in documentation must reference:
-  - `benchmarks/` scenarios, and
+  - `evidence/perf/scenarios/` canonical workloads, and
   - `artifacts/benchmarks/` or `evidence/perf/baselines/` evidence.
 - Claims about speed, efficiency, or low overhead without evidence links are non-compliant.
 

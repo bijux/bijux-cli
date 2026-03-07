@@ -12,10 +12,22 @@ use tempfile as _;
 #[test]
 fn repository_layout_contains_required_roots() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let required = ["crates", "docs", "evidence", "configs/nextest"];
+    let required = ["crates", "docs", "evidence", "configs", "make"];
 
     for rel in required {
         assert!(root.join(rel).exists(), "missing required path: {rel}");
+    }
+}
+
+#[test]
+fn repository_proof_roots_remain_concentrated_in_evidence() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let forbidden_proof_roots = ["examples", "benchmarks", "comparisons"];
+    for rel in forbidden_proof_roots {
+        assert!(
+            !root.join(rel).exists(),
+            "forbidden proof root is present; evidence must remain sole proof pillar: {rel}"
+        );
     }
 }
 
