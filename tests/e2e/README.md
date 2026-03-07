@@ -31,5 +31,4 @@ E2E scenarios are the only test family allowed to shell out to production binari
 
 Run matrix via:
 
-- `tests/e2e/run_matrix.sh`
 - `cargo run -p bijux-dev-dag -- e2e-matrix`

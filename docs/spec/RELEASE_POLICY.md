@@ -23,7 +23,7 @@ Defines the minimum evidence required before a release is allowed.
 
 ## Related tests
 - `crates/bijux-dev-dag/src/commands/mod.rs`
-- `tests/post_release/minimal_workflow.sh`
+- `bijux-dev-dag release post-release-verify`
 
 ## Versioning and change policy
 Any relaxation of release requirements is a breaking governance change and requires explicit changelog entry.

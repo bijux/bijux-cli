@@ -15,7 +15,7 @@ Checklist for release approvers.
 9. Post-release verification suite passed.
 
 ## Related tests
-- `tests/post_release/minimal_workflow.sh`
+- `bijux-dev-dag release post-release-verify`
 
 ## Versioning and change policy
 Checklist changes must remain aligned with `docs/spec/RELEASE_POLICY.md`.
