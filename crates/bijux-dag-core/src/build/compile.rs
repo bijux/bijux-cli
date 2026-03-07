@@ -32,7 +32,7 @@ pub enum CompatibilityDecision {
 }
 
 pub fn negotiate_spec_version(version: &str) -> CompatibilityDecision {
-    if version == crate::SPEC_VERSION {
+    if version == crate::SPEC_VERSION || version == "0.1" || version == "v0.1" {
         CompatibilityDecision::AcceptExact
     } else {
         CompatibilityDecision::RejectVersion

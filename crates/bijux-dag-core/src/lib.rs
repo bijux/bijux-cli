@@ -2,6 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+#[cfg(test)]
+use criterion as _;
+#[cfg(test)]
+use tempfile as _;
 
 #[path = "build/compile.rs"]
 pub mod compile;
@@ -85,7 +89,9 @@ pub struct Graph {
 pub struct Node {
     pub id: String,
     pub kind: NodeKind,
+    #[serde(default)]
     pub inputs: Vec<String>,
+    #[serde(default)]
     pub outputs: Vec<FileOutput>,
     #[serde(default)]
     pub params: ParamValue,
