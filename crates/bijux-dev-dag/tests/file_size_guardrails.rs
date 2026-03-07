@@ -1,12 +1,12 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use clap as _;
 use hex as _;
-use std::fs;
-use std::path::Path;
 use serde::Deserialize;
 use sha2 as _;
+use std::fs;
+use std::path::Path;
 use tempfile as _;
 
 #[derive(Debug, Deserialize)]
@@ -23,10 +23,7 @@ struct SourceLayoutGlobal {
 }
 
 fn line_count(path: &Path) -> usize {
-    fs::read_to_string(path)
-        .expect("read file")
-        .lines()
-        .count()
+    fs::read_to_string(path).expect("read file").lines().count()
 }
 
 #[test]
@@ -46,6 +43,10 @@ fn source_files_stay_under_size_budget() {
             let entry = entry.expect("dir entry");
             let path = entry.path();
             if path.is_dir() {
+                let name = path.file_name().and_then(|value| value.to_str()).unwrap_or("");
+                if matches!(name, "target" | "artifacts") {
+                    continue;
+                }
                 stack.push(path);
                 continue;
             }

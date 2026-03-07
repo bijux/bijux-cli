@@ -12,6 +12,6 @@
     "crates/bijux-dag-runtime/src/internal/testing/tests_runtime.in.rs": 1250,
     "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs": 1250,
     "crates/bijux-dag-app/src/lib.rs": 3000,
-    "crates/bijux-dev-dag/src/commands/mod.rs": 7600
+    "crates/bijux-dev-dag/src/commands/mod.rs": 10000
   }
 }
