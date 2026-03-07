@@ -63,3 +63,20 @@ fn graph_helpers_use_module_not_include() {
         "graph helper inclusion should not rely on include!"
     );
 }
+
+#[test]
+fn lib_uses_diagnostics_route_module_for_operator_diagnostics() {
+    let lib = read("src/lib.rs");
+    assert!(
+        lib.contains("mod routes;"),
+        "lib should declare routes module for command-family handlers"
+    );
+    assert!(
+        lib.contains("routes::diagnostics_routes::why_rerun_payload("),
+        "lib should delegate why-rerun payload assembly"
+    );
+    assert!(
+        lib.contains("routes::diagnostics_routes::trace_artifact_payload("),
+        "lib should delegate trace-artifact payload assembly"
+    );
+}
