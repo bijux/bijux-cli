@@ -1,10 +1,10 @@
 use bijux_dag_app::{dag_command, dag_run};
-use clap::{Arg, Command as ClapCommand};
+use clap::{Arg, Command as Cmd};
 use clap_complete::{generate, shells};
-use std::panic::AssertUnwindSafe;
-use std::process::ExitCode;
 #[cfg(test)]
 use serde_json as _;
+use std::panic::AssertUnwindSafe;
+use std::process::ExitCode;
 #[cfg(test)]
 use tempfile as _;
 
@@ -17,13 +17,13 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let mut cmd = ClapCommand ::new("bijux")
+    let mut cmd = Cmd::new("bijux")
         .about("Bijux umbrella CLI")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(dag_command())
         .subcommand(
-            ClapCommand ::new("completions")
+            Cmd::new("completions")
                 .about("Generate shell completion script")
                 .arg(
                     Arg::new("shell")
@@ -32,8 +32,8 @@ fn main() -> ExitCode {
                         .required(true),
                 ),
         )
-        .subcommand(ClapCommand ::new("rag").about("Not implemented"))
-        .subcommand(ClapCommand ::new("rar").about("Not implemented"));
+        .subcommand(Cmd::new("rag").about("Not implemented"))
+        .subcommand(Cmd::new("rar").about("Not implemented"));
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
@@ -60,9 +60,12 @@ fn main() -> ExitCode {
                 "zsh" => generate(shells::Zsh, &mut cmd, "bijux", &mut std::io::stdout()),
                 "fish" => generate(shells::Fish, &mut cmd, "bijux", &mut std::io::stdout()),
                 "elvish" => generate(shells::Elvish, &mut cmd, "bijux", &mut std::io::stdout()),
-                "powershell" => {
-                    generate(shells::PowerShell, &mut cmd, "bijux", &mut std::io::stdout())
-                }
+                "powershell" => generate(
+                    shells::PowerShell,
+                    &mut cmd,
+                    "bijux",
+                    &mut std::io::stdout(),
+                ),
                 _ => return ExitCode::from(2),
             }
             ExitCode::SUCCESS
