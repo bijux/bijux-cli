@@ -8,6 +8,14 @@ use crate::{
     RunMetrics, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
     SchedulerMetrics, TimelineEntry, TimelineExport,
 };
+#[path = "engine_dispatch.rs"]
+mod engine_dispatch;
+#[path = "engine_finalize.rs"]
+mod engine_finalize;
+#[path = "engine_observe.rs"]
+mod engine_observe;
+#[path = "engine_record.rs"]
+mod engine_record;
 use bijux_dag_artifacts::{
     write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
     ReplayProvenance, RunDir, RunMetadata,
@@ -123,17 +131,14 @@ pub fn execute(
     let mut failure_propagation_records: Vec<serde_json::Value> = Vec::new();
     let mut node_metric_rows: Vec<NodeMetrics> = Vec::new();
     let mut metrics_registry = InMemoryMetricsRegistry::default();
-    crate::append_event(
+    engine_record::append_indexed_event(
         &mut run_log,
+        &mut run_log_index,
         serde_json::json!({
             "event": "run_started",
             "ts": started_unix_ms,
         }),
     )?;
-    run_log_index.push(serde_json::json!({
-        "event": "run_started",
-        "ts": started_unix_ms,
-    }));
     run_audit_events.push(serde_json::json!({
         "action": "start",
         "ts": started_unix_ms,
@@ -228,34 +233,30 @@ pub fn execute(
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
-    crate::append_event(
+    engine_record::append_indexed_event(
         &mut run_log,
+        &mut run_log_index,
         serde_json::json!({
             "event": "plan_built",
             "ts": ctx.clock.now_unix_ms(),
             "nodes": graph.nodes.len(),
         }),
     )?;
-    run_log_index.push(serde_json::json!({
-        "event": "plan_built",
-        "ts": ctx.clock.now_unix_ms(),
-        "nodes": graph.nodes.len(),
-    }));
     while !ready_queue.is_empty() {
         loop_index = loop_index.saturating_add(1);
         let ready_vec: Vec<String> = ready_queue.snapshot_sorted();
         for node_id in &ready_vec {
             scheduler_hook.on_node_eligible(node_id);
-            crate::append_event(
-                &mut run_log,
-                serde_json::json!({
-                    "event": "node_eligible",
-                    "ts": ctx.clock.now_unix_ms(),
-                    "node_id": node_id,
-                }),
-            )?;
+            let events = engine_observe::node_eligible_events(
+                std::slice::from_ref(node_id),
+                ctx.clock.now_unix_ms(),
+            );
+            for event in events {
+                crate::append_event(&mut run_log, event)?;
+            }
         }
-        let decision = scheduler.next_batch(
+        let decision = engine_dispatch::next_scheduler_decision(
+            scheduler.as_mut(),
             graph,
             &mut ready_queue,
             &options,
@@ -1000,16 +1001,7 @@ pub fn execute(
             "run summary invariant violated: manifest totals do not match trace totals".to_string(),
         ));
     }
-    manifest.run_summary = Some(bijux_dag_artifacts::RunSummary {
-        total_nodes: manifest.node_counts.success
-            + manifest.node_counts.failed
-            + manifest.node_counts.skipped
-            + manifest.node_counts.cached,
-        success: manifest.node_counts.success,
-        failed: manifest.node_counts.failed,
-        skipped: manifest.node_counts.skipped,
-        cached: manifest.node_counts.cached,
-    });
+    manifest.run_summary = Some(engine_finalize::summarize_counts(&manifest.node_counts));
     manifest.outputs = collect_outputs_summary(ctx.fs.as_ref(), &ctx.run_dir)?;
     let memory_after_materialization = current_process_memory_bytes().unwrap_or(0);
     let run_index = build_run_outputs_index(&ctx.run_dir, &manifest.outputs)?;
