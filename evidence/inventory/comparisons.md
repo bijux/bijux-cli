@@ -3,6 +3,7 @@
 - comparisons/README.md
 - comparisons/bijux/baselines/v1.json
 - comparisons/external/argo_notes.md
+- comparisons/external/coverage_map.json
 - comparisons/external/dagster_notes.md
 - comparisons/external/prefect_notes.md
 - comparisons/scenarios/artifact_inspectability.json
