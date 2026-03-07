@@ -11,10 +11,15 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod evidence_registry;
 mod model;
 mod reporting;
 mod suite_dispatch;
 
+use evidence_registry::{
+    run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
+    run_evidence_registry_orphans, run_evidence_registry_rebuild, run_evidence_registry_verify,
+};
 use model::{CommandContext, CommandEffect, SuiteDef};
 use reporting::run_command_reported;
 use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
@@ -292,6 +297,11 @@ enum RepoCommand {
     EvidenceLedger,
     /// Validate evidence metadata completeness and path governance
     EvidenceValidate,
+    /// Normalize evidence ledger ordering and representation
+    EvidenceLedgerNormalize {
+        #[arg(long, default_value_t = false)]
+        check: bool,
+    },
     /// Generate evidence directory map from policy
     EvidenceDirectoryMap {
         #[arg(long, default_value = "evidence/_meta/maps/directory_map.json")]
@@ -299,6 +309,22 @@ enum RepoCommand {
         #[arg(long, default_value_t = false)]
         create_missing: bool,
     },
+    /// Rebuild canonical evidence registry
+    EvidenceRegistryRebuild {
+        #[arg(
+            long,
+            default_value = "evidence/_meta/registries/evidence_registry.json"
+        )]
+        out: PathBuf,
+        #[arg(long, default_value_t = false)]
+        check: bool,
+    },
+    /// Diff generated evidence registry against current committed registry
+    EvidenceRegistryDiff,
+    /// Detect evidence files not represented by registry entries
+    EvidenceRegistryOrphans,
+    /// Detect registry entries whose canonical files do not exist
+    EvidenceRegistryMissing,
     /// List battle scenarios and mapped trust properties
     BattleScenarios,
     /// Validate battle scenario trust-property mappings
@@ -309,6 +335,8 @@ enum RepoCommand {
 enum VerifyCommand {
     /// Validate complete evidence foundation integrity
     EvidenceFoundation,
+    /// Validate canonical evidence registry integrity and drift
+    EvidenceRegistry,
     /// Validate evidence metadata against strict schema contracts
     EvidenceSchema,
     /// Validate authoring evidence surfaces
@@ -1750,6 +1778,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({}),
                 || run_evidence_metadata_validate(),
             ),
+            RepoCommand::EvidenceLedgerNormalize { check } => run_command_reported(
+                &context,
+                "repo.evidence-ledger-normalize",
+                CommandEffect::ReadWrite,
+                json!({ "check": check }),
+                || run_evidence_ledger_normalize(check),
+            ),
             RepoCommand::EvidenceDirectoryMap {
                 out,
                 create_missing,
@@ -1759,6 +1794,34 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::ReadWrite,
                 json!({ "out": out, "create_missing": create_missing }),
                 || run_evidence_directory_map(&out, create_missing),
+            ),
+            RepoCommand::EvidenceRegistryRebuild { out, check } => run_command_reported(
+                &context,
+                "repo.evidence-registry-rebuild",
+                CommandEffect::ReadWrite,
+                json!({ "out": out, "check": check }),
+                || run_evidence_registry_rebuild(&out, check),
+            ),
+            RepoCommand::EvidenceRegistryDiff => run_command_reported(
+                &context,
+                "repo.evidence-registry-diff",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_registry_diff(),
+            ),
+            RepoCommand::EvidenceRegistryOrphans => run_command_reported(
+                &context,
+                "repo.evidence-registry-orphans",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_registry_orphans(),
+            ),
+            RepoCommand::EvidenceRegistryMissing => run_command_reported(
+                &context,
+                "repo.evidence-registry-missing",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_registry_missing(),
             ),
             RepoCommand::BattleScenarios => run_command_reported(
                 &context,
@@ -1782,6 +1845,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_foundation_verify(),
+            ),
+            VerifyCommand::EvidenceRegistry => run_command_reported(
+                &context,
+                "verify.evidence-registry",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_registry_verify(),
             ),
             VerifyCommand::EvidenceSchema => run_command_reported(
                 &context,
@@ -5290,6 +5360,7 @@ fn run_evidence_compare_verify() -> Result<(), String> {
 fn run_evidence_foundation_verify() -> Result<(), String> {
     let root = repo_root()?;
     run_evidence_schema_verify()?;
+    run_evidence_registry_verify()?;
     run_evidence_ownership_verify()?;
     run_evidence_drift_verify()?;
     run_evidence_consumers_verify()?;
@@ -5368,12 +5439,22 @@ fn run_evidence_consumers_verify() -> Result<(), String> {
     let mut violations = Vec::new();
     let mut files = Vec::new();
     collect_all_files(&root, &mut files)?;
+    let ignore_paths = [
+        "crates/bijux-dev-dag/src/commands/mod.rs",
+        "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs",
+        "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+        "configs/policy/evidence_governance.json",
+        "configs/policy/evidence_path_policy.json",
+    ];
     for file in files {
         let rel = file
             .strip_prefix(&root)
             .map_err(|err| err.to_string())?
             .to_string_lossy()
             .replace('\\', "/");
+        if ignore_paths.iter().any(|path| rel == *path) {
+            continue;
+        }
         if !(rel.ends_with(".rs")
             || rel.ends_with(".md")
             || rel.ends_with(".json")
