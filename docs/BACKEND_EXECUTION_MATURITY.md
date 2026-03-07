@@ -51,3 +51,8 @@ Kubernetes conformance and evidence linkage:
 
 - `docs/reports/foundation/k8s_conformance_gate_report.md`
 - `docs/reference/K8S_SUPPORT_MATRIX.md`
+
+HPC conformance and evidence linkage:
+
+- `docs/reports/foundation/hpc_conformance_gate_report.md`
+- `docs/reference/HPC_SUPPORT_MATRIX.md`

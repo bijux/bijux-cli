@@ -146,6 +146,8 @@
 - [Kubernetes adapter contract](./spec/K8S_ADAPTER_CONTRACT.md)
 - [HPC adapter contract](./spec/HPC_ADAPTER_CONTRACT.md)
 - [Kubernetes support matrix](./reference/K8S_SUPPORT_MATRIX.md)
+- [HPC support matrix](./reference/HPC_SUPPORT_MATRIX.md)
+- [HPC and DNA boundary](./reference/HPC_AND_DNA_BOUNDARY.md)
 - [Regulated workflow reference](./REGULATED_WORKFLOW_REFERENCE.md)
 - [Environment capability guide](./ENVIRONMENT_CAPABILITIES.md)
 - [DAG schema contract](./spec/dag-schema-v0.1.json)

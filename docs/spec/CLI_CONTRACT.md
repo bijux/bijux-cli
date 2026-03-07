@@ -41,6 +41,7 @@ This is the normative contract for `bijux` command surfaces.
 - `dag doctor`: operator diagnostics surface.
 - `dag migrate`: migration workflows (`migrate dag`, `migrate run`).
 - `dag capabilities --backend kubernetes`: backend-specific capability report surface.
+- `dag capabilities --backend hpc`: backend-specific capability report surface.
 
 ## Invariants
 - JSON mode is machine-readable and contract-stable.

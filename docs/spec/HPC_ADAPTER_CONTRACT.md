@@ -55,6 +55,21 @@ Required mappings:
 - Module/environment setup contributes to an environment fingerprint.
 - Scheduler name/version capture is required in run metadata surfaces.
 
+## Universal vs scheduler-specific semantics
+
+Universal (must hold for any supported HPC scheduler contract):
+
+- queue/partition mapping determinism
+- walltime mapping determinism
+- explicit retry ownership precedence
+- explicit failure normalization into runtime taxonomy
+
+Scheduler-specific (allowed variation by scheduler family):
+
+- array-job support behavior
+- polling cadence and scheduler event delivery
+- queue/account naming conventions
+
 ## Contract tests
 
 - `crates/bijux-dag-runtime/tests/backend_cluster_contracts.rs`

@@ -58,5 +58,9 @@ Backend conformance fixture:
 - `evidence/battle/fixtures/kubernetes/tiny_equivalence.dag.json`
 - `evidence/battle/fixtures/kubernetes/medium_fanout.dag.json`
 - `evidence/battle/fixtures/kubernetes/failure_injection_image_pull_backoff.dag.json`
+- `evidence/battle/fixtures/hpc/simple_equivalence.dag.json`
+- `evidence/battle/fixtures/hpc/staged_input_equivalence.dag.json`
+- `evidence/battle/fixtures/hpc/checkpointed_partial_replay.dag.json`
 
 See support status and evidence linkage in `docs/reference/K8S_SUPPORT_MATRIX.md`.
+See HPC scope and evidence linkage in `docs/reference/HPC_SUPPORT_MATRIX.md`.

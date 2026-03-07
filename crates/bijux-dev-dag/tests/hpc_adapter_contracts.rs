@@ -34,6 +34,7 @@ fn hpc_adapter_contract_doc_exists_with_required_sections() {
         "Failure normalization",
         "Array job and unsupported feature behavior",
         "Environment and scheduler identity capture",
+        "Universal vs scheduler-specific semantics",
     ] {
         assert!(
             text.contains(token),
@@ -65,6 +66,8 @@ fn hpc_runtime_contract_tests_cover_required_semantics() {
         "reject_unsupported_hpc_scheduler_features",
         "hpc_environment_fingerprint",
         "capture_hpc_scheduler_version",
+        "hpc_resource_fingerprint",
+        "hpc_replay_fidelity_from_module_fingerprints",
     ] {
         assert!(
             source.contains(token),
