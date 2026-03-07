@@ -35,7 +35,7 @@
 - `benchmarks/fixtures/scheduling/ha/cold_restart_objective.json`
 - `benchmarks/fixtures/scheduling/ha/split_brain_failover.json`
 - `benchmarks/fixtures/scheduling/ha/trigger_storm_rebalance.json`
-- `benchmarks/scenarios/replay_path.json` (removed earlier in governance pass)
+- `evidence/perf/scenarios/replay_path.json` (removed earlier in governance pass)
 
 ## Remaining Cleanup Queue
 - Candidate docs-only benchmark fixtures under `benchmarks/fixtures/observability`, `benchmarks/fixtures/recovery`, and selected infrastructure backends.

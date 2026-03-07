@@ -37,6 +37,6 @@ Planner execution is represented as explicit phases:
 
 ## Benchmark fixture set
 
-- `benchmarks/fixtures/planner_large_fanout.json`
-- `benchmarks/fixtures/planner_deep_chain.json`
-- `benchmarks/fixtures/planner_mixed_resources.json`
+- `evidence/perf/fixtures/planner_large_fanout.json`
+- `evidence/perf/fixtures/planner_deep_chain.json`
+- `evidence/perf/fixtures/planner_mixed_resources.json`

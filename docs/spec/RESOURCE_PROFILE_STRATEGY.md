@@ -23,7 +23,7 @@ cache metadata growth, replay, and import/export memory behavior.
 
 ## Budget policy
 
-- scenario-level artifact size budgets and trace/manifest budgets are defined under `benchmarks/scenarios/`.
+- scenario-level artifact size budgets and trace/manifest budgets are defined under `evidence/perf/scenarios/`.
 - budget checks run in warning mode first and can be promoted to gate mode.
 
 ## Evidence outputs

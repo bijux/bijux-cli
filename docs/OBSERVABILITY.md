@@ -86,8 +86,8 @@ These artifacts are intended for CLI reports and future UI rendering without for
 
 Fixture examples:
 
-- `benchmarks/fixtures/observability/retry_cancel_cache_failure.json`
-- `benchmarks/fixtures/observability/investigation_bundle_demo.json`
+- `evidence/perf/fixtures/observability/retry_cancel_cache_failure.json`
+- `evidence/perf/fixtures/observability/investigation_bundle_demo.json`
 
 ## Redaction and sampling
 

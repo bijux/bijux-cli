@@ -37,5 +37,5 @@ Performance claims are only allowed when backed by committed benchmark evidence 
 ## Governance rules
 
 - docs may not claim performance quality without benchmark artifact links
-- regression analysis must compare against baseline artifacts under `benchmarks/baselines/`
+- regression analysis must compare against baseline artifacts under `evidence/perf/baselines/`
 - smoke timings are not benchmark evidence

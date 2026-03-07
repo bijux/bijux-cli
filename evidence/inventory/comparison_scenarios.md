@@ -1,15 +1,15 @@
 # 
 
-- scope: `comparisons/scenarios`
+- scope: `evidence/compare/scenarios`
 
-- comparisons/scenarios/artifact_inspectability.json
-- comparisons/scenarios/cache_reuse_shape.json
-- comparisons/scenarios/chain.json
-- comparisons/scenarios/determinism.json
-- comparisons/scenarios/diamond.json
-- comparisons/scenarios/failure_diagnostics.json
-- comparisons/scenarios/failure_propagation.json
-- comparisons/scenarios/operator_inspectability.json
-- comparisons/scenarios/replay_equivalence.json
-- comparisons/scenarios/retry_timeout.json
-- comparisons/scenarios/scheduler_tiny_tasks_overhead.json
+- evidence/compare/scenarios/artifact_inspectability.json
+- evidence/compare/scenarios/cache_reuse_shape.json
+- evidence/compare/scenarios/chain.json
+- evidence/compare/scenarios/determinism.json
+- evidence/compare/scenarios/diamond.json
+- evidence/compare/scenarios/failure_diagnostics.json
+- evidence/compare/scenarios/failure_propagation.json
+- evidence/compare/scenarios/operator_inspectability.json
+- evidence/compare/scenarios/replay_equivalence.json
+- evidence/compare/scenarios/retry_timeout.json
+- evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json

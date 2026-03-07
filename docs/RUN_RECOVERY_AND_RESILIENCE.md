@@ -42,8 +42,8 @@ This contract defines run orchestration and recovery behavior for pause/resume, 
   - `RecoverySimulationScenario`
   - `RecoveryAcceptanceSuite`
 - Fixture paths:
-  - `benchmarks/fixtures/recovery/power_loss_restart.json`
-  - `benchmarks/fixtures/recovery/acceptance_suite.json`
+  - `evidence/perf/fixtures/recovery/power_loss_restart.json`
+  - `evidence/perf/fixtures/recovery/acceptance_suite.json`
 
 ## Metadata repair, consistency checks, and quarantine
 

@@ -7,9 +7,9 @@ Snapshot date: 2026-03-07
 | scope | files |
 |---|---:|
 | examples | 0 |
-| benchmarks/scenarios | 22 |
+| evidence/perf/scenarios | 22 |
 | benchmarks/fixtures | 15 |
-| comparisons/scenarios | 11 |
+| evidence/compare/scenarios | 11 |
 | tests/authoring | 0 |
 | tests/cache | 6 |
 | tests/compatibility | 7 |

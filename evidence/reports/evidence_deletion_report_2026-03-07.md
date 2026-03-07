@@ -9,7 +9,7 @@
 | tests | 60 | 57 | -3 |
 
 ## Removed Files
-- benchmarks/scenarios/replay_path.json
+- evidence/perf/scenarios/replay_path.json
 - benchmarks/fixtures/distributed/transport_protocol_simulation.json
 - benchmarks/fixtures/distributed/worker_lifecycle_simulation.json
 - benchmarks/fixtures/scheduling/enterprise/load_spike.json
@@ -21,5 +21,5 @@
 
 ## Rationale
 - Removed scenario/fixture files without active executable measurement linkage in current benchmark contracts.
-- Consolidated replay benchmark semantics under benchmarks/scenarios/replay_canonical.json.
+- Consolidated replay benchmark semantics under evidence/perf/scenarios/replay_canonical.json.
 - Reduced speculative enterprise/HA/distributed benchmark fixture surfaces to lower evidence noise.

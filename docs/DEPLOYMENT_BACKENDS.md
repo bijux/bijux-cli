@@ -53,4 +53,4 @@ Backends that do not satisfy declared requirements must be rejected before dispa
 
 Backend conformance fixture:
 
-- `benchmarks/fixtures/infrastructure/backend_conformance_matrix.json`
+- `evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json`
