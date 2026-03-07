@@ -27,6 +27,7 @@ pub const IDS: &[&str] = &[
     "runtime-module-triage",
     "crate-boundary-foundation",
     "sacred-execution-flow",
+    "runtime-semantics",
     "naming-governance",
     "scheduler-invariants",
     "concurrency-model",

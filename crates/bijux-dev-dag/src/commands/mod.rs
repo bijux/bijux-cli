@@ -951,6 +951,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_sacred_execution_flow_guard(),
     },
     SuiteDef {
+        id: "runtime-semantics",
+        description: "runtime semantics contract coverage for deterministic execution behavior",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_runtime_semantics_guard(),
+    },
+    SuiteDef {
         id: "naming-governance",
         description: "naming policy glossary and runtime naming lint enforcement",
         domain: "governance",
@@ -4337,6 +4346,21 @@ fn run_naming_governance_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn run_runtime_semantics_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/RUNTIME_SEMANTICS_CONTRACT.md",
+        "crates/bijux-dag-runtime/src/runtime_semantics.rs",
+        "crates/bijux-dag-runtime/tests/runtime_semantics_contracts.rs",
+        "crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing runtime semantics artifact: {rel}"));
+        }
+    }
+    Ok(())
 }
 
 fn run_docs_schema_reference_guard() -> Result<(), String> {
