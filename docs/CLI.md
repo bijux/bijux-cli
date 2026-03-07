@@ -15,6 +15,7 @@ bijux dag node <run-dir> --id <id>
 bijux dag status <run-dir>
 bijux dag verify <run-dir> [--deep]
 bijux dag fsck <run-dir> [--strict]
+bijux dag fsck <bundle.json> --json
 bijux dag hash run <run-dir>
 bijux dag hash artifact <file>
 bijux dag capabilities --json

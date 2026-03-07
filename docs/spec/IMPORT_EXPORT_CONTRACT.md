@@ -25,6 +25,7 @@ Defines export bundle formats, metadata-only behavior, and compatibility expecta
 ## Import verification mode
 - `dag import --verify-only` performs version + invariant checks and returns summary output.
 - `--verify-only` does not mutate run history state.
+- `dag fsck <bundle.json>` provides bundle invariant verification via the fsck surface.
 
 ## Bundle versioning
 - Current supported bundle version: `export-bundle/v0.1`.

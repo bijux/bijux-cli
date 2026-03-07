@@ -377,6 +377,40 @@ fn fsck_alias_surface_runs_on_valid_run_dir() {
 }
 
 #[test]
+fn fsck_alias_supports_bundle_verification_mode() {
+    let tmp = tempdir().expect("tempdir");
+    let bundle_path = tmp.path().join("bundle.json");
+    std::fs::write(
+        &bundle_path,
+        r#"{
+  "bundle_version":"export-bundle/v0.1",
+  "export_mode":"manifest-only",
+  "manifest":{"manifest_version":"run-manifest/v0.1"},
+  "graph_snapshot":{"spec":"bijux-dag/v0.1","nodes":[],"edges":[]},
+  "node_traces":{},
+  "outputs":{}
+}"#,
+    )
+    .expect("write bundle");
+
+    let output = dag_command()
+        .args([
+            "dag",
+            "fsck",
+            bundle_path.to_str().expect("bundle path"),
+            "--json",
+        ])
+        .output()
+        .expect("bundle fsck");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("bundle fsck json");
+    assert_eq!(payload["command"], "dag.fsck");
+    assert_eq!(payload["data"]["kind"], "bundle");
+    assert_eq!(payload["ok"], true);
+}
+
+#[test]
 fn capabilities_backend_query_supports_kubernetes() {
     let output = dag_command()
         .args(["dag", "capabilities", "--backend", "kubernetes", "--json"])

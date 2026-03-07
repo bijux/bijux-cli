@@ -1520,12 +1520,30 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Fsck { run_dir, strict } => {
-            let report = verify_run(run_dir, true, *strict)?;
-            let ok = report
-                .get("status")
-                .and_then(|v| v.as_str())
-                .map(|v| v == "ok")
-                .unwrap_or(false);
+            let (report, ok) = if run_dir.is_file() {
+                let data = read_file(run_dir)?;
+                let val: serde_json::Value =
+                    serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+                let violations = verify_bundle_invariants(&val);
+                let ok = violations.is_empty();
+                (
+                    json!({
+                        "kind": "bundle",
+                        "path": run_dir,
+                        "status": if ok { "ok" } else { "error" },
+                        "invariant_violations": violations
+                    }),
+                    ok,
+                )
+            } else {
+                let report = verify_run(run_dir, true, *strict)?;
+                let ok = report
+                    .get("status")
+                    .and_then(|v| v.as_str())
+                    .map(|v| v == "ok")
+                    .unwrap_or(false);
+                (report, ok)
+            };
             if cli.json {
                 return emit_json(
                     &cli,
@@ -2069,6 +2087,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     .unwrap_or(""),
                 "nodes": nodes,
                 "failed_nodes": failed,
+                "preservation": {
+                    "lineage": val
+                        .get("provenance")
+                        .and_then(|v| v.get("lineage"))
+                        .is_some(),
+                    "run_ancestry": val
+                        .get("provenance")
+                        .and_then(|v| v.get("parent_run_id"))
+                        .is_some()
+                        || val
+                            .get("provenance")
+                            .and_then(|v| v.get("source_run_id"))
+                            .is_some(),
+                    "graph_identity": val.get("graph_snapshot").is_some(),
+                    "artifact_identity": val
+                        .get("outputs")
+                        .and_then(|v| v.as_object())
+                        .is_some()
+                },
                 "invariant_violations": invariant_violations,
             });
             if !summary["invariant_violations"]
@@ -3344,6 +3381,30 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         && !files.is_some_and(|v| v.is_object())
     {
         violations.push("INV-EXPORT-MODE-001 with-files bundle must include files map".to_string());
+    }
+    if let Some(files_map) = files.and_then(|v| v.as_object()) {
+        for (node_id, node_files) in files_map {
+            let Some(node_files) = node_files.as_object() else {
+                violations.push(format!(
+                    "INV-EXPORT-FILES-001 files entry for node {node_id} must be object"
+                ));
+                continue;
+            };
+            for (path, encoded) in node_files {
+                if encoded.as_str().is_none() {
+                    violations.push(format!(
+                        "INV-EXPORT-FILES-001 file payload for {node_id}/{path} must be base64 string"
+                    ));
+                    continue;
+                }
+                let value = encoded.as_str().unwrap_or_default();
+                if BASE64.decode(value).is_err() {
+                    violations.push(format!(
+                        "INV-EXPORT-FILES-001 file payload for {node_id}/{path} is not valid base64"
+                    ));
+                }
+            }
+        }
     }
     if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("without-artifacts") {
         if !bundle
