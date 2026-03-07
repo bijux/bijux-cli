@@ -17,3 +17,9 @@ Generated from import/export portability tests.
 ## Current status
 
 All listed portability contract tests pass in current suite.
+
+## Raw evidence references
+
+- scenarios: `evidence/perf/scenarios/portability_canonical.json`
+- score benchmark: `evidence/perf/scenarios/portability_success_rate.json`
+- baseline fixture set: `evidence/perf/baselines/benchmark_baseline_fixtures_v1.json`
