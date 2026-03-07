@@ -1,6 +1,7 @@
 mod adapter;
 pub mod adapter_api;
 mod adapter_sdk;
+pub mod api;
 mod adaptive_scheduler;
 mod ai_operator_assist;
 mod auth_identity;
@@ -8,9 +9,11 @@ mod authz_policy;
 mod async_adapter;
 mod backend_cluster;
 mod clock;
+pub mod config;
 mod control_plane;
 mod control_plane_api;
 mod cost_optimization;
+pub mod cache;
 mod dataset_semantics;
 mod distributed;
 mod engine;
@@ -22,8 +25,10 @@ mod formal_verification;
 mod geo_federation;
 mod ha_scheduler;
 mod io;
+pub mod policy;
 mod infrastructure;
 mod local_executor;
+pub mod node_result;
 mod observability;
 mod observability_deep;
 mod operations_governance;
@@ -33,6 +38,7 @@ mod plugin_ecosystem;
 mod recovery;
 mod remote_executor;
 mod registry;
+pub mod run_context;
 mod run_state;
 mod scheduler;
 mod scheduler_enterprise;
@@ -43,11 +49,17 @@ mod supply_chain_trust;
 mod task_contract;
 mod task_types;
 mod tenancy;
+pub mod trace;
+pub mod selectors;
+pub mod subprocess;
+pub mod builtins;
 mod upgrade_compatibility;
 mod performance_capacity;
 mod workflow_product;
 #[cfg(test)]
 mod test_support;
+#[cfg(test)]
+mod runtime_boundary_tests;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -1139,10 +1151,7 @@ fn cache_mode_string(mode: &CacheMode) -> Option<String> {
 
 fn tool_version() -> String {
     let base = env!("CARGO_PKG_VERSION");
-    if let Ok(out) = Command::new("git")
-        .args(["rev-parse", "--short", "HEAD"])
-        .output()
-    {
+    if let Ok(out) = subprocess::output("git", &["rev-parse", "--short", "HEAD"]) {
         if out.status.success() {
             let commit = String::from_utf8_lossy(&out.stdout).trim().to_string();
             if !commit.is_empty() {
@@ -1582,9 +1591,7 @@ fn container_trace(
     exit_code: Option<i32>,
     engine_version: Option<String>,
 ) -> ContainerTrace {
-    let image_digest = Command::new(engine)
-        .args(["image", "inspect", "--format", "{{.Id}}", &spec.image])
-        .output()
+    let image_digest = subprocess::output(engine, &["image", "inspect", "--format", "{{.Id}}", &spec.image])
         .ok()
         .and_then(|out| {
             if out.status.success() {
@@ -1608,9 +1615,7 @@ fn container_trace(
 }
 
 fn engine_version(engine: &str) -> Option<String> {
-    Command::new(engine)
-        .arg("--version")
-        .output()
+    subprocess::output(engine, &["--version"])
         .ok()
         .and_then(|out| {
             if out.status.success() {
@@ -1674,7 +1679,7 @@ fn build_run_outputs_index(
 }
 
 fn rustc_version() -> String {
-    if let Ok(out) = Command::new("rustc").arg("--version").output() {
+    if let Ok(out) = subprocess::output("rustc", &["--version"]) {
         if out.status.success() {
             return String::from_utf8_lossy(&out.stdout).trim().to_string();
         }
