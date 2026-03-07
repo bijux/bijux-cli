@@ -978,6 +978,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_security_model_guard(),
     },
     SuiteDef {
+        id: "container-remote-boundaries",
+        description: "container remote and kubernetes docs must match implemented execution surfaces",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_container_remote_boundary_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -4908,6 +4917,43 @@ fn run_security_model_guard() -> Result<(), String> {
         || !security_tests.contains("input_and_output_authorization_reject_path_traversal_and_symlink_escape")
     {
         return Err("security model tests missing required enforcement coverage".to_string());
+    }
+    Ok(())
+}
+
+fn run_container_remote_boundary_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/CONTAINER_EXECUTION_CONTRACT.md",
+        "docs/spec/REMOTE_EXECUTION_MODEL.md",
+        "docs/architecture/execution-mode-responsibilities.md",
+        "crates/bijux-dag-runtime/tests/container_execution_contracts.rs",
+        "crates/bijux-dag-runtime/tests/remote_execution_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "container/remote execution boundary missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let remote_doc =
+        fs::read_to_string(root.join("docs/spec/REMOTE_EXECUTION_MODEL.md")).map_err(|err| err.to_string())?;
+    if !remote_doc.contains("Not implemented: production Kubernetes/HPC") {
+        return Err("remote execution model must explicitly declare kubernetes/hpc not implemented".to_string());
+    }
+    let deployment_doc =
+        fs::read_to_string(root.join("docs/DEPLOYMENT_BACKENDS.md")).map_err(|err| err.to_string())?;
+    if deployment_doc.contains("Kubernetes execution is production-ready")
+        || deployment_doc.contains("HPC execution is production-ready")
+    {
+        return Err("deployment backend docs overclaim kubernetes/hpc maturity".to_string());
     }
     Ok(())
 }
