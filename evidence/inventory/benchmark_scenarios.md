@@ -13,6 +13,7 @@
 - evidence/perf/scenarios/explainability_quality.json
 - evidence/perf/scenarios/failure_injection_canonical.json
 - evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json
+- evidence/perf/scenarios/inspect_history_latency.json
 - evidence/perf/scenarios/large_artifact_canonical.json
 - evidence/perf/scenarios/manifest_trace_volume_growth.json
 - evidence/perf/scenarios/manifest_trace_write_amplification.json

@@ -39,6 +39,9 @@ Defines benchmark classes, canonical system scenarios, evidence requirements, an
 - artifact lineage completeness: `evidence/perf/scenarios/artifact_lineage_completeness.json`
 - portability success-rate: `evidence/perf/scenarios/portability_success_rate.json`
 
+## Latency benchmarks
+- inspect-history latency: `evidence/perf/scenarios/inspect_history_latency.json`
+
 ## Battle scenarios
 - scheduler overhead on many tiny tasks: `evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json`
 - artifact write amplification: `evidence/perf/scenarios/manifest_trace_write_amplification.json`

@@ -59,6 +59,7 @@ pub(super) fn verify_scenario_registry(root: &Path) -> Result<(), String> {
         "explainability-quality",
         "artifact-lineage-completeness",
         "portability-success-rate",
+        "inspect-history-latency",
     ];
 
     let mut ids = BTreeSet::new();

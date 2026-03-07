@@ -34,6 +34,7 @@ The registry must include the following scenario IDs:
 - `explainability-quality`
 - `artifact-lineage-completeness`
 - `portability-success-rate`
+- `inspect-history-latency`
 
 ## Evolution policy
 - Changes to scenario meaning require `version` bump in the scenario file.

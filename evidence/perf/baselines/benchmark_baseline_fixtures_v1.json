@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "scenarios": [
+    "tiny-canonical",
+    "medium-canonical",
+    "wide-canonical",
+    "deep-canonical",
+    "tenk-nodes-canonical",
+    "large-artifact-canonical",
+    "cache-heavy-canonical",
+    "failure-injection-canonical",
+    "replay-canonical",
+    "diff-canonical",
+    "portability-canonical",
+    "determinism-score",
+    "replay-fidelity-score",
+    "explainability-quality",
+    "artifact-lineage-completeness",
+    "portability-success-rate",
+    "inspect-history-latency"
+  ]
+}
