@@ -164,6 +164,8 @@ enum CommandLine {
     ExecutionModesReport,
     /// Report local semantics and simulated distributed semantics boundaries
     DistributedSemanticsReport,
+    /// Enumerate invariant registry and coverage status
+    InvariantsReport,
     /// Summarize version support by versioned surface
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
@@ -1049,6 +1051,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_distributed_coordination_guard(),
     },
     SuiteDef {
+        id: "formal-invariants",
+        description: "formal invariants registry docs tests and coverage alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_formal_invariants_guard(),
+    },
+    SuiteDef {
         id: "multi-run-analytics",
         description: "multi-run analytics contracts commands schemas and tests alignment",
         domain: "governance",
@@ -1584,6 +1595,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_distributed_semantics_report(),
+        ),
+        CommandLine::InvariantsReport => run_command_reported(
+            &context,
+            "invariants-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_invariants_report(),
         ),
         CommandLine::CompatibilityReport => run_command_reported(
             &context,
@@ -5391,6 +5409,104 @@ fn run_distributed_semantics_report() -> Result<(), String> {
         serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
     );
     Ok(())
+}
+
+fn run_formal_invariants_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/FORMAL_INVARIANTS.md",
+        "docs/tracking/INVARIANT_COVERAGE.md",
+        "crates/bijux-dag-runtime/src/invariants.rs",
+        "crates/bijux-dag-runtime/src/invariants_tests.rs",
+        "crates/bijux-dag-runtime/tests/formal_invariant_property_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "formal invariants required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let spec = fs::read_to_string(root.join("docs/spec/FORMAL_INVARIANTS.md"))
+        .map_err(|err| err.to_string())?;
+    for token in [
+        "INV-GRAPH-SHAPE-001",
+        "INV-PLAN-SHAPE-001",
+        "INV-SCHED-READY-001",
+        "INV-RUN-COUNTS-001",
+        "INV-TRACE-TIME-001",
+        "INV-CACHE-PROOF-001",
+        "INV-ARTIFACT-REF-001",
+    ] {
+        if !spec.contains(token) {
+            return Err(format!("formal invariants spec missing `{token}`"));
+        }
+    }
+    let mut unchecked_guarantees = Vec::new();
+    let rel = "docs/spec/FORMAL_INVARIANTS.md";
+    let text = fs::read_to_string(root.join(rel)).map_err(|err| err.to_string())?;
+    for (idx, line) in text.lines().enumerate() {
+        let lower = line.to_ascii_lowercase();
+        if (lower.contains("guarantee") || lower.contains("always") || lower.contains("never"))
+            && !line.contains("INV-")
+        {
+            unchecked_guarantees.push(format!("{}:{} {}", rel, idx + 1, line.trim()));
+        }
+    }
+    if !unchecked_guarantees.is_empty() {
+        return Err(format!(
+            "normative guarantee wording must cite invariant ids: {}",
+            unchecked_guarantees.join(" | ")
+        ));
+    }
+    Ok(())
+}
+
+fn run_invariants_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let registry_src =
+        fs::read_to_string(root.join("crates/bijux-dag-runtime/src/invariants.rs")).map_err(|err| err.to_string())?;
+    let coverage =
+        fs::read_to_string(root.join("docs/tracking/INVARIANT_COVERAGE.md")).map_err(|err| err.to_string())?;
+
+    let mut ids = Vec::new();
+    for line in registry_src.lines() {
+        if let Some(start) = line.find("id: \"INV-") {
+            let slice = &line[start + 5..];
+            if let Some(end) = slice.find('"') {
+                ids.push(slice[..end].to_string());
+            }
+        }
+    }
+    ids.sort();
+    ids.dedup();
+
+    let mut missing_coverage = Vec::new();
+    for id in &ids {
+        if !coverage.contains(id) {
+            missing_coverage.push(id.clone());
+        }
+    }
+
+    let payload = json!({
+        "invariant_ids": ids,
+        "missing_coverage_entries": missing_coverage,
+        "coverage_file": "docs/tracking/INVARIANT_COVERAGE.md"
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
+    if payload["missing_coverage_entries"].as_array().is_some_and(|a| a.is_empty()) {
+        Ok(())
+    } else {
+        Err("invariant coverage file missing registry entries".to_string())
+    }
 }
 
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {

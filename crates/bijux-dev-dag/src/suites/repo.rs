@@ -40,6 +40,7 @@ pub const IDS: &[&str] = &[
     "cache-evolution",
     "multi-run-analytics",
     "distributed-coordination",
+    "formal-invariants",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
