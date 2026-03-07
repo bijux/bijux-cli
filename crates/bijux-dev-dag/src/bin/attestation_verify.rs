@@ -1,8 +1,15 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use clap as _;
+use hex as _;
 use serde::Deserialize;
 use serde_json::json;
+use sha2 as _;
 use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
+use tempfile as _;
 
 #[derive(Debug, Deserialize)]
 struct VerifyInput {

@@ -1,6 +1,14 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use clap as _;
+use hex as _;
+use serde as _;
 use serde_json::json;
+use sha2 as _;
 use std::env;
 use std::process::ExitCode;
+use tempfile as _;
 
 fn main() -> ExitCode {
     let credential_classes = vec!["local-token", "service-token", "worker-lease-token"];
