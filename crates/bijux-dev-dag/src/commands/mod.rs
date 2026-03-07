@@ -139,6 +139,8 @@ enum CommandLine {
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog
     FaultSummary,
+    /// Enumerate unsafe blocks and owner files
+    UnsafeAudit,
     /// Enumerate known public error codes and owners
     ErrorCodes,
     /// Print effective config resolution as machine-readable JSON
@@ -896,6 +898,24 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_scheduler_invariants_guard(),
     },
     SuiteDef {
+        id: "concurrency-model",
+        description: "concurrency model docs tests and ledger alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_concurrency_model_guard(),
+    },
+    SuiteDef {
+        id: "runtime-unsafe-audit",
+        description: "runtime unsafe usage guard and auditability",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_runtime_unsafe_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1366,6 +1386,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_fault_summary_report(),
+        ),
+        CommandLine::UnsafeAudit => run_command_reported(
+            &context,
+            "unsafe-audit",
+            CommandEffect::Validation,
+            json!({}),
+            || run_unsafe_audit_report(),
         ),
         CommandLine::ErrorCodes => run_command_reported(
             &context,
@@ -4407,6 +4434,83 @@ fn run_scheduler_invariants_guard() -> Result<(), String> {
             missing.join(", ")
         ))
     }
+}
+
+fn run_concurrency_model_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/CONCURRENCY_MODEL.md",
+        "docs/architecture/runtime-concurrency-boundaries.md",
+        "docs/tracking/CONCURRENCY_FLAKE_LEDGER.md",
+        "crates/bijux-dag-runtime/tests/concurrency_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "concurrency model missing required surfaces: {}",
+            missing.join(", ")
+        ))
+    }
+}
+
+fn run_runtime_unsafe_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let output = Command::new("rg")
+        .args(["-n", "\\bunsafe\\b", "crates/bijux-dag-runtime/src"])
+        .current_dir(&root)
+        .output()
+        .map_err(|err| err.to_string())?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let findings = stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect::<Vec<_>>();
+    if findings.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "runtime unsafe usage requires ADR and dedicated tests: {}",
+            findings.join(" | ")
+        ))
+    }
+}
+
+fn run_unsafe_audit_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let output = Command::new("rg")
+        .args(["-n", "\\bunsafe\\b", "crates"])
+        .current_dir(&root)
+        .output()
+        .map_err(|err| err.to_string())?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let entries = stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let mut parts = line.splitn(3, ':');
+            json!({
+                "file": parts.next().unwrap_or(""),
+                "line": parts.next().unwrap_or(""),
+                "snippet": parts.next().unwrap_or("").trim(),
+            })
+        })
+        .collect::<Vec<_>>();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "unsafe_entry_count": entries.len(),
+            "entries": entries
+        }))
+        .map_err(|err| err.to_string())?
+    );
+    Ok(())
 }
 
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
