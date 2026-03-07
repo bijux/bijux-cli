@@ -10,6 +10,9 @@
 - external service
 
 Local runtime remains the correctness reference backend.
+Only local/subprocess are implemented as runnable backend paths in this repo.
+Container, kubernetes, and hpc entries are contract-model surfaces and simulation
+targets until dedicated backend implementations land.
 
 ## Capability negotiation
 
