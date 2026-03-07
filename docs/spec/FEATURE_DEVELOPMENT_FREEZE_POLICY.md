@@ -5,6 +5,7 @@ No new feature surfaces are introduced until foundation readiness criteria are s
 
 ## Evidence governance linkage
 All new scenario-like assets must comply with `evidence/CONTRACT.md` and be registered in `evidence/ownership/evidence_ledger.json`.
+Repository proof pillars are frozen: no new top-level proof roots beyond `evidence/`.
 
 ## Allowed during freeze
 - contract clarification
