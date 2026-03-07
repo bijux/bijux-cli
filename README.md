@@ -62,7 +62,7 @@ Canonical capability list:
 - `docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md`
 
 Status matrix (implemented vs modeled/experimental/simulated):
-- `ROOT_CAPABILITY_MATRIX.md`
+- `docs/reference/ROOT_CAPABILITY_MATRIX.md`
 
 ## Quickstart
 
