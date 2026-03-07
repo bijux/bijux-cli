@@ -5858,6 +5858,35 @@ fn run_anti_drift_governance_guard() -> Result<(), String> {
             return Err(format!("anti-drift policy missing `{}`", token));
         }
     }
+
+    let suite_ids = crate::suites::repo::IDS;
+    for required_check in [
+        "cli-freeze",
+        "docs-schema-ref",
+        "docs-contract-ref",
+        "contract-test-links",
+        "docs-coverage",
+        "versioning-compatibility",
+        "performance-claims",
+    ] {
+        if !suite_ids.contains(&required_check) {
+            return Err(format!(
+                "anti-drift governance requires repo suite `{}`",
+                required_check
+            ));
+        }
+    }
+
+    let release_doc =
+        fs::read_to_string(root.join("docs/spec/RELEASE_BINARY_VERIFICATION.md")).map_err(|err| err.to_string())?;
+    if !release_doc.contains("dag version --json") || !release_doc.contains("dag capabilities --json") {
+        return Err("release verification doc must define machine-readable artifact checks".to_string());
+    }
+
+    let benchmark_scenarios = root.join("benchmarks/scenarios");
+    if !benchmark_scenarios.exists() {
+        return Err("benchmark scenario directory missing for anti-drift benchmark check".to_string());
+    }
     Ok(())
 }
 
