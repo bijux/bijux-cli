@@ -12,6 +12,9 @@ This is the normative contract for `bijux` command surfaces.
 - `dag canonicalize`: canonical serialization workflow.
 - `dag lint`: static lint contract surface.
 - `dag fingerprint`: fingerprint introspection output.
+- `dag hash graph`: canonical graph identity alias surface.
+- `dag canonical-diff`: machine-readable raw vs canonical graph diff.
+- `dag canonical-bytes`: canonical graph JSON byte emission.
 - `dag run`: run orchestration and manifest emission.
 - `dag replay`: replay semantics and comparability behavior.
 - `dag diff`: run comparison behavior.

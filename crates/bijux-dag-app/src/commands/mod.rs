@@ -43,6 +43,18 @@ pub(crate) enum Commands {
     },
     Fingerprint {
         dag: PathBuf,
+        #[arg(long)]
+        explain: bool,
+    },
+    Hash {
+        #[command(subcommand)]
+        command: HashCommands,
+    },
+    CanonicalBytes {
+        dag: PathBuf,
+    },
+    CanonicalDiff {
+        dag: PathBuf,
     },
     ShowEffectiveGraph {
         dag: PathBuf,
@@ -207,6 +219,15 @@ pub(crate) enum Commands {
     Policy {
         #[command(subcommand)]
         command: PolicyCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum HashCommands {
+    Graph {
+        dag: PathBuf,
+        #[arg(long)]
+        explain: bool,
     },
 }
 

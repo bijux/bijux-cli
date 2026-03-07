@@ -75,7 +75,8 @@ use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, CacheModeArg, Commands, ConfigCommands, DagCli,
-    GraphFormatArg, MaterializeModeArg, MigrateCommands, PolicyCommands, RunsCommands,
+    GraphFormatArg, HashCommands, MaterializeModeArg, MigrateCommands, PolicyCommands,
+    RunsCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -451,21 +452,110 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Fingerprint { dag } => {
+        Commands::Fingerprint { dag, explain } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let fp = graph.graph_fingerprint().map_err(|_| ExitCode::from(3))?;
+            let explained = graph
+                .graph_fingerprint_explain()
+                .map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     &cli,
                     "dag.fingerprint",
                     true,
-                    json!({"graph": fp}),
+                    if *explain {
+                        serde_json::to_value(&explained).map_err(|_| ExitCode::from(3))?
+                    } else {
+                        json!({"graph": explained.graph_id.as_str()})
+                    },
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             } else {
-                println!("{}", fp);
+                if *explain {
+                    println!("{}", explained.graph_id.as_str());
+                    println!("hash_algorithm={}", explained.hash_algorithm);
+                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
+                } else {
+                    println!("{}", explained.graph_id.as_str());
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Hash { command } => match command {
+            HashCommands::Graph { dag, explain } => {
+                let input = read_file(dag)?;
+                let graph = parse_graph(&input)?;
+                let explained = graph
+                    .graph_fingerprint_explain()
+                    .map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.hash.graph",
+                        true,
+                        if *explain {
+                            serde_json::to_value(&explained).map_err(|_| ExitCode::from(3))?
+                        } else {
+                            json!({"graph_id": explained.graph_id.as_str()})
+                        },
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", explained.graph_id.as_str());
+                if *explain {
+                    println!("hash_algorithm={}", explained.hash_algorithm);
+                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+        },
+        Commands::CanonicalBytes { dag } => {
+            let input = read_file(dag)?;
+            let graph = parse_graph(&input)?;
+            let bytes = graph.canonical_json_bytes().map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.canonical-bytes",
+                    true,
+                    json!({
+                        "bytes_len": bytes.len(),
+                        "utf8": String::from_utf8_lossy(&bytes),
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", String::from_utf8_lossy(&bytes));
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::CanonicalDiff { dag } => {
+            let input = read_file(dag)?;
+            let raw: Value = serde_json::from_str(&input).map_err(|_| ExitCode::from(2))?;
+            let graph = parse_graph(&input)?;
+            let canonical: Value =
+                serde_json::from_str(&graph.to_canonical_json().map_err(|_| ExitCode::from(3))?)
+                    .map_err(|_| ExitCode::from(3))?;
+            let mut changed_paths = Vec::new();
+            collect_json_diff_paths("", &raw, &canonical, &mut changed_paths);
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.canonical-diff",
+                    true,
+                    json!({
+                        "changed_paths": changed_paths,
+                        "raw": raw,
+                        "canonical": canonical
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            for p in changed_paths {
+                println!("{p}");
             }
             Ok(ExitCode::SUCCESS)
         }
@@ -2714,6 +2804,50 @@ fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
         MaterializeModeArg::Copy => MaterializeMode::Copy,
         MaterializeModeArg::Hardlink => MaterializeMode::Hardlink,
         MaterializeModeArg::Symlink => MaterializeMode::Symlink,
+    }
+}
+
+fn collect_json_diff_paths(path: &str, left: &Value, right: &Value, out: &mut Vec<String>) {
+    match (left, right) {
+        (Value::Object(a), Value::Object(b)) => {
+            let mut keys = std::collections::BTreeSet::new();
+            keys.extend(a.keys().cloned());
+            keys.extend(b.keys().cloned());
+            for key in keys {
+                let child = if path.is_empty() {
+                    format!("/{}", key)
+                } else {
+                    format!("{}/{}", path, key)
+                };
+                match (a.get(&key), b.get(&key)) {
+                    (Some(lv), Some(rv)) => collect_json_diff_paths(&child, lv, rv, out),
+                    _ => out.push(child),
+                }
+            }
+        }
+        (Value::Array(a), Value::Array(b)) => {
+            let max = a.len().max(b.len());
+            for idx in 0..max {
+                let child = if path.is_empty() {
+                    format!("/{}", idx)
+                } else {
+                    format!("{}/{}", path, idx)
+                };
+                match (a.get(idx), b.get(idx)) {
+                    (Some(lv), Some(rv)) => collect_json_diff_paths(&child, lv, rv, out),
+                    _ => out.push(child),
+                }
+            }
+        }
+        _ => {
+            if left != right {
+                out.push(if path.is_empty() {
+                    "/".to_string()
+                } else {
+                    path.to_string()
+                });
+            }
+        }
     }
 }
 
