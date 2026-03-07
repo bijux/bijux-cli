@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "comparators": [
+    {
+      "note": "comparisons/external/argo_notes.md",
+      "linked_scenarios": ["chain", "diamond", "retry-timeout", "failure-propagation"],
+      "bijux_baseline": "comparisons/bijux/baselines/v1.json"
+    },
+    {
+      "note": "comparisons/external/dagster_notes.md",
+      "linked_scenarios": ["determinism", "replay-equivalence", "failure-diagnostics"],
+      "bijux_baseline": "comparisons/bijux/baselines/v1.json"
+    },
+    {
+      "note": "comparisons/external/prefect_notes.md",
+      "linked_scenarios": ["cache-reuse-shape", "operator-inspectability", "artifact-inspectability"],
+      "bijux_baseline": "comparisons/bijux/baselines/v1.json"
+    }
+  ]
+}
