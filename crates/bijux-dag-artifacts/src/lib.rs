@@ -9,6 +9,7 @@ pub mod proof;
 pub mod promotion;
 pub mod retention;
 pub mod schema;
+pub mod services;
 pub mod store;
 
 pub use models::*;
