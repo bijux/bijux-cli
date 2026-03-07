@@ -12,7 +12,6 @@ Prevent fake completeness by banning placeholder implementations in stable code 
 
 ## Controlled exceptions
 
-- Reserved top-level CLI commands `rag` and `rar` are intentionally retained as explicit contract placeholders.
 - Object-store runtime boundary message remains explicit until an approved backend contract is implemented.
 
 ## Governance artifacts

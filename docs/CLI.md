@@ -10,9 +10,14 @@ bijux dag run <dag> --out <runs/>
 bijux dag replay <run-dir> --out <runs/>
 bijux dag diff <runA> <runB>
 bijux dag explain <run-dir> [--node <id>]
+bijux dag show-effective-plan <dag>
 bijux dag node <run-dir> --id <id>
 bijux dag status <run-dir>
 bijux dag verify <run-dir> [--deep]
+bijux dag fsck <run-dir> [--strict]
+bijux dag hash run <run-dir>
+bijux dag hash artifact <file>
+bijux dag capabilities --json
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
@@ -59,8 +64,11 @@ All commands accept a global `--json` flag. JSON output is normalized as:
 | DAG umbrella | `dag status` | 0 | 3 |
 | DAG umbrella | `dag cache` | 0 | 3 |
 | DAG umbrella | `dag adapters` | 0 | 3 |
-| Top-level placeholder | `rag` | 2 | 2 |
-| Top-level placeholder | `rar` | 2 | 2 |
+| DAG umbrella | `dag fsck` | 0 | 3 |
+| DAG umbrella | `dag hash run` | 0 | 3 |
+| DAG umbrella | `dag hash artifact` | 0 | 3 |
+| DAG umbrella | `dag capabilities` | 0 | 0 |
+| Top-level | `completions --shell <shell>` | 0 | 2 |
 
 Failure codes are stable for CLI parser and command validation errors unless a subcommand
 explicitly returns a richer status.

@@ -24,40 +24,12 @@
   ],
   "allowed_public_output_exceptions": [
     {
-      "path": "crates/bijux-dag-cli/src/main.rs",
-      "contains": "Cmd::new(\"rag\").about(\"Not implemented\")",
-      "reason": "reserved top-level command surface retained intentionally until contract approval"
-    },
-    {
-      "path": "crates/bijux-dag-cli/src/main.rs",
-      "contains": "Cmd::new(\"rar\").about(\"Not implemented\")",
-      "reason": "reserved top-level command surface retained intentionally until contract approval"
-    },
-    {
-      "path": "crates/bijux-dag-cli/src/main.rs",
-      "contains": "eprintln!(\"not implemented\")",
-      "reason": "stable failure text for reserved top-level command surface"
-    },
-    {
       "path": "crates/bijux-dag-artifacts/src/io/store.rs",
       "contains": "object store backend is not implemented in this runtime",
       "reason": "explicit runtime boundary declaration for unsupported execution backend"
     }
   ],
   "retained_placeholders": [
-    {
-      "id": "cli-reserved-rag-rar",
-      "owner": "dag-cli",
-      "status": "postpone-with-doc-only",
-      "deadline": "2026-12-31",
-      "paths": [
-        "crates/bijux-dag-cli/src/main.rs",
-        "crates/bijux-dag-cli/tests/contract_surface.rs",
-        "docs/CLI.md",
-        "docs/CLI_BACKWARD_COMPAT.md",
-        "docs/COMPATIBILITY.md"
-      ]
-    },
     {
       "id": "runtime-object-store-boundary",
       "owner": "dag-artifacts",

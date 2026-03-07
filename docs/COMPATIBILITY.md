@@ -14,4 +14,4 @@
 ## CLI compatibility
 
 - `dag validate`, `run`, `replay`, `diff`, `status`, `cache`, and `adapters` are contract surfaces.
-- Placeholder top-level commands (`rag`, `rar`) are intentionally unimplemented and explicitly documented.
+- `dag hash run`, `dag hash artifact`, and `dag fsck` are stable compatibility surfaces.

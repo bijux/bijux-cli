@@ -139,6 +139,7 @@
 - [Local-only vs remote-coordinated runtime](./architecture/local_only_vs_remote_coordinated_runtime.md)
 - [Invariant coverage tracking](./tracking/INVARIANT_COVERAGE.md)
 - [Operator command index](./user/OPERATOR_COMMAND_INDEX.md)
+- [Deterministic pipeline control](./reference/DETERMINISTIC_PIPELINE_CONTROL.md)
 - [Authoring guide](./user/AUTHORING_GUIDE.md)
 - [Command taxonomy](./reference/COMMAND_TAXONOMY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
@@ -162,6 +163,7 @@
 - [Compatibility policy](./COMPATIBILITY.md)
 - [Upgrade and compatibility governance](./UPGRADE_COMPATIBILITY_GOVERNANCE.md)
 - [Compatibility window v0.1](./COMPATIBILITY_WINDOW_v0.1.md)
+- [CLI deprecation and alias policy](./spec/CLI_DEPRECATION_AND_ALIAS_POLICY.md)
 
 ## Crate contracts and ownership
 
@@ -186,6 +188,7 @@
 - [Roadmap ownership](./ROADMAP_OWNERSHIP.md)
 - [Repository guardrails](./REPO_GUARDRAILS.md)
 - [Documentation generation plan](./DOCS_GENERATION_PLAN.md)
+- [Future backlog groups](./reference/FUTURE_BACKLOG_GROUPS.md)
 
 ## Operations
 

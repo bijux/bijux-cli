@@ -23,8 +23,22 @@ Run all tests with:
 cargo test --workspace
 ```
 
+Fast local feedback:
+```bash
+make test
+```
+
+Full repository verification (includes battle and release evidence gates):
+```bash
+make test-all
+```
+
+`make test` intentionally skips slower and release-oriented suites. Use `make test-all`
+before opening a PR when command surfaces, replay/diff behavior, or evidence wiring changes.
+
 ## Make Targets
 - `make test`
+- `make test-all`
 - `make lint`
 - `make security`
 

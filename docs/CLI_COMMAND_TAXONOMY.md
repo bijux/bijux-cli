@@ -7,6 +7,7 @@
 - `canonicalize`
 - `lint`
 - `fingerprint`
+- `show-effective-plan`
 - `run`
 - `replay`
 - `diff`
@@ -14,6 +15,11 @@
 - `node`
 - `status`
 - `verify`
+- `fsck`
+- `hash graph`
+- `hash run`
+- `hash artifact`
+- `capabilities`
 - `cache`
 - `adapters`
 - `export`
@@ -23,6 +29,13 @@
 ## Debug and diagnostics commands
 
 - `doctor`
+- `trace-artifact`
+- `why-rerun`
+- `why-cache-missed`
+
+## Top-level utility commands
+
+- `completions`
 
 ## Migration commands
 
