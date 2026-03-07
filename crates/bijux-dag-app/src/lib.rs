@@ -1,28 +1,45 @@
 mod cache;
+#[path = "cache/cmd.rs"]
 mod cache_cmd;
+#[path = "commands/cli_model.rs"]
 mod cli_model;
 mod commands;
+#[path = "commands/config_surface.rs"]
 mod config_surface;
+#[path = "commands/dispatch.rs"]
 mod dispatch;
+#[path = "inspect/doctor_cmd.rs"]
 mod doctor_cmd;
+#[path = "replay/diff.rs"]
 mod diff;
 mod explain;
+#[path = "explain/cmd.rs"]
 mod explain_cmd;
+#[path = "commands/export_cmd.rs"]
 mod export_cmd;
+#[path = "read/fs_input.rs"]
 mod fs_input;
 mod format;
 mod graph;
+#[path = "graph/cmd.rs"]
 mod graph_cmd;
 mod migrate;
 mod read;
+#[path = "read/read_graph.rs"]
 mod read_graph;
 mod replay;
+#[path = "replay/cmd.rs"]
 mod replay_cmd;
+#[path = "inspect/run_views.rs"]
 mod run_views;
+#[path = "commands/run_cmd.rs"]
 mod run_cmd;
+#[path = "inspect/status_cmd.rs"]
 mod status_cmd;
+#[path = "graph/validate_cmd.rs"]
 mod validate_cmd;
 mod write;
+#[path = "commands/import_cmd.rs"]
 mod import_cmd;
 mod inspect;
 
