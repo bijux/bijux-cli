@@ -149,8 +149,8 @@ fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
         assert!(fixture_root.join(rel).exists(), "missing fixture: {}", rel);
     }
 
-    let warm_cold = fs::read_to_string(fixture_root.join("scenarios/warm_cold.json"))
-        .expect("read warm_cold");
+    let warm_cold =
+        fs::read_to_string(fixture_root.join("scenarios/warm_cold.json")).expect("read warm_cold");
     let parsed: serde_json::Value = serde_json::from_str(&warm_cold).expect("parse warm_cold");
     let expectations = parsed["expectations"].as_array().expect("expectation list");
     assert!(expectations

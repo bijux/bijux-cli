@@ -99,7 +99,8 @@ fn import_export_and_replay_artifact_payloads_validate() {
 #[test]
 fn corruption_fixtures_are_detected_and_cleanup_plan_is_bounded() {
     let corrupted =
-        fs::read_to_string("../../evidence/fault/corrupt_runs/missing_manifest_version.json").unwrap();
+        fs::read_to_string("../../evidence/fault/corrupt_runs/missing_manifest_version.json")
+            .unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&corrupted).unwrap();
     assert!(parsed.get("manifest_version").is_none());
 

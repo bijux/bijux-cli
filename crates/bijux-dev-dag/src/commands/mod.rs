@@ -7657,7 +7657,9 @@ fn run_cache_evolution_guard() -> Result<(), String> {
         "evidence/cache/corrupt/missing_outputs_proof.json",
     ] {
         if !corrupt_fixtures.contains_key(fixture) {
-            return Err(format!("cache metadata missing corruption entry: {fixture}"));
+            return Err(format!(
+                "cache metadata missing corruption entry: {fixture}"
+            ));
         }
     }
     let model = fs::read_to_string(root.join("docs/spec/CACHE_EVOLUTION_MODEL.md"))
