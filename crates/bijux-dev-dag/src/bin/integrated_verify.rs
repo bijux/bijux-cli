@@ -66,7 +66,13 @@ fn run_integrated_verification(path: &str) -> Result<serde_json::Value, String> 
 
     let failed: Vec<String> = checks
         .iter()
-        .filter_map(|(name, passed)| if *passed { None } else { Some((*name).to_string()) })
+        .filter_map(|(name, passed)| {
+            if *passed {
+                None
+            } else {
+                Some((*name).to_string())
+            }
+        })
         .collect();
 
     Ok(json!({
