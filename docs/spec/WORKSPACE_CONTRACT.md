@@ -5,7 +5,7 @@ This document defines crate responsibilities and allowed dependency directions.
 ## Crate responsibilities
 
 - `bijux-dag-core`: DAG model, parsing, canonicalization, validation, fingerprinting, and topology algorithms. Pure logic only.
-- `bijux-dag-artifacts`: artifact/run manifest data models and artifact persistence contracts.
+- `bijux-dag-artifacts`: artifact/run manifest data models plus artifact persistence contracts (`format + IO`).
 - `bijux-dag-runtime`: execution planning/runtime, scheduling flow, adapter invocation boundaries, policy enforcement, and trace emission.
 - `bijux-dag-app`: application orchestration commands and structured output rendering.
 - `bijux-dag-cli`: binary wiring and process-level error mapping only.
