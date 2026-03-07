@@ -155,6 +155,11 @@ enum CommandLine {
         #[arg(long)]
         config: Option<PathBuf>,
     },
+    /// Print effective security controls for a run policy configuration
+    PolicyAudit {
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -964,6 +969,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_extensibility_contract_guard(),
     },
     SuiteDef {
+        id: "security-model",
+        description: "security model docs enforcement tests and debt ledger alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_security_model_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1469,6 +1483,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({ "config": config }),
             || run_config_dump(config.as_deref()),
+        ),
+        CommandLine::PolicyAudit { config } => run_command_reported(
+            &context,
+            "policy-audit",
+            CommandEffect::Validation,
+            json!({ "config": config }),
+            || run_policy_audit(config.as_deref()),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -4843,6 +4864,32 @@ fn run_extensibility_contract_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_security_model_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/SECURITY_MODEL.md",
+        "docs/tracking/NON_HERMETIC_BEHAVIORS.md",
+        "docs/tracking/SECURITY_DEBT_LEDGER.md",
+        "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
+        "crates/bijux-dag-runtime/tests/secrets_security_contracts.rs",
+        "crates/bijux-dag-runtime/src/security_env.rs",
+        "crates/bijux-dag-runtime/src/path_authorization.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "security model contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+    Ok(())
+}
+
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
     let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
@@ -4906,6 +4953,39 @@ fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
     println!(
         "{}",
         serde_json::to_string_pretty(&merged).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_policy_audit(config: Option<&Path>) -> Result<(), String> {
+    let root = repo_root()?;
+    let defaults_path = root.join("configs/dev/default_runtime_config.json");
+    let defaults_payload = fs::read_to_string(&defaults_path).map_err(|err| err.to_string())?;
+    let defaults: Value = serde_json::from_str(&defaults_payload).map_err(|err| err.to_string())?;
+    let mut merged = defaults;
+    if let Some(path) = config {
+        let full = if path.is_absolute() { path.to_path_buf() } else { root.join(path) };
+        let payload = fs::read_to_string(full).map_err(|err| err.to_string())?;
+        let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        deep_merge_json(&mut merged, &parsed);
+    }
+    let policy = merged
+        .get("policy")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    let report = json!({
+        "policy_controls": {
+            "deny_network": policy.get("deny_network").cloned().unwrap_or(Value::Bool(false)),
+            "deny_env": policy.get("deny_env").cloned().unwrap_or(Value::Bool(false)),
+            "deny_clock": policy.get("deny_clock").cloned().unwrap_or(Value::Bool(false)),
+            "clean_env": policy.get("clean_env").cloned().unwrap_or(Value::Bool(false))
+        },
+        "security_contract": "docs/spec/SECURITY_MODEL.md"
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
     );
     Ok(())
 }
