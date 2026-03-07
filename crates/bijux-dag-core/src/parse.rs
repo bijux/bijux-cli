@@ -8,5 +8,22 @@ pub fn parse_graph_strict(input: &str) -> Result<Graph, GraphError> {
     if graph.spec != SPEC_VERSION {
         return Err(GraphError::InvalidSpec(graph.spec));
     }
+    if graph_has_ambiguous_output_path(&graph) {
+        return Err(GraphError::ValidationFailed);
+    }
     Ok(graph)
+}
+
+fn graph_has_ambiguous_output_path(graph: &Graph) -> bool {
+    for node in &graph.nodes {
+        for output in &node.outputs {
+            if output.path.contains("..") {
+                return true;
+            }
+            if output.path.starts_with('/') || output.path.starts_with('\\') {
+                return true;
+            }
+        }
+    }
+    false
 }

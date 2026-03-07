@@ -5,10 +5,32 @@
 - Hash with SHA256 of the UTF-8 bytes.
 - Graph metadata is included when present.
 
+Contributes directly:
+- `spec`
+- `meta.name`, `meta.description`, `meta.owners`, `meta.tags`
+- `inputs`
+- `nondeterminism_allowed`
+- node list (after canonical ordering)
+- edge list (after canonical ordering)
+
 ## Node Fingerprint
 - Compute canonical JSON for the node only.
 - Use resolved params (graph inputs substituted; node output refs resolve to declared output paths).
 - Hash with SHA256 of the UTF-8 bytes.
+
+Contributes directly:
+- `id`
+- `kind`
+- `inputs`
+- `outputs` (with canonical path normalization)
+- resolved `params`
+- `container`
+- `timeout_ms`
+- `resources`
+- `tags`
+- `retry`
+- `effects`
+- `env_allowlist`
 
 ## Runtime Node Fingerprint
 - Start with the base node fingerprint above.

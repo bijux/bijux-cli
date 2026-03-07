@@ -26,6 +26,8 @@ Validation rule registry source: `crates/bijux-dag-core/src/validate.rs`.
 - `E1023` Missing container spec for container node
 - `E1024` Invalid container spec
 - `E1025` Invalid output file path
+- `E1026` Illegal tag name
+- `E1027` Illegal graph name
 
 ## Warning Codes
 - `W2001` Unreachable node
@@ -51,5 +53,7 @@ Validation rule registry source: `crates/bijux-dag-core/src/validate.rs`.
 17. Container nodes must include a container spec. (`E1023`)
 18. Container spec must be valid (engine and argv). (`E1024`)
 19. Output file paths must be relative and not contain `..`. (`E1025`)
-20. Nodes not reachable from any root emit a warning. (`W2001`)
-21. Nodes with no edges emit a warning. (`W2002`)
+20. Tag names must match `[a-zA-Z0-9_-]+`. (`E1026`)
+21. Graph name must match `[a-zA-Z0-9_-]+`. (`E1027`)
+22. Nodes not reachable from any root emit a warning. (`W2001`)
+23. Nodes with no edges emit a warning. (`W2002`)

@@ -34,6 +34,8 @@ pub fn validation_rule_registry() -> &'static [ValidationRule] {
         ValidationRule { id: "E1023", severity: Severity::Error, domain: ValidationDomain::Semantic },
         ValidationRule { id: "E1024", severity: Severity::Error, domain: ValidationDomain::Semantic },
         ValidationRule { id: "E1025", severity: Severity::Error, domain: ValidationDomain::Schema },
+        ValidationRule { id: "E1026", severity: Severity::Error, domain: ValidationDomain::Schema },
+        ValidationRule { id: "E1027", severity: Severity::Error, domain: ValidationDomain::Schema },
         ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
         ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ]

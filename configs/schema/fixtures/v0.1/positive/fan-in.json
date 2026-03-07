@@ -1,0 +1,12 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}]},
+    {"id":"b","kind":"const","inputs":[],"outputs":[{"name":"out","path":"b/out"}]},
+    {"id":"c","kind":"const","inputs":["left","right"],"outputs":[{"name":"out","path":"c/out"}]}
+  ],
+  "edges": [
+    {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"left"}},
+    {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"right"}}
+  ]
+}

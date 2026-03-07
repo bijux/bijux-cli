@@ -267,6 +267,16 @@ impl Graph {
                     Some("Use [a-zA-Z0-9_-] only".to_string()),
                 ));
             }
+            for tag in &node.tags {
+                if !is_valid_canonical_name(tag) {
+                    diags.push(error(
+                        "E1026",
+                        format!("illegal node tag: {}", tag),
+                        format!("/nodes/{}/tags", node.id),
+                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                    ));
+                }
+            }
             if node.kind == NodeKind::Shell && node.effects.is_empty() {
                 diags.push(error(
                     "E1009",
@@ -465,6 +475,7 @@ impl Graph {
         diags.extend(self.validate_param_refs());
         diags.extend(self.unreachable_warnings());
         diags.extend(self.orphan_warnings());
+        diags.extend(self.validate_graph_meta_names());
 
         diags
     }
@@ -485,6 +496,9 @@ impl Graph {
         for node in &mut nodes {
             sort_param_value(&mut node.params);
             node.inputs.sort();
+            for out in &mut node.outputs {
+                out.path = normalize_rel_path(&out.path);
+            }
             node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
@@ -587,6 +601,9 @@ impl Graph {
         sort_value_maps(&mut params);
         node.params = ParamValue::Literal(params);
         node.inputs.sort();
+        for out in &mut node.outputs {
+            out.path = normalize_rel_path(&out.path);
+        }
         node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
         node.effects.sort_by_key(effect_order);
         node.env_allowlist.sort();
@@ -693,6 +710,31 @@ impl Graph {
                 &mut diags,
                 &format!("/nodes/{}/params", node.id),
             );
+        }
+        diags
+    }
+
+    fn validate_graph_meta_names(&self) -> Vec<ValidationDiagnostic> {
+        let mut diags = Vec::new();
+        if let Some(meta) = &self.meta {
+            if !is_valid_canonical_name(&meta.name) {
+                diags.push(error(
+                    "E1027",
+                    format!("illegal graph name: {}", meta.name),
+                    "/meta/name".to_string(),
+                    Some("Use [a-zA-Z0-9_-] only".to_string()),
+                ));
+            }
+            for tag in &meta.tags {
+                if !is_valid_canonical_name(tag) {
+                    diags.push(error(
+                        "E1026",
+                        format!("illegal graph tag: {}", tag),
+                        "/meta/tags".to_string(),
+                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                    ));
+                }
+            }
         }
         diags
     }
@@ -861,8 +903,14 @@ fn sort_param_value(value: &mut ParamValue) {
 }
 
 fn is_valid_node_id(id: &str) -> bool {
-    id.chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    is_valid_canonical_name(id)
+}
+
+fn is_valid_canonical_name(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 fn error(code: &str, message: String, path: String, hint: Option<String>) -> ValidationDiagnostic {
@@ -898,7 +946,21 @@ fn is_valid_output_path(path: &str) -> bool {
     if path.contains("..") {
         return false;
     }
-    !path.starts_with('/') && !path.starts_with('\\')
+    let normalized = normalize_rel_path(path);
+    if normalized.starts_with('/') {
+        return false;
+    }
+    if normalized.len() > 2 {
+        let bytes = normalized.as_bytes();
+        if bytes[1] == b':' && bytes[2] == b'/' {
+            return false;
+        }
+    }
+    true
+}
+
+fn normalize_rel_path(path: &str) -> String {
+    path.replace('\\', "/")
 }
 
 #[cfg(test)]
