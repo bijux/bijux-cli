@@ -8,9 +8,6 @@ authors = ["Bijan Mousavi"]
 [lints]
 workspace = true
 
-[lints.rust]
-unused_crate_dependencies = "allow"
-
 [dependencies]
 clap = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
