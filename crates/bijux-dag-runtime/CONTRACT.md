@@ -10,6 +10,10 @@
 - `replay/*`: replay verification, semantic diff, and explain surfaces.
 - `diagnostics/*`: invariant/event/timeline diagnostics surfaces.
 - `error/*`: runtime error code and classification boundary.
+- `cache/*`: cache identity, proof validation, store and lineage surfaces.
+- `policy/*`: policy evaluation and policy trace surfaces.
+- `adapters/*`: adapter registry, adapter contract, and built-in adapter façade.
+- `internal/*`: non-public selectors/clock/io boundary wrappers.
 - `api`/`config`: public runtime surfaces.
 - `policy`: policy modeling and evaluation helpers.
 - `run_context`: execution context and dependency injection.
