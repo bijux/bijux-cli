@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
+use super::evidence_access::load_registry_release_blocking_flags;
 use super::repo_root;
 
 pub(super) fn run_evidence_suite_policy_verify() -> Result<(), String> {
@@ -64,24 +65,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         return Err("release evidence set must include blocking_assets".to_string());
     }
 
-    let registry_payload =
-        fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
-            .map_err(|err| err.to_string())?;
-    let registry: Value = serde_json::from_str(&registry_payload).map_err(|err| err.to_string())?;
-    let assets = registry["assets"]
-        .as_array()
-        .ok_or_else(|| "evidence registry missing assets array".to_string())?;
-    let mut registry_release_flags = BTreeMap::new();
-    for entry in assets {
-        let id = entry["id"]
-            .as_str()
-            .ok_or_else(|| "registry asset id must be string".to_string())?
-            .to_string();
-        let release_blocking = entry["release_blocking"]
-            .as_bool()
-            .ok_or_else(|| format!("registry asset `{id}` missing release_blocking bool"))?;
-        registry_release_flags.insert(id, release_blocking);
-    }
+    let registry_release_flags = load_registry_release_blocking_flags(&root)?;
 
     if required_families.is_empty() {
         return Err("release evidence set required_families cannot be empty".to_string());
@@ -166,9 +150,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
             .as_array()
             .ok_or_else(|| format!("minimum_blocking_sets `{set_id}` must be an array"))?;
         if minimum_assets.is_empty() {
-            return Err(format!(
-                "minimum_blocking_sets `{set_id}` cannot be empty"
-            ));
+            return Err(format!("minimum_blocking_sets `{set_id}` cannot be empty"));
         }
         for entry in minimum_assets {
             let id = entry
@@ -254,9 +236,11 @@ pub(super) fn run_release_evidence_report(
     limits_out: &Path,
 ) -> Result<(), String> {
     let root = repo_root()?;
-    let release_payload = fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
-        .map_err(|err| err.to_string())?;
-    let release_set: Value = serde_json::from_str(&release_payload).map_err(|err| err.to_string())?;
+    let release_payload =
+        fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
+            .map_err(|err| err.to_string())?;
+    let release_set: Value =
+        serde_json::from_str(&release_payload).map_err(|err| err.to_string())?;
     let blocking_assets = release_set["blocking_assets"]
         .as_array()
         .ok_or_else(|| "release evidence set missing blocking_assets array".to_string())?;
@@ -327,7 +311,8 @@ pub(super) fn run_release_evidence_report(
     let mut proves_lines = vec![
         "# What This Release Proves".to_string(),
         String::new(),
-        "The following evidence assets are release-blocking and required for release readiness:".to_string(),
+        "The following evidence assets are release-blocking and required for release readiness:"
+            .to_string(),
         String::new(),
     ];
     for entry in blocking_assets {

@@ -185,10 +185,11 @@ fn release_evidence_policy_exists_and_declares_governance_rules() {
             .expect("release_set_source"),
         "evidence/release/release_evidence_set.json"
     );
-    assert!(
-        policy["legacy_roots_must_remain_deleted"]
-            .as_array()
-            .expect("legacy roots array")
-            .contains(&serde_json::Value::String("comparisons/scenarios/".to_string()))
-    );
+    assert!(policy["legacy_roots_must_remain_deleted"]
+        .as_array()
+        .expect("legacy roots array")
+        .contains(&serde_json::Value::String(format!(
+            "{}/{}/",
+            "comparisons", "scenarios"
+        ))));
 }

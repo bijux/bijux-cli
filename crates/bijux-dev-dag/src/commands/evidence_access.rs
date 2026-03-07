@@ -19,6 +19,27 @@ pub fn load_registry_assets(root: &Path) -> Result<Vec<EvidenceAsset>, String> {
     parse_registry_assets(&registry)
 }
 
+pub fn load_registry_release_blocking_flags(root: &Path) -> Result<BTreeMap<String, bool>, String> {
+    let payload = fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
+        .map_err(|err| err.to_string())?;
+    let registry: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let assets = registry["assets"]
+        .as_array()
+        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
+    let mut flags = BTreeMap::new();
+    for asset in assets {
+        let id = asset["id"]
+            .as_str()
+            .ok_or_else(|| "registry asset missing string id".to_string())?
+            .to_string();
+        let release_blocking = asset["release_blocking"]
+            .as_bool()
+            .ok_or_else(|| format!("registry asset `{id}` missing release_blocking bool"))?;
+        flags.insert(id, release_blocking);
+    }
+    Ok(flags)
+}
+
 pub fn parse_registry_assets(registry: &Value) -> Result<Vec<EvidenceAsset>, String> {
     let assets = registry["assets"]
         .as_array()
