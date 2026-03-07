@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "graph_diff",
+  "type": "object",
+  "required": ["changed_paths", "raw", "canonical"],
+  "properties": {
+    "changed_paths": { "type": "array", "items": { "type": "string" } },
+    "raw": {},
+    "canonical": {}
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "artifact_trace",
+  "type": "object",
+  "required": ["artifact_id", "path", "provenance", "lineage"],
+  "properties": {
+    "artifact_id": { "type": "string" },
+    "path": { "type": "string" },
+    "provenance": { "type": "object" },
+    "lineage": { "type": "object" }
+  }
+}

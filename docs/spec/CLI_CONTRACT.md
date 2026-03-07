@@ -28,6 +28,9 @@ This is the normative contract for `bijux` command surfaces.
 - `dag artifact-inspect`: artifact identity/provenance/lineage inspection surface.
 - `dag replay --dry-run`: replay planning surface without execution side effects.
 - `dag replay --prove`: replay fidelity proof output surface.
+- `dag why-rerun`: root cause summary for semantic replay divergence.
+- `dag why-cache-missed`: cache eligibility and miss reason summary.
+- `dag trace-artifact`: lineage-aware artifact trace surface.
 - `dag cache`: cache inspection and control surfaces.
 - `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.
