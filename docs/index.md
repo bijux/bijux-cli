@@ -21,6 +21,7 @@
 - [Node state machine](./spec/NODE_STATE_MACHINE.md)
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
+- [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)
 - [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
 - [Sacred execution flow](./spec/SACRED_EXECUTION_FLOW.md)
 - [Scheduler state-space contract](./spec/SCHEDULER_STATESPACE_CONTRACT.md)
