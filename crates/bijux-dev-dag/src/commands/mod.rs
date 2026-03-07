@@ -139,6 +139,8 @@ enum CommandLine {
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog
     FaultSummary,
+    /// Enumerate known public error codes and owners
+    ErrorCodes,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -794,6 +796,24 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_contract_coverage_report(),
     },
+    SuiteDef {
+        id: "error-code-registry",
+        description: "enumerate stable error codes and owner crates",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_error_code_registry_report(),
+    },
+    SuiteDef {
+        id: "error-code-doc-tests",
+        description: "public error codes require docs and test references",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_error_code_docs_tests_guard(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -1171,6 +1191,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_fault_summary_report(),
+        ),
+        CommandLine::ErrorCodes => run_command_reported(
+            &context,
+            "error-codes",
+            CommandEffect::Validation,
+            json!({}),
+            || run_error_code_registry_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -3832,4 +3859,102 @@ fn collect_contract_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Stri
         }
     }
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct ErrorCodeRegistry {
+    version: u64,
+    categories: Vec<String>,
+    codes: Vec<ErrorCodeEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ErrorCodeEntry {
+    code: String,
+    category: String,
+    owner: String,
+    description: String,
+}
+
+fn run_error_code_registry_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let registry = load_error_code_registry(&root)?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "version": registry.version,
+            "categories": registry.categories,
+            "codes": registry.codes,
+        }))
+        .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_error_code_docs_tests_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let registry = load_error_code_registry(&root)?;
+    let docs_error_ref =
+        fs::read_to_string(root.join("docs/reference/ERRORS.md")).map_err(|err| err.to_string())?;
+    let docs_error_contract =
+        fs::read_to_string(root.join("docs/spec/ERROR_CONTRACT.md")).map_err(|err| err.to_string())?;
+    let tests = [
+        root.join("crates/bijux-dag-app/tests/error_output_contract.rs"),
+        root.join("crates/bijux-dag-app/tests/error_exit_contract.rs"),
+    ];
+
+    let mut violations = Vec::new();
+    for code in &registry.codes {
+        if !docs_error_ref.contains(&code.category) {
+            violations.push(format!(
+                "docs/reference/ERRORS.md missing category {} for {}",
+                code.category, code.code
+            ));
+        }
+        if !docs_error_contract.contains("Public error code additions require docs plus test coverage") {
+            violations.push("docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string());
+        }
+    }
+
+    for test in tests {
+        if !test.exists() {
+            violations.push(format!(
+                "missing required error contract test file: {}",
+                test.strip_prefix(&root).map_err(|err| err.to_string())?.display()
+            ));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
+    let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
+        .map_err(|err| err.to_string())?;
+    let registry: ErrorCodeRegistry = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+
+    let mut seen_codes = BTreeSet::new();
+    let mut seen_categories = BTreeSet::new();
+    for category in &registry.categories {
+        seen_categories.insert(category.clone());
+    }
+    for entry in &registry.codes {
+        if !seen_categories.contains(&entry.category) {
+            return Err(format!(
+                "error code {} references unknown category {}",
+                entry.code, entry.category
+            ));
+        }
+        if entry.owner.trim().is_empty() || entry.description.trim().is_empty() {
+            return Err(format!("error code {} has empty owner or description", entry.code));
+        }
+        if !seen_codes.insert(entry.code.clone()) {
+            return Err(format!("duplicate error code {}", entry.code));
+        }
+    }
+    Ok(registry)
 }
