@@ -29,7 +29,8 @@
       "id": "normalize",
       "kind": "shell",
       "inputs": [
-        "raw_a_input"
+        "raw_a_input",
+        "raw_b_input"
       ],
       "outputs": [
         { "name": "value", "path": "normalized.txt" }

@@ -19,6 +19,7 @@
       "kind": "shell",
       "inputs": ["in"],
       "outputs": [{"name": "out", "path": "left/out.json"}],
+      "effects": ["filesystem"],
       "params": {"argv": ["sh", "-c", "cat inputs/seed/in > outputs/left.json"]}
     },
     {
@@ -26,6 +27,7 @@
       "kind": "shell",
       "inputs": ["in"],
       "outputs": [{"name": "out", "path": "right/out.json"}],
+      "effects": ["filesystem"],
       "params": {"argv": ["sh", "-c", "cat inputs/seed/in > outputs/right.json"]}
     },
     {
@@ -33,6 +35,7 @@
       "kind": "shell",
       "inputs": ["left", "right"],
       "outputs": [{"name": "out", "path": "merge/out.json"}],
+      "effects": ["filesystem"],
       "params": {"argv": ["sh", "-c", "cat inputs/left/left inputs/right/right > outputs/merged.json"]}
     }
   ],
