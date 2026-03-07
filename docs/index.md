@@ -151,6 +151,7 @@
 - [Run bundle format v1](./spec/RUN_BUNDLE_FORMAT_v1.md)
 - [Artifact bundle format v1](./spec/ARTIFACT_BUNDLE_FORMAT_v1.md)
 - [Bundle manifest versioning policy](./spec/BUNDLE_MANIFEST_VERSIONING_POLICY.md)
+- [Bundle schema reference](./spec/BUNDLE_SCHEMA_REFERENCE.md)
 - [Kubernetes support matrix](./reference/K8S_SUPPORT_MATRIX.md)
 - [HPC support matrix](./reference/HPC_SUPPORT_MATRIX.md)
 - [HPC and DNA boundary](./reference/HPC_AND_DNA_BOUNDARY.md)

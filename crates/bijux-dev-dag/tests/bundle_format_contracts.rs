@@ -26,6 +26,7 @@ fn bundle_format_specs_exist_and_define_v1_identifiers() {
         ("docs/spec/GRAPH_BUNDLE_FORMAT_v1.md", "graph-bundle/v1"),
         ("docs/spec/RUN_BUNDLE_FORMAT_v1.md", "run-bundle/v1"),
         ("docs/spec/ARTIFACT_BUNDLE_FORMAT_v1.md", "artifact-bundle/v1"),
+        ("docs/spec/BUNDLE_SCHEMA_REFERENCE.md", "minimal_bundle.json"),
         (
             "docs/spec/BUNDLE_MANIFEST_VERSIONING_POLICY.md",
             "export-bundle/v0.1",
@@ -64,5 +65,26 @@ fn import_export_contract_and_cli_contract_cover_new_bundle_flags() {
         "dag import --verify-only",
     ] {
         assert!(cli.contains(token), "cli contract missing token: {token}");
+    }
+}
+
+#[test]
+fn bundle_examples_and_benchmark_reports_exist() {
+    let root = repo_root();
+    for rel in [
+        "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+        "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+        "docs/reports/foundation/bundle_export_import_benchmarks.md",
+    ] {
+        assert!(root.join(rel).exists(), "missing bundle surface: {rel}");
+    }
+
+    let benchmark = fs::read_to_string(root.join("docs/reports/foundation/bundle_export_import_benchmarks.md"))
+        .expect("read bundle benchmark report");
+    for token in ["Small bundle benchmark", "Large bundle benchmark"] {
+        assert!(
+            benchmark.contains(token),
+            "bundle benchmark report missing section: {token}"
+        );
     }
 }

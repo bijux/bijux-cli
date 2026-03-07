@@ -1,0 +1,11 @@
+{
+  "bundle_version": "export-bundle/v0.1",
+  "format": "run-bundle/v1",
+  "export_mode": "manifest-only",
+  "manifest": {"manifest_version": "run-manifest/v0.1"},
+  "graph_snapshot": {"spec": "bijux-dag/v0.1", "nodes": [], "edges": []},
+  "node_traces": {},
+  "outputs": {},
+  "files": null,
+  "provenance": {"source": "native-run", "imported": false}
+}
