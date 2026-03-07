@@ -12,7 +12,11 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::state_machine::{run_transition_allowed, RunLifecycleState};
-use bijux_dag_runtime::{scheduler_contract_profile, Runtime, RuntimeConfig};
+use bijux_dag_runtime::{
+    execution_context::{ExecutionContext, NodeExecutionContext},
+    node_result::NodeResult,
+    scheduler_contract_profile, Runtime, RuntimeConfig,
+};
 
 #[test]
 fn engine_flow_executes_minimal_graph_and_materializes_run_dir() {
@@ -58,4 +62,41 @@ fn run_state_machine_guards_block_illegal_terminal_regressions() {
         RunLifecycleState::Succeeded,
         RunLifecycleState::Running
     ));
+}
+
+#[test]
+fn canonical_execution_context_and_result_surfaces_are_stable() {
+    let _ = std::mem::size_of::<ExecutionContext>();
+    let _ = std::mem::size_of::<NodeResult>();
+    let _ = std::mem::size_of::<Option<NodeExecutionContext<'static>>>();
+}
+
+#[test]
+fn engine_uses_centralized_sacred_hooks_without_direct_bypass_calls() {
+    let source = std::fs::read_to_string("src/runtime_core/execution/engine.rs")
+        .expect("engine source should exist");
+    for required in [
+        "sacred_execution::run_materialize_inputs",
+        "sacred_execution::run_cache_lookup",
+        "sacred_execution::run_retry_logic",
+        "sacred_execution::run_write_trace",
+        "sacred_execution::run_cache_write",
+        "sacred_execution::resolve_dependencies",
+    ] {
+        assert!(
+            source.contains(required),
+            "engine missing sacred hook `{required}`"
+        );
+    }
+    for forbidden in [
+        "crate::try_cache_read(",
+        "crate::try_cache_write(",
+        "crate::write_trace(",
+        "crate::execute_with_retries(",
+    ] {
+        assert!(
+            !source.contains(forbidden),
+            "engine bypasses sacred hook with direct call `{forbidden}`"
+        );
+    }
 }
