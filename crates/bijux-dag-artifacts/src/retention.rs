@@ -18,3 +18,18 @@ impl Default for RetentionPolicy {
         }
     }
 }
+
+impl RetentionPolicy {
+    pub fn retain_prefixes(&self) -> Vec<&'static str> {
+        let _ = self;
+        vec!["run-", "promoted-", "export-", "cache-"]
+    }
+
+    pub fn should_prune_run_days(&self, age_days: u32) -> bool {
+        age_days > self.run_artifacts_ttl_days
+    }
+
+    pub fn should_prune_cache_days(&self, age_days: u32) -> bool {
+        age_days > self.local_cache_ttl_days
+    }
+}

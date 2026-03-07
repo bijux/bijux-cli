@@ -1,5 +1,6 @@
 pub mod fs;
 pub mod hash;
+pub mod hardening;
 pub mod index;
 pub mod lineage;
 pub mod models;
@@ -12,6 +13,7 @@ pub mod schema;
 pub mod services;
 pub mod store;
 
+pub use hardening::{build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode};
 pub use models::*;
 
 use serde::Serialize;
