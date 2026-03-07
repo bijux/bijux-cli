@@ -9,6 +9,7 @@ mod suites;
 mod tooling;
 
 use std::process::ExitCode;
+// Keep the dependency reachable at the binary root for strict target dependency checks.
 use tempfile as _;
 
 fn main() -> ExitCode {

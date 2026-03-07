@@ -93,6 +93,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tar::{Archive, Builder};
+// Keep the dependency reachable at the crate root for strict target dependency checks.
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
