@@ -1,11 +1,12 @@
 use crate::{
-    build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
-    category_from_runtime_event_name, current_process_memory_bytes, node_fingerprint_from_ctx,
-    node_fingerprint_with_inputs, registered_adapters, sacred_execution, set_node_fingerprint,
-    summarize_failure_root_causes, write_timeline_export, CacheProof, EffectSet, EventRecord,
-    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult,
-    NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId, RunMetrics, RunSnapshot, Runtime,
-    RuntimeConfig, RuntimeError, SchedulerEventHook, SchedulerMetrics, TimelineEntry, TimelineExport,
+    build_run_outputs_index, cache_dir_from_env, cache_mode_string,
+    category_from_runtime_event_name, collect_outputs_summary, current_process_memory_bytes,
+    node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
+    set_node_fingerprint, summarize_failure_root_causes, write_timeline_export, CacheProof,
+    EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
+    NodeMetrics, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId,
+    RunMetrics, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
+    SchedulerMetrics, TimelineEntry, TimelineExport,
 };
 use bijux_dag_artifacts::{
     write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
@@ -195,9 +196,10 @@ pub fn execute(
             .and_then(|v| RunId::parse(v).ok()),
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
-    let _ = ctx
-        .fs
-        .write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?);
+    let _ = ctx.fs.write(
+        &run_snapshot_path,
+        &serde_json::to_vec_pretty(&run_snapshot)?,
+    );
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -212,9 +214,10 @@ pub fn execute(
         },
     };
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
-    let _ = ctx
-        .fs
-        .write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?);
+    let _ = ctx.fs.write(
+        &run_attempts_path,
+        &serde_json::to_vec_pretty(&vec![run_attempt])?,
+    );
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
@@ -805,27 +808,25 @@ pub fn execute(
                         }));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
-                    let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-                    let aschema = runtime.adapter_schema_for_kind(&node.kind);
-                    let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
-                    sacred_execution::run_cache_write(
-                        &options,
-                        &node,
-                        &node_fp,
-                        &ctx,
-                        Arc::clone(&ctx.fs),
-                        &aid,
-                        &aver,
+                        let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+                        let aschema = runtime.adapter_schema_for_kind(&node.kind);
+                        let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
+                        sacred_execution::run_cache_write(
+                            &options,
+                            &node,
+                            &node_fp,
+                            &ctx,
+                            Arc::clone(&ctx.fs),
+                            &aid,
+                            &aver,
                             &aschema,
                         )?;
                     }
-                    let output_bytes = match ctx
-                        .fs
-                        .metadata(&ctx.run_dir.node_outputs_dir(&node_id))
-                    {
-                        Ok(meta) => meta.len(),
-                        Err(_) => 0,
-                    };
+                    let output_bytes =
+                        match ctx.fs.metadata(&ctx.run_dir.node_outputs_dir(&node_id)) {
+                            Ok(meta) => meta.len(),
+                            Err(_) => 0,
+                        };
                     node_metric_rows.push(NodeMetrics {
                         node_id: node_id.clone(),
                         queue_delay_ms: 0,
@@ -995,8 +996,7 @@ pub fn execute(
     };
     if !crate::invariants::run_summary_invariant_ok(invariant_counts, &trace_statuses) {
         return Err(RuntimeError::Executor(
-            "run summary invariant violated: manifest totals do not match trace totals"
-                .to_string(),
+            "run summary invariant violated: manifest totals do not match trace totals".to_string(),
         ));
     }
     manifest.run_summary = Some(bijux_dag_artifacts::RunSummary {
@@ -1080,12 +1080,16 @@ pub fn execute(
             details,
         });
     }
-    let cache_hits = status_map.values().filter(|s| matches!(s, NodeStatus::Cached)).count() as f64;
+    let cache_hits = status_map
+        .values()
+        .filter(|s| matches!(s, NodeStatus::Cached))
+        .count() as f64;
     let total_nodes = graph.nodes.len().max(1) as f64;
     let run_metrics = RunMetrics {
         makespan_ms: finished_unix_ms.saturating_sub(started_unix_ms),
         success_ratio: manifest.node_counts.success as f64 / total_nodes,
-        parallelism_utilization: (manifest.node_counts.success + manifest.node_counts.cached) as f64
+        parallelism_utilization: (manifest.node_counts.success + manifest.node_counts.cached)
+            as f64
             / (options.jobs.max(1) as f64 * total_nodes).max(1.0),
         cache_reuse_ratio: cache_hits / total_nodes,
         artifact_volume_bytes: manifest.outputs.len() as u64,
@@ -1125,7 +1129,8 @@ pub fn execute(
             .filter(|v| v.get("cause").and_then(|x| x.as_str()) == Some("budget"))
             .count() as u64,
         dispatch_latency_ms: 0,
-        concurrency_pressure: (options.jobs.max(1) as f64) / (options.scheduler_policy.max_parallelism.max(1) as f64),
+        concurrency_pressure: (options.jobs.max(1) as f64)
+            / (options.scheduler_policy.max_parallelism.max(1) as f64),
     };
     for row in node_metric_rows {
         metrics_registry.record_node(row);
@@ -1145,12 +1150,16 @@ pub fn execute(
             .collect(),
     };
     let _ = write_timeline_export(
-        ctx.run_dir.staging_path().join("observability.timeline.json"),
+        ctx.run_dir
+            .staging_path()
+            .join("observability.timeline.json"),
         &timeline,
     );
     let root_causes = summarize_failure_root_causes(&structured_events);
     let _ = ctx.fs.write(
-        &ctx.run_dir.staging_path().join("observability.root-causes.json"),
+        &ctx.run_dir
+            .staging_path()
+            .join("observability.root-causes.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
     );
     let _ = ctx.fs.write(
@@ -1158,7 +1167,9 @@ pub fn execute(
         &serde_json::to_vec_pretty(&structured_events)?,
     );
     let _ = ctx.fs.write(
-        &ctx.run_dir.staging_path().join("observability.metrics.json"),
+        &ctx.run_dir
+            .staging_path()
+            .join("observability.metrics.json"),
         &serde_json::to_vec_pretty(&serde_json::json!({
             "node": metrics_registry.node_metrics,
             "run": metrics_registry.run_metrics,

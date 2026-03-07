@@ -125,7 +125,8 @@ pub fn invariant_catalog_default() -> Vec<InvariantDefinition> {
         InvariantDefinition {
             id: "dag-compile-determinism".to_string(),
             subsystem: "planner".to_string(),
-            statement: "identical DAG and policy inputs yield identical plan fingerprint".to_string(),
+            statement: "identical DAG and policy inputs yield identical plan fingerprint"
+                .to_string(),
             machine_checkable: true,
         },
         InvariantDefinition {
@@ -154,9 +155,7 @@ pub fn verification_gate_passed(
         && (!gate.model_suites_required || model_ok)
 }
 
-pub fn machine_checkable_invariants(
-    invariants: &[InvariantDefinition],
-) -> BTreeMap<String, bool> {
+pub fn machine_checkable_invariants(invariants: &[InvariantDefinition]) -> BTreeMap<String, bool> {
     invariants
         .iter()
         .map(|inv| (inv.id.clone(), inv.machine_checkable))

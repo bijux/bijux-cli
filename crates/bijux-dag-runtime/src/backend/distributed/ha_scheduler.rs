@@ -157,7 +157,9 @@ pub fn deduplicate_across_replicas(
     !existing.iter().any(|r| r.dedup_key == proposed.dedup_key)
 }
 
-pub fn ordering_during_failover(mut entries: Vec<DurableRunQueueEntry>) -> Vec<DurableRunQueueEntry> {
+pub fn ordering_during_failover(
+    mut entries: Vec<DurableRunQueueEntry>,
+) -> Vec<DurableRunQueueEntry> {
     entries.sort_by(|a, b| {
         a.created_unix_ms
             .cmp(&b.created_unix_ms)

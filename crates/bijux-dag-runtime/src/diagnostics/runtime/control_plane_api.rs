@@ -256,7 +256,8 @@ pub fn filter_resources<T>(
     filter: &ListFilter,
     value_of: impl Fn(&T, &str) -> Option<String>,
 ) -> Vec<T> {
-    items.into_iter()
+    items
+        .into_iter()
         .filter(|item| value_of(item, &filter.field).as_deref() == Some(filter.value.as_str()))
         .collect()
 }

@@ -230,7 +230,10 @@ pub fn build_topology_overlay(entries: &[TimelineEntry]) -> TopologyOverlay {
     }
 }
 
-pub fn observability_contract_status(events: &[EventRecord], metric_count: usize) -> ObservabilityContractStatus {
+pub fn observability_contract_status(
+    events: &[EventRecord],
+    metric_count: usize,
+) -> ObservabilityContractStatus {
     ObservabilityContractStatus {
         emits_events: !events.is_empty(),
         emits_metrics: metric_count > 0,
@@ -265,7 +268,13 @@ pub fn sample_events(events: &[EventRecord], policy: &SamplingPolicy) -> Vec<Eve
     events
         .iter()
         .enumerate()
-        .filter_map(|(idx, event)| if idx % stride == 0 { Some(event.clone()) } else { None })
+        .filter_map(|(idx, event)| {
+            if idx % stride == 0 {
+                Some(event.clone())
+            } else {
+                None
+            }
+        })
         .take(policy.max_events_per_run)
         .collect()
 }
@@ -275,13 +284,20 @@ pub fn build_investigation_bundle(run_id: &str, run_dir: &str) -> InvestigationB
         run_id: run_id.to_string(),
         event_paths: vec![format!("{run_dir}/observability.events.json")],
         manifest_paths: vec![format!("{run_dir}/manifest.json")],
-        lineage_paths: vec![format!("{run_dir}/observability.lineage-visualization.json")],
+        lineage_paths: vec![format!(
+            "{run_dir}/observability.lineage-visualization.json"
+        )],
         log_paths: vec![format!("{run_dir}/nodes/*/stderr.log")],
         summary_paths: vec![format!("{run_dir}/observability.root-causes.json")],
     }
 }
 
-pub fn detect_metric_drift(current: &BTreeMap<String, f64>, baseline: &BTreeMap<String, f64>, dag_name: &str, baseline_name: &str) -> DriftDetectionReport {
+pub fn detect_metric_drift(
+    current: &BTreeMap<String, f64>,
+    baseline: &BTreeMap<String, f64>,
+    dag_name: &str,
+    baseline_name: &str,
+) -> DriftDetectionReport {
     let mut findings = BTreeSet::new();
     for (metric, value) in current {
         if let Some(base) = baseline.get(metric) {

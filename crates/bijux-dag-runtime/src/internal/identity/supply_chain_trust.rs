@@ -204,7 +204,8 @@ pub fn evaluate_attestation_compatibility(
     candidate_format: &str,
     rules: &[AttestationFormatRule],
 ) -> AttestationCompatibility {
-    rules.iter()
+    rules
+        .iter()
         .find(|rule| {
             rule.current_format == current_format && rule.candidate_format == candidate_format
         })
@@ -273,7 +274,10 @@ pub fn regulated_workflow_reference_example() -> RegulatedWorkflowReference {
         name: "regulated-release".to_string(),
         requires_signed_artifacts: true,
         requires_attested_promotion: true,
-        required_labels: BTreeSet::from([ArtifactTrustLabel::Attested, ArtifactTrustLabel::Approved]),
+        required_labels: BTreeSet::from([
+            ArtifactTrustLabel::Attested,
+            ArtifactTrustLabel::Approved,
+        ]),
     }
 }
 
@@ -283,6 +287,7 @@ pub fn default_supply_chain_maturity_matrix() -> SupplyChainMaturityMatrix {
         shared_dev: "binary provenance required; plugin provenance recommended".to_string(),
         staging: "binary/plugin provenance and attestation verification required".to_string(),
         production: "signed artifacts and promotion trust labels enforced".to_string(),
-        high_assurance: "full attestations, signed artifacts, and approval gates required".to_string(),
+        high_assurance: "full attestations, signed artifacts, and approval gates required"
+            .to_string(),
     }
 }

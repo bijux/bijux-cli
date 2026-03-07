@@ -1,4 +1,6 @@
-use crate::remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
+use crate::remote_executor::{
+    RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -194,7 +196,10 @@ pub struct MockRemoteBackend {
 
 impl MockRemoteBackend {
     pub fn submissions(&self) -> Vec<DistributedExecutionRequest> {
-        self.submissions.lock().map(|g| g.clone()).unwrap_or_default()
+        self.submissions
+            .lock()
+            .map(|g| g.clone())
+            .unwrap_or_default()
     }
 
     pub fn submit_distributed(

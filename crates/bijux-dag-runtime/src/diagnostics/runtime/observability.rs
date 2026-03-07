@@ -42,7 +42,11 @@ pub const REQUIRED_RUNTIME_EVENT_NAMES: &[&str] = &[
 pub fn required_event_fields_present(event: &EventRecord) -> bool {
     !event.name.trim().is_empty()
         && event.unix_ms > 0
-        && event.run_id.as_ref().map(|v| !v.is_empty()).unwrap_or(false)
+        && event
+            .run_id
+            .as_ref()
+            .map(|v| !v.is_empty())
+            .unwrap_or(false)
 }
 
 pub fn validate_required_event_names(events: &[EventRecord]) -> Vec<String> {
@@ -213,7 +217,10 @@ impl EventSink for RemoteCollectorSink {
     }
 }
 
-pub fn write_timeline_export(path: impl AsRef<Path>, timeline: &TimelineExport) -> Result<(), String> {
+pub fn write_timeline_export(
+    path: impl AsRef<Path>,
+    timeline: &TimelineExport,
+) -> Result<(), String> {
     if let Some(parent) = path.as_ref().parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }

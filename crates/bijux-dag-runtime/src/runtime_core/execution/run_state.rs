@@ -136,7 +136,10 @@ pub struct RunSummaryV2 {
 impl RunSummaryV2 {
     pub fn to_artifact_summary(&self) -> RunSummary {
         RunSummary {
-            total_nodes: self.counts.success + self.counts.failed + self.counts.skipped + self.counts.cached,
+            total_nodes: self.counts.success
+                + self.counts.failed
+                + self.counts.skipped
+                + self.counts.cached,
             success: self.counts.success,
             failed: self.counts.failed,
             skipped: self.counts.skipped,
@@ -327,7 +330,10 @@ pub fn verify_post_run_state_consistency(
             INV_RUN_FAILED_CAUSAL_FAILURE
         ));
     }
-    if matches!(run_state, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+    if matches!(
+        run_state,
+        RunState::Succeeded | RunState::Failed | RunState::Cancelled
+    ) {
         let non_terminal = node_states.iter().any(|s| {
             !matches!(
                 s,

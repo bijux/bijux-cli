@@ -40,7 +40,10 @@ pub fn validate_container_relative_path(path: &str) -> Result<(), String> {
     if parsed.is_absolute() || path.is_empty() {
         return Err(format!("invalid container relative path: {path}"));
     }
-    if parsed.components().any(|c| matches!(c, Component::ParentDir | Component::Prefix(_))) {
+    if parsed
+        .components()
+        .any(|c| matches!(c, Component::ParentDir | Component::Prefix(_)))
+    {
         return Err(format!("container path escapes root: {path}"));
     }
     Ok(())
@@ -51,9 +54,13 @@ pub fn map_local_path_to_container(
     container_root: &Path,
     local_path: &Path,
 ) -> Result<String, String> {
-    let rel = local_path
-        .strip_prefix(local_root)
-        .map_err(|_| format!("local path {} not under root {}", local_path.display(), local_root.display()))?;
+    let rel = local_path.strip_prefix(local_root).map_err(|_| {
+        format!(
+            "local path {} not under root {}",
+            local_path.display(),
+            local_root.display()
+        )
+    })?;
     let mapped = container_root.join(rel);
     Ok(mapped.to_string_lossy().replace('\\', "/"))
 }

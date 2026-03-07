@@ -160,7 +160,9 @@ pub fn dataset_consumption_satisfied(
 }
 
 pub fn dataset_ready_for_schedule(gates: &[DatasetReadinessGate]) -> bool {
-    gates.iter().all(|gate| !gate.required_for_schedule || gate.accepted)
+    gates
+        .iter()
+        .all(|gate| !gate.required_for_schedule || gate.accepted)
 }
 
 pub fn dataset_diff(
@@ -194,8 +196,18 @@ pub fn dataset_catalog_query(
 ) -> Vec<DatasetCatalogEntry> {
     entries
         .iter()
-        .filter(|entry| query.schema_ref.as_ref().is_none_or(|value| &entry.schema_ref == value))
-        .filter(|entry| query.owner.as_ref().is_none_or(|value| &entry.owner == value))
+        .filter(|entry| {
+            query
+                .schema_ref
+                .as_ref()
+                .is_none_or(|value| &entry.schema_ref == value)
+        })
+        .filter(|entry| {
+            query
+                .owner
+                .as_ref()
+                .is_none_or(|value| &entry.owner == value)
+        })
         .filter(|entry| {
             query
                 .freshness_max_minutes

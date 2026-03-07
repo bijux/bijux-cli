@@ -27,7 +27,10 @@ fn deny_network_policy_is_consistent_for_shell_and_container_effects() {
         clean_env: true,
     };
     assert!(!policy_allows_effects(&policy, &[Effect::Network]));
-    assert!(!policy_allows_effects(&policy, &[Effect::Filesystem, Effect::Network]));
+    assert!(!policy_allows_effects(
+        &policy,
+        &[Effect::Filesystem, Effect::Network]
+    ));
 }
 
 #[test]

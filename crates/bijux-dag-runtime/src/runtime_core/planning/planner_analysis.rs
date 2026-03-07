@@ -1,5 +1,7 @@
 use crate::execution_plan::ExecutionPlan;
-use crate::infrastructure::{negotiate_backend_capabilities, BackendCapabilities, BackendCapabilityRequirement};
+use crate::infrastructure::{
+    negotiate_backend_capabilities, BackendCapabilities, BackendCapabilityRequirement,
+};
 use crate::{RuntimeConfig, SelectorSet};
 use bijux_dag_core::{Graph, Node};
 use serde::{Deserialize, Serialize};
@@ -106,7 +108,9 @@ pub fn build_planner_analysis(
         .iter()
         .any(|d| d.contains("P4013") || d.contains("P4021"))
     {
-        return Err("planner lowering rejected unsupported runtime capability requirements".to_string());
+        return Err(
+            "planner lowering rejected unsupported runtime capability requirements".to_string(),
+        );
     }
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph, plan, &mut annotations, guardrails);
@@ -213,7 +217,11 @@ pub fn compute_partial_run_closure(
     plan: &ExecutionPlan,
     selected_nodes: &[String],
 ) -> BTreeSet<String> {
-    fn expand(node_id: &str, dep_map: &HashMap<String, BTreeSet<String>>, keep: &mut BTreeSet<String>) {
+    fn expand(
+        node_id: &str,
+        dep_map: &HashMap<String, BTreeSet<String>>,
+        keep: &mut BTreeSet<String>,
+    ) {
         if !keep.insert(node_id.to_string()) {
             return;
         }
@@ -268,7 +276,8 @@ fn annotate_plan(
     plan: &ExecutionPlan,
     selector_set: &SelectorSet,
 ) -> Vec<PlannerNodeAnnotation> {
-    graph.nodes
+    graph
+        .nodes
         .iter()
         .map(|node| {
             let selected = !plan.filter_reasons.contains_key(&node.id);
@@ -312,7 +321,8 @@ fn estimate_resources(nodes: &[Node]) -> PlannerResourceEstimate {
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {
-    nodes.iter()
+    nodes
+        .iter()
         .map(|node| {
             let inherited_priority = if node.tags.iter().any(|t| t == "critical") {
                 "critical"

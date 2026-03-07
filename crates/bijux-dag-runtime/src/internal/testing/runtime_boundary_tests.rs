@@ -1,6 +1,8 @@
 #![cfg(test)]
 
-use crate::{PolicyConfig, RuntimeConfig, Selector, SelectorSet, transition_cause_for_status, NodeStatus};
+use crate::{
+    transition_cause_for_status, NodeStatus, PolicyConfig, RuntimeConfig, Selector, SelectorSet,
+};
 
 #[test]
 fn runtime_config_default_is_execution_independent() {
@@ -14,7 +16,10 @@ fn runtime_config_default_is_execution_independent() {
 #[test]
 fn selector_set_is_deterministic_value_model() {
     let set = SelectorSet {
-        include: vec![Selector::Kind("shell".to_string()), Selector::Tag("etl".to_string())],
+        include: vec![
+            Selector::Kind("shell".to_string()),
+            Selector::Tag("etl".to_string()),
+        ],
         exclude: vec![Selector::IdPrefix("tmp_".to_string())],
     };
     let set2 = set.clone();
@@ -33,8 +38,20 @@ fn policy_defaults_do_not_require_execution() {
 
 #[test]
 fn transition_cause_mapping_is_stable() {
-    assert_eq!(transition_cause_for_status(&NodeStatus::Success), "ExecutionSucceeded");
-    assert_eq!(transition_cause_for_status(&NodeStatus::Failed), "ExecutionFailed");
-    assert_eq!(transition_cause_for_status(&NodeStatus::Skipped), "SelectionFiltered");
-    assert_eq!(transition_cause_for_status(&NodeStatus::Cached), "CachedReuse");
+    assert_eq!(
+        transition_cause_for_status(&NodeStatus::Success),
+        "ExecutionSucceeded"
+    );
+    assert_eq!(
+        transition_cause_for_status(&NodeStatus::Failed),
+        "ExecutionFailed"
+    );
+    assert_eq!(
+        transition_cause_for_status(&NodeStatus::Skipped),
+        "SelectionFiltered"
+    );
+    assert_eq!(
+        transition_cause_for_status(&NodeStatus::Cached),
+        "CachedReuse"
+    );
 }

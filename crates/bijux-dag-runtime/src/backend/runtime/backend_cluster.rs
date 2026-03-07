@@ -165,12 +165,16 @@ pub fn normalize_backend_failure(
     backend_error_code: &str,
     rules: &[BackendFailureMappingRule],
 ) -> Option<BackendFailureMappingRule> {
-    rules.iter()
+    rules
+        .iter()
         .find(|rule| rule.backend_error_code == backend_error_code)
         .cloned()
 }
 
-pub fn backend_ready_for_admission(probe: &BackendReadinessProbe, mode: &BackendMaintenanceMode) -> bool {
+pub fn backend_ready_for_admission(
+    probe: &BackendReadinessProbe,
+    mode: &BackendMaintenanceMode,
+) -> bool {
     probe.healthy && matches!(mode, BackendMaintenanceMode::Active)
 }
 
@@ -186,7 +190,7 @@ pub fn replay_allowed_across_backends(
     to_backend: &str,
     rules: &[CrossBackendReplayRule],
 ) -> bool {
-    rules.iter().any(|r| {
-        r.from_backend == from_backend && r.to_backend == to_backend && r.replay_safe
-    })
+    rules
+        .iter()
+        .any(|r| r.from_backend == from_backend && r.to_backend == to_backend && r.replay_safe)
 }

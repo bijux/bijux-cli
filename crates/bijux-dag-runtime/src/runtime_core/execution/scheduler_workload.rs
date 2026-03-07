@@ -1,4 +1,6 @@
-use crate::scheduler::{BackfillRequest, PriorityClass, ScheduleDefinition, ScheduledSubmission, TriggerSpec};
+use crate::scheduler::{
+    BackfillRequest, PriorityClass, ScheduleDefinition, ScheduledSubmission, TriggerSpec,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -243,7 +245,11 @@ pub fn weighted_priority_tie_break_order(
     submissions
 }
 
-pub fn materialize_next_runs(definition: &ScheduleDefinition, now_unix_ms: u128, n: usize) -> MaterializedRunPreview {
+pub fn materialize_next_runs(
+    definition: &ScheduleDefinition,
+    now_unix_ms: u128,
+    n: usize,
+) -> MaterializedRunPreview {
     let mut next = Vec::new();
     match definition.trigger {
         TriggerSpec::Cron { .. } => {
@@ -271,7 +277,10 @@ pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConf
     let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for d in definitions {
         if let TriggerSpec::Cron { expression, .. } = &d.trigger {
-            grouped.entry(expression.clone()).or_default().push(d.id.clone());
+            grouped
+                .entry(expression.clone())
+                .or_default()
+                .push(d.id.clone());
         }
     }
     grouped
@@ -308,10 +317,7 @@ pub fn deduplicate_trigger_events(keys: &[String]) -> Vec<TriggerDedupDecision> 
         .collect()
 }
 
-pub fn run_batches(
-    queue: VecDeque<String>,
-    policy: &RunBatchPolicy,
-) -> Vec<Vec<String>> {
+pub fn run_batches(queue: VecDeque<String>, policy: &RunBatchPolicy) -> Vec<Vec<String>> {
     if !policy.allow_grouping {
         return queue.into_iter().map(|id| vec![id]).collect();
     }
@@ -352,4 +358,3 @@ pub fn evaluate_sla_metrics(
         fairness_drift_count,
     }
 }
-

@@ -62,7 +62,10 @@ impl ArtifactStore {
         let path = self.run_dir.staging_path().join("manifest.json");
         let payload = self.fs.read_to_string(&path)?;
         let parsed: serde_json::Value = serde_json::from_str(&payload).map_err(|err| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("invalid manifest json: {err}"))
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid manifest json: {err}"),
+            )
         })?;
         if parsed.get("run_id").is_none() {
             return Err(std::io::Error::new(
@@ -130,7 +133,10 @@ impl CacheStore {
         let target = entry.join("meta.json");
         let tmp = entry.join("meta.json.tmp");
         let payload = serde_json::to_vec_pretty(meta).map_err(|err| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("serialize meta: {err}"))
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("serialize meta: {err}"),
+            )
         })?;
         self.fs.write(&tmp, &payload)?;
         self.fs.rename(&tmp, &target)
@@ -141,7 +147,10 @@ impl CacheStore {
         let path = self.entry(key).join("meta.json");
         let payload = self.fs.read_to_string(&path)?;
         let parsed: serde_json::Value = serde_json::from_str(&payload).map_err(|err| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("invalid cache meta: {err}"))
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid cache meta: {err}"),
+            )
         })?;
         if parsed.get("fingerprint").is_none() {
             return Err(std::io::Error::new(

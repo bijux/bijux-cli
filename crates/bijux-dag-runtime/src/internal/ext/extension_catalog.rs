@@ -180,7 +180,12 @@ pub fn validate_plugin_conformance(
     if trust.require_signature && trust.allowlisted_publishers.is_empty() {
         failures.push("signature-required plugins need allowlisted publishers".to_string());
     }
-    if isolation.require_deterministic_mode && !metadata.policy_requirements.iter().any(|r| r == "deterministic") {
+    if isolation.require_deterministic_mode
+        && !metadata
+            .policy_requirements
+            .iter()
+            .any(|r| r == "deterministic")
+    {
         failures.push("plugin must require deterministic policy".to_string());
     }
     PluginConformanceSuiteResult {
@@ -191,7 +196,9 @@ pub fn validate_plugin_conformance(
     }
 }
 
-pub fn extension_discovery_inventory(registrations: &[ExtensionRegistration]) -> Vec<ExtensionDiscoveryRecord> {
+pub fn extension_discovery_inventory(
+    registrations: &[ExtensionRegistration],
+) -> Vec<ExtensionDiscoveryRecord> {
     let mut out = registrations
         .iter()
         .map(|r| ExtensionDiscoveryRecord {

@@ -84,8 +84,11 @@ pub trait ExecutionBackend: Send + Sync {
     fn prepare(&self, _ctx: &BackendContext) -> Result<(), BackendError>;
     fn launch(&self, _ctx: &BackendContext) -> Result<(), BackendError>;
     fn observe(&self, _ctx: &BackendContext) -> Result<BackendLifecycleResult, BackendError>;
-    fn finalize(&self, _ctx: &BackendContext, _result: &BackendLifecycleResult)
-        -> Result<(), BackendError>;
+    fn finalize(
+        &self,
+        _ctx: &BackendContext,
+        _result: &BackendLifecycleResult,
+    ) -> Result<(), BackendError>;
     fn cleanup(&self, _ctx: &BackendContext) -> Result<(), BackendError>;
 }
 
@@ -211,14 +214,20 @@ impl ExecutionBackend for FakeBackend {
 
     fn prepare(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_prepare_for.contains(&ctx.node_id) {
-            return Err(BackendError::Prepare(format!("prepare failed for {}", ctx.node_id)));
+            return Err(BackendError::Prepare(format!(
+                "prepare failed for {}",
+                ctx.node_id
+            )));
         }
         Ok(())
     }
 
     fn launch(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_launch_for.contains(&ctx.node_id) {
-            return Err(BackendError::Launch(format!("launch failed for {}", ctx.node_id)));
+            return Err(BackendError::Launch(format!(
+                "launch failed for {}",
+                ctx.node_id
+            )));
         }
         Ok(())
     }
@@ -255,7 +264,10 @@ impl ExecutionBackend for FakeBackend {
 
     fn cleanup(&self, ctx: &BackendContext) -> Result<(), BackendError> {
         if self.fail_cleanup_for.contains(&ctx.node_id) {
-            return Err(BackendError::Cleanup(format!("cleanup failed for {}", ctx.node_id)));
+            return Err(BackendError::Cleanup(format!(
+                "cleanup failed for {}",
+                ctx.node_id
+            )));
         }
         Ok(())
     }

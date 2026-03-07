@@ -191,11 +191,19 @@ pub fn builtin_role_definitions() -> Vec<RoleDefinition> {
         },
         RoleDefinition {
             role: BuiltInRole::Operator,
-            permissions: vec!["run.read".to_string(), "run.cancel".to_string(), "run.pause".to_string()],
+            permissions: vec![
+                "run.read".to_string(),
+                "run.cancel".to_string(),
+                "run.pause".to_string(),
+            ],
         },
         RoleDefinition {
             role: BuiltInRole::Developer,
-            permissions: vec!["dag.read".to_string(), "dag.validate".to_string(), "run.submit".to_string()],
+            permissions: vec![
+                "dag.read".to_string(),
+                "dag.validate".to_string(),
+                "run.submit".to_string(),
+            ],
         },
         RoleDefinition {
             role: BuiltInRole::Releaser,
@@ -251,7 +259,10 @@ pub fn has_permission(permission: &str, permissions: &[String]) -> bool {
     permissions.iter().any(|p| p == permission)
 }
 
-pub fn decision_cache_key(request: &PolicyEvaluationRequest, policy_bundle_version: &str) -> String {
+pub fn decision_cache_key(
+    request: &PolicyEvaluationRequest,
+    policy_bundle_version: &str,
+) -> String {
     format!(
         "{}|{}|{}|{}|{}",
         request.subject.subject_id,
@@ -289,12 +300,12 @@ pub fn evaluate_authorization_acceptance(
     decisions: &[(String, DecisionType)],
     cross_tenant_denials: &[bool],
 ) -> AuthorizationAcceptanceReport {
-    let denied_without_permission = decisions
-        .iter()
-        .any(|(action, decision)| action.contains("admin") && matches!(decision, DecisionType::Deny));
-    let least_privilege_holds = decisions
-        .iter()
-        .all(|(action, decision)| !(action.contains("admin") && matches!(decision, DecisionType::Allow)));
+    let denied_without_permission = decisions.iter().any(|(action, decision)| {
+        action.contains("admin") && matches!(decision, DecisionType::Deny)
+    });
+    let least_privilege_holds = decisions.iter().all(|(action, decision)| {
+        !(action.contains("admin") && matches!(decision, DecisionType::Allow))
+    });
     let no_cross_tenant_escalation = cross_tenant_denials.iter().all(|d| *d);
     let mut failures = Vec::new();
     if !least_privilege_holds {

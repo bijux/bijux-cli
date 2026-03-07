@@ -29,7 +29,11 @@ pub trait AdapterPlugin: Send + Sync {
 pub trait BackendPlugin: Send + Sync {
     fn backend_kind(&self) -> ExecutorBackend;
     fn submit(&self, request: &BackendExecutionRequest) -> Result<(), String>;
-    fn poll(&self, run_id: &str, node_id: &str) -> Result<Option<BackendExecutionCompletion>, String>;
+    fn poll(
+        &self,
+        run_id: &str,
+        node_id: &str,
+    ) -> Result<Option<BackendExecutionCompletion>, String>;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

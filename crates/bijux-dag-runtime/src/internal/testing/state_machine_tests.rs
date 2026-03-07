@@ -40,7 +40,16 @@ fn failure_propagation_rule_is_deterministic() {
 fn terminal_node_states_have_no_outgoing_transitions() {
     use NodeLifecycleState as S;
     let terminal = [S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled];
-    let all = [S::Queued, S::Ready, S::Running, S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled];
+    let all = [
+        S::Queued,
+        S::Ready,
+        S::Running,
+        S::Succeeded,
+        S::Failed,
+        S::Cached,
+        S::Skipped,
+        S::Cancelled,
+    ];
     for from in terminal {
         for to in all {
             assert!(!node_transition_allowed(from, to));
@@ -52,7 +61,16 @@ fn terminal_node_states_have_no_outgoing_transitions() {
 fn terminal_run_states_have_no_outgoing_transitions() {
     use RunLifecycleState as S;
     let terminal = [S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled];
-    let all = [S::Queued, S::Ready, S::Running, S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled];
+    let all = [
+        S::Queued,
+        S::Ready,
+        S::Running,
+        S::Succeeded,
+        S::Failed,
+        S::Cached,
+        S::Skipped,
+        S::Cancelled,
+    ];
     for from in terminal {
         for to in all {
             assert!(!run_transition_allowed(from, to));

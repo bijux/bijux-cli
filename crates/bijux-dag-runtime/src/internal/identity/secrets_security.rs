@@ -180,7 +180,10 @@ pub fn select_secret_version(
     None
 }
 
-pub fn should_materialize_secret_artifact(policy: &SecretArtifactPolicy, classification: Option<&str>) -> bool {
+pub fn should_materialize_secret_artifact(
+    policy: &SecretArtifactPolicy,
+    classification: Option<&str>,
+) -> bool {
     policy.allow_secret_artifacts
         && policy
             .required_classification
@@ -246,7 +249,10 @@ pub fn incident_response_actions(incident: &SecretLeakIncident) -> BTreeSet<Stri
         .collect::<BTreeSet<_>>()
 }
 
-pub fn secure_cleanup_required(rule: &SecureWorkspaceRule, teardown: &SecureTeardownPolicy) -> bool {
+pub fn secure_cleanup_required(
+    rule: &SecureWorkspaceRule,
+    teardown: &SecureTeardownPolicy,
+) -> bool {
     rule.secure_temp_cleanup
         && rule.remove_secret_mounts_on_exit
         && teardown.wipe_env_on_cancel

@@ -1,8 +1,8 @@
 #![cfg(test)]
 
 use crate::invariants::{
-    run_summary_invariant_ok, terminal_run_has_terminal_node, trace_time_order_ok, INVARIANT_REGISTRY,
-    RunNodeCounts,
+    run_summary_invariant_ok, terminal_run_has_terminal_node, trace_time_order_ok, RunNodeCounts,
+    INVARIANT_REGISTRY,
 };
 use crate::NodeStatus;
 

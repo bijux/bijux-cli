@@ -162,7 +162,11 @@ pub fn workflow_template_catalog() -> Vec<WorkflowTemplate> {
         WorkflowTemplate {
             template_id: "etl-standard".to_string(),
             kind: WorkflowTemplateKind::Etl,
-            required_nodes: vec!["extract".to_string(), "transform".to_string(), "load".to_string()],
+            required_nodes: vec![
+                "extract".to_string(),
+                "transform".to_string(),
+                "load".to_string(),
+            ],
         },
         WorkflowTemplate {
             template_id: "ml-train-eval".to_string(),

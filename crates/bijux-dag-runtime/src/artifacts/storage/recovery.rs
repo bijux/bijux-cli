@@ -173,10 +173,16 @@ pub fn evaluate_pause_state(
     running_count: usize,
 ) -> BTreeMap<&'static str, bool> {
     let mut result = BTreeMap::new();
-    result.insert("freeze_dispatch", matches!(policy.mode, RunPauseMode::PauseAllNewDispatch));
+    result.insert(
+        "freeze_dispatch",
+        matches!(policy.mode, RunPauseMode::PauseAllNewDispatch),
+    );
     result.insert(
         "freeze_ready_queue",
-        matches!(policy.mode, RunPauseMode::PauseQueuedAndReady | RunPauseMode::PauseAllNewDispatch),
+        matches!(
+            policy.mode,
+            RunPauseMode::PauseQueuedAndReady | RunPauseMode::PauseAllNewDispatch
+        ),
     );
     result.insert("has_queued", queued_count > 0);
     result.insert("has_ready", ready_count > 0);
@@ -267,7 +273,10 @@ pub fn check_run_consistency(
     if summary.counts.cached != cached_count {
         mismatches.push("summary cached count mismatch".to_string());
     }
-    let artifact_set = artifact_nodes.iter().cloned().collect::<std::collections::BTreeSet<_>>();
+    let artifact_set = artifact_nodes
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
     let all_success_nodes_have_artifacts = node_states
         .iter()
         .filter(|(_, state)| *state == NodeState::Success)
@@ -276,9 +285,7 @@ pub fn check_run_consistency(
         mismatches.push("some successful nodes are missing artifacts".to_string());
     }
     ConsistencyCheckReport {
-        summary_matches_node_states: mismatches
-            .iter()
-            .all(|msg| !msg.contains("summary")),
+        summary_matches_node_states: mismatches.iter().all(|msg| !msg.contains("summary")),
         all_success_nodes_have_artifacts,
         mismatches,
     }
@@ -289,7 +296,8 @@ pub fn should_quarantine_run(
     consistency: &ConsistencyCheckReport,
 ) -> Option<String> {
     if matches!(run_state, RunState::Cancelled | RunState::Failed)
-        && (!consistency.summary_matches_node_states || !consistency.all_success_nodes_have_artifacts)
+        && (!consistency.summary_matches_node_states
+            || !consistency.all_success_nodes_have_artifacts)
     {
         return Some("inconsistent terminal run metadata".to_string());
     }

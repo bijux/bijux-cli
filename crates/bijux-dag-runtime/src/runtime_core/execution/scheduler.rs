@@ -18,10 +18,22 @@ pub struct SchedulerPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TriggerSpec {
     Manual,
-    Cron { expression: String, timezone: String },
-    Event { event_type: String, source: String },
-    Dependency { dag_name: String, on_status: String },
-    Signal { signal_name: String, payload_schema: Option<String> },
+    Cron {
+        expression: String,
+        timezone: String,
+    },
+    Event {
+        event_type: String,
+        source: String,
+    },
+    Dependency {
+        dag_name: String,
+        on_status: String,
+    },
+    Signal {
+        signal_name: String,
+        payload_schema: Option<String>,
+    },
     Backfill(BackfillRequest),
 }
 
@@ -287,11 +299,7 @@ impl SchedulerState {
         self.mark_completion(node_id, "skipped")
     }
 
-    pub fn complete_failed(
-        &mut self,
-        node_id: &str,
-        mode: FailurePropagationMode,
-    ) -> Vec<String> {
+    pub fn complete_failed(&mut self, node_id: &str, mode: FailurePropagationMode) -> Vec<String> {
         self.mark_event(
             SchedulerEventKind::NodeFailed,
             node_id,
@@ -513,7 +521,13 @@ impl Scheduler for DeterministicScheduler {
         let mut blocked = Vec::new();
         let mut candidates = ready_queue.snapshot_sorted();
         for id in candidates.drain(..) {
-            if batch.len() >= options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1)) {
+            if batch.len()
+                >= options
+                    .scheduler_policy
+                    .max_parallelism
+                    .max(1)
+                    .min(options.jobs.max(1))
+            {
                 blocked.push(id);
                 continue;
             }
@@ -578,7 +592,12 @@ impl Scheduler for ThroughputScheduler {
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         while !ready_queue.is_empty()
-            && batch.len() < options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
+            && batch.len()
+                < options
+                    .scheduler_policy
+                    .max_parallelism
+                    .max(1)
+                    .min(options.jobs.max(1))
         {
             let id = match ready_queue.pop_fifo() {
                 Some(v) => v,
@@ -704,7 +723,10 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
     Ok(())
 }
 
-pub fn dry_run_schedule(definition: &ScheduleDefinition, now_unix_ms: u128) -> ScheduleDryRunPreview {
+pub fn dry_run_schedule(
+    definition: &ScheduleDefinition,
+    now_unix_ms: u128,
+) -> ScheduleDryRunPreview {
     match &definition.trigger {
         TriggerSpec::Manual => ScheduleDryRunPreview {
             schedule_id: definition.id.clone(),
@@ -753,7 +775,9 @@ pub fn compile_submission_request(
     }
 }
 
-pub fn deterministic_tick_order(mut submissions: Vec<ScheduledSubmission>) -> Vec<ScheduledSubmission> {
+pub fn deterministic_tick_order(
+    mut submissions: Vec<ScheduledSubmission>,
+) -> Vec<ScheduledSubmission> {
     submissions.sort_by(|a, b| {
         a.created_unix_ms
             .cmp(&b.created_unix_ms)

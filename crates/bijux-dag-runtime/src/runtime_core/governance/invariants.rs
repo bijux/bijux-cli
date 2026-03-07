@@ -62,7 +62,15 @@ pub fn run_summary_invariant_ok(manifest: RunNodeCounts, traces: &[crate::NodeSt
 }
 
 pub fn terminal_run_has_terminal_node(statuses: &[crate::NodeStatus]) -> bool {
-    statuses.iter().any(|s| matches!(s, crate::NodeStatus::Success | crate::NodeStatus::Failed | crate::NodeStatus::Cached | crate::NodeStatus::Skipped))
+    statuses.iter().any(|s| {
+        matches!(
+            s,
+            crate::NodeStatus::Success
+                | crate::NodeStatus::Failed
+                | crate::NodeStatus::Cached
+                | crate::NodeStatus::Skipped
+        )
+    })
 }
 
 pub fn trace_time_order_ok(started_unix_ms: u64, finished_unix_ms: u64) -> bool {

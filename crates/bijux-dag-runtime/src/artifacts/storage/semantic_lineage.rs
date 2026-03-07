@@ -145,7 +145,10 @@ pub struct PolicyLineageHookInput {
     pub quality: LineageQualityScore,
 }
 
-pub fn summarize_lineage(relationships: &[SemanticRelationship], summarize_threshold: usize) -> LineageSummary {
+pub fn summarize_lineage(
+    relationships: &[SemanticRelationship],
+    summarize_threshold: usize,
+) -> LineageSummary {
     let mut child_counts: BTreeMap<String, usize> = BTreeMap::new();
     for relation in relationships {
         *child_counts.entry(relation.from_id.clone()).or_default() += 1;
@@ -174,7 +177,8 @@ pub fn summarize_lineage(relationships: &[SemanticRelationship], summarize_thres
 }
 
 pub fn detect_lineage_conflicts(relationships: &[SemanticRelationship]) -> Vec<LineageConflict> {
-    let mut grouped: BTreeMap<(String, String), BTreeSet<ArtifactRelationshipType>> = BTreeMap::new();
+    let mut grouped: BTreeMap<(String, String), BTreeSet<ArtifactRelationshipType>> =
+        BTreeMap::new();
     for relation in relationships {
         grouped
             .entry((relation.from_id.clone(), relation.to_id.clone()))
@@ -194,7 +198,10 @@ pub fn detect_lineage_conflicts(relationships: &[SemanticRelationship]) -> Vec<L
     conflicts
 }
 
-pub fn lineage_quality_score(relationships: &[SemanticRelationship], verified_edges: usize) -> LineageQualityScore {
+pub fn lineage_quality_score(
+    relationships: &[SemanticRelationship],
+    verified_edges: usize,
+) -> LineageQualityScore {
     let total = relationships.len().max(1);
     let exact = relationships
         .iter()
@@ -223,7 +230,10 @@ pub fn export_lineage_format(format: &LineageExportFormat) -> &'static str {
     }
 }
 
-pub fn recommended_replay_set(relationships: &[SemanticRelationship], target_id: &str) -> ReplayRecommendation {
+pub fn recommended_replay_set(
+    relationships: &[SemanticRelationship],
+    target_id: &str,
+) -> ReplayRecommendation {
     let upstream: Vec<String> = relationships
         .iter()
         .filter(|relation| relation.to_id == target_id)

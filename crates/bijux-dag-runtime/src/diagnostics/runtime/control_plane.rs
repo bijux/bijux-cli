@@ -191,14 +191,20 @@ pub fn register_dag_version(
             tags,
             versions: Vec::new(),
         });
-    if entry.versions.iter().any(|v| v.version_id == record.version_id) {
+    if entry
+        .versions
+        .iter()
+        .any(|v| v.version_id == record.version_id)
+    {
         return Err(format!(
             "dag '{}' already contains version '{}'",
             dag_name, record.version_id
         ));
     }
     entry.versions.push(record);
-    entry.versions.sort_by(|a, b| a.version_id.cmp(&b.version_id));
+    entry
+        .versions
+        .sort_by(|a, b| a.version_id.cmp(&b.version_id));
     Ok(())
 }
 
@@ -216,7 +222,12 @@ pub fn select_dag_version(
         DagVersionSelectionPolicy::RunLatest => entry
             .versions
             .iter()
-            .filter(|v| matches!(v.status, DagVersionStatus::Validated | DagVersionStatus::Active))
+            .filter(|v| {
+                matches!(
+                    v.status,
+                    DagVersionStatus::Validated | DagVersionStatus::Active
+                )
+            })
             .max_by(|a, b| a.version_id.cmp(&b.version_id))
             .map(|v| CompatibilityDecision::Selected {
                 version_id: v.version_id.clone(),
@@ -245,7 +256,10 @@ pub fn select_dag_version(
             .max_by(|a, b| a.version_id.cmp(&b.version_id))
             .map(|v| CompatibilityDecision::Selected {
                 version_id: v.version_id.clone(),
-                reason: format!("selected highest compatible version in '{}'", compatibility_line),
+                reason: format!(
+                    "selected highest compatible version in '{}'",
+                    compatibility_line
+                ),
             })
             .unwrap_or(CompatibilityDecision::Rejected {
                 reason: format!(

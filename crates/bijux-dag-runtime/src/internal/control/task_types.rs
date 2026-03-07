@@ -147,7 +147,11 @@ pub fn default_task_type_registry() -> TaskTypeRegistry {
             ScalarType::Boolean,
             ScalarType::Bytes,
         ],
-        collection_types: vec![CollectionType::List, CollectionType::Map, CollectionType::Set],
+        collection_types: vec![
+            CollectionType::List,
+            CollectionType::Map,
+            CollectionType::Set,
+        ],
         versioned_rules: vec![
             VersionedTypeRule {
                 type_id: "string".to_string(),
@@ -225,7 +229,9 @@ pub fn validate_cross_node_compatibility(
     diagnostics
 }
 
-pub fn compute_task_contract_fingerprint(contract: &TaskContract) -> Result<TaskContractFingerprint, RuntimeError> {
+pub fn compute_task_contract_fingerprint(
+    contract: &TaskContract,
+) -> Result<TaskContractFingerprint, RuntimeError> {
     let payload = serde_json::to_vec(contract)?;
     let mut hasher = Sha256::new();
     hasher.update(payload);
@@ -239,7 +245,8 @@ pub fn check_replay_adapter_compatibility(
     declared: &AdapterCapabilityDeclaration,
     replay_adapter_version: &str,
 ) -> bool {
-    declared.supports_replay_compatibility_check && declared.adapter_version == replay_adapter_version
+    declared.supports_replay_compatibility_check
+        && declared.adapter_version == replay_adapter_version
 }
 
 pub fn compatibility_score_for_contract(
@@ -265,7 +272,10 @@ pub fn generate_task_contract_markdown(contract: &TaskContract) -> String {
         required,
     } in &contract.inputs
     {
-        lines.push(format!("- {}: {} (required: {})", name, value_type, required));
+        lines.push(format!(
+            "- {}: {} (required: {})",
+            name, value_type, required
+        ));
     }
     lines.push(String::new());
     lines.push("## Outputs".to_string());

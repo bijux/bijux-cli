@@ -142,10 +142,7 @@ pub struct PlatformCostMaturityScorecard {
     pub optimization_safety_ready: bool,
 }
 
-pub fn choose_cost_profile(
-    latency_sensitive: bool,
-    strict_budget: bool,
-) -> CostPerformanceProfile {
+pub fn choose_cost_profile(latency_sensitive: bool, strict_budget: bool) -> CostPerformanceProfile {
     if latency_sensitive && !strict_budget {
         CostPerformanceProfile::FastestSafe
     } else if strict_budget {
@@ -182,7 +179,11 @@ pub fn budget_policy_action(cost: f64, policy: &TenantBudgetPolicy) -> &'static 
     }
 }
 
-pub fn detect_cost_anomaly(expected: f64, observed: f64, threshold_ratio: f64) -> Option<CostAnomaly> {
+pub fn detect_cost_anomaly(
+    expected: f64,
+    observed: f64,
+    threshold_ratio: f64,
+) -> Option<CostAnomaly> {
     if expected <= 0.0 {
         return None;
     }

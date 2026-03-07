@@ -197,7 +197,11 @@ pub fn scope_lineage_query(
     requested_artifact_ids: &[String],
     scope: &TenantLineageScope,
 ) -> Vec<String> {
-    let allowed = scope.allowed_artifact_ids.iter().cloned().collect::<BTreeSet<_>>();
+    let allowed = scope
+        .allowed_artifact_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
     requested_artifact_ids
         .iter()
         .filter(|id| allowed.contains(*id))
@@ -214,9 +218,7 @@ pub fn tenant_provisioning_bootstrap(spec: &TenantProvisioningSpec) -> Vec<Strin
         ),
         format!(
             "configure queue isolation {}",
-            spec.default_queue_isolation
-                .queue_names
-                .join(",")
+            spec.default_queue_isolation.queue_names.join(",")
         ),
         format!(
             "attach policy bundle {}:{}",

@@ -108,7 +108,12 @@ impl RuntimeCoordinationState {
     }
 
     pub fn snapshot(&self) -> RuntimeCoordinationSnapshot {
-        let summary = self.summary.lock().ok().map(|v| v.clone()).unwrap_or_default();
+        let summary = self
+            .summary
+            .lock()
+            .ok()
+            .map(|v| v.clone())
+            .unwrap_or_default();
         let trace_writes = self
             .trace_writes
             .lock()

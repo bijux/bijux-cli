@@ -157,7 +157,10 @@ pub fn answer_failure_question(summary: &FailureSummary) -> DiagnosticsAnswer {
         evidence.push(format!("failed-nodes={}", summary.failed_nodes.join(",")));
     }
     if !summary.policy_denials.is_empty() {
-        evidence.push(format!("policy-denials={}", summary.policy_denials.join(",")));
+        evidence.push(format!(
+            "policy-denials={}",
+            summary.policy_denials.join(",")
+        ));
     }
     DiagnosticsAnswer {
         question: "why did this fail".to_string(),
@@ -202,21 +205,35 @@ pub fn recommend_safe_actions(
 }
 
 pub fn anomaly_detected(signal: &ObservabilityAnomalySignal, threshold: f64) -> bool {
-    signal.retries_spike >= threshold || signal.hang_rate >= threshold || signal.cache_error_rate >= threshold
+    signal.retries_spike >= threshold
+        || signal.hang_rate >= threshold
+        || signal.cache_error_rate >= threshold
 }
 
 pub fn build_postmortem_seed(summary: &FailureSummary) -> PostmortemSeed {
     let mut sections = BTreeMap::new();
-    sections.insert("impact".to_string(), format!("failed_nodes={}", summary.failed_nodes.len()));
-    sections.insert("timeline".to_string(), "see investigation bundle timeline".to_string());
-    sections.insert("root-cause-hypothesis".to_string(), "pending operator review".to_string());
+    sections.insert(
+        "impact".to_string(),
+        format!("failed_nodes={}", summary.failed_nodes.len()),
+    );
+    sections.insert(
+        "timeline".to_string(),
+        "see investigation bundle timeline".to_string(),
+    );
+    sections.insert(
+        "root-cause-hypothesis".to_string(),
+        "pending operator review".to_string(),
+    );
     PostmortemSeed {
         run_id: summary.run_id.clone(),
         sections,
     }
 }
 
-pub fn redact_for_ai_export(bundle: &InvestigationBundle, policy: &PrivacyRedactionPolicy) -> InvestigationBundle {
+pub fn redact_for_ai_export(
+    bundle: &InvestigationBundle,
+    policy: &PrivacyRedactionPolicy,
+) -> InvestigationBundle {
     let mut sections = bundle.evidence_sections.clone();
     if policy.redact_secrets {
         sections.push("redacted-secrets".to_string());
@@ -239,7 +256,10 @@ pub fn suggestion_quality(simulations: &[RecommendationSimulationResult]) -> f64
     if simulations.is_empty() {
         return 0.0;
     }
-    let passed = simulations.iter().filter(|item| item.recommendation_correct).count();
+    let passed = simulations
+        .iter()
+        .filter(|item| item.recommendation_correct)
+        .count();
     passed as f64 / simulations.len() as f64
 }
 
@@ -252,7 +272,9 @@ pub fn next_maturity_level(
         AiAssistMaturityLevel::DiagnosticsOnly if quality_score >= 0.7 => {
             AiAssistMaturityLevel::EvidenceGuidedSuggestions
         }
-        AiAssistMaturityLevel::EvidenceGuidedSuggestions if quality_score >= 0.85 && guardrails_strict => {
+        AiAssistMaturityLevel::EvidenceGuidedSuggestions
+            if quality_score >= 0.85 && guardrails_strict =>
+        {
             AiAssistMaturityLevel::GuardedRecommendations
         }
         _ => current,

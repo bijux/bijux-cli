@@ -161,9 +161,8 @@ pub fn detect_performance_regression(
     gate: &PerformanceGate,
 ) -> Vec<String> {
     let mut violations = Vec::new();
-    let latency_regression = ((candidate.p95_latency_ms - baseline.p95_latency_ms)
-        / baseline.p95_latency_ms)
-        * 100.0;
+    let latency_regression =
+        ((candidate.p95_latency_ms - baseline.p95_latency_ms) / baseline.p95_latency_ms) * 100.0;
     let throughput_retention = (candidate.throughput_per_sec / baseline.throughput_per_sec) * 100.0;
 
     if latency_regression > gate.max_latency_regression_pct as f64 {

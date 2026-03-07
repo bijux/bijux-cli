@@ -1,59 +1,69 @@
 #[path = "adapters/adapter.rs"]
 mod adapter;
-pub mod adapters;
-#[path = "adapters/conformance.rs"]
-pub mod adapter_conformance;
 #[path = "adapters/api.rs"]
 pub mod adapter_api;
+#[path = "adapters/conformance.rs"]
+pub mod adapter_conformance;
+#[cfg(test)]
+#[path = "internal/testing/adapter_contract_tests.rs"]
+mod adapter_contract_tests;
 #[path = "adapters/sdk.rs"]
 mod adapter_sdk;
-#[path = "internal/control/api.rs"]
-pub mod api;
+pub mod adapters;
 #[path = "internal/analysis/adaptive_scheduler.rs"]
 mod adaptive_scheduler;
 #[path = "internal/workflow/ai_operator_assist.rs"]
 mod ai_operator_assist;
+#[path = "internal/control/api.rs"]
+pub mod api;
+mod artifacts;
+#[path = "adapters/async_adapter.rs"]
+mod async_adapter;
 #[path = "internal/identity/auth_identity.rs"]
 mod auth_identity;
 #[path = "internal/identity/authz_policy.rs"]
 mod authz_policy;
-#[path = "adapters/async_adapter.rs"]
-mod async_adapter;
+mod backend;
 #[path = "backend/runtime/backend_cluster.rs"]
 mod backend_cluster;
 #[path = "backend/runtime/batch_execution.rs"]
 mod batch_execution;
+pub mod builtins;
+pub mod cache;
 #[path = "internal/control/clock.rs"]
 mod clock;
-#[path = "backend/runtime/container_execution.rs"]
-mod container_execution;
 #[path = "internal/control/config.rs"]
 pub mod config;
+#[path = "backend/runtime/container_execution.rs"]
+mod container_execution;
 #[path = "diagnostics/runtime/control_plane.rs"]
 mod control_plane;
 #[path = "diagnostics/runtime/control_plane_api.rs"]
 mod control_plane_api;
-#[path = "internal/analysis/cost_optimization.rs"]
-mod cost_optimization;
 #[path = "backend/distributed/coordination.rs"]
 mod coordination;
-pub mod cache;
+#[path = "internal/analysis/cost_optimization.rs"]
+mod cost_optimization;
 #[path = "internal/analysis/dataset_semantics.rs"]
 mod dataset_semantics;
+mod diagnostics;
 #[path = "backend/distributed/distributed.rs"]
 mod distributed;
+#[path = "backend/distributed/distribution_readiness.rs"]
+mod distribution_readiness;
 #[path = "runtime_core/execution/engine.rs"]
 mod engine;
+mod error;
 #[path = "runtime_core/execution/flow.rs"]
 pub mod execution;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
-#[path = "backend/distributed/distribution_readiness.rs"]
-mod distribution_readiness;
 #[path = "runtime_core/execution/context.rs"]
 pub mod execution_context;
 #[path = "runtime_core/planning/execution_plan.rs"]
 mod execution_plan;
+#[path = "internal/ext/extension_catalog.rs"]
+mod extension_catalog;
 #[path = "adapters/external.rs"]
 mod external_adapter;
 #[path = "backend/distributed/federated_scheduling.rs"]
@@ -64,13 +74,16 @@ mod formal_verification;
 mod geo_federation;
 #[path = "backend/distributed/ha_scheduler.rs"]
 mod ha_scheduler;
-#[path = "internal/control/io.rs"]
-mod io;
-pub mod policy;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
+mod internal;
 #[path = "runtime_core/governance/invariants.rs"]
 pub mod invariants;
+#[cfg(test)]
+#[path = "internal/testing/invariants_tests.rs"]
+mod invariants_tests;
+#[path = "internal/control/io.rs"]
+mod io;
 #[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
 #[path = "runtime_core/execution/node_result.rs"]
@@ -83,27 +96,35 @@ mod observability_deep;
 mod operations_governance;
 #[path = "artifacts/storage/path_authorization.rs"]
 mod path_authorization;
+#[path = "internal/perf/performance_capacity.rs"]
+mod performance_capacity;
 #[path = "runtime_core/planning/planner.rs"]
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
-#[path = "internal/ext/extension_catalog.rs"]
-mod extension_catalog;
+pub mod policy;
 #[path = "artifacts/storage/recovery.rs"]
 mod recovery;
-#[path = "backend/runtime/remote_executor.rs"]
-mod remote_executor;
-#[path = "backend/runtime/remote_execution_model.rs"]
-mod remote_execution_model;
 #[path = "adapters/runtime_registry.rs"]
 mod registry;
+#[path = "backend/runtime/remote_execution_model.rs"]
+mod remote_execution_model;
+#[path = "backend/runtime/remote_executor.rs"]
+mod remote_executor;
+mod replay;
 #[path = "runtime_core/execution/run_context.rs"]
 pub mod run_context;
-pub mod runtime_core;
-#[path = "internal/control/services.rs"]
-pub mod services;
 #[path = "runtime_core/execution/run_state.rs"]
 mod run_state;
+#[path = "internal/control/runtime.rs"]
+mod runtime;
+#[cfg(test)]
+#[path = "internal/testing/runtime_boundary_tests.rs"]
+mod runtime_boundary_tests;
+pub mod runtime_core;
+#[cfg(test)]
+#[path = "internal/testing/runtime_policy_trace_tests.rs"]
+mod runtime_policy_trace_tests;
 #[path = "runtime_core/governance/semantics.rs"]
 mod runtime_semantics;
 #[path = "runtime_core/governance/sacred_execution.rs"]
@@ -112,16 +133,25 @@ mod sacred_execution;
 mod scheduler;
 #[path = "runtime_core/execution/scheduler_workload.rs"]
 mod scheduler_workload;
-#[path = "internal/identity/security_env.rs"]
-mod security_env;
-#[path = "artifacts/storage/semantic_lineage.rs"]
-mod semantic_lineage;
 #[path = "internal/identity/secrets_security.rs"]
 mod secrets_security;
+#[path = "internal/identity/security_env.rs"]
+mod security_env;
+#[path = "internal/control/selectors.rs"]
+pub mod selectors;
+#[path = "artifacts/storage/semantic_lineage.rs"]
+mod semantic_lineage;
+#[path = "internal/control/services.rs"]
+pub mod services;
 #[path = "runtime_core/execution/state_machine.rs"]
 pub mod state_machine;
+#[cfg(test)]
+#[path = "internal/testing/state_machine_tests.rs"]
+mod state_machine_tests;
 #[path = "artifacts/storage/store.rs"]
 mod store;
+#[path = "backend/runtime/subprocess.rs"]
+pub mod subprocess;
 #[path = "internal/identity/supply_chain_trust.rs"]
 mod supply_chain_trust;
 #[path = "internal/control/task_contract.rs"]
@@ -130,184 +160,29 @@ mod task_contract;
 mod task_types;
 #[path = "internal/identity/tenancy.rs"]
 mod tenancy;
-#[path = "artifacts/storage/trace.rs"]
-pub mod trace;
-#[path = "internal/control/selectors.rs"]
-pub mod selectors;
-#[path = "backend/runtime/subprocess.rs"]
-pub mod subprocess;
-pub mod builtins;
-#[path = "internal/control/runtime.rs"]
-mod runtime;
-mod backend;
-mod replay;
-mod artifacts;
-mod diagnostics;
-mod error;
-mod internal;
-#[path = "artifacts/storage/upgrade_compatibility.rs"]
-mod upgrade_compatibility;
-#[path = "internal/perf/performance_capacity.rs"]
-mod performance_capacity;
-#[path = "internal/workflow/workflow_product.rs"]
-mod workflow_product;
 #[cfg(test)]
 #[path = "internal/testing/test_support.rs"]
 mod test_support;
-#[cfg(test)]
-#[path = "internal/testing/runtime_boundary_tests.rs"]
-mod runtime_boundary_tests;
-#[cfg(test)]
-#[path = "internal/testing/adapter_contract_tests.rs"]
-mod adapter_contract_tests;
-#[cfg(test)]
-#[path = "internal/testing/invariants_tests.rs"]
-mod invariants_tests;
-#[cfg(test)]
-#[path = "internal/testing/runtime_policy_trace_tests.rs"]
-mod runtime_policy_trace_tests;
-#[cfg(test)]
-#[path = "internal/testing/state_machine_tests.rs"]
-mod state_machine_tests;
+#[path = "artifacts/storage/trace.rs"]
+pub mod trace;
+#[path = "artifacts/storage/upgrade_compatibility.rs"]
+mod upgrade_compatibility;
+#[path = "internal/workflow/workflow_product.rs"]
+mod workflow_product;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
-use bijux_dag_artifacts::{
-    write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
-    ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
-    OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile,
-    RunOutputsIndex,
+pub use adapter_sdk::{
+    AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
-use bijux_dag_artifacts::schema::{
-    validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
-};
-use bijux_dag_core::{
-    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
-};
-use clock::{Clock, SystemClock};
-use io::{Fs, StdFs};
-pub use planner::build_plan;
-pub use cache::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
-    CacheKeyInput,
-};
-pub use planner_analysis::{
-    build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
-    compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
-    PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
-    PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
-    PlannerResourceEstimate,
-};
-pub use path_authorization::{authorize_input_path, authorize_output_path};
-pub use extension_catalog::{
-    compute_platform_maturity, detect_extension_compatibility_issues,
-    extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
-    internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
-    validate_extension_descriptor, validate_plugin_conformance, CapabilityRange,
-    CodeGenerationHook, DslExtensionPoint, ExtensionCompatibilityIssue,
-    ExtensionDescriptor, ExtensionDiscoveryRecord, ExtensionPointStatus, ExtensionRegistration,
-    ExtensionStabilityLevel, InternalHookPromotionChecklist, OfficialPluginPolicy,
-    PlatformMaturityScorecard, PluginBoundaryKind, PluginConformanceSuiteResult,
-    PluginIsolationPolicy, PluginLifecycleState, PluginLoadingMode, PluginMetadata,
-    PluginTrustPolicy,
-};
-pub use security_env::{is_allowed_env_key, is_denied_env_key, shape_environment};
-pub use authz_policy::{
-    builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
-    evaluate_dry_run, has_permission, invalidate_decision_cache, is_action_allowed_in_environment,
-    role_catalog_by_name, validate_custom_role, Action, ActionKind, AuthorizationAcceptanceReport,
-    BuiltInRole, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
-    IdentityPermissionProfile, PermissionBoundary, PolicyDecisionCache, PolicyDecisionCacheEntry,
-    PolicyDecisionRecord, PolicyDryRunResult, PolicyEvaluationEngine, PolicyEvaluationRequest,
-    PolicyEvaluationResult, PolicyEvaluationTrace, ResourceKind, ResourceRef, ResourceScope,
-    RoleDefinition, SensitiveControlPermissions, SubjectIdentity, SubjectKind,
-};
-pub use recovery::{
-    check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
-    should_quarantine_run, validate_and_repair_run_metadata, BranchRecoveryMode,
-    CheckpointResumeContract, ConsistencyCheckReport, DegradedExecutionPolicy, InterruptionClass,
-    ManualInterventionRecord, NodeControlMode, NodeHeartbeatPolicy, OperatorRetryPolicy,
-    PersistedRunSnapshotRef, RecoveryAcceptanceSuite, RecoveryFaultBoundary,
-    RecoveryFaultInjection, RecoverySimulationScenario, ResilientLogRecord, ResumePolicy,
-    RunPauseMode, RunPausePolicy, RunQuarantineRecord, RunRepairOutcome, SchedulerRecoveryAction,
-    SchedulerRecoveryRule, StuckRunPolicy,
-};
-pub use runtime_semantics::*;
-pub use policy::policy_allows_effects;
-use registry::{build_registry, AdapterRegistry};
-use serde_json::Value;
-use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, HashMap};
-use std::io::{self as std_io, Write};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
-pub use task_contract::{
-    default_forced_cleanup, build_task_contract, validate_task_contracts, ForcedCancellationCleanup,
-    IdempotencyMode, NodeProvenance, OutputMaterializationPolicy, RuntimeState,
-    SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
-    TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
-};
-pub use task_types::{
-    check_replay_adapter_compatibility, compatibility_matrix_report, compatibility_score_for_contract,
-    compute_task_contract_fingerprint, default_task_type_registry, generate_task_contract_markdown,
-    validate_cross_node_compatibility, validate_parameter_defaults, AdapterCapabilityDeclaration,
-    CollectionType, CompatibilityScore, NullabilityContract, OutputEvolutionMarker,
-    PartitionCollectionContract, PolymorphicTaskContract, PolymorphicVariant, ResourceReference,
-    ScalarType, SchemaReference, SecretReference, TaskCompatibilityMatrixReport,
-    TaskCompatibilityRelationship, TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry,
-    TypeCoercionRule, VersionedTypeRule,
-};
-pub use tenancy::{
-    check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
-    resolve_tenant_overlay, scope_lineage_query, tenant_index_key, tenant_provisioning_bootstrap,
-    validate_tenant_isolation, TenantConcurrencyQuota, TenantConfigOverlay, TenantEnvironmentOverlay,
-    TenantId, TenantIsolationConformanceReport, TenantLifecycleState, TenantLineageScope,
-    TenantObservabilityView, TenantOwnershipMetadata, TenantPluginAllowlist, TenantPolicyBundleRef,
-    TenantProvisioningSpec, TenantQueueIsolationPolicy, TenantRegistryPartition,
-    TenantResourceBudget, TenantRetentionPolicy, TenantSchedulerAdmission, TenantScopedDagName,
-    TenantSecretScope,
-};
-pub use workflow_product::{
-    approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
-    product_positioning_note, rollout_is_progressive, wait_state_resumable,
-    workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
-    world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, HumanWaitState,
-    EvolutionPlan, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
-    ProductPositioningNote, RolloutWorkflow, SubworkflowInvocation, WorkflowContractInheritance,
-    WorkflowEvent, WorkflowFamilyImpactAnalysis, WorkflowPortfolio, WorkflowProductMetadata,
-    WorkflowQualityGate, WorkflowScenarioTest, WorkflowTemplate, WorkflowTemplateKind,
-    WorkflowVerificationPlan, WorldClassPlatformScorecard,
-};
-pub use async_adapter::AsyncAdapter;
-pub use backend_cluster::{
-    backend_ready_for_admission, matches_placement_policy, normalize_backend_failure,
-    quota_saturation_percent, replay_allowed_across_backends, BackendCapabilityDescriptor,
-    BackendCleanupGuarantee, BackendConformanceSuite, BackendFailureMappingRule,
-    BackendLogCollectionContract, BackendMaintenanceMode, BackendOutageSimulationFixture,
-    BackendProductionReadinessChecklist, BackendQuotaMetrics, BackendReadinessProbe,
-    CrossBackendReplayRule, GenericBatchExecutorContract, ImageResolutionProvenance,
-    KubernetesExecutorContractV2, NodeAffinityHint, PlacementPolicyRule,
-    QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmExecutorContract,
-};
-pub use batch_execution::{
-    cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
-    heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
-    BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
-};
-pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
 pub use adaptive_scheduler::{
-    adaptive_cache_policy, adaptive_fallback_needed, adaptive_maturity_ready, adaptive_queue_throttle,
-    choose_prefetch_hints, compare_static_and_adaptive, decide_adaptive_parallelism,
-    detect_adaptive_drift, render_adaptive_explanation, AdaptiveBackfillPacingDecision,
-    AdaptiveBoundsPolicy, AdaptiveCachePolicyDecision, AdaptiveComparisonReport,
-    AdaptiveConcurrencyDecision, AdaptiveControlLoopGuard, AdaptiveDriftReport,
-    AdaptiveExplanation, AdaptiveFallbackPolicy, AdaptiveMaturityGate, AdaptiveQualityMetrics,
-    AdaptiveQueueThrottleDecision, ArtifactPrefetchHint, BackendSuitabilitySignal,
-    LearnedDurationProfile, LearningWindowPolicy, SlaDispatchTuningDecision,
-};
-pub use container_execution::{
-    container_env_isolated, map_local_path_to_container, validate_container_contract,
-    validate_container_relative_path, ContainerExecutionContract, ContainerMount,
+    adaptive_cache_policy, adaptive_fallback_needed, adaptive_maturity_ready,
+    adaptive_queue_throttle, choose_prefetch_hints, compare_static_and_adaptive,
+    decide_adaptive_parallelism, detect_adaptive_drift, render_adaptive_explanation,
+    AdaptiveBackfillPacingDecision, AdaptiveBoundsPolicy, AdaptiveCachePolicyDecision,
+    AdaptiveComparisonReport, AdaptiveConcurrencyDecision, AdaptiveControlLoopGuard,
+    AdaptiveDriftReport, AdaptiveExplanation, AdaptiveFallbackPolicy, AdaptiveMaturityGate,
+    AdaptiveQualityMetrics, AdaptiveQueueThrottleDecision, ArtifactPrefetchHint,
+    BackendSuitabilitySignal, LearnedDurationProfile, LearningWindowPolicy,
+    SlaDispatchTuningDecision,
 };
 pub use ai_operator_assist::{
     anomaly_detected, answer_failure_question, build_investigation_bundle, build_postmortem_seed,
@@ -319,95 +194,85 @@ pub use ai_operator_assist::{
     RootCauseDomainHint, SafeActionGuardrail, SafeOperatorAction, ScheduleAnomalySummary,
     SuggestedAction, WhatChangedSummary,
 };
+pub use async_adapter::AsyncAdapter;
 pub use auth_identity::{
-    can_renew_credential, credential_is_expired, credential_scopes_matrix, local_dev_bypass_allowed,
-    migrate_identity_provider_compatible, readiness_for_federation, revoked_principals_set,
-    trust_health_report, ArtifactSigningIdentity, AuthProvider, AuthenticationBoundary,
-    AuthenticationEvent, AuthenticationEventKind, CredentialLifecycle, CredentialProvenanceRecord,
-    CredentialRevocation, CredentialScope, CredentialStorageGuideline, IdentityFederationReadiness,
-    IdentityPrincipal, IdentityPrincipalKind, IdentityProviderCompatibilityRule,
-    LocalDevAuthBypassRule, MutualAuthDesignNote, PluginTrustRegistration,
-    SchedulerBootstrapTrustFlow, TrustDomain, TrustHealthReport, WorkerBootstrapTrustFlow,
-    WorkerCredentialBinding,
+    can_renew_credential, credential_is_expired, credential_scopes_matrix,
+    local_dev_bypass_allowed, migrate_identity_provider_compatible, readiness_for_federation,
+    revoked_principals_set, trust_health_report, ArtifactSigningIdentity, AuthProvider,
+    AuthenticationBoundary, AuthenticationEvent, AuthenticationEventKind, CredentialLifecycle,
+    CredentialProvenanceRecord, CredentialRevocation, CredentialScope, CredentialStorageGuideline,
+    IdentityFederationReadiness, IdentityPrincipal, IdentityPrincipalKind,
+    IdentityProviderCompatibilityRule, LocalDevAuthBypassRule, MutualAuthDesignNote,
+    PluginTrustRegistration, SchedulerBootstrapTrustFlow, TrustDomain, TrustHealthReport,
+    WorkerBootstrapTrustFlow, WorkerCredentialBinding,
 };
-pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
-pub use execution_backend::{
-    backend_registry, bind_backend_or_error, execute_with_backend, BackendBindingRequest,
-    BackendCapabilities, BackendContext, BackendError, BackendKind, BackendLifecycleResult,
-    EngineOutcome, ExecutionAttemptRecord, ExecutionBackend, ExecutionBackendCapabilityDescriptor,
-    FakeBackend, ProcessLikeBackend,
+pub use authz_policy::{
+    builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
+    evaluate_dry_run, has_permission, invalidate_decision_cache, is_action_allowed_in_environment,
+    role_catalog_by_name, validate_custom_role, Action, ActionKind, AuthorizationAcceptanceReport,
+    BuiltInRole, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
+    IdentityPermissionProfile, PermissionBoundary, PolicyDecisionCache, PolicyDecisionCacheEntry,
+    PolicyDecisionRecord, PolicyDryRunResult, PolicyEvaluationEngine, PolicyEvaluationRequest,
+    PolicyEvaluationResult, PolicyEvaluationTrace, ResourceKind, ResourceRef, ResourceScope,
+    RoleDefinition, SensitiveControlPermissions, SubjectIdentity, SubjectKind,
 };
-pub use local_executor::LocalExecutor;
-pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
-pub use formal_verification::{
-    artifact_integrity_holds, build_counterexample, invariant_catalog_default,
-    lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
-    replay_determinism_holds, verification_gate_passed, verification_maturity_label,
-    AdversarialFixtureSet, ArtifactIntegrityInvariant, CounterexampleReport, DiffSemanticSpec,
-    FormalAssuranceRoadmap, FuzzingStrategy, HaVerificationHarness, InvariantDefinition,
-    LineageInvariantProof, ModelTestSuite, PolicyInvariantProof, PropertyTestSuite,
-    ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
-    VerificationMaturityLabel, VerifiedCoreScope,
+pub use backend_cluster::{
+    backend_ready_for_admission, matches_placement_policy, normalize_backend_failure,
+    quota_saturation_percent, replay_allowed_across_backends, BackendCapabilityDescriptor,
+    BackendCleanupGuarantee, BackendConformanceSuite, BackendFailureMappingRule,
+    BackendLogCollectionContract, BackendMaintenanceMode, BackendOutageSimulationFixture,
+    BackendProductionReadinessChecklist, BackendQuotaMetrics, BackendReadinessProbe,
+    CrossBackendReplayRule, GenericBatchExecutorContract, ImageResolutionProvenance,
+    KubernetesExecutorContractV2, NodeAffinityHint, PlacementPolicyRule, QueueBackendRoutingPolicy,
+    RemoteArtifactStagingProtocol, SlurmExecutorContract,
 };
-pub use remote_execution_model::{
-    execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
-    RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
+pub use batch_execution::{
+    cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
+    heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
+    BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
 };
-pub use federated_scheduling::{
-    cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
-    domain_healthy, federation_conformance_passes, select_delegation_failure_action,
-    trust_tier_allows_domain, CrossClusterRoutingPolicy, CrossDomainReplaySafety,
-    DelegationFailureAction, DelegationFailurePolicy, DomainCapabilityAdvertisement,
-    DomainHealthSnapshot, DomainRoutingExplanation, FederatedBackfillPlan,
-    FederatedConformanceGate, FederatedScheduleSuppression, FederatedSimulationScenario,
-    FederationConcurrencyControl, FederationDomainIdentity, FederationMaturityMatrix,
-    InterSchedulerFlowControl, PeeringObservabilityContract, RunDelegationRecord,
-    SchedulerDomainId, SchedulerPeeringRule, TrustTierRoutingRule,
+use bijux_dag_artifacts::schema::{
+    validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
-pub use geo_federation::{
-    build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
-    geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
-    CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, InterRegionReplicationPolicy, RegionAffinityPolicy, RegionAwareDagActivation,
-    RegionBackendRegistry, RegionId, RegionLineageRecord, RegionMigrationWorkflow,
-    RegionObservabilityPartition, RegionPolicyOverlay, RegionQueuePartition,
-    RegionalReplicaOwnership, RegionScheduleRule, SplitBrainMitigationPlan, WriteRoutingRule,
+use bijux_dag_artifacts::{
+    write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
+    ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
+    OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile,
+    RunOutputsIndex,
 };
-pub use ha_scheduler::{
-    clock_within_assumption, conformance_no_duplicate_runs, deduplicate_across_replicas,
-    evaluate_ha_conformance, failover_recovery_passes, fence_allows_mutation, idempotent_run_creation,
-    is_stale_leader, next_epoch, ordering_during_failover, DurableInFlightDispatch,
-    DurableRunQueueEntry, DurableSchedulerTick, DurableSchedulerStateStore, HaConformanceReport,
-    HaMilestoneDefinition, HaSimulationScenario, LeaderElectionState, QueueOwnershipTransfer,
-    QueueShardLease, ScheduleDedupRecord, SchedulerAuditEvent, SchedulerAuditEventKind,
-    SchedulerClockAssumption, SchedulerEpoch, SchedulerFenceToken, SchedulerRecoveryObjectives,
+use bijux_dag_core::{
+    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
 };
-pub use infrastructure::{
-    negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
-    ArtifactTransportMode, BackendAcceptanceGate,
-    BackendCapabilities as InfrastructureBackendCapabilities,
-    BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
-    BackendPolicyOverlay, CapabilityDecision, ExecutorBackend,
-    HighAvailabilitySchedulerPlan, HpcExecutorContract, KubernetesExecutorContract,
-    MultiTenantIdentity, ObjectStorageContract, QueuePartition, RegistryPersistenceBackend,
-    RuntimeSecretContract, SchedulerScalingPlan,
+pub use cache::{
+    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
+    CacheKeyInput,
+};
+use clock::{Clock, SystemClock};
+pub use container_execution::{
+    container_env_isolated, map_local_path_to_container, validate_container_contract,
+    validate_container_relative_path, ContainerExecutionContract, ContainerMount,
 };
 pub use control_plane::{
     register_dag_version, resolve_environment_values, select_dag_version, AuthorizationDecision,
-    AuthorizationRequest, AuthorizationSubject, CompatibilityDecision, DagRegistry, DagRegistryEntry,
-    DagRegistryStore, DagVersionRecord, DagVersionSelectionPolicy, DagVersionStatus,
-    EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision, PolicyDomain,
-    PolicyEngine, RunControlOperation, TypedControlPlaneRequest, TypedControlPlaneResponse,
-    ValidationRequest, ValidationResponse, ValidationService,
+    AuthorizationRequest, AuthorizationSubject, CompatibilityDecision, DagRegistry,
+    DagRegistryEntry, DagRegistryStore, DagVersionRecord, DagVersionSelectionPolicy,
+    DagVersionStatus, EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision,
+    PolicyDomain, PolicyEngine, RunControlOperation, TypedControlPlaneRequest,
+    TypedControlPlaneResponse, ValidationRequest, ValidationResponse, ValidationService,
 };
 pub use control_plane_api::{
     authorize, check_api_compatibility, filter_resources, paginate, ApiCompatibilityRule,
     ApiVersion, ArtifactApiOperation, ArtifactResource, AuditEventResource, AuthContext,
     AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, ControlPlaneMvpDefinition,
-    DagResource, DagVersionResource, EnvironmentScopedConfiguration, EventSubscription,
-    ListFilter, NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource,
-    RegistryOperation, RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
+    DagResource, DagVersionResource, EnvironmentScopedConfiguration, EventSubscription, ListFilter,
+    NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource, RegistryOperation,
+    RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
     ServiceArchitectureNote, TypedApiRequest, TypedApiResponse, VersionedResource,
+};
+pub use coordination::{
+    merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
+    RuntimeCoordinationSnapshot, RuntimeCoordinationState, ThreadSafetyAuditRecord,
+    TraceWriteRecord,
 };
 pub use cost_optimization::{
     budget_policy_action, cache_reuse_score, choose_cost_profile, cost_optimization_allowed,
@@ -420,61 +285,164 @@ pub use cost_optimization::{
 };
 pub use dataset_semantics::{
     build_dataset_provenance_report, dataset_catalog_query, dataset_consumption_satisfied,
-    dataset_diff, dataset_mapping_index, dataset_ready_for_schedule, default_dataset_example_workflow,
-    DatasetArtifactMapping, DatasetBinding, DatasetCatalogEntry, DatasetCatalogQuery,
-    DatasetCompleteness, DatasetConsumptionContract, DatasetConsumptionMode, DatasetDiffReport,
-    DatasetFreshnessPolicy, DatasetId, DatasetImmutability, DatasetLineageRecord,
-    DatasetPartitionModel, DatasetPartitionStrategy, DatasetProvenanceReport,
-    DatasetPublicationWorkflow, DatasetQualityState, DatasetReadinessGate,
-    DatasetRetentionPolicy, DatasetSchemaContract, DatasetVersionId,
+    dataset_diff, dataset_mapping_index, dataset_ready_for_schedule,
+    default_dataset_example_workflow, DatasetArtifactMapping, DatasetBinding, DatasetCatalogEntry,
+    DatasetCatalogQuery, DatasetCompleteness, DatasetConsumptionContract, DatasetConsumptionMode,
+    DatasetDiffReport, DatasetFreshnessPolicy, DatasetId, DatasetImmutability,
+    DatasetLineageRecord, DatasetPartitionModel, DatasetPartitionStrategy, DatasetProvenanceReport,
+    DatasetPublicationWorkflow, DatasetQualityState, DatasetReadinessGate, DatasetRetentionPolicy,
+    DatasetSchemaContract, DatasetVersionId,
 };
 pub use distributed::{
     check_worker_version_compatibility, should_reassign, worker_alive, DeliveryGuarantee,
     DistributedExecutionRequest, DistributedExecutionResult, DistributedFailureClass,
     DistributedReadinessChecklist, DistributedSecurityModel, LivenessPolicy, MockRemoteBackend,
     PlacementHint, ReassignmentRule, RemoteArtifactUploadContract, RemoteCancellationContract,
-    RemoteLogStreamContract, RetryLineageRecord, WorkerCapabilities, WorkerHeartbeat,
+    RemoteLogStreamContract, RetryLineageRecord, WorkLease, WorkerCapabilities, WorkerHeartbeat,
     WorkerIdentity, WorkerPool, WorkerRegistration, WorkerSandboxNegotiation,
-    WorkerVersionCompatibilityRule, WorkLease,
+    WorkerVersionCompatibilityRule,
 };
 pub use distribution_readiness::{
     adoption_score, conformance_passes, integration_governance_ready, packaging_ready,
     release_note_summary, upgrade_bundle_valid, CapabilityDiscoveryReport,
     ClusterDeploymentReference, DeploymentConformanceResult, DeploymentProfileBundle,
-    DistributionSignatureRecord, EcosystemCatalog, IntegrationGovernanceRule,
-    InstallationDiagnostics, IntegrationSupportPolicy, OnboardingGuideCatalog, PackagingMode,
-    PackagingStrategy, PlatformAdoptionScorecard, ProductTierPolicy, ReferenceEnvironmentVerification,
-    ReleaseNoteRecord, ReleaseTransparencyReport, SampleDeploymentCatalog, StabilityClass,
-    StabilityMap, UpgradeBundle, VersionedCompatibilityMatrix,
+    DistributionSignatureRecord, EcosystemCatalog, InstallationDiagnostics,
+    IntegrationGovernanceRule, IntegrationSupportPolicy, OnboardingGuideCatalog, PackagingMode,
+    PackagingStrategy, PlatformAdoptionScorecard, ProductTierPolicy,
+    ReferenceEnvironmentVerification, ReleaseNoteRecord, ReleaseTransparencyReport,
+    SampleDeploymentCatalog, StabilityClass, StabilityMap, UpgradeBundle,
+    VersionedCompatibilityMatrix,
 };
+pub use execution_backend::{
+    backend_registry, bind_backend_or_error, execute_with_backend, BackendBindingRequest,
+    BackendCapabilities, BackendContext, BackendError, BackendKind, BackendLifecycleResult,
+    EngineOutcome, ExecutionAttemptRecord, ExecutionBackend, ExecutionBackendCapabilityDescriptor,
+    FakeBackend, ProcessLikeBackend,
+};
+pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
+pub use extension_catalog::{
+    compute_platform_maturity, detect_extension_compatibility_issues,
+    extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
+    internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
+    validate_extension_descriptor, validate_plugin_conformance, CapabilityRange,
+    CodeGenerationHook, DslExtensionPoint, ExtensionCompatibilityIssue, ExtensionDescriptor,
+    ExtensionDiscoveryRecord, ExtensionPointStatus, ExtensionRegistration, ExtensionStabilityLevel,
+    InternalHookPromotionChecklist, OfficialPluginPolicy, PlatformMaturityScorecard,
+    PluginBoundaryKind, PluginConformanceSuiteResult, PluginIsolationPolicy, PluginLifecycleState,
+    PluginLoadingMode, PluginMetadata, PluginTrustPolicy,
+};
+pub use federated_scheduling::{
+    cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
+    domain_healthy, federation_conformance_passes, select_delegation_failure_action,
+    trust_tier_allows_domain, CrossClusterRoutingPolicy, CrossDomainReplaySafety,
+    DelegationFailureAction, DelegationFailurePolicy, DomainCapabilityAdvertisement,
+    DomainHealthSnapshot, DomainRoutingExplanation, FederatedBackfillPlan,
+    FederatedConformanceGate, FederatedScheduleSuppression, FederatedSimulationScenario,
+    FederationConcurrencyControl, FederationDomainIdentity, FederationMaturityMatrix,
+    InterSchedulerFlowControl, PeeringObservabilityContract, RunDelegationRecord,
+    SchedulerDomainId, SchedulerPeeringRule, TrustTierRoutingRule,
+};
+pub use formal_verification::{
+    artifact_integrity_holds, build_counterexample, invariant_catalog_default,
+    lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
+    replay_determinism_holds, verification_gate_passed, verification_maturity_label,
+    AdversarialFixtureSet, ArtifactIntegrityInvariant, CounterexampleReport, DiffSemanticSpec,
+    FormalAssuranceRoadmap, FuzzingStrategy, HaVerificationHarness, InvariantDefinition,
+    LineageInvariantProof, ModelTestSuite, PolicyInvariantProof, PropertyTestSuite,
+    ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
+    VerificationMaturityLabel, VerifiedCoreScope,
+};
+pub use geo_federation::{
+    build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
+    geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
+    CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
+    GeoSimulationScenario, InterRegionReplicationPolicy, RegionAffinityPolicy,
+    RegionAwareDagActivation, RegionBackendRegistry, RegionId, RegionLineageRecord,
+    RegionMigrationWorkflow, RegionObservabilityPartition, RegionPolicyOverlay,
+    RegionQueuePartition, RegionScheduleRule, RegionalReplicaOwnership, SplitBrainMitigationPlan,
+    WriteRoutingRule,
+};
+pub use ha_scheduler::{
+    clock_within_assumption, conformance_no_duplicate_runs, deduplicate_across_replicas,
+    evaluate_ha_conformance, failover_recovery_passes, fence_allows_mutation,
+    idempotent_run_creation, is_stale_leader, next_epoch, ordering_during_failover,
+    DurableInFlightDispatch, DurableRunQueueEntry, DurableSchedulerStateStore,
+    DurableSchedulerTick, HaConformanceReport, HaMilestoneDefinition, HaSimulationScenario,
+    LeaderElectionState, QueueOwnershipTransfer, QueueShardLease, ScheduleDedupRecord,
+    SchedulerAuditEvent, SchedulerAuditEventKind, SchedulerClockAssumption, SchedulerEpoch,
+    SchedulerFenceToken, SchedulerRecoveryObjectives,
+};
+pub use infrastructure::{
+    negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
+    ArtifactTransportMode, BackendAcceptanceGate,
+    BackendCapabilities as InfrastructureBackendCapabilities, BackendCapabilityRequirement,
+    BackendExecutionCompletion, BackendExecutionRequest, BackendPolicyOverlay, CapabilityDecision,
+    ExecutorBackend, HighAvailabilitySchedulerPlan, HpcExecutorContract,
+    KubernetesExecutorContract, MultiTenantIdentity, ObjectStorageContract, QueuePartition,
+    RegistryPersistenceBackend, RuntimeSecretContract, SchedulerScalingPlan,
+};
+use io::{Fs, StdFs};
+pub use local_executor::LocalExecutor;
 pub use observability::{
-    category_from_runtime_event_name, current_process_memory_bytes, event_contains_sensitive_material,
-    event_names_emitted_once, required_event_fields_present, summarize_failure_root_causes,
-    validate_required_event_names, write_timeline_export, EventCategory, EventRecord, EventSink,
-    FileEventSink, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink,
-    RunMetrics, SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport,
-    TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
+    category_from_runtime_event_name, current_process_memory_bytes,
+    event_contains_sensitive_material, event_names_emitted_once, required_event_fields_present,
+    summarize_failure_root_causes, validate_required_event_names, write_timeline_export,
+    EventCategory, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry, MetricsRegistry,
+    NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind, StdoutEventSink,
+    TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
+};
+pub use observability_deep::{
+    build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,
+    redact_event_details, render_timeline_text, root_cause_graph, sample_events, AlertRule,
+    DiagnosticRecord, DiagnosticsKind, DriftDetectionReport, EventCorrelation,
+    ExplainArtifactReport, ExplainNodeReport, ExplainRunReport, ExplainScheduleReport,
+    FailureCauseCode, MetricsExportFormat, ObservabilityContractStatus, RedactionPolicy,
+    ReplaySpanLink, SamplingPolicy, TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
 };
 pub use operations_governance::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    release_policy_allows, AuditReadinessChecklist,
-    ErrorBudgetPolicy, GamedayScenario, IncidentClassification, IncidentSeverity,
-    IntegratedVerificationLane, LifecycleGovernanceRule, OperatorTrainingCatalog,
-    PlatformAcceptanceBoard, PlatformHealthDashboard, PlatformInvariantCatalog,
-    PlatformOperatingModel, PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy,
-    RoadmapGovernance, RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective,
-    SloEvaluation, SupportabilityModel, SustainabilityOwnership,
+    release_policy_allows, AuditReadinessChecklist, ErrorBudgetPolicy, GamedayScenario,
+    IncidentClassification, IncidentSeverity, IntegratedVerificationLane, LifecycleGovernanceRule,
+    OperatorTrainingCatalog, PlatformAcceptanceBoard, PlatformHealthDashboard,
+    PlatformInvariantCatalog, PlatformOperatingModel, PostmortemTemplate, ProductBoundary,
+    ReleaseGovernancePolicy, RoadmapGovernance, RunbookEntry, ServiceLevelIndicators,
+    ServiceLevelObjective, SloEvaluation, SupportabilityModel, SustainabilityOwnership,
 };
-pub use observability_deep::{
-    build_diagnostics, build_topology_overlay, detect_metric_drift,
-    observability_contract_status, redact_event_details, render_timeline_text, root_cause_graph,
-    sample_events, AlertRule, DiagnosticRecord, DiagnosticsKind, DriftDetectionReport,
-    EventCorrelation, ExplainArtifactReport, ExplainNodeReport, ExplainRunReport,
-    ExplainScheduleReport, FailureCauseCode, MetricsExportFormat,
-    ObservabilityContractStatus, RedactionPolicy, ReplaySpanLink, SamplingPolicy,
-    TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
+pub use path_authorization::{authorize_input_path, authorize_output_path};
+pub use performance_capacity::{
+    build_cost_model, build_performance_maturity_report, compile_environment_profiles,
+    derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
+    synthetic_large_dag_profiles, ArtifactStoreBenchmarkResult, AutoscalingHint, BenchmarkResult,
+    CapacityModel, EnvironmentScaleProfile, PerformanceGate, PerformanceMaturityReport,
+    SchedulerScalabilityResult, StorageCostModel, StorageGrowthForecast, SyntheticDagProfile,
 };
-pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
+pub use planner::build_plan;
+pub use planner_analysis::{
+    build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
+    compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
+    PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
+    PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
+    PlannerResourceEstimate,
+};
+pub use policy::policy_allows_effects;
+pub use recovery::{
+    check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
+    should_quarantine_run, validate_and_repair_run_metadata, BranchRecoveryMode,
+    CheckpointResumeContract, ConsistencyCheckReport, DegradedExecutionPolicy, InterruptionClass,
+    ManualInterventionRecord, NodeControlMode, NodeHeartbeatPolicy, OperatorRetryPolicy,
+    PersistedRunSnapshotRef, RecoveryAcceptanceSuite, RecoveryFaultBoundary,
+    RecoveryFaultInjection, RecoverySimulationScenario, ResilientLogRecord, ResumePolicy,
+    RunPauseMode, RunPausePolicy, RunQuarantineRecord, RunRepairOutcome, SchedulerRecoveryAction,
+    SchedulerRecoveryRule, StuckRunPolicy,
+};
+use registry::{build_registry, AdapterRegistry};
+pub use remote_execution_model::{
+    execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
+    RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
+};
+pub use remote_executor::{
+    RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
+};
 pub use run_state::{
     imported_run_distinguishable, node_transition_invariant_id, run_transition_invariant_id,
     terminal_transition_audit_events, validate_node_transition, validate_run_transition,
@@ -483,54 +451,61 @@ pub use run_state::{
     RunState, RunSummaryV2, RunTransition, StateConsistencyReport, TransitionAuditEvent,
     TransitionCause, INV_NODE_TERMINAL_NO_REVERT, INV_RUN_FAILED_CAUSAL_FAILURE,
 };
-pub use coordination::{
-    merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
-    RuntimeCoordinationSnapshot, RuntimeCoordinationState, ThreadSafetyAuditRecord,
-    TraceWriteRecord,
-};
+pub use runtime_semantics::*;
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
     failure_allows_downstream_readiness, failure_mode_name, scheduler_contract_profile,
-    scheduler_debug_event_log, scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
-    validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
-    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
-    FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,
-    QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition,
-    ScheduleDryRunPreview, ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission,
-    Scheduler, SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
+    scheduler_debug_event_log, scheduler_invariants_hold, validate_cron_expression,
+    validate_schedule_policy_combination, validate_schedule_registry, BackfillRequest,
+    CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter, DeterministicScheduler,
+    ExecutionCheckpoint, ExecutionSubmissionRequest, FailurePropagationMode,
+    NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
+    ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview,
+    ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, Scheduler,
+    SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
     SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
     SchedulerUnit, ThroughputScheduler, TriggerSpec,
-};
-pub use semantic_lineage::{
-    detect_lineage_conflicts, export_lineage_format, lineage_quality_score, policy_hook_allows_operation,
-    recommended_replay_set, summarize_lineage, ArtifactRelationshipType, ArtifactSemanticTag,
-    CrossRunLineageStitch, FieldLevelLineageHook, LineageConfidence, LineageConflict,
-    LineageExportFormat, LineageImpactReport, LineageMaterializationRule, LineageQualityScore,
-    LineageReconciliationPlan, LineageSummary, LineageSummaryNode, PolicyLineageHookInput,
-    RetentionProtectionRule, ReverseImpactReport, SemanticDependencyClass,
-    SemanticLineageExplain, SemanticRelationship,
-};
-pub use secrets_security::{
-    incident_response_actions, leak_conformance_check, redact_secret_payload, secret_readiness,
-    secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
-    should_materialize_secret_artifact, summarize_sensitive_classes, taint_from_secret_usage,
-    validate_secret_delivery_mode, SecretArtifactPolicy, SecretDeliveryPolicy,
-    SecretInjectionMode, SecretIntegrationReadiness, SecretLeakIncident, SecretMaskingPolicy,
-    SecretResolutionTiming, SecretRotationRule, SecretScopeRule, SecretSource,
-    SecretTaintRecord, SecretUsageAuditEvent, SecretVersionSelection, SecureExecutionMode,
-    SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
 pub use scheduler_workload::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
     detect_cron_conflicts, evaluate_sla_metrics, is_suppressed_by_calendar, materialize_next_runs,
     run_batches, weighted_priority_tie_break_order, BackfillThrottlingPolicy, BlackoutWindow,
-    ConcurrencyScope, CrossSchedulerCompatibility, DagCalendar, DependencyTriggerBufferPolicy,
-    EnvironmentSuppression, FairnessAlgorithm, HolidayPolicy, MaterializedRunPreview,
-    PartitionBackfillOrchestration, QueueAdmissionPolicy, RunBatchPolicy, ScheduleOverrideRecord,
-    SchedulerAlertRule, SchedulerMaturityMatrix, SchedulerSlaMetrics, SchedulingSimulationSuite,
-    ScheduleSuppressionAnnotation, ServiceClass, SlaPolicy, StarvationPreventionPolicy,
-    TriggerDedupDecision, WeightedPriorityPolicy, CronConflict,
+    ConcurrencyScope, CronConflict, CrossSchedulerCompatibility, DagCalendar,
+    DependencyTriggerBufferPolicy, EnvironmentSuppression, FairnessAlgorithm, HolidayPolicy,
+    MaterializedRunPreview, PartitionBackfillOrchestration, QueueAdmissionPolicy, RunBatchPolicy,
+    ScheduleOverrideRecord, ScheduleSuppressionAnnotation, SchedulerAlertRule,
+    SchedulerMaturityMatrix, SchedulerSlaMetrics, SchedulingSimulationSuite, ServiceClass,
+    SlaPolicy, StarvationPreventionPolicy, TriggerDedupDecision, WeightedPriorityPolicy,
 };
+pub use secrets_security::{
+    incident_response_actions, leak_conformance_check, redact_secret_payload, secret_readiness,
+    secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
+    should_materialize_secret_artifact, summarize_sensitive_classes, taint_from_secret_usage,
+    validate_secret_delivery_mode, SecretArtifactPolicy, SecretDeliveryPolicy, SecretInjectionMode,
+    SecretIntegrationReadiness, SecretLeakIncident, SecretMaskingPolicy, SecretResolutionTiming,
+    SecretRotationRule, SecretScopeRule, SecretSource, SecretTaintRecord, SecretUsageAuditEvent,
+    SecretVersionSelection, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
+    SensitiveArtifactClass, SensitiveArtifactRestriction,
+};
+pub use security_env::{is_allowed_env_key, is_denied_env_key, shape_environment};
+pub use semantic_lineage::{
+    detect_lineage_conflicts, export_lineage_format, lineage_quality_score,
+    policy_hook_allows_operation, recommended_replay_set, summarize_lineage,
+    ArtifactRelationshipType, ArtifactSemanticTag, CrossRunLineageStitch, FieldLevelLineageHook,
+    LineageConfidence, LineageConflict, LineageExportFormat, LineageImpactReport,
+    LineageMaterializationRule, LineageQualityScore, LineageReconciliationPlan, LineageSummary,
+    LineageSummaryNode, PolicyLineageHookInput, RetentionProtectionRule, ReverseImpactReport,
+    SemanticDependencyClass, SemanticLineageExplain, SemanticRelationship,
+};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashMap};
+use std::io::{self as std_io, Write};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
+use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 pub use supply_chain_trust::{
     build_provenance_drift_report, can_promote_artifact, default_supply_chain_maturity_matrix,
     evaluate_attestation_compatibility, regulated_workflow_reference_example,
@@ -542,21 +517,52 @@ pub use supply_chain_trust::{
     RegulatedWorkflowReference, ReplayTrustWarning, RunProvenanceAttestation,
     SignedArtifactManifest, SupplyChainMaturityMatrix,
 };
+pub use task_contract::{
+    build_task_contract, default_forced_cleanup, validate_task_contracts,
+    ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
+    RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason, TaskInputDescriptor,
+    TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy,
+};
+pub use task_types::{
+    check_replay_adapter_compatibility, compatibility_matrix_report,
+    compatibility_score_for_contract, compute_task_contract_fingerprint,
+    default_task_type_registry, generate_task_contract_markdown, validate_cross_node_compatibility,
+    validate_parameter_defaults, AdapterCapabilityDeclaration, CollectionType, CompatibilityScore,
+    NullabilityContract, OutputEvolutionMarker, PartitionCollectionContract,
+    PolymorphicTaskContract, PolymorphicVariant, ResourceReference, ScalarType, SchemaReference,
+    SecretReference, TaskCompatibilityMatrixReport, TaskCompatibilityRelationship,
+    TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry, TypeCoercionRule,
+    VersionedTypeRule,
+};
+pub use tenancy::{
+    check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
+    resolve_tenant_overlay, scope_lineage_query, tenant_index_key, tenant_provisioning_bootstrap,
+    validate_tenant_isolation, TenantConcurrencyQuota, TenantConfigOverlay,
+    TenantEnvironmentOverlay, TenantId, TenantIsolationConformanceReport, TenantLifecycleState,
+    TenantLineageScope, TenantObservabilityView, TenantOwnershipMetadata, TenantPluginAllowlist,
+    TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
+    TenantRegistryPartition, TenantResourceBudget, TenantRetentionPolicy, TenantSchedulerAdmission,
+    TenantScopedDagName, TenantSecretScope,
+};
 pub use upgrade_compatibility::{
     build_compatibility_dashboard, classify_compatibility, evaluate_release_gate,
     simulate_migration_impact, validate_upgrade_path, CompatibilityAcceptanceSuite,
     CompatibilityClass, CompatibilityDashboard, CompatibilityPolicy, CompatibilityRule,
     CrossVersionMatrixRow, DeprecationDiagnostic, DowngradeRiskReport,
-    DurableStateMigrationContract, FeatureFlagRecord, FeatureLifecycleState,
-    LongTermSupportPolicy, ManifestMigrationPlan, MigrationImpactEstimate, PluginVersionWindow,
-    ReleaseGateOutcome, SchedulerStateCompatibilityCheck, UpgradePathPolicy, UpgradeRolloutPlan,
+    DurableStateMigrationContract, FeatureFlagRecord, FeatureLifecycleState, LongTermSupportPolicy,
+    ManifestMigrationPlan, MigrationImpactEstimate, PluginVersionWindow, ReleaseGateOutcome,
+    SchedulerStateCompatibilityCheck, UpgradePathPolicy, UpgradeRolloutPlan,
 };
-pub use performance_capacity::{
-    build_cost_model, build_performance_maturity_report, compile_environment_profiles,
-    derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
-    synthetic_large_dag_profiles, ArtifactStoreBenchmarkResult, AutoscalingHint, BenchmarkResult,
-    CapacityModel, EnvironmentScaleProfile, PerformanceGate, PerformanceMaturityReport,
-    SchedulerScalabilityResult, StorageCostModel, StorageGrowthForecast, SyntheticDagProfile,
+pub use workflow_product::{
+    approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
+    product_positioning_note, rollout_is_progressive, wait_state_resumable,
+    workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
+    world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, EvolutionPlan,
+    HumanWaitState, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
+    ProductPositioningNote, RolloutWorkflow, SubworkflowInvocation, WorkflowContractInheritance,
+    WorkflowEvent, WorkflowFamilyImpactAnalysis, WorkflowPortfolio, WorkflowProductMetadata,
+    WorkflowQualityGate, WorkflowScenarioTest, WorkflowTemplate, WorkflowTemplateKind,
+    WorkflowVerificationPlan, WorldClassPlatformScorecard,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -908,7 +914,12 @@ impl Adapter for ContainerAdapter {
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
-                container_meta: Some(container_trace(spec, engine, exit_code, engine_version.clone())),
+                container_meta: Some(container_trace(
+                    spec,
+                    engine,
+                    exit_code,
+                    engine_version.clone(),
+                )),
                 adapter_binary_sha256: None,
             });
         }
@@ -1449,8 +1460,8 @@ fn try_cache_read(
                     }),
                 });
             }
-            let source = cache_source_from_meta(store.fs(), &entry)
-                .unwrap_or_else(|| "local".to_string());
+            let source =
+                cache_source_from_meta(store.fs(), &entry).unwrap_or_else(|| "local".to_string());
             let node_dir = ctx.run_dir.node_dir(&node.id);
             store.fs().create_dir_all(&node_dir)?;
             copy_dir_all(
@@ -1654,7 +1665,10 @@ fn set_node_fingerprint(ctx: &RunContext, node_id: &str, fp: String) {
     }
 }
 
-fn node_fingerprint_with_inputs(base_fp: &str, inputs: &InputsIndex) -> Result<String, RuntimeError> {
+fn node_fingerprint_with_inputs(
+    base_fp: &str,
+    inputs: &InputsIndex,
+) -> Result<String, RuntimeError> {
     let value = serde_json::json!({
         "base": base_fp,
         "inputs": &inputs.files,
@@ -1765,7 +1779,11 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
     None
 }
 
-fn collect_relative_files(root: &Path, current: &Path, out: &mut std::collections::BTreeSet<String>) {
+fn collect_relative_files(
+    root: &Path,
+    current: &Path,
+    out: &mut std::collections::BTreeSet<String>,
+) {
     let entries = match std::fs::read_dir(current) {
         Ok(entries) => entries,
         Err(_) => return,
@@ -1790,20 +1808,23 @@ fn container_trace(
     exit_code: Option<i32>,
     engine_version: Option<String>,
 ) -> ContainerTrace {
-    let image_digest = subprocess::output(engine, &["image", "inspect", "--format", "{{.Id}}", &spec.image])
-        .ok()
-        .and_then(|out| {
-            if out.status.success() {
-                let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                if s.is_empty() {
-                    None
-                } else {
-                    Some(s)
-                }
-            } else {
+    let image_digest = subprocess::output(
+        engine,
+        &["image", "inspect", "--format", "{{.Id}}", &spec.image],
+    )
+    .ok()
+    .and_then(|out| {
+        if out.status.success() {
+            let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if s.is_empty() {
                 None
+            } else {
+                Some(s)
             }
-        });
+        } else {
+            None
+        }
+    });
     ContainerTrace {
         image: spec.image.clone(),
         image_digest,
@@ -1946,7 +1967,6 @@ fn materialize_file(
     }
     Ok(())
 }
-
 
 #[cfg(test)]
 include!("internal/testing/tests_runtime.in.rs");

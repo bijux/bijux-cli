@@ -8,7 +8,9 @@ fn matches_pattern(key: &str, pattern: &str) -> bool {
 }
 
 pub fn is_allowed_env_key(key: &str, allowlist: &[String]) -> bool {
-    allowlist.iter().any(|pattern| matches_pattern(key, pattern))
+    allowlist
+        .iter()
+        .any(|pattern| matches_pattern(key, pattern))
 }
 
 pub fn is_denied_env_key(key: &str, denylist: &[String]) -> bool {

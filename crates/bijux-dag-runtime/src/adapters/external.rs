@@ -1,4 +1,7 @@
-use crate::{adapter::{AdapterOrigin, EffectSet}, Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError};
+use crate::{
+    adapter::{AdapterOrigin, EffectSet},
+    Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError,
+};
 use bijux_dag_artifacts::write_outputs_index;
 use serde::Deserialize;
 use std::path::PathBuf;

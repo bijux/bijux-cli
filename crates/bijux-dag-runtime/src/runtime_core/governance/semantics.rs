@@ -75,16 +75,26 @@ pub fn deterministic_schedule_order(
     ready
 }
 
-pub fn fairness_is_satisfied(dispatch_order: &[ReadyNode], starvation_threshold: u32, starvation_ticks: &BTreeMap<String, u32>) -> bool {
+pub fn fairness_is_satisfied(
+    dispatch_order: &[ReadyNode],
+    starvation_threshold: u32,
+    starvation_ticks: &BTreeMap<String, u32>,
+) -> bool {
     if dispatch_order.is_empty() {
         return true;
     }
     let dispatched: BTreeSet<&str> = dispatch_order.iter().map(|n| n.node_id.as_str()).collect();
     starvation_ticks
         .iter()
-        .filter(|(node, ticks)| **ticks >= starvation_threshold && dispatched.contains(node.as_str()))
+        .filter(|(node, ticks)| {
+            **ticks >= starvation_threshold && dispatched.contains(node.as_str())
+        })
         .count()
-        >= starvation_ticks.iter().filter(|(_, ticks)| **ticks >= starvation_threshold).count().min(1)
+        >= starvation_ticks
+            .iter()
+            .filter(|(_, ticks)| **ticks >= starvation_threshold)
+            .count()
+            .min(1)
 }
 
 pub fn retry_allowed(attempt: u32, policy: &RetryPolicySemantics) -> bool {
@@ -99,11 +109,18 @@ pub fn cancellation_is_terminal(cancel_requested: bool, node_terminal: bool) -> 
     cancel_requested && node_terminal
 }
 
-pub fn dependency_resolution_is_complete(required: &[String], succeeded: &BTreeSet<String>) -> bool {
+pub fn dependency_resolution_is_complete(
+    required: &[String],
+    succeeded: &BTreeSet<String>,
+) -> bool {
     required.iter().all(|dep| succeeded.contains(dep))
 }
 
-pub fn artifact_commit_guaranteed(temp_written: bool, manifest_updated: bool, fsync_complete: bool) -> bool {
+pub fn artifact_commit_guaranteed(
+    temp_written: bool,
+    manifest_updated: bool,
+    fsync_complete: bool,
+) -> bool {
     temp_written && manifest_updated && fsync_complete
 }
 
@@ -111,7 +128,11 @@ pub fn cache_entry_valid(input: &CacheValidationInput) -> bool {
     input.fingerprint_matches && input.schema_matches && input.proof_present
 }
 
-pub fn cache_entry_invalidated(policy_changed: bool, adapter_version_changed: bool, output_schema_changed: bool) -> bool {
+pub fn cache_entry_invalidated(
+    policy_changed: bool,
+    adapter_version_changed: bool,
+    output_schema_changed: bool,
+) -> bool {
     policy_changed || adapter_version_changed || output_schema_changed
 }
 
@@ -120,18 +141,33 @@ pub fn replay_equivalent(expected_fingerprint: &str, observed_fingerprint: &str)
 }
 
 pub fn run_manifest_valid(input: &ManifestVerificationInput) -> bool {
-    input.has_run_header && input.has_trace_index && input.has_outputs_index && input.totals_consistent
+    input.has_run_header
+        && input.has_trace_index
+        && input.has_outputs_index
+        && input.totals_consistent
 }
 
 pub fn recovery_action_required(input: &RecoveryInput) -> bool {
     input.partial_artifacts_present || (!input.terminal_state_seen && input.has_checkpoint)
 }
 
-pub fn artifact_lineage_complete(outputs: &[String], lineage_index: &BTreeMap<String, String>) -> bool {
-    outputs.iter().all(|output| lineage_index.contains_key(output))
+pub fn artifact_lineage_complete(
+    outputs: &[String],
+    lineage_index: &BTreeMap<String, String>,
+) -> bool {
+    outputs
+        .iter()
+        .all(|output| lineage_index.contains_key(output))
 }
 
-pub fn classify_failure(timeout: bool, cancelled: bool, dependency_failed: bool, policy_violation: bool, cache_invalid: bool, artifact_corruption: bool) -> RuntimeFailureClass {
+pub fn classify_failure(
+    timeout: bool,
+    cancelled: bool,
+    dependency_failed: bool,
+    policy_violation: bool,
+    cache_invalid: bool,
+    artifact_corruption: bool,
+) -> RuntimeFailureClass {
     if timeout {
         RuntimeFailureClass::Timeout
     } else if cancelled {

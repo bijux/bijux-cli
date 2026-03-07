@@ -300,13 +300,22 @@ pub fn build_task_contract(node: &Node, graph: &Graph, options: &RuntimeConfig) 
         retry_policy: build_retry_policy(node),
         timeout_policy: build_timeout_policy(node, options),
         idempotency_mode: parse_idempotency_mode(node),
-        nondeterministic_allowed: parse_nondeterministic_allowed(node, graph.nondeterminism_allowed),
-        output_materialization_policy: parse_output_materialization_policy(node, options.materialize_inputs),
+        nondeterministic_allowed: parse_nondeterministic_allowed(
+            node,
+            graph.nondeterminism_allowed,
+        ),
+        output_materialization_policy: parse_output_materialization_policy(
+            node,
+            options.materialize_inputs,
+        ),
         sandbox_policy: build_sandbox_policy(node, &options.policy, isolation_mode),
     }
 }
 
-pub fn validate_task_contracts(graph: &Graph, options: &RuntimeConfig) -> Result<Vec<TaskContract>, RuntimeError> {
+pub fn validate_task_contracts(
+    graph: &Graph,
+    options: &RuntimeConfig,
+) -> Result<Vec<TaskContract>, RuntimeError> {
     let mut contracts = Vec::new();
     for node in &graph.nodes {
         let contract = build_task_contract(node, graph, options);

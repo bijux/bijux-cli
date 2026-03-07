@@ -152,7 +152,11 @@ pub fn domain_healthy(domain: &SchedulerDomainId, health: &[DomainHealthSnapshot
         .unwrap_or(false)
 }
 
-pub fn delegation_allowed(flow: &InterSchedulerFlowControl, inflight: usize, per_minute: usize) -> bool {
+pub fn delegation_allowed(
+    flow: &InterSchedulerFlowControl,
+    inflight: usize,
+    per_minute: usize,
+) -> bool {
     inflight < flow.max_inflight_delegations && per_minute < flow.max_delegations_per_minute
 }
 

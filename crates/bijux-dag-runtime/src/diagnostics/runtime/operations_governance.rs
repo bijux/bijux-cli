@@ -149,7 +149,10 @@ pub struct SloEvaluation {
     pub violations: Vec<String>,
 }
 
-pub fn evaluate_slo(objective: &ServiceLevelObjective, indicators: &ServiceLevelIndicators) -> SloEvaluation {
+pub fn evaluate_slo(
+    objective: &ServiceLevelObjective,
+    indicators: &ServiceLevelIndicators,
+) -> SloEvaluation {
     let mut violations = Vec::new();
     if indicators.measured_run_creation_latency_ms > objective.run_creation_latency_ms {
         violations.push("run creation latency SLO missed".to_string());

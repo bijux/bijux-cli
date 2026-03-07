@@ -148,8 +148,8 @@ pub fn adaptive_queue_throttle(
     backend_churn_index: f64,
     store_pressure_index: f64,
 ) -> AdaptiveQueueThrottleDecision {
-    let throttle_ratio = ((retry_storm_index + backend_churn_index + store_pressure_index) / 3.0)
-        .clamp(0.0, 1.0);
+    let throttle_ratio =
+        ((retry_storm_index + backend_churn_index + store_pressure_index) / 3.0).clamp(0.0, 1.0);
     AdaptiveQueueThrottleDecision {
         retry_storm_index,
         backend_churn_index,

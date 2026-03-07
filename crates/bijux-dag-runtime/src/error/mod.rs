@@ -1,2 +1,2 @@
-pub(crate) mod codes;
 pub(crate) mod classify;
+pub(crate) mod codes;

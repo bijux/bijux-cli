@@ -173,7 +173,11 @@ pub fn simulate_migration_impact(
     }
 }
 
-pub fn validate_upgrade_path(policy: &UpgradePathPolicy, from: &str, to: &str) -> Result<(), String> {
+pub fn validate_upgrade_path(
+    policy: &UpgradePathPolicy,
+    from: &str,
+    to: &str,
+) -> Result<(), String> {
     let key = format!("{from}->{to}");
     if policy.unsupported_jumps.contains(&key) {
         return Err(format!("unsupported upgrade jump: {key}"));
@@ -217,7 +221,10 @@ pub fn build_compatibility_dashboard(
         policy,
         rule_count: rules.len(),
         features_by_state,
-        suites_required: suites.iter().filter(|suite| suite.required_for_release).count(),
+        suites_required: suites
+            .iter()
+            .filter(|suite| suite.required_for_release)
+            .count(),
         downgrade_risk_blocking: downgrade_risk.blocking,
     }
 }
