@@ -65,6 +65,11 @@
       "id": "tp_run_dir_resilience",
       "name": "Run-directory resilience under corruption",
       "description": "Malformed or corrupted run directories are rejected with explicit diagnostics."
+    },
+    {
+      "id": "tp_plan_truth",
+      "name": "Plan truth and lowering determinism",
+      "description": "Semantically equivalent graphs lower to identical execution plans and unsupported requirements fail during planning."
     }
   ],
   "required_scenarios": [
@@ -92,7 +97,7 @@
     "failure_heavy_workflow": ["tp_failure_propagation", "tp_state_machine_legality"],
     "import_export_workflow": ["tp_import_export_compatibility", "tp_artifact_integrity"],
     "large_dag_workflow": ["tp_deterministic_scheduling", "tp_timeout_retry_accounting"],
-    "medium_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality"],
+    "medium_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality", "tp_plan_truth"],
     "multi_root_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality"],
     "operator_debugging_workflow": ["tp_operator_observability", "tp_failure_propagation"],
     "operator_inspection_workflow": ["tp_operator_observability", "tp_run_dir_resilience"],
@@ -100,7 +105,7 @@
     "replay_divergence_workflow": ["tp_replay_equivalence", "tp_artifact_integrity"],
     "resource_contention_workflow": ["tp_deterministic_scheduling", "tp_timeout_retry_accounting"],
     "retry_storm_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
-    "scheduler_fairness_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation"],
+    "scheduler_fairness_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation", "tp_plan_truth"],
     "secret_leakage_workflow": ["tp_secret_redaction", "tp_policy_enforcement"],
     "timeout_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
     "version_compatibility_workflow": ["tp_import_export_compatibility", "tp_replay_equivalence"],

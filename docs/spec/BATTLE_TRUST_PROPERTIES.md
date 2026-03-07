@@ -18,6 +18,7 @@ This document defines the canonical trust properties for battle workflow evidenc
 - `tp_timeout_retry_accounting`
 - `tp_secret_redaction`
 - `tp_run_dir_resilience`
+- `tp_plan_truth`
 
 ## Authority and mapping
 
