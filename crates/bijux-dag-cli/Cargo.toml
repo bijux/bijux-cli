@@ -10,6 +10,7 @@ workspace = true
 
 [dependencies]
 clap = { workspace = true }
+clap_complete = { workspace = true }
 bijux_dag_app = { package = "bijux-dag-app", path = "../bijux-dag-app" }
 
 [dev-dependencies]

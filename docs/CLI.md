@@ -17,6 +17,7 @@ bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
 bijux dag import <bundle.json>
+bijux completions --shell zsh
 ```
 
 `dag verify --deep` performs full artifact integrity checks including path normalization,
