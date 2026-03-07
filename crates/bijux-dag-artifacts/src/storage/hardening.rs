@@ -24,7 +24,10 @@ pub struct ArtifactCleanupPlan {
     pub prunable: Vec<String>,
 }
 
-pub fn write_json_atomic_durable(path: impl AsRef<Path>, value: &Value) -> Result<(), ArtifactError> {
+pub fn write_json_atomic_durable(
+    path: impl AsRef<Path>,
+    value: &Value,
+) -> Result<(), ArtifactError> {
     let path = path.as_ref();
     let tmp = path.with_extension("tmp");
     let data = serde_json::to_vec_pretty(value)?;
@@ -38,7 +41,10 @@ pub fn write_json_atomic_durable(path: impl AsRef<Path>, value: &Value) -> Resul
     Ok(())
 }
 
-pub fn write_incomplete_run_marker(run_dir: impl AsRef<Path>, reason: &str) -> Result<(), ArtifactError> {
+pub fn write_incomplete_run_marker(
+    run_dir: impl AsRef<Path>,
+    reason: &str,
+) -> Result<(), ArtifactError> {
     let marker_path = run_dir.as_ref().join(".run-incomplete.json");
     let payload = serde_json::json!({
         "status": "incomplete",
@@ -51,7 +57,9 @@ pub fn finalize_run_manifest(run_dir: impl AsRef<Path>) -> Result<(), ArtifactEr
     let run_dir = run_dir.as_ref();
     let manifest = run_dir.join("manifest.json");
     if !manifest.exists() {
-        return Err(ArtifactError::PathViolation("manifest missing during finalization".to_string()));
+        return Err(ArtifactError::PathViolation(
+            "manifest missing during finalization".to_string(),
+        ));
     }
     let finalized = run_dir.join("manifest.finalized.json");
     fs::copy(&manifest, &finalized)?;
@@ -60,7 +68,10 @@ pub fn finalize_run_manifest(run_dir: impl AsRef<Path>) -> Result<(), ArtifactEr
     write_json_atomic_durable(marker_path, &marker)
 }
 
-pub fn verify_run_dir(run_dir: impl AsRef<Path>, mode: VerificationMode) -> Result<RunDirAuditReport, ArtifactError> {
+pub fn verify_run_dir(
+    run_dir: impl AsRef<Path>,
+    mode: VerificationMode,
+) -> Result<RunDirAuditReport, ArtifactError> {
     let run_dir = run_dir.as_ref();
     let mut anomalies = Vec::new();
 
@@ -106,7 +117,10 @@ pub fn build_cleanup_plan(entries: &[String], retain_prefixes: &[&str]) -> Artif
     let mut retained = Vec::new();
     let mut prunable = Vec::new();
     for entry in entries {
-        if retain_prefixes.iter().any(|prefix| entry.starts_with(prefix)) {
+        if retain_prefixes
+            .iter()
+            .any(|prefix| entry.starts_with(prefix))
+        {
             retained.push(entry.clone());
         } else {
             prunable.push(entry.clone());

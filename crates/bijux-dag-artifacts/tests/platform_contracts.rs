@@ -1,8 +1,8 @@
 use bijux_dag_artifacts::index::ArtifactId;
 use bijux_dag_artifacts::lineage::{ArtifactLineageEdge, ArtifactLineageSnapshot};
 use bijux_dag_artifacts::platform::{
-    build_replay_assist, compact_lineage, lineage_dependencies, lineage_dependents, plan_lineage_safe_gc,
-    run_store_conformance,
+    build_replay_assist, compact_lineage, lineage_dependencies, lineage_dependents,
+    plan_lineage_safe_gc, run_store_conformance,
 };
 use bijux_dag_artifacts::store::ArtifactStoreBackend;
 use hex as _;
@@ -67,7 +67,10 @@ fn lineage_utilities_are_stable() {
     assert_eq!(dependents, vec!["a.final".to_string()]);
 
     let assist = build_replay_assist(&snapshot, ArtifactId("a.final".to_string()));
-    assert_eq!(assist.required_upstream_artifacts, vec![ArtifactId("a.mid".to_string())]);
+    assert_eq!(
+        assist.required_upstream_artifacts,
+        vec![ArtifactId("a.mid".to_string())]
+    );
     assert_eq!(assist.required_nodes, vec!["node.final".to_string()]);
 }
 

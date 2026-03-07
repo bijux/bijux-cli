@@ -232,7 +232,11 @@ pub fn lineage_dependencies(snapshot: &ArtifactLineageSnapshot, artifact_id: &st
 pub fn lineage_dependents(snapshot: &ArtifactLineageSnapshot, artifact_id: &str) -> Vec<String> {
     let mut dependents = Vec::new();
     for edge in &snapshot.edges {
-        if edge.upstream_artifact_ids.iter().any(|up| up == artifact_id) {
+        if edge
+            .upstream_artifact_ids
+            .iter()
+            .any(|up| up == artifact_id)
+        {
             dependents.push(edge.artifact_id.clone());
         }
     }
@@ -241,7 +245,10 @@ pub fn lineage_dependents(snapshot: &ArtifactLineageSnapshot, artifact_id: &str)
     dependents
 }
 
-pub fn build_replay_assist(snapshot: &ArtifactLineageSnapshot, artifact_id: ArtifactId) -> ReplayAssistContext {
+pub fn build_replay_assist(
+    snapshot: &ArtifactLineageSnapshot,
+    artifact_id: ArtifactId,
+) -> ReplayAssistContext {
     let required_upstream_artifacts = lineage_dependencies(snapshot, &artifact_id.0)
         .into_iter()
         .map(ArtifactId)

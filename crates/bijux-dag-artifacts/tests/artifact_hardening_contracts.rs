@@ -5,8 +5,8 @@ use bijux_dag_artifacts::{
 use hex as _;
 use serde as _;
 use sha2 as _;
-use thiserror as _;
 use std::fs;
+use thiserror as _;
 
 fn sample_manifest(run_id: &str) -> Manifest {
     Manifest {
@@ -23,8 +23,18 @@ fn sample_manifest(run_id: &str) -> Manifest {
         jobs: 1,
         adapters: vec![],
         outputs: vec![],
-        node_counts: bijux_dag_artifacts::NodeCounts { success: 1, failed: 0, skipped: 0, cached: 0 },
-        policy: bijux_dag_artifacts::PolicyInfo { deny_network: true, deny_env: true, deny_clock: true, clean_env: true },
+        node_counts: bijux_dag_artifacts::NodeCounts {
+            success: 1,
+            failed: 0,
+            skipped: 0,
+            cached: 0,
+        },
+        policy: bijux_dag_artifacts::PolicyInfo {
+            deny_network: true,
+            deny_env: true,
+            deny_clock: true,
+            clean_env: true,
+        },
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
@@ -45,7 +55,11 @@ fn manifest_and_atomic_write_contracts_hold() {
 #[test]
 fn incomplete_and_finalized_markers_are_written() {
     let dir = tempfile::tempdir().unwrap();
-    fs::write(dir.path().join("manifest.json"), serde_json::to_vec_pretty(&sample_manifest("run-2")).unwrap()).unwrap();
+    fs::write(
+        dir.path().join("manifest.json"),
+        serde_json::to_vec_pretty(&sample_manifest("run-2")).unwrap(),
+    )
+    .unwrap();
     write_incomplete_run_marker(dir.path(), "interrupted").unwrap();
     assert!(dir.path().join(".run-incomplete.json").exists());
     finalize_run_manifest(dir.path()).unwrap();
@@ -57,7 +71,11 @@ fn incomplete_and_finalized_markers_are_written() {
 fn strict_and_standard_verification_behave_as_expected() {
     let dir = tempfile::tempdir().unwrap();
     fs::create_dir_all(dir.path().join("trace")).unwrap();
-    fs::write(dir.path().join("manifest.json"), serde_json::to_vec_pretty(&sample_manifest("run-3")).unwrap()).unwrap();
+    fs::write(
+        dir.path().join("manifest.json"),
+        serde_json::to_vec_pretty(&sample_manifest("run-3")).unwrap(),
+    )
+    .unwrap();
     fs::write(dir.path().join("outputs.index.json"), b"{\"files\":[]}").unwrap();
 
     let standard = verify_run_dir(dir.path(), VerificationMode::Standard).unwrap();
@@ -73,13 +91,15 @@ fn import_export_and_replay_artifact_payloads_validate() {
     let parsed: RunOutputsIndex = serde_json::from_value(valid_outputs).unwrap();
     assert!(parsed.files.is_empty());
 
-    let invalid_raw = fs::read_to_string("tests/fixtures/corrupt_runs/invalid_outputs_index.json").unwrap();
+    let invalid_raw =
+        fs::read_to_string("tests/fixtures/corrupt_runs/invalid_outputs_index.json").unwrap();
     assert!(serde_json::from_str::<RunOutputsIndex>(&invalid_raw).is_err());
 }
 
 #[test]
 fn corruption_fixtures_are_detected_and_cleanup_plan_is_bounded() {
-    let corrupted = fs::read_to_string("tests/fixtures/corrupt_runs/missing_manifest_version.json").unwrap();
+    let corrupted =
+        fs::read_to_string("tests/fixtures/corrupt_runs/missing_manifest_version.json").unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&corrupted).unwrap();
     assert!(parsed.get("manifest_version").is_none());
 

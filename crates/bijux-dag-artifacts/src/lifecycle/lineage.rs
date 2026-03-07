@@ -22,7 +22,10 @@ pub struct ArtifactLineageVisualization {
     pub links: Vec<(String, String)>,
 }
 
-pub fn write_lineage_snapshot(path: impl AsRef<Path>, snapshot: &ArtifactLineageSnapshot) -> Result<(), String> {
+pub fn write_lineage_snapshot(
+    path: impl AsRef<Path>,
+    snapshot: &ArtifactLineageSnapshot,
+) -> Result<(), String> {
     let path = path.as_ref();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;

@@ -16,7 +16,9 @@ pub enum SchemaValidationMode {
     Skip,
 }
 
-pub fn validate_output_schema_descriptor(descriptor: &ArtifactSchemaDescriptor) -> Result<(), String> {
+pub fn validate_output_schema_descriptor(
+    descriptor: &ArtifactSchemaDescriptor,
+) -> Result<(), String> {
     if descriptor.name.trim().is_empty() {
         return Err("schema name must not be empty".to_string());
     }

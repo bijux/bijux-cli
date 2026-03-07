@@ -1,9 +1,9 @@
 #[path = "io/fs.rs"]
 pub mod fs;
-#[path = "integrity/hash.rs"]
-pub mod hash;
 #[path = "storage/hardening.rs"]
 pub mod hardening;
+#[path = "integrity/hash.rs"]
+pub mod hash;
 #[path = "integrity/index.rs"]
 pub mod index;
 #[path = "lifecycle/lineage.rs"]
@@ -14,10 +14,10 @@ pub mod models;
 pub mod paths;
 #[path = "layout/platform.rs"]
 pub mod platform;
-#[path = "integrity/proof.rs"]
-pub mod proof;
 #[path = "lifecycle/promotion.rs"]
 pub mod promotion;
+#[path = "integrity/proof.rs"]
+pub mod proof;
 #[path = "lifecycle/retention.rs"]
 pub mod retention;
 #[path = "integrity/schema.rs"]
@@ -27,7 +27,10 @@ pub mod services;
 #[path = "io/store.rs"]
 pub mod store;
 
-pub use hardening::{build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode};
+pub use hardening::{
+    build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
+    write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode,
+};
 pub use models::*;
 
 use serde::Serialize;

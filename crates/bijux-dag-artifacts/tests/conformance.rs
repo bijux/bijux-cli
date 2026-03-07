@@ -1,14 +1,24 @@
-use bijux_dag_artifacts::index::{dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactPackManifest};
-use bijux_dag_artifacts::lineage::{write_lineage_snapshot, ArtifactLineageEdge, ArtifactLineageSnapshot};
+use bijux_dag_artifacts::index::{
+    dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactPackManifest,
+};
+use bijux_dag_artifacts::lineage::{
+    write_lineage_snapshot, ArtifactLineageEdge, ArtifactLineageSnapshot,
+};
 use bijux_dag_artifacts::paths::is_normalized_relative_path;
-use bijux_dag_artifacts::proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
-use bijux_dag_artifacts::schema::{validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode};
-use bijux_dag_artifacts::{write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex};
+use bijux_dag_artifacts::proof::{
+    ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy,
+};
+use bijux_dag_artifacts::schema::{
+    validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
+};
+use bijux_dag_artifacts::{
+    write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
+};
 use hex as _;
 use serde as _;
 use sha2 as _;
-use thiserror as _;
 use std::fs;
+use thiserror as _;
 
 #[test]
 fn outputs_index_is_stable_under_repeated_writes() {
@@ -63,16 +73,15 @@ fn lineage_snapshot_write_is_deterministic() {
 
 #[test]
 fn metadata_normalization_and_dedup_metrics_are_stable() {
-    let pairs = vec![("b".to_string(), "2".to_string()), ("a".to_string(), "1".to_string())];
+    let pairs = vec![
+        ("b".to_string(), "2".to_string()),
+        ("a".to_string(), "1".to_string()),
+    ];
     let normalized = normalize_metadata_pairs(pairs);
     assert_eq!(normalized[0].0, "a");
     assert_eq!(normalized[1].0, "b");
 
-    let metrics = dedup_metrics_for_hashes(&[
-        "h1".to_string(),
-        "h1".to_string(),
-        "h2".to_string(),
-    ]);
+    let metrics = dedup_metrics_for_hashes(&["h1".to_string(), "h1".to_string(), "h2".to_string()]);
     assert_eq!(metrics.total_artifacts, 3);
     assert_eq!(metrics.unique_content_hashes, 2);
     assert_eq!(metrics.deduplicated_artifacts, 1);
