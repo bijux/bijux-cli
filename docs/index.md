@@ -143,6 +143,8 @@
 - [Authoring guide](./user/AUTHORING_GUIDE.md)
 - [Command taxonomy](./reference/COMMAND_TAXONOMY.md)
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
+- [Backend equivalence contract](./spec/BACKEND_EQUIVALENCE_CONTRACT.md)
+- [Backend non-equivalences](./reference/BACKEND_NON_EQUIVALENCES.md)
 - [Kubernetes adapter contract](./spec/K8S_ADAPTER_CONTRACT.md)
 - [HPC adapter contract](./spec/HPC_ADAPTER_CONTRACT.md)
 - [Worker protocol contract](./spec/WORKER_PROTOCOL_CONTRACT.md)

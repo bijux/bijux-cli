@@ -64,3 +64,5 @@ Backend conformance fixture:
 
 See support status and evidence linkage in `docs/reference/K8S_SUPPORT_MATRIX.md`.
 See HPC scope and evidence linkage in `docs/reference/HPC_SUPPORT_MATRIX.md`.
+See remote scope and evidence linkage in `docs/reference/REMOTE_SUPPORT_MATRIX.md`.
+Generated backend capability matrix: `evidence/reports/backend_capability_matrix_generated.json`.

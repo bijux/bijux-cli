@@ -24,6 +24,8 @@ bijux dag capabilities --json
 bijux dag capabilities --backend kubernetes --json
 bijux dag capabilities --backend hpc --json
 bijux dag capabilities --backend remote --json
+bijux dag semantic-portability --backend kubernetes --json
+bijux dag equivalence-proof ./runs/a ./runs/b --backend-a kubernetes --backend-b hpc --json
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json

@@ -50,6 +50,8 @@ This is the normative contract for `bijux` command surfaces.
 - `dag capabilities --backend kubernetes`: backend-specific capability report surface.
 - `dag capabilities --backend hpc`: backend-specific capability report surface.
 - `dag capabilities --backend remote`: backend-specific capability report surface.
+- `dag semantic-portability --backend <name>`: backend-target portability and downgrade report surface.
+- `dag equivalence-proof <run-a> <run-b> --backend-a <name> --backend-b <name>`: cross-backend run equivalence proof report surface.
 
 ## Invariants
 - JSON mode is machine-readable and contract-stable.
