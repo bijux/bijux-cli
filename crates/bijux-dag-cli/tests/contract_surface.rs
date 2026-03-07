@@ -1,3 +1,9 @@
+use bijux_dag_app as _;
+use clap as _;
+use clap_complete as _;
+use serde_json as _;
+use tempfile as _;
+
 use std::io::Write;
 use std::fs;
 use std::process::Command;
@@ -8,7 +14,13 @@ fn dag_binary() -> String {
 }
 
 fn write_temp_dag() -> String {
-    let mut file = NamedTempFile::new().expect("temp dag");
+    let path = std::env::temp_dir().join(format!(
+        "bijux-dag-cli-contract-{}.json",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("time")
+            .as_nanos()
+    ));
     let content = r#"{
   "spec": "bijux-dag/v0.1",
   "nodes": [
@@ -30,8 +42,8 @@ fn write_temp_dag() -> String {
   "edges": []
 }
 "#;
-    file.write_all(content.as_bytes()).unwrap();
-    file.into_temp_path().to_str().unwrap().to_string()
+    std::fs::write(&path, content).expect("write dag");
+    path.to_string_lossy().into_owned()
 }
 
 #[test]
@@ -133,7 +145,7 @@ fn dag_replay_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "run_id", "--reuse-cache", "replay"] {
+    for token in ["--out", "--run-id", "--reuse-cache", "replay"] {
         assert!(text.contains(token));
     }
 }
@@ -173,7 +185,7 @@ fn dag_cache_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["cache", "--cache-dir", "verify", "pack"] {
+    for token in ["cache", "verify", "pack", "explain"] {
         assert!(text.contains(token));
     }
 }
@@ -256,7 +268,13 @@ fn dag_run_exit_code_success() {
 #[test]
 fn dag_run_runtime_failure_returns_nonzero_exit() {
     let dag = {
-        let mut file = NamedTempFile::new().expect("temp dag");
+        let path = std::env::temp_dir().join(format!(
+            "bijux-dag-cli-contract-failing-{}.json",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("time")
+                .as_nanos()
+        ));
         let content = r#"{
           "spec": "bijux-dag/v0.1",
           "nodes": [{
@@ -270,8 +288,8 @@ fn dag_run_runtime_failure_returns_nonzero_exit() {
           }],
           "edges": []
         }"#;
-        file.write_all(content.as_bytes()).expect("write dag");
-        file.into_temp_path().to_str().unwrap().to_string()
+        std::fs::write(&path, content).expect("write dag");
+        path.to_string_lossy().into_owned()
     };
     let out_dir = tempfile::tempdir().expect("run out");
 

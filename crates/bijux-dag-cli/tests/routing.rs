@@ -1,3 +1,9 @@
+use bijux_dag_app as _;
+use clap as _;
+use clap_complete as _;
+use serde_json as _;
+use tempfile as _;
+
 use std::process::Command;
 
 #[test]
