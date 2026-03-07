@@ -6964,12 +6964,16 @@ fn run_replay_contract_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/REPLAY_CONTRACT.md",
+        "docs/reports/foundation/replay_hardening_report.md",
         "configs/schema/operator/replay_diff.schema.json",
         "tests/e2e/replay/fixtures/match_case.json",
         "tests/e2e/replay/fixtures/mismatch_case.json",
         "tests/e2e/replay/fixtures/corruption_case.json",
         "tests/e2e/replay/fixtures/unsupported_version_case.json",
         "crates/bijux-dag-app/tests/replay_contract.rs",
+        "crates/bijux-dag-runtime/tests/replay_contract.rs",
+        "crates/bijux-dag-runtime/tests/runtime_replay_contracts.rs",
+        "crates/bijux-dev-dag/tests/replay_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -7005,6 +7009,24 @@ fn run_replay_contract_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?;
     if !replay_battle.contains("replay_mandatory_proof") {
         return Err("replay battle scenario must assert replay_mandatory_proof".to_string());
+    }
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    let has_replay_equivalence = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_replay_equivalence")
+    });
+    if !has_replay_equivalence {
+        return Err("replay contract requires tp_replay_equivalence trust property".to_string());
     }
 
     let mut violations = Vec::new();
@@ -8109,6 +8131,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "scheduler-invariants",
         "backend-contract",
         "cache-evolution",
+        "replay-contract",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
