@@ -25,6 +25,18 @@
 - Scenario-bearing `tests/` trees are constrained compatibility surfaces and cannot become proof-asset authorities.
 - Crate-local fixtures are consumers of evidence authority and cannot define independent truth.
 
+## Family boundaries
+- `battle` proves end-to-end trust properties and consumes family evidence; it does not own cache/compat/fault canonical fixtures.
+- `cache` owns cache-integrity and replay-fixture assets under `evidence/cache/**`.
+- `compat` owns supported-versus-unsupported compatibility decisions for graph schema, run directory, and export bundles.
+- `fault` owns explicit fault classes and expected system reactions for resilience behavior.
+- `authoring` negatives are validation-authoring contracts and must not be used as runtime fault-class proof.
+
+## Shared usage policy
+- Shared usage is allowed only when one canonical asset is consumed by multiple suites without changing semantics.
+- Duplicate assets are preferred when consumer semantics diverge or naming/diagnostics must stay domain-specific.
+- Shared usage must be declared in metadata and verified by drift checks.
+
 ## Metadata requirements
 Each governed asset must include:
 - identity: `path`, `canonical_location`, `duplicate_of`
