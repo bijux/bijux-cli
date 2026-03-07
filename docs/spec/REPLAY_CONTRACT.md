@@ -46,10 +46,10 @@ Replay must not consult ambient host state as authoritative evidence.
 
 Replay fixture family includes:
 
-- `tests/e2e/replay/fixtures/match_case.json`
-- `tests/e2e/replay/fixtures/mismatch_case.json`
-- `tests/e2e/replay/fixtures/corruption_case.json`
-- `tests/e2e/replay/fixtures/unsupported_version_case.json`
+- `evidence/cache/replay/match_case.json`
+- `evidence/cache/replay/mismatch_case.json`
+- `evidence/cache/replay/corruption_case.json`
+- `evidence/cache/replay/unsupported_version_case.json`
 
 ## What replay cannot prove
 

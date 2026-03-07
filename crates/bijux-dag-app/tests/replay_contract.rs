@@ -19,7 +19,7 @@ use std::path::Path;
 #[test]
 fn replay_fixture_family_exists() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let root = repo.join("tests/e2e/replay/fixtures");
+    let root = repo.join("evidence/cache/replay");
     for rel in [
         "match_case.json",
         "mismatch_case.json",

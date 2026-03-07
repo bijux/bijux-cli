@@ -2554,14 +2554,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/fixtures/e2e_minimal.json",
+      "path": "evidence/battle/workflows/e2e_minimal.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "failure-propagation",
       "why_exists": "drive end-to-end execution invariants",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/e2e/fixtures/e2e_minimal.json",
+      "canonical_location": "evidence/battle/workflows/e2e_minimal.json",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -2575,14 +2575,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/replay/fixtures/corruption_case.json",
+      "path": "evidence/cache/replay/corruption_case.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "replay-equivalence",
       "why_exists": "validate replay semantic match and mismatch handling",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/e2e/replay/fixtures/corruption_case.json",
+      "canonical_location": "evidence/cache/replay/corruption_case.json",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -2596,14 +2596,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/replay/fixtures/match_case.json",
+      "path": "evidence/cache/replay/match_case.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "replay-equivalence",
       "why_exists": "validate replay semantic match and mismatch handling",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/e2e/replay/fixtures/match_case.json",
+      "canonical_location": "evidence/cache/replay/match_case.json",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -2617,14 +2617,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/replay/fixtures/mismatch_case.json",
+      "path": "evidence/cache/replay/mismatch_case.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "replay-equivalence",
       "why_exists": "validate replay semantic match and mismatch handling",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/e2e/replay/fixtures/mismatch_case.json",
+      "canonical_location": "evidence/cache/replay/mismatch_case.json",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -2638,14 +2638,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/replay/fixtures/unsupported_version_case.json",
+      "path": "evidence/cache/replay/unsupported_version_case.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "replay-equivalence",
       "why_exists": "validate replay semantic match and mismatch handling",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/e2e/replay/fixtures/unsupported_version_case.json",
+      "canonical_location": "evidence/cache/replay/unsupported_version_case.json",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -3517,6 +3517,48 @@
       "release_blocking": false,
       "duplicate_of": null,
       "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/container_execution_if_supported.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "container-capable execution scenario remains evidence-owned and policy-governed",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/container_execution_if_supported.json",
+      "consumer_surfaces": [
+        "e2e-matrix",
+        "battle-suite"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "replay-equivalence",
+      "why_exists": "legacy fixture validation is compatibility evidence, not top-level test-owned scenario",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "consumer_surfaces": [
+        "compatibility-contracts",
+        "e2e-matrix"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
     }
   ],
   "fixture_families": [
@@ -3537,11 +3579,11 @@
       "retirement_date": null
     },
     {
-      "path": "tests/e2e/replay/fixtures",
+      "path": "evidence/cache/replay",
       "status": "canonical",
       "owner": "team-runtime",
       "version": "1",
-      "canonical_location": "tests/e2e/replay/fixtures",
+      "canonical_location": "evidence/cache/replay",
       "consumer_surfaces": [
         "e2e-contracts",
         "runtime-tests"
@@ -3610,7 +3652,7 @@
       "trust_property_protected": "schema-compatibility",
       "implementation_status": "simulated",
       "release_blocking": false,
-      "duplicate_of": "tests/e2e/replay/fixtures",
+      "duplicate_of": "evidence/cache/replay",
       "retirement_date": "2026-12-31"
     },
     {
@@ -3625,7 +3667,7 @@
       "trust_property_protected": "schema-compatibility",
       "implementation_status": "simulated",
       "release_blocking": false,
-      "duplicate_of": "tests/e2e/replay/fixtures",
+      "duplicate_of": "evidence/cache/replay",
       "retirement_date": "2026-12-31"
     },
     {
@@ -3640,7 +3682,7 @@
       "trust_property_protected": "schema-compatibility",
       "implementation_status": "simulated",
       "release_blocking": false,
-      "duplicate_of": "tests/e2e/replay/fixtures",
+      "duplicate_of": "evidence/cache/replay",
       "retirement_date": "2026-12-31"
     },
     {
@@ -3655,7 +3697,7 @@
       "trust_property_protected": "schema-compatibility",
       "implementation_status": "simulated",
       "release_blocking": false,
-      "duplicate_of": "tests/e2e/replay/fixtures",
+      "duplicate_of": "evidence/cache/replay",
       "retirement_date": "2026-12-31"
     },
     {
@@ -3670,7 +3712,7 @@
       "trust_property_protected": "schema-compatibility",
       "implementation_status": "simulated",
       "release_blocking": false,
-      "duplicate_of": "tests/e2e/replay/fixtures",
+      "duplicate_of": "evidence/cache/replay",
       "retirement_date": "2026-12-31"
     }
   ],
