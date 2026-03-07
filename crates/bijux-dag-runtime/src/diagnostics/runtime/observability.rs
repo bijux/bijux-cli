@@ -175,6 +175,7 @@ pub trait EventSink: Send + Sync {
 pub struct StdoutEventSink;
 
 impl EventSink for StdoutEventSink {
+    #[allow(clippy::print_stdout)]
     fn write_event(&self, event: &EventRecord) -> Result<(), String> {
         let line = serde_json::to_string(event).map_err(|err| err.to_string())?;
         println!("{line}");
