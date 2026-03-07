@@ -856,6 +856,64 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Err(ExitCode::from(3))
             }
         }
+        Commands::ProofSummary { run_dir } => {
+            let proof = build_run_proof_bundle(run_dir)?;
+            let complete = proof
+                .get("complete")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let status = proof.get("status").and_then(Value::as_str).unwrap_or("incomplete");
+            let determinism = proof
+                .get("determinism")
+                .and_then(Value::as_str)
+                .unwrap_or("insufficient-evidence");
+            let integrity = proof
+                .get("integrity")
+                .and_then(Value::as_str)
+                .unwrap_or("insufficient-evidence");
+            let replay_level = proof
+                .get("replay_evidence")
+                .and_then(|v| v.get("level"))
+                .and_then(Value::as_str)
+                .unwrap_or("partial");
+            let incomplete_reasons = proof
+                .get("incomplete_reasons")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let summary = json!({
+                "proof_id": proof.get("proof_id").cloned().unwrap_or(Value::Null),
+                "run_id": proof.get("run_id").cloned().unwrap_or(Value::Null),
+                "status": status,
+                "complete": complete,
+                "determinism": determinism,
+                "integrity": integrity,
+                "replay_level": replay_level,
+                "incomplete_reasons": incomplete_reasons
+            });
+
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.proof-summary",
+                    complete,
+                    summary,
+                    Vec::new(),
+                    if complete {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(3)
+                    },
+                );
+            }
+
+            println!("proof summary: {}", summary);
+            if complete {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
+        }
         Commands::Runs { command } => match command {
             RunsCommands::List { root } => {
                 let runs = list_runs(root).map_err(|_| ExitCode::from(3))?;
@@ -3578,12 +3636,26 @@ fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode>
         incomplete_reasons.push("invariant violations present".to_string());
     }
 
+    let provenance_path = run_dir.join("provenance.json");
+    let backend_origin = if provenance_path.exists() {
+        let raw = read_file(&provenance_path).unwrap_or_default();
+        let value: Value = serde_json::from_str(&raw).unwrap_or_default();
+        value
+            .get("source")
+            .and_then(Value::as_str)
+            .unwrap_or("native-run")
+            .to_string()
+    } else {
+        "native-run".to_string()
+    };
+
     let complete = incomplete_reasons.is_empty() && status == "ok";
     Ok(json!({
         "schema_version": "proof-bundle/v0.1",
         "proof_id": proof_id,
         "run_id": run_id,
         "run_dir": run_dir,
+        "backend_origin": backend_origin,
         "status": if complete { "complete" } else { "incomplete" },
         "complete": complete,
         "determinism": if complete { "verified" } else { "insufficient-evidence" },
@@ -3598,7 +3670,13 @@ fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode>
         },
         "incomplete_reasons": incomplete_reasons,
         "verification_errors": errors,
-        "invariant_violations": invariant_violations
+        "invariant_violations": invariant_violations,
+        "signing": {
+            "signed": false,
+            "signature_format": Value::Null,
+            "signature": Value::Null,
+            "trust_level": "unsigned"
+        }
     }))
 }
 

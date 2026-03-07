@@ -7,18 +7,21 @@
     "schema_version",
     "proof_id",
     "run_id",
+    "backend_origin",
     "status",
     "complete",
     "determinism",
     "integrity",
     "replay_evidence",
     "integrity_evidence",
-    "incomplete_reasons"
+    "incomplete_reasons",
+    "signing"
   ],
   "properties": {
     "schema_version": {"const": "proof-bundle/v0.1"},
     "proof_id": {"type": "string"},
     "run_id": {"type": "string"},
+    "backend_origin": {"type": "string"},
     "status": {"type": "string", "enum": ["complete", "incomplete"]},
     "complete": {"type": "boolean"},
     "determinism": {"type": "string"},
@@ -41,6 +44,16 @@
     },
     "incomplete_reasons": {"type": "array", "items": {"type": "string"}},
     "verification_errors": {"type": "array"},
-    "invariant_violations": {"type": "array"}
+    "invariant_violations": {"type": "array"},
+    "signing": {
+      "type": "object",
+      "required": ["signed", "signature_format", "signature", "trust_level"],
+      "properties": {
+        "signed": {"type": "boolean"},
+        "signature_format": {"type": ["string", "null"]},
+        "signature": {"type": ["string", "null"]},
+        "trust_level": {"type": "string", "enum": ["unsigned", "signed-unverified", "signed-verified"]}
+      }
+    }
   }
 }

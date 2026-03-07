@@ -13,3 +13,4 @@ Required fields:
 - `replay_evidence`
 - `integrity_evidence`
 - `incomplete_reasons`
+- `signing`

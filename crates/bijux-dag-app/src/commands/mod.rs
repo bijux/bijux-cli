@@ -146,6 +146,10 @@ pub(crate) enum Commands {
     Prove {
         run_dir: PathBuf,
     },
+    #[command(name = "proof-summary")]
+    ProofSummary {
+        run_dir: PathBuf,
+    },
     Graph {
         dag: PathBuf,
         #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
