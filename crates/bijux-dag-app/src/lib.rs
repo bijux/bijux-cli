@@ -30,6 +30,8 @@ mod graph_cmd;
 #[path = "commands/import_cmd.rs"]
 mod import_cmd;
 mod inspect;
+#[path = "inspect/service.rs"]
+mod inspect_service;
 mod migrate;
 mod read;
 #[path = "read/read_graph.rs"]
@@ -37,6 +39,8 @@ mod read_graph;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
+#[path = "replay/service.rs"]
+mod replay_service;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
 #[path = "inspect/run_views.rs"]
@@ -622,8 +626,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Show { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
+                let summary = inspect_service::run_summary_for_id(root, run_id)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -638,8 +641,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Inspect { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
+                let summary = inspect_service::run_summary_for_id(root, run_id)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -654,8 +656,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Tree { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let tree = run_tree(&run_dir).map_err(|_| ExitCode::from(3))?;
+                let tree = inspect_service::run_tree_for_id(root, run_id)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -670,8 +671,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Timeline { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let timeline = run_timeline(&run_dir).map_err(|_| ExitCode::from(3))?;
+                let timeline = inspect_service::run_timeline_for_id(root, run_id)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -691,24 +691,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 mode: _mode,
                 explain,
             } => {
-                let manifest_a = read_file(&run_a.join("manifest.json"))?;
-                let manifest_b = read_file(&run_b.join("manifest.json"))?;
-                let snap_a = load_snapshot(run_a)?;
-                let snap_b = load_snapshot(run_b)?;
-                let nodes_a = read_node_traces(run_a)?;
-                let nodes_b = read_node_traces(run_b)?;
-                let outputs_a = read_outputs_indexes(run_a)?;
-                let outputs_b = read_outputs_indexes(run_b)?;
-                let diff = diff::build_run_diff(
-                    serde_json::from_str(&manifest_a).unwrap_or_default(),
-                    serde_json::from_str(&manifest_b).unwrap_or_default(),
-                    snap_a.graph_fingerprint,
-                    snap_b.graph_fingerprint,
-                    &nodes_a,
-                    &nodes_b,
-                    &outputs_a,
-                    &outputs_b,
-                );
+                let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -769,8 +752,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Doctor { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let report = doctor_run(&run_dir);
+                let report = inspect_service::doctor_for_run_id(root, run_id);
                 let ok = report.get("status").and_then(|v| v.as_str()) == Some("ok");
                 if cli.json {
                     return emit_json(
@@ -793,8 +775,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::ExplainFailure { run_id, root } => {
-                let run_dir = resolve_run_dir(root, run_id);
-                let report = explain_failure(&run_dir).map_err(|_| ExitCode::from(3))?;
+                let report = inspect_service::explain_failure_for_run_id(root, run_id)?;
                 if cli.json {
                     return emit_json(
                         &cli,
@@ -891,24 +872,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             explain,
         } => {
             let explain = *explain;
-            let manifest_a = read_file(&run_a.join("manifest.json"))?;
-            let manifest_b = read_file(&run_b.join("manifest.json"))?;
-            let snap_a = load_snapshot(run_a)?;
-            let snap_b = load_snapshot(run_b)?;
-            let nodes_a = read_node_traces(run_a)?;
-            let nodes_b = read_node_traces(run_b)?;
-            let outputs_a = read_outputs_indexes(run_a)?;
-            let outputs_b = read_outputs_indexes(run_b)?;
-            let diff = diff::build_run_diff(
-                serde_json::from_str(&manifest_a).unwrap_or_default(),
-                serde_json::from_str(&manifest_b).unwrap_or_default(),
-                snap_a.graph_fingerprint,
-                snap_b.graph_fingerprint,
-                &nodes_a,
-                &nodes_b,
-                &outputs_a,
-                &outputs_b,
-            );
+            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
             if cli.json {
                 return emit_json(
                     &cli,
