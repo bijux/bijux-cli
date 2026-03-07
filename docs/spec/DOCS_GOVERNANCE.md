@@ -15,7 +15,8 @@ All normative documentation must live under one of:
 
 ## Root-doc budget
 
-Root-level markdown files under `docs/` are capped at **110**.
+Root-level markdown files under `docs/` are capped at **100**.
+Repository enforcement policy is defined in `configs/policy/docs_config_governance.json`.
 
 ## Required governance documents
 
@@ -58,6 +59,8 @@ User docs must include:
 - unsupported guarantee language is disallowed without evidence links
 - stale crate names and legacy paths are disallowed
 - speculative roadmap content must live in `docs/tracking/`
+- self-scoring scorecard documents are disallowed in root docs
+- title overlap across root docs is rejected by governance tests
 
 ## Ownership
 
