@@ -7,3 +7,8 @@
 
 Memory budget compliance is release-relevant only when tied to benchmark workload metadata
 and measured environment context.
+
+Resource budget checks are available in warning and gate modes:
+
+- warning: `cargo run -p bijux-dev-dag -- resource-budget-check --report artifacts/benchmarks/baseline.json`
+- gate: `cargo run -p bijux-dev-dag -- resource-budget-check --report artifacts/benchmarks/baseline.json --gate`

@@ -12,4 +12,5 @@ pub const IDS: &[&str] = &[
     "repo-api",
     "fault-summary",
     "performance-claims",
+    "resource-budgets-warning",
 ];

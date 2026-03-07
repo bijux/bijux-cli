@@ -110,6 +110,25 @@ enum CommandLine {
         #[arg(long, default_value_t = 0.15)]
         max_regression_ratio: f64,
     },
+    /// Print resource profile summary from benchmark report
+    ResourceProfileSummary {
+        #[arg(long)]
+        report: PathBuf,
+    },
+    /// Validate resource budgets in warning or gate mode
+    ResourceBudgetCheck {
+        #[arg(long)]
+        report: PathBuf,
+        #[arg(long, default_value_t = false)]
+        gate: bool,
+    },
+    /// Append benchmark report to resource trend series
+    ResourceTrendAppend {
+        #[arg(long)]
+        report: PathBuf,
+        #[arg(long)]
+        trend: PathBuf,
+    },
     /// Verify artifact reproducibility and integrity for local runs
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
@@ -674,6 +693,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_performance_claims_guard(),
     },
+    SuiteDef {
+        id: "resource-budgets-warning",
+        description: "resource budget validation in warning mode",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_resource_budget_check(Path::new("artifacts/benchmarks/baseline.json"), false),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -995,6 +1023,27 @@ fn run(cli: Cli) -> Result<(), String> {
                 "max_regression_ratio": max_regression_ratio
             }),
             || run_benchmark_compare(&current, &baseline, max_regression_ratio),
+        ),
+        CommandLine::ResourceProfileSummary { report } => run_command_reported(
+            &context,
+            "resource-profile-summary",
+            CommandEffect::Validation,
+            json!({ "report": report }),
+            || run_resource_profile_summary(&report),
+        ),
+        CommandLine::ResourceBudgetCheck { report, gate } => run_command_reported(
+            &context,
+            "resource-budget-check",
+            CommandEffect::Validation,
+            json!({ "report": report, "gate": gate }),
+            || run_resource_budget_check(&report, gate),
+        ),
+        CommandLine::ResourceTrendAppend { report, trend } => run_command_reported(
+            &context,
+            "resource-trend-append",
+            CommandEffect::ReadWrite,
+            json!({ "report": report, "trend": trend }),
+            || run_resource_trend_append(&report, &trend),
         ),
         CommandLine::ArtifactVerify => run_command_reported(
             &context,
@@ -1753,11 +1802,22 @@ fn run_benchmark_baseline() -> Result<(), String> {
             ],
         )?;
         let end_ms = now_millis();
+        let run_dir_size_bytes = dir_size_bytes(&runs_dir).unwrap_or(0);
         scenario_results.push(json!({
             "scenario_id": scenario_id,
             "class": class,
             "fixture": fixture,
             "elapsed_ms": end_ms.saturating_sub(start_ms),
+            "resource_profile": {
+                "wall_time_ms": end_ms.saturating_sub(start_ms),
+                "cpu_time_ms": Value::Null,
+                "rss_bytes": Value::Null,
+                "peak_memory_bytes": Value::Null,
+                "artifact_bytes": run_dir_size_bytes,
+                "trace_bytes": estimate_trace_bytes(&runs_dir).unwrap_or(0),
+                "process_count": 1,
+                "measurement_quality": "approximate"
+            }
         }));
     }
 
@@ -2937,4 +2997,192 @@ fn run_performance_claims_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn run_resource_profile_summary(report: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let report_path = root.join(report);
+    let payload = fs::read_to_string(&report_path).map_err(|err| err.to_string())?;
+    let report_json: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+
+    let mut summary = json!({
+        "measurement_quality": "approximate",
+        "scenario_count": 0,
+        "totals": {
+            "wall_time_ms": 0.0,
+            "artifact_bytes": 0,
+            "trace_bytes": 0
+        },
+        "cost_split": {
+            "product_execution_ms": 0.0,
+            "harness_overhead_ms": 0.0
+        }
+    });
+
+    if let Some(items) = report_json.get("scenario_results").and_then(Value::as_array) {
+        let mut wall = 0.0_f64;
+        for item in items {
+            wall += item.get("elapsed_ms").and_then(Value::as_f64).unwrap_or(0.0);
+        }
+        summary["scenario_count"] = Value::from(items.len() as u64);
+        summary["totals"]["wall_time_ms"] = Value::from(wall);
+        summary["cost_split"]["product_execution_ms"] = Value::from(wall);
+        summary["cost_split"]["harness_overhead_ms"] = Value::from(0.0_f64);
+    }
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_resource_budget_check(report: &Path, gate: bool) -> Result<(), String> {
+    let root = repo_root()?;
+    let report_path = root.join(report);
+    let budgets_path = root.join("benchmarks/scenarios/resource_budgets.json");
+
+    let report_json: Value = serde_json::from_str(
+        &fs::read_to_string(&report_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let budgets_json: Value = serde_json::from_str(
+        &fs::read_to_string(&budgets_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+
+    let mut budget_map: std::collections::BTreeMap<String, Value> = std::collections::BTreeMap::new();
+    if let Some(items) = budgets_json.get("scenarios").and_then(Value::as_array) {
+        for item in items {
+            if let Some(id) = item.get("scenario_id").and_then(Value::as_str) {
+                budget_map.insert(id.to_string(), item.clone());
+            }
+        }
+    }
+
+    let mut warnings = Vec::new();
+    if let Some(items) = report_json.get("scenario_results").and_then(Value::as_array) {
+        for item in items {
+            let scenario = item
+                .get("scenario_id")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let elapsed = item.get("elapsed_ms").and_then(Value::as_f64).unwrap_or(0.0);
+            if let Some(budget) = budget_map.get(scenario) {
+                let approx_budget_ms = budget
+                    .get("max_manifest_bytes")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0) as f64;
+                if approx_budget_ms > 0.0 && elapsed > approx_budget_ms {
+                    warnings.push(format!(
+                        "scenario {} exceeded approximate budget threshold (elapsed_ms={elapsed})",
+                        scenario
+                    ));
+                }
+            }
+        }
+    }
+
+    if warnings.is_empty() {
+        println!("resource budgets within thresholds");
+        return Ok(());
+    }
+
+    for warning in &warnings {
+        eprintln!("resource-budget-warning: {warning}");
+    }
+    if gate {
+        Err("resource budget check failed in gate mode".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+fn run_resource_trend_append(report: &Path, trend: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let report_json: Value = serde_json::from_str(
+        &fs::read_to_string(root.join(report)).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+
+    let trend_path = root.join(trend);
+    let mut trend_json: Value = if trend_path.exists() {
+        serde_json::from_str(&fs::read_to_string(&trend_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?
+    } else {
+        json!({"trend_format":"resource-trend/v1","series":[]})
+    };
+
+    let entry = json!({
+        "commit_sha": report_json.get("commit_sha").cloned().unwrap_or(Value::from("unknown")),
+        "timestamp_unix_ms": now_millis(),
+        "scenario_results": report_json
+            .get("scenario_results")
+            .cloned()
+            .unwrap_or(Value::Array(Vec::new()))
+    });
+
+    if let Some(series) = trend_json.get_mut("series").and_then(Value::as_array_mut) {
+        series.push(entry);
+    }
+
+    fs::write(
+        trend_path,
+        serde_json::to_vec_pretty(&trend_json).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())
+}
+
+fn dir_size_bytes(path: &Path) -> Result<u64, String> {
+    if !path.exists() {
+        return Ok(0);
+    }
+    let mut total = 0_u64;
+    let mut stack = vec![path.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else {
+                total = total.saturating_add(
+                    entry
+                        .metadata()
+                        .map_err(|err| err.to_string())?
+                        .len(),
+                );
+            }
+        }
+    }
+    Ok(total)
+}
+
+fn estimate_trace_bytes(path: &Path) -> Result<u64, String> {
+    if !path.exists() {
+        return Ok(0);
+    }
+    let mut total = 0_u64;
+    let mut stack = vec![path.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path
+                .file_name()
+                .and_then(|v| v.to_str())
+                .is_some_and(|name| name == "trace.json")
+            {
+                total = total.saturating_add(
+                    entry
+                        .metadata()
+                        .map_err(|err| err.to_string())?
+                        .len(),
+                );
+            }
+        }
+    }
+    Ok(total)
 }
