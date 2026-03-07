@@ -166,7 +166,98 @@ impl Default for RunCompactionPolicy {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransitionAuditEvent {
+    pub invariant_id: String,
+    pub entity: String,
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StateConsistencyReport {
+    pub valid: bool,
+    pub violations: Vec<String>,
+}
+
+pub const INV_NODE_TRANSITION_PENDING_ELIGIBLE: &str = "INV-NODE-TRANSITION-001";
+pub const INV_NODE_TRANSITION_ELIGIBLE_QUEUED: &str = "INV-NODE-TRANSITION-002";
+pub const INV_NODE_TRANSITION_QUEUED_RUNNING: &str = "INV-NODE-TRANSITION-003";
+pub const INV_NODE_TRANSITION_RUNNING_SUCCESS: &str = "INV-NODE-TERMINAL-001";
+pub const INV_NODE_TRANSITION_RUNNING_FAILED: &str = "INV-NODE-TERMINAL-002";
+pub const INV_NODE_TRANSITION_ELIGIBLE_SKIPPED: &str = "INV-NODE-TERMINAL-003";
+pub const INV_NODE_TRANSITION_QUEUED_SKIPPED: &str = "INV-NODE-TERMINAL-004";
+pub const INV_NODE_TRANSITION_ELIGIBLE_CACHED: &str = "INV-NODE-TERMINAL-005";
+pub const INV_NODE_TRANSITION_QUEUED_CACHED: &str = "INV-NODE-TERMINAL-006";
+pub const INV_NODE_TRANSITION_RUNNING_CANCELLED: &str = "INV-NODE-TERMINAL-007";
+pub const INV_NODE_TERMINAL_NO_REVERT: &str = "INV-NODE-TERMINAL-REVERT-001";
+
+pub const INV_RUN_TRANSITION_SUBMITTED_PLANNING: &str = "INV-RUN-TRANSITION-001";
+pub const INV_RUN_TRANSITION_PLANNING_RUNNING: &str = "INV-RUN-TRANSITION-002";
+pub const INV_RUN_TRANSITION_RUNNING_PAUSED: &str = "INV-RUN-TRANSITION-003";
+pub const INV_RUN_TRANSITION_PAUSED_RUNNING: &str = "INV-RUN-TRANSITION-004";
+pub const INV_RUN_TRANSITION_RUNNING_INTERRUPTED: &str = "INV-RUN-TRANSITION-005";
+pub const INV_RUN_TRANSITION_INTERRUPTED_RUNNING: &str = "INV-RUN-TRANSITION-006";
+pub const INV_RUN_TRANSITION_INTERRUPTED_CANCELLING: &str = "INV-RUN-TRANSITION-007";
+pub const INV_RUN_TRANSITION_RUNNING_CANCELLING: &str = "INV-RUN-TRANSITION-008";
+pub const INV_RUN_TRANSITION_CANCELLING_CANCELLED: &str = "INV-RUN-TERMINAL-001";
+pub const INV_RUN_TRANSITION_RUNNING_FAILED: &str = "INV-RUN-TERMINAL-002";
+pub const INV_RUN_TRANSITION_RUNNING_SUCCEEDED: &str = "INV-RUN-TERMINAL-003";
+pub const INV_RUN_FAILED_CAUSAL_FAILURE: &str = "INV-RUN-FAILED-CAUSAL-001";
+
+pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'static str> {
+    use NodeState as S;
+    match (from, to) {
+        (S::Pending, S::Eligible) => Some(INV_NODE_TRANSITION_PENDING_ELIGIBLE),
+        (S::Eligible, S::Queued) => Some(INV_NODE_TRANSITION_ELIGIBLE_QUEUED),
+        (S::Queued, S::Running) => Some(INV_NODE_TRANSITION_QUEUED_RUNNING),
+        (S::Running, S::Success) => Some(INV_NODE_TRANSITION_RUNNING_SUCCESS),
+        (S::Running, S::Failed) => Some(INV_NODE_TRANSITION_RUNNING_FAILED),
+        (S::Eligible, S::Skipped) => Some(INV_NODE_TRANSITION_ELIGIBLE_SKIPPED),
+        (S::Queued, S::Skipped) => Some(INV_NODE_TRANSITION_QUEUED_SKIPPED),
+        (S::Eligible, S::Cached) => Some(INV_NODE_TRANSITION_ELIGIBLE_CACHED),
+        (S::Queued, S::Cached) => Some(INV_NODE_TRANSITION_QUEUED_CACHED),
+        (S::Running, S::Cancelled) => Some(INV_NODE_TRANSITION_RUNNING_CANCELLED),
+        _ => None,
+    }
+}
+
+pub fn run_transition_invariant_id(from: RunState, to: RunState) -> Option<&'static str> {
+    use RunState as S;
+    match (from, to) {
+        (S::Submitted, S::Planning) => Some(INV_RUN_TRANSITION_SUBMITTED_PLANNING),
+        (S::Planning, S::Running) => Some(INV_RUN_TRANSITION_PLANNING_RUNNING),
+        (S::Running, S::Paused) => Some(INV_RUN_TRANSITION_RUNNING_PAUSED),
+        (S::Paused, S::Running) => Some(INV_RUN_TRANSITION_PAUSED_RUNNING),
+        (S::Running, S::Interrupted) => Some(INV_RUN_TRANSITION_RUNNING_INTERRUPTED),
+        (S::Interrupted, S::Running) => Some(INV_RUN_TRANSITION_INTERRUPTED_RUNNING),
+        (S::Interrupted, S::Cancelling) => Some(INV_RUN_TRANSITION_INTERRUPTED_CANCELLING),
+        (S::Running, S::Cancelling) => Some(INV_RUN_TRANSITION_RUNNING_CANCELLING),
+        (S::Cancelling, S::Cancelled) => Some(INV_RUN_TRANSITION_CANCELLING_CANCELLED),
+        (S::Running, S::Failed) => Some(INV_RUN_TRANSITION_RUNNING_FAILED),
+        (S::Running, S::Succeeded) => Some(INV_RUN_TRANSITION_RUNNING_SUCCEEDED),
+        _ => None,
+    }
+}
+
+fn node_is_terminal(state: NodeState) -> bool {
+    matches!(
+        state,
+        NodeState::Success
+            | NodeState::Failed
+            | NodeState::Skipped
+            | NodeState::Cached
+            | NodeState::Cancelled
+    )
+}
+
 pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), String> {
+    if node_is_terminal(transition.from) && transition.from != transition.to {
+        return Err(format!(
+            "{} illegal node transition from terminal state: {:?} -> {:?}",
+            INV_NODE_TERMINAL_NO_REVERT, transition.from, transition.to
+        ));
+    }
     use NodeState as S;
     let allowed = matches!(
         (&transition.from, &transition.to),
@@ -184,8 +275,10 @@ pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), Strin
     if allowed {
         Ok(())
     } else {
+        let inv = node_transition_invariant_id(transition.from.clone(), transition.to.clone())
+            .unwrap_or("INV-NODE-TRANSITION-UNKNOWN");
         Err(format!(
-            "illegal node transition: {:?} -> {:?}",
+            "{inv} illegal node transition: {:?} -> {:?}",
             transition.from, transition.to
         ))
     }
@@ -210,9 +303,92 @@ pub fn validate_run_transition(transition: &RunTransition) -> Result<(), String>
     if allowed {
         Ok(())
     } else {
+        let inv = run_transition_invariant_id(transition.from.clone(), transition.to.clone())
+            .unwrap_or("INV-RUN-TRANSITION-UNKNOWN");
         Err(format!(
-            "illegal run transition: {:?} -> {:?}",
+            "{inv} illegal run transition: {:?} -> {:?}",
             transition.from, transition.to
         ))
     }
+}
+
+pub fn verify_post_run_state_consistency(
+    run_state: RunState,
+    node_states: &[NodeState],
+    causal_failure_count: usize,
+) -> StateConsistencyReport {
+    let mut violations = Vec::new();
+    if run_state == RunState::Cancelled && !node_states.iter().any(|s| *s == NodeState::Cancelled) {
+        violations.push("cancelled run has no cancelled nodes".to_string());
+    }
+    if run_state == RunState::Failed && causal_failure_count == 0 {
+        violations.push(format!(
+            "{} failed run has no causal failure",
+            INV_RUN_FAILED_CAUSAL_FAILURE
+        ));
+    }
+    if matches!(run_state, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+        let non_terminal = node_states.iter().any(|s| {
+            !matches!(
+                s,
+                NodeState::Success
+                    | NodeState::Failed
+                    | NodeState::Skipped
+                    | NodeState::Cached
+                    | NodeState::Cancelled
+            )
+        });
+        if non_terminal {
+            violations.push("terminal run contains non-terminal node".to_string());
+        }
+    }
+    StateConsistencyReport {
+        valid: violations.is_empty(),
+        violations,
+    }
+}
+
+pub fn imported_run_distinguishable(snapshot: &RunSnapshot) -> bool {
+    snapshot.submission_source == "import" || snapshot.replay_source_run_id.is_some()
+}
+
+pub fn terminal_transition_audit_events(
+    node_transitions: &[NodeTransition],
+    run_transitions: &[RunTransition],
+) -> Vec<TransitionAuditEvent> {
+    let mut out = Vec::new();
+    for transition in node_transitions {
+        if node_is_terminal(transition.to) {
+            out.push(TransitionAuditEvent {
+                invariant_id: node_transition_invariant_id(
+                    transition.from.clone(),
+                    transition.to.clone(),
+                )
+                .unwrap_or("INV-NODE-TERMINAL-UNKNOWN")
+                .to_string(),
+                entity: "node".to_string(),
+                from: format!("{:?}", transition.from),
+                to: format!("{:?}", transition.to),
+            });
+        }
+    }
+    for transition in run_transitions {
+        if matches!(
+            transition.to,
+            RunState::Succeeded | RunState::Failed | RunState::Cancelled
+        ) {
+            out.push(TransitionAuditEvent {
+                invariant_id: run_transition_invariant_id(
+                    transition.from.clone(),
+                    transition.to.clone(),
+                )
+                .unwrap_or("INV-RUN-TERMINAL-UNKNOWN")
+                .to_string(),
+                entity: "run".to_string(),
+                from: format!("{:?}", transition.from),
+                to: format!("{:?}", transition.to),
+            });
+        }
+    }
+    out
 }

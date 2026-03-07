@@ -1,0 +1,13 @@
+{
+  "node_transitions": [
+    {"from":"Pending","to":"Eligible","cause":"SchedulerEligible"},
+    {"from":"Eligible","to":"Queued","cause":"SchedulerQueued"},
+    {"from":"Queued","to":"Running","cause":"ExecutionStarted"},
+    {"from":"Running","to":"Success","cause":"ExecutionSucceeded"}
+  ],
+  "run_transitions": [
+    {"from":"Submitted","to":"Planning","cause":"Submission"},
+    {"from":"Planning","to":"Running","cause":"PlanningCompleted"},
+    {"from":"Running","to":"Succeeded","cause":"ExecutionSucceeded"}
+  ]
+}

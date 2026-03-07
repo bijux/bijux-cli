@@ -385,9 +385,12 @@ pub use observability_deep::{
 };
 pub use remote_executor::{RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter};
 pub use run_state::{
-    validate_node_transition, validate_run_transition, NodeState, NodeTransition, ReplayNodeAction,
+    imported_run_distinguishable, node_transition_invariant_id, run_transition_invariant_id,
+    terminal_transition_audit_events, validate_node_transition, validate_run_transition,
+    verify_post_run_state_consistency, NodeState, NodeTransition, ReplayNodeAction,
     ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId, RunSnapshot,
-    RunState, RunSummaryV2, RunTransition, TransitionCause,
+    RunState, RunSummaryV2, RunTransition, StateConsistencyReport, TransitionAuditEvent,
+    TransitionCause, INV_NODE_TERMINAL_NO_REVERT, INV_RUN_FAILED_CAUSAL_FAILURE,
 };
 pub use coordination::{
     merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
