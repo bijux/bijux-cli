@@ -160,6 +160,8 @@ enum CommandLine {
         #[arg(long)]
         config: Option<PathBuf>,
     },
+    /// Report implemented, simulated, and aspirational execution modes
+    ExecutionModesReport,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -987,6 +989,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_container_remote_boundary_guard(),
     },
     SuiteDef {
+        id: "batch-execution-boundaries",
+        description: "batch execution docs and tests must align with simulated-not-implemented boundary",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_batch_execution_boundary_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1499,6 +1510,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({ "config": config }),
             || run_policy_audit(config.as_deref()),
+        ),
+        CommandLine::ExecutionModesReport => run_command_reported(
+            &context,
+            "execution-modes-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_execution_modes_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -4958,6 +4976,37 @@ fn run_container_remote_boundary_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_batch_execution_boundary_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/BATCH_EXECUTION_MODEL.md",
+        "docs/architecture/local-vs-batch-execution-constraints.md",
+        "crates/bijux-dag-runtime/tests/batch_execution_contracts.rs",
+        "crates/bijux-dag-runtime/tests/batch_backend_simulation_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "batch execution boundary missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+    let batch_doc =
+        fs::read_to_string(root.join("docs/spec/BATCH_EXECUTION_MODEL.md")).map_err(|err| err.to_string())?;
+    if !batch_doc.contains("not implemented as") && !batch_doc.contains("not implemented") {
+        return Err("batch execution model must explicitly state not-implemented production boundary".to_string());
+    }
+    if batch_doc.contains("production-ready") || batch_doc.contains("ga-ready") {
+        return Err("batch execution model contains unsupported maturity claim".to_string());
+    }
+    Ok(())
+}
+
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
     let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
@@ -5051,6 +5100,15 @@ fn run_policy_audit(config: Option<&Path>) -> Result<(), String> {
         },
         "security_contract": "docs/spec/SECURITY_MODEL.md"
     });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_execution_modes_report() -> Result<(), String> {
+    let report = bijux_dag_runtime::execution_mode_report();
     println!(
         "{}",
         serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
