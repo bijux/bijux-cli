@@ -166,6 +166,8 @@ enum CommandLine {
     DistributedSemanticsReport,
     /// Enumerate invariant registry and coverage status
     InvariantsReport,
+    /// Summarize committed comparison evidence surfaces
+    ComparisonEvidenceReport,
     /// Summarize version support by versioned surface
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
@@ -1060,6 +1062,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_formal_invariants_guard(),
     },
     SuiteDef {
+        id: "comparison-harness",
+        description: "comparison harness scenarios baselines docs and anti-claim drift checks",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_comparison_harness_guard(),
+    },
+    SuiteDef {
         id: "multi-run-analytics",
         description: "multi-run analytics contracts commands schemas and tests alignment",
         domain: "governance",
@@ -1602,6 +1613,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_invariants_report(),
+        ),
+        CommandLine::ComparisonEvidenceReport => run_command_reported(
+            &context,
+            "comparison-evidence-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_comparison_evidence_report(),
         ),
         CommandLine::CompatibilityReport => run_command_reported(
             &context,
@@ -5507,6 +5525,131 @@ fn run_invariants_report() -> Result<(), String> {
     } else {
         Err("invariant coverage file missing registry entries".to_string())
     }
+}
+
+fn run_comparison_harness_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
+        "docs/reference/COMPARISON_REPORT_TEMPLATE.md",
+        "docs/reference/COMPARISON_LIMITATIONS.md",
+        "comparisons/README.md",
+        "comparisons/bijux/baselines/v1.json",
+        "crates/bijux-dag-app/tests/comparison_harness_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "comparison harness required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let scenario_dir = root.join("comparisons/scenarios");
+    let mut scenario_count = 0usize;
+    for entry in fs::read_dir(&scenario_dir).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.extension().and_then(|v| v.to_str()) == Some("json") {
+            scenario_count += 1;
+        }
+    }
+    if scenario_count < 11 {
+        return Err(format!(
+            "comparison harness requires at least 11 canonical scenarios, found {}",
+            scenario_count
+        ));
+    }
+
+    let mut violations = Vec::new();
+    let docs_dir = root.join("docs");
+    let mut stack = vec![docs_dir];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("md") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            for line in text.lines() {
+                let lower = line.to_ascii_lowercase();
+                let vague_superiority = lower.contains("superior")
+                    || lower.contains("best dag")
+                    || lower.contains("better than")
+                    || lower.contains("faster than");
+                if vague_superiority && !line.contains("comparisons/") {
+                    violations.push(format!("{rel}: {}", line.trim()));
+                }
+            }
+        }
+    }
+    if !violations.is_empty() {
+        return Err(format!(
+            "vague superiority language without comparison evidence: {}",
+            violations.join(" | ")
+        ));
+    }
+    Ok(())
+}
+
+fn run_comparison_evidence_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let scenario_dir = root.join("comparisons/scenarios");
+    let mut scenario_ids = Vec::new();
+    for entry in fs::read_dir(&scenario_dir).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.extension().and_then(|v| v.to_str()) != Some("json") {
+            continue;
+        }
+        let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        let value: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        if let Some(id) = value.get("id").and_then(Value::as_str) {
+            scenario_ids.push(id.to_string());
+        }
+    }
+    scenario_ids.sort();
+    scenario_ids.dedup();
+
+    let baseline: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("comparisons/bijux/baselines/v1.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let baseline_count = baseline
+        .get("scenarios")
+        .and_then(Value::as_array)
+        .map(|v| v.len())
+        .unwrap_or(0);
+
+    let payload = json!({
+        "scenario_count": scenario_ids.len(),
+        "scenarios": scenario_ids,
+        "bijux_baseline_entries": baseline_count,
+        "external_notes": [
+            "comparisons/external/dagster_notes.md",
+            "comparisons/external/prefect_notes.md",
+            "comparisons/external/argo_notes.md"
+        ]
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
+    Ok(())
 }
 
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {

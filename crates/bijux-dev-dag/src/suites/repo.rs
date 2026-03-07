@@ -41,6 +41,7 @@ pub const IDS: &[&str] = &[
     "multi-run-analytics",
     "distributed-coordination",
     "formal-invariants",
+    "comparison-harness",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
