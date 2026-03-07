@@ -4871,6 +4871,7 @@ fn run_security_model_guard() -> Result<(), String> {
         "docs/tracking/NON_HERMETIC_BEHAVIORS.md",
         "docs/tracking/SECURITY_DEBT_LEDGER.md",
         "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
+        "crates/bijux-dag-runtime/tests/security_policy_contracts.rs",
         "crates/bijux-dag-runtime/tests/secrets_security_contracts.rs",
         "crates/bijux-dag-runtime/src/security_env.rs",
         "crates/bijux-dag-runtime/src/path_authorization.rs",
@@ -4886,6 +4887,27 @@ fn run_security_model_guard() -> Result<(), String> {
             "security model contract missing required surfaces: {}",
             missing.join(", ")
         ));
+    }
+
+    let security_doc =
+        fs::read_to_string(root.join("docs/spec/SECURITY_MODEL.md")).map_err(|err| err.to_string())?;
+    for required_section in [
+        "## Threat model",
+        "## Hermeticity model",
+        "## Environment controls",
+        "## Filesystem controls",
+        "## Secret handling and redaction",
+    ] {
+        if !security_doc.contains(required_section) {
+            return Err(format!("security model missing required section: {required_section}"));
+        }
+    }
+    let security_tests = fs::read_to_string(root.join("crates/bijux-dag-runtime/tests/security_model_contracts.rs"))
+        .map_err(|err| err.to_string())?;
+    if !security_tests.contains("clean_env_and_allowlist_contract_is_deterministic")
+        || !security_tests.contains("input_and_output_authorization_reject_path_traversal_and_symlink_escape")
+    {
+        return Err("security model tests missing required enforcement coverage".to_string());
     }
     Ok(())
 }
