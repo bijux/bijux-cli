@@ -73,6 +73,12 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         .iter()
         .map(|value| value.as_str().expect("class string").to_string())
         .collect();
+    let required_fields: BTreeSet<String> = policy["required_metadata_fields"]
+        .as_array()
+        .expect("required_metadata_fields array")
+        .iter()
+        .map(|value| value.as_str().expect("required field string").to_string())
+        .collect();
 
     let mut governed_files = BTreeSet::new();
     for root_entry in managed_roots {
@@ -83,16 +89,35 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
     let entries = ledger["entries"].as_array().expect("ledger entries array");
     let mut ledger_paths = BTreeSet::new();
     for entry in entries {
+        let map = entry.as_object().expect("entry object");
+        for field in &required_fields {
+            assert!(
+                map.contains_key(field),
+                "entry missing required field `{field}`"
+            );
+        }
         let path = entry["path"].as_str().expect("entry path").to_string();
         let owner = entry["owner"].as_str().expect("entry owner");
         let class = entry["evidence_class"].as_str().expect("entry class");
         let trust = entry["trust_property"].as_str().expect("entry trust");
+        let why_exists = entry["why_exists"].as_str().expect("entry why_exists");
+        let deletion_review = entry["deletion_review"]
+            .as_str()
+            .expect("entry deletion_review");
         let decision = entry["decision"].as_str().expect("entry decision");
 
         assert!(!owner.trim().is_empty(), "owner is empty for {path}");
         assert!(
             !trust.trim().is_empty(),
             "trust_property is empty for {path}"
+        );
+        assert!(
+            !why_exists.trim().is_empty(),
+            "why_exists is empty for {path}"
+        );
+        assert!(
+            !deletion_review.trim().is_empty(),
+            "deletion_review is empty for {path}"
         );
         assert!(
             allowed_classes.contains(class),
@@ -144,6 +169,48 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         assert!(
             !owner.trim().is_empty(),
             "fixture family owner is empty for {path}"
+        );
+    }
+
+    let comparison_scenarios = root.join("comparisons/scenarios");
+    let mut scenario_ids = BTreeSet::new();
+    for entry in fs::read_dir(&comparison_scenarios).expect("read comparisons scenarios") {
+        let path = entry.expect("scenario entry").path();
+        if path.extension().and_then(|value| value.to_str()) != Some("json") {
+            continue;
+        }
+        let payload = fs::read_to_string(path).expect("read comparison scenario");
+        let json: Value = serde_json::from_str(&payload).expect("parse comparison scenario");
+        let id = json["id"].as_str().expect("comparison scenario id");
+        scenario_ids.insert(id.to_string());
+    }
+
+    let coverage_payload = fs::read_to_string(root.join("comparisons/external/coverage_map.json"))
+        .expect("read external coverage map");
+    let coverage: Value = serde_json::from_str(&coverage_payload).expect("parse coverage map");
+    for comparator in coverage["comparators"]
+        .as_array()
+        .expect("coverage comparators array")
+    {
+        let note = comparator["note"].as_str().expect("coverage note path");
+        assert!(root.join(note).exists(), "external note missing: {note}");
+        let linked = comparator["linked_scenarios"]
+            .as_array()
+            .expect("linked_scenarios array");
+        assert!(!linked.is_empty(), "linked_scenarios is empty for {note}");
+        for id in linked {
+            let id = id.as_str().expect("linked scenario id");
+            assert!(
+                scenario_ids.contains(id),
+                "external note `{note}` references missing scenario id `{id}`"
+            );
+        }
+        let baseline = comparator["bijux_baseline"]
+            .as_str()
+            .expect("coverage baseline path");
+        assert!(
+            root.join(baseline).exists(),
+            "coverage baseline missing: {baseline}"
         );
     }
 }
