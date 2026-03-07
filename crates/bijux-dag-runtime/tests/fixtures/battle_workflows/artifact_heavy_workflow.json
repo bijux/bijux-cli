@@ -1,0 +1,1 @@
+{"scenario":"artifact_heavy_workflow","graph":"chain","nodes":18,"focus":["artifact_commit","lineage"],"expectations":{"terminal":"success","artifacts_min":40}}

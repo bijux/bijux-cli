@@ -1,0 +1,1 @@
+{"scenario":"cache_invalidation_workflow","graph":"diamond","nodes":16,"focus":["cache_key_change","cache_reject_stale"],"expectations":{"terminal":"success","invalidated_nodes_min":4}}

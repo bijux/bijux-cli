@@ -1,0 +1,1 @@
+{"scenario":"failure_heavy_workflow","graph":"fanout","nodes":30,"focus":["failure_propagation","classification"],"expectations":{"terminal":"failed","root_failures":3}}

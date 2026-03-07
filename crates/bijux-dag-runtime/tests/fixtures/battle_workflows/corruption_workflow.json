@@ -1,0 +1,1 @@
+{"scenario":"corruption_workflow","graph":"chain","nodes":10,"focus":["corruption_detection","doctor_signal"],"expectations":{"terminal":"failed","corruption_detected":true}}

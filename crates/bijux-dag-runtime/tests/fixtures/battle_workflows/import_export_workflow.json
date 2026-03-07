@@ -1,0 +1,1 @@
+{"scenario":"import_export_workflow","graph":"diamond","nodes":12,"focus":["bundle_integrity","manifest_compatibility"],"expectations":{"terminal":"success","export_valid":true,"import_valid":true}}

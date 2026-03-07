@@ -1,0 +1,1 @@
+{"scenario":"operator_inspection_workflow","graph":"diamond","nodes":15,"focus":["run_inspect","run_timeline","run_explain_failure"],"expectations":{"terminal":"failed","inspection_complete":true}}
