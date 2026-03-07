@@ -11,6 +11,8 @@ use bijux_dag_core::{
     planner_identity_for_graph, PlanOptions, PlannerError,
 };
 use std::collections::BTreeSet;
+use std::fs;
+use std::path::Path;
 
 fn graph_from(json: &str) -> bijux_dag_core::Graph {
     parse_graph_strict(json).expect("parse graph")
@@ -152,4 +154,44 @@ fn fan_structures_and_selector_pruned_graphs_lower() {
         .nodes
         .iter()
         .all(|n| ["root", "l", "join"].contains(&n.id.as_str())));
+    let join = pruned
+        .nodes
+        .iter()
+        .find(|node| node.id == "join")
+        .expect("join should remain in pruned plan");
+    assert_eq!(
+        join.deps,
+        vec!["l".to_string()],
+        "pruned plan should keep only selected dependency inputs"
+    );
+}
+
+#[test]
+fn execution_plan_shape_matches_schema_required_fields() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"shape","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../configs/schema/execution_plan.schema.json");
+    let schema_text = fs::read_to_string(schema_path).expect("execution plan schema");
+    let schema: serde_json::Value = serde_json::from_str(&schema_text).expect("schema parse");
+    let required = schema
+        .get("required")
+        .and_then(serde_json::Value::as_array)
+        .expect("schema required fields");
+    let plan_value = serde_json::to_value(&plan).expect("plan value");
+    for field in required.iter().filter_map(serde_json::Value::as_str) {
+        assert!(
+            plan_value.get(field).is_some(),
+            "plan must include schema required field `{field}`"
+        );
+    }
 }

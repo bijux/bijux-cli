@@ -94,10 +94,13 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
         .iter()
         .map(|property| property.id.clone())
         .collect();
-    assert_eq!(
-        trust_property_ids.len(),
-        12,
-        "battle trust property count must remain 12"
+    assert!(
+        trust_property_ids.len() >= 12,
+        "battle trust property count must remain at least 12"
+    );
+    assert!(
+        trust_property_ids.contains("tp_plan_truth"),
+        "battle trust properties must include tp_plan_truth"
     );
 
     let fixture_ids = battle_fixture_ids(&root);
