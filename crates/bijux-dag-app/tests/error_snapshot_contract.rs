@@ -25,7 +25,7 @@ fn repo_target_dir() -> PathBuf {
 
 fn examples_file(file_name: &str) -> String {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../examples")
+        .join("../../evidence/authoring/examples")
         .join(file_name);
     root.to_string_lossy().into_owned()
 }
