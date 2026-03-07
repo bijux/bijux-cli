@@ -101,6 +101,11 @@ Verify cache integrity including a remote cache directory:
 bijux dag cache verify --remote /path/to/remote-cache
 ```
 
+Verify a run directory with deep artifact integrity checks:
+```
+bijux dag verify runs/run-123 --deep
+```
+
 ## Resources
 Use `--jobs` and `--cpu-budget` to control concurrency and CPU aggregate.
 

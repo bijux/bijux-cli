@@ -12,12 +12,15 @@ bijux dag diff <runA> <runB>
 bijux dag explain <run-dir> [--node <id>]
 bijux dag node <run-dir> --id <id>
 bijux dag status <run-dir>
-bijux dag verify <run-dir>
+bijux dag verify <run-dir> [--deep]
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
 bijux dag import <bundle.json>
 ```
+
+`dag verify --deep` performs full artifact integrity checks including path normalization,
+index ordering, and schema-parse verification for stored manifest and trace files.
 
 ## JSON Envelope
 
