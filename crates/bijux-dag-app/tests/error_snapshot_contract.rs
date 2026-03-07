@@ -17,6 +17,12 @@ use thiserror as _;
 use std::path::PathBuf;
 use std::process::Command;
 
+fn repo_target_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("artifacts/target")
+}
+
 fn examples_file(file_name: &str) -> String {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../examples")
@@ -28,7 +34,7 @@ fn examples_file(file_name: &str) -> String {
 #[ignore = "slow"]
 fn representative_json_error_snapshot_is_stable() {
     let output = Command::new("cargo")
-        .env("CARGO_TARGET_DIR", "artifacts/target")
+        .env("CARGO_TARGET_DIR", repo_target_dir())
         .args([
             "run",
             "-p",
