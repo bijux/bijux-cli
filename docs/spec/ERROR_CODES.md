@@ -1,27 +1,27 @@
 # Error Codes
 
-These codes are globally stable across bijux-dag versions.
+This catalog tracks stable public code IDs.
 
-## Errors
-- `E1001` Duplicate node id
-- `E1002` Dangling node reference
-- `E1003` Dangling port reference
-- `E1004` Cycle detected
-- `E1005` JSON parse / unknown fields
-- `E1006` Invalid spec version
-- `E1007` Illegal node id characters
-- `E1008` Output collision
-- `E1009` Missing effects declaration
-- `E1010` Env allowlist without env effect
-- `E1011` Retry disallowed for nondeterministic effects
-- `E1013` Effect denied by policy (network/env/clock)
-- `E1020` Unknown graph input reference
-- `E1021` Unknown node output reference
-- `E1022` Forward node output reference
-- `E1023` Missing container spec for container node
-- `E1024` Invalid container spec
-- `E1025` Invalid output file path
+## Taxonomy source
+- Registry: `configs/policy/error_codes.json`
+- Contract: `docs/spec/ERROR_CONTRACT.md`
+- Taxonomy: `docs/spec/ERROR_TAXONOMY.md`
 
-## Warnings
-- `W2001` Unreachable node
-- `W2002` Orphan node
+## Stable codes
+- `BJX-PARSE-001` (`parse`) Input is not valid DAG JSON.
+- `BJX-SCHEMA-001` (`schema`) JSON shape violates schema contract.
+- `BJX-VALIDATION-001` (`validation`) Semantic graph validation failed.
+- `BJX-CONFIG-001` (`config`) Invalid configuration input.
+- `BJX-POLICY-001` (`policy`) Policy denied requested behavior.
+- `BJX-EXEC-001` (`execution`) Node execution failed.
+- `BJX-IO-001` (`io`) Filesystem or artifact I/O failed.
+- `BJX-REPLAY-001` (`replay`) Replay mismatch against recorded artifacts.
+- `BJX-CACHE-001` (`cache`) Cache contract or proof mismatch.
+- `BJX-COMPAT-001` (`compatibility`) Compatibility contract violation.
+- `BJX-INTERNAL-001` (`internal`) Unexpected internal failure path.
+
+## Change policy
+New public codes require:
+1. Registry update.
+2. Contract/reference docs update.
+3. Error tests update.
