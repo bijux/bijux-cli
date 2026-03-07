@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "replay_proof",
+  "type": "object",
+  "required": [
+    "fidelity_level",
+    "equivalent",
+    "reasons",
+    "reason_report",
+    "cause_groups",
+    "source_run_id",
+    "replay_run_id"
+  ],
+  "properties": {
+    "fidelity_level": {
+      "type": "string",
+      "enum": ["strict_equivalent", "diverged"]
+    },
+    "equivalent": { "type": "boolean" },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "reason_report": { "type": "object" },
+    "cause_groups": { "type": "object" },
+    "source_run_id": { "type": "string" },
+    "replay_run_id": { "type": "string" }
+  }
+}

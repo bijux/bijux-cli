@@ -1,0 +1,19 @@
+{
+  "format": "replay-fidelity-report/v0.1",
+  "levels": [
+    {
+      "name": "strict_equivalent",
+      "description": "Replay matches source run semantics across required dimensions."
+    },
+    {
+      "name": "diverged",
+      "description": "Replay differs from source run semantics and requires operator review."
+    }
+  ],
+  "required_dimensions": [
+    "manifest",
+    "graph_fingerprint",
+    "nodes",
+    "outputs"
+  ]
+}
