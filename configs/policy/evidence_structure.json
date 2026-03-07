@@ -1,0 +1,33 @@
+{
+  "version": "1",
+  "required_directories": [
+    "evidence/authoring",
+    "evidence/authoring/examples",
+    "evidence/authoring/patterns",
+    "evidence/authoring/negative",
+    "evidence/battle",
+    "evidence/battle/workflows",
+    "evidence/battle/registries",
+    "evidence/cache",
+    "evidence/cache/scenarios",
+    "evidence/cache/corrupt",
+    "evidence/compat",
+    "evidence/compat/graph_schema",
+    "evidence/compat/export_bundle",
+    "evidence/compat/run_dir",
+    "evidence/fault",
+    "evidence/fault/classes",
+    "evidence/operator",
+    "evidence/operator/scenarios",
+    "evidence/perf",
+    "evidence/perf/scenarios",
+    "evidence/perf/baselines",
+    "evidence/compare",
+    "evidence/compare/scenarios",
+    "evidence/compare/baselines",
+    "evidence/_meta",
+    "evidence/_meta/schemas",
+    "evidence/_meta/registries",
+    "evidence/_meta/maps"
+  ]
+}

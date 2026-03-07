@@ -287,6 +287,13 @@ enum RepoCommand {
     EvidenceLedger,
     /// Validate evidence metadata completeness and path governance
     EvidenceValidate,
+    /// Generate evidence directory map from policy
+    EvidenceDirectoryMap {
+        #[arg(long, default_value = "evidence/_meta/maps/directory_map.json")]
+        out: PathBuf,
+        #[arg(long, default_value_t = false)]
+        create_missing: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1683,6 +1690,16 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_metadata_validate(),
+            ),
+            RepoCommand::EvidenceDirectoryMap {
+                out,
+                create_missing,
+            } => run_command_reported(
+                &context,
+                "repo.evidence-directory-map",
+                CommandEffect::ReadWrite,
+                json!({ "out": out, "create_missing": create_missing }),
+                || run_evidence_directory_map(&out, create_missing),
             ),
         },
         CommandLine::Schedule { command } => match command {
@@ -4496,6 +4513,50 @@ fn run_evidence_ledger_report() -> Result<(), String> {
     let content = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
         .map_err(|err| err.to_string())?;
     println!("{content}");
+    Ok(())
+}
+
+fn run_evidence_directory_map(out: &Path, create_missing: bool) -> Result<(), String> {
+    let root = repo_root()?;
+    let structure_payload = fs::read_to_string(root.join("configs/policy/evidence_structure.json"))
+        .map_err(|err| err.to_string())?;
+    let structure: Value =
+        serde_json::from_str(&structure_payload).map_err(|err| err.to_string())?;
+    let required_dirs = structure["required_directories"]
+        .as_array()
+        .ok_or_else(|| "required_directories must be an array".to_string())?;
+
+    let mut map_entries = Vec::new();
+    for dir in required_dirs {
+        let rel = dir
+            .as_str()
+            .ok_or_else(|| "required directory entry must be a string".to_string())?;
+        let full = root.join(rel);
+        if create_missing && !full.exists() {
+            fs::create_dir_all(&full).map_err(|err| err.to_string())?;
+        }
+        map_entries.push(json!({
+            "path": rel,
+            "exists": full.is_dir(),
+        }));
+    }
+
+    let payload = json!({
+        "version": structure["version"].as_str().unwrap_or("1"),
+        "source_policy": "configs/policy/evidence_structure.json",
+        "entries": map_entries
+    });
+    let out_path = if out.is_absolute() {
+        out.to_path_buf()
+    } else {
+        root.join(out)
+    };
+    if let Some(parent) = out_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let text = serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?;
+    fs::write(&out_path, text).map_err(|err| err.to_string())?;
+    println!("{}", out_path.display());
     Ok(())
 }
 
