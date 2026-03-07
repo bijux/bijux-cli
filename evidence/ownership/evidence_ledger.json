@@ -5589,7 +5589,7 @@
       "kind": "operator",
       "owner": "team-runtime",
       "path": "evidence/operator/scenarios/inspection_only.json",
-      "release_blocking": false,
+      "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
       "status": "keep",

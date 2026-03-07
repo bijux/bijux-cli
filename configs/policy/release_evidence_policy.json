@@ -5,10 +5,9 @@
     "battle",
     "compat",
     "cache",
-    "replay",
     "operator",
-    "perf",
-    "fault"
+    "fault",
+    "perf"
   ],
   "advisory_families": [
     "compare"

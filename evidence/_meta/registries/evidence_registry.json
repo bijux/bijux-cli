@@ -2013,7 +2013,7 @@
       "kind": "operator",
       "owner": "team-runtime",
       "registry_key": "operator:evidence/operator/scenarios/inspection_only.json",
-      "release_blocking": false,
+      "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
       "trust_properties": [

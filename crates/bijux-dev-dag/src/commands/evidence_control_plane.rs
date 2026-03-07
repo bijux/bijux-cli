@@ -74,6 +74,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         .as_array()
         .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
     let mut registry_kind_by_id = BTreeMap::new();
+    let mut registry_asset_by_id = BTreeMap::new();
     for asset in registry_assets {
         let id = asset["id"]
             .as_str()
@@ -82,6 +83,7 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
             .as_str()
             .ok_or_else(|| format!("registry asset `{id}` missing kind"))?;
         registry_kind_by_id.insert(id.to_string(), kind.to_string());
+        registry_asset_by_id.insert(id.to_string(), asset.clone());
     }
 
     if required_families.is_empty() {
@@ -144,6 +146,33 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         let kind = registry_kind_by_id
             .get(id)
             .ok_or_else(|| format!("registry kind missing for `{id}`"))?;
+        let registry_asset = registry_asset_by_id
+            .get(id)
+            .ok_or_else(|| format!("registry asset missing for `{id}`"))?;
+        let owner = registry_asset["owner"]
+            .as_str()
+            .ok_or_else(|| format!("registry asset `{id}` missing owner"))?;
+        if owner.trim().is_empty() {
+            return Err(format!(
+                "release-blocking asset `{id}` must have one clear owner in registry"
+            ));
+        }
+        let consumers = registry_asset["consumers"]
+            .as_array()
+            .ok_or_else(|| format!("registry asset `{id}` missing consumers array"))?;
+        if consumers.is_empty() {
+            return Err(format!(
+                "release-blocking asset `{id}` must have at least one consumer suite"
+            ));
+        }
+        let trust_properties = registry_asset["trust_properties"]
+            .as_array()
+            .ok_or_else(|| format!("registry asset `{id}` missing trust_properties array"))?;
+        if trust_properties.is_empty() {
+            return Err(format!(
+                "release-blocking asset `{id}` must declare trust-property mapping"
+            ));
+        }
         if advisory_families_set.contains(kind) {
             return Err(format!(
                 "ambiguous evidence classification: blocking asset `{id}` belongs to advisory family `{kind}`"
@@ -198,10 +227,45 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         }
     }
 
+    let claimed_surfaces = release_set["claimed_proof_surfaces"]
+        .as_object()
+        .ok_or_else(|| "release evidence set missing claimed_proof_surfaces object".to_string())?;
     for required in ["replay", "cache", "operator"] {
-        if !blocking_family_coverage.contains(required) {
+        let Some(claimed_assets) = claimed_surfaces.get(required).and_then(Value::as_array) else {
             return Err(format!(
-                "release evidence set missing blocking coverage for required trust family `{required}`"
+                "release evidence set missing claimed proof surface `{required}`"
+            ));
+        };
+        if claimed_assets.is_empty() {
+            return Err(format!(
+                "release evidence set claimed proof surface `{required}` cannot be empty"
+            ));
+        }
+        let mut covered = false;
+        for entry in claimed_assets {
+            let id = entry
+                .as_str()
+                .ok_or_else(|| format!("claimed proof surface `{required}` contains non-string"))?;
+            if !blocking_ids.contains(id) {
+                return Err(format!(
+                    "claimed proof surface `{required}` references non-blocking asset `{id}`"
+                ));
+            }
+            if required == "operator" {
+                let kind = registry_kind_by_id
+                    .get(id)
+                    .ok_or_else(|| format!("registry kind missing for `{id}`"))?;
+                if kind != "operator" {
+                    return Err(format!(
+                        "claimed proof surface `operator` must reference operator-kind blocking asset, got `{id}` kind `{kind}`"
+                    ));
+                }
+            }
+            covered = true;
+        }
+        if !covered {
+            return Err(format!(
+                "release evidence set missing blocking proof coverage for `{required}`"
             ));
         }
     }
@@ -225,20 +289,49 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         }
     }
 
-    let expected_manifest = json!({
-        "version": "1",
-        "source": "evidence/release/release_evidence_set.json",
-        "required_families": required_families_set,
-        "advisory_families": advisory_families_set,
-        "minimum_blocking_sets": minimum_sets,
-        "blocking_assets": blocking_ids,
-        "advisory_assets": advisory_ids
-    });
     let manifest_path = root.join("evidence/release/release_evidence.json");
     if manifest_path.exists() {
         let manifest_payload = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
         let manifest: Value = serde_json::from_str(&manifest_payload).map_err(|err| err.to_string())?;
-        if manifest != expected_manifest {
+        if manifest["version"].as_str() != Some("1")
+            || manifest["source"].as_str() != Some("evidence/release/release_evidence_set.json")
+        {
+            return Err(
+                "release evidence manifest drift detected; regenerate with `cargo run -p bijux-dev-dag -- repo release-evidence-report`"
+                    .to_string(),
+            );
+        }
+        let manifest_required: BTreeSet<String> = manifest["required_families"]
+            .as_array()
+            .ok_or_else(|| "release manifest missing required_families array".to_string())?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+            .collect();
+        let manifest_advisory: BTreeSet<String> = manifest["advisory_families"]
+            .as_array()
+            .ok_or_else(|| "release manifest missing advisory_families array".to_string())?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+            .collect();
+        let manifest_blocking: BTreeSet<String> = manifest["blocking_assets"]
+            .as_array()
+            .ok_or_else(|| "release manifest missing blocking_assets array".to_string())?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+            .collect();
+        let manifest_advisory_assets: BTreeSet<String> = manifest["advisory_assets"]
+            .as_array()
+            .ok_or_else(|| "release manifest missing advisory_assets array".to_string())?
+            .iter()
+            .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+            .collect();
+        if manifest_required != required_families_set
+            || manifest_advisory != advisory_families_set
+            || manifest_blocking != blocking_ids
+            || manifest_advisory_assets != advisory_ids
+            || manifest["minimum_blocking_sets"] != Value::Object(minimum_sets.clone())
+            || manifest["claimed_proof_surfaces"] != Value::Object(claimed_surfaces.clone())
+        {
             return Err(
                 "release evidence manifest drift detected; regenerate with `cargo run -p bijux-dev-dag -- repo release-evidence-report`"
                     .to_string(),
@@ -356,6 +449,9 @@ pub(super) fn run_release_evidence_report(
     let minimum_sets = release_set["minimum_blocking_sets"]
         .as_object()
         .ok_or_else(|| "release evidence set missing minimum_blocking_sets object".to_string())?;
+    let claimed_proof_surfaces = release_set["claimed_proof_surfaces"]
+        .as_object()
+        .ok_or_else(|| "release evidence set missing claimed_proof_surfaces object".to_string())?;
     let mut minimum_map = BTreeMap::new();
     for (id, entries) in minimum_sets {
         let assets = entries
@@ -378,6 +474,7 @@ pub(super) fn run_release_evidence_report(
         "required_families": required_families,
         "advisory_families": advisory_families,
         "minimum_blocking_sets": minimum_map,
+        "claimed_proof_surfaces": claimed_proof_surfaces,
         "blocking_assets": blocking_assets,
         "advisory_assets": advisory_assets
     });

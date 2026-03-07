@@ -4,10 +4,9 @@
     "battle",
     "compat",
     "cache",
-    "replay",
     "operator",
-    "perf",
-    "fault"
+    "fault",
+    "perf"
   ],
   "advisory_families": [
     "compare"
@@ -24,23 +23,34 @@
       "evidence/cache/replay/match_case.json"
     ],
     "operator": [
-      "evidence/fault/classes/fault_classes.json"
+      "evidence/operator/scenarios/inspection_only.json"
     ],
     "perf": [
       "evidence/perf/scenarios/tiny_canonical.json"
     ]
   },
   "blocking_assets": [
-    "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
     "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+    "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
     "evidence/cache/replay/match_case.json",
     "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
     "evidence/fault/classes/fault_classes.json",
+    "evidence/operator/scenarios/inspection_only.json",
     "evidence/perf/scenarios/tiny_canonical.json"
   ],
   "advisory_assets": [
     "evidence/compare/scenarios/chain.json",
-    "evidence/compare/scenarios/diamond.json",
-    "evidence/perf/scenarios/replay_verification_cost.json"
-  ]
+    "evidence/compare/scenarios/diamond.json"
+  ],
+  "claimed_proof_surfaces": {
+    "replay": [
+      "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json"
+    ],
+    "cache": [
+      "evidence/cache/replay/match_case.json"
+    ],
+    "operator": [
+      "evidence/operator/scenarios/inspection_only.json"
+    ]
+  }
 }

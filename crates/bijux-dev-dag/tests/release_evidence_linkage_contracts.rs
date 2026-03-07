@@ -18,6 +18,25 @@ fn repo_root() -> PathBuf {
 #[test]
 fn release_evidence_outputs_and_verify_surfaces_exist() {
     let root = repo_root();
+    let release_set: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
+            .expect("read release evidence set"),
+    )
+    .expect("parse release evidence set");
+    let claimed = release_set["claimed_proof_surfaces"]
+        .as_object()
+        .expect("claimed_proof_surfaces object");
+    for required in ["replay", "cache", "operator"] {
+        let values = claimed
+            .get(required)
+            .and_then(serde_json::Value::as_array)
+            .unwrap_or_else(|| panic!("missing claimed proof surface: {required}"));
+        assert!(
+            !values.is_empty(),
+            "claimed proof surface cannot be empty: {required}"
+        );
+    }
+
     for rel in [
         "evidence/release/release_evidence_set.json",
         "evidence/release/release_evidence.json",
@@ -57,6 +76,17 @@ fn release_verify_enforces_manifest_drift_and_ambiguous_classification_failure()
         source.contains("ambiguous evidence classification"),
         "release-set verify must fail ambiguous blocking/advisory classification"
     );
+    for token in [
+        "must have one clear owner in registry",
+        "must have at least one consumer suite",
+        "must declare trust-property mapping",
+        "claimed proof surface `operator` must reference operator-kind blocking asset",
+    ] {
+        assert!(
+            source.contains(token),
+            "release-set verify missing governance token: {token}"
+        );
+    }
 }
 
 #[test]
