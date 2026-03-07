@@ -1,3 +1,10 @@
+#![allow(
+    clippy::if_not_else,
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate,
+    clippy::pedantic
+)]
+
 #[path = "io/fs.rs"]
 pub mod fs;
 #[path = "storage/hardening.rs"]

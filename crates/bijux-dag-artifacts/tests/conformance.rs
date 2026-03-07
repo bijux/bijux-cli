@@ -43,7 +43,7 @@ fn outputs_index_is_stable_under_repeated_writes() {
 #[test]
 fn schema_descriptor_validation_rejects_empty_fields() {
     let descriptor = ArtifactSchemaDescriptor {
-        name: "".to_string(),
+        name: String::new(),
         version: "v0.1".to_string(),
         media_type: "application/json".to_string(),
         encoding: "identity".to_string(),
