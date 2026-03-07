@@ -33,6 +33,7 @@ pub const IDS: &[&str] = &[
     "test-trust-foundation",
     "naming-governance",
     "scheduler-invariants",
+    "state-machine-contract",
     "concurrency-model",
     "runtime-unsafe-audit",
     "backend-contract",

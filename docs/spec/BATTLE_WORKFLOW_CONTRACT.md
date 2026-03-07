@@ -38,3 +38,8 @@ Each scenario fixture must include:
 - `nodes`
 - `focus`
 - `expectations`
+
+## Non-negotiable properties
+
+- State-machine conformance is mandatory evidence for battle workflows.
+- Node and run transitions must satisfy the state-machine contract and invariant IDs.

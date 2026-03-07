@@ -292,6 +292,11 @@ enum DagCommand {
         #[arg(long)]
         run_dir: PathBuf,
     },
+    /// Verify node and run state-machine consistency from run artifacts
+    VerifyState {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
     /// Debug dependency closure and blocked nodes from a graph
     Debug {
         #[arg(long)]
@@ -1014,6 +1019,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_scheduler_invariants_guard(),
     },
     SuiteDef {
+        id: "state-machine-contract",
+        description: "state machine contract docs enum variants and tests alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_state_machine_contract_guard(),
+    },
+    SuiteDef {
         id: "concurrency-model",
         description: "concurrency model docs tests and ledger alignment",
         domain: "governance",
@@ -1492,6 +1506,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({"run_dir": run_dir}),
                 || run_dag_scheduler_timeline(&run_dir),
+            ),
+            DagCommand::VerifyState { run_dir } => run_command_reported(
+                &context,
+                "dag.verify-state",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_verify_state(&run_dir),
             ),
             DagCommand::Debug { graph } => run_command_reported(
                 &context,
@@ -2383,6 +2404,61 @@ fn run_dag_scheduler_timeline(run_dir: &Path) -> Result<(), String> {
     println!(
         "{}",
         serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_verify_state(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let manifest_path = run_path.join("manifest.json");
+    let manifest_text = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
+    let manifest: Value = serde_json::from_str(&manifest_text).map_err(|err| err.to_string())?;
+    let run_state = match manifest
+        .get("status")
+        .and_then(Value::as_str)
+        .unwrap_or("failed")
+    {
+        "success" => bijux_dag_runtime::RunState::Succeeded,
+        "failed" => bijux_dag_runtime::RunState::Failed,
+        "cancelled" => bijux_dag_runtime::RunState::Cancelled,
+        _ => bijux_dag_runtime::RunState::Running,
+    };
+
+    let mut node_states = Vec::new();
+    let trace_dir = run_path.join("trace");
+    if trace_dir.exists() {
+        for entry in fs::read_dir(&trace_dir).map_err(|err| err.to_string())? {
+            let path = entry.map_err(|err| err.to_string())?.path();
+            if path.extension().and_then(|v| v.to_str()) != Some("json") {
+                continue;
+            }
+            let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+            let state = match parsed.get("status").and_then(Value::as_str).unwrap_or("failed") {
+                "success" => bijux_dag_runtime::NodeState::Success,
+                "failed" => bijux_dag_runtime::NodeState::Failed,
+                "cached" => bijux_dag_runtime::NodeState::Cached,
+                "skipped" => bijux_dag_runtime::NodeState::Skipped,
+                "cancelled" => bijux_dag_runtime::NodeState::Cancelled,
+                "running" => bijux_dag_runtime::NodeState::Running,
+                _ => bijux_dag_runtime::NodeState::Failed,
+            };
+            node_states.push(state);
+        }
+    }
+
+    let report = bijux_dag_runtime::verify_post_run_state_consistency(
+        run_state,
+        &node_states,
+        node_states
+            .iter()
+            .filter(|s| matches!(s, bijux_dag_runtime::NodeState::Failed))
+            .count(),
+    );
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
     );
     Ok(())
 }
@@ -5092,6 +5168,81 @@ fn run_scheduler_invariants_guard() -> Result<(), String> {
         if !commands.contains(required) {
             return Err(format!(
                 "scheduler invariant coverage missing command surface: {required}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn run_state_machine_contract_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/STATE_MACHINE_CONTRACT.md",
+        "docs/spec/STATE_MACHINE_VISUALIZATION.md",
+        "crates/bijux-dag-runtime/tests/state_machine_transitions.rs",
+        "crates/bijux-dag-runtime/tests/state_machine_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "state machine contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let contract =
+        fs::read_to_string(root.join("docs/spec/STATE_MACHINE_CONTRACT.md")).map_err(|err| err.to_string())?;
+    let node_states = [
+        "pending",
+        "eligible",
+        "queued",
+        "running",
+        "success",
+        "failed",
+        "skipped",
+        "cached",
+        "cancelled",
+    ];
+    for state in node_states {
+        if !contract.contains(&format!("- {}", state)) {
+            return Err(format!(
+                "state machine contract missing documented node state `{}`",
+                state
+            ));
+        }
+    }
+    let run_states = [
+        "submitted",
+        "planning",
+        "running",
+        "paused",
+        "interrupted",
+        "cancelling",
+        "cancelled",
+        "failed",
+        "succeeded",
+    ];
+    for state in run_states {
+        if !contract.contains(&format!("- {}", state)) {
+            return Err(format!(
+                "state machine contract missing documented run state `{}`",
+                state
+            ));
+        }
+    }
+
+    let commands = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+        .map_err(|err| err.to_string())?;
+    for required_surface in ["DagCommand::VerifyState", "run_dag_verify_state"] {
+        if !commands.contains(required_surface) {
+            return Err(format!(
+                "state machine contract missing command surface `{}`",
+                required_surface
             ));
         }
     }
