@@ -29,6 +29,12 @@ Each cache entry should record:
 - stale/unsupported metadata versions are rejected explicitly
 - output proof hashes must match on verification
 
+## Inspection surfaces
+- `dag cache explain` for hit/miss causality
+- `dag cache verify` for integrity walks
+- `dag cache stats` for invalid-entry and size visibility
+- `dag cache diff` for semantic comparison between cache entries
+
 ## Locality decision
 Cache in this repository is local-first and filesystem-scoped.
 Portable/promotable cache behavior is limited to explicit pack/unpack flows.

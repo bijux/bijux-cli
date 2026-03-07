@@ -1,19 +1,66 @@
-# Cache Contract
+# Cache contract
 
 ## Scope
-Defines cache key inputs, cache invalidation semantics, and correctness behavior.
 
-## Invariants
-- Cache key behavior is fingerprint-driven.
-- Cache modes are explicit: off, read, read-write.
-- Cache hit behavior must preserve semantic output equivalence.
+Defines cache identity, proof requirements, lineage metadata, verification behavior, and governance limits.
 
-## Related tests
-- `tests/e2e/cache/*`
-- `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
+## Cache identity inputs
 
-## Related schemas
-- `configs/schema/run_manifest.schema.json`
+Intentional cache key inputs:
 
-## Versioning and change policy
-Any key-space change must be documented and covered by cache invalidation tests.
+- node fingerprint
+- adapter id
+- adapter version
+- output schema version
+- policy fingerprint
+- config fingerprint
+- backend class
+
+Accidental inputs are forbidden and treated as drift.
+
+## Proof model
+
+Required proof fields per cache entry:
+
+- `node_fingerprint`
+- `adapter_id`
+- `adapter_version`
+- `cache_metadata_version`
+- outputs proof index under `outputs/index.json`
+
+Entries missing required proof fields or outputs proof are invalid.
+
+## Metadata version
+
+- Cache metadata version is independent from run-directory format.
+- Current supported metadata version: `cache-meta/v0.1`.
+- Stale or truncated metadata must fail closed.
+
+## Lineage model
+
+Cache entry metadata must include lineage context where available:
+
+- `source_run_id`
+- `source_node_id`
+- `cache_source` (`local`, `imported-pack`, or `remote-copy`)
+
+## Operator surfaces
+
+Required cache surfaces:
+
+- `dag cache explain`
+- `dag cache verify`
+- `dag cache stats`
+- `dag cache diff`
+
+## Correctness expectations
+
+- Cache key stability for semantically identical inputs.
+- Cache key invalidation on planner-significant changes.
+- Cache key invalidation on backend capability changes.
+- Cache key invalidation on policy/config changes.
+- Cache hit semantics equivalent to fresh execution for covered scenarios.
+
+## Governance
+
+Cache feature expansion is blocked unless proof verification coverage expands in the same change.
