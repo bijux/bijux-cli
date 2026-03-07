@@ -207,3 +207,130 @@ fn import_rejects_truncated_bundle_with_clear_failure() {
         run_dag(&["import", "--json", &output_path_string(&bundle)], &root);
     assert_ne!(code, 0, "truncated bundle must fail import");
 }
+
+#[test]
+fn kubernetes_origin_bundle_export_contract_preserves_import_summary_provenance() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let bundle_path = temp.path().join("bundle-k8s-origin.json");
+
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&bundle_path),
+            "--with-files",
+        ],
+        &root,
+    );
+
+    let mut bundle: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle_path).expect("read bundle"))
+            .expect("parse bundle");
+    bundle["provenance"]["source"] = serde_json::json!("kubernetes-run");
+    bundle["provenance"]["imported"] = serde_json::json!(true);
+    fs::write(
+        &bundle_path,
+        serde_json::to_vec_pretty(&bundle).expect("encode bundle"),
+    )
+    .expect("rewrite bundle");
+
+    let imported = run_json(
+        &["import", "--json", &output_path_string(&bundle_path)],
+        &root,
+    );
+    assert_eq!(imported["data"]["provenance_source"], "kubernetes-run");
+}
+
+#[test]
+fn kubernetes_replay_from_import_conformance_simulation_is_stable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+
+    let bundle_path = temp.path().join("bundle-k8s-replay.json");
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&bundle_path),
+            "--with-files",
+        ],
+        &root,
+    );
+    let mut bundle: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle_path).expect("read bundle"))
+            .expect("parse bundle");
+    bundle["provenance"]["source"] = serde_json::json!("kubernetes-run");
+    bundle["provenance"]["imported"] = serde_json::json!(true);
+    fs::write(
+        &bundle_path,
+        serde_json::to_vec_pretty(&bundle).expect("encode bundle"),
+    )
+    .expect("rewrite bundle");
+
+    let import_payload = run_json(
+        &["import", "--json", &output_path_string(&bundle_path)],
+        &root,
+    );
+    assert_eq!(
+        import_payload["data"]["provenance_source"],
+        "kubernetes-run"
+    );
+
+    let replay_out = temp.path().join("replay-runs");
+    fs::create_dir_all(&replay_out).expect("create replay out");
+    let replay_payload = run_json(
+        &[
+            "replay",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&replay_out),
+        ],
+        &root,
+    );
+    let replay_run_dir = extract_run_dir(&replay_payload);
+
+    let diff_payload = run_json(
+        &[
+            "diff",
+            "--json",
+            &output_path_string(&run_dir),
+            &output_path_string(&replay_run_dir),
+        ],
+        &root,
+    );
+    assert_eq!(diff_payload["ok"], true);
+}

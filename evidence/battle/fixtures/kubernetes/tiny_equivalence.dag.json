@@ -1,0 +1,13 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "value", "path": "seed.txt"}],
+      "params": {"value": "tiny"}
+    }
+  ],
+  "edges": []
+}

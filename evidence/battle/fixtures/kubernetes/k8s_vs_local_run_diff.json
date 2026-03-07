@@ -1,0 +1,14 @@
+{
+  "fixture": "k8s-vs-local-run-diff",
+  "local": {
+    "backend": "local",
+    "node_statuses": {"extract": "succeeded", "train": "succeeded"},
+    "output_hashes": {"model.bin": "sha256:abc"}
+  },
+  "kubernetes": {
+    "backend": "kubernetes",
+    "node_statuses": {"extract": "succeeded", "train": "succeeded"},
+    "output_hashes": {"model.bin": "sha256:abc"}
+  },
+  "expected_semantic_diff": []
+}

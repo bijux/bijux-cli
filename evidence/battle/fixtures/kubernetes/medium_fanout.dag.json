@@ -1,0 +1,32 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "seed_out", "path": "seed.txt"}],
+      "params": {"value": "m"}
+    },
+    {
+      "id": "left",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "left_out", "path": "left.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "echo left > ../outputs/left.txt"]},
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "right",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "right_out", "path": "right.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "echo right > ../outputs/right.txt"]},
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "seed", "port": "seed_out"}, "to": {"node_id": "left", "port": "in"}},
+    {"from": {"node_id": "seed", "port": "seed_out"}, "to": {"node_id": "right", "port": "in"}}
+  ]
+}
