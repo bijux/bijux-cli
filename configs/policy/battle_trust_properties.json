@@ -245,6 +245,15 @@
     "selection-include-exclude-filters": [
       "tp_plan_truth",
       "tp_state_machine_legality"
+    ],
+    "container-execution-if-supported": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "e2e-minimal-parse-validate-run-inspect-replay": [
+      "tp_deterministic_scheduling",
+      "tp_replay_equivalence",
+      "tp_operator_observability"
     ]
   }
 }

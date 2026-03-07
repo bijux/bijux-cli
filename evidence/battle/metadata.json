@@ -181,6 +181,16 @@
       "grade": "battle",
       "why_exists": "Protect include/exclude selector semantics and manifest consistency.",
       "delete_review": "retain"
+    },
+    "container-execution-if-supported": {
+      "grade": "battle",
+      "why_exists": "Protect container execution path behavior when container engine is available.",
+      "delete_review": "retain"
+    },
+    "e2e-minimal-parse-validate-run-inspect-replay": {
+      "grade": "battle",
+      "why_exists": "Protect minimal end-to-end parse validate run inspect replay contract path.",
+      "delete_review": "retain"
     }
   }
 }
