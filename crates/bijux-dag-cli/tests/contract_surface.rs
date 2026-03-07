@@ -457,6 +457,75 @@ fn capabilities_backend_query_supports_remote() {
 }
 
 #[test]
+fn semantic_portability_backend_query_surface_is_available() {
+    let output = dag_command()
+        .args(["dag", "semantic-portability", "--backend", "kubernetes", "--json"])
+        .output()
+        .expect("semantic portability");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("semantic portability json");
+    assert_eq!(payload["command"], "dag.semantic-portability");
+    assert_eq!(payload["data"]["backend"], "kubernetes");
+}
+
+#[test]
+fn equivalence_proof_surface_reports_for_two_runs() {
+    let dag = write_temp_dag();
+    let run_a = tempfile::tempdir().expect("run a dir");
+    let run_b = tempfile::tempdir().expect("run b dir");
+    let run_a_out = dag_command()
+        .args([
+            "dag",
+            "run",
+            &dag,
+            "--out",
+            run_a.path().to_str().expect("run_a path"),
+            "--json",
+        ])
+        .output()
+        .expect("run a");
+    assert!(run_a_out.status.success());
+    let run_b_out = dag_command()
+        .args([
+            "dag",
+            "run",
+            &dag,
+            "--out",
+            run_b.path().to_str().expect("run_b path"),
+            "--json",
+        ])
+        .output()
+        .expect("run b");
+    assert!(run_b_out.status.success());
+
+    let run_a_payload: serde_json::Value = serde_json::from_slice(&run_a_out.stdout).expect("a");
+    let run_b_payload: serde_json::Value = serde_json::from_slice(&run_b_out.stdout).expect("b");
+    let run_a_dir = run_a_payload["data"]["run_dir"].as_str().expect("run a dir");
+    let run_b_dir = run_b_payload["data"]["run_dir"].as_str().expect("run b dir");
+
+    let output = dag_command()
+        .args([
+            "dag",
+            "equivalence-proof",
+            run_a_dir,
+            run_b_dir,
+            "--backend-a",
+            "kubernetes",
+            "--backend-b",
+            "hpc",
+            "--json",
+        ])
+        .output()
+        .expect("equivalence proof");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("equivalence proof payload");
+    assert_eq!(payload["command"], "dag.equivalence-proof");
+    assert!(payload["data"]["status"].as_str().is_some());
+}
+
+#[test]
 fn export_import_help_includes_bundle_control_flags() {
     let export_help = dag_command()
         .args(["dag", "export", "--help"])
