@@ -18,6 +18,7 @@ mod read;
 mod read_graph;
 mod replay;
 mod replay_cmd;
+mod run_views;
 mod run_cmd;
 mod status_cmd;
 mod validate_cmd;
@@ -30,6 +31,10 @@ pub use config_surface::{
     resolve_effective_config, CacheModeSurface, MaterializeInputsSurface,
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
+pub use run_views::{
+    doctor_run, explain_failure, format_inspect_human, inspect_summary, list_runs,
+    resolve_run_dir, run_timeline, run_tree,
+};
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
@@ -41,7 +46,7 @@ use bijux_dag_runtime::{
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, CacheModeArg, Commands, DagCli, GraphFormatArg,
-    MaterializeModeArg, MigrateCommands,
+    MaterializeModeArg, MigrateCommands, RunsCommands,
 };
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -489,6 +494,163 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Commands::Runs { command } => match command {
+            RunsCommands::List { root } => {
+                let runs = list_runs(root).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.list",
+                        true,
+                        json!({"runs": runs}),
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                for run in runs {
+                    println!("{run}");
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Show { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(&cli, "dag.runs.show", true, summary, Vec::new(), ExitCode::SUCCESS);
+                }
+                println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Inspect { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(&cli, "dag.runs.inspect", true, summary, Vec::new(), ExitCode::SUCCESS);
+                }
+                println!("{}", format_inspect_human(&summary));
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Tree { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let tree = run_tree(&run_dir).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(&cli, "dag.runs.tree", true, tree, Vec::new(), ExitCode::SUCCESS);
+                }
+                println!("{}", serde_json::to_string_pretty(&tree).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Timeline { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let timeline = run_timeline(&run_dir).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.timeline",
+                        true,
+                        timeline,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Diff { run_a, run_b, explain } => {
+                let manifest_a = read_file(&run_a.join("manifest.json"))?;
+                let manifest_b = read_file(&run_b.join("manifest.json"))?;
+                let snap_a = load_snapshot(run_a)?;
+                let snap_b = load_snapshot(run_b)?;
+                let nodes_a = read_node_traces(run_a)?;
+                let nodes_b = read_node_traces(run_b)?;
+                let outputs_a = read_outputs_indexes(run_a)?;
+                let outputs_b = read_outputs_indexes(run_b)?;
+                let diff = diff::build_run_diff(
+                    serde_json::from_str(&manifest_a).unwrap_or_default(),
+                    serde_json::from_str(&manifest_b).unwrap_or_default(),
+                    snap_a.graph_fingerprint,
+                    snap_b.graph_fingerprint,
+                    &nodes_a,
+                    &nodes_b,
+                    &outputs_a,
+                    &outputs_b,
+                );
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.diff",
+                        true,
+                        serde_json::to_value(&diff).unwrap(),
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                print_human_diff(&serde_json::to_value(&diff).unwrap());
+                if *explain {
+                    println!("explain: graph fingerprint change implies cache invalidation");
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Verify { run_id, root, deep } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let report = verify_run(&run_dir, *deep)?;
+                let ok = report
+                    .get("status")
+                    .and_then(|v| v.as_str())
+                    .map(|v| v == "ok")
+                    .unwrap_or(false);
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.verify",
+                        ok,
+                        report,
+                        Vec::new(),
+                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                    );
+                }
+                println!("status: {}", if ok { "ok" } else { "invalid" });
+                if !ok {
+                    return Err(ExitCode::from(3));
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Doctor { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let report = doctor_run(&run_dir);
+                let ok = report.get("status").and_then(|v| v.as_str()) == Some("ok");
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.doctor",
+                        ok,
+                        report,
+                        Vec::new(),
+                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                if !ok {
+                    return Err(ExitCode::from(3));
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::ExplainFailure { run_id, root } => {
+                let run_dir = resolve_run_dir(root, run_id);
+                let report = explain_failure(&run_dir).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.explain-failure",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+        },
         Commands::Diff {
             run_a,
             run_b,

@@ -13,6 +13,7 @@ migrate
 node
 replay
 run
+runs
 status
 validate
 verify

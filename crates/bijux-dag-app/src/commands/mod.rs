@@ -115,12 +115,18 @@ pub(crate) enum Commands {
         #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
         format: GraphFormatArg,
     },
+    Runs {
+        #[command(subcommand)]
+        command: RunsCommands,
+    },
+    #[command(hide = true)]
     Diff {
         run_a: PathBuf,
         run_b: PathBuf,
         #[arg(long)]
         explain: bool,
     },
+    #[command(hide = true)]
     Explain {
         run_dir: PathBuf,
         #[arg(long)]
@@ -132,15 +138,18 @@ pub(crate) enum Commands {
         #[arg(long)]
         id: String,
     },
+    #[command(hide = true)]
     Status {
         run_dir: PathBuf,
     },
     #[command(name = "verify")]
+    #[command(hide = true)]
     Verify {
         run_dir: PathBuf,
         #[arg(long)]
         deep: bool,
     },
+    #[command(hide = true)]
     Doctor,
     Migrate {
         #[command(subcommand)]
@@ -165,6 +174,57 @@ pub(crate) enum Commands {
         file: PathBuf,
     },
     Version,
+}
+
+#[derive(Subcommand)]
+pub(crate) enum RunsCommands {
+    List {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Show {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Inspect {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Tree {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Timeline {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Diff {
+        run_a: PathBuf,
+        run_b: PathBuf,
+        #[arg(long)]
+        explain: bool,
+    },
+    Verify {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+        #[arg(long)]
+        deep: bool,
+    },
+    Doctor {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    ExplainFailure {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
