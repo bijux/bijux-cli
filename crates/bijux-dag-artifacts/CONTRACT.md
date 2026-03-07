@@ -10,6 +10,14 @@ It is explicitly a `format + IO` crate.
 - Artifact hashing/index/integrity helpers (`hash`, `index`, `proof`, `schema`)
 - Artifact store and filesystem-backed persistence entrypoints (`store`, root write helpers)
 - Artifact lifecycle policy models (`retention`, `promotion`, `lineage`)
+- `src/lib.rs` is the only root Rust file; module logic must live in bounded domain folders.
+
+## Internal boundaries
+- `storage/*`: authoritative artifact models, hardening, and service orchestration.
+- `io/*`: filesystem-backed read/write surfaces.
+- `integrity/*`: hashing, proof, schema, and index validation surfaces.
+- `layout/*`: path and platform layout helpers.
+- `lifecycle/*`: retention, promotion, and lineage policy surfaces.
 
 ## Boundary
 - Runtime must use artifact persistence through this crate's stable APIs.
