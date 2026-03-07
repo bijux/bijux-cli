@@ -5,7 +5,7 @@ RUN_ID ?= local
 CARGO_TARGET_DIR ?= $(CURDIR)/artifacts/target
 NEXTEST_CACHE_DIR ?= $(CURDIR)/artifacts/target/nextest
 
-DEV_TOOL := RUSTFLAGS="-Aunused-crate-dependencies" cargo run -p bijux-dev-dag --bin bijux-dev-dag --
+DEV_TOOL := CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" RUSTFLAGS="-Aunused-crate-dependencies" cargo run -p bijux-dev-dag --bin bijux-dev-dag --
 RUN_DIR := artifacts/runs
 REPORT_DIR := artifacts/reports
 TARGET_DIR := artifacts/target
