@@ -12,14 +12,20 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
-    classify_k8s_failure, equivalent_to_local, k8s_capability_declaration,
-    map_node_policy_to_k8s_job, map_node_resources_to_k8s, matches_placement_policy,
-    normalize_backend_failure, outputs_logs_equivalent, quota_saturation_percent,
-    reconcile_k8s_watch_stream, reject_unsupported_k8s_fields, replay_allowed_across_backends,
+    capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
+    effective_hpc_retry_policy, equivalent_to_local, hpc_array_job_supported,
+    hpc_environment_fingerprint, hpc_log_collection_semantics, hpc_poll_response_recovered,
+    hpc_scratch_staging_semantics, k8s_capability_declaration, map_node_policy_to_k8s_job,
+    map_node_resources_to_k8s, map_node_to_hpc_queue_partition, map_timeout_to_hpc_walltime,
+    matches_placement_policy, normalize_backend_failure, outputs_logs_equivalent,
+    quota_saturation_percent, reconcile_k8s_watch_stream,
+    reject_unsupported_hpc_scheduler_features, reject_unsupported_k8s_fields,
+    replay_allowed_across_backends, scratch_retention_required, staged_input_cleanup_required,
     validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
     BackendCapabilityDescriptor, BackendFailureMappingRule, BackendMaintenanceMode,
-    BackendReadinessProbe, CrossBackendReplayRule, K8sInjectionAvailability, K8sInjectionRequest,
-    K8sWatchEvent, NodeExecutionContract, WorkdirVolumeKind,
+    BackendReadinessProbe, CrossBackendReplayRule, HpcNodeExecutionContract,
+    K8sInjectionAvailability, K8sInjectionRequest, K8sWatchEvent, NodeExecutionContract,
+    WorkdirVolumeKind,
 };
 use std::collections::BTreeMap;
 
@@ -304,4 +310,108 @@ fn unsupported_kubernetes_only_fields_are_rejected_by_contract() {
     assert!(reject_unsupported_k8s_fields(&["hostNetwork".to_string()]).is_err());
     assert!(reject_unsupported_k8s_fields(&["runtimeClassName".to_string()]).is_err());
     assert!(reject_unsupported_k8s_fields(&["safeField".to_string()]).is_ok());
+}
+
+#[test]
+fn hpc_queue_partition_walltime_and_retry_precedence_are_deterministic() {
+    let node = HpcNodeExecutionContract {
+        cpu_units: 8,
+        memory_mib: 16384,
+        timeout_seconds: 3661,
+        requested_partition: Some("gpu".to_string()),
+        requested_queue: Some("priority".to_string()),
+    };
+    let mapped = map_node_to_hpc_queue_partition(&node, "default", "general");
+    assert_eq!(mapped.queue, "priority");
+    assert_eq!(mapped.partition, "gpu");
+    assert_eq!(
+        map_timeout_to_hpc_walltime(node.timeout_seconds),
+        "01:01:01"
+    );
+
+    let scheduler_first = effective_hpc_retry_policy(true, true);
+    assert_eq!(scheduler_first.effective_retry_owner, "scheduler-native");
+    let bijux_only = effective_hpc_retry_policy(false, true);
+    assert_eq!(bijux_only.effective_retry_owner, "bijux");
+}
+
+#[test]
+fn hpc_staging_and_semantic_equivalence_hold_for_simple_staged_input_and_partial_replay() {
+    let staging = hpc_scratch_staging_semantics("run-1", "node-a");
+    assert!(staging.scratch_dir.contains("/scratch/run-1/node-a"));
+    assert!(staging.staging_dir.contains("/staging/run-1/node-a"));
+
+    for shape in ["simple", "staged-input", "partial-replay"] {
+        let local = outcome(shape);
+        let hpc = outcome(shape);
+        assert!(equivalent_to_local(&local, &hpc));
+    }
+}
+
+#[test]
+fn hpc_failure_taxonomy_covers_queue_account_walltime_and_preemption() {
+    let queue_reject = classify_hpc_failure("SLURM_QUEUE_REJECTED");
+    assert_eq!(queue_reject.runtime_failure_kind, "configuration");
+    assert!(!queue_reject.retryable);
+
+    let invalid_account = classify_hpc_failure("SLURM_INVALID_ACCOUNT");
+    assert_eq!(invalid_account.runtime_failure_kind, "configuration");
+    assert!(!invalid_account.retryable);
+
+    let walltime = classify_hpc_failure("SLURM_WALLTIME_EXCEEDED");
+    assert_eq!(walltime.runtime_failure_kind, "timeout");
+    assert!(walltime.retryable);
+
+    let preempt = classify_hpc_failure("SLURM_PREEMPTED");
+    assert_eq!(preempt.runtime_failure_kind, "infrastructure");
+    assert!(preempt.retryable);
+}
+
+#[test]
+fn hpc_polling_logs_cleanup_and_retention_contracts_are_explicit() {
+    assert!(hpc_poll_response_recovered(10, 30));
+    assert!(!hpc_poll_response_recovered(40, 30));
+
+    let logs = hpc_log_collection_semantics(5);
+    assert_eq!(logs.mode, "streaming-chunked");
+    assert_eq!(logs.chunks_collected, 5);
+
+    assert!(staged_input_cleanup_required(true));
+    assert!(!scratch_retention_required(true, true));
+    assert!(scratch_retention_required(false, true));
+    assert!(!scratch_retention_required(false, false));
+}
+
+#[test]
+fn hpc_artifact_collection_array_semantics_and_unsupported_features_are_guarded() {
+    assert_eq!(
+        artifact_collection_state(4, 3),
+        ArtifactCollectionState::Partial
+    );
+    assert_eq!(
+        artifact_collection_state(4, 4),
+        ArtifactCollectionState::Complete
+    );
+    assert!(hpc_array_job_supported("slurm"));
+    assert!(!hpc_array_job_supported("pbs"));
+
+    assert!(reject_unsupported_hpc_scheduler_features(&["host-network".to_string()]).is_err());
+    assert!(reject_unsupported_hpc_scheduler_features(&["safe-feature".to_string()]).is_ok());
+}
+
+#[test]
+fn hpc_environment_fingerprint_and_scheduler_version_capture_are_stable() {
+    let modules = vec!["python/3.11".to_string(), "cuda/12.2".to_string()];
+    let env = BTreeMap::from([
+        ("OMP_NUM_THREADS".to_string(), "8".to_string()),
+        ("SLURM_ACCOUNT".to_string(), "ml-team".to_string()),
+    ]);
+    let a = hpc_environment_fingerprint(&modules, &env);
+    let b = hpc_environment_fingerprint(&modules, &env);
+    assert_eq!(a, b);
+    assert!(!a.is_empty());
+
+    let metadata = capture_hpc_scheduler_version("slurm", "23.11.5");
+    assert_eq!(metadata.scheduler_name, "slurm");
+    assert_eq!(metadata.scheduler_version, "23.11.5");
 }

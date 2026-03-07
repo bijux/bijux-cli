@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -254,6 +255,52 @@ pub struct K8sCapabilityDeclaration {
     pub supports_pod_affinity: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcNodeExecutionContract {
+    pub cpu_units: u32,
+    pub memory_mib: u32,
+    pub timeout_seconds: u32,
+    pub requested_partition: Option<String>,
+    pub requested_queue: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcQueuePartitionMapping {
+    pub queue: String,
+    pub partition: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcRetryPolicyDecision {
+    pub scheduler_retry_enabled: bool,
+    pub bijux_retry_enabled: bool,
+    pub effective_retry_owner: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcScratchStagingSemantics {
+    pub scratch_dir: String,
+    pub staging_dir: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcFailureClassification {
+    pub runtime_failure_kind: String,
+    pub retryable: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcLogCollectionSemantics {
+    pub mode: String,
+    pub chunks_collected: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcSchedulerVersionMetadata {
+    pub scheduler_name: String,
+    pub scheduler_version: String,
+}
+
 const TERMINAL_PHASES: [&str; 3] = ["Succeeded", "Failed", "Cancelled"];
 
 pub fn matches_placement_policy(
@@ -467,4 +514,144 @@ pub fn reject_unsupported_k8s_fields(fields: &[String]) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+pub fn map_node_to_hpc_queue_partition(
+    node: &HpcNodeExecutionContract,
+    default_queue: &str,
+    default_partition: &str,
+) -> HpcQueuePartitionMapping {
+    HpcQueuePartitionMapping {
+        queue: node
+            .requested_queue
+            .clone()
+            .unwrap_or_else(|| default_queue.to_string()),
+        partition: node
+            .requested_partition
+            .clone()
+            .unwrap_or_else(|| default_partition.to_string()),
+    }
+}
+
+pub fn map_timeout_to_hpc_walltime(timeout_seconds: u32) -> String {
+    let total = timeout_seconds.max(1);
+    let hours = total / 3600;
+    let minutes = (total % 3600) / 60;
+    let seconds = total % 60;
+    format!("{hours:02}:{minutes:02}:{seconds:02}")
+}
+
+pub fn effective_hpc_retry_policy(
+    scheduler_native_retry: bool,
+    bijux_retry: bool,
+) -> HpcRetryPolicyDecision {
+    let effective_retry_owner = if scheduler_native_retry {
+        "scheduler-native"
+    } else if bijux_retry {
+        "bijux"
+    } else {
+        "none"
+    };
+    HpcRetryPolicyDecision {
+        scheduler_retry_enabled: scheduler_native_retry,
+        bijux_retry_enabled: bijux_retry,
+        effective_retry_owner: effective_retry_owner.to_string(),
+    }
+}
+
+pub fn hpc_scratch_staging_semantics(run_id: &str, node_id: &str) -> HpcScratchStagingSemantics {
+    HpcScratchStagingSemantics {
+        scratch_dir: format!("/scratch/{run_id}/{node_id}"),
+        staging_dir: format!("/staging/{run_id}/{node_id}"),
+    }
+}
+
+pub fn classify_hpc_failure(code: &str) -> HpcFailureClassification {
+    match code {
+        "SLURM_QUEUE_REJECTED" | "SLURM_INVALID_ACCOUNT" => HpcFailureClassification {
+            runtime_failure_kind: "configuration".to_string(),
+            retryable: false,
+        },
+        "SLURM_WALLTIME_EXCEEDED" => HpcFailureClassification {
+            runtime_failure_kind: "timeout".to_string(),
+            retryable: true,
+        },
+        "SLURM_PREEMPTED" => HpcFailureClassification {
+            runtime_failure_kind: "infrastructure".to_string(),
+            retryable: true,
+        },
+        _ => HpcFailureClassification {
+            runtime_failure_kind: "execution".to_string(),
+            retryable: false,
+        },
+    }
+}
+
+pub fn hpc_poll_response_recovered(last_poll_age_seconds: u32, timeout_seconds: u32) -> bool {
+    last_poll_age_seconds <= timeout_seconds.max(1)
+}
+
+pub fn hpc_log_collection_semantics(chunks_collected: u32) -> HpcLogCollectionSemantics {
+    let mode = if chunks_collected > 0 {
+        "streaming-chunked"
+    } else {
+        "no-logs"
+    };
+    HpcLogCollectionSemantics {
+        mode: mode.to_string(),
+        chunks_collected,
+    }
+}
+
+pub fn staged_input_cleanup_required(run_succeeded: bool) -> bool {
+    run_succeeded
+}
+
+pub fn scratch_retention_required(run_succeeded: bool, retain_on_failure: bool) -> bool {
+    if run_succeeded {
+        false
+    } else {
+        retain_on_failure
+    }
+}
+
+pub fn hpc_array_job_supported(scheduler: &str) -> bool {
+    matches!(scheduler, "slurm")
+}
+
+pub fn reject_unsupported_hpc_scheduler_features(features: &[String]) -> Result<(), String> {
+    let blocked = ["interactive-shell", "privileged-container", "host-network"];
+    for feature in features {
+        if blocked.iter().any(|item| feature == item) {
+            return Err(format!("unsupported scheduler feature: {feature}"));
+        }
+    }
+    Ok(())
+}
+
+pub fn hpc_environment_fingerprint(modules: &[String], env: &BTreeMap<String, String>) -> String {
+    let mut hasher = Sha256::new();
+    let mut sorted_modules = modules.to_vec();
+    sorted_modules.sort();
+    for module in sorted_modules {
+        hasher.update(module.as_bytes());
+        hasher.update(b"\n");
+    }
+    for (key, value) in env {
+        hasher.update(key.as_bytes());
+        hasher.update(b"=");
+        hasher.update(value.as_bytes());
+        hasher.update(b"\n");
+    }
+    hex::encode(hasher.finalize())
+}
+
+pub fn capture_hpc_scheduler_version(
+    scheduler_name: &str,
+    scheduler_version: &str,
+) -> HpcSchedulerVersionMetadata {
+    HpcSchedulerVersionMetadata {
+        scheduler_name: scheduler_name.to_string(),
+        scheduler_version: scheduler_version.to_string(),
+    }
 }
