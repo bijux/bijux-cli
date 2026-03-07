@@ -1,14 +1,18 @@
-# Evidence System
+# Evidence
 
-This directory is the migration anchor for unifying benchmarks, comparisons, examples, and fixture-driven tests into one governed evidence system.
+`evidence/` is the repository authority for executable proof assets.
 
-## Files
-- `CONTRACT.md`: authority contract and enforcement rules.
-- `taxonomy.md`: class and grade definitions.
-- `inventory/`: source inventories by existing repository root.
-- `ownership/evidence_ledger.json`: ownership and lifecycle decisions for governed evidence files.
+## Subdomain map
+- `evidence/authoring`: canonical authoring examples and negative authoring cases.
+- `evidence/battle`: trust-critical end-to-end behavior scenarios.
+- `evidence/cache`: cache reuse and corruption correctness scenarios.
+- `evidence/compat`: version and format compatibility fixtures.
+- `evidence/fault`: fault injection and resilience scenarios.
+- `evidence/operator`: operator inspection and diagnostics scenarios.
+- `evidence/perf`: performance scenarios and controlled baselines.
+- `evidence/compare`: cross-system comparison scenarios and baselines.
 
-## Immediate Program
-- Establish one ownership ledger.
-- Freeze unmanaged additions in legacy roots.
-- Consolidate duplicate concepts and move retained sources into a future single evidence root.
+## Governance
+- Contract: `evidence/CONTRACT.md`
+- Taxonomy: `evidence/taxonomy.md`
+- Ownership ledger: `evidence/ownership/evidence_ledger.json`

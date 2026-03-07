@@ -1,45 +1,39 @@
 # Evidence Authority Contract
 
-## Purpose
-This directory is the repository authority for executable evidence sources that validate behavior, performance, compatibility, and operator trust.
+## Authority
+`evidence/` is the single ownership boundary for executable proof assets in this repository. Scenario assets in other roots are temporary compatibility surfaces and are governed by this contract until migrated.
 
-## Scope
-The governed evidence roots are:
-- `benchmarks/`
-- `comparisons/`
-- `examples/`
-- `tests/`
-- `crates/*/tests/fixtures/`
+## Subdomains
+- `authoring`
+- `battle`
+- `cache`
+- `compat`
+- `fault`
+- `operator`
+- `perf`
+- `compare`
 
-## Canonical Taxonomy
-- `authoring`: authoring and schema correctness
-- `battle`: core trust workflows and failure semantics
-- `compat`: version and format compatibility
-- `fault`: adversarial and resilience behavior
-- `perf`: measurable throughput, latency, and resource envelopes
-- `compare`: cross-system capability and behavior comparison
-- `operator`: inspection, diagnostics, and usability for operations
+## Asset classification
+- Evidence asset: executable scenario, fixture, or baseline that proves runtime, policy, compatibility, failure, operator, or performance behavior.
+- Schema fixture: syntax and schema-conformance fixture owned by schema policy under `configs/schema/**`.
+- Test helper: non-authoritative utility input used only to make a test executable, never as product truth.
 
-## Governance Rules
-- Every governed evidence file must be represented in `evidence/ownership/evidence_ledger.json` unless explicitly exempt.
-- Every ledger entry must define owner, evidence class, trust property, and lifecycle decision.
-- New files under governed roots are rejected unless they are added to the ledger in the same change.
-- Duplicated evidence concepts are merged to one canonical source, and redundant files are removed.
+## Canonical ownership rules
+- All scenario-like assets are owned by `evidence/ownership/evidence_ledger.json`.
+- New scenario-like files outside approved evidence roots are forbidden.
+- `examples/`, `benchmarks/`, `comparisons/`, and scenario-bearing `tests/` trees are compatibility roots under evidence governance until migration is complete.
+- Crate-local fixtures are consumers of evidence authority and cannot define independent truth.
 
-## Lifecycle Decisions
-- `keep`: canonical and retained in current root
-- `merge`: concept overlaps another source and must be consolidated
-- `move`: retained but migrated to future unified evidence root
-- `delete`: retired because duplicated, shallow, or unowned
+## Metadata requirements
+Each governed asset must include:
+- identity: `path`, `canonical_location`, `duplicate_of`
+- ownership: `owner`, `evidence_class`, `consumer_surfaces`
+- trust: `trust_property`, `trust_properties_protected`, `release_blocking`
+- lifecycle: `decision`, `deletion_review`, `retirement_date`
+- status: `implementation_status`, `why_exists`
 
 ## Enforcement
-- `crates/bijux-dev-dag/tests/evidence_governance_contract.rs` validates:
-  - ownership metadata completeness
-  - decision taxonomy validity
-  - governed root coverage
-  - freeze policy for unmanaged additions
-
-## Deliverables Covered by This Contract
-- Evidence authority proposal and taxonomy
-- Full inventories for benchmarks, comparisons, examples, tests, and crate fixtures
-- Ownership ledger with explicit decisions for examples, benchmark scenarios, comparison scenarios, and test fixture families
+`bijux-dev-dag` is the only approved control plane for evidence governance checks:
+- taxonomy and ownership reporting
+- metadata completeness validation
+- evidence drift and out-of-bound path rejection

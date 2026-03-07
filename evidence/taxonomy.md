@@ -1,42 +1,26 @@
-# Evidence Taxonomy and Grade Definitions
+# Evidence Taxonomy
 
-## Evidence Classes
+## Evidence classes
 - `authoring`
 - `battle`
+- `cache`
 - `compat`
 - `fault`
+- `operator`
 - `perf`
 - `compare`
-- `operator`
 
-## Grade Requirements
-### Battle-grade
-- Protects at least one named trust property in runtime semantics.
-- Exercises multi-step behavior, not single-function parsing.
-- Verifies outcomes with deterministic assertions.
+## Asset kinds
+- `scenario`: executable flow or behavior proof.
+- `fixture`: structured input for a deterministic behavioral assertion.
+- `baseline`: approved expectation used by performance or comparison checks.
+- `catalog`: index that binds stable IDs to evidence assets.
+- `report`: derived artifact from evidence consumers.
 
-### Perf-grade
-- Includes a stable scenario identity and measurable metric target.
-- Has an owned baseline or threshold contract.
-- Can be executed repeatedly with comparable conditions.
+## Stability fields
+- `version`: schema or family version for readers and migration tooling.
+- `implementation_status`: `implemented` or `simulated`.
+- `release_blocking`: whether the asset is required for release trust gates.
 
-### Comparison-grade
-- Has a bijux-executable scenario counterpart.
-- States the capability axis being compared.
-- Produces actionable deltas, not narrative-only notes.
-
-### Authoring/example-grade
-- Demonstrates one canonical authoring shape.
-- Is parseable and validation-safe under current schema.
-- Has clear ownership and version metadata.
-
-## Trust Property Fields
-Each ledger entry must include at least one primary trust property, such as:
-- `determinism`
-- `failure-propagation`
-- `cache-correctness`
-- `replay-equivalence`
-- `artifact-integrity`
-- `operator-inspection`
-- `schema-compatibility`
-- `resource-accounting`
+## Trust mapping
+`battle` assets must declare `trust_properties_protected` and include at least one trust property from policy.
