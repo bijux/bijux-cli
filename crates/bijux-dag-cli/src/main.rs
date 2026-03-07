@@ -24,9 +24,13 @@ fn main() -> ExitCode {
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
-        Some(("dag", sub)) => match dag_run(sub) {
-            Ok(code) => code,
-            Err(code) => code,
+        Some(("dag", sub)) => match std::panic::catch_unwind(|| dag_run(sub)) {
+            Ok(Ok(code)) => code,
+            Ok(Err(code)) => code,
+            Err(_) => {
+                eprintln!("internal error: unexpected panic");
+                ExitCode::from(1)
+            }
         },
         Some(("completions", sub)) => {
             let shell = sub.get_one::<String>("shell").map_or("", String::as_str);
