@@ -12,6 +12,8 @@
 - [Development environment](./DEVELOPMENT.md)
 - [Architecture overview](./ARCHITECTURE.md)
 - [Runtime execution flow](./architecture/runtime-execution-flow.md)
+- [Runtime module triage](./architecture/runtime_module_triage.md)
+- [Runtime core architecture](./architecture/runtime_core_architecture.md)
 - [Node state machine](./spec/NODE_STATE_MACHINE.md)
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
@@ -118,6 +120,7 @@
 - [Schema compatibility policy](./spec/SCHEMA_COMPATIBILITY_POLICY.md)
 - [DAG behavior decisions](./spec/DAG_BEHAVIOR_DECISIONS.md)
 - [Path normalization policy](./spec/PATH_NORMALIZATION_POLICY.md)
+- [Runtime public API boundary](./spec/RUNTIME_PUBLIC_API_BOUNDARY.md)
 - [Outputs index schema](./spec/OUTPUTS_INDEX_SCHEMA_v0.1.md)
 
 ## Test governance
