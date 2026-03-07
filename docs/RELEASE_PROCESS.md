@@ -32,3 +32,7 @@ Public API baselines under `docs/api/*.txt` are validated during release verific
 - Release notes use template `docs/reference/RELEASE_NOTE_TEMPLATE.md`.
 - Known limitations must be updated in `docs/tracking/KNOWN_LIMITATIONS.md`.
 - CLI JSON compatibility report must be updated in `docs/reports/foundation/cli_json_compatibility_report.md`.
+- Schema compatibility review must be completed using:
+  - `docs/reference/COMPATIBILITY_MATRIX_GENERATED.md`
+  - `docs/reports/foundation/schema_changelog.md`
+  - compatibility fixtures under `evidence/compat/*_schema/`

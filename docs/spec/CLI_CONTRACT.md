@@ -52,6 +52,8 @@ This is the normative contract for `bijux` command surfaces.
 - `dag capabilities --backend remote`: backend-specific capability report surface.
 - `dag semantic-portability --backend <name>`: backend-target portability and downgrade report surface.
 - `dag equivalence-proof <run-a> <run-b> --backend-a <name> --backend-b <name>`: cross-backend run equivalence proof report surface.
+- `dag version-inspect --dag|--run-dir|--export-bundle`: schema/format inspection surface.
+- `dag migrate dag|run --from <v> --to <v> --dry-run`: schema migration preview surface.
 
 ## Invariants
 - JSON mode is machine-readable and contract-stable.
