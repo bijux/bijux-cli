@@ -1,0 +1,28 @@
+{
+  "version": "1",
+  "managed_roots": [
+    "benchmarks/scenarios",
+    "comparisons/scenarios",
+    "examples",
+    "tests/cache/fixtures",
+    "tests/e2e/fixtures",
+    "tests/e2e/replay/fixtures",
+    "tests/fault/fixtures",
+    "crates/bijux-dag-core/tests/fixtures",
+    "crates/bijux-dag-artifacts/tests/fixtures",
+    "crates/bijux-dag-runtime/tests/fixtures"
+  ],
+  "exempt_paths": [
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep"
+  ],
+  "allowed_decisions": ["keep", "merge", "move", "delete"],
+  "allowed_evidence_classes": [
+    "authoring",
+    "battle",
+    "compat",
+    "fault",
+    "perf",
+    "compare",
+    "operator"
+  ]
+}
