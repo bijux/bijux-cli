@@ -145,6 +145,7 @@
 - [Deployment backends and capability matrix](./DEPLOYMENT_BACKENDS.md)
 - [Kubernetes adapter contract](./spec/K8S_ADAPTER_CONTRACT.md)
 - [HPC adapter contract](./spec/HPC_ADAPTER_CONTRACT.md)
+- [Worker protocol contract](./spec/WORKER_PROTOCOL_CONTRACT.md)
 - [Kubernetes support matrix](./reference/K8S_SUPPORT_MATRIX.md)
 - [HPC support matrix](./reference/HPC_SUPPORT_MATRIX.md)
 - [HPC and DNA boundary](./reference/HPC_AND_DNA_BOUNDARY.md)

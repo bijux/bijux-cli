@@ -40,6 +40,8 @@ Remote observability handoff includes:
 ## Compatibility notes
 - Future remote backends must satisfy `ExecutionBackend` contract tests.
 - Capability mismatches must fail at binding/planning boundaries.
+- Worker lease/heartbeat/ordering semantics are governed by
+  `docs/spec/WORKER_PROTOCOL_CONTRACT.md`.
 
 ## Verifying tests
 - `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`
