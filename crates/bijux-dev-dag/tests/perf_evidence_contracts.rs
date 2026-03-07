@@ -7,6 +7,7 @@ use serde as _;
 use serde_json::Value;
 use sha2 as _;
 use std::fs;
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use tempfile as _;
 
@@ -118,4 +119,49 @@ fn perf_commands_and_reports_are_wired() {
             .exists(),
         "missing perf obsolete candidate report"
     );
+}
+
+#[test]
+fn benchmark_registry_covers_required_scenarios_and_metadata_links() {
+    let root = repo_root();
+    let metadata = load_perf_metadata(&root);
+    let scenarios = metadata["scenarios"].as_object().expect("scenarios object");
+
+    let registry_payload = fs::read_to_string(root.join("evidence/perf/scenario_registry.json"))
+        .expect("read scenario registry");
+    let registry: Value = serde_json::from_str(&registry_payload).expect("parse scenario registry");
+    let entries = registry["entries"].as_array().expect("entries array");
+
+    let mut ids = BTreeSet::new();
+    let mut paths = BTreeSet::new();
+    for entry in entries {
+        let id = entry["id"].as_str().expect("id");
+        let path = entry["path"].as_str().expect("path");
+        assert!(ids.insert(id.to_string()), "duplicate registry id {id}");
+        paths.insert(path.to_string());
+        assert!(
+            scenarios.contains_key(path),
+            "registry path missing in perf metadata: {path}"
+        );
+    }
+
+    for required in [
+        "tiny-canonical",
+        "wide-canonical",
+        "deep-canonical",
+        "tenk-nodes-canonical",
+        "large-artifact-canonical",
+        "cache-heavy-canonical",
+        "failure-injection-canonical",
+        "replay-canonical",
+        "diff-canonical",
+        "portability-canonical",
+        "determinism-score",
+        "replay-fidelity-score",
+        "explainability-quality",
+        "artifact-lineage-completeness",
+        "portability-success-rate",
+    ] {
+        assert!(ids.contains(required), "registry missing required id: {required}");
+    }
 }

@@ -19,14 +19,20 @@ fn benchmark_scenarios_are_owned_versioned_and_documented() {
     let root = repo_root();
     let required = [
         "evidence/perf/scenarios/tiny_canonical.json",
-        "evidence/perf/scenarios/medium_canonical.json",
         "evidence/perf/scenarios/wide_canonical.json",
         "evidence/perf/scenarios/deep_canonical.json",
+        "evidence/perf/scenarios/tenk_nodes_canonical.json",
+        "evidence/perf/scenarios/large_artifact_canonical.json",
         "evidence/perf/scenarios/cache_heavy_canonical.json",
+        "evidence/perf/scenarios/failure_injection_canonical.json",
         "evidence/perf/scenarios/replay_canonical.json",
-        "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
-        "evidence/perf/scenarios/manifest_trace_write_amplification.json",
-        "evidence/perf/scenarios/replay_verification_cost.json",
+        "evidence/perf/scenarios/diff_canonical.json",
+        "evidence/perf/scenarios/portability_canonical.json",
+        "evidence/perf/scenarios/determinism_score.json",
+        "evidence/perf/scenarios/replay_fidelity_score.json",
+        "evidence/perf/scenarios/explainability_quality.json",
+        "evidence/perf/scenarios/artifact_lineage_completeness.json",
+        "evidence/perf/scenarios/portability_success_rate.json",
     ];
     for rel in required {
         let path = root.join(rel);
@@ -53,16 +59,33 @@ fn benchmark_scenarios_are_owned_versioned_and_documented() {
         .expect("read performance contract");
     for token in [
         "tiny_canonical.json",
-        "medium_canonical.json",
         "wide_canonical.json",
         "deep_canonical.json",
+        "tenk_nodes_canonical.json",
+        "large_artifact_canonical.json",
         "cache_heavy_canonical.json",
+        "failure_injection_canonical.json",
         "replay_canonical.json",
+        "diff_canonical.json",
+        "portability_canonical.json",
     ] {
         assert!(
             contract.contains(token),
             "performance contract missing canonical scenario reference `{}`",
             token
+        );
+    }
+
+    for contract in [
+        "docs/spec/BENCHMARK_SCENARIO_CONTRACT.md",
+        "docs/spec/BENCHMARK_REPRODUCIBILITY_CONTRACT.md",
+        "docs/spec/COMPARISON_METHOD_CONTRACT.md",
+        "docs/spec/EVIDENCE_PUBLICATION_CONTRACT.md",
+        "evidence/perf/scenario_registry.json",
+    ] {
+        assert!(
+            root.join(contract).exists(),
+            "benchmark contract surface missing: {contract}"
         );
     }
 }
