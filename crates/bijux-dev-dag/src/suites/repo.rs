@@ -53,6 +53,7 @@ pub const IDS: &[&str] = &[
     "versioning-compatibility",
     "cache-evolution",
     "replay-contract",
+    "evidence-authority",
     "multi-run-analytics",
     "distributed-coordination",
     "formal-invariants",

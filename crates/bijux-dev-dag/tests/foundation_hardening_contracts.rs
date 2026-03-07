@@ -80,8 +80,9 @@ fn release_evidence_and_proof_statement_cover_required_claims() {
         );
     }
 
-    let proof = fs::read_to_string(root.join("docs/reports/foundation/repository_proof_statement.md"))
-        .expect("repository proof statement should exist");
+    let proof =
+        fs::read_to_string(root.join("docs/reports/foundation/repository_proof_statement.md"))
+            .expect("repository proof statement should exist");
     for token in [
         "What this repository can prove today",
         "scheduler readiness and determinism invariants",

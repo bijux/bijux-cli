@@ -281,6 +281,12 @@ enum RepoCommand {
         #[arg(long)]
         suite: String,
     },
+    /// Print evidence taxonomy contract
+    EvidenceTaxonomy,
+    /// Print evidence ownership ledger
+    EvidenceLedger,
+    /// Validate evidence metadata completeness and path governance
+    EvidenceValidate,
 }
 
 #[derive(Subcommand)]
@@ -1267,6 +1273,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_replay_contract_guard(),
     },
     SuiteDef {
+        id: "evidence-authority",
+        description: "evidence metadata completeness and scenario path governance",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_evidence_metadata_validate(),
+    },
+    SuiteDef {
         id: "distributed-coordination",
         description: "distributed coordination model and simulation boundaries alignment",
         domain: "governance",
@@ -1648,6 +1663,27 @@ fn run(cli: Cli) -> Result<(), String> {
             RepoCommand::Explain { suite } => {
                 run_suite_explain(&context, "repo", &suite, REPO_SUITES)
             }
+            RepoCommand::EvidenceTaxonomy => run_command_reported(
+                &context,
+                "repo.evidence-taxonomy",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_taxonomy_report(),
+            ),
+            RepoCommand::EvidenceLedger => run_command_reported(
+                &context,
+                "repo.evidence-ledger",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_ledger_report(),
+            ),
+            RepoCommand::EvidenceValidate => run_command_reported(
+                &context,
+                "repo.evidence-validate",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_metadata_validate(),
+            ),
         },
         CommandLine::Schedule { command } => match command {
             ScheduleCommand::Validate { file } => run_command_reported(
@@ -2350,7 +2386,10 @@ fn run_foundation_hardening_suite(
     if failed.is_empty() || advisory {
         Ok(())
     } else {
-        Err(format!("foundation hardening failed: {}", failed.join(", ")))
+        Err(format!(
+            "foundation hardening failed: {}",
+            failed.join(", ")
+        ))
     }
 }
 
@@ -2436,9 +2475,8 @@ fn run_release_readiness_report() -> Result<(), String> {
 }
 
 fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
-    let config_payload =
-        fs::read_to_string(root.join("configs/suites/foundation_hardening.json"))
-            .map_err(|err| err.to_string())?;
+    let config_payload = fs::read_to_string(root.join("configs/suites/foundation_hardening.json"))
+        .map_err(|err| err.to_string())?;
     let config: FoundationHardeningConfig =
         serde_json::from_str(&config_payload).map_err(|err| err.to_string())?;
     let required_surfaces = [
@@ -4386,7 +4424,7 @@ fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String> {
 pub(crate) fn repo_root() -> Result<PathBuf, String> {
     let mut dir = env::current_dir().map_err(|err| err.to_string())?;
     loop {
-        if dir.join("Cargo.toml").exists() {
+        if dir.join("Cargo.toml").exists() && dir.join("crates").is_dir() {
             return Ok(dir);
         }
         if !dir.pop() {
@@ -4394,6 +4432,292 @@ pub(crate) fn repo_root() -> Result<PathBuf, String> {
         }
     }
     Err("could not locate repo root".to_string())
+}
+
+fn wildcard_match(pattern: &str, text: &str) -> bool {
+    if pattern == "*" {
+        return true;
+    }
+    let parts: Vec<&str> = pattern.split('*').collect();
+    if parts.len() == 1 {
+        return pattern == text;
+    }
+    let mut index = 0usize;
+    for (i, part) in parts.iter().enumerate() {
+        if part.is_empty() {
+            continue;
+        }
+        if i == 0 && !pattern.starts_with('*') {
+            if !text[index..].starts_with(part) {
+                return false;
+            }
+            index += part.len();
+            continue;
+        }
+        if i == parts.len() - 1 && !pattern.ends_with('*') {
+            return text.ends_with(part);
+        }
+        if let Some(found) = text[index..].find(part) {
+            index += found + part.len();
+        } else {
+            return false;
+        }
+    }
+    true
+}
+
+fn collect_all_files(root: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    for entry in fs::read_dir(root).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.is_dir() {
+            if path.file_name().and_then(|v| v.to_str()) == Some(".git") {
+                continue;
+            }
+            collect_all_files(&path, out)?;
+            continue;
+        }
+        if path.is_file() {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn run_evidence_taxonomy_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let content =
+        fs::read_to_string(root.join("evidence/taxonomy.md")).map_err(|err| err.to_string())?;
+    println!("{content}");
+    Ok(())
+}
+
+fn run_evidence_ledger_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let content = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
+        .map_err(|err| err.to_string())?;
+    println!("{content}");
+    Ok(())
+}
+
+fn run_evidence_metadata_validate() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_payload = fs::read_to_string(root.join("configs/policy/evidence_governance.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
+    let ledger_payload = fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
+        .map_err(|err| err.to_string())?;
+    let ledger: Value = serde_json::from_str(&ledger_payload).map_err(|err| err.to_string())?;
+    let path_policy_payload =
+        fs::read_to_string(root.join("configs/policy/evidence_path_policy.json"))
+            .map_err(|err| err.to_string())?;
+    let path_policy: Value =
+        serde_json::from_str(&path_policy_payload).map_err(|err| err.to_string())?;
+
+    let required_fields: BTreeSet<String> = policy["required_metadata_fields"]
+        .as_array()
+        .ok_or_else(|| "required_metadata_fields must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "required metadata field must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let allowed_classes: BTreeSet<String> = policy["allowed_evidence_classes"]
+        .as_array()
+        .ok_or_else(|| "allowed_evidence_classes must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "allowed evidence class must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let allowed_decisions: BTreeSet<String> = policy["allowed_decisions"]
+        .as_array()
+        .ok_or_else(|| "allowed_decisions must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "allowed decision must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let allowed_impl_status: BTreeSet<String> = policy["allowed_implementation_statuses"]
+        .as_array()
+        .ok_or_else(|| "allowed_implementation_statuses must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "allowed implementation status must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+
+    let entries = ledger["entries"]
+        .as_array()
+        .ok_or_else(|| "evidence ledger entries must be an array".to_string())?;
+    for entry in entries {
+        let map = entry
+            .as_object()
+            .ok_or_else(|| "evidence ledger entry must be an object".to_string())?;
+        for field in &required_fields {
+            if !map.contains_key(field) {
+                return Err(format!(
+                    "evidence ledger entry missing required field `{field}`"
+                ));
+            }
+        }
+        let path = entry["path"]
+            .as_str()
+            .ok_or_else(|| "entry path must be string".to_string())?;
+        let owner = entry["owner"]
+            .as_str()
+            .ok_or_else(|| format!("owner must be string for {path}"))?;
+        let class = entry["evidence_class"]
+            .as_str()
+            .ok_or_else(|| format!("evidence_class must be string for {path}"))?;
+        let decision = entry["decision"]
+            .as_str()
+            .ok_or_else(|| format!("decision must be string for {path}"))?;
+        let implementation_status = entry["implementation_status"]
+            .as_str()
+            .ok_or_else(|| format!("implementation_status must be string for {path}"))?;
+        let canonical_location = entry["canonical_location"]
+            .as_str()
+            .ok_or_else(|| format!("canonical_location must be string for {path}"))?;
+        let trust_property = entry["trust_property"]
+            .as_str()
+            .ok_or_else(|| format!("trust_property must be string for {path}"))?;
+        let trust_properties_protected = entry["trust_properties_protected"]
+            .as_array()
+            .ok_or_else(|| format!("trust_properties_protected must be array for {path}"))?;
+        let consumer_surfaces = entry["consumer_surfaces"]
+            .as_array()
+            .ok_or_else(|| format!("consumer_surfaces must be array for {path}"))?;
+        if owner.trim().is_empty() {
+            return Err(format!("owner is empty for {path}"));
+        }
+        if canonical_location.trim().is_empty() {
+            return Err(format!("canonical_location is empty for {path}"));
+        }
+        if trust_property.trim().is_empty() {
+            return Err(format!("trust_property is empty for {path}"));
+        }
+        if trust_properties_protected.is_empty() {
+            return Err(format!("trust_properties_protected is empty for {path}"));
+        }
+        if consumer_surfaces.is_empty() {
+            return Err(format!("consumer_surfaces is empty for {path}"));
+        }
+        if !allowed_classes.contains(class) {
+            return Err(format!("invalid evidence_class `{class}` for {path}"));
+        }
+        if !allowed_decisions.contains(decision) {
+            return Err(format!("invalid decision `{decision}` for {path}"));
+        }
+        if !allowed_impl_status.contains(implementation_status) {
+            return Err(format!(
+                "invalid implementation_status `{implementation_status}` for {path}"
+            ));
+        }
+        if !root.join(path).exists() {
+            return Err(format!("ledger path does not exist: {path}"));
+        }
+    }
+
+    let governed_roots: Vec<String> = path_policy["governed_roots"]
+        .as_array()
+        .ok_or_else(|| "governed_roots must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "governed root must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let schema_fixture_roots: Vec<String> = path_policy["schema_fixture_roots"]
+        .as_array()
+        .ok_or_else(|| "schema_fixture_roots must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "schema fixture root must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let legacy_scenario_roots: Vec<String> = path_policy["legacy_scenario_roots"]
+        .as_array()
+        .ok_or_else(|| "legacy_scenario_roots must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "legacy scenario root must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+    let helper_allowlist: Vec<String> = path_policy["helper_allowlist"]
+        .as_array()
+        .ok_or_else(|| "helper_allowlist must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "helper allowlist entry must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
+
+    let mut files = Vec::new();
+    collect_all_files(&root, &mut files)?;
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !rel.ends_with(".json") {
+            continue;
+        }
+        let in_governed_root = governed_roots.iter().any(|governed_root| {
+            rel == *governed_root || rel.starts_with(&format!("{governed_root}/"))
+        });
+        let in_schema_fixture_root = schema_fixture_roots
+            .iter()
+            .any(|schema_root| rel == *schema_root || rel.starts_with(&format!("{schema_root}/")));
+        let in_helper_allowlist = helper_allowlist
+            .iter()
+            .any(|pattern| wildcard_match(pattern, &rel));
+        let in_legacy_scenario_root = legacy_scenario_roots
+            .iter()
+            .any(|legacy_root| rel == *legacy_root || rel.starts_with(&format!("{legacy_root}/")));
+        if in_governed_root
+            || in_schema_fixture_root
+            || in_helper_allowlist
+            || in_legacy_scenario_root
+        {
+            continue;
+        }
+        let is_scenario_like = rel.ends_with(".dag.json")
+            || rel.contains("/scenarios/")
+            || rel.contains("/fixtures/")
+            || rel.starts_with("examples/");
+        if is_scenario_like {
+            return Err(format!(
+                "scenario-like json path outside evidence-governed roots is forbidden: {rel}"
+            ));
+        }
+    }
+
+    println!("evidence metadata validation passed");
+    Ok(())
 }
 
 fn now_secs() -> u64 {
@@ -8443,6 +8767,7 @@ fn run_repo_hygiene_suite_guard() -> Result<(), String> {
         "config-lint",
         "config-drift",
         "ambient-env-guard",
+        "evidence-authority",
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
             return Err(format!(
