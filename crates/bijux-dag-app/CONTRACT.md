@@ -10,6 +10,15 @@ This crate is the owner of command orchestration behavior, command-level respons
 - Business orchestration is implemented here, not in `bijux-dag-cli`.
 - Each command path returns a typed response model before rendering.
 - This crate does not own DAG schema/model semantics (`bijux-dag-core`) or runtime execution internals (`bijux-dag-runtime`).
+- `src/lib.rs` is the only root Rust file; command logic must live in bounded domain folders.
+
+## Internal boundaries
+- `commands/*`: orchestration command surfaces and runtime config resolution.
+- `graph/*`: graph-oriented command surfaces and validation entrypoints.
+- `read/*` and `write/*`: input/output IO shaping boundaries.
+- `inspect/*`: run status, doctor, and run-view presentation boundaries.
+- `replay/*`: replay and diff command boundaries.
+- `cache/*`, `explain/*`, `format/*`, `migrate/*`: focused domain command helpers.
 
 ## Allowed changes
 - Add or evolve orchestration modules while keeping command contracts backward-compatible per [docs/spec/CLI_BACKWARD_COMPATIBILITY.md](/Users/bijan/bijux/bijux-dag/docs/spec/CLI_BACKWARD_COMPATIBILITY.md).
