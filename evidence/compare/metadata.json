@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "scenarios": {
+    "evidence/compare/scenarios/chain.json": {"target_system": "orchestrators", "scenario_equivalence_note": "linear dependency chain semantics", "limitation_note": "runtime setup differences are excluded"},
+    "evidence/compare/scenarios/diamond.json": {"target_system": "orchestrators", "scenario_equivalence_note": "diamond fanout and join equivalence", "limitation_note": "resource scaling is not compared"},
+    "evidence/compare/scenarios/retry_timeout.json": {"target_system": "orchestrators", "scenario_equivalence_note": "retry and timeout behavior equivalence", "limitation_note": "adapter-specific timeout internals excluded"},
+    "evidence/compare/scenarios/cache_reuse_shape.json": {"target_system": "orchestrators", "scenario_equivalence_note": "cache reuse behavior shape", "limitation_note": "cache backend implementation details excluded"},
+    "evidence/compare/scenarios/replay_equivalence.json": {"target_system": "orchestrators", "scenario_equivalence_note": "replay equivalence and mismatch behavior", "limitation_note": "binary artifact internals excluded"},
+    "evidence/compare/scenarios/failure_propagation.json": {"target_system": "orchestrators", "scenario_equivalence_note": "downstream skip and failure propagation semantics", "limitation_note": "scheduler internals excluded"},
+    "evidence/compare/scenarios/determinism.json": {"target_system": "orchestrators", "scenario_equivalence_note": "deterministic behavior claims", "limitation_note": "environment-level nondeterminism excluded"},
+    "evidence/compare/scenarios/operator_inspectability.json": {"target_system": "orchestrators", "scenario_equivalence_note": "operator explainability signal quality", "limitation_note": "UI ergonomics excluded"},
+    "evidence/compare/scenarios/failure_diagnostics.json": {"target_system": "orchestrators", "scenario_equivalence_note": "failure diagnostics clarity", "limitation_note": "vendor-specific diagnostic taxonomies excluded"},
+    "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json": {"target_system": "orchestrators", "scenario_equivalence_note": "scheduler overhead with tiny tasks", "limitation_note": "hardware variance excluded"},
+    "evidence/compare/scenarios/artifact_inspectability.json": {"target_system": "orchestrators", "scenario_equivalence_note": "artifact inspection and traceability", "limitation_note": "storage backend internals excluded"}
+  },
+  "baselines": [
+    "evidence/compare/baselines/bijux_v1.json"
+  ]
+}

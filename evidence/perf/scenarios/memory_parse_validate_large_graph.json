@@ -1,0 +1,1 @@
+{"scenario_id":"memory-parse-validate-large-graph","class":"parse","resource_focus":"memory","graph":"evidence/perf/fixtures/large_dag.json"}

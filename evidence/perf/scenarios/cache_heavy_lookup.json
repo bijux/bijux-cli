@@ -1,0 +1,1 @@
+{"scenario_id":"cache-heavy-lookup","class":"cache-lookup","graph":"evidence/perf/fixtures/large_dag.json","mode":"readwrite"}

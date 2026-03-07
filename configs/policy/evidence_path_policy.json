@@ -10,8 +10,6 @@
     "evidence/operator",
     "evidence/perf",
     "evidence/compare",
-    "benchmarks/scenarios",
-    "comparisons/scenarios",
     "evidence/cache",
     "evidence/compat",
     "evidence/fault",
@@ -26,6 +24,8 @@
   ],
   "legacy_scenario_roots": [
     "benchmarks/fixtures",
+    "benchmarks/scenarios",
+    "comparisons/scenarios",
     "tests/compatibility/graph_schema",
     "crates/bijux-dag-core/tests/compat",
     "crates/bijux-dag-core/tests/snapshots"

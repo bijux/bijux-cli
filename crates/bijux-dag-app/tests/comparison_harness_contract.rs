@@ -22,7 +22,7 @@ use std::path::Path;
 #[test]
 fn comparison_scenarios_have_required_ids_and_unique_names() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let scenarios_dir = root.join("comparisons/scenarios");
+    let scenarios_dir = root.join("evidence/compare/scenarios");
     let entries = fs::read_dir(&scenarios_dir).expect("read scenarios dir");
     let mut ids = BTreeSet::new();
     for entry in entries {
@@ -58,7 +58,7 @@ fn comparison_scenarios_have_required_ids_and_unique_names() {
 #[test]
 fn bijux_baseline_covers_all_scenarios() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let baseline_path = root.join("comparisons/bijux/baselines/v1.json");
+    let baseline_path = root.join("evidence/compare/baselines/bijux_v1.json");
     let baseline_payload = fs::read_to_string(baseline_path).expect("read baseline");
     let baseline: Value = serde_json::from_str(&baseline_payload).expect("parse baseline");
     let items = baseline

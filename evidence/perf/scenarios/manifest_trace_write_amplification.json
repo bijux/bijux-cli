@@ -1,0 +1,1 @@
+{"scenario_id":"manifest-trace-write-amplification","class":"manifest-finalize","graph":"evidence/perf/fixtures/large_dag.json","focus":"trace-write-amplification","version":"v1","owner":"bijux-dev-dag"}

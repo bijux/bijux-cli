@@ -13,8 +13,10 @@
     "evidence/compat/run_dir",
     "evidence/fault/classes",
     "evidence/fault/corrupt_runs",
-    "benchmarks/scenarios",
-    "comparisons/scenarios",
+    "evidence/perf/scenarios",
+    "evidence/perf/baselines",
+    "evidence/compare/scenarios",
+    "evidence/compare/baselines",
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
     "crates/bijux-dag-core/tests/fixtures",
@@ -33,7 +35,11 @@
     "evidence/compat/graph_schema/.gitkeep",
     "evidence/compat/export_bundle/.gitkeep",
     "evidence/compat/run_dir/.gitkeep",
-    "evidence/fault/classes/.gitkeep"
+    "evidence/fault/classes/.gitkeep",
+    "evidence/perf/scenarios/.gitkeep",
+    "evidence/perf/baselines/.gitkeep",
+    "evidence/compare/scenarios/.gitkeep",
+    "evidence/compare/baselines/.gitkeep"
   ],
   "forbidden_globs": [
     "benchmarks/fixtures/distributed/*",
@@ -47,7 +53,11 @@
     "tests/cache/fixtures/*",
     "tests/compatibility/*",
     "tests/fault/fixtures/*",
-    "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/*"
+    "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/*",
+    "benchmarks/scenarios/*",
+    "benchmarks/baselines/*",
+    "comparisons/scenarios/*",
+    "comparisons/bijux/baselines/*"
   ],
   "allowed_decisions": [
     "keep",

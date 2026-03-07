@@ -2719,11 +2719,11 @@ fn check_e2e_state_ready(root: &Path) -> Value {
 }
 
 fn check_perf_baseline_ready(root: &Path) -> Value {
-    json!({"ok": root.join("benchmarks/baselines").exists()})
+    json!({"ok": root.join("evidence/perf/baselines").exists()})
 }
 
 fn check_resource_baseline_ready(root: &Path) -> Value {
-    json!({"ok": root.join("benchmarks/baselines/resource_trend_v1.json").exists()})
+    json!({"ok": root.join("evidence/perf/baselines/resource_trend_v1.json").exists()})
 }
 
 fn read_release_blockers(root: &Path) -> Result<Value, String> {
@@ -3472,22 +3472,22 @@ fn run_benchmark_baseline() -> Result<(), String> {
         (
             "large-dag",
             "execute-local",
-            "benchmarks/fixtures/large_dag.json",
+            "evidence/perf/fixtures/large_dag.json",
         ),
         (
             "linear-32",
             "plan",
-            "benchmarks/fixtures/scheduler_linear_32.json",
+            "evidence/perf/fixtures/scheduler_linear_32.json",
         ),
         (
             "parallel-64",
             "plan",
-            "benchmarks/fixtures/scheduler_parallel_64.json",
+            "evidence/perf/fixtures/scheduler_parallel_64.json",
         ),
         (
             "diamond-fanout",
             "manifest-finalize",
-            "benchmarks/fixtures/scheduler_diamond_fanout.json",
+            "evidence/perf/fixtures/scheduler_diamond_fanout.json",
         ),
     ];
     let mut scenario_results = Vec::new();
@@ -5439,17 +5439,18 @@ fn run_performance_evidence_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
         "docs/spec/PERFORMANCE_CONTRACT.md",
-        "benchmarks/baselines/benchmark_report.schema.json",
-        "benchmarks/baselines/regression_thresholds.json",
-        "benchmarks/scenarios/tiny_canonical.json",
-        "benchmarks/scenarios/medium_canonical.json",
-        "benchmarks/scenarios/wide_canonical.json",
-        "benchmarks/scenarios/deep_canonical.json",
-        "benchmarks/scenarios/cache_heavy_canonical.json",
-        "benchmarks/scenarios/replay_canonical.json",
-        "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
-        "benchmarks/scenarios/manifest_trace_write_amplification.json",
-        "benchmarks/scenarios/replay_verification_cost.json",
+        "configs/schema/benchmarks/benchmark_report.schema.json",
+        "evidence/perf/baselines/regression_thresholds.json",
+        "evidence/perf/metadata.json",
+        "evidence/perf/scenarios/tiny_canonical.json",
+        "evidence/perf/scenarios/medium_canonical.json",
+        "evidence/perf/scenarios/wide_canonical.json",
+        "evidence/perf/scenarios/deep_canonical.json",
+        "evidence/perf/scenarios/cache_heavy_canonical.json",
+        "evidence/perf/scenarios/replay_canonical.json",
+        "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+        "evidence/perf/scenarios/manifest_trace_write_amplification.json",
+        "evidence/perf/scenarios/replay_verification_cost.json",
         "crates/bijux-dev-dag/tests/benchmark_scenario_contract.rs",
     ] {
         if !root.join(rel).exists() {
@@ -5462,15 +5463,15 @@ fn run_performance_evidence_guard() -> Result<(), String> {
 fn run_performance_evidence_report() -> Result<(), String> {
     let root = repo_root()?;
     let scenario_files = [
-        "benchmarks/scenarios/tiny_canonical.json",
-        "benchmarks/scenarios/medium_canonical.json",
-        "benchmarks/scenarios/wide_canonical.json",
-        "benchmarks/scenarios/deep_canonical.json",
-        "benchmarks/scenarios/cache_heavy_canonical.json",
-        "benchmarks/scenarios/replay_canonical.json",
-        "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
-        "benchmarks/scenarios/manifest_trace_write_amplification.json",
-        "benchmarks/scenarios/replay_verification_cost.json",
+        "evidence/perf/scenarios/tiny_canonical.json",
+        "evidence/perf/scenarios/medium_canonical.json",
+        "evidence/perf/scenarios/wide_canonical.json",
+        "evidence/perf/scenarios/deep_canonical.json",
+        "evidence/perf/scenarios/cache_heavy_canonical.json",
+        "evidence/perf/scenarios/replay_canonical.json",
+        "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+        "evidence/perf/scenarios/manifest_trace_write_amplification.json",
+        "evidence/perf/scenarios/replay_verification_cost.json",
     ];
     let mut scenarios = Vec::new();
     for rel in scenario_files {
@@ -5487,8 +5488,9 @@ fn run_performance_evidence_report() -> Result<(), String> {
 
     let payload = json!({
         "contract": "docs/spec/PERFORMANCE_CONTRACT.md",
-        "schema": "benchmarks/baselines/benchmark_report.schema.json",
-        "thresholds": "benchmarks/baselines/regression_thresholds.json",
+        "schema": "configs/schema/benchmarks/benchmark_report.schema.json",
+        "thresholds": "evidence/perf/baselines/regression_thresholds.json",
+        "metadata": "evidence/perf/metadata.json",
         "has_baseline_command": true,
         "has_compare_command": true,
         "scenarios": scenarios
@@ -5547,7 +5549,7 @@ fn run_resource_profile_summary(report: &Path) -> Result<(), String> {
 fn run_resource_budget_check(report: &Path, gate: bool) -> Result<(), String> {
     let root = repo_root()?;
     let report_path = root.join(report);
-    let budgets_path = root.join("benchmarks/scenarios/resource_budgets.json");
+    let budgets_path = root.join("evidence/perf/scenarios/resource_budgets.json");
 
     let report_json: Value =
         serde_json::from_str(&fs::read_to_string(&report_path).map_err(|err| err.to_string())?)
@@ -8037,7 +8039,8 @@ fn run_comparison_harness_guard() -> Result<(), String> {
         "docs/reference/COMPARISON_REPORT_TEMPLATE.md",
         "docs/reference/COMPARISON_LIMITATIONS.md",
         "comparisons/README.md",
-        "comparisons/bijux/baselines/v1.json",
+        "evidence/compare/baselines/bijux_v1.json",
+        "evidence/compare/metadata.json",
         "crates/bijux-dag-app/tests/comparison_harness_contract.rs",
     ];
     let mut missing = Vec::new();
@@ -8053,7 +8056,7 @@ fn run_comparison_harness_guard() -> Result<(), String> {
         ));
     }
 
-    let scenario_dir = root.join("comparisons/scenarios");
+    let scenario_dir = root.join("evidence/compare/scenarios");
     let mut scenario_count = 0usize;
     for entry in fs::read_dir(&scenario_dir).map_err(|err| err.to_string())? {
         let path = entry.map_err(|err| err.to_string())?.path();
@@ -8094,7 +8097,10 @@ fn run_comparison_harness_guard() -> Result<(), String> {
                     || lower.contains("best dag")
                     || lower.contains("better than")
                     || lower.contains("faster than");
-                if vague_superiority && !line.contains("comparisons/") {
+                if vague_superiority
+                    && !line.contains("comparisons/")
+                    && !line.contains("evidence/compare/")
+                {
                     violations.push(format!("{rel}: {}", line.trim()));
                 }
             }
@@ -8111,7 +8117,7 @@ fn run_comparison_harness_guard() -> Result<(), String> {
 
 fn run_comparison_evidence_report() -> Result<(), String> {
     let root = repo_root()?;
-    let scenario_dir = root.join("comparisons/scenarios");
+    let scenario_dir = root.join("evidence/compare/scenarios");
     let mut scenario_ids = Vec::new();
     for entry in fs::read_dir(&scenario_dir).map_err(|err| err.to_string())? {
         let path = entry.map_err(|err| err.to_string())?.path();
@@ -8128,7 +8134,7 @@ fn run_comparison_evidence_report() -> Result<(), String> {
     scenario_ids.dedup();
 
     let baseline: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("comparisons/bijux/baselines/v1.json"))
+        &fs::read_to_string(root.join("evidence/compare/baselines/bijux_v1.json"))
             .map_err(|err| err.to_string())?,
     )
     .map_err(|err| err.to_string())?;
@@ -8141,7 +8147,8 @@ fn run_comparison_evidence_report() -> Result<(), String> {
     let payload = json!({
         "scenario_count": scenario_ids.len(),
         "scenarios": scenario_ids,
-        "bijux_baseline_entries": baseline_count
+        "bijux_baseline_entries": baseline_count,
+        "metadata": "evidence/compare/metadata.json"
     });
     println!(
         "{}",
@@ -8345,7 +8352,7 @@ fn run_anti_drift_governance_guard() -> Result<(), String> {
         );
     }
 
-    let benchmark_scenarios = root.join("benchmarks/scenarios");
+    let benchmark_scenarios = root.join("evidence/perf/scenarios");
     if !benchmark_scenarios.exists() {
         return Err(
             "benchmark scenario directory missing for anti-drift benchmark check".to_string(),

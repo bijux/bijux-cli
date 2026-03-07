@@ -1,1 +1,0 @@
-{"scenario_id":"manifest-trace-volume-growth","class":"manifest-finalize","resource_focus":"artifact-bytes","graph":"benchmarks/fixtures/large_dag.json"}

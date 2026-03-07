@@ -4,5 +4,5 @@
   "size": "replay",
   "version": "v1",
   "owner": "bijux-dev-dag",
-  "graph": "benchmarks/fixtures/large_dag.json"
+  "graph":"evidence/perf/fixtures/large_dag.json"
 }

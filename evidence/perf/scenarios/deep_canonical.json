@@ -4,5 +4,5 @@
   "size": "deep",
   "version": "v1",
   "owner": "bijux-dev-dag",
-  "graph": "benchmarks/fixtures/planner_deep_chain.json"
+  "graph":"evidence/perf/fixtures/planner_deep_chain.json"
 }

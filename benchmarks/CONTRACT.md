@@ -23,7 +23,7 @@ This directory is authoritative for benchmark scenario definitions and baseline 
 - `crates/bijux-dev-dag/tests/benchmark_scenario_contract.rs`
 
 ## Related schemas
-- `benchmarks/baselines/benchmark_report.schema.json`
+- `configs/schema/benchmarks/benchmark_report.schema.json`
 
 ## Versioning and change policy
 Baseline schema changes require a new schema version and migration notes.
