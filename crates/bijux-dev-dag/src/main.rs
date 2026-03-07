@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const CLI_COMMAND_FREEZE_BASELINE: usize = 28;
+const CLI_COMMAND_FREEZE_BASELINE: usize = 29;
 const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
 #[derive(Parser)]
@@ -460,6 +460,15 @@ const CONTRACT_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_schema_contracts_guard(),
+    },
+    SuiteDef {
+        id: "adapter-conformance",
+        description: "runtime adapter descriptor conformance checks",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "-p", "bijux-dag-runtime", "adapter_descriptor_requires_identity_and_schema_version"]),
     },
 ];
 

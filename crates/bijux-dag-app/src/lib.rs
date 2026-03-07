@@ -14,7 +14,7 @@ use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{
-    registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeConfig, Selector, SelectorSet,
+    adapter_registry_dump, registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeConfig, Selector, SelectorSet,
 };
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
@@ -988,6 +988,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         );
                     }
                 }
+                Ok(ExitCode::SUCCESS)
+            }
+            AdaptersCommands::Dump => {
+                let data = adapter_registry_dump();
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.adapters.dump",
+                        true,
+                        data,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&data).map_err(|_| ExitCode::from(3))?
+                );
                 Ok(ExitCode::SUCCESS)
             }
             AdaptersCommands::Doctor => {

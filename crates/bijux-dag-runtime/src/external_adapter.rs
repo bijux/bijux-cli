@@ -1,4 +1,4 @@
-use crate::{adapter::EffectSet, Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError};
+use crate::{adapter::{AdapterOrigin, EffectSet}, Adapter, AdapterId, NodeCtx, NodeResult, RuntimeError};
 use bijux_dag_artifacts::write_outputs_index;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -65,6 +65,10 @@ impl Adapter for ExternalAdapter {
 
     fn produces_outputs_schema_version(&self) -> String {
         self.info.produces_outputs_schema_version.clone()
+    }
+
+    fn origin(&self) -> AdapterOrigin {
+        AdapterOrigin::External
     }
 
     fn binary_hash(&self) -> Option<String> {
@@ -172,6 +176,10 @@ pub fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeErro
         if !path.is_file() {
             continue;
         }
+        let path = match canonicalize_external_adapter_path(&path) {
+            Some(path) => path,
+            None => continue,
+        };
         let info = match Command::new(&path).args(["info", "--json"]).output() {
             Ok(out) if out.status.success() => {
                 serde_json::from_slice::<ExternalAdapterInfo>(&out.stdout).ok()
@@ -191,4 +199,11 @@ pub fn discover_external_adapters() -> Result<Vec<Arc<dyn Adapter>>, RuntimeErro
 
 fn default_outputs_schema_version() -> String {
     "v0.1".to_string()
+}
+
+fn canonicalize_external_adapter_path(path: &PathBuf) -> Option<PathBuf> {
+    if !path.is_file() {
+        return None;
+    }
+    std::fs::canonicalize(path).ok()
 }

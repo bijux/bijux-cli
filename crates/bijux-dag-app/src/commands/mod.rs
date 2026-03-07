@@ -199,6 +199,7 @@ pub(crate) enum CacheCommands {
 #[derive(Subcommand)]
 pub(crate) enum AdaptersCommands {
     Ls,
+    Dump,
     Doctor,
 }
 

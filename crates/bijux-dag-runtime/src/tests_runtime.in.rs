@@ -981,4 +981,77 @@ mod tests {
         assert!(out.exists());
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     }
+
+    #[test]
+    fn undeclared_output_file_fails_execution() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::Shell,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "declared".to_string(),
+                    path: "declared.txt".to_string(),
+                }],
+                params: param_object(vec![(
+                    "argv",
+                    Value::Array(vec![
+                        Value::from("/bin/sh"),
+                        Value::from("-c"),
+                        Value::from("echo ok > ../outputs/declared.txt && echo bad > ../outputs/extra.txt"),
+                    ]),
+                )]),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("\"OUTPUT_UNDECLARED\""));
+    }
+
+    #[test]
+    fn adapter_metadata_present_for_run_and_replay() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let original = runtime
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let replay = runtime
+            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let trace_a = fs::read_to_string(original.join("nodes").join("a").join("trace.json"))
+            .unwrap();
+        let trace_b = fs::read_to_string(replay.join("nodes").join("a").join("trace.json"))
+            .unwrap();
+        assert!(trace_a.contains("\"adapter_id\""));
+        assert!(trace_b.contains("\"adapter_id\""));
+    }
+
+    #[test]
+    fn external_adapter_path_must_be_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter_dir = dir.path().join("adapters");
+        fs::create_dir_all(&adapter_dir).unwrap();
+        std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+        let adapters = crate::external_adapter::discover_external_adapters().unwrap();
+        assert!(adapters.is_empty());
+        std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+    }
 }

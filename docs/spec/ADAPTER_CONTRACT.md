@@ -4,6 +4,7 @@ Adapter implementations must satisfy all requirements below.
 
 ## Identity and capabilities
 - Stable adapter ID and version.
+- Type-level origin classification: `BuiltIn` or `External`.
 - Declared supported node kinds.
 - Declared required effects.
 - Declared output schema version.

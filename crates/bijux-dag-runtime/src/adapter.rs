@@ -1,6 +1,12 @@
 use crate::{NodeResult, RunContext, RuntimeError};
 use bijux_dag_core::{Effect, Node};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AdapterOrigin {
+    BuiltIn,
+    External,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdapterId {
     pub id: String,
@@ -36,11 +42,35 @@ pub struct NodeCtx<'a> {
     pub params: &'a serde_json::Value,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdapterDescriptor {
+    pub id: String,
+    pub version: String,
+    pub supported_kinds: Vec<String>,
+    pub required_effects: EffectSet,
+    pub produces_outputs_schema_version: String,
+    pub origin: AdapterOrigin,
+}
+
 pub trait Adapter: Send + Sync {
     fn id(&self) -> AdapterId;
     fn supported_kinds(&self) -> Vec<String>;
     fn required_effects(&self) -> EffectSet;
     fn produces_outputs_schema_version(&self) -> String;
+    fn origin(&self) -> AdapterOrigin {
+        AdapterOrigin::BuiltIn
+    }
+    fn descriptor(&self) -> AdapterDescriptor {
+        let id = self.id();
+        AdapterDescriptor {
+            id: id.id,
+            version: id.version,
+            supported_kinds: self.supported_kinds(),
+            required_effects: self.required_effects(),
+            produces_outputs_schema_version: self.produces_outputs_schema_version(),
+            origin: self.origin(),
+        }
+    }
     fn binary_hash(&self) -> Option<String> {
         None
     }

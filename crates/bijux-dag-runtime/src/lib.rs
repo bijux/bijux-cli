@@ -1,4 +1,5 @@
 mod adapter;
+pub mod adapter_conformance;
 pub mod adapter_api;
 mod adapter_sdk;
 pub mod api;
@@ -60,6 +61,8 @@ mod workflow_product;
 mod test_support;
 #[cfg(test)]
 mod runtime_boundary_tests;
+#[cfg(test)]
+mod adapter_contract_tests;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
@@ -1171,6 +1174,14 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     registry.list()
 }
 
+pub fn adapter_registry_dump() -> serde_json::Value {
+    let adapters = registered_adapters();
+    serde_json::json!({
+        "count": adapters.len(),
+        "adapters": adapters
+    })
+}
+
 fn materialize_inputs(
     ctx: &RunContext,
     graph: &Graph,
@@ -1539,6 +1550,11 @@ fn sort_value_maps(value: &mut Value) {
 }
 
 pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
+    let mut declared = std::collections::BTreeSet::new();
+    for out in outputs {
+        declared.insert(out.path.replace('\\', "/"));
+    }
+
     for out in outputs {
         let schema = ArtifactSchemaDescriptor {
             name: "bijux.output.file".to_string(),
@@ -1581,7 +1597,39 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
             });
         }
     }
+
+    let mut actual = std::collections::BTreeSet::new();
+    collect_relative_files(dir, dir, &mut actual);
+    for rel in actual {
+        if !declared.contains(&rel) {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_UNDECLARED".to_string(),
+                message: format!("undeclared output file: {}", rel),
+                details: None,
+            });
+        }
+    }
     None
+}
+
+fn collect_relative_files(root: &Path, current: &Path, out: &mut std::collections::BTreeSet<String>) {
+    let entries = match std::fs::read_dir(current) {
+        Ok(entries) => entries,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_relative_files(root, &path, out);
+            continue;
+        }
+        if path.is_file() {
+            if let Ok(rel) = path.strip_prefix(root) {
+                out.insert(rel.to_string_lossy().replace('\\', "/"));
+            }
+        }
+    }
 }
 
 fn container_trace(
