@@ -252,7 +252,7 @@ fn node_is_terminal(state: NodeState) -> bool {
 }
 
 pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), String> {
-    if node_is_terminal(transition.from) && transition.from != transition.to {
+    if node_is_terminal(transition.from.clone()) && transition.from != transition.to {
         return Err(format!(
             "{} illegal node transition from terminal state: {:?} -> {:?}",
             INV_NODE_TERMINAL_NO_REVERT, transition.from, transition.to
@@ -358,7 +358,7 @@ pub fn terminal_transition_audit_events(
 ) -> Vec<TransitionAuditEvent> {
     let mut out = Vec::new();
     for transition in node_transitions {
-        if node_is_terminal(transition.to) {
+        if node_is_terminal(transition.to.clone()) {
             out.push(TransitionAuditEvent {
                 invariant_id: node_transition_invariant_id(
                     transition.from.clone(),

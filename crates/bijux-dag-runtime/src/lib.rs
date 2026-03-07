@@ -185,6 +185,10 @@ use bijux_dag_core::{
 use clock::{Clock, SystemClock};
 use io::{Fs, StdFs};
 pub use planner::build_plan;
+pub use cache::{
+    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
+    CacheKeyInput,
+};
 pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
@@ -198,7 +202,7 @@ pub use extension_catalog::{
     extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
     internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
     validate_extension_descriptor, validate_plugin_conformance, CapabilityRange,
-    CodeGenerationHook, DslExtensionPoint, EcosystemRoadmap, ExtensionCompatibilityIssue,
+    CodeGenerationHook, DslExtensionPoint, ExtensionCompatibilityIssue,
     ExtensionDescriptor, ExtensionDiscoveryRecord, ExtensionPointStatus, ExtensionRegistration,
     ExtensionStabilityLevel, InternalHookPromotionChecklist, OfficialPluginPolicy,
     PlatformMaturityScorecard, PluginBoundaryKind, PluginConformanceSuiteResult,
@@ -226,6 +230,8 @@ pub use recovery::{
     RunPauseMode, RunPausePolicy, RunQuarantineRecord, RunRepairOutcome, SchedulerRecoveryAction,
     SchedulerRecoveryRule, StuckRunPolicy,
 };
+pub use runtime_semantics::*;
+pub use policy::policy_allows_effects;
 use registry::{build_registry, AdapterRegistry};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -378,9 +384,10 @@ pub use ha_scheduler::{
 };
 pub use infrastructure::{
     negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
-    ArtifactTransportMode, BackendAcceptanceGate, BackendCapabilities,
+    ArtifactTransportMode, BackendAcceptanceGate,
+    BackendCapabilities as InfrastructureBackendCapabilities,
     BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
-    BackendPolicyOverlay, CapabilityDecision, ContainerExecutionContract, ExecutorBackend,
+    BackendPolicyOverlay, CapabilityDecision, ExecutorBackend,
     HighAvailabilitySchedulerPlan, HpcExecutorContract, KubernetesExecutorContract,
     MultiTenantIdentity, ObjectStorageContract, QueuePartition, RegistryPersistenceBackend,
     RuntimeSecretContract, SchedulerScalingPlan,
@@ -450,7 +457,7 @@ pub use observability::{
 };
 pub use operations_governance::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    invariant_catalog_default, release_policy_allows, AuditReadinessChecklist,
+    release_policy_allows, AuditReadinessChecklist,
     ErrorBudgetPolicy, GamedayScenario, IncidentClassification, IncidentSeverity,
     IntegratedVerificationLane, LifecycleGovernanceRule, OperatorTrainingCatalog,
     PlatformAcceptanceBoard, PlatformHealthDashboard, PlatformInvariantCatalog,
@@ -459,11 +466,11 @@ pub use operations_governance::{
     SloEvaluation, SupportabilityModel, SustainabilityOwnership,
 };
 pub use observability_deep::{
-    build_diagnostics, build_investigation_bundle, build_topology_overlay, detect_metric_drift,
+    build_diagnostics, build_topology_overlay, detect_metric_drift,
     observability_contract_status, redact_event_details, render_timeline_text, root_cause_graph,
     sample_events, AlertRule, DiagnosticRecord, DiagnosticsKind, DriftDetectionReport,
     EventCorrelation, ExplainArtifactReport, ExplainNodeReport, ExplainRunReport,
-    ExplainScheduleReport, FailureCauseCode, InvestigationBundle, MetricsExportFormat,
+    ExplainScheduleReport, FailureCauseCode, MetricsExportFormat,
     ObservabilityContractStatus, RedactionPolicy, ReplaySpanLink, SamplingPolicy,
     TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
 };
@@ -500,7 +507,7 @@ pub use semantic_lineage::{
     CrossRunLineageStitch, FieldLevelLineageHook, LineageConfidence, LineageConflict,
     LineageExportFormat, LineageImpactReport, LineageMaterializationRule, LineageQualityScore,
     LineageReconciliationPlan, LineageSummary, LineageSummaryNode, PolicyLineageHookInput,
-    ReplayRecommendation, RetentionProtectionRule, ReverseImpactReport, SemanticDependencyClass,
+    RetentionProtectionRule, ReverseImpactReport, SemanticDependencyClass,
     SemanticLineageExplain, SemanticRelationship,
 };
 pub use secrets_security::{
@@ -509,7 +516,7 @@ pub use secrets_security::{
     should_materialize_secret_artifact, summarize_sensitive_classes, taint_from_secret_usage,
     validate_secret_delivery_mode, SecretArtifactPolicy, SecretDeliveryPolicy,
     SecretInjectionMode, SecretIntegrationReadiness, SecretLeakIncident, SecretMaskingPolicy,
-    SecretReference, SecretResolutionTiming, SecretRotationRule, SecretScopeRule, SecretSource,
+    SecretResolutionTiming, SecretRotationRule, SecretScopeRule, SecretSource,
     SecretTaintRecord, SecretUsageAuditEvent, SecretVersionSelection, SecureExecutionMode,
     SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
@@ -566,7 +573,7 @@ pub enum RuntimeError {
     Executor(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum NodeStatus {
     Success,
     Failed,
@@ -950,6 +957,7 @@ struct CacheRead {
     proof: Option<CacheProof>,
 }
 
+#[derive(Clone)]
 pub struct RuntimeConfig {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
@@ -1941,4 +1949,4 @@ fn materialize_file(
 
 
 #[cfg(test)]
-include!("tests_runtime.in.rs");
+include!("internal/testing/tests_runtime.in.rs");

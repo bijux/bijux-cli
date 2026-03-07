@@ -59,7 +59,7 @@ impl ArtifactStore {
     }
 
     pub fn read_validated_run_manifest(&self) -> std::io::Result<serde_json::Value> {
-        let path = self.run_dir.manifest_path();
+        let path = self.run_dir.staging_path().join("manifest.json");
         let payload = self.fs.read_to_string(&path)?;
         let parsed: serde_json::Value = serde_json::from_str(&payload).map_err(|err| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, format!("invalid manifest json: {err}"))
@@ -75,13 +75,13 @@ impl ArtifactStore {
 
     pub fn verify_health(&self) -> std::io::Result<StorageHealthReport> {
         let mut anomalies = Vec::new();
-        let manifest = self.run_dir.manifest_path();
+        let manifest = self.run_dir.staging_path().join("manifest.json");
         if self.fs.metadata(&manifest).is_err() {
             anomalies.push("missing manifest.json".to_string());
         } else if self.read_validated_run_manifest().is_err() {
             anomalies.push("invalid manifest.json".to_string());
         }
-        let outputs_index = self.run_dir.outputs_index_path();
+        let outputs_index = self.run_dir.run_outputs_index_path();
         if self.fs.metadata(&outputs_index).is_err() {
             anomalies.push("missing outputs.index.json".to_string());
         }

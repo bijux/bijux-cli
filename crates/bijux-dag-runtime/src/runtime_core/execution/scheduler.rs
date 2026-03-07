@@ -295,7 +295,7 @@ impl SchedulerState {
         self.mark_event(
             SchedulerEventKind::NodeFailed,
             node_id,
-            Some(format!("mode={}", failure_mode_name(mode))),
+            Some(format!("mode={}", failure_mode_name(&mode))),
         );
         self.completion_by_node
             .insert(node_id.to_string(), "failed".to_string());
@@ -382,7 +382,7 @@ pub trait Scheduler {
     ) -> ScheduleDecision;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ReadyQueue {
     ordered: BTreeSet<String>,
     queue: VecDeque<String>,
@@ -616,7 +616,7 @@ pub fn failure_allows_downstream_readiness(mode: FailurePropagationMode) -> bool
     !matches!(mode, FailurePropagationMode::FailFast)
 }
 
-pub fn failure_mode_name(mode: FailurePropagationMode) -> &'static str {
+pub fn failure_mode_name(mode: &FailurePropagationMode) -> &'static str {
     match mode {
         FailurePropagationMode::FailFast => "fail_fast",
         FailurePropagationMode::IsolateBranch => "isolate_branch",

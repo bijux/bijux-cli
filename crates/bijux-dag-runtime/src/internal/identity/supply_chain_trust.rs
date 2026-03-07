@@ -62,7 +62,7 @@ pub struct RunProvenanceAttestation {
     pub environment: EnvironmentAttestation,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ArtifactTrustLabel {
     Unverified,
     Verified,

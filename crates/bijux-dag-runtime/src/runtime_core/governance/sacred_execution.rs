@@ -122,7 +122,7 @@ pub(crate) fn ready_queue_from_dependencies(counter: &DependencyCounter) -> Read
     ReadyQueue::from_indegree(counter.indegree_map())
 }
 
-pub(crate) fn resolve_dependencies(plan: &crate::planner::ExecutionPlan) -> DependencyCounter {
+pub(crate) fn resolve_dependencies(plan: &crate::ExecutionPlan) -> DependencyCounter {
     DependencyCounter::from_plan(plan)
 }
 

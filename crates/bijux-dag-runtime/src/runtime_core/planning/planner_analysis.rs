@@ -73,7 +73,7 @@ pub struct PlannerGuardrails {
     pub allow_semantic_optimizations: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlannerBuildResult {
     pub plan: ExecutionPlan,
     pub phases: Vec<PlannerPhase>,

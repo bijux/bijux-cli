@@ -6,7 +6,11 @@ use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     let canonical = graph.canonicalize();
-    let order = canonical.nodes.iter().map(|n| n.id.clone()).collect();
+    let order = canonical
+        .nodes
+        .iter()
+        .map(|n| n.id.clone())
+        .collect::<Vec<String>>();
     let dep_map = build_dep_map(graph);
     let (indegree, adj) = build_graph_index(graph);
     let mut filter_reasons = HashMap::new();

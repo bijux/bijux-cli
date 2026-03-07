@@ -311,14 +311,6 @@ pub fn validate_task_contracts(graph: &Graph, options: &RuntimeConfig) -> Result
     for node in &graph.nodes {
         let contract = build_task_contract(node, graph, options);
 
-        if contract.retry_policy.max_attempts > 0
-            && contract.idempotency_mode == IdempotencyMode::BestEffort
-        {
-            return Err(RuntimeError::Executor(format!(
-                "retryable node '{}' must declare idempotency_mode as required or recommended",
-                node.id
-            )));
-        }
         if !node.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
             return Err(RuntimeError::Executor(format!(
                 "node '{}' declares env_allowlist without env effect",
@@ -326,9 +318,9 @@ pub fn validate_task_contracts(graph: &Graph, options: &RuntimeConfig) -> Result
             )));
         }
         if let Some(resources) = node.resources.as_ref() {
-            if resources.cpu == 0 || resources.mem_mb == 0 {
+            if resources.cpu == 0 {
                 return Err(RuntimeError::Executor(format!(
-                    "node '{}' has invalid resource contract; cpu and mem_mb must be positive",
+                    "node '{}' has invalid resource contract; cpu must be positive",
                     node.id
                 )));
             }

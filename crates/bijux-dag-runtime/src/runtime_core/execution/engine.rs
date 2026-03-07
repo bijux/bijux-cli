@@ -3,8 +3,8 @@ use crate::{
     category_from_runtime_event_name, current_process_memory_bytes, node_fingerprint_from_ctx,
     node_fingerprint_with_inputs, registered_adapters, sacred_execution, set_node_fingerprint,
     summarize_failure_root_causes, write_timeline_export, CacheProof, EffectSet, EventRecord,
-    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult, NodeStatus,
-    ReplayNodeAction, RunAttempt, RunId, RunMetrics, RunSnapshot, Runtime,
+    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult,
+    NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId, RunMetrics, RunSnapshot, Runtime,
     RuntimeConfig, RuntimeError, SchedulerEventHook, SchedulerMetrics, TimelineEntry, TimelineExport,
 };
 use bijux_dag_artifacts::{
@@ -21,7 +21,7 @@ use std::time::{Duration, Instant};
 pub fn execute(
     runtime: &Runtime,
     graph: &Graph,
-    plan: crate::planner::ExecutionPlan,
+    plan: crate::ExecutionPlan,
     out_dir: impl AsRef<Path>,
     options: RuntimeConfig,
 ) -> Result<PathBuf, RuntimeError> {

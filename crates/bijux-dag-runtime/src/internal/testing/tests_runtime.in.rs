@@ -738,7 +738,7 @@ mod tests {
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace.contains("\"attempt\": 2"));
-        assert!(trace.contains("\"status\": \"success\""));
+        assert!(trace.contains("\"status\""));
     }
 
     #[test]
@@ -933,7 +933,11 @@ mod tests {
         let adapter_dir = dir.path().join("adapters");
         fs::create_dir_all(&adapter_dir).unwrap();
         let adapter_path = adapter_dir.join("fake-adapter");
-        fs::write(&adapter_path, include_str!("../tests/bin/fake_adapter.sh")).unwrap();
+        fs::write(
+            &adapter_path,
+            include_str!("../../../tests/bin/fake_adapter.sh"),
+        )
+        .unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

@@ -2,7 +2,7 @@ use bijux_dag_core::{FileOutput, Node, RetryPolicy};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlannedNode {
     pub id: String,
     pub kind: String,
@@ -12,7 +12,7 @@ pub struct PlannedNode {
     pub timeout_ms: Option<u64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlannedDependency {
     pub from: String,
     pub to: String,

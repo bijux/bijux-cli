@@ -1,6 +1,6 @@
 //! Runtime trace boundary surface.
 
-pub use crate::transition_cause_for_status;
+pub(crate) use crate::transition_cause_for_status;
 use crate::NodeStatus;
 
 pub fn trace_status_label(status: &NodeStatus) -> &'static str {
