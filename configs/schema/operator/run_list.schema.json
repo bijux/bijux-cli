@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_list",
+  "type": "object",
+  "required": ["runs"],
+  "properties": {
+    "runs": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

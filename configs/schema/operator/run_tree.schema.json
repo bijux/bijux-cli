@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_tree",
+  "type": "object",
+  "required": ["nodes"],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "parents", "status"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "parents": {"type": "array", "items": {"type": "string"}},
+          "status": {"type": "string"}
+        }
+      }
+    }
+  }
+}

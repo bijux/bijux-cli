@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run_explain_failure",
+  "type": "object",
+  "required": ["failed_nodes", "propagated_or_skipped_nodes"],
+  "properties": {
+    "root_failure": {"type": ["string", "null"]},
+    "failed_nodes": {"type": "array", "items": {"type": "string"}},
+    "propagated_or_skipped_nodes": {"type": "array", "items": {"type": "string"}}
+  }
+}
