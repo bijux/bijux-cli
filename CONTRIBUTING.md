@@ -14,6 +14,7 @@ No feature work is accepted without a declared owner, a written contract, and te
 - Prefer small, readable modules.
 - Keep JSON parsing strict.
 - Keep scheduling deterministic.
+- Use `use ... as _;` only in tests/benches or crate entrypoints when required for dependency-touch accounting; otherwise use explicit imports.
 
 ## Tests
 Run all tests with:

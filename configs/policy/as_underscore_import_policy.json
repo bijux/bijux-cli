@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "owner": "dag-control-plane",
+  "purpose": "Constrain `use ... as _;` imports to explicit dependency-touch and trait-visibility contexts.",
+  "allowed_path_classes": {
+    "tests": "crates/*/tests/*.rs",
+    "benches": "crates/*/benches/*.rs",
+    "crate_root_lib": "crates/*/src/lib.rs",
+    "crate_root_main": "crates/*/src/main.rs",
+    "binary_entrypoints": "crates/*/src/bin/*.rs"
+  },
+  "generated_code_exclusions": [
+    "crates/*/src/**/*.in.rs"
+  ],
+  "disallowed_module_paths": [
+    "crates/*/src/**/mod.rs",
+    "crates/*/src/**/*.rs"
+  ],
+  "explicit_exceptions": [
+    {
+      "path": "crates/bijux-dag-app/src/lib.rs",
+      "reason": "dependency-touch import retained for root crate dependency accounting"
+    },
+    {
+      "path": "crates/bijux-dev-dag/src/main.rs",
+      "reason": "dependency-touch import retained for binary root dependency accounting"
+    }
+  ]
+}
