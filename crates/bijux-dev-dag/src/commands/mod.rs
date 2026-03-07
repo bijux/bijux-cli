@@ -1165,6 +1165,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_cache_evolution_guard(),
     },
     SuiteDef {
+        id: "replay-contract",
+        description: "replay semantics fixtures schema and explainability alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_replay_contract_guard(),
+    },
+    SuiteDef {
         id: "distributed-coordination",
         description: "distributed coordination model and simulation boundaries alignment",
         domain: "governance",
@@ -5983,6 +5992,92 @@ fn run_cache_evolution_guard() -> Result<(), String> {
                 ));
             }
         }
+    }
+    Ok(())
+}
+
+fn run_replay_contract_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/REPLAY_CONTRACT.md",
+        "configs/schema/operator/replay_diff.schema.json",
+        "tests/e2e/replay/fixtures/match_case.json",
+        "tests/e2e/replay/fixtures/mismatch_case.json",
+        "tests/e2e/replay/fixtures/corruption_case.json",
+        "tests/e2e/replay/fixtures/unsupported_version_case.json",
+        "crates/bijux-dag-app/tests/replay_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "replay contract required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let contract =
+        fs::read_to_string(root.join("docs/spec/REPLAY_CONTRACT.md")).map_err(|err| err.to_string())?;
+    for token in [
+        "## Replay definition",
+        "## Authoritative inputs",
+        "## Replay explain mode",
+        "## What replay cannot prove",
+    ] {
+        if !contract.contains(token) {
+            return Err(format!("replay contract missing section `{token}`"));
+        }
+    }
+    let commands_src =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
+    if !commands_src.contains("DiffModeArg::Semantic") {
+        return Err("replay contract requires semantic diff mode in CLI surfaces".to_string());
+    }
+    let replay_battle = fs::read_to_string(root.join("tests/e2e/replay/replay_semantic_comparison.json"))
+        .map_err(|err| err.to_string())?;
+    if !replay_battle.contains("replay_mandatory_proof") {
+        return Err("replay battle scenario must assert replay_mandatory_proof".to_string());
+    }
+
+    let mut violations = Vec::new();
+    let docs_dir = root.join("docs");
+    let mut stack = vec![docs_dir];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("md") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            for line in text.lines() {
+                let lower = line.to_ascii_lowercase();
+                if lower.contains("replayable")
+                    && !line.contains("REPLAY_CONTRACT.md")
+                    && !line.contains("docs/spec/REPLAY_CONTRACT.md")
+                {
+                    violations.push(format!("{}: {}", rel, line.trim()));
+                }
+            }
+        }
+    }
+    if !violations.is_empty() {
+        return Err(format!(
+            "vague replayable claims must cite replay contract: {}",
+            violations.join(" | ")
+        ));
     }
     Ok(())
 }
