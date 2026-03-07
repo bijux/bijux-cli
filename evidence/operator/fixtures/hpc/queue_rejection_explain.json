@@ -1,0 +1,10 @@
+{
+  "fixture": "hpc-queue-rejection-explain",
+  "failure_code": "SLURM_QUEUE_REJECTED",
+  "runtime_failure_kind": "configuration",
+  "retryable": false,
+  "operator_explain": {
+    "summary": "queue rejected submission",
+    "recommended_action": "verify queue and account mapping"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "fixture": "hpc-delayed-scheduler-state-propagation",
+  "scheduler": "slurm",
+  "poll_timeout_seconds": 30,
+  "simulated_poll_age_seconds": 75,
+  "expected_recovered": false,
+  "expected_classification": "poll-timeout"
+}
