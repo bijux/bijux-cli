@@ -3,6 +3,12 @@
 ## Scope
 Defines benchmark classes, canonical system scenarios, evidence requirements, and claim discipline.
 
+## Related contracts
+- `docs/spec/BENCHMARK_SCENARIO_CONTRACT.md`
+- `docs/spec/BENCHMARK_REPRODUCIBILITY_CONTRACT.md`
+- `docs/spec/COMPARISON_METHOD_CONTRACT.md`
+- `docs/spec/EVIDENCE_PUBLICATION_CONTRACT.md`
+
 ## Allowed claims
 - Performance language in documentation must reference:
   - `evidence/perf/scenarios/` canonical workloads, and
@@ -18,8 +24,20 @@ Defines benchmark classes, canonical system scenarios, evidence requirements, an
 - medium: `evidence/perf/scenarios/medium_canonical.json`
 - wide: `evidence/perf/scenarios/wide_canonical.json`
 - deep: `evidence/perf/scenarios/deep_canonical.json`
+- 10k nodes: `evidence/perf/scenarios/tenk_nodes_canonical.json`
+- large artifact: `evidence/perf/scenarios/large_artifact_canonical.json`
 - cache-heavy: `evidence/perf/scenarios/cache_heavy_canonical.json`
+- failure injection: `evidence/perf/scenarios/failure_injection_canonical.json`
 - replay: `evidence/perf/scenarios/replay_canonical.json`
+- diff: `evidence/perf/scenarios/diff_canonical.json`
+- portability: `evidence/perf/scenarios/portability_canonical.json`
+
+## Score benchmarks
+- determinism score: `evidence/perf/scenarios/determinism_score.json`
+- replay fidelity score: `evidence/perf/scenarios/replay_fidelity_score.json`
+- explainability quality: `evidence/perf/scenarios/explainability_quality.json`
+- artifact lineage completeness: `evidence/perf/scenarios/artifact_lineage_completeness.json`
+- portability success-rate: `evidence/perf/scenarios/portability_success_rate.json`
 
 ## Battle scenarios
 - scheduler overhead on many tiny tasks: `evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json`
