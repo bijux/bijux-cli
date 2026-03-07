@@ -1,0 +1,77 @@
+# Runtime Public API Map
+
+Generated from `crates/bijux-dag-runtime/src/lib.rs` public exports.
+
+- export_count: 70
+
+## Exports
+- `pub mod adapter_api`
+- `pub mod adapter_conformance`
+- `pub mod adapters`
+- `pub mod api`
+- `pub mod builtins`
+- `pub mod cache`
+- `pub mod config`
+- `pub mod execution`
+- `pub mod execution_context`
+- `pub mod invariants`
+- `pub mod node_result`
+- `pub mod policy`
+- `pub mod run_context`
+- `pub mod runtime_core`
+- `pub mod selectors`
+- `pub mod services`
+- `pub mod state_machine`
+- `pub mod subprocess`
+- `pub mod trace`
+- `pub use adapter_sdk::{`
+- `pub use adaptive_scheduler::{`
+- `pub use ai_operator_assist::{`
+- `pub use async_adapter::AsyncAdapter`
+- `pub use auth_identity::{`
+- `pub use authz_policy::{`
+- `pub use backend_cluster::{`
+- `pub use batch_execution::{`
+- `pub use cache::{`
+- `pub use container_execution::{`
+- `pub use control_plane::{`
+- `pub use control_plane_api::{`
+- `pub use coordination::{`
+- `pub use cost_optimization::{`
+- `pub use dataset_semantics::{`
+- `pub use distributed::{`
+- `pub use distribution_readiness::{`
+- `pub use execution_backend::{`
+- `pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode}`
+- `pub use extension_catalog::{`
+- `pub use federated_scheduling::{`
+- `pub use formal_verification::{`
+- `pub use geo_federation::{`
+- `pub use ha_scheduler::{`
+- `pub use infrastructure::{`
+- `pub use local_executor::LocalExecutor`
+- `pub use observability::{`
+- `pub use observability_deep::{`
+- `pub use operations_governance::{`
+- `pub use path_authorization::{authorize_input_path, authorize_output_path}`
+- `pub use performance_capacity::{`
+- `pub use planner::build_plan`
+- `pub use planner_analysis::{`
+- `pub use policy::policy_allows_effects`
+- `pub use recovery::{`
+- `pub use remote_execution_model::{`
+- `pub use remote_executor::{`
+- `pub use run_state::{`
+- `pub use runtime_semantics::*`
+- `pub use scheduler::{`
+- `pub use scheduler_workload::{`
+- `pub use secrets_security::{`
+- `pub use security_env::{is_allowed_env_key, is_denied_env_key, shape_environment}`
+- `pub use semantic_lineage::{`
+- `pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport}`
+- `pub use supply_chain_trust::{`
+- `pub use task_contract::{`
+- `pub use task_types::{`
+- `pub use tenancy::{`
+- `pub use upgrade_compatibility::{`
+- `pub use workflow_product::{`
