@@ -2,7 +2,8 @@
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
 use bijux_dag_core::{
-    Edge, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy, SPEC_VERSION,
+    Edge, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy,
+    SPEC_VERSION,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -187,7 +188,7 @@ fn const_node(id: &str) -> Node {
         inputs: vec![],
         outputs: vec![FileOutput {
             name: "out".to_string(),
-            path: "out".to_string(),
+            path: format!("out_{id}"),
         }],
         params: param_object(vec![("value", Value::from("ok"))]),
         container: None,
@@ -208,14 +209,14 @@ fn shell_node(id: &str) -> Node {
         inputs: vec!["in".to_string()],
         outputs: vec![FileOutput {
             name: "out".to_string(),
-            path: "out".to_string(),
+            path: format!("out_{id}"),
         }],
         params: param_object(vec![(
             "argv",
             Value::Array(vec![
                 Value::from("/bin/sh"),
                 Value::from("-c"),
-                Value::from("echo ok > ../outputs/out"),
+                Value::from(format!("echo ok > ../outputs/out_{id}")),
             ]),
         )]),
         container: None,
@@ -223,7 +224,7 @@ fn shell_node(id: &str) -> Node {
         resources: None,
         tags: vec![],
         retry: RetryPolicy::default(),
-        effects: vec![],
+        effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
     }
