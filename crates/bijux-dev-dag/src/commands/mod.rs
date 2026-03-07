@@ -1035,7 +1035,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 "release.reproducibility-check",
                 CommandEffect::Validation,
                 json!({ "tag": tag }),
-                || run_release_reproducibility_check(tag),
+                || run_release_reproducibility_check(&tag),
             ),
             ReleaseCommand::EvidenceBundle { out } => run_command_reported(
                 &context,
@@ -4194,7 +4194,7 @@ struct ErrorCodeRegistry {
     codes: Vec<ErrorCodeEntry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, serde::Serialize)]
 struct ErrorCodeEntry {
     code: String,
     category: String,

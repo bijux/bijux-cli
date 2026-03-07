@@ -7,6 +7,7 @@ mod suites;
 mod tooling;
 
 use std::process::ExitCode;
+use tempfile as _;
 
 fn main() -> ExitCode {
     commands::entry_main()
