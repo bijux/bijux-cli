@@ -57,9 +57,9 @@ pub use config_surface::{
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
 pub use run_views::{
-    doctor_run, explain_failure, format_inspect_human, format_show_human, inspect_summary,
-    list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare, runs_failures, runs_flakes,
-    runs_summary, runs_trend,
+    doctor_run, explain_failure, explain_run_id, format_inspect_human, format_show_human,
+    inspect_summary, list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare,
+    runs_failures, runs_flakes, runs_history, runs_summary, runs_trend,
 };
 
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -748,6 +748,36 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     );
                 }
                 println!("{}", format_inspect_human(&summary));
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::History { root } => {
+                let report = inspect_service::run_history_for_root(root)?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.history",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::IdExplain { run_id, root } => {
+                let report = inspect_service::run_id_explain_for_root(root, run_id)?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.id-explain",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Tree { run_id, root } => {
@@ -1865,7 +1895,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "batch_hpc": "simulated"
                 },
                 "operator_commands": [
-                    "runs.list","runs.show","runs.inspect","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure"
+                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure"
                 ]
             });
             if cli.json {

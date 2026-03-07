@@ -1,5 +1,7 @@
 adapters
 cache
+canonical-bytes
+canonical-diff
 canonicalize
 capabilities
 config
@@ -10,6 +12,7 @@ export
 fingerprint
 graph
 graph-lint
+hash
 import
 init
 lint

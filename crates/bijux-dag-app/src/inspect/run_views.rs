@@ -83,6 +83,52 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     }))
 }
 
+pub fn explain_run_id(root: &Path, run_id: &str) -> Result<Value, std::io::Error> {
+    let run_dir = resolve_run_dir(root, run_id);
+    let manifest = read_json(&run_dir.join("manifest.json"))?;
+    let run_metadata = manifest
+        .get("run_metadata")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    Ok(json!({
+        "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
+        "run_dir": run_dir.display().to_string(),
+        "exists": run_dir.exists(),
+        "manifest_exists": run_dir.join("manifest.json").exists(),
+        "created_unix_ms": manifest.get("created_unix_ms").cloned().unwrap_or(Value::Null),
+        "started_unix_ms": manifest.get("started_unix_ms").cloned().unwrap_or(Value::Null),
+        "finished_unix_ms": manifest.get("finished_unix_ms").cloned().unwrap_or(Value::Null),
+        "submission_source": run_metadata.get("submission_source").cloned().unwrap_or(Value::Null),
+        "trigger_source": run_metadata.get("trigger_source").cloned().unwrap_or(Value::Null),
+        "parent_run_id": run_metadata.get("parent_run_id").cloned().unwrap_or(Value::Null),
+        "source_run_id": run_metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
+        "immutability_contract": "run directories are immutable after finalization; aliases must not mutate historical content"
+    }))
+}
+
+pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
+    let run_ids = list_runs(root)?;
+    let mut rows = Vec::new();
+    for run_id in run_ids {
+        let run_dir = resolve_run_dir(root, &run_id);
+        let manifest = read_json(&run_dir.join("manifest.json"))?;
+        let metadata = manifest
+            .get("run_metadata")
+            .cloned()
+            .unwrap_or_else(|| json!({}));
+        rows.push(json!({
+            "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
+            "status": manifest.get("status").cloned().unwrap_or(Value::Null),
+            "created_unix_ms": manifest.get("created_unix_ms").cloned().unwrap_or(Value::Null),
+            "parent_run_id": metadata.get("parent_run_id").cloned().unwrap_or(Value::Null),
+            "source_run_id": metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
+            "submission_source": metadata.get("submission_source").cloned().unwrap_or(Value::Null),
+            "trigger_source": metadata.get("trigger_source").cloned().unwrap_or(Value::Null)
+        }));
+    }
+    Ok(json!({ "runs": rows }))
+}
+
 pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
     let snapshot = read_json(&run_dir.join("snapshot.json"))?;
     let nodes = snapshot

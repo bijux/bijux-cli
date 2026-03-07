@@ -247,6 +247,15 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         root: PathBuf,
     },
+    History {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    IdExplain {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
     Tree {
         run_id: String,
         #[arg(long)]

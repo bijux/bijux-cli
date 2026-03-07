@@ -22,6 +22,8 @@ This is the normative contract for `bijux` command surfaces.
 - `dag node`: node-focused diagnostics and inspection.
 - `dag status`: run status summary behavior.
 - `dag verify`: artifact verification behavior.
+- `dag runs history`: machine-readable ancestry listing for run directories.
+- `dag runs id-explain`: run identity composition and ancestry explanation.
 - `dag cache`: cache inspection and control surfaces.
 - `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.

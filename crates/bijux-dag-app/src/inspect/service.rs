@@ -1,5 +1,6 @@
 use crate::run_views::{
-    doctor_run, explain_failure, inspect_summary, resolve_run_dir, run_timeline, run_tree,
+    doctor_run, explain_failure, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
+    run_tree, runs_history,
 };
 use serde_json::Value;
 use std::path::Path;
@@ -28,4 +29,12 @@ pub(crate) fn doctor_for_run_id(root: &Path, run_id: &str) -> Value {
 pub(crate) fn explain_failure_for_run_id(root: &Path, run_id: &str) -> Result<Value, ExitCode> {
     let run_dir = resolve_run_dir(root, run_id);
     explain_failure(&run_dir).map_err(|_| ExitCode::from(3))
+}
+
+pub(crate) fn run_history_for_root(root: &Path) -> Result<Value, ExitCode> {
+    runs_history(root).map_err(|_| ExitCode::from(3))
+}
+
+pub(crate) fn run_id_explain_for_root(root: &Path, run_id: &str) -> Result<Value, ExitCode> {
+    explain_run_id(root, run_id).map_err(|_| ExitCode::from(3))
 }
