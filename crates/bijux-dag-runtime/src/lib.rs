@@ -98,9 +98,13 @@ pub use planner_intelligence::{
     PlannerResourceEstimate,
 };
 pub use plugin_ecosystem::{
-    compute_platform_maturity, extension_discovery_inventory, negotiate_plugin_version,
-    validate_plugin_conformance, CapabilityRange, CodeGenerationHook, DslExtensionPoint,
-    EcosystemRoadmap, ExtensionDiscoveryRecord, ExtensionRegistration, OfficialPluginPolicy,
+    compute_platform_maturity, detect_extension_compatibility_issues,
+    extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
+    internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
+    validate_extension_descriptor, validate_plugin_conformance, CapabilityRange,
+    CodeGenerationHook, DslExtensionPoint, EcosystemRoadmap, ExtensionCompatibilityIssue,
+    ExtensionDescriptor, ExtensionDiscoveryRecord, ExtensionPointStatus, ExtensionRegistration,
+    ExtensionStabilityLevel, InternalHookPromotionChecklist, OfficialPluginPolicy,
     PlatformMaturityScorecard, PluginBoundaryKind, PluginConformanceSuiteResult,
     PluginIsolationPolicy, PluginLifecycleState, PluginLoadingMode, PluginMetadata,
     PluginTrustPolicy,

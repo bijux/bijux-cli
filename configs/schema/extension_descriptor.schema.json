@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/extension_descriptor.schema.json",
+  "title": "ExtensionDescriptor",
+  "type": "object",
+  "required": [
+    "plugin_name",
+    "plugin_version",
+    "boundary",
+    "contract_version",
+    "capabilities",
+    "trust_model"
+  ],
+  "properties": {
+    "plugin_name": { "type": "string", "minLength": 1 },
+    "plugin_version": { "type": "string", "minLength": 1 },
+    "boundary": {
+      "type": "string",
+      "enum": ["TaskAdapter", "ExecutorBackend", "ArtifactStore", "ObservabilitySink"]
+    },
+    "contract_version": { "type": "string", "pattern": "^v[0-9]+(\\.[0-9]+)*$" },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "trust_model": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

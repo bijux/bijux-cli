@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PluginBoundaryKind {
@@ -36,6 +37,45 @@ pub struct ExtensionRegistration {
     pub plugin_version: String,
     pub boundary: PluginBoundaryKind,
     pub registered_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtensionDescriptor {
+    pub plugin_name: String,
+    pub plugin_version: String,
+    pub boundary: PluginBoundaryKind,
+    pub contract_version: String,
+    pub capabilities: Vec<String>,
+    pub trust_model: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtensionCompatibilityIssue {
+    pub plugin_name: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ExtensionStabilityLevel {
+    InternalHook,
+    Experimental,
+    Stable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtensionPointStatus {
+    pub extension_point: String,
+    pub stability: ExtensionStabilityLevel,
+    pub owner: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InternalHookPromotionChecklist {
+    pub hook_name: String,
+    pub has_contract_doc: bool,
+    pub has_versioning_policy: bool,
+    pub has_negative_tests: bool,
+    pub has_failure_isolation: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -171,4 +211,94 @@ pub fn compute_platform_maturity(scores: &[u8]) -> u8 {
     }
     let total: u32 = scores.iter().map(|v| *v as u32).sum();
     (total / scores.len() as u32) as u8
+}
+
+pub fn validate_extension_descriptor(descriptor: &ExtensionDescriptor) -> Result<(), String> {
+    if descriptor.plugin_name.trim().is_empty() {
+        return Err("plugin_name must not be empty".to_string());
+    }
+    if descriptor.plugin_version.trim().is_empty() {
+        return Err("plugin_version must not be empty".to_string());
+    }
+    if !descriptor.contract_version.starts_with('v') {
+        return Err("contract_version must use v-prefixed format".to_string());
+    }
+    if descriptor.capabilities.is_empty() {
+        return Err("descriptor must declare capabilities".to_string());
+    }
+    Ok(())
+}
+
+pub fn register_extension(
+    registry: &mut BTreeMap<String, ExtensionDescriptor>,
+    descriptor: ExtensionDescriptor,
+) -> Result<(), String> {
+    validate_extension_descriptor(&descriptor)?;
+    if registry.contains_key(&descriptor.plugin_name) {
+        return Err(format!(
+            "extension registration conflict for {}",
+            descriptor.plugin_name
+        ));
+    }
+    registry.insert(descriptor.plugin_name.clone(), descriptor);
+    Ok(())
+}
+
+pub fn detect_extension_compatibility_issues(
+    descriptors: &[ExtensionDescriptor],
+    supported_contract_versions: &BTreeSet<String>,
+    required_capabilities: &BTreeSet<String>,
+) -> Vec<ExtensionCompatibilityIssue> {
+    let mut issues = Vec::new();
+    for descriptor in descriptors {
+        if !supported_contract_versions.contains(&descriptor.contract_version) {
+            issues.push(ExtensionCompatibilityIssue {
+                plugin_name: descriptor.plugin_name.clone(),
+                reason: format!(
+                    "unsupported contract version {}",
+                    descriptor.contract_version
+                ),
+            });
+        }
+        for capability in required_capabilities {
+            if !descriptor.capabilities.iter().any(|c| c == capability) {
+                issues.push(ExtensionCompatibilityIssue {
+                    plugin_name: descriptor.plugin_name.clone(),
+                    reason: format!("missing required capability {}", capability),
+                });
+            }
+        }
+    }
+    issues
+}
+
+pub fn extension_point_status_report() -> Vec<ExtensionPointStatus> {
+    vec![
+        ExtensionPointStatus {
+            extension_point: "task_adapter".to_string(),
+            stability: ExtensionStabilityLevel::Stable,
+            owner: "runtime".to_string(),
+        },
+        ExtensionPointStatus {
+            extension_point: "executor_backend".to_string(),
+            stability: ExtensionStabilityLevel::Experimental,
+            owner: "runtime".to_string(),
+        },
+        ExtensionPointStatus {
+            extension_point: "validation_hook".to_string(),
+            stability: ExtensionStabilityLevel::InternalHook,
+            owner: "core".to_string(),
+        },
+    ]
+}
+
+pub fn internal_hook_ready_for_promotion(check: &InternalHookPromotionChecklist) -> bool {
+    check.has_contract_doc
+        && check.has_versioning_policy
+        && check.has_negative_tests
+        && check.has_failure_isolation
+}
+
+pub fn extension_failure_isolated(failure_scope: &str, engine_crashed: bool) -> bool {
+    failure_scope == "extension_only" && !engine_crashed
 }
