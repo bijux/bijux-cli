@@ -55,3 +55,13 @@ fn runtime_execution_tests_are_module_based_not_include_based() {
         "runtime tests should avoid include!-based aggregation: {include_hits:?}"
     );
 }
+
+#[test]
+fn scheduler_profile_report_matches_runtime_contract_surface() {
+    let profile_path = repo_root().join("docs/reports/foundation/scheduler_profile_report.json");
+    let raw = std::fs::read_to_string(profile_path).expect("profile report");
+    let value: serde_json::Value = serde_json::from_str(&raw).expect("profile json");
+    assert_eq!(value["canonical_unit"], "node");
+    assert_eq!(value["model"], "event_driven");
+    assert_eq!(value["ready_tie_break"], "lexicographic_node_id");
+}
