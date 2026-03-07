@@ -8,8 +8,8 @@ cargo run -p bijux-dag-cli -- dag capabilities --json
 
 ## 2. Validate and execute a DAG
 ```sh
-cargo run -p bijux-dag-cli -- dag validate tests/authoring/examples/minimal.json --strict --json
-cargo run -p bijux-dag-cli -- dag run tests/authoring/examples/minimal.json --out runs --run-id first-hour --json
+cargo run -p bijux-dag-cli -- dag validate evidence/authoring/patterns/minimal.json --strict --json
+cargo run -p bijux-dag-cli -- dag run evidence/authoring/patterns/minimal.json --out runs --run-id first-hour --json
 ```
 
 ## 3. Inspect and verify run artifacts

@@ -1,10 +1,10 @@
 # DAG Authoring Guide
 
 ## Start with minimal JSON authoring
-Use `tests/authoring/examples/minimal.json` as the baseline shape.
+Use `evidence/authoring/patterns/minimal.json` as the baseline shape.
 
 ## Medium authoring example
-Use `tests/authoring/examples/medium.json` for retries/resources/selectors structure.
+Use `evidence/authoring/patterns/medium.json` for retries/resources/selectors structure.
 
 ## Validate and explain
 Run `dag validate --explain <dag>` to get rule IDs and normalized context.
@@ -21,19 +21,19 @@ Run `dag validate --explain <dag>` to get rule IDs and normalized context.
 - Keep edge port names consistent with data shape purpose.
 
 ## Common patterns
-- chain: `tests/authoring/examples/pattern_chain.json`
-- diamond: `tests/authoring/examples/pattern_diamond.json`
-- fanout: `tests/authoring/examples/pattern_fanout.json`
-- aggregation: `tests/authoring/examples/pattern_aggregation.json`
-- cache-heavy: `tests/authoring/examples/pattern_cache_heavy.json`
-- replay-sensitive: `tests/authoring/examples/pattern_replay_sensitive.json`
+- chain: `evidence/authoring/patterns/pattern_chain.json`
+- diamond: `evidence/authoring/patterns/pattern_diamond.json`
+- fanout: `evidence/authoring/patterns/pattern_fanout.json`
+- aggregation: `evidence/authoring/patterns/pattern_aggregation.json`
+- cache-heavy: `evidence/authoring/patterns/pattern_cache_heavy.json`
+- replay-sensitive: `evidence/authoring/patterns/pattern_replay_sensitive.json`
 
 ## Common mistakes
-- undeclared outputs: `tests/authoring/bad/undeclared_outputs.json`
-- invalid refs: `tests/authoring/bad/invalid_refs.json`
-- cycles: `tests/authoring/bad/cycle.json`
-- invalid selectors: `tests/authoring/bad/invalid_selectors.json`
-- unsupported adapter payload: `tests/authoring/bad/unsupported_adapter_payload.json`
+- undeclared outputs: `evidence/authoring/negative/undeclared_outputs.json`
+- invalid refs: `evidence/authoring/negative/invalid_refs.json`
+- cycles: `evidence/authoring/negative/cycle.json`
+- invalid selectors: `evidence/authoring/negative/invalid_selectors.json`
+- unsupported adapter payload: `evidence/authoring/negative/unsupported_adapter_payload.json`
 
 ## What this DAG tool intentionally does not do
 - It does not provide a production-grade distributed controller in this repository.

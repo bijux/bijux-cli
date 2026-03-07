@@ -2,7 +2,7 @@
 
 ## Contract examples
 
-- `examples/hello.dag.json` is the canonical compatibility example.
+- `evidence/authoring/examples/hello.dag.json` is the canonical compatibility example.
 - New examples must include stable behavior with no external non-deterministic dependencies.
 
 ## Ownership and review
@@ -14,11 +14,11 @@
 
 ## Additional realistic examples
 
-- `examples/etl-constant-to-shell.dag.json`
-- `examples/cached-branched-report.dag.json`
-- `examples/multi-output-artifact.dag.json`
-- `examples/replay-heavy-branching.dag.json`
-- `examples/failure-heavy-retry.dag.json`
+- `evidence/authoring/examples/etl-constant-to-shell.dag.json`
+- `evidence/authoring/examples/cached-branched-report.dag.json`
+- `evidence/authoring/examples/multi-output-artifact.dag.json`
+- `evidence/authoring/examples/replay-heavy-branching.dag.json`
+- `evidence/authoring/examples/failure-heavy-retry.dag.json`
 
 ## Usage policy
 

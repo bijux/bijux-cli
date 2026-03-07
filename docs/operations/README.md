@@ -3,8 +3,8 @@
 ## Running
 Use the CLI to validate and run DAGs:
 ```
-bijux dag validate examples/hello.dag.json
-bijux dag run examples/hello.dag.json --out runs/
+bijux dag validate evidence/authoring/examples/hello.dag.json
+bijux dag run evidence/authoring/examples/hello.dag.json --out runs/
 ```
 
 ## Selectors

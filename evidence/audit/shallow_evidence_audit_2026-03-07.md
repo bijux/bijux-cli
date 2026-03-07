@@ -20,7 +20,7 @@
 
 ### Examples (Item 23)
 - Example set was executable and owned; no duplicate payload hashes were detected.
-- Action: no deletion in this pass; `examples/hello.dag.json` remains flagged `move` in governance ledger.
+- Action: no deletion in this pass; `evidence/authoring/examples/hello.dag.json` remains flagged `move` in governance ledger.
 
 ### Top-level tests (Item 24)
 - Top-level fixture families are active and consumed by contracts.

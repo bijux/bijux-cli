@@ -34,25 +34,25 @@ make security
 cargo build -p bijux-dag-cli
 
 # validate
-cargo run -p bijux-dag-cli -- dag validate examples/hello.dag.json
+cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json
 
 # validate with explain
-cargo run -p bijux-dag-cli -- dag validate examples/hello.dag.json --explain
+cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json --explain
 
 # run
-cargo run -p bijux-dag-cli -- dag run examples/hello.dag.json --out runs/
+cargo run -p bijux-dag-cli -- dag run evidence/authoring/examples/hello.dag.json --out runs/
 
 # run with selectors
-cargo run -p bijux-dag-cli -- dag run examples/hello.dag.json --out runs/ --select tag:etl
+cargo run -p bijux-dag-cli -- dag run evidence/authoring/examples/hello.dag.json --out runs/ --select tag:etl
 
 # init
 cargo run -p bijux-dag-cli -- dag init
 
 # lint
-cargo run -p bijux-dag-cli -- dag lint examples/hello.dag.json
+cargo run -p bijux-dag-cli -- dag lint evidence/authoring/examples/hello.dag.json
 
 # graph (dot)
-cargo run -p bijux-dag-cli -- dag graph examples/hello.dag.json --format dot
+cargo run -p bijux-dag-cli -- dag graph evidence/authoring/examples/hello.dag.json --format dot
 
 # replay
 cargo run -p bijux-dag-cli -- dag replay runs/run-<id> --out runs/

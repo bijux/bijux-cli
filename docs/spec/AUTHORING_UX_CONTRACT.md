@@ -6,23 +6,23 @@
 YAML/DSL/generated authoring are not normative product surfaces in this repository.
 
 ## Canonical examples
-- Minimal executable DAG: `tests/authoring/examples/minimal.json`
-- Medium executable DAG with retries/resources/selectors: `tests/authoring/examples/medium.json`
+- Minimal executable DAG: `evidence/authoring/patterns/minimal.json`
+- Medium executable DAG with retries/resources/selectors: `evidence/authoring/patterns/medium.json`
 
 ## Pattern examples
-- chain: `tests/authoring/examples/pattern_chain.json`
-- diamond: `tests/authoring/examples/pattern_diamond.json`
-- fanout: `tests/authoring/examples/pattern_fanout.json`
-- aggregation: `tests/authoring/examples/pattern_aggregation.json`
-- cache-heavy: `tests/authoring/examples/pattern_cache_heavy.json`
-- replay-sensitive: `tests/authoring/examples/pattern_replay_sensitive.json`
+- chain: `evidence/authoring/patterns/pattern_chain.json`
+- diamond: `evidence/authoring/patterns/pattern_diamond.json`
+- fanout: `evidence/authoring/patterns/pattern_fanout.json`
+- aggregation: `evidence/authoring/patterns/pattern_aggregation.json`
+- cache-heavy: `evidence/authoring/patterns/pattern_cache_heavy.json`
+- replay-sensitive: `evidence/authoring/patterns/pattern_replay_sensitive.json`
 
 ## Common mistake fixtures
-- undeclared outputs: `tests/authoring/bad/undeclared_outputs.json`
-- invalid refs: `tests/authoring/bad/invalid_refs.json`
-- cycles: `tests/authoring/bad/cycle.json`
-- invalid selectors: `tests/authoring/bad/invalid_selectors.json`
-- unsupported adapter payload: `tests/authoring/bad/unsupported_adapter_payload.json`
+- undeclared outputs: `evidence/authoring/negative/undeclared_outputs.json`
+- invalid refs: `evidence/authoring/negative/invalid_refs.json`
+- cycles: `evidence/authoring/negative/cycle.json`
+- invalid selectors: `evidence/authoring/negative/invalid_selectors.json`
+- unsupported adapter payload: `evidence/authoring/negative/unsupported_adapter_payload.json`
 
 ## Authoring command surfaces
 - `dag validate --explain <dag>`
@@ -38,7 +38,7 @@ YAML/DSL/generated authoring are not normative product surfaces in this reposito
 - Guidance is tied to validation rules documented in `docs/spec/VALIDATION_RULES.md`.
 
 ## Documentation and fixture rule
-Examples in user-facing docs must reference executable fixture files under `tests/authoring/`.
+Examples in user-facing docs must reference executable fixture files under `evidence/authoring/`.
 Hand-maintained prose-only DAG snippets are not allowed as normative examples.
 
 ## Intentionally out of scope
