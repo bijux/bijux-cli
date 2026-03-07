@@ -760,6 +760,24 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_repo_source_guard(),
     },
     SuiteDef {
+        id: "root-directory-guard",
+        description: "workspace root file layout guard",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_root_directory_guard(),
+    },
+    SuiteDef {
+        id: "executable-guard",
+        description: "checked-in executable files are restricted to scripts",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_executable_guard(),
+    },
+    SuiteDef {
         id: "repo-manifests",
         description: "workspace Cargo manifest conventions",
         domain: "governance",
@@ -1217,6 +1235,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_ambient_env_guard(),
+    },
+    SuiteDef {
+        id: "foundation-verification",
+        description: "control-plane foundation coverage and ssot alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_foundation_verification_guard(),
     },
 ];
 
@@ -3388,6 +3415,77 @@ fn run_repo_source_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     if runtime_lib.contains("use clap::") {
         return Err("runtime crate must not import clap".into());
+    }
+    Ok(())
+}
+
+fn run_root_directory_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let allowed = [
+        "Cargo.toml",
+        "Cargo.lock",
+        "README.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "LICENSE",
+        "NOTICE",
+        ".gitignore",
+        "rust-toolchain.toml",
+        "Makefile",
+    ];
+    let mut violations = Vec::new();
+    for entry in fs::read_dir(&root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let path = entry.path();
+        if path.is_dir() {
+            continue;
+        }
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        if !allowed.contains(&name) {
+            violations.push(name.to_string());
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "root directory contains non-contract files: {}",
+            violations.join(", ")
+        ))
+    }
+}
+
+fn run_executable_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut violations = Vec::new();
+        let mut files = Vec::new();
+        collect_files_with_extension(&root.join("crates"), "rs", &mut files)?;
+        collect_files_with_extension(&root.join("docs"), "md", &mut files)?;
+        collect_files_with_extension(&root.join("configs"), "json", &mut files)?;
+        for file in files {
+            let rel = file
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let mode = fs::metadata(&file)
+                .map_err(|err| err.to_string())?
+                .permissions()
+                .mode();
+            let executable = mode & 0o111 != 0;
+            if executable && !rel.starts_with("scripts/") {
+                violations.push(rel);
+            }
+        }
+        if !violations.is_empty() {
+            return Err(format!(
+                "executable files outside scripts/ are not allowed: {}",
+                violations.join(", ")
+            ));
+        }
     }
     Ok(())
 }
@@ -6553,6 +6651,38 @@ fn run_ambient_env_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn run_foundation_verification_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/CONTROL_PLANE_FOUNDATION.md",
+        "docs/spec/WORKSPACE_CONTRACT.md",
+        "crates/bijux-dev-dag/src/commands/mod.rs",
+        "crates/bijux-dev-dag/src/suites/repo.rs",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing foundation artifact: {rel}"));
+        }
+    }
+    for required in [
+        "repo-docs",
+        "repo-source",
+        "root-directory-guard",
+        "executable-guard",
+        "docs-governance",
+        "docs-links",
+        "docs-schema-ref",
+        "crate-boundary-foundation",
+        "artifact-hardening",
+        "test-trust-foundation",
+        "runtime-module-triage",
+    ] {
+        if !crate::suites::repo::IDS.contains(&required) {
+            return Err(format!("foundation verification missing suite id: {required}"));
+        }
+    }
+    Ok(())
 }
 
 fn deep_merge_json(target: &mut Value, overlay: &Value) {

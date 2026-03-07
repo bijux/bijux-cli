@@ -8,6 +8,8 @@ pub const IDS: &[&str] = &[
     "public-export-docs",
     "repo-docs",
     "repo-source",
+    "root-directory-guard",
+    "executable-guard",
     "repo-manifests",
     "repo-api",
     "fault-summary",
@@ -56,4 +58,5 @@ pub const IDS: &[&str] = &[
     "config-lint",
     "config-drift",
     "ambient-env-guard",
+    "foundation-verification",
 ];
