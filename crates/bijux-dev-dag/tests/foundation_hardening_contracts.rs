@@ -53,15 +53,18 @@ fn foundation_hardening_registry_references_known_suite_ids() {
 
     let mod_source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
         .expect("read command source");
-    let suite_source = fs::read_to_string(
-        root.join("crates/bijux-dev-dag/src/commands/suite_catalog.rs"),
-    )
-    .expect("read suite catalog source");
+    let suite_source =
+        fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog.rs"))
+            .expect("read suite catalog source");
+    let suite_repo_fragment =
+        fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.inc"))
+            .expect("read suite catalog repo fragment");
     for id in ids {
         let id = id.as_str().expect("suite id should be string");
         assert!(
             mod_source.contains(&format!("id: \"{id}\""))
-                || suite_source.contains(&format!("id: \"{id}\"")),
+                || suite_source.contains(&format!("id: \"{id}\""))
+                || suite_repo_fragment.contains(&format!("id: \"{id}\"")),
             "foundation hardening suite id must map to a defined suite: {id}"
         );
     }
