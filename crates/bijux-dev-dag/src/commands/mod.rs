@@ -2655,10 +2655,33 @@ fn run_dag_plan_dump(graph: &Path, select: &[String]) -> Result<(), String> {
     };
     let plan = bijux_dag_core::lower_graph_to_execution_plan(&parsed, options)
         .map_err(|err| err.to_string())?;
+    validate_execution_plan_shape(&root, &plan)?;
     println!(
         "{}",
         serde_json::to_string_pretty(&plan).map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn validate_execution_plan_shape(
+    root: &Path,
+    plan: &bijux_dag_core::ExecutionPlan,
+) -> Result<(), String> {
+    let schema_path = root.join("configs/schema/execution_plan.schema.json");
+    let schema_payload = fs::read_to_string(&schema_path).map_err(|err| err.to_string())?;
+    let schema: Value = serde_json::from_str(&schema_payload).map_err(|err| err.to_string())?;
+    let required = schema
+        .get("required")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "execution plan schema missing required list".to_string())?;
+    let plan_value = serde_json::to_value(plan).map_err(|err| err.to_string())?;
+    for key in required.iter().filter_map(Value::as_str) {
+        if plan_value.get(key).is_none() {
+            return Err(format!(
+                "execution plan missing schema-required field `{key}`"
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -5242,8 +5265,17 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
         .get("trust_properties")
         .and_then(Value::as_array)
         .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
-    if trust_properties.len() != 12 {
-        return Err("battle trust policy must define exactly 12 trust properties".to_string());
+    if trust_properties.len() < 12 {
+        return Err("battle trust policy must define at least 12 trust properties".to_string());
+    }
+    let has_plan_truth = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_plan_truth")
+    });
+    if !has_plan_truth {
+        return Err("battle trust policy must include tp_plan_truth".to_string());
     }
 
     let required_scenarios = policy
@@ -5864,6 +5896,11 @@ fn run_planner_alignment_guard() -> Result<(), String> {
         bijux_dag_core::planner_alignment_required_schema(),
         bijux_dag_core::planner_alignment_required_test(),
         "crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs",
+        "crates/bijux-dev-dag/tests/planner_hardening_contracts.rs",
+        "docs/reports/foundation/planner_hardening_report.md",
+        "docs/spec/BATTLE_TRUST_PROPERTIES.md",
+        "configs/policy/battle_trust_properties.json",
+        "crates/bijux-dag-runtime/src/runtime_core/planning/planner.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -5871,14 +5908,62 @@ fn run_planner_alignment_guard() -> Result<(), String> {
             missing.push(rel.to_string());
         }
     }
-    if missing.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
+    if !missing.is_empty() {
+        return Err(format!(
             "planner alignment missing required surfaces: {}",
             missing.join(", ")
-        ))
+        ));
     }
+
+    let planner_contract =
+        fs::read_to_string(root.join(bijux_dag_core::planner_alignment_required_doc()))
+            .map_err(|err| err.to_string())?;
+    for required_token in [
+        "parsed graph",
+        "validated graph",
+        "canonical graph",
+        "execution plan",
+        "P4021",
+        "dag plan-dump",
+    ] {
+        if !planner_contract.contains(required_token) {
+            return Err(format!(
+                "planner contract missing required token: {required_token}"
+            ));
+        }
+    }
+
+    let commands = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+        .map_err(|err| err.to_string())?;
+    for required_command in ["DagCommand::PlanDump", "run_dag_plan_dump"] {
+        if !commands.contains(required_command) {
+            return Err(format!(
+                "planner alignment missing command surface: {required_command}"
+            ));
+        }
+    }
+
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let has_plan_truth = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .is_some_and(|entries| {
+            entries.iter().any(|entry| {
+                entry
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| id == "tp_plan_truth")
+            })
+        });
+    if !has_plan_truth {
+        return Err("planner alignment requires tp_plan_truth trust property".to_string());
+    }
+
+    Ok(())
 }
 
 fn run_scheduler_invariants_guard() -> Result<(), String> {
