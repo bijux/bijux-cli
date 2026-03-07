@@ -1,93 +1,103 @@
 # bijux-dag
 
-A minimal, deterministic DAG runner and artifact system written in Rust. This repo provides a JSON DAG IR, validation rules, a runtime with deterministic scheduling contracts, and a CLI for validating and running DAGs into reproducible run directories.
+**Git for computation graphs.**
 
-## Purpose
-- Define a compact DAG IR that is strict and canonicalizable.
-- Provide deterministic execution order with stable artifact outputs.
-- Make runs easy to inspect and explain.
+Canonical mission statements live in
+`docs/spec/MISSION_STATEMENT.md`. Root docs and command help must use that wording.
 
-## Refusal List
-This project does not:
-- Execute untrusted code without explicit user intent.
-- Perform network operations by default.
-- Allow unknown JSON fields in DAG definitions.
-- Accept non-deterministic scheduling.
+## What bijux-dag is
+
+- A deterministic computation-graph engine.
+- A canonical graph and run identity model.
+- A run-directory and artifact truth system with replay, diff, and proof surfaces.
+- A CLI for validate/plan/run/replay/diff/inspect workflows.
+
+## What bijux-dag is not
+
+- Not a managed workflow platform.
+- Not a scheduler control plane for distributed clusters.
+- Not a claim of production container/Kubernetes/HPC execution in this repo.
+- Not a replacement for every orchestration product category.
+
+See `docs/reference/POSITIONING_NOTE.md`.
+
+## Architecture overview
+
+```text
+                +-----------------------------+
+                |         bijux-dag-cli       |
+                |      operator command UX    |
+                +--------------+--------------+
+                               |
+                               v
+                +-----------------------------+
+                |         bijux-dag-app       |
+                | command routing + renderers |
+                +--------------+--------------+
+                               |
+                               v
+        +-----------------------------------------------+
+        |                  bijux-dag-runtime            |
+        | planner -> scheduler -> execution -> artifacts|
+        +----------------------+------------------------+
+                               |
+                               v
+                +-----------------------------+
+                |         bijux-dag-core      |
+                | canonical graph/run identity|
+                +-----------------------------+
+
+Evidence and trust boundaries:
+evidence/ + bijux-dev-dag verify suites
+```
+
+## Current implemented capabilities
+
+Short summary:
+- Deterministic local DAG validation, planning, execution, replay, and diff.
+- Run-directory artifact integrity verification and import/export compatibility checks.
+- Evidence-governed trust reporting for release blocking vs advisory proof.
+
+Canonical capability list:
+- `docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md`
+
+Status matrix (implemented vs modeled/experimental/simulated):
+- `ROOT_CAPABILITY_MATRIX.md`
 
 ## Quickstart
-1. Build the CLI.
-2. Validate a DAG.
-3. Run a DAG and inspect artifacts.
 
-Example commands (assuming `cargo` is available):
-```
-# test
+```bash
 make test
-
-# lint
 make lint
-
-# security
 make security
 
-# build
 cargo build -p bijux-dag-cli
-
-# validate
 cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json
-
-# validate with explain
-cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json --explain
-
-# run
+cargo run -p bijux-dag-cli -- dag plan evidence/authoring/examples/hello.dag.json
 cargo run -p bijux-dag-cli -- dag run evidence/authoring/examples/hello.dag.json --out runs/
-
-# run with selectors
-cargo run -p bijux-dag-cli -- dag run evidence/authoring/examples/hello.dag.json --out runs/ --select tag:etl
-
-# init
-cargo run -p bijux-dag-cli -- dag init
-
-# lint
-cargo run -p bijux-dag-cli -- dag lint evidence/authoring/examples/hello.dag.json
-
-# graph (dot)
-cargo run -p bijux-dag-cli -- dag graph evidence/authoring/examples/hello.dag.json --format dot
-
-# replay
+cargo run -p bijux-dag-cli -- dag inspect runs/run-<id>
 cargo run -p bijux-dag-cli -- dag replay runs/run-<id> --out runs/
-
-# diff
 cargo run -p bijux-dag-cli -- dag diff runs/run-<id-a> runs/run-<id-b>
-
-# export/import
-cargo run -p bijux-dag-cli -- dag export runs/run-<id> --out run.json
-cargo run -p bijux-dag-cli -- dag import run.json
-
-# adapters
-cargo run -p bijux-dag-cli -- dag adapters ls
-
-# explain a run
-cargo run -p bijux-dag-cli -- dag explain runs/run-<id>
-
-# explain a node
-cargo run -p bijux-dag-cli -- dag explain runs/run-<id> --node <node-id>
-
-# cache verify
 cargo run -p bijux-dag-cli -- dag cache verify
 ```
 
-See `docs/CLI.md` for the command taxonomy, `docs/spec/` for formal definitions,
-`docs/operations/README.md` for runtime usage, and `docs/ADAPTERS.md` / `docs/EFFECTS.md` for adapter/effects guidance.
+## Key references
 
-Evidence and guarantee policy is defined in [docs/spec/EVIDENCE_MODEL.md](./docs/spec/EVIDENCE_MODEL.md).
+- Mission: `docs/spec/MISSION_STATEMENT.md`
+- Positioning: `docs/reference/POSITIONING_NOTE.md`
+- Git mapping: `docs/reference/GIT_FOR_COMPUTATION_GRAPHS_MAPPING.md`
+- Support policy: `docs/reference/EXECUTION_SUPPORT_POLICY.md`
+- Glossary: `docs/reference/COMPUTATION_GRAPH_GLOSSARY.md`
+- Evidence model: `docs/spec/EVIDENCE_MODEL.md`
 
 ## License
+
 Apache-2.0. See `LICENSE` and `NOTICE`.
 
 ## Security
-The `make security` target runs `cargo audit` to check dependencies for known vulnerabilities.
-Install it once with:
-```
+
+`make security` runs `cargo audit`. Install once:
+
+```bash
 cargo install cargo-audit
 ```
