@@ -15,6 +15,7 @@ No feature work is accepted without a declared owner, a written contract, and te
 - Keep JSON parsing strict.
 - Keep scheduling deterministic.
 - Use `use ... as _;` only in tests/benches or crate entrypoints when required for dependency-touch accounting; otherwise use explicit imports.
+- Do not introduce `todo!`, `unimplemented!`, or placeholder user-facing text in stable surfaces without a policy exception and owner.
 
 ## Tests
 Run all tests with:
