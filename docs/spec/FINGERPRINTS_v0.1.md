@@ -1,9 +1,12 @@
 # Fingerprints v0.1
 
+`graph_id` is the canonical graph fingerprint identifier.
+
 ## Graph Fingerprint
 - Compute canonical JSON for the entire graph.
 - Hash with SHA256 of the UTF-8 bytes.
 - Graph metadata is included when present.
+- Exposed as `graph_id`.
 
 Contributes directly:
 - `spec`
@@ -40,3 +43,8 @@ Contributes directly:
 ## Exclusions
 - Runtime-only fields such as timestamps or execution status are excluded.
 - `group` is excluded from node fingerprints.
+
+## Explain surface
+
+- `dag fingerprint --explain`
+- `dag hash graph --explain`

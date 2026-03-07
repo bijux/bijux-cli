@@ -83,6 +83,25 @@ pub use semantics::{
 pub const SPEC_VERSION: &str = "bijux-dag/v0.1";
 pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(transparent)]
+pub struct GraphId(pub String);
+
+impl GraphId {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct GraphFingerprintExplain {
+    pub graph_id: GraphId,
+    pub canonical_json: String,
+    pub canonical_json_bytes_len: usize,
+    pub hash_algorithm: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Graph {
@@ -630,6 +649,29 @@ impl Graph {
     pub fn graph_fingerprint(&self) -> Result<String, GraphError> {
         let json = self.to_canonical_json()?;
         Ok(hash_bytes(json.as_bytes()))
+    }
+
+    pub fn graph_id(&self) -> Result<GraphId, GraphError> {
+        Ok(GraphId(self.graph_fingerprint()?))
+    }
+
+    pub fn graph_fingerprint_explain(&self) -> Result<GraphFingerprintExplain, GraphError> {
+        let canonical_json = self.to_canonical_json()?;
+        let graph_id = GraphId(hash_bytes(canonical_json.as_bytes()));
+        Ok(GraphFingerprintExplain {
+            graph_id,
+            canonical_json_bytes_len: canonical_json.len(),
+            canonical_json,
+            hash_algorithm: "sha256".to_string(),
+        })
+    }
+
+    pub fn canonical_json_bytes(&self) -> Result<Vec<u8>, GraphError> {
+        Ok(self.to_canonical_json()?.into_bytes())
+    }
+
+    pub fn canonical_graph_pretty(&self) -> Result<String, GraphError> {
+        self.to_canonical_json()
     }
 
     pub fn node_fingerprint(&self, node: &Node) -> Result<String, GraphError> {

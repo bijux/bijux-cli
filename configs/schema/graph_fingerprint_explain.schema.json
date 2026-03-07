@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/graph_fingerprint_explain.schema.json",
+  "title": "Graph Fingerprint Explain",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "graph_id",
+    "canonical_json",
+    "canonical_json_bytes_len",
+    "hash_algorithm"
+  ],
+  "properties": {
+    "graph_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canonical_json": {
+      "type": "string",
+      "minLength": 2
+    },
+    "canonical_json_bytes_len": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "hash_algorithm": {
+      "type": "string",
+      "enum": [
+        "sha256"
+      ]
+    }
+  }
+}
