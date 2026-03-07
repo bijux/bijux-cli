@@ -8,8 +8,8 @@
     "crates/bijux-dag-runtime/src/lib.rs": 1850,
     "crates/bijux-dag-runtime/src/scheduler.rs": 820,
     "crates/bijux-dag-runtime/src/tests_runtime.in.rs": 1189,
-    "crates/bijux-dag-runtime/src/engine.rs": 1173,
+    "crates/bijux-dag-runtime/src/engine.rs": 1250,
     "crates/bijux-dag-app/src/lib.rs": 1778,
-    "crates/bijux-dev-dag/src/commands/mod.rs": 5000
+    "crates/bijux-dev-dag/src/commands/mod.rs": 5100
   }
 }
