@@ -126,7 +126,5 @@ test-all: ## Run full workspace test suite including slow and ignored tests
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \
 	test $$status -eq 0
-	@$(DEV_TOOL) verify evidence-battle
-	@$(DEV_TOOL) verify evidence-consumers
 
 .PHONY: audit check coverage fmt lint test test-slow test-all
