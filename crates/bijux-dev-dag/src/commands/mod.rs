@@ -1075,6 +1075,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_test_trust_cleanup_guard(),
     },
     SuiteDef {
+        id: "docs-config-reduction",
+        description: "docs and config governance reduction contracts remain enforced",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_config_reduction_guard(),
+    },
+    SuiteDef {
         id: "battle-suite-mandatory",
         description:
             "battle trust properties and scenario concentration remain mandatory in verification",
@@ -5299,6 +5308,49 @@ fn run_test_trust_cleanup_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_docs_config_reduction_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs_policy = root.join("configs/policy/docs_config_governance.json");
+    let config_policy = root.join("configs/policy/config_consumers.json");
+    if !docs_policy.exists() {
+        return Err("missing docs config governance policy".to_string());
+    }
+    if !config_policy.exists() {
+        return Err("missing config consumers policy".to_string());
+    }
+
+    for required in [
+        "docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md",
+        "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
+        "docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md",
+        "docs/reports/foundation/docs_root_inventory_report.md",
+        "docs/reports/foundation/config_inventory_report.md",
+        "docs/reports/foundation/evidence_claim_links.md",
+        "docs/reports/foundation/renovation_burndown_report.md",
+        "docs/architecture/ADR_RENOVATION_ALIGNMENT.md",
+    ] {
+        if !root.join(required).exists() {
+            return Err(format!(
+                "missing docs config reduction authority: {required}"
+            ));
+        }
+    }
+
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(&docs_policy).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let freeze_enabled = policy
+        .get("roadmap_growth_freeze")
+        .and_then(|node| node.get("enabled"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if !freeze_enabled {
+        return Err("roadmap growth freeze must stay enabled".to_string());
+    }
+
+    Ok(())
+}
+
 fn run_docs_schema_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -7852,6 +7904,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "performance-evidence",
         "test-trust-foundation",
         "test-trust-cleanup",
+        "docs-config-reduction",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
