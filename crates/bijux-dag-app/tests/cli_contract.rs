@@ -15,7 +15,6 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::{dag_command, dag_run};
-use clap::CommandFactory;
 
 #[test]
 fn dag_help_command_tree_snapshot_is_stable() {

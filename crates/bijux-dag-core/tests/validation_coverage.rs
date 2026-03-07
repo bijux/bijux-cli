@@ -267,7 +267,7 @@ fn graph_for_code(code: &str) -> Graph {
             g
         }
         "E1004" => {
-            let mut g = Graph {
+            let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
                 inputs: serde_json::Map::new(),
@@ -442,7 +442,7 @@ fn graph_for_code(code: &str) -> Graph {
             g
         }
         "W2002" => {
-            let mut g = Graph {
+            let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
                 inputs: serde_json::Map::new(),
