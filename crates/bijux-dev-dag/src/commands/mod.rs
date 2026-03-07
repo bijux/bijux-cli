@@ -5971,7 +5971,10 @@ fn run_scheduler_invariants_guard() -> Result<(), String> {
     let required = [
         "docs/spec/SCHEDULER_CONTRACT.md",
         "docs/spec/SCHEDULER_STATE_TRANSITIONS.md",
+        "docs/reports/foundation/scheduler_hardening_report.md",
         "crates/bijux-dag-runtime/tests/scheduler_contract.rs",
+        "crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs",
+        "crates/bijux-dev-dag/tests/scheduler_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -7990,6 +7993,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "test-trust-foundation",
         "test-trust-cleanup",
         "docs-config-reduction",
+        "scheduler-invariants",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
