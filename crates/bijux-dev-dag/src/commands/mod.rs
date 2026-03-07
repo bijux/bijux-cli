@@ -5918,14 +5918,18 @@ fn run_versioning_compatibility_guard() -> Result<(), String> {
 fn run_cache_evolution_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
+        "docs/spec/CACHE_CONTRACT.md",
         "docs/spec/CACHE_EVOLUTION_MODEL.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
         "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
         "tests/cache/fixtures/corrupt/missing_meta.json",
         "tests/cache/fixtures/corrupt/hash_mismatch.json",
         "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+        "tests/cache/fixtures/corrupt/truncated_meta.json",
+        "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
         "tests/cache/fixtures/warm_cold/scenario.json",
         "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
+        "crates/bijux-dag-runtime/tests/cache_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -5953,16 +5957,32 @@ fn run_cache_evolution_guard() -> Result<(), String> {
     }
     let app_commands =
         fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
-    let cache_surface_count = ["Ls", "Pack", "Unpack", "Gc", "Verify", "Explain", "Stats", "PruneSimulate"]
+    let cache_surface_count = [
+        "Ls",
+        "Pack",
+        "Unpack",
+        "Gc",
+        "Verify",
+        "Explain",
+        "Stats",
+        "PruneSimulate",
+        "Diff",
+    ]
         .iter()
         .filter(|name| app_commands.contains(&format!("CacheCommands::{}", name)))
         .count();
-    if cache_surface_count >= 8
-        && !root
-            .join("crates/bijux-dag-app/tests/cache_evolution_contract.rs")
-            .exists()
-    {
-        return Err("cache command surface expanded without cache evolution coverage tests".to_string());
+    if cache_surface_count >= 9 {
+        for test in [
+            "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
+            "crates/bijux-dag-runtime/tests/cache_contracts.rs",
+        ] {
+            if !root.join(test).exists() {
+                return Err(format!(
+                    "cache command surface expanded without required cache coverage test: {}",
+                    test
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -6767,6 +6787,7 @@ fn run_cache_coverage_report() -> Result<(), String> {
     let report = json!({
         "cache_correctness": {
             "docs": {
+                "contract": root.join("docs/spec/CACHE_CONTRACT.md").exists(),
                 "model": root.join("docs/spec/CACHE_EVOLUTION_MODEL.md").exists(),
                 "prune_policy": root.join("docs/spec/CACHE_PRUNE_POLICY.md").exists(),
                 "coverage_ledger": root.join("docs/tracking/CACHE_CORRECTNESS_COVERAGE.md").exists()
@@ -6776,7 +6797,8 @@ fn run_cache_coverage_report() -> Result<(), String> {
                 "warm_cold": collect_fixture_count(&root.join("tests/cache/fixtures/warm_cold"))?
             },
             "tests": {
-                "app_cache_evolution_contract": root.join("crates/bijux-dag-app/tests/cache_evolution_contract.rs").exists()
+                "app_cache_evolution_contract": root.join("crates/bijux-dag-app/tests/cache_evolution_contract.rs").exists(),
+                "runtime_cache_contracts": root.join("crates/bijux-dag-runtime/tests/cache_contracts.rs").exists()
             }
         }
     });
