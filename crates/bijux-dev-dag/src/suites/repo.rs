@@ -1,0 +1,13 @@
+pub const IDS: &[&str] = &[
+    "dependency-policy",
+    "dep-guard",
+    "ownership-public-modules",
+    "cli-freeze",
+    "adapter-freeze",
+    "crate-manifest-policy",
+    "public-export-docs",
+    "repo-docs",
+    "repo-source",
+    "repo-manifests",
+    "repo-api",
+];

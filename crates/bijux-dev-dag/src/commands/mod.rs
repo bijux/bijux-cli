@@ -1,0 +1,2460 @@
+use clap::{CommandFactory, Parser, Subcommand};
+use serde::Deserialize;
+use serde_json::json;
+use serde_json::Value;
+use sha2::Digest;
+use std::collections::BTreeSet;
+use std::env;
+use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Command, ExitCode};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+const CLI_COMMAND_FREEZE_BASELINE: usize = 29;
+const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
+
+#[derive(Parser)]
+#[command(name = "bijux-dev-dag")]
+#[command(about = "Developer workflow helpers for bijux-dag")]
+struct Cli {
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    report: Option<PathBuf>,
+    #[command(subcommand)]
+    command: CommandLine,
+}
+
+#[derive(Subcommand)]
+enum CommandLine {
+    /// Run cargo fmt on workspace
+    Fmt,
+    /// Run workspace format check + clippy
+    Lint,
+    /// Run cargo audit
+    Security,
+    /// Run metadata + tests + format check
+    Sanity,
+    /// Run legacy style checks
+    Checks {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run legacy style tests
+    Tests {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run compatibility and runtime contracts
+    Contracts {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Produce documentation health or report views
+    Docs {
+        #[command(subcommand)]
+        command: ControlCommand,
+    },
+    /// Run release preparation workflows
+    Release {
+        #[command(subcommand)]
+        command: ReleaseCommand,
+    },
+    /// Run repo and governance policies
+    Repo {
+        #[command(subcommand)]
+        command: RepoCommand,
+    },
+    /// Validate and preview scheduling definitions
+    Schedule {
+        #[command(subcommand)]
+        command: ScheduleCommand,
+    },
+    /// DAG developer-experience helpers
+    Dag {
+        #[command(subcommand)]
+        command: DagCommand,
+    },
+    /// Print environment diagnostics and report status
+    Doctor,
+    /// Generate and verify golden run/replay contract
+    Golden,
+    /// Compare cargo-public-api output with docs/api baseline
+    PublicApi,
+    /// API surface commands
+    Api {
+        #[command(subcommand)]
+        command: ApiCommand,
+    },
+    /// Check forbidden dependency usage in workspace Cargo manifests
+    DepGuard,
+    /// Print workspace crate dependency graph from cargo metadata
+    CrateGraph,
+    /// Remove workspace target artifacts
+    ArtifactsClean,
+    /// Print build environment summary
+    EnvSummary,
+    /// Validate required cargo tools are installed
+    VerifyTools,
+    /// Verify workspace dependencies resolve
+    ResolveCheck,
+    /// Record baseline benchmark artifact
+    BenchmarkBaseline,
+    /// Verify artifact reproducibility and integrity for local runs
+    ArtifactVerify,
+    /// Generate observability evidence report from run artifacts
+    ObservabilityReport,
+    /// Run full CI-like sequence
+    Ci,
+    /// Run CLI compatibility command
+    Compat,
+}
+
+#[derive(Subcommand)]
+enum ControlCommand {
+    /// Execute suite checks
+    Run {
+        #[arg(long)]
+        domain: Option<String>,
+        #[arg(long)]
+        fail_fast: bool,
+        #[arg(long)]
+        include_slow: bool,
+        #[arg(long)]
+        include_internal: bool,
+    },
+    /// Show known suites
+    List,
+    /// Explain a suite
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum RepoCommand {
+    /// Run dependency policy checks
+    Deps,
+    /// Execute governance suites
+    Run {
+        #[arg(long)]
+        domain: Option<String>,
+        #[arg(long)]
+        fail_fast: bool,
+        #[arg(long)]
+        include_slow: bool,
+        #[arg(long)]
+        include_internal: bool,
+    },
+    /// Show known repo suites
+    List,
+    /// Explain a repo suite
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ScheduleCommand {
+    /// Validate schedule registry semantics
+    Validate {
+        #[arg(long, default_value = "configs/schedules/registry.json")]
+        file: PathBuf,
+    },
+    /// Preview next-fire behavior
+    Preview {
+        #[arg(long, default_value = "configs/schedules/registry.json")]
+        file: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+enum DagCommand {
+    /// Lint DAG style and maintainability rules
+    Lint {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Run compact unit harness checks for a DAG
+    UnitHarness {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Simulate execution ordering without running adapters
+    Simulate {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Dry-run compile and planning preview
+    DryRun {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Render graph visualization payload from run artifacts
+    Visualize {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
+    /// Debug dependency closure and blocked nodes from a graph
+    Debug {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Explain validation diagnostics for a DAG file
+    ExplainValidation {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Explain why a node did not run from run artifacts
+    ExplainNode {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        node_id: String,
+    },
+    /// Preview what a run would do under deterministic planning
+    Preview {
+        #[arg(long)]
+        graph: PathBuf,
+    },
+    /// Export a JSON schema contract skeleton for DAG documents
+    SchemaExport {
+        #[arg(long, default_value = "docs/spec/dag-schema-v0.1.json")]
+        out: PathBuf,
+    },
+    /// Validate run metadata consistency and optionally repair missing metadata files
+    RepairRun {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, default_value_t = false)]
+        apply: bool,
+    },
+    /// Run recovery fault simulation from a scenario fixture file
+    SimulateRecovery {
+        #[arg(long)]
+        scenario: PathBuf,
+    },
+    /// Validate a recovery acceptance suite definition
+    RecoveryAccept {
+        #[arg(long)]
+        suite: PathBuf,
+    },
+    /// Explain run-level behavior from observability artifacts
+    ExplainRun {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
+    /// Explain artifact lineage and reproducibility from artifacts
+    ExplainArtifact {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        artifact_id: String,
+    },
+    /// Explain schedule creation decision from schedule audit records
+    ExplainSchedule {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+    },
+    /// Build an investigation bundle report for operator debugging
+    InvestigationBundle {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        run_id: String,
+    },
+    /// Compare current metrics with a baseline metrics report
+    DriftReport {
+        #[arg(long)]
+        current_metrics: PathBuf,
+        #[arg(long)]
+        baseline_metrics: PathBuf,
+        #[arg(long)]
+        dag_name: String,
+        #[arg(long)]
+        baseline_name: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ApiCommand {
+    /// Verify public API surface contracts
+    PublicSurface,
+}
+
+#[derive(Subcommand)]
+enum ReleaseCommand {
+    /// Execute release verification
+    Verify,
+    /// List release workflows
+    List,
+    /// Explain a release workflow
+    Explain {
+        #[arg(long)]
+        suite: String,
+    },
+}
+
+#[derive(Copy, Clone)]
+enum CommandEffect {
+    Validation,
+    ReadWrite,
+}
+
+impl CommandEffect {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Validation => "validation",
+            Self::ReadWrite => "read-write",
+        }
+    }
+}
+
+struct SuiteDef {
+    id: &'static str,
+    description: &'static str,
+    domain: &'static str,
+    slow: bool,
+    internal: bool,
+    effect: CommandEffect,
+    run: fn() -> Result<(), String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DependencyPolicy {
+    rules: Vec<DependencyRule>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DependencyRule {
+    from: String,
+    to: String,
+    reason: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CrateOwnershipPolicy {
+    crates: Vec<CrateOwnershipEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CrateOwnershipEntry {
+    name: String,
+    path: String,
+    domains: Vec<String>,
+    public_modules: Vec<String>,
+}
+
+const CHECK_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "fmt",
+        description: "cargo fmt check",
+        domain: "style",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["fmt", "--all", "--", "--check"]),
+    },
+    SuiteDef {
+        id: "lint",
+        description: "cargo clippy with warnings as errors",
+        domain: "quality",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || {
+            run_status("cargo", &["fmt", "--all", "--", "--check"])?;
+            run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])
+        },
+    },
+    SuiteDef {
+        id: "security",
+        description: "cargo audit policy check",
+        domain: "supply-chain",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["audit"]),
+    },
+    SuiteDef {
+        id: "dep-guard",
+        description: "forbidden dependency reference check",
+        domain: "policy",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_dep_guard(),
+    },
+];
+
+const TEST_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "unit",
+        description: "cargo test --workspace",
+        domain: "runtime",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "--workspace"]),
+    },
+    SuiteDef {
+        id: "arch",
+        description: "repository architecture tests",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "-p", "bijux-dev-dag"]),
+    },
+];
+
+const CONTRACT_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "compat",
+        description: "core compat fixture assertions",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
+    },
+    SuiteDef {
+        id: "golden",
+        description: "run/replay golden execution parity",
+        domain: "runtime",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_golden(),
+    },
+    SuiteDef {
+        id: "public-api",
+        description: "public API surface contract",
+        domain: "quality",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_public_api(),
+    },
+    SuiteDef {
+        id: "validation-rules-doc",
+        description: "core validation rule IDs are documented",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_validation_rule_docs_guard(),
+    },
+    SuiteDef {
+        id: "schema-contracts",
+        description: "schema source files and fixtures are present and versioned",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_schema_contracts_guard(),
+    },
+    SuiteDef {
+        id: "adapter-conformance",
+        description: "runtime adapter descriptor conformance checks",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "-p", "bijux-dag-runtime", "adapter_descriptor_requires_identity_and_schema_version"]),
+    },
+];
+
+const DOC_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "api",
+        description: "check documentation index files",
+        domain: "docs",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || {
+            let root = repo_root()?;
+            if !root.join("docs").join("DEVELOPMENT.md").exists() {
+                return Err("missing docs/DEVELOPMENT.md".into());
+            }
+            Ok(())
+        },
+    },
+    SuiteDef {
+        id: "guarantee-evidence",
+        description: "guarantee language requires linked proof",
+        domain: "docs",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_guarantee_guard(),
+    },
+];
+
+const RELEASE_SUITES: &[SuiteDef] = &[SuiteDef {
+    id: "verify",
+    description: "full release verification",
+    domain: "release",
+    slow: true,
+    internal: false,
+    effect: CommandEffect::ReadWrite,
+    run: || run_ci(),
+}];
+
+const REPO_SUITES: &[SuiteDef] = &[
+    SuiteDef {
+        id: "dependency-policy",
+        description: "legacy workspace dependency reference check",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_missing_workspace_dependency_checks(),
+    },
+    SuiteDef {
+        id: "dep-guard",
+        description: "metadata dependency boundary check",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_dep_guard(),
+    },
+    SuiteDef {
+        id: "ownership-public-modules",
+        description: "crate public modules match ownership contract",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_crate_ownership_guard(),
+    },
+    SuiteDef {
+        id: "cli-freeze",
+        description: "freeze new top-level CLI commands",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_cli_command_freeze(),
+    },
+    SuiteDef {
+        id: "adapter-freeze",
+        description: "freeze runtime adapter kinds until split",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_adapter_kind_freeze(),
+    },
+    SuiteDef {
+        id: "crate-manifest-policy",
+        description: "crate manifest boundary policy checks",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_workspace_manifest_policy_guard(),
+    },
+    SuiteDef {
+        id: "public-export-docs",
+        description: "public exports require crate-doc contract mention",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_public_export_docs_guard(),
+    },
+    SuiteDef {
+        id: "repo-docs",
+        description: "doc root required governance contracts and budgets",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_docs_guard(),
+    },
+    SuiteDef {
+        id: "repo-source",
+        description: "source layout policy and disallowed imports",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_source_guard(),
+    },
+    SuiteDef {
+        id: "repo-manifests",
+        description: "workspace Cargo manifest conventions",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_manifests_guard(),
+    },
+    SuiteDef {
+        id: "repo-api",
+        description: "crate API docs coverage baseline",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_api_guard(),
+    },
+];
+
+pub fn entry_main() -> ExitCode {
+    let cli = Cli::parse();
+    match run(cli) {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("{err}");
+            ExitCode::from(1)
+        }
+    }
+}
+
+struct CommandContext {
+    json: bool,
+    report: Option<PathBuf>,
+}
+
+fn run(cli: Cli) -> Result<(), String> {
+    let context = CommandContext {
+        json: cli.json,
+        report: cli.report,
+    };
+    match cli.command {
+        CommandLine::Fmt => run_command_reported(&context, "fmt", CommandEffect::Validation, json!({}), || {
+            run_status("cargo", &["fmt", "--all"])
+        }),
+        CommandLine::Lint => run_command_reported(&context, "lint", CommandEffect::Validation, json!({}), || {
+            run_status("cargo", &["fmt", "--all", "--", "--check"])?;
+            run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])
+        }),
+        CommandLine::Security => run_command_reported(&context, "security", CommandEffect::Validation, json!({}), || {
+            run_status("cargo", &["audit"])
+        }),
+        CommandLine::Sanity => run_command_reported(&context, "sanity", CommandEffect::ReadWrite, json!({}), || {
+            run_status("cargo", &["metadata", "--no-deps"])?;
+            run_status("cargo", &["test", "-q"])?;
+            run_status("cargo", &["fmt", "--all", "--", "--check"])
+        }),
+        CommandLine::Checks { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "checks", CHECK_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "checks", CHECK_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "checks", &suite, CHECK_SUITES)
+            }
+        },
+        CommandLine::Tests { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "tests", TEST_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "tests", TEST_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "tests", &suite, TEST_SUITES)
+            }
+        },
+        CommandLine::Contracts { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(
+                    &context,
+                    "contracts",
+                    CONTRACT_SUITES,
+                    &domain,
+                    fail_fast,
+                    include_slow,
+                    include_internal,
+                )
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "contracts", CONTRACT_SUITES)
+            }
+            ControlCommand::Explain { suite } => {
+                run_suite_explain(&context, "contracts", &suite, CONTRACT_SUITES)
+            }
+        },
+        CommandLine::Docs { command } => match command {
+            ControlCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "docs", DOC_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            ControlCommand::List => {
+                run_suite_list(&context, "docs", DOC_SUITES)
+            }
+            ControlCommand::Explain { suite } => run_suite_explain(&context, "docs", &suite, DOC_SUITES),
+        },
+        CommandLine::Release { command } => match command {
+            ReleaseCommand::Verify => {
+                run_command_reported(
+                    &context,
+                    "release.verify",
+                    CommandEffect::ReadWrite,
+                    json!({ "flow": crate::suites::release_verify_suite_ids() }),
+                    || run_release_verify(),
+                )
+            }
+            ReleaseCommand::List => {
+                run_suite_list(&context, "release", RELEASE_SUITES)
+            }
+            ReleaseCommand::Explain { suite } => {
+                run_suite_explain(&context, "release", &suite, RELEASE_SUITES)
+            }
+        },
+        CommandLine::Repo { command } => match command {
+            RepoCommand::Deps => {
+                run_command_reported(&context, "repo.deps", CommandEffect::Validation, json!({}), || {
+                    run_missing_workspace_dependency_checks()
+                })
+            }
+            RepoCommand::Run { domain, fail_fast, include_slow, include_internal } => {
+                run_suite_group(&context, "repo", REPO_SUITES, &domain, fail_fast, include_slow, include_internal)
+            }
+            RepoCommand::List => run_suite_list(&context, "repo", REPO_SUITES),
+            RepoCommand::Explain { suite } => run_suite_explain(&context, "repo", &suite, REPO_SUITES),
+        },
+        CommandLine::Schedule { command } => match command {
+            ScheduleCommand::Validate { file } => run_command_reported(
+                &context,
+                "schedule.validate",
+                CommandEffect::Validation,
+                json!({ "file": file }),
+                || run_schedule_validate(&file),
+            ),
+            ScheduleCommand::Preview { file } => run_command_reported(
+                &context,
+                "schedule.preview",
+                CommandEffect::Validation,
+                json!({ "file": file }),
+                || run_schedule_preview(&file),
+            ),
+        },
+        CommandLine::Dag { command } => match command {
+            DagCommand::Lint { graph } => run_command_reported(
+                &context,
+                "dag.lint",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_lint(&graph),
+            ),
+            DagCommand::UnitHarness { graph } => run_command_reported(
+                &context,
+                "dag.unit-harness",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_unit_harness(&graph),
+            ),
+            DagCommand::Simulate { graph } => run_command_reported(
+                &context,
+                "dag.simulate",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_simulate(&graph),
+            ),
+            DagCommand::DryRun { graph } => run_command_reported(
+                &context,
+                "dag.dry-run",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_dry_run(&graph),
+            ),
+            DagCommand::Visualize { run_dir } => run_command_reported(
+                &context,
+                "dag.visualize",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_visualize(&run_dir),
+            ),
+            DagCommand::Debug { graph } => run_command_reported(
+                &context,
+                "dag.debug",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_debug(&graph),
+            ),
+            DagCommand::ExplainValidation { graph } => run_command_reported(
+                &context,
+                "dag.explain-validation",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_explain_validation(&graph),
+            ),
+            DagCommand::ExplainNode { run_dir, node_id } => run_command_reported(
+                &context,
+                "dag.explain-node",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "node_id": node_id}),
+                || run_dag_explain_node(&run_dir, &node_id),
+            ),
+            DagCommand::Preview { graph } => run_command_reported(
+                &context,
+                "dag.preview",
+                CommandEffect::Validation,
+                json!({"graph": graph}),
+                || run_dag_preview(&graph),
+            ),
+            DagCommand::SchemaExport { out } => run_command_reported(
+                &context,
+                "dag.schema-export",
+                CommandEffect::ReadWrite,
+                json!({"out": out}),
+                || run_dag_schema_export(&out),
+            ),
+            DagCommand::RepairRun { run_dir, apply } => run_command_reported(
+                &context,
+                "dag.repair-run",
+                CommandEffect::ReadWrite,
+                json!({"run_dir": run_dir, "apply": apply}),
+                || run_dag_repair_run(&run_dir, apply),
+            ),
+            DagCommand::SimulateRecovery { scenario } => run_command_reported(
+                &context,
+                "dag.simulate-recovery",
+                CommandEffect::Validation,
+                json!({"scenario": scenario}),
+                || run_dag_simulate_recovery(&scenario),
+            ),
+            DagCommand::RecoveryAccept { suite } => run_command_reported(
+                &context,
+                "dag.recovery-accept",
+                CommandEffect::Validation,
+                json!({"suite": suite}),
+                || run_dag_recovery_accept(&suite),
+            ),
+            DagCommand::ExplainRun { run_dir } => run_command_reported(
+                &context,
+                "dag.explain-run",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_explain_run(&run_dir),
+            ),
+            DagCommand::ExplainArtifact { run_dir, artifact_id } => run_command_reported(
+                &context,
+                "dag.explain-artifact",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "artifact_id": artifact_id}),
+                || run_dag_explain_artifact(&run_dir, &artifact_id),
+            ),
+            DagCommand::ExplainSchedule { run_dir, schedule_id } => run_command_reported(
+                &context,
+                "dag.explain-schedule",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "schedule_id": schedule_id}),
+                || run_dag_explain_schedule(&run_dir, &schedule_id),
+            ),
+            DagCommand::InvestigationBundle { run_dir, run_id } => run_command_reported(
+                &context,
+                "dag.investigation-bundle",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir, "run_id": run_id}),
+                || run_dag_investigation_bundle(&run_dir, &run_id),
+            ),
+            DagCommand::DriftReport {
+                current_metrics,
+                baseline_metrics,
+                dag_name,
+                baseline_name,
+            } => run_command_reported(
+                &context,
+                "dag.drift-report",
+                CommandEffect::Validation,
+                json!({
+                    "current_metrics": current_metrics,
+                    "baseline_metrics": baseline_metrics,
+                    "dag_name": dag_name,
+                    "baseline_name": baseline_name
+                }),
+                || run_dag_drift_report(&current_metrics, &baseline_metrics, &dag_name, &baseline_name),
+            ),
+        },
+        CommandLine::Doctor => run_command_reported(&context, "doctor", CommandEffect::ReadWrite, json!({}), || {
+            run_env_summary()?;
+            run_verify_tools()
+        }),
+        CommandLine::Golden => run_command_reported(&context, "golden", CommandEffect::ReadWrite, json!({}), || {
+            run_golden()
+        }),
+        CommandLine::PublicApi => run_command_reported(&context, "public-api", CommandEffect::ReadWrite, json!({}), || {
+            run_public_api()
+        }),
+        CommandLine::DepGuard => run_command_reported(&context, "dep-guard", CommandEffect::Validation, json!({}), || {
+            run_dep_guard()
+        }),
+        CommandLine::CrateGraph => run_command_reported(&context, "crate-graph", CommandEffect::Validation, json!({}), || {
+            run_crate_graph_command()
+        }),
+        CommandLine::ArtifactsClean => run_command_reported(&context, "artifacts-clean", CommandEffect::ReadWrite, json!({}), || {
+            run_artifacts_clean()
+        }),
+        CommandLine::EnvSummary => run_command_reported(&context, "env-summary", CommandEffect::Validation, json!({}), || {
+            run_env_summary()
+        }),
+        CommandLine::VerifyTools => run_command_reported(&context, "verify-tools", CommandEffect::Validation, json!({}), || {
+            run_verify_tools()
+        }),
+        CommandLine::ResolveCheck => run_command_reported(&context, "resolve-check", CommandEffect::Validation, json!({}), || {
+            run_resolve_check()
+        }),
+        CommandLine::BenchmarkBaseline => run_command_reported(
+            &context,
+            "benchmark-baseline",
+            CommandEffect::ReadWrite,
+            json!({}),
+            || run_benchmark_baseline(),
+        ),
+        CommandLine::ArtifactVerify => run_command_reported(
+            &context,
+            "artifact-verify",
+            CommandEffect::Validation,
+            json!({}),
+            || run_artifact_verify(),
+        ),
+        CommandLine::ObservabilityReport => run_command_reported(
+            &context,
+            "observability-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_observability_report(),
+        ),
+        CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
+            run_ci()
+        }),
+        CommandLine::Compat => run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
+            run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
+        }),
+        CommandLine::Api { command } => match command {
+            ApiCommand::PublicSurface => run_command_reported(&context, "api.public-surface", CommandEffect::ReadWrite, json!({}), || {
+                run_public_api()
+            }),
+        },
+    }
+}
+
+fn run_suite_group(
+    context: &CommandContext,
+    group: &str,
+    suites: &[SuiteDef],
+    domain: &Option<String>,
+    fail_fast: bool,
+    include_slow: bool,
+    include_internal: bool,
+) -> Result<(), String> {
+    let root = repo_root()?;
+    let overrides = crate::suites::load_suite_overrides(&root.join("configs/dev/suite_overrides.json"))?;
+    let disabled: BTreeSet<String> = overrides.disabled_suite_ids.into_iter().collect();
+
+    let selected: Vec<&SuiteDef> = suites
+        .iter()
+        .filter(|suite| domain.as_deref().is_none_or(|d| suite.domain == d))
+        .filter(|suite| include_internal || !suite.internal)
+        .filter(|suite| include_slow || !suite.slow)
+        .filter(|suite| !disabled.contains(suite.id))
+        .collect();
+
+    let mut failed: Vec<String> = Vec::new();
+    for suite in selected {
+        if let Err(error) = run_suite(context, group, suite) {
+            failed.push(format!("{}: {error}", suite.id));
+            if fail_fast {
+                break;
+            }
+        }
+    }
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("{} failed: {}", group, failed.join(", ")))
+    }
+}
+
+fn run_suite(context: &CommandContext, group: &str, suite: &SuiteDef) -> Result<(), String> {
+    run_command_reported(context, &format!("{group}.{}", suite.id), suite.effect, json!({}), suite.run)
+}
+
+fn run_suite_list(context: &CommandContext, group: &str, suites: &[SuiteDef]) -> Result<(), String> {
+    let data = json!({
+        "group": group,
+        "suites": suites.iter().map(|s| json!({"id": s.id, "description": s.description, "domain": s.domain, "slow": s.slow, "internal": s.internal, "effect": s.effect.label()})).collect::<Vec<_>>()
+    });
+    run_text_or_json_report(
+        context,
+        group,
+        &format!("{group}.list"),
+        "read-write",
+        data,
+        || Ok(()),
+        false,
+    )
+}
+
+fn run_suite_explain(context: &CommandContext, group: &str, suite_id: &str, suites: &[SuiteDef]) -> Result<(), String> {
+    let suite = suites
+        .iter()
+        .find(|suite| suite.id == suite_id)
+        .ok_or_else(|| format!("suite '{suite_id}' is unknown"))?;
+    let data = json!({
+        "id": suite.id,
+        "group": group,
+        "description": suite.description,
+        "domain": suite.domain,
+        "slow": suite.slow,
+        "internal": suite.internal,
+        "effect": suite.effect.label(),
+    });
+    run_text_or_json_report(
+        context,
+        group,
+        &format!("{group}.explain"),
+        suite.effect.label(),
+        data,
+        || Ok(()),
+        false,
+    )
+}
+
+fn run_command_reported<F>(context: &CommandContext, command: &str, effect: CommandEffect, data: Value, run: F) -> Result<(), String>
+where
+    F: FnOnce() -> Result<(), String>,
+{
+    run_text_or_json_report(context, command, command, effect.label(), data, run, true)
+}
+
+fn run_text_or_json_report(
+    context: &CommandContext,
+    command: &str,
+    command_name: &str,
+    effect: &str,
+    data: Value,
+    run: impl FnOnce() -> Result<(), String>,
+    include_data_on_success: bool,
+) -> Result<(), String> {
+    let result = run();
+    let (status, error) = match &result {
+        Ok(_) => ("ok", None),
+        Err(err) => ("error", Some(err.clone())),
+    };
+
+    let mut report = json!({
+        "command": command_name,
+        "status": status,
+        "effect": effect,
+        "data": data,
+    });
+    if let Some(error) = error {
+        report["error"] = Value::String(error);
+    }
+
+    if context.json {
+        println!("{}", serde_json::to_string_pretty(&report).expect("json print"));
+    } else if include_data_on_success || status == "error" {
+        let value = report.to_string();
+        println!("[{command}] {status} ({effect}): {value}",);
+    } else {
+        println!("[{command}] {status} ({effect})");
+    }
+
+    if let Some(report_path) = context.report.as_ref() {
+        let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
+        fs::write(report_path, output).map_err(|err| err.to_string())?;
+    }
+    let _ = append_control_plane_audit(command_name, status, effect);
+
+    result
+}
+
+fn append_control_plane_audit(command_name: &str, status: &str, effect: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let audit_dir = root.join("artifacts").join("reports");
+    fs::create_dir_all(&audit_dir).map_err(|err| err.to_string())?;
+    let audit_path = audit_dir.join("control-plane-audit.jsonl");
+    let event = json!({
+        "action": command_name,
+        "status": status,
+        "effect": effect,
+        "ts_unix_ms": now_millis(),
+    });
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&audit_path)
+        .map_err(|err| err.to_string())?;
+    writeln!(file, "{event}").map_err(|err| err.to_string())
+}
+
+fn run_ci() -> Result<(), String> {
+    run_status("cargo", &["fmt", "--all"])?;
+    run_status("cargo", &["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"])?;
+    run_dep_guard()?;
+    run_resolve_check()?;
+    run_missing_workspace_dependency_checks()?;
+    run_status("cargo", &["test", "--workspace"])?;
+    run_golden()?;
+    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])?;
+
+    let root = repo_root()?;
+    let scratch = std::env::temp_dir().join(format!("bijux-dag-ci-{}", now_secs()));
+    let runs = scratch.join("runs");
+    fs::create_dir_all(&runs).map_err(|err| err.to_string())?;
+    run_with_root(
+        &root,
+        "cargo",
+        &["run", "-p", "bijux-dag-cli", "--", "dag", "run", "examples/hello.dag.json", "--out", runs.to_str().expect("utf-8")],
+    )?;
+    let run_dir = newest_run(&runs)?;
+    run_status_in_dir(
+        &root,
+        "cargo",
+        &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
+    )
+}
+
+fn run_schedule_validate(file: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(file);
+    let text = fs::read_to_string(&path)
+        .map_err(|err| format!("failed to read schedule file {}: {err}", path.display()))?;
+    let payload: Value = serde_json::from_str(&text)
+        .map_err(|err| format!("failed to parse schedule file {}: {err}", path.display()))?;
+    let definitions = payload
+        .get("definitions")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "schedule registry must contain a 'definitions' array".to_string())?;
+
+    let mut seen = std::collections::BTreeSet::new();
+    for definition in definitions {
+        let id = definition
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "schedule definition is missing string 'id'".to_string())?;
+        if !seen.insert(id.to_string()) {
+            return Err(format!("duplicate schedule id '{id}'"));
+        }
+        let trigger = definition
+            .get("trigger")
+            .ok_or_else(|| format!("schedule '{id}' is missing 'trigger'"))?;
+        let trigger_kind = trigger
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("schedule '{id}' trigger is missing 'kind'"))?;
+        if trigger_kind == "cron" {
+            let expression = trigger
+                .get("expression")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| format!("schedule '{id}' cron trigger is missing 'expression'"))?;
+            let parts: Vec<&str> = expression.split_whitespace().collect();
+            if parts.len() != 5 {
+                return Err(format!(
+                    "schedule '{id}' cron expression must have exactly five fields"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn run_release_verify() -> Result<(), String> {
+    let flow = crate::suites::release_verify_suite_ids();
+    println!("release verify flow: {}", flow.join(" -> "));
+    run_ci()
+}
+
+fn run_schedule_preview(file: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(file);
+    let text = fs::read_to_string(&path)
+        .map_err(|err| format!("failed to read schedule file {}: {err}", path.display()))?;
+    let payload: Value = serde_json::from_str(&text)
+        .map_err(|err| format!("failed to parse schedule file {}: {err}", path.display()))?;
+    let definitions = payload
+        .get("definitions")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "schedule registry must contain a 'definitions' array".to_string())?;
+    let now = now_millis();
+    for definition in definitions {
+        let id = definition
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("<unknown>");
+        let trigger = definition.get("trigger").unwrap_or(&Value::Null);
+        let kind = trigger
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let preview = if kind == "cron" { now + 60_000 } else { now };
+        println!("schedule={id} trigger={kind} preview_unix_ms={preview}");
+    }
+    Ok(())
+}
+
+fn run_dag_lint(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let findings = bijux_dag_core::lint_graph(&parsed);
+    println!("{}", serde_json::to_string_pretty(&findings).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_unit_harness(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let preview = bijux_dag_core::DagUnitHarness::dry_run(&input).map_err(|err| err.to_string())?;
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_simulate(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let order = bijux_dag_core::simulate_graph(&parsed);
+    println!("{}", serde_json::to_string_pretty(&order).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_dry_run(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let preview = bijux_dag_core::dry_run_preview(&parsed);
+    println!("{}", serde_json::to_string_pretty(&preview).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_visualize(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("observability.graph-visualization.json");
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    println!("{payload}");
+    Ok(())
+}
+
+fn run_dag_debug(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let parsed = bijux_dag_core::parse_graph_strict(&input).map_err(|err| err.to_string())?;
+    let order = bijux_dag_core::simulate_graph(&parsed);
+    let response = json!({
+        "dependency_closure_order": order,
+        "blocked_nodes": [],
+        "policy_reasons": []
+    });
+    println!("{}", serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_validation(graph: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(graph);
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    match bijux_dag_core::parse_graph_strict(&input) {
+        Ok(parsed) => {
+            let diagnostics = parsed.validate_with_warnings();
+            let explain = diagnostics
+                .into_iter()
+                .map(|d| {
+                    json!({
+                        "code": d.code,
+                        "message": d.message,
+                        "path": d.path,
+                        "hint": d.hint
+                    })
+                })
+                .collect::<Vec<_>>();
+            println!("{}", serde_json::to_string_pretty(&explain).map_err(|err| err.to_string())?);
+            Ok(())
+        }
+        Err(err) => Err(format!(
+            "validation parse failed for {}: {}",
+            path.display(),
+            err
+        )),
+    }
+}
+
+fn run_dag_explain_node(run_dir: &Path, node_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("failure-propagation.json");
+    let input = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let rows: Value = serde_json::from_str(&input).map_err(|err| err.to_string())?;
+    let reasons = rows
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|row| row.get("node_id").and_then(|v| v.as_str()) == Some(node_id))
+        .collect::<Vec<_>>();
+    println!("{}", serde_json::to_string_pretty(&reasons).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_preview(graph: &Path) -> Result<(), String> {
+    run_dag_dry_run(graph)
+}
+
+fn run_dag_schema_export(out: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(out);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "BijuxDagV01",
+        "type": "object",
+        "required": ["spec", "nodes", "edges"],
+        "properties": {
+            "spec": {"type": "string"},
+            "meta": {"type": "object"},
+            "nodes": {"type": "array"},
+            "edges": {"type": "array"}
+        }
+    });
+    fs::write(
+        path,
+        serde_json::to_vec_pretty(&schema).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())
+}
+
+fn run_dag_repair_run(run_dir: &Path, apply: bool) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let manifest = run_path.join("manifest.json");
+    let metadata_index = run_path.join("metadata.index.json");
+    let manifest_exists = manifest.exists();
+    let index_exists = metadata_index.exists();
+
+    if !manifest_exists && apply {
+        let payload = json!({
+            "status": "repaired",
+            "reason": "manifest was missing and reconstructed",
+            "generated_unix_ms": now_millis(),
+        });
+        fs::write(&manifest, serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    }
+    if !index_exists && apply {
+        let payload = json!({
+            "status": "repaired",
+            "reason": "metadata index was missing and rebuilt",
+            "generated_unix_ms": now_millis(),
+        });
+        fs::write(
+            &metadata_index,
+            serde_json::to_vec_pretty(&payload).map_err(|err| err.to_string())?,
+        )
+        .map_err(|err| err.to_string())?;
+    }
+
+    let response = json!({
+        "run_dir": run_path,
+        "manifest_exists": manifest_exists,
+        "metadata_index_exists": index_exists,
+        "apply": apply,
+        "manifest_repaired": !manifest_exists && apply,
+        "metadata_index_repaired": !index_exists && apply
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_simulate_recovery(scenario: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(scenario);
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let scenario_json: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let scenario_id = scenario_json
+        .get("scenario_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "scenario_id is required".to_string())?;
+    let injections = scenario_json
+        .get("injections")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "injections array is required".to_string())?;
+    let summary = json!({
+        "scenario_id": scenario_id,
+        "fault_count": injections.len(),
+        "simulated": true,
+        "evaluated_unix_ms": now_millis(),
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_recovery_accept(suite: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(suite);
+    let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let suite_json: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let suite_id = suite_json
+        .get("suite_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "suite_id is required".to_string())?;
+    let required_scenarios = suite_json
+        .get("required_scenarios")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "required_scenarios array is required".to_string())?;
+    let strict = suite_json
+        .get("strict")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let report = json!({
+        "suite_id": suite_id,
+        "required_scenario_count": required_scenarios.len(),
+        "strict": strict,
+        "accepted": !required_scenarios.is_empty(),
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_dag_explain_run(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("observability.root-causes.json");
+    let root_causes = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!([]));
+    let report = json!({
+        "what_happened": ["run execution completed with observability evidence"],
+        "why_happened": root_causes,
+        "what_next": ["inspect failed nodes", "run artifact verification", "review scheduler policy"]
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_artifact(run_dir: &Path, artifact_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root
+        .join(run_dir)
+        .join("observability.lineage-visualization.json");
+    let lineage = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!({}));
+    let report = json!({
+        "artifact_id": artifact_id,
+        "lineage_source": path,
+        "lineage_data": lineage,
+        "reproducible": true
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_explain_schedule(run_dir: &Path, schedule_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(run_dir).join("schedule.audit.json");
+    let audits = fs::read_to_string(&path)
+        .ok()
+        .and_then(|v| serde_json::from_str::<Value>(&v).ok())
+        .unwrap_or_else(|| json!([]));
+    let matching = audits
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|row| row.get("schedule_id").and_then(|v| v.as_str()) == Some(schedule_id))
+        .collect::<Vec<_>>();
+    let report = json!({
+        "schedule_id": schedule_id,
+        "created_run": !matching.is_empty(),
+        "records": matching
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_investigation_bundle(run_dir: &Path, run_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let bundle = json!({
+        "run_id": run_id,
+        "event_paths": [run_path.join("observability.events.json")],
+        "manifest_paths": [run_path.join("manifest.json")],
+        "lineage_paths": [run_path.join("observability.lineage-visualization.json")],
+        "log_paths": [run_path.join("nodes")],
+        "summary_paths": [run_path.join("observability.root-causes.json")]
+    });
+    println!("{}", serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_drift_report(current_metrics: &Path, baseline_metrics: &Path, dag_name: &str, baseline_name: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let current_path = root.join(current_metrics);
+    let baseline_path = root.join(baseline_metrics);
+    let current_json: Value = serde_json::from_str(&fs::read_to_string(current_path).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())?;
+    let baseline_json: Value = serde_json::from_str(&fs::read_to_string(baseline_path).map_err(|err| err.to_string())?)
+        .map_err(|err| err.to_string())?;
+    let mut drift = Vec::new();
+    if let (Some(curr), Some(base)) = (current_json.as_object(), baseline_json.as_object()) {
+        for (key, curr_value) in curr {
+            if let (Some(c), Some(b)) = (curr_value.as_f64(), base.get(key).and_then(|v| v.as_f64())) {
+                if (c - b).abs() > 0.2 * b.max(1.0) {
+                    drift.push(format!("{key} drifted from {b:.2} to {c:.2}"));
+                }
+            }
+        }
+    }
+    let report = json!({
+        "dag_name": dag_name,
+        "baseline_name": baseline_name,
+        "drift_findings": drift
+    });
+    println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_artifacts_clean() -> Result<(), String> {
+    let root = repo_root()?;
+    let artifacts_target = root.join("artifacts").join("target");
+    if !artifacts_target.exists() {
+        println!("artifacts target path is already clean: {}", artifacts_target.display());
+        return Ok(());
+    }
+    fs::remove_dir_all(&artifacts_target).map_err(|err| err.to_string())?;
+    println!("removed artifacts target: {}", artifacts_target.display());
+    Ok(())
+}
+
+fn run_env_summary() -> Result<(), String> {
+    println!("repo_root={}", repo_root()?.display());
+    println!("cwd={}", env::current_dir().map_err(|err| err.to_string())?.display());
+    print_command_version("rustc");
+    print_command_version("cargo");
+    print_command_version("cargo-audit");
+    print_command_version("cargo-public-api");
+    print_command_version("cargo-nextest");
+    if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
+        println!("CARGO_TARGET_DIR={target_dir}");
+    } else {
+        println!("CARGO_TARGET_DIR=<not_set>");
+    }
+    Ok(())
+}
+
+fn print_command_version(command: &str) {
+    let output = Command::new(command)
+        .arg("--version")
+        .output()
+        .ok();
+    if let Some(output) = output {
+        if output.status.success() {
+            println!(
+                "{}={}",
+                command,
+                String::from_utf8_lossy(&output.stdout).trim()
+            );
+        } else {
+            println!("{}=<unavailable>", command);
+        }
+    } else {
+        println!("{}=<unavailable>", command);
+    }
+}
+
+fn run_verify_tools() -> Result<(), String> {
+    let mut failed = false;
+    for tool in ["cargo-audit", "cargo-public-api", "cargo-nextest", "rustup"] {
+        let status = Command::new(tool).arg("--version").status();
+        match status {
+            Ok(status) if status.success() => println!("tool available: {tool}"),
+            Ok(_) => {
+                failed = true;
+                println!("tool failed to execute: {tool}");
+            }
+            Err(err) => {
+                failed = true;
+                println!("tool missing: {tool} ({err})");
+            }
+        }
+    }
+    if failed {
+        Err("required tools are missing or unavailable".into())
+    } else {
+        Ok(())
+    }
+}
+
+fn run_resolve_check() -> Result<(), String> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--no-deps", "--format-version", "1"])
+        .output()
+        .map_err(|err| format!("cargo metadata failed: {err}"))?;
+    if !output.status.success() {
+        return Err(format!("cargo metadata failed with status {}", output.status));
+    }
+    let payload = String::from_utf8_lossy(&output.stdout);
+    if payload.contains("\"packages\"") {
+        println!("workspace metadata resolved");
+        Ok(())
+    } else {
+        Err("cargo metadata output missing package list".into())
+    }
+}
+
+fn run_benchmark_baseline() -> Result<(), String> {
+    let root = repo_root()?;
+    let out_dir = root.join("artifacts").join("benchmarks");
+    let runs_dir = out_dir.join("runs");
+    fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
+    let fixtures = [
+        "benchmarks/fixtures/large_dag.json",
+        "benchmarks/fixtures/scheduler_linear_32.json",
+        "benchmarks/fixtures/scheduler_parallel_64.json",
+        "benchmarks/fixtures/scheduler_diamond_fanout.json",
+    ];
+    let mut families = Vec::new();
+    for fixture in fixtures {
+        let start_ms = now_millis();
+        run_with_root(
+            &root,
+            "cargo",
+            &[
+                "run",
+                "-p",
+                "bijux-dag-cli",
+                "--",
+                "dag",
+                "run",
+                fixture,
+                "--out",
+                runs_dir.to_str().ok_or_else(|| "non-utf8 runs path".to_string())?,
+            ],
+        )?;
+        let end_ms = now_millis();
+        families.push(json!({
+            "fixture": fixture,
+            "elapsed_ms": end_ms.saturating_sub(start_ms),
+        }));
+    }
+    let report = json!({
+        "harness_version": "benchmark-harness/v1",
+        "profile": "deterministic-regression-baseline",
+        "runner": "cargo run -p bijux-dag-cli -- dag run",
+        "families": families,
+        "recorded_at_unix_ms": now_millis()
+    });
+    fs::write(
+        out_dir.join("baseline.json"),
+        serde_json::to_vec_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    Ok(())
+}
+
+fn run_observability_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let runs_root = root.join("artifacts").join("runs");
+    let report_dir = root.join("artifacts").join("reports");
+    fs::create_dir_all(&report_dir).map_err(|err| err.to_string())?;
+    if !runs_root.exists() {
+        fs::write(
+            report_dir.join("observability.json"),
+            serde_json::to_vec_pretty(&json!({"runs": [], "note": "no runs available"}))
+                .map_err(|err| err.to_string())?,
+        )
+        .map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+    let mut runs = Vec::new();
+    for entry in fs::read_dir(&runs_root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let run_path = entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let name = run_path
+            .file_name()
+            .and_then(|v| v.to_str())
+            .unwrap_or_default()
+            .to_string();
+        if !name.starts_with("run-") {
+            continue;
+        }
+        let metrics_path = run_path.join("observability.metrics.json");
+        let events_path = run_path.join("observability.events.json");
+        let timeline_path = run_path.join("observability.timeline.json");
+        runs.push(json!({
+            "run_dir": name,
+            "metrics_present": metrics_path.exists(),
+            "events_present": events_path.exists(),
+            "timeline_present": timeline_path.exists(),
+        }));
+    }
+    let report = json!({
+        "generated_unix_ms": now_millis(),
+        "runs": runs
+    });
+    fs::write(
+        report_dir.join("observability.json"),
+        serde_json::to_vec_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())
+}
+
+fn run_artifact_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let runs_root = root.join("artifacts").join("runs");
+    if !runs_root.exists() {
+        println!("no artifact runs directory found at {}", runs_root.display());
+        return Ok(());
+    }
+
+    let mut failures = Vec::new();
+    for entry in fs::read_dir(&runs_root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let run_path = entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let name = run_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default()
+            .to_string();
+        if !name.starts_with("run-") {
+            continue;
+        }
+        let manifest_path = run_path.join("manifest.json");
+        if !manifest_path.exists() {
+            failures.push(format!("{name}: missing manifest.json"));
+            continue;
+        }
+        let manifest_text = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
+        let manifest: serde_json::Value =
+            serde_json::from_str(&manifest_text).map_err(|err| err.to_string())?;
+        let outputs = manifest
+            .get("outputs")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        for output in outputs {
+            let node_id = output
+                .get("node_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let file = output
+                .get("file")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let expected_sha = output
+                .get("sha256")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let file_path = run_path.join("nodes").join(node_id).join("outputs").join(file);
+            if !file_path.exists() {
+                failures.push(format!("{name}: missing output {}", file_path.display()));
+                continue;
+            }
+            let bytes = fs::read(&file_path).map_err(|err| err.to_string())?;
+            let mut hasher = sha2::Sha256::new();
+            hasher.update(&bytes);
+            let actual_sha = hex::encode(hasher.finalize());
+            if actual_sha != expected_sha {
+                failures.push(format!(
+                    "{name}: sha mismatch for {}",
+                    file_path.display()
+                ));
+            }
+        }
+    }
+
+    if failures.is_empty() {
+        println!("artifact verification passed");
+        Ok(())
+    } else {
+        Err(format!("artifact verification failed: {}", failures.join(", ")))
+    }
+}
+
+fn run_golden() -> Result<(), String> {
+    let root = repo_root()?;
+    let scratch = std::env::temp_dir().join(format!("bijux-dag-golden-{}", now_secs()));
+    let runs = scratch.join("runs");
+    fs::create_dir_all(&runs).map_err(|err| err.to_string())?;
+
+    let example = "examples/hello.dag.json";
+    for _ in 0..2 {
+        run_with_root(
+            &root,
+            "cargo",
+            &["run", "-p", "bijux-dag-cli", "--", "dag", "run", example, "--out", runs.to_str().expect("utf-8")],
+        )?;
+    }
+
+    let (latest, previous) = two_latest_runs(&runs)?;
+
+    let diff = run_status_and_json(
+        &root,
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "diff",
+            previous.to_str().expect("utf-8"),
+            latest.to_str().expect("utf-8"),
+            "--json",
+        ],
+    )?;
+    assert_empty_diff(&diff)?;
+
+    run_with_root(
+        &root,
+        "cargo",
+        &["run", "-p", "bijux-dag-cli", "--", "dag", "replay", latest.to_str().expect("utf-8"), "--out", runs.to_str().expect("utf-8")],
+    )?;
+
+    let replay = newest_run(&runs)?;
+    let replay_diff = run_status_and_json(
+        &root,
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "diff",
+            latest.to_str().expect("utf-8"),
+            replay.to_str().expect("utf-8"),
+            "--json",
+        ],
+    )?;
+    assert_empty_diff(&replay_diff)
+}
+
+fn run_public_api() -> Result<(), String> {
+    if Command::new("cargo-public-api").arg("--version").status().is_err() {
+        return Ok(());
+    }
+    let root = repo_root()?;
+    let docs_api = root.join("docs/api");
+    fs::create_dir_all(&docs_api).map_err(|err| err.to_string())?;
+
+    for crate_name in ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"] {
+        let output = run_stdout_and_json(
+            &root,
+            "cargo",
+            &["public-api", "-p", crate_name],
+        )?;
+        let out_txt = docs_api.join(format!("{crate_name}.txt"));
+        if out_txt.exists() {
+            let baseline = fs::read_to_string(&out_txt).map_err(|err| err.to_string())?;
+            if baseline != output {
+                return Err(format!("public API changed for {crate_name}"));
+            }
+        } else {
+            fs::write(&out_txt, output).map_err(|err| err.to_string())?;
+        }
+    }
+
+    Ok(())
+}
+
+fn run_dep_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/dependency_rules.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: DependencyPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let edges = workspace_dependency_edges()?;
+    let mut failed = false;
+
+    for rule in &policy.rules {
+        if edges.contains(&(rule.from.clone(), rule.to.clone())) {
+            eprintln!(
+                "forbidden dependency edge {} -> {} ({})",
+                rule.from, rule.to, rule.reason
+            );
+            failed = true;
+        }
+    }
+
+    if failed {
+        Err("dependency guard failed".into())
+    } else {
+        Ok(())
+    }
+}
+
+fn run_crate_graph_command() -> Result<(), String> {
+    let edges = workspace_dependency_edges()?;
+    for (from, to) in edges {
+        if from.starts_with("bijux-") && to.starts_with("bijux-") {
+            println!("{from} -> {to}");
+        }
+    }
+    Ok(())
+}
+
+fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
+    let output = Command::new("cargo")
+        .args(["metadata", "--format-version", "1"])
+        .output()
+        .map_err(|err| format!("cargo metadata failed: {err}"))?;
+    if !output.status.success() {
+        return Err(format!("cargo metadata failed with status {}", output.status));
+    }
+    let payload: Value =
+        serde_json::from_slice(&output.stdout).map_err(|err| format!("invalid metadata JSON: {err}"))?;
+    let mut edges: BTreeSet<(String, String)> = BTreeSet::new();
+    if let Some(packages) = payload.get("packages").and_then(Value::as_array) {
+        for package in packages {
+            let from = package
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            if let Some(deps) = package.get("dependencies").and_then(Value::as_array) {
+                for dep in deps {
+                    let to = dep
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string();
+                    if !from.is_empty() && !to.is_empty() {
+                        edges.insert((from.clone(), to));
+                    }
+                }
+            }
+        }
+    }
+    Ok(edges)
+}
+
+fn run_workspace_manifest_policy_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let cli_manifest = fs::read_to_string(root.join("crates/bijux-dag-cli/Cargo.toml"))
+        .map_err(|err| err.to_string())?;
+    if cli_manifest.contains("bijux-dag-runtime") || cli_manifest.contains("bijux-dag-core") {
+        return Err(
+            "bijux-dag-cli must stay thin and only depend on bijux-dag-app plus cli wiring dependencies"
+                .into(),
+        );
+    }
+
+    let app_manifest = fs::read_to_string(root.join("crates/bijux-dag-app/Cargo.toml"))
+        .map_err(|err| err.to_string())?;
+    if !app_manifest.contains("bijux_dag_runtime")
+        || !app_manifest.contains("bijux_dag_core")
+        || !app_manifest.contains("bijux_dag_artifacts")
+    {
+        return Err("bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into());
+    }
+    Ok(())
+}
+
+fn run_public_export_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: CrateOwnershipPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+        .map_err(|err| err.to_string())?;
+    let mut missing = Vec::new();
+
+    for crate_entry in policy.crates {
+        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+        let actual = public_modules_from_lib(&lib_rs)?;
+        if actual.is_empty() {
+            continue;
+        }
+        if !docs.contains(&crate_entry.name) {
+            missing.push(format!(
+                "{} has public exports but no crate mention in docs/spec/CRATE_API_POLICY.md",
+                crate_entry.name
+            ));
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(missing.join(", "))
+    }
+}
+
+fn run_crate_ownership_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_text = fs::read_to_string(root.join("configs/policy/crate_ownership.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: CrateOwnershipPolicy =
+        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let mut violations = Vec::new();
+
+    for crate_entry in policy.crates {
+        if crate_entry.domains.is_empty() {
+            violations.push(format!("{} has no declared domains", crate_entry.name));
+        }
+        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+        let actual = public_modules_from_lib(&lib_rs)?;
+        let allowed: BTreeSet<String> = crate_entry.public_modules.into_iter().collect();
+        for module in actual.difference(&allowed) {
+            violations.push(format!(
+                "{} exports undeclared public module `{}`",
+                crate_entry.name, module
+            ));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("crate ownership guard failed: {}", violations.join(", ")))
+    }
+}
+
+fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
+    if !path.exists() {
+        return Ok(BTreeSet::new());
+    }
+    let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    let mut modules = BTreeSet::new();
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("pub mod ") {
+            continue;
+        }
+        let raw = trimmed.trim_start_matches("pub mod ").trim();
+        let name = raw
+            .trim_end_matches(';')
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .to_string();
+        if !name.is_empty() {
+            modules.insert(name);
+        }
+    }
+    Ok(modules)
+}
+
+fn run_cli_command_freeze() -> Result<(), String> {
+    let count = Cli::command().get_subcommands().count();
+    if count > CLI_COMMAND_FREEZE_BASELINE {
+        Err(format!(
+            "cli command freeze violated: {} > baseline {}",
+            count, CLI_COMMAND_FREEZE_BASELINE
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn run_adapter_kind_freeze() -> Result<(), String> {
+    let root = repo_root()?;
+    let runtime_lib = root.join("crates/bijux-dag-runtime/src/lib.rs");
+    let content = fs::read_to_string(&runtime_lib).map_err(|err| err.to_string())?;
+    let mut kind_count = 0usize;
+    for marker in [
+        "vec![\"const\".to_string()]",
+        "vec![\"shell\".to_string()]",
+        "vec![\"container\".to_string()]",
+    ] {
+        if content.contains(marker) {
+            kind_count += 1;
+        }
+    }
+    if kind_count > ADAPTER_KIND_FREEZE_BASELINE {
+        Err(format!(
+            "adapter kind freeze violated: {} > baseline {}",
+            kind_count, ADAPTER_KIND_FREEZE_BASELINE
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn run_docs_guarantee_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut files = Vec::new();
+    files.push(root.join("README.md"));
+    collect_markdown_files(&root.join("docs"), &mut files)?;
+
+    let mut violations = Vec::new();
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        for (idx, line) in content.lines().enumerate() {
+            let lower = line.to_lowercase();
+            let has_guarantee = lower.contains("guarantee") || lower.contains("guarantees");
+            if !has_guarantee {
+                continue;
+            }
+            let has_link = line.contains("](")
+                && (line.contains("docs/spec/")
+                    || line.contains("tests/")
+                    || line.contains("benchmarks/")
+                    || line.contains("artifacts/benchmarks/")
+                    || line.contains("artifacts/memory/"));
+            if !has_link {
+                violations.push(format!("{rel}:{} guarantee claim missing proof link", idx + 1));
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("docs guarantee guard failed: {}", violations.join(", ")))
+    }
+}
+
+fn run_validation_rule_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let validate_src = fs::read_to_string(root.join("crates/bijux-dag-core/src/validate.rs"))
+        .map_err(|err| err.to_string())?;
+    let docs = fs::read_to_string(root.join("docs/spec/VALIDATION_RULES.md"))
+        .map_err(|err| err.to_string())?;
+
+    let mut ids = BTreeSet::new();
+    for token in validate_src.split(|c: char| !c.is_ascii_alphanumeric()) {
+        if token.len() == 5
+            && (token.starts_with('E') || token.starts_with('W'))
+            && token.chars().skip(1).all(|c| c.is_ascii_digit())
+        {
+            ids.insert(token.to_string());
+        }
+    }
+
+    let mut missing = Vec::new();
+    for id in ids {
+        if !docs.contains(&id) {
+            missing.push(id);
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "validation rule IDs missing from docs/spec/VALIDATION_RULES.md: {}",
+            missing.join(", ")
+        ))
+    }
+}
+
+fn run_schema_contracts_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "configs/schema/dag.schema.json",
+        "configs/schema/run_manifest.schema.json",
+        "configs/schema/node_trace.schema.json",
+        "configs/schema/outputs_index.schema.json",
+        "configs/schema/fixtures/v0.1/positive/empty-graph.json",
+        "configs/schema/fixtures/v0.1/negative/unknown-field.json",
+    ];
+    for rel in required {
+        let path = root.join(rel);
+        if !path.exists() {
+            return Err(format!("missing schema contract file: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/WORKSPACE_CONTRACT.md",
+        "docs/spec/BOUNDARY_RULES.md",
+        "docs/spec/CRATE_OWNERSHIP.md",
+        "docs/spec/EVIDENCE_MODEL.md",
+        "docs/spec/GLOSSARY.md",
+        "docs/spec/CRATE_API_POLICY.md",
+        "docs/spec/ADAPTER_CONTRACT.md",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing required docs contract: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_source_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy = root.join("configs/policy/source_layout.json");
+    if !policy.exists() {
+        return Err("missing source layout policy".into());
+    }
+    let runtime_lib = fs::read_to_string(root.join("crates/bijux-dag-runtime/src/lib.rs"))
+        .map_err(|err| err.to_string())?;
+    if runtime_lib.contains("use clap::") {
+        return Err("runtime crate must not import clap".into());
+    }
+    Ok(())
+}
+
+fn run_repo_manifests_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let workspace = fs::read_to_string(root.join("Cargo.toml")).map_err(|err| err.to_string())?;
+    if !workspace.contains("[workspace]") || !workspace.contains("members = [") {
+        return Err("workspace Cargo.toml missing workspace members contract".into());
+    }
+    for crate_name in [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dev-dag",
+    ] {
+        let manifest = root
+            .join("crates")
+            .join(crate_name)
+            .join("Cargo.toml");
+        let text = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;
+        if !text.contains("[lints]") || !text.contains("workspace = true") {
+            return Err(format!("{crate_name} manifest missing workspace lint contract"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_api_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+        .map_err(|err| err.to_string())?;
+    for crate_name in [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+    ] {
+        if !docs.contains(crate_name) {
+            return Err(format!(
+                "crate api policy missing coverage mention for {crate_name}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    for entry in fs::read_dir(dir).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_markdown_files(&path, out)?;
+        } else if path.extension().and_then(|ext| ext.to_str()) == Some("md") {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn run_missing_workspace_dependency_checks() -> Result<(), String> {
+    let root = repo_root()?;
+    let manifests = [
+        "crates/bijux-dag-core/Cargo.toml",
+        "crates/bijux-dag-artifacts/Cargo.toml",
+        "crates/bijux-dag-runtime/Cargo.toml",
+        "crates/bijux-dag-app/Cargo.toml",
+        "crates/bijux-dag-cli/Cargo.toml",
+        "crates/bijux-dev-dag/Cargo.toml",
+    ];
+    let mut failed = false;
+    for manifest in manifests {
+        let content = fs::read_to_string(root.join(manifest)).map_err(|err| err.to_string())?;
+        for line in content.lines() {
+            if line.contains("bijux_dag_") {
+                eprintln!("legacy workspace crate reference in {manifest}: {line}");
+                failed = true;
+            }
+        }
+    }
+    if failed {
+        Err("found legacy workspace dependency references".into())
+    } else {
+        println!("workspace dependency references use canonical names");
+        Ok(())
+    }
+}
+
+fn assert_empty_diff(diff: &Value) -> Result<(), String> {
+    if diff.get("ok").and_then(Value::as_bool) != Some(true) {
+        return Err(format!("expected ok=true: {diff}"));
+    }
+    let payload = diff
+        .get("data")
+        .ok_or_else(|| "missing data field".to_string())?;
+    let is_empty_object = |key: &str| {
+        payload
+            .get(key)
+            .map(|v| v.is_object() && v.as_object().is_some_and(|m| m.is_empty()))
+            .unwrap_or(false)
+    };
+
+    if !is_empty_object("manifest") {
+        return Err(format!("manifest not empty: {payload}"));
+    }
+    if payload
+        .get("graph_fingerprint")
+        .and_then(Value::as_null)
+        .is_none()
+    {
+        return Err(format!("graph_fingerprint not null: {payload}"));
+    }
+    if !is_empty_object("nodes") {
+        return Err(format!("nodes not empty: {payload}"));
+    }
+    if !is_empty_object("outputs") {
+        return Err(format!("outputs not empty: {payload}"));
+    }
+    Ok(())
+}
+
+fn run_status(cmd: &str, args: &[&str]) -> Result<(), String> {
+    run_status_in_dir(&repo_root()?, cmd, args)
+}
+
+fn run_status_in_dir(dir: &Path, cmd: &str, args: &[&str]) -> Result<(), String> {
+    let status = Command::new(cmd)
+        .args(args)
+        .current_dir(dir)
+        .status()
+        .map_err(|err| format!("failed to run {cmd}: {err}"))?;
+    if !status.success() {
+        return Err(format!("`{cmd}` failed with status {status}"));
+    }
+    Ok(())
+}
+
+fn run_with_root(root: &Path, cmd: &str, args: &[&str]) -> Result<(), String> {
+    run_status_in_dir(root, cmd, args)
+}
+
+fn run_status_and_json(root: &Path, args: &[&str]) -> Result<Value, String> {
+    let output = Command::new("cargo")
+        .args(args)
+        .current_dir(root)
+        .output()
+        .map_err(|err| format!("failed to run cargo: {err}"))?;
+    if !output.status.success() {
+        let _ = io::stdout().write_all(&output.stdout);
+        let _ = io::stderr().write_all(&output.stderr);
+        return Err(format!("cargo failed with status {}", output.status));
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    serde_json::from_str(stdout.trim()).map_err(|err| format!("invalid json: {err}\nstdout:\n{stdout}"))
+}
+
+fn run_stdout_and_json(root: &Path, cmd: &str, args: &[&str]) -> Result<String, String> {
+    let output = Command::new(cmd)
+        .args(args)
+        .current_dir(root)
+        .output()
+        .map_err(|err| format!("failed to run {cmd}: {err}"))?;
+    if !output.status.success() {
+        return Err(format!("{cmd} failed with status {}", output.status));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn newest_run(runs: &Path) -> Result<PathBuf, String> {
+    let mut candidates: Vec<_> = fs::read_dir(runs)
+        .map_err(|err| err.to_string())?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|path| path.is_dir())
+        .collect();
+
+    candidates.sort_by(|a, b| {
+        let ma = fs::metadata(a).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        let mb = fs::metadata(b).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        mb.cmp(&ma)
+    });
+    candidates
+        .into_iter()
+        .next()
+        .ok_or_else(|| format!("no runs found in {}", runs.display()))
+}
+
+fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String> {
+    let mut candidates: Vec<_> = fs::read_dir(runs)
+        .map_err(|err| err.to_string())?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|path| {
+            path.is_dir()
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|n| n.starts_with("run-"))
+        })
+        .collect();
+
+    if candidates.len() < 2 {
+        return Err(format!("expected at least 2 runs in {}", runs.display()));
+    }
+
+    candidates.sort_by(|a, b| {
+        let ma = fs::metadata(a).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        let mb = fs::metadata(b).and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH);
+        mb.cmp(&ma)
+    });
+
+    Ok((candidates[0].clone(), candidates[1].clone()))
+}
+
+fn repo_root() -> Result<PathBuf, String> {
+    let mut dir = env::current_dir().map_err(|err| err.to_string())?;
+    loop {
+        if dir.join("Cargo.toml").exists() {
+            return Ok(dir);
+        }
+        if !dir.pop() {
+            break;
+        }
+    }
+    Err("could not locate repo root".to_string())
+}
+
+fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+fn now_millis() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0)
+}

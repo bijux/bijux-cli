@@ -10,7 +10,9 @@ workspace = true
 
 [dependencies]
 clap = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 bijux-dag-core = { path = "../bijux-dag-core" }
+tempfile = { workspace = true }
