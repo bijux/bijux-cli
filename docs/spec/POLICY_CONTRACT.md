@@ -13,7 +13,7 @@ Defines policy inputs, enforcement points, and decision visibility.
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 
 ## Related schemas
-- `configs/schema/policy.schema.json`
+- `configs/schema/dag.schema.json`
 
 ## Versioning and change policy
 Policy input changes require schema and docs updates in the same change.

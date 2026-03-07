@@ -7,15 +7,25 @@ Defines user-facing command behavior, command-tree stability expectations, and o
 This is the normative contract for `bijux` command surfaces.
 
 ## Commands and ownership
-- `dag run`: run orchestration and manifest emission.
+- `dag init`: graph project initialization behavior.
 - `dag validate`: graph validation only, no execution side effects.
+- `dag canonicalize`: canonical serialization workflow.
+- `dag lint`: static lint contract surface.
+- `dag fingerprint`: fingerprint introspection output.
+- `dag run`: run orchestration and manifest emission.
 - `dag replay`: replay semantics and comparability behavior.
+- `dag diff`: run comparison behavior.
+- `dag explain`: explain diagnostics for runs/validation.
+- `dag node`: node-focused diagnostics and inspection.
+- `dag status`: run status summary behavior.
+- `dag verify`: artifact verification behavior.
 - `dag cache`: cache inspection and control surfaces.
+- `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.
 - `dag import`: run bundle import behavior.
-- `dag graph`: graph rendering/introspection outputs.
-- `dag explain`: explain diagnostics for runs/validation.
-- `dag status`: run status summary behavior.
+- `dag version`: CLI/runtime version reporting.
+- `dag doctor`: operator diagnostics surface.
+- `dag migrate`: migration workflows (`migrate dag`, `migrate run`).
 
 ## Invariants
 - JSON mode is machine-readable and contract-stable.

@@ -15,7 +15,7 @@ Defines precedence and behavior for CLI args, config files, environment, and def
 - `tests/e2e/policy/*`
 
 ## Related schemas
-- `configs/schema/policy.schema.json`
+- `configs/schema/dag.schema.json`
 - `configs/schema/dag.schema.json`
 
 ## Versioning and change policy

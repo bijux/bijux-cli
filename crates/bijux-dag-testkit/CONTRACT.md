@@ -22,8 +22,8 @@ This crate is the single source of truth for shared DAG fixture builders and run
 
 ## Related schemas
 - `configs/schema/dag.schema.json`
-- `configs/schema/run-manifest.schema.json`
-- `configs/schema/node-trace.schema.json`
+- `configs/schema/run_manifest.schema.json`
+- `configs/schema/node_trace.schema.json`
 
 ## Versioning and change policy
 APIs are internal to repository tests; compatibility is maintained across workspace crates, not across external semver users.

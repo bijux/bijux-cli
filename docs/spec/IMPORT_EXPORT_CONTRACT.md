@@ -12,8 +12,8 @@ Defines export bundle formats, metadata-only behavior, and compatibility expecta
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 
 ## Related schemas
-- `configs/schema/run-manifest.schema.json`
-- `configs/schema/outputs-index.schema.json`
+- `configs/schema/run_manifest.schema.json`
+- `configs/schema/outputs_index.schema.json`
 
 ## Versioning and change policy
 Format changes require compatibility fixtures for supported windows.

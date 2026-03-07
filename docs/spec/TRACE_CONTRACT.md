@@ -13,7 +13,7 @@ Defines trace event ordering, required fields, optional fields, and compatibilit
 - `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
 
 ## Related schemas
-- `configs/schema/node-trace.schema.json`
+- `configs/schema/node_trace.schema.json`
 
 ## Versioning and change policy
 Breaking event-shape changes require schema versioning and migration plan.

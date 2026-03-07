@@ -13,7 +13,7 @@ Defines cache key inputs, cache invalidation semantics, and correctness behavior
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 
 ## Related schemas
-- `configs/schema/run-manifest.schema.json`
+- `configs/schema/run_manifest.schema.json`
 
 ## Versioning and change policy
 Any key-space change must be documented and covered by cache invalidation tests.

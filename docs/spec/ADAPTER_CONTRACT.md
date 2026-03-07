@@ -2,6 +2,9 @@
 
 Adapter implementations must satisfy all requirements below.
 
+## Scope
+Defines adapter identity, capability metadata, execution behavior, and conformance requirements for built-in and external adapters.
+
 ## Identity and capabilities
 - Stable adapter ID and version.
 - Type-level origin classification: `BuiltIn` or `External`.
@@ -23,3 +26,11 @@ Adapter implementations must satisfy all requirements below.
 
 ## Conformance
 Every adapter must pass the runtime adapter conformance suite and metadata reproducibility checks across run and replay.
+
+## Related tests
+- `crates/bijux-dag-runtime/tests/adapter_conformance.rs`
+- `crates/bijux-dag-runtime/tests/adapter_metadata_stability.rs`
+- `tests/e2e/container/*`
+
+## Versioning and change policy
+Adapter contract changes must preserve existing descriptors or introduce explicit compatibility notes and conformance updates in the same change.

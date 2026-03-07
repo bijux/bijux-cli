@@ -22,9 +22,9 @@ Defines run directory layout, mandatory files, optional files, and compatibility
 - `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
 
 ## Related schemas
-- `configs/schema/run-manifest.schema.json`
-- `configs/schema/node-trace.schema.json`
-- `configs/schema/outputs-index.schema.json`
+- `configs/schema/run_manifest.schema.json`
+- `configs/schema/node_trace.schema.json`
+- `configs/schema/outputs_index.schema.json`
 
 ## Versioning and change policy
 Additive optional files are allowed. Required structure changes require compatibility review and fixture migration.

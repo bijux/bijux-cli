@@ -2,6 +2,9 @@
 
 This document defines crate responsibilities and allowed dependency directions.
 
+## Scope
+Defines workspace crate responsibility boundaries and allowed dependency directions.
+
 ## Crate responsibilities
 
 - `bijux-dag-core`: DAG model, parsing, canonicalization, validation, fingerprinting, and topology algorithms. Pure logic only.
@@ -23,3 +26,10 @@ This document defines crate responsibilities and allowed dependency directions.
 ## Enforcement
 
 Boundary policy is enforced by `configs/policy/dependency_rules.json` through `bijux-dev-dag dep-guard`.
+
+## Related tests
+- `crates/bijux-dev-dag/src/commands/mod.rs` (`run_dep_guard`, manifest guards)
+- `crates/bijux-dev-dag/src/suites/repo.rs`
+
+## Versioning and change policy
+Dependency direction changes require coordinated updates to policy JSON, this contract, and repo governance checks.

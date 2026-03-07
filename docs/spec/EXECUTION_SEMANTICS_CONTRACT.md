@@ -1,5 +1,8 @@
 # Execution semantics contract
 
+## Scope
+Defines execution semantics for planning, ordering, failure/retry behavior, selection, replay, and run integrity invariants.
+
 ## Planning and ordering
 - Plan construction and execution ordering are independent contract surfaces.
 - Deterministic workloads must produce equivalent outcomes for `jobs=1` and `jobs>1`.
@@ -19,3 +22,11 @@
 - Latest symlink updates must not mutate historical run directories.
 - Run ID collision handling must be deterministic and safe.
 - Manifest node totals must equal trace status totals.
+
+## Related tests
+- `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
+- `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
+- `tests/e2e/happy_path/*`
+
+## Versioning and change policy
+Execution semantic changes require matching updates to state-machine docs, runtime tests, and replay behavior tests in one change.

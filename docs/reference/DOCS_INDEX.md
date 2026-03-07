@@ -22,4 +22,5 @@ This index is generated from governance taxonomy and maintained by control-plane
 - `bijux-dag-runtime`
 - `bijux-dag-app`
 - `bijux-dag-cli`
+- `bijux-dag-testkit`
 - `bijux-dev-dag`
