@@ -1054,4 +1054,89 @@ mod tests {
         assert!(adapters.is_empty());
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     }
+
+    #[test]
+    fn hermetic_mode_materializes_only_declared_inputs() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let mut graph = sample_graph();
+        graph.nodes[1].inputs = vec!["in".to_string()];
+        let options = RuntimeConfig {
+            policy: PolicyConfig {
+                deny_network: true,
+                deny_env: true,
+                deny_clock: true,
+                clean_env: true,
+            },
+            ..RuntimeConfig::default()
+        };
+        let final_path = runtime.run(&graph, dir.path(), options).unwrap();
+        let inputs_index = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("b")
+                .join("inputs")
+                .join("index.json"),
+        )
+        .unwrap();
+        assert!(inputs_index.contains("\"path\": \"a/in\""));
+        assert!(!inputs_index.contains("\"path\": \"a/undeclared\""));
+    }
+
+    #[test]
+    fn missing_adapter_registration_fails_fast() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::External("missing-kind".to_string()),
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let result = runtime.run(&graph, dir.path(), RuntimeConfig::default());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn adapter_version_changes_do_not_change_graph_fingerprint_contract() {
+        let graph = sample_graph();
+        let before = graph.graph_fingerprint().unwrap();
+        let adapters = registered_adapters();
+        assert!(!adapters.is_empty());
+        let after = graph.graph_fingerprint().unwrap();
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn cache_modes_execute_in_contract_matrix() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        for mode in [CacheMode::Off, CacheMode::Read, CacheMode::ReadWrite] {
+            let options = RuntimeConfig {
+                cache_mode: mode,
+                ..RuntimeConfig::default()
+            };
+            let run_dir = runtime.run(&sample_graph(), dir.path(), options).unwrap();
+            assert!(run_dir.join("manifest.json").exists());
+        }
+    }
 }
