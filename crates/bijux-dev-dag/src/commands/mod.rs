@@ -4010,18 +4010,9 @@ struct EffectiveConfigDump {
 
 fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
     let root = repo_root()?;
-    let defaults = json!({
-        "jobs": 1,
-        "cache_mode": "off",
-        "materialize_inputs": "none",
-        "policy": {
-            "deny_network": false,
-            "deny_env": false,
-            "deny_clock": false,
-            "clean_env": true,
-            "allowed_env": []
-        }
-    });
+    let defaults_path = root.join("configs/dev/default_runtime_config.json");
+    let defaults_payload = fs::read_to_string(&defaults_path).map_err(|err| err.to_string())?;
+    let defaults: Value = serde_json::from_str(&defaults_payload).map_err(|err| err.to_string())?;
     let mut merged = defaults;
 
     if let Ok(env_cache_dir) = env::var("BIJUX_DAG_CACHE_DIR") {

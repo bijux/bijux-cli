@@ -6,6 +6,8 @@ Defines precedence and behavior for CLI args, config files, environment, and def
 ## Precedence
 `CLI args > explicit config file > environment > defaults`.
 
+Default baseline source: `configs/dev/default_runtime_config.json`.
+
 ## Invariants
 - Unknown config fields are rejected unless explicitly marked for compatibility handling.
 - Semantically equivalent config values normalize to equivalent internal config.
