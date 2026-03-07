@@ -32,7 +32,7 @@
 - [Changelog](../CHANGELOG.md)
 - [Adapter SDK contracts](./ADAPTER_SDK.md)
 - [Adapter runtime contract](./spec/ADAPTER_CONTRACT.md)
-- [Plugin ecosystem contracts](./PLUGIN_ECOSYSTEM_CONTRACTS.md)
+- [Extension catalog contracts](./EXTENSION_CATALOG_CONTRACTS.md)
 - [Plugin SDK examples](./PLUGIN_SDK_EXAMPLES.md)
 
 ## Behavior domains
@@ -45,7 +45,7 @@
 - [Backend policy overlays](./BACKEND_POLICY_OVERLAYS.md)
 - [Advanced DAG semantics](./ADVANCED_DAG_SEMANTICS.md)
 - [Task contract type system](./TASK_CONTRACT_TYPES.md)
-- [Planner intelligence and optimization](./PLANNER_INTELLIGENCE.md)
+- [Planner analysis and optimization](./PLANNER_ANALYSIS.md)
 - [Distributed execution foundations](./DISTRIBUTED_EXECUTION_FOUNDATIONS.md)
 - [Run recovery and resilience contracts](./RUN_RECOVERY_AND_RESILIENCE.md)
 - [Cache semantics](./CACHE_SEMANTICS.md)

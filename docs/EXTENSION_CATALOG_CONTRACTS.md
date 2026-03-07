@@ -1,4 +1,4 @@
-# Plugin ecosystem contracts
+# Extension catalog contracts
 
 This document defines stable extension boundaries and governance contracts for adapter, executor, artifact-store, and observability plugins.
 

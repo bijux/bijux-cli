@@ -5047,7 +5047,7 @@ fn run_extensibility_contract_guard() -> Result<(), String> {
         "docs/spec/EXTENSIBILITY_CONTRACT.md",
         "docs/reference/INTERNAL_HOOK_PROMOTION_CHECKLIST.md",
         "configs/schema/extension_descriptor.schema.json",
-        "crates/bijux-dag-runtime/tests/plugin_ecosystem_contracts.rs",
+        "crates/bijux-dag-runtime/tests/extension_catalog_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {

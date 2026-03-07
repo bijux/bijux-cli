@@ -140,7 +140,7 @@ pub struct CodeGenerationHook {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EcosystemRoadmap {
+pub struct ExtensionRoadmap {
     pub core_surface: Vec<String>,
     pub pluggable_surface: Vec<String>,
     pub intentionally_unsupported: Vec<String>,
@@ -154,7 +154,7 @@ pub struct PlatformMaturityScorecard {
     pub observability_ready: u8,
     pub api_ready: u8,
     pub infrastructure_ready: u8,
-    pub ecosystem_ready: u8,
+    pub extension_ready: u8,
 }
 
 pub fn negotiate_plugin_version(range: &CapabilityRange, requested_contract_version: &str) -> bool {

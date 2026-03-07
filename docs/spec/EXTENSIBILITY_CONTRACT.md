@@ -71,7 +71,7 @@ Checklist document:
 
 ## Verifying Surfaces
 
-- `crates/bijux-dag-runtime/src/plugin_ecosystem.rs`
-- `crates/bijux-dag-runtime/tests/plugin_ecosystem_contracts.rs`
+- `crates/bijux-dag-runtime/src/extension_catalog.rs`
+- `crates/bijux-dag-runtime/tests/extension_catalog_contracts.rs`
 - `bijux-dev-dag extension-report`
 - `bijux-dev-dag repo` suite `extensibility-contract`

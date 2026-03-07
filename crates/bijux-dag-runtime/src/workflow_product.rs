@@ -141,7 +141,7 @@ pub struct ProductPositioningNote {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct InnovationRoadmap {
+pub struct EvolutionPlan {
     pub stable_commitments: Vec<String>,
     pub research_directions: Vec<String>,
 }
@@ -241,6 +241,6 @@ pub fn workflow_blueprint_valid(blueprint: &PolicyComposedBlueprint) -> bool {
     !blueprint.required_policy_bundle.is_empty() && !blueprint.guarded_workflow_template.is_empty()
 }
 
-pub fn innovation_roadmap_valid(roadmap: &InnovationRoadmap) -> bool {
-    !roadmap.stable_commitments.is_empty() && !roadmap.research_directions.is_empty()
+pub fn evolution_plan_valid(plan: &EvolutionPlan) -> bool {
+    !plan.stable_commitments.is_empty() && !plan.research_directions.is_empty()
 }

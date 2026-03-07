@@ -37,5 +37,5 @@ Plugins publish a manifest with:
 
 See:
 
-- [Plugin ecosystem contracts](./PLUGIN_ECOSYSTEM_CONTRACTS.md)
+- [Extension catalog contracts](./EXTENSION_CATALOG_CONTRACTS.md)
 - [Plugin and DSL roadmap](./PLUGIN_DSL_ROADMAP.md)

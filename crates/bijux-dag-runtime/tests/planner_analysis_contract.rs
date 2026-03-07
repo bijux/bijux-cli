@@ -1,6 +1,6 @@
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    build_backfill_plan, build_planner_intelligence, build_replay_plan_annotations,
+    build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compute_partial_run_closure, diff_plans, explain_plan, PlannerGuardrails, RuntimeConfig,
     Selector, SelectorSet,
 };
@@ -24,7 +24,7 @@ fn sample_graph() -> &'static str {
 fn planner_builds_phased_result_and_fingerprint() {
     let graph = parse_graph_strict(sample_graph()).expect("graph should parse");
     let options = RuntimeConfig::default();
-    let result = build_planner_intelligence(
+    let result = build_planner_analysis(
         &graph,
         &options,
         &SelectorSet::default(),
@@ -48,7 +48,7 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
         },
         ..RuntimeConfig::default()
     };
-    let before = build_planner_intelligence(
+    let before = build_planner_analysis(
         &graph,
         &RuntimeConfig::default(),
         &SelectorSet::default(),
@@ -57,7 +57,7 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
         },
     )
     .expect("before planner should succeed");
-    let after = build_planner_intelligence(
+    let after = build_planner_analysis(
         &graph,
         &options,
         &options.selectors,

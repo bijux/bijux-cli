@@ -24,7 +24,7 @@ mod distributed;
 mod engine;
 pub mod execution;
 mod execution_backend;
-mod ecosystem_productization;
+mod distribution_readiness;
 pub mod execution_context;
 mod execution_plan;
 mod external_adapter;
@@ -43,8 +43,8 @@ mod observability_deep;
 mod operations_governance;
 mod path_authorization;
 mod planner;
-mod planner_intelligence;
-mod plugin_ecosystem;
+mod planner_analysis;
+mod extension_catalog;
 mod recovery;
 mod remote_executor;
 mod remote_execution_model;
@@ -55,7 +55,7 @@ pub mod services;
 mod run_state;
 mod sacred_execution;
 mod scheduler;
-mod scheduler_enterprise;
+mod scheduler_workload;
 mod security_env;
 mod semantic_lineage;
 mod secrets_security;
@@ -101,15 +101,15 @@ use bijux_dag_core::{
 use clock::{Clock, SystemClock};
 use io::{Fs, StdFs};
 pub use planner::build_plan;
-pub use planner_intelligence::{
-    build_backfill_plan, build_planner_intelligence, build_replay_plan_annotations,
+pub use planner_analysis::{
+    build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
     PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
     PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
     PlannerResourceEstimate,
 };
 pub use path_authorization::{authorize_input_path, authorize_output_path};
-pub use plugin_ecosystem::{
+pub use extension_catalog::{
     compute_platform_maturity, detect_extension_compatibility_issues,
     extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
     internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
@@ -178,11 +178,11 @@ pub use tenancy::{
     TenantSecretScope,
 };
 pub use workflow_product::{
-    approval_gate_ready, critical_workflow_ready, innovation_roadmap_valid, portfolio_observability,
+    approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
     product_positioning_note, rollout_is_progressive, wait_state_resumable,
     workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
     world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, HumanWaitState,
-    InnovationRoadmap, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
+    EvolutionPlan, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
     ProductPositioningNote, RolloutWorkflow, SubworkflowInvocation, WorkflowContractInheritance,
     WorkflowEvent, WorkflowFamilyImpactAnalysis, WorkflowPortfolio, WorkflowProductMetadata,
     WorkflowQualityGate, WorkflowScenarioTest, WorkflowTemplate, WorkflowTemplateKind,
@@ -345,11 +345,11 @@ pub use distributed::{
     WorkerIdentity, WorkerPool, WorkerRegistration, WorkerSandboxNegotiation,
     WorkerVersionCompatibilityRule, WorkLease,
 };
-pub use ecosystem_productization::{
-    adoption_score, conformance_passes, ecosystem_governance_ready, packaging_ready,
+pub use distribution_readiness::{
+    adoption_score, conformance_passes, integration_governance_ready, packaging_ready,
     release_note_summary, upgrade_bundle_valid, CapabilityDiscoveryReport,
     ClusterDeploymentReference, DeploymentConformanceResult, DeploymentProfileBundle,
-    DistributionSignatureRecord, EcosystemCatalog, EcosystemGovernanceRule,
+    DistributionSignatureRecord, EcosystemCatalog, IntegrationGovernanceRule,
     InstallationDiagnostics, IntegrationSupportPolicy, OnboardingGuideCatalog, PackagingMode,
     PackagingStrategy, PlatformAdoptionScorecard, ProductTierPolicy, ReferenceEnvironmentVerification,
     ReleaseNoteRecord, ReleaseTransparencyReport, SampleDeploymentCatalog, StabilityClass,
@@ -425,7 +425,7 @@ pub use secrets_security::{
     SecretTaintRecord, SecretUsageAuditEvent, SecretVersionSelection, SecureExecutionMode,
     SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
-pub use scheduler_enterprise::{
+pub use scheduler_workload::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
     detect_cron_conflicts, evaluate_sla_metrics, is_suppressed_by_calendar, materialize_next_runs,
     run_batches, weighted_priority_tie_break_order, BackfillThrottlingPolicy, BlackoutWindow,

@@ -1,7 +1,7 @@
 use bijux_dag_runtime::{
-    adoption_score, conformance_passes, ecosystem_governance_ready, packaging_ready,
+    adoption_score, conformance_passes, integration_governance_ready, packaging_ready,
     release_note_summary, upgrade_bundle_valid, DeploymentConformanceResult,
-    EcosystemGovernanceRule, PackagingMode, PackagingStrategy, PlatformAdoptionScorecard,
+    IntegrationGovernanceRule, PackagingMode, PackagingStrategy, PlatformAdoptionScorecard,
     ReleaseNoteRecord, UpgradeBundle,
 };
 use std::collections::BTreeSet;
@@ -60,13 +60,13 @@ fn release_note_summary_is_machine_readable() {
 }
 
 #[test]
-fn ecosystem_governance_and_adoption_score_are_reported() {
-    let governance = EcosystemGovernanceRule {
+fn integration_governance_and_adoption_score_are_reported() {
+    let governance = IntegrationGovernanceRule {
         contribution_requirements: vec!["signed-cla".to_string()],
         integration_qualification_requirements: vec!["contract-tests".to_string()],
         official_adoption_requirements: vec!["support-review".to_string()],
     };
-    assert!(ecosystem_governance_ready(&governance));
+    assert!(integration_governance_ready(&governance));
 
     let scorecard = PlatformAdoptionScorecard {
         installability_score: 85,

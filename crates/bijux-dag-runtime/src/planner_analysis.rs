@@ -83,7 +83,7 @@ pub struct PlannerBuildResult {
     pub plan_fingerprint: String,
 }
 
-pub fn build_planner_intelligence(
+pub fn build_planner_analysis(
     graph: &Graph,
     options: &RuntimeConfig,
     selector_set: &SelectorSet,

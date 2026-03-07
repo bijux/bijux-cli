@@ -33,14 +33,14 @@
 | registry.rs | support | adapter registry internals |
 | io.rs | support | fs abstraction |
 | builtins.rs | support | built-in adapter implementations |
-| planner_intelligence.rs | speculative | advanced planner heuristics |
+| planner_analysis.rs | speculative | advanced planner heuristics |
 | adaptive_scheduler.rs | speculative | adaptive tuning model |
 | ai_operator_assist.rs | speculative | assistive analysis model |
-| ecosystem_productization.rs | speculative | product strategy modeling |
+| distribution_readiness.rs | speculative | product strategy modeling |
 | workflow_product.rs | speculative | product-level workflow modeling |
 | geo_federation.rs | speculative | future geo/federation semantics |
 | federated_scheduling.rs | speculative | future federated scheduler semantics |
-| scheduler_enterprise.rs | speculative | enterprise scheduler extensions |
+| scheduler_workload.rs | speculative | workload scheduling extensions |
 | observability_deep.rs | speculative | deep observability modeling |
 | semantic_lineage.rs | speculative | advanced lineage modeling |
 | dataset_semantics.rs | speculative | dataset product semantics |
@@ -57,7 +57,7 @@
 | infrastructure.rs | support | backend requirement matching |
 | external_adapter.rs | support | external adapter descriptors |
 | adapter_sdk.rs | support | adapter plugin contract |
-| plugin_ecosystem.rs | support | extension contracts |
+| extension_catalog.rs | support | extension contracts |
 | auth_identity.rs | support | identity policy models |
 | authz_policy.rs | support | authorization policy models |
 | secrets_security.rs | support | secret redaction boundary |

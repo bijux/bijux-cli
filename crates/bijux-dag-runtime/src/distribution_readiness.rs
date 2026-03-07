@@ -125,7 +125,7 @@ pub struct ReleaseNoteRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct EcosystemGovernanceRule {
+pub struct IntegrationGovernanceRule {
     pub contribution_requirements: Vec<String>,
     pub integration_qualification_requirements: Vec<String>,
     pub official_adoption_requirements: Vec<String>,
@@ -184,7 +184,7 @@ pub fn release_note_summary(record: &ReleaseNoteRecord) -> String {
     )
 }
 
-pub fn ecosystem_governance_ready(rule: &EcosystemGovernanceRule) -> bool {
+pub fn integration_governance_ready(rule: &IntegrationGovernanceRule) -> bool {
     !rule.contribution_requirements.is_empty()
         && !rule.integration_qualification_requirements.is_empty()
         && !rule.official_adoption_requirements.is_empty()

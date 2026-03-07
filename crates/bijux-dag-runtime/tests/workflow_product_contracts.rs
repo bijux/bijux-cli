@@ -1,9 +1,9 @@
 use bijux_dag_runtime::{
-    approval_gate_ready, critical_workflow_ready, innovation_roadmap_valid,
+    approval_gate_ready, critical_workflow_ready, evolution_plan_valid,
     portfolio_observability, product_positioning_note, rollout_is_progressive,
     wait_state_resumable, workflow_blueprint_valid, workflow_quality_gate_passed,
     workflow_template_catalog, world_class_score, ApprovalGateNode,
-    CriticalWorkflowDesignation, HumanWaitState, InnovationRoadmap,
+    CriticalWorkflowDesignation, HumanWaitState, EvolutionPlan,
     PolicyComposedBlueprint, RolloutWorkflow, WorkflowQualityGate,
     WorldClassPlatformScorecard,
 };
@@ -96,10 +96,10 @@ fn portfolio_observability_and_world_class_score_are_computable() {
 }
 
 #[test]
-fn innovation_roadmap_requires_stable_and_research_tracks() {
-    let roadmap = InnovationRoadmap {
+fn evolution_plan_requires_stable_and_research_tracks() {
+    let plan = EvolutionPlan {
         stable_commitments: vec!["deterministic-core".to_string()],
         research_directions: vec!["autonomous-optimization-safety".to_string()],
     };
-    assert!(innovation_roadmap_valid(&roadmap));
+    assert!(evolution_plan_valid(&plan));
 }

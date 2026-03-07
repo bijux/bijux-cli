@@ -1,4 +1,4 @@
-# Planner intelligence and optimization contracts
+# Planner analysis and optimization contracts
 
 ## Planner phase model
 
