@@ -5,4 +5,5 @@ pub const IDS: &[&str] = &[
     "validation-rules-doc",
     "schema-contracts",
     "adapter-conformance",
+    "backend-conformance",
 ];

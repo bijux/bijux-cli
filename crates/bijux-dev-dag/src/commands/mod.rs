@@ -175,6 +175,8 @@ enum CommandLine {
     InvariantsReport,
     /// Summarize committed comparison evidence surfaces
     ComparisonEvidenceReport,
+    /// Print execution backend registry and capability descriptors
+    BackendRegistryReport,
     /// Verify release artifact command surfaces and machine-readable outputs
     ReleaseArtifactVerify,
     /// Summarize drift classes and checker coverage
@@ -599,6 +601,15 @@ const CONTRACT_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_status("cargo", &["test", "-p", "bijux-dag-runtime", "adapter_descriptor_requires_identity_and_schema_version"]),
+    },
+    SuiteDef {
+        id: "backend-conformance",
+        description: "runtime execution backend conformance checks",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_status("cargo", &["test", "-p", "bijux-dag-runtime", "execution_backend_contract"]),
     },
 ];
 
@@ -1798,6 +1809,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_comparison_evidence_report(),
+        ),
+        CommandLine::BackendRegistryReport => run_command_reported(
+            &context,
+            "backend-registry-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_backend_registry_report(),
         ),
         CommandLine::ReleaseArtifactVerify => run_command_reported(
             &context,
@@ -5329,6 +5347,7 @@ fn run_unsafe_audit_report() -> Result<(), String> {
 fn run_backend_contract_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
+        "docs/spec/BACKEND_CONTRACT.md",
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
         "docs/spec/ATTEMPT_TRACE_SCHEMA_v0.1.md",
         "docs/architecture/engine-backend-responsibilities.md",
@@ -5353,6 +5372,46 @@ fn run_backend_contract_guard() -> Result<(), String> {
     if !payload.contains("fake_and_process_like_backends_have_parity_on_basic_scenario") {
         return Err("backend contract missing fake-backend parity test".to_string());
     }
+    for required_test in [
+        "backend_prepare_failures_are_classified_correctly",
+        "backend_launch_failures_do_not_corrupt_state",
+        "cleanup_runs_after_observe_and_reports_cleanup_failures",
+        "cleanup_runs_when_prepare_fails",
+        "backend_observe_timeout_has_distinct_error",
+        "backend_env_shaping_contract_is_explicitly_applied",
+        "backend_output_collection_rejects_undeclared_outputs",
+        "backend_registry_includes_capability_descriptors",
+    ] {
+        if !payload.contains(required_test) {
+            return Err(format!(
+                "backend contract missing required conformance test `{}`",
+                required_test
+            ));
+        }
+    }
+    let backend_src =
+        fs::read_to_string(root.join("crates/bijux-dag-runtime/src/execution_backend.rs"))
+            .map_err(|err| err.to_string())?;
+    let implementation_count = backend_src.matches("impl ExecutionBackend for").count();
+    if implementation_count > 2 {
+        return Err(
+            "new backend implementations are blocked until backend contract conformance remains explicit and passing"
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
+fn run_backend_registry_report() -> Result<(), String> {
+    let registry = bijux_dag_runtime::backend_registry();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "backend_count": registry.len(),
+            "backends": registry
+        }))
+        .map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 
