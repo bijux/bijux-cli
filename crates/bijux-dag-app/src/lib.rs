@@ -2,6 +2,7 @@ mod cache;
 mod cache_cmd;
 mod cli_model;
 mod commands;
+mod config_surface;
 mod dispatch;
 mod doctor_cmd;
 mod diff;
@@ -23,6 +24,12 @@ mod validate_cmd;
 mod write;
 mod import_cmd;
 mod inspect;
+
+pub use config_surface::{
+    config_fingerprint, default_runtime_config, normalize_runtime_config, policy_evaluation_trace,
+    resolve_effective_config, CacheModeSurface, MaterializeInputsSurface,
+    PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
+};
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
