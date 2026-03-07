@@ -175,6 +175,8 @@ enum CommandLine {
     InvariantsReport,
     /// Summarize committed comparison evidence surfaces
     ComparisonEvidenceReport,
+    /// Summarize benchmark and performance evidence surfaces
+    PerformanceEvidenceReport,
     /// Print execution backend registry and capability descriptors
     BackendRegistryReport,
     /// Verify release artifact command surfaces and machine-readable outputs
@@ -857,6 +859,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_performance_claims_guard(),
+    },
+    SuiteDef {
+        id: "performance-evidence",
+        description: "performance contract canonical scenarios and threshold policy coverage",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_performance_evidence_guard(),
     },
     SuiteDef {
         id: "resource-budgets-warning",
@@ -1818,6 +1829,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_comparison_evidence_report(),
+        ),
+        CommandLine::PerformanceEvidenceReport => run_command_reported(
+            &context,
+            "performance-evidence-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_performance_evidence_report(),
         ),
         CommandLine::BackendRegistryReport => run_command_reported(
             &context,
@@ -4206,7 +4224,8 @@ fn run_performance_claims_guard() -> Result<(), String> {
                 if claim
                     && !(line.contains("benchmarks/")
                         || line.contains("artifacts/benchmarks")
-                        || line.contains("PERFORMANCE_STRATEGY.md"))
+                        || line.contains("PERFORMANCE_STRATEGY.md")
+                        || line.contains("PERFORMANCE_CONTRACT.md"))
                 {
                     violations.push(format!("{rel}: performance claim without evidence link: {line}"));
                 }
@@ -4218,6 +4237,71 @@ fn run_performance_claims_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn run_performance_evidence_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/PERFORMANCE_CONTRACT.md",
+        "benchmarks/baselines/benchmark_report.schema.json",
+        "benchmarks/baselines/regression_thresholds.json",
+        "benchmarks/scenarios/tiny_canonical.json",
+        "benchmarks/scenarios/medium_canonical.json",
+        "benchmarks/scenarios/wide_canonical.json",
+        "benchmarks/scenarios/deep_canonical.json",
+        "benchmarks/scenarios/cache_heavy_canonical.json",
+        "benchmarks/scenarios/replay_canonical.json",
+        "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+        "benchmarks/scenarios/manifest_trace_write_amplification.json",
+        "benchmarks/scenarios/replay_verification_cost.json",
+        "crates/bijux-dev-dag/tests/benchmark_scenario_contract.rs",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing performance evidence artifact: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_performance_evidence_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let scenario_files = [
+        "benchmarks/scenarios/tiny_canonical.json",
+        "benchmarks/scenarios/medium_canonical.json",
+        "benchmarks/scenarios/wide_canonical.json",
+        "benchmarks/scenarios/deep_canonical.json",
+        "benchmarks/scenarios/cache_heavy_canonical.json",
+        "benchmarks/scenarios/replay_canonical.json",
+        "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+        "benchmarks/scenarios/manifest_trace_write_amplification.json",
+        "benchmarks/scenarios/replay_verification_cost.json",
+    ];
+    let mut scenarios = Vec::new();
+    for rel in scenario_files {
+        let payload = fs::read_to_string(root.join(rel)).map_err(|err| err.to_string())?;
+        let value: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        scenarios.push(json!({
+            "scenario_id": value.get("scenario_id").and_then(Value::as_str).unwrap_or(""),
+            "class": value.get("class").and_then(Value::as_str).unwrap_or(""),
+            "owner": value.get("owner").and_then(Value::as_str).unwrap_or(""),
+            "version": value.get("version").and_then(Value::as_str).unwrap_or(""),
+            "file": rel
+        }));
+    }
+
+    let payload = json!({
+        "contract": "docs/spec/PERFORMANCE_CONTRACT.md",
+        "schema": "benchmarks/baselines/benchmark_report.schema.json",
+        "thresholds": "benchmarks/baselines/regression_thresholds.json",
+        "has_baseline_command": true,
+        "has_compare_command": true,
+        "scenarios": scenarios
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
+    Ok(())
 }
 
 fn run_resource_profile_summary(report: &Path) -> Result<(), String> {
@@ -7107,6 +7191,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "docs-schema-ref",
         "crate-boundary-foundation",
         "artifact-hardening",
+        "performance-evidence",
         "test-trust-foundation",
         "runtime-module-triage",
     ] {
@@ -7153,6 +7238,7 @@ fn run_foundation_review_guard() -> Result<(), String> {
         "docs/reports/foundation/repository_architecture_report.md",
         "docs/reports/foundation/runtime_module_ownership_report.md",
         "docs/reports/foundation/artifact_contract_report.md",
+        "docs/reports/foundation/performance_evidence_report.md",
         "docs/reports/foundation/test_trust_coverage_report.md",
         "docs/reports/foundation/cleanup_backlog.md",
         "docs/reports/foundation/subsystem_strength_assessment.md",

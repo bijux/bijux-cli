@@ -14,6 +14,7 @@ pub const IDS: &[&str] = &[
     "repo-api",
     "fault-summary",
     "performance-claims",
+    "performance-evidence",
     "resource-budgets-warning",
     "docs-governance",
     "docs-links",
