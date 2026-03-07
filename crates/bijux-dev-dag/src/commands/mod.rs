@@ -309,6 +309,8 @@ enum RepoCommand {
 enum VerifyCommand {
     /// Validate complete evidence foundation integrity
     EvidenceFoundation,
+    /// Validate evidence metadata against strict schema contracts
+    EvidenceSchema,
     /// Validate authoring evidence surfaces
     EvidenceAuthoring,
     /// Validate battle evidence surfaces and trust mapping
@@ -1780,6 +1782,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_foundation_verify(),
+            ),
+            VerifyCommand::EvidenceSchema => run_command_reported(
+                &context,
+                "verify.evidence-schema",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_schema_verify(),
             ),
             VerifyCommand::EvidenceAuthoring => run_command_reported(
                 &context,
@@ -4959,6 +4968,211 @@ fn run_evidence_ownership_verify() -> Result<(), String> {
     run_evidence_metadata_validate()
 }
 
+fn required_schema_fields(schema_path: &Path) -> Result<BTreeSet<String>, String> {
+    let schema: Value =
+        serde_json::from_str(&fs::read_to_string(schema_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let required = schema
+        .get("required")
+        .and_then(Value::as_array)
+        .ok_or_else(|| format!("schema missing required array: {}", schema_path.display()))?;
+    let mut fields = BTreeSet::new();
+    for field in required {
+        let name = field.as_str().ok_or_else(|| {
+            format!(
+                "schema required entry must be string: {}",
+                schema_path.display()
+            )
+        })?;
+        fields.insert(name.to_string());
+    }
+    Ok(fields)
+}
+
+fn run_evidence_schema_verify() -> Result<(), String> {
+    let root = repo_root()?;
+
+    let schema_files = [
+        "configs/schema/evidence_asset.schema.json",
+        "configs/schema/evidence_family.schema.json",
+        "configs/schema/evidence_battle_metadata.schema.json",
+        "configs/schema/evidence_perf_metadata.schema.json",
+        "configs/schema/evidence_compare_metadata.schema.json",
+        "configs/schema/evidence_compat_metadata.schema.json",
+        "configs/schema/evidence_fault_metadata.schema.json",
+        "configs/schema/evidence_authoring_metadata.schema.json",
+    ];
+    for rel in schema_files {
+        let path = root.join(rel);
+        if !path.exists() {
+            return Err(format!("required evidence schema is missing: {rel}"));
+        }
+        let parsed: Value =
+            serde_json::from_str(&fs::read_to_string(&path).map_err(|err| err.to_string())?)
+                .map_err(|err| err.to_string())?;
+        if parsed.get("type").and_then(Value::as_str) != Some("object") {
+            return Err(format!("evidence schema must declare object type: {rel}"));
+        }
+    }
+
+    let asset_required =
+        required_schema_fields(&root.join("configs/schema/evidence_asset.schema.json"))?;
+    let family_required =
+        required_schema_fields(&root.join("configs/schema/evidence_family.schema.json"))?;
+
+    let ledger: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+
+    let entries = ledger["entries"]
+        .as_array()
+        .ok_or_else(|| "evidence ledger entries must be an array".to_string())?;
+    for entry in entries {
+        let map = entry
+            .as_object()
+            .ok_or_else(|| "evidence ledger entry must be object".to_string())?;
+        let id = entry
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "evidence entry missing id".to_string())?;
+        for field in &asset_required {
+            if !map.contains_key(field) {
+                return Err(format!(
+                    "evidence entry `{id}` missing required field `{field}`"
+                ));
+            }
+        }
+
+        let kind = entry
+            .get("kind")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid kind"))?;
+        let owner = entry
+            .get("owner")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid owner"))?;
+        let canonical_path = entry
+            .get("canonical_path")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid canonical_path"))?;
+        let consumers = entry
+            .get("consumers")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid consumers"))?;
+        let release_blocking = entry
+            .get("release_blocking")
+            .and_then(Value::as_bool)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid release_blocking"))?;
+        let trust_properties = entry
+            .get("trust_properties")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("evidence entry `{id}` has invalid trust_properties"))?;
+        let duplicate_of = entry
+            .get("duplicate_of")
+            .ok_or_else(|| format!("evidence entry `{id}` missing duplicate_of"))?;
+        let derived_from = entry
+            .get("derived_from")
+            .ok_or_else(|| format!("evidence entry `{id}` missing derived_from"))?;
+
+        if owner.trim().is_empty() {
+            return Err(format!("evidence entry `{id}` has empty owner"));
+        }
+        if canonical_path.trim().is_empty() {
+            return Err(format!("evidence entry `{id}` has empty canonical_path"));
+        }
+        if !root.join(canonical_path).exists() {
+            return Err(format!(
+                "evidence entry `{id}` canonical_path does not exist: {canonical_path}"
+            ));
+        }
+        if consumers.is_empty() {
+            return Err(format!("evidence entry `{id}` has empty consumers"));
+        }
+        let allowed_kinds = [
+            "authoring",
+            "battle",
+            "cache",
+            "compat",
+            "fault",
+            "operator",
+            "perf",
+            "compare",
+        ];
+        if !allowed_kinds.contains(&kind) {
+            return Err(format!("evidence entry `{id}` has unknown kind `{kind}`"));
+        }
+        if release_blocking && trust_properties.is_empty() {
+            return Err(format!(
+                "evidence entry `{id}` is release_blocking but has no trust_properties"
+            ));
+        }
+        if !duplicate_of.is_null()
+            && duplicate_of
+                .as_str()
+                .map_or(true, |value| value.trim().is_empty())
+        {
+            return Err(format!(
+                "evidence entry `{id}` duplicate_of must be non-empty string or null"
+            ));
+        }
+        if !derived_from.is_null()
+            && derived_from
+                .as_str()
+                .map_or(true, |value| value.trim().is_empty())
+        {
+            return Err(format!(
+                "evidence entry `{id}` derived_from must be non-empty string or null"
+            ));
+        }
+    }
+
+    let families = ledger["asset_families"]
+        .as_array()
+        .ok_or_else(|| "evidence ledger asset_families must be an array".to_string())?;
+    for family in families {
+        let map = family
+            .as_object()
+            .ok_or_else(|| "asset family must be object".to_string())?;
+        let family_id = family
+            .get("family_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "asset family missing family_id".to_string())?;
+        for field in &family_required {
+            if !map.contains_key(field) {
+                return Err(format!(
+                    "asset family `{family_id}` missing required field `{field}`"
+                ));
+            }
+        }
+    }
+
+    let metadata_files = [
+        ("evidence/battle/metadata.json", "battle metadata"),
+        ("evidence/perf/metadata.json", "perf metadata"),
+        ("evidence/compare/metadata.json", "compare metadata"),
+        ("evidence/compat/metadata.json", "compat metadata"),
+        ("evidence/fault/metadata.json", "fault metadata"),
+        ("evidence/authoring/metadata.json", "authoring metadata"),
+    ];
+    for (rel, label) in metadata_files {
+        let path = root.join(rel);
+        if !path.exists() {
+            return Err(format!("missing {label}: {rel}"));
+        }
+        let payload: Value =
+            serde_json::from_str(&fs::read_to_string(path).map_err(|err| err.to_string())?)
+                .map_err(|err| err.to_string())?;
+        if !payload.is_object() {
+            return Err(format!("{label} is not an object: {rel}"));
+        }
+    }
+
+    println!("evidence schema validation passed");
+    Ok(())
+}
+
 fn run_evidence_domain_verify(domain: &str, required_paths: &[&str]) -> Result<(), String> {
     let root = repo_root()?;
     run_evidence_metadata_validate()?;
@@ -4996,6 +5210,7 @@ fn run_evidence_authoring_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "authoring",
         &[
+            "evidence/authoring/metadata.json",
             "evidence/authoring/examples",
             "evidence/authoring/patterns",
             "evidence/authoring/negative",
@@ -5034,6 +5249,7 @@ fn run_evidence_compat_verify() -> Result<(), String> {
             "evidence/compat/export_bundle",
             "evidence/compat/run_dir",
             "evidence/compat/scenarios",
+            "evidence/compat/metadata.json",
         ],
     )
 }
@@ -5041,14 +5257,22 @@ fn run_evidence_compat_verify() -> Result<(), String> {
 fn run_evidence_fault_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "fault",
-        &["evidence/fault/classes", "evidence/fault/corrupt_runs"],
+        &[
+            "evidence/fault/classes",
+            "evidence/fault/corrupt_runs",
+            "evidence/fault/metadata.json",
+        ],
     )
 }
 
 fn run_evidence_perf_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "perf",
-        &["evidence/perf/scenarios", "evidence/perf/baselines"],
+        &[
+            "evidence/perf/scenarios",
+            "evidence/perf/baselines",
+            "evidence/perf/metadata.json",
+        ],
     )
 }
 
@@ -5065,6 +5289,7 @@ fn run_evidence_compare_verify() -> Result<(), String> {
 
 fn run_evidence_foundation_verify() -> Result<(), String> {
     let root = repo_root()?;
+    run_evidence_schema_verify()?;
     run_evidence_ownership_verify()?;
     run_evidence_drift_verify()?;
     run_evidence_consumers_verify()?;
