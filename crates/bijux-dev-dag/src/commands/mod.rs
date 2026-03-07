@@ -162,6 +162,8 @@ enum CommandLine {
     },
     /// Report implemented, simulated, and aspirational execution modes
     ExecutionModesReport,
+    /// Report local semantics and simulated distributed semantics boundaries
+    DistributedSemanticsReport,
     /// Summarize version support by versioned surface
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
@@ -1038,6 +1040,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_cache_evolution_guard(),
     },
     SuiteDef {
+        id: "distributed-coordination",
+        description: "distributed coordination model and simulation boundaries alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_distributed_coordination_guard(),
+    },
+    SuiteDef {
         id: "multi-run-analytics",
         description: "multi-run analytics contracts commands schemas and tests alignment",
         domain: "governance",
@@ -1566,6 +1577,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_execution_modes_report(),
+        ),
+        CommandLine::DistributedSemanticsReport => run_command_reported(
+            &context,
+            "distributed-semantics-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_distributed_semantics_report(),
         ),
         CommandLine::CompatibilityReport => run_command_reported(
             &context,
@@ -5317,6 +5335,61 @@ fn run_multi_run_analytics_guard() -> Result<(), String> {
     if !contract.contains("never mutate authoritative run records") {
         return Err("multi-run analytics contract must assert non-mutation rule".to_string());
     }
+    Ok(())
+}
+
+fn run_distributed_coordination_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/DISTRIBUTED_COORDINATION_MODEL.md",
+        "docs/architecture/controller_backend_artifact_boundary.md",
+        "docs/architecture/local_only_vs_remote_coordinated_runtime.md",
+        "crates/bijux-dag-runtime/tests/distributed_event_reconciliation_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "distributed coordination required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let model = fs::read_to_string(root.join("docs/spec/DISTRIBUTED_COORDINATION_MODEL.md"))
+        .map_err(|err| err.to_string())?;
+    for token in [
+        "single-controller",
+        "Single-writer rule",
+        "Not implemented boundary",
+        "planner, scheduler, and storage contracts",
+    ] {
+        if !model.contains(token) {
+            return Err(format!("distributed coordination model missing section `{token}`"));
+        }
+    }
+    Ok(())
+}
+
+fn run_distributed_semantics_report() -> Result<(), String> {
+    let payload = json!({
+        "local_semantics": {
+            "authoritative_writer": "controller",
+            "run_state_writer_count": 1,
+            "distributed_coordination_mode": "not_implemented"
+        },
+        "simulated_distributed_semantics": {
+            "event_source": "fake_distributed_event_source",
+            "reconciliation": ["out_of_order", "duplicate", "missing_completion", "restart_partial_state"],
+            "authoritative_remote_state_writer": false
+        }
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 
