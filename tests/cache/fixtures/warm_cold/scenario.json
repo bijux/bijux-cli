@@ -1,0 +1,8 @@
+{
+  "scenario_id": "warm_vs_cold_semantic_equivalence",
+  "expectations": [
+    "warm_and_cold_outputs_semantically_equal",
+    "warm_run_reports_cache_hits",
+    "cold_run_reports_no_cache_hits"
+  ]
+}

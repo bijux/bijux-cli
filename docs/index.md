@@ -84,6 +84,8 @@
 - [Versioning model](./spec/VERSIONING_MODEL.md)
 - [Compatibility matrix](./reference/COMPATIBILITY_MATRIX.md)
 - [Migration policy](./spec/MIGRATION_POLICY.md)
+- [Cache evolution model](./spec/CACHE_EVOLUTION_MODEL.md)
+- [Cache prune policy](./spec/CACHE_PRUNE_POLICY.md)
 - [Operator command index](./user/OPERATOR_COMMAND_INDEX.md)
 - [Authoring guide](./user/AUTHORING_GUIDE.md)
 - [Command taxonomy](./reference/COMMAND_TAXONOMY.md)
