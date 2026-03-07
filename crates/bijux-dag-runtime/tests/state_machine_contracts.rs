@@ -126,13 +126,17 @@ fn state_machine_snapshot_fixture_represents_legal_evolution() {
         node_transitions: Vec<NodeTransition>,
         run_transitions: Vec<RunTransition>,
     }
-    let raw = std::fs::read_to_string("tests/fixtures/state_machine/evolution_trace.json")
-        .expect("fixture must exist");
-    let fixture: TraceFixture = serde_json::from_str(&raw).expect("fixture must parse");
-    for transition in &fixture.node_transitions {
-        assert!(validate_node_transition(transition).is_ok());
-    }
-    for transition in &fixture.run_transitions {
-        assert!(validate_run_transition(transition).is_ok());
+    for fixture_path in [
+        "tests/fixtures/state_machine/evolution_trace.json",
+        "tests/fixtures/state_machine/cancellation_trace.json",
+    ] {
+        let raw = std::fs::read_to_string(fixture_path).expect("fixture must exist");
+        let fixture: TraceFixture = serde_json::from_str(&raw).expect("fixture must parse");
+        for transition in &fixture.node_transitions {
+            assert!(validate_node_transition(transition).is_ok());
+        }
+        for transition in &fixture.run_transitions {
+            assert!(validate_run_transition(transition).is_ok());
+        }
     }
 }
