@@ -1066,6 +1066,16 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_test_trust_foundation_guard(),
     },
     SuiteDef {
+        id: "battle-suite-mandatory",
+        description:
+            "battle trust properties and scenario concentration remain mandatory in verification",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_battle_suite_mandatory_guard(),
+    },
+    SuiteDef {
         id: "naming-governance",
         description: "naming policy glossary and runtime naming lint enforcement",
         domain: "governance",
@@ -5188,6 +5198,58 @@ fn run_test_trust_foundation_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_battle_suite_mandatory_guard() -> Result<(), String> {
+    let root = repo_root()?;
+
+    let policy_path = root.join("configs/policy/battle_trust_properties.json");
+    let metadata_path =
+        root.join("crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json");
+    let harness_path =
+        root.join("crates/bijux-dag-runtime/tests/battle_workflow_harness_contracts.rs");
+
+    for required in [&policy_path, &metadata_path, &harness_path] {
+        if !required.exists() {
+            return Err(format!(
+                "missing battle suite artifact: {}",
+                required.display()
+            ));
+        }
+    }
+
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(&policy_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    if trust_properties.len() != 12 {
+        return Err("battle trust policy must define exactly 12 trust properties".to_string());
+    }
+
+    let required_scenarios = policy
+        .get("required_scenarios")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing required_scenarios".to_string())?;
+    if required_scenarios.is_empty() {
+        return Err("battle trust policy required_scenarios must not be empty".to_string());
+    }
+
+    let metadata: Value =
+        serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    if metadata
+        .get("scenarios")
+        .and_then(Value::as_object)
+        .is_none()
+    {
+        return Err("battle metadata must define scenario ownership".to_string());
+    }
+
+    Ok(())
+}
+
 fn run_docs_schema_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -7740,6 +7802,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "artifact-hardening",
         "performance-evidence",
         "test-trust-foundation",
+        "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
