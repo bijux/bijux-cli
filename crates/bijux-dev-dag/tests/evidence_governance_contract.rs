@@ -75,6 +75,23 @@ fn glob_match(pattern: &str, text: &str) -> bool {
 #[test]
 fn evidence_governance_contract_enforces_ownership_and_freeze() {
     let root = repo_root();
+    let release_subset: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_release_blocking_subset.json"))
+            .expect("read battle release subset policy"),
+    )
+    .expect("parse battle release subset policy");
+    let advisory_battle_paths: BTreeSet<String> = release_subset["advisory_scenarios"]
+        .as_array()
+        .expect("advisory_scenarios array")
+        .iter()
+        .map(|value| {
+            let scenario = value.as_str().expect("advisory scenario id");
+            format!(
+                "evidence/battle/workflows/adversarial/{}.json",
+                scenario.trim_start_matches("adversarial-").replace('-', "_")
+            )
+        })
+        .collect();
 
     let policy_payload = fs::read_to_string(root.join("configs/policy/evidence_governance.json"))
         .expect("read evidence governance policy");
@@ -202,10 +219,17 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
             "invalid implementation_status `{implementation_status}` for {path}"
         );
         if class == "battle" {
-            assert!(
-                release_blocking,
-                "battle evidence must be release_blocking for {path}"
-            );
+            if advisory_battle_paths.contains(&path) {
+                assert!(
+                    !release_blocking,
+                    "advisory battle evidence must not be release_blocking for {path}"
+                );
+            } else {
+                assert!(
+                    release_blocking,
+                    "battle evidence must be release_blocking for {path}"
+                );
+            }
         }
         match duplicate_of {
             Value::Null => {}

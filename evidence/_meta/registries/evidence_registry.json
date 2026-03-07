@@ -382,6 +382,287 @@
       ]
     },
     {
+      "canonical_path": "evidence/battle/workflows/adversarial/cache_proof_corruption_plausible_outputs.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/cache_proof_corruption_plausible_outputs.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/cache_proof_corruption_plausible_outputs.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/cancel_retry_bookkeeping_integrity.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/cancel_retry_bookkeeping_integrity.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/cancel_retry_bookkeeping_integrity.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/concurrency_retry_determinism.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/concurrency_retry_determinism.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/concurrency_retry_determinism.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_timeout_retry_accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/env_leakage_via_adapters_blocked.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/env_leakage_via_adapters_blocked.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/env_leakage_via_adapters_blocked.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_secret_redaction",
+        "tp_policy_enforcement"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/import_export_semantic_loss_rejected.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/import_export_semantic_loss_rejected.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/import_export_semantic_loss_rejected.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_artifact_integrity",
+        "tp_replay_equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/imported_runs_remain_visible.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/imported_runs_remain_visible.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/imported_runs_remain_visible.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_operator_observability"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/missing_outputs_superficial_success_rejected.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/missing_outputs_superficial_success_rejected.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/missing_outputs_superficial_success_rejected.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/operator_only_recovery_path.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/operator_only_recovery_path.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/operator_only_recovery_path.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_operator_observability",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/partial_run_dir_not_finalized.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/partial_run_dir_not_finalized.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/partial_run_dir_not_finalized.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_run_dir_resilience",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/path_escape_via_declared_outputs_blocked.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/path_escape_via_declared_outputs_blocked.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/path_escape_via_declared_outputs_blocked.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_policy_enforcement"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/policy_denial_blocks_unsafe_execution.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/policy_denial_blocks_unsafe_execution.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/policy_denial_blocks_unsafe_execution.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_policy_enforcement",
+        "tp_secret_redaction"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/post_success_artifact_corruption.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/post_success_artifact_corruption.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/post_success_artifact_corruption.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/replay_semantic_drift_detection.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/replay_semantic_drift_detection.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/replay_semantic_drift_detection.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_replay_equivalence",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/adversarial/tie_break_stability_under_contention.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/adversarial/tie_break_stability_under_contention.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/adversarial/tie_break_stability_under_contention.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_plan_truth"
+      ]
+    },
+    {
       "canonical_path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
       "consumers": [
         "crate-contracts",
