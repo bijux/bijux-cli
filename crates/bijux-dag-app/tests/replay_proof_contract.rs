@@ -103,3 +103,99 @@ fn replay_dry_run_and_prove_surfaces_are_machine_readable() {
     assert!(proved["data"]["replay_proof"].is_object());
     assert!(proved["data"]["replay_proof"]["fidelity_level"].is_string());
 }
+
+#[test]
+fn replay_prove_reports_strict_equivalent_on_exact_pair() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let _ = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "exact-source",
+        ],
+        &root,
+    );
+
+    let source_run = out_dir.join("run-exact-source");
+    let proved = run_json(
+        &[
+            "replay",
+            "--json",
+            &output_path_string(&source_run),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "exact-replay",
+            "--prove",
+        ],
+        &root,
+    );
+    assert_eq!(proved["ok"], true);
+    assert_eq!(
+        proved["data"]["replay_proof"]["fidelity_level"],
+        "strict_equivalent"
+    );
+}
+
+#[test]
+fn replay_prove_reports_diverged_on_corrupt_source_pair() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let _ = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "drift-source",
+        ],
+        &root,
+    );
+
+    let source_run = out_dir.join("run-drift-source");
+    let first_node_dir = std::fs::read_dir(source_run.join("nodes"))
+        .expect("read nodes dir")
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .find(|p| p.is_dir())
+        .expect("at least one node dir");
+    let trace_path = first_node_dir.join("trace.json");
+    let mut trace: Value =
+        serde_json::from_str(&fs::read_to_string(&trace_path).expect("read trace"))
+            .expect("parse trace");
+    trace["status"] = Value::String("failed".to_string());
+    fs::write(
+        &trace_path,
+        serde_json::to_vec_pretty(&trace).expect("encode trace"),
+    )
+    .expect("write trace");
+
+    let proved = run_json(
+        &[
+            "replay",
+            "--json",
+            &output_path_string(&source_run),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "drift-replay",
+            "--prove",
+        ],
+        &root,
+    );
+    assert_eq!(proved["ok"], true);
+    assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "diverged");
+}

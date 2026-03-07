@@ -490,6 +490,17 @@ fn prove_help_and_json_surface_are_available() {
 }
 
 #[test]
+fn proof_summary_help_surface_is_available() {
+    let help = dag_command()
+        .args(["dag", "proof-summary", "--help"])
+        .output()
+        .expect("proof-summary help");
+    assert!(help.status.success());
+    let text = String::from_utf8_lossy(&help.stdout);
+    assert!(text.contains("dag proof-summary"));
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");
