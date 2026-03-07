@@ -42,6 +42,8 @@ Remote observability handoff includes:
 - Capability mismatches must fail at binding/planning boundaries.
 - Worker lease/heartbeat/ordering semantics are governed by
   `docs/spec/WORKER_PROTOCOL_CONTRACT.md`.
+- Delivery guarantees and hard vs best-effort boundaries are governed by
+  `docs/spec/REMOTE_DELIVERY_GUARANTEES.md`.
 
 ## Verifying tests
 - `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`

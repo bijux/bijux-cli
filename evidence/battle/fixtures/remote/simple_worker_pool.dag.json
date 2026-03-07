@@ -1,0 +1,13 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {
+      "id": "prepare",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [{"name":"prepared","path":"prepared.txt"}],
+      "params": {"cmd": ["sh", "-lc", "echo ready > prepared.txt"]}
+    }
+  ],
+  "edges": []
+}

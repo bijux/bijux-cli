@@ -1,0 +1,8 @@
+{
+  "run_id": "run-remote-vm-1",
+  "node_id": "extract",
+  "classification": "worker-version-mismatch",
+  "minimum_supported_worker_version": "1.2.0",
+  "observed_worker_version": "1.1.9",
+  "recommended_action": "upgrade worker pool before retry"
+}

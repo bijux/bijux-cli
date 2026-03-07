@@ -67,3 +67,21 @@ fn distributed_runtime_contract_tests_cover_worker_protocol_semantics() {
         );
     }
 }
+
+#[test]
+fn remote_worker_protocol_conformance_suite_exists() {
+    let root = repo_root();
+    let path = root.join("crates/bijux-dag-runtime/tests/remote_worker_protocol_conformance.rs");
+    assert!(path.exists(), "missing remote worker conformance suite");
+    let source = fs::read_to_string(path).expect("read conformance suite");
+    for token in [
+        "conformance_heartbeat_classification_is_stable",
+        "conformance_duplicate_dispatch_and_event_dedup_hold",
+        "conformance_upload_commit_version_gate_and_capability_negotiation_hold",
+    ] {
+        assert!(
+            source.contains(token),
+            "remote worker conformance suite missing token: {token}"
+        );
+    }
+}

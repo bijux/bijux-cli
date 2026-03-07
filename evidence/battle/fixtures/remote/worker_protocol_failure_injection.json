@@ -1,0 +1,9 @@
+{
+  "scenario": "remote-worker-protocol-failure-injection",
+  "events": [
+    {"type": "worker-crash", "run_id": "run-remote-1", "node_id": "transform", "when": "during-execution"},
+    {"type": "upload-interruption", "run_id": "run-remote-1", "node_id": "transform", "attempt": 1},
+    {"type": "late-heartbeat", "worker_id": "worker-a", "delay_ms": 7000},
+    {"type": "status-partition", "worker_id": "worker-a", "duration_ms": 5000}
+  ]
+}
