@@ -146,6 +146,109 @@ pub struct BackendProductionReadinessChecklist {
     pub observability_integrated: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sResourceRequest {
+    pub cpu_millis: u32,
+    pub memory_mib: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sResourceMapping {
+    pub requests: K8sResourceRequest,
+    pub limits: K8sResourceRequest,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodeExecutionContract {
+    pub cpu_units: u32,
+    pub memory_mib: u32,
+    pub timeout_seconds: u32,
+    pub max_retries: u32,
+    pub retry_backoff_seconds: u32,
+    pub cancel_grace_seconds: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sJobPolicyMapping {
+    pub active_deadline_seconds: u32,
+    pub backoff_limit: u32,
+    pub retry_backoff_seconds: u32,
+    pub termination_grace_period_seconds: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum K8sFailureClass {
+    InfrastructureRetryable,
+    InfrastructureFatal,
+    Configuration,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeFailureClassification {
+    pub runtime_failure_kind: String,
+    pub retryable: bool,
+    pub class: K8sFailureClass,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sInjectionRequest {
+    pub required_secrets: Vec<String>,
+    pub required_configs: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sInjectionAvailability {
+    pub available_secrets: Vec<String>,
+    pub available_configs: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ArtifactCollectionState {
+    Complete,
+    Partial,
+    Missing,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WorkdirVolumeKind {
+    EmptyDir,
+    PersistentVolumeClaim,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkdirSemantics {
+    pub survives_pod_restart: bool,
+    pub survives_reschedule: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdapterExecutionOutcome {
+    pub dag_shape: String,
+    pub node_statuses: BTreeMap<String, String>,
+    pub output_hashes: BTreeMap<String, String>,
+    pub stdout: String,
+    pub stderr: String,
+    pub cache_hit_nodes: Vec<String>,
+    pub replayed_nodes: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sWatchEvent {
+    pub node_id: String,
+    pub phase: String,
+    pub observed_at_millis: u64,
+    pub sequence: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sBackendVersionMetadata {
+    pub k8s_version: String,
+    pub api_server: String,
+    pub cluster_uid: String,
+}
+
+const TERMINAL_PHASES: [&str; 3] = ["Succeeded", "Failed", "Cancelled"];
+
 pub fn matches_placement_policy(
     required_capability: &str,
     backend_descriptor: &BackendCapabilityDescriptor,
@@ -193,4 +296,126 @@ pub fn replay_allowed_across_backends(
     rules
         .iter()
         .any(|r| r.from_backend == from_backend && r.to_backend == to_backend && r.replay_safe)
+}
+
+pub fn map_node_resources_to_k8s(node: &NodeExecutionContract) -> K8sResourceMapping {
+    let request_cpu = node.cpu_units.saturating_mul(1000);
+    let request_mem = node.memory_mib;
+    // Keep limits deterministic and explicit: 2x cpu, 1.5x memory floor-rounded.
+    let limit_cpu = request_cpu.saturating_mul(2);
+    let limit_mem = ((request_mem as u64 * 3) / 2) as u32;
+    K8sResourceMapping {
+        requests: K8sResourceRequest {
+            cpu_millis: request_cpu,
+            memory_mib: request_mem,
+        },
+        limits: K8sResourceRequest {
+            cpu_millis: limit_cpu,
+            memory_mib: limit_mem.max(request_mem),
+        },
+    }
+}
+
+pub fn map_node_policy_to_k8s_job(node: &NodeExecutionContract) -> K8sJobPolicyMapping {
+    K8sJobPolicyMapping {
+        active_deadline_seconds: node.timeout_seconds.max(1),
+        backoff_limit: node.max_retries,
+        retry_backoff_seconds: node.retry_backoff_seconds,
+        termination_grace_period_seconds: node.cancel_grace_seconds.max(1),
+    }
+}
+
+pub fn classify_k8s_failure(code: &str) -> RuntimeFailureClassification {
+    match code {
+        "K8S_POD_EVICTED" => RuntimeFailureClassification {
+            runtime_failure_kind: "infrastructure".to_string(),
+            retryable: true,
+            class: K8sFailureClass::InfrastructureRetryable,
+        },
+        "K8S_IMAGE_PULL_BACKOFF" => RuntimeFailureClassification {
+            runtime_failure_kind: "configuration".to_string(),
+            retryable: false,
+            class: K8sFailureClass::Configuration,
+        },
+        "K8S_POD_PENDING_TIMEOUT" => RuntimeFailureClassification {
+            runtime_failure_kind: "infrastructure".to_string(),
+            retryable: true,
+            class: K8sFailureClass::InfrastructureRetryable,
+        },
+        _ => RuntimeFailureClassification {
+            runtime_failure_kind: "execution".to_string(),
+            retryable: false,
+            class: K8sFailureClass::InfrastructureFatal,
+        },
+    }
+}
+
+pub fn validate_k8s_injection(
+    requested: &K8sInjectionRequest,
+    available: &K8sInjectionAvailability,
+) -> Result<(), String> {
+    for secret in &requested.required_secrets {
+        if !available.available_secrets.iter().any(|s| s == secret) {
+            return Err(format!("missing required secret: {secret}"));
+        }
+    }
+    for cfg in &requested.required_configs {
+        if !available.available_configs.iter().any(|c| c == cfg) {
+            return Err(format!("missing required config: {cfg}"));
+        }
+    }
+    Ok(())
+}
+
+pub fn outputs_logs_equivalent(
+    local: &AdapterExecutionOutcome,
+    k8s: &AdapterExecutionOutcome,
+) -> bool {
+    local.output_hashes == k8s.output_hashes
+        && local.stdout == k8s.stdout
+        && local.stderr == k8s.stderr
+}
+
+pub fn equivalent_to_local(local: &AdapterExecutionOutcome, k8s: &AdapterExecutionOutcome) -> bool {
+    local.dag_shape == k8s.dag_shape
+        && local.node_statuses == k8s.node_statuses
+        && local.output_hashes == k8s.output_hashes
+        && local.cache_hit_nodes == k8s.cache_hit_nodes
+        && local.replayed_nodes == k8s.replayed_nodes
+}
+
+pub fn artifact_collection_state(expected: usize, collected: usize) -> ArtifactCollectionState {
+    if collected == 0 {
+        ArtifactCollectionState::Missing
+    } else if collected >= expected {
+        ArtifactCollectionState::Complete
+    } else {
+        ArtifactCollectionState::Partial
+    }
+}
+
+pub fn workdir_semantics(kind: WorkdirVolumeKind) -> WorkdirSemantics {
+    match kind {
+        WorkdirVolumeKind::EmptyDir => WorkdirSemantics {
+            survives_pod_restart: false,
+            survives_reschedule: false,
+        },
+        WorkdirVolumeKind::PersistentVolumeClaim => WorkdirSemantics {
+            survives_pod_restart: true,
+            survives_reschedule: true,
+        },
+    }
+}
+
+pub fn canonical_k8s_terminal_events(events: &[K8sWatchEvent]) -> BTreeMap<String, K8sWatchEvent> {
+    let mut sorted = events.to_vec();
+    sorted.sort_by_key(|e| (e.sequence, e.observed_at_millis));
+    let mut out = BTreeMap::new();
+    for event in sorted {
+        if !TERMINAL_PHASES.iter().any(|phase| *phase == event.phase) {
+            continue;
+        }
+        out.insert(event.node_id.clone(), event);
+    }
+    out
 }
