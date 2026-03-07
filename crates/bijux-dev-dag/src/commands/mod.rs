@@ -4268,6 +4268,12 @@ fn run_evidence_foundation_verify() -> Result<(), String> {
     run_evidence_compare_verify()?;
     run_evidence_release_set_verify()?;
     for rel in [
+        "evidence/reports/evidence_audit_2026-03-07.md",
+        "evidence/reports/evidence_topology_before_after.md",
+        "evidence/reports/root_cleanup_before_after.md",
+        "evidence/reports/release_evidence_strength_before_after.md",
+        "evidence/reports/evidence_architecture_freeze_review_cycle.md",
+        "evidence/reports/evidence_roast_memo_2026-03-07.md",
         "evidence/reports/final_evidence_root_contract_report.md",
         "evidence/reports/root_topology_before_after.md",
         "evidence/reports/evidence_verification_summary.md",
