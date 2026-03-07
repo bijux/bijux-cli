@@ -5049,6 +5049,7 @@ fn run_planner_alignment_guard() -> Result<(), String> {
         bijux_dag_core::planner_alignment_required_doc(),
         bijux_dag_core::planner_alignment_required_schema(),
         bijux_dag_core::planner_alignment_required_test(),
+        "crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {

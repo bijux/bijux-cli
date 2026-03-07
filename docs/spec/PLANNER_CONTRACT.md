@@ -1,59 +1,66 @@
-# Planner Contract
+# Planner contract
 
-## Scope
-Defines planner input/output, graph lowering semantics, plan identity, and runtime execution boundary.
+## Authority
 
-## Planner input model
-Planner consumes a parsed and validated DAG graph.
+This document is the single normative authority for planner inputs, lowering stages, outputs, and guarantees.
 
-Boundary definitions:
-- parsed graph: strict JSON parsed DAG structure.
-- validated graph: parsed graph with schema and semantic validation passed.
-- canonical graph: deterministic ordering form used for identity-sensitive operations.
-- execution plan: runtime-facing lowered representation containing only execution-relevant fields.
+## Boundary model
 
-## Lowering boundary
-Planner performs explicit graph lowering from validated canonical graph to `ExecutionPlan`.
+- parsed graph: strict parse output
+- validated graph: parse output after schema and semantic validation
+- canonical graph: deterministic normalization for identity and ordering
+- execution plan: lowered runtime representation
 
-Erased user-facing fields in lowering:
-- `graph.meta`
-- `graph.inputs`
-- `graph.nondeterminism_allowed`
-- `node.tags`
-- `node.group`
-- `node.params`
-- `node.resources`
+## Lowered plan model
 
-Surviving execution fields:
-- node id, kind, dependencies, retry, timeout, outputs
-- lowered dependency edges
-- deterministic execution ordering
+Execution plan uses lowered structures only:
 
-Selection model:
-Selection/filtering is applied after validation and before execution planning.
+- `PlannedNode`: execution-relevant fields (`id`, `kind`, `deps`, `outputs`, `retry`, `timeout_ms`)
+- `PlannedDependency`: lowered dependency edge (`from`, `to`)
 
-## Identity model
-Planner emits:
-- graph fingerprint: identity of canonical graph.
-- planner fingerprint: identity of lowered execution plan.
+Planner boundary owns graph lowering; runtime execution consumes lowered plan semantics.
 
-Both are stable and deterministic for semantically identical inputs.
+## Fingerprints
 
-## Diagnostics
-Planner diagnostics use stable IDs:
-- `P4000`: planner generic failure.
-- `P4013`: unsupported runtime node kind.
-- `P4016`: execution no-op or annotation-only node warning.
+- `graph_fingerprint`: canonical graph identity
+- `planner_fingerprint`: lowered plan identity
 
-## Runtime boundary
-Runtime execution contract is plan-first: runtime execution is driven by lowered plan semantics, not author-facing graph metadata.
+These fingerprints have distinct meaning and must not be conflated.
+
+## Determinism guarantees
+
+- semantically equivalent graphs lower to identical planner fingerprints
+- cosmetic metadata changes do not alter lowered semantic plan identity
+- plan ordering is deterministic
+
+## Validation and diagnostics
+
+- schema/semantic validation errors are distinct from planner lowering errors
+- planner diagnostics use stable IDs:
+  - `P4000`: planner generic failure
+  - `P4013`: unsupported node kind
+  - `P4016`: warning for outputless execution node
+  - `P4021`: runtime capability requirement rejected during lowering
+
+## Selector and pruning stage
+
+Selector pruning occurs after validation and before final lowering output is committed.
+
+## Graph shape coverage
+
+Planner lowering coverage includes:
+
+- fan-in graphs
+- fan-out graphs
+- disconnected graphs (supported)
 
 ## Debug and schema surfaces
-- Plan JSON schema: `configs/schema/execution_plan.schema.json`
-- Debug dump command: `bijux-dev-dag dag plan-dump --graph <path>`
 
-## Related tests
+- debug command: `bijux-dev-dag dag plan-dump --graph <path>`
+- schema: `configs/schema/execution_plan.schema.json`
+
+## Required evidence
+
 - `crates/bijux-dag-core/tests/planner_contract.rs`
-
-## Versioning and change policy
-Planner contract changes require synchronized updates to this doc, planner schema, and planner contract tests.
+- `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
+- `planner-alignment` control-plane suite
