@@ -24,6 +24,8 @@ Repository enforcement policy is defined in `configs/policy/docs_config_governan
 - `docs/spec/BOUNDARY_RULES.md`
 - `docs/spec/EVIDENCE_MODEL.md`
 - `docs/spec/DOCS_GOVERNANCE.md`
+- `docs/spec/MISSION_STATEMENT.md`
+- `docs/spec/ROOT_MESSAGING_CONTRACT.md`
 - `docs/tracking/DOC_OWNERSHIP.json`
 
 ## Templates
