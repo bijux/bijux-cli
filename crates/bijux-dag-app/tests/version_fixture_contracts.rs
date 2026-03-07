@@ -66,3 +66,32 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
         .expect("parse args unsupported run");
     assert!(dag_run(&bad_matches).is_err());
 }
+
+#[test]
+fn supported_and_unsupported_export_bundle_versions_are_classified() {
+    let root = repo_root();
+    let supported = root.join("tests/compatibility/export_bundle/v0.1/bundle.json");
+    let unsupported = root.join("tests/compatibility/export_bundle/unsupported_past/bundle.json");
+
+    let cmd = dag_command();
+    let ok_matches = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "import",
+            supported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args supported bundle");
+    assert!(dag_run(&ok_matches).is_ok());
+
+    let bad_matches = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "import",
+            unsupported.to_string_lossy().as_ref(),
+        ])
+        .expect("parse args unsupported bundle");
+    assert!(dag_run(&bad_matches).is_err());
+}
