@@ -570,6 +570,17 @@ fn proof_summary_help_surface_is_available() {
 }
 
 #[test]
+fn migrate_help_includes_dry_run_preview_flag() {
+    let help = dag_command()
+        .args(["dag", "migrate", "dag", "--help"])
+        .output()
+        .expect("migrate help");
+    assert!(help.status.success());
+    let text = String::from_utf8_lossy(&help.stdout);
+    assert!(text.contains("--dry-run"));
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");
