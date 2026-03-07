@@ -5080,14 +5080,22 @@ fn run_scheduler_invariants_guard() -> Result<(), String> {
             missing.push(rel.to_string());
         }
     }
-    if missing.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
+    if !missing.is_empty() {
+        return Err(format!(
             "scheduler invariant coverage missing required surfaces: {}",
             missing.join(", ")
-        ))
+        ));
     }
+    let commands = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+        .map_err(|err| err.to_string())?;
+    for required in ["DagCommand::SchedulerTimeline", "run_dag_scheduler_timeline"] {
+        if !commands.contains(required) {
+            return Err(format!(
+                "scheduler invariant coverage missing command surface: {required}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn run_concurrency_model_guard() -> Result<(), String> {
