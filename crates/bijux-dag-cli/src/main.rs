@@ -4,13 +4,13 @@ use clap_complete::{generate, shells};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    let mut cmd = ClapCommand::new("bijux")
+    let mut cmd = ClapCommand ::new("bijux")
         .about("Bijux umbrella CLI")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(dag_command())
         .subcommand(
-            ClapCommand::new("completions")
+            ClapCommand ::new("completions")
                 .about("Generate shell completion script")
                 .arg(
                     Arg::new("shell")
@@ -19,8 +19,8 @@ fn main() -> ExitCode {
                         .required(true),
                 ),
         )
-        .subcommand(ClapCommand::new("rag").about("Not implemented"))
-        .subcommand(ClapCommand::new("rar").about("Not implemented"));
+        .subcommand(ClapCommand ::new("rag").about("Not implemented"))
+        .subcommand(ClapCommand ::new("rar").about("Not implemented"));
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
