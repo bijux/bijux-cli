@@ -96,6 +96,4 @@ Fixture examples:
 
 ## Demo DAG
 
-Gold-standard observability demo DAG:
-
-- `examples/observability-gold-standard.dag.json`
+Observability demonstrations are sourced from benchmark observability fixtures and governed evidence scenarios.

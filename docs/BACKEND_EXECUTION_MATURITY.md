@@ -39,13 +39,7 @@ This document defines contract maturity for local, Kubernetes, Slurm, and generi
 ## Replay compatibility and simulations
 
 - cross-backend replay rules define when replay is safe across executors
-- simulation fixtures cover queue buildup, backend degradation, and partial cluster outage
-
-Fixtures:
-
-- `benchmarks/fixtures/infrastructure/backends/queue_buildup.json`
-- `benchmarks/fixtures/infrastructure/backends/backend_degradation.json`
-- `benchmarks/fixtures/infrastructure/backends/partial_cluster_outage.json`
+- backend simulation fixtures without release-truth ownership are disallowed by evidence governance
 
 ## Production readiness checklist
 

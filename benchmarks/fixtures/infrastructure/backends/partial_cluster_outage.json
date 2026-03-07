@@ -1,9 +1,0 @@
-{
-  "fixture_id": "partial-cluster-outage",
-  "outage_zone": "zone-a",
-  "available_zones": ["zone-b", "zone-c"],
-  "expected": {
-    "inflight_tracking_preserved": true,
-    "cleanup_guarantees_verified": true
-  }
-}

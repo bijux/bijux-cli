@@ -2407,27 +2407,6 @@
       "retirement_date": null
     },
     {
-      "path": "examples/observability-gold-standard.dag.json",
-      "owner": "team-authoring",
-      "evidence_class": "authoring",
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references",
-      "deletion_review": "retain",
-      "decision": "keep",
-      "canonical_location": "examples/observability-gold-standard.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "implementation_status": "implemented",
-      "release_blocking": false,
-      "duplicate_of": null,
-      "retirement_date": null
-    },
-    {
       "path": "examples/replay-heavy-branching.dag.json",
       "owner": "team-authoring",
       "evidence_class": "authoring",
