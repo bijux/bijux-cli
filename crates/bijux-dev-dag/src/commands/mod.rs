@@ -105,6 +105,8 @@ enum CommandLine {
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
     ObservabilityReport,
+    /// Execute end-to-end matrix across binary and crate integration entrypoints
+    E2eMatrix,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -410,6 +412,15 @@ const TEST_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_status("cargo", &["test", "-p", "bijux-dev-dag"]),
+    },
+    SuiteDef {
+        id: "e2e-matrix",
+        description: "end-to-end matrix against binary and crate entrypoints",
+        domain: "e2e",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::ReadWrite,
+        run: || run_e2e_matrix(),
     },
 ];
 
@@ -954,6 +965,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_observability_report(),
+        ),
+        CommandLine::E2eMatrix => run_command_reported(
+            &context,
+            "e2e-matrix",
+            CommandEffect::ReadWrite,
+            json!({}),
+            || run_e2e_matrix(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -2661,4 +2679,19 @@ fn run_test_policy_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn run_e2e_matrix() -> Result<(), String> {
+    let root = repo_root()?;
+    let script = root.join("tests/e2e/run_matrix.sh");
+    if !script.exists() {
+        return Err("missing tests/e2e/run_matrix.sh".to_string());
+    }
+    run_with_root(
+        &root,
+        "bash",
+        &[script
+            .to_str()
+            .ok_or_else(|| "non-utf8 e2e matrix script path".to_string())?],
+    )
 }

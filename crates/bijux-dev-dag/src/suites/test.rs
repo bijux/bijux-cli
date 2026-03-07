@@ -1,1 +1,1 @@
-pub const IDS: &[&str] = &["unit", "arch"];
+pub const IDS: &[&str] = &["unit", "arch", "e2e-matrix"];
