@@ -122,6 +122,12 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
                 .to_string()
         })
         .collect();
+    let forbidden_globs: Vec<String> = policy["forbidden_globs"]
+        .as_array()
+        .expect("forbidden_globs array")
+        .iter()
+        .map(|value| value.as_str().expect("forbidden glob string").to_string())
+        .collect();
 
     let mut governed_files = BTreeSet::new();
     for root_entry in managed_roots {
@@ -450,47 +456,11 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         if is_scenario_like {
             panic!("scenario-like json path outside evidence-governed roots is forbidden: {rel}");
         }
-    }
-
-    let comparison_scenarios = root.join("comparisons/scenarios");
-    let mut scenario_ids = BTreeSet::new();
-    for entry in fs::read_dir(&comparison_scenarios).expect("read comparisons scenarios") {
-        let path = entry.expect("scenario entry").path();
-        if path.extension().and_then(|value| value.to_str()) != Some("json") {
-            continue;
+        if forbidden_globs
+            .iter()
+            .any(|pattern| glob_match(pattern, &rel))
+        {
+            panic!("path is forbidden by evidence governance freeze policy: {rel}");
         }
-        let payload = fs::read_to_string(path).expect("read comparison scenario");
-        let json: Value = serde_json::from_str(&payload).expect("parse comparison scenario");
-        let id = json["id"].as_str().expect("comparison scenario id");
-        scenario_ids.insert(id.to_string());
-    }
-
-    let coverage_payload = fs::read_to_string(root.join("comparisons/external/coverage_map.json"))
-        .expect("read external coverage map");
-    let coverage: Value = serde_json::from_str(&coverage_payload).expect("parse coverage map");
-    for comparator in coverage["comparators"]
-        .as_array()
-        .expect("coverage comparators array")
-    {
-        let note = comparator["note"].as_str().expect("coverage note path");
-        assert!(root.join(note).exists(), "external note missing: {note}");
-        let linked = comparator["linked_scenarios"]
-            .as_array()
-            .expect("linked_scenarios array");
-        assert!(!linked.is_empty(), "linked_scenarios is empty for {note}");
-        for id in linked {
-            let id = id.as_str().expect("linked scenario id");
-            assert!(
-                scenario_ids.contains(id),
-                "external note `{note}` references missing scenario id `{id}`"
-            );
-        }
-        let baseline = comparator["bijux_baseline"]
-            .as_str()
-            .expect("coverage baseline path");
-        assert!(
-            root.join(baseline).exists(),
-            "coverage baseline missing: {baseline}"
-        );
     }
 }

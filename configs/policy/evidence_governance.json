@@ -3,7 +3,6 @@
   "managed_roots": [
     "benchmarks/scenarios",
     "comparisons/scenarios",
-    "comparisons/external",
     "examples",
     "tests/cache/fixtures",
     "tests/e2e/fixtures",
@@ -14,11 +13,15 @@
     "crates/bijux-dag-runtime/tests/fixtures"
   ],
   "exempt_paths": [
-    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
-    "comparisons/external/argo_notes.md",
-    "comparisons/external/coverage_map.json",
-    "comparisons/external/dagster_notes.md",
-    "comparisons/external/prefect_notes.md"
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep"
+  ],
+  "forbidden_globs": [
+    "benchmarks/fixtures/distributed/*",
+    "benchmarks/fixtures/infrastructure/backends/*",
+    "benchmarks/fixtures/scheduling/enterprise/*",
+    "benchmarks/fixtures/scheduling/ha/*",
+    "comparisons/external/*",
+    "examples/observability-gold-standard.dag.json"
   ],
   "allowed_decisions": [
     "keep",

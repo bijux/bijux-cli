@@ -4557,6 +4557,17 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
                 .map(ToOwned::to_owned)
         })
         .collect::<Result<_, _>>()?;
+    let forbidden_globs: Vec<String> = policy["forbidden_globs"]
+        .as_array()
+        .ok_or_else(|| "forbidden_globs must be an array".to_string())?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "forbidden glob must be a string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<_, _>>()?;
 
     let entries = ledger["entries"]
         .as_array()
@@ -4712,6 +4723,14 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
         if is_scenario_like {
             return Err(format!(
                 "scenario-like json path outside evidence-governed roots is forbidden: {rel}"
+            ));
+        }
+        if forbidden_globs
+            .iter()
+            .any(|pattern| wildcard_match(pattern, &rel))
+        {
+            return Err(format!(
+                "path is forbidden by evidence governance freeze policy: {rel}"
             ));
         }
     }
@@ -7836,12 +7855,7 @@ fn run_comparison_evidence_report() -> Result<(), String> {
     let payload = json!({
         "scenario_count": scenario_ids.len(),
         "scenarios": scenario_ids,
-        "bijux_baseline_entries": baseline_count,
-        "external_notes": [
-            "comparisons/external/dagster_notes.md",
-            "comparisons/external/prefect_notes.md",
-            "comparisons/external/argo_notes.md"
-        ]
+        "bijux_baseline_entries": baseline_count
     });
     println!(
         "{}",
