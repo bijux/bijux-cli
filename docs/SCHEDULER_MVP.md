@@ -40,6 +40,3 @@ Scheduling simulation fixtures live in:
 - `benchmarks/fixtures/scheduling/cron_storm.json`
 - `benchmarks/fixtures/scheduling/backfill_saturation.json`
 - `benchmarks/fixtures/scheduling/concurrency_pressure.json`
-- `benchmarks/fixtures/scheduling/enterprise/load_spike.json`
-- `benchmarks/fixtures/scheduling/enterprise/trigger_storm.json`
-- `benchmarks/fixtures/scheduling/enterprise/mass_backfill.json`

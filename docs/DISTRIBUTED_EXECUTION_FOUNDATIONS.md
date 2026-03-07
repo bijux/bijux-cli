@@ -39,8 +39,6 @@ Distributed execution uses typed request/result contracts that include:
 
 ## Simulation fixtures
 
-- `benchmarks/fixtures/distributed/worker_lifecycle_simulation.json`
-- `benchmarks/fixtures/distributed/transport_protocol_simulation.json`
 
 ## Beta readiness checklist
 

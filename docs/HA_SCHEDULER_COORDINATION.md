@@ -41,9 +41,6 @@ This document defines high-availability scheduler contracts for leader election,
 
 Fixtures:
 
-- `benchmarks/fixtures/scheduling/ha/split_brain_failover.json`
-- `benchmarks/fixtures/scheduling/ha/trigger_storm_rebalance.json`
-- `benchmarks/fixtures/scheduling/ha/cold_restart_objective.json`
 
 ## Minimal HA milestone
 

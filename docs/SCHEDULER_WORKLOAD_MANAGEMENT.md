@@ -47,7 +47,3 @@ This document defines enterprise scheduling contracts for calendars, fairness, a
 - `SchedulerMaturityMatrix` tracks readiness: local-only, durable, multi-queue, backfill, HA.
 
 Fixtures:
-
-- `benchmarks/fixtures/scheduling/enterprise/load_spike.json`
-- `benchmarks/fixtures/scheduling/enterprise/trigger_storm.json`
-- `benchmarks/fixtures/scheduling/enterprise/mass_backfill.json`

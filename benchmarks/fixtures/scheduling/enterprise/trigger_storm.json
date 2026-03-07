@@ -1,9 +1,0 @@
-{
-  "fixture_id": "trigger-storm",
-  "description": "bursty dependency and signal triggers with dedup behavior",
-  "events": ["k1", "k1", "k2", "k3", "k3", "k3"],
-  "expected": {
-    "dedup_enabled": true,
-    "buffering_required": true
-  }
-}
