@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux-dev-control.command-report.v1",
+  "title": "CommandReport",
+  "type": "object",
+  "required": ["command", "status", "effect", "data"],
+  "properties": {
+    "command": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["ok", "error"]},
+    "effect": {"type": "string", "enum": ["validation", "read-write"]},
+    "data": {},
+    "error": {"type": "string"}
+  },
+  "additionalProperties": false
+}

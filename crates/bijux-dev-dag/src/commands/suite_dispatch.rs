@@ -189,7 +189,11 @@ mod tests {
     use crate::commands::model::CommandEffect;
 
     fn pass() -> Result<(), String> {
-        if std::env::var("BIJUX_DEV_DAG_FORCE_TEST_FAIL").ok().as_deref() == Some("1") {
+        if std::env::var("BIJUX_DEV_DAG_FORCE_TEST_FAIL")
+            .ok()
+            .as_deref()
+            == Some("1")
+        {
             return Err("forced failure".to_string());
         }
         Ok(())
@@ -248,7 +252,8 @@ mod tests {
             json: false,
             report: None,
         };
-        let result = finalize_suite_outcome("checks", vec!["lint: failed".to_string()], false, &context);
+        let result =
+            finalize_suite_outcome("checks", vec!["lint: failed".to_string()], false, &context);
         assert!(result.is_err());
     }
 
@@ -258,7 +263,8 @@ mod tests {
             json: true,
             report: None,
         };
-        let result = finalize_suite_outcome("checks", vec!["lint: failed".to_string()], true, &context);
+        let result =
+            finalize_suite_outcome("checks", vec!["lint: failed".to_string()], true, &context);
         assert!(result.is_ok());
     }
 }

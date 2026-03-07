@@ -62,7 +62,11 @@ pub(crate) fn run_text_or_json_report(
     result
 }
 
-fn append_control_plane_audit(command_name: &str, status: &str, effect: &str) -> Result<(), String> {
+fn append_control_plane_audit(
+    command_name: &str,
+    status: &str,
+    effect: &str,
+) -> Result<(), String> {
     let root = crate::commands::repo_root()?;
     let audit_dir = root.join("artifacts").join("reports");
     fs::create_dir_all(&audit_dir).map_err(|err| err.to_string())?;
@@ -79,4 +83,37 @@ fn append_control_plane_audit(command_name: &str, status: &str, effect: &str) ->
         .open(&audit_path)
         .map_err(|err| err.to_string())?;
     writeln!(file, "{event}").map_err(|err| err.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::run_text_or_json_report;
+    use crate::commands::model::CommandContext;
+    use serde_json::Value;
+
+    #[test]
+    fn report_shape_is_stable_for_success_case() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let report_path = temp.path().join("report.json");
+        let context = CommandContext {
+            json: false,
+            report: Some(report_path.clone()),
+        };
+        run_text_or_json_report(
+            &context,
+            "test.command",
+            "test.command",
+            "validation",
+            serde_json::json!({"sample": true}),
+            || Ok(()),
+            true,
+        )
+        .expect("report run");
+        let payload = std::fs::read_to_string(&report_path).expect("read report");
+        let value: Value = serde_json::from_str(&payload).expect("parse report");
+        assert_eq!(value["command"], "test.command");
+        assert_eq!(value["status"], "ok");
+        assert_eq!(value["effect"], "validation");
+        assert!(value.get("data").is_some());
+    }
 }

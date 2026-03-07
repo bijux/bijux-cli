@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux-dev-control.suite-selection-report.v1",
+  "title": "SuiteSelectionReport",
+  "type": "object",
+  "required": [
+    "group",
+    "selected_suite_ids",
+    "skipped_domain",
+    "skipped_slow",
+    "skipped_internal",
+    "skipped_disabled"
+  ],
+  "properties": {
+    "group": {"type": "string", "minLength": 1},
+    "selected_suite_ids": {"type": "array", "items": {"type": "string"}},
+    "skipped_domain": {"type": "array", "items": {"type": "string"}},
+    "skipped_slow": {"type": "array", "items": {"type": "string"}},
+    "skipped_internal": {"type": "array", "items": {"type": "string"}},
+    "skipped_disabled": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

@@ -21,3 +21,19 @@
 5. `repo.run`
 
 The composed flow is declared in `crates/bijux-dev-dag/src/suites/release.rs`.
+
+## Command execution split
+
+`commands` is split into dedicated execution components:
+
+- `commands/model.rs`: command and suite typed models
+- `commands/reporting.rs`: report emission and audit append behavior
+- `commands/suite_dispatch.rs`: suite filtering/explain/list/run behaviors
+
+Suite run commands support:
+
+- blocking mode (default)
+- advisory mode (`--advisory`)
+- explanation mode (`--why`)
+
+The control-plane also exposes `foundation` to execute the grouped control-plane suites through one contract surface.
