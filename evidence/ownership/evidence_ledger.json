@@ -2951,6 +2951,342 @@
       "release_blocking": false,
       "duplicate_of": null,
       "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle cache hit semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle cache invalidation semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle missing-output failure semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle downstream skip semantics after failure",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle retry accounting semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle timeout classification semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle validation-failure no-partial-run-dir semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle happy-path manifest total semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle parse-validate-run-inspect-replay flow",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle real-world orchestration stress semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle import/export metadata-only semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/import_export/export_import_with_files.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle import/export file payload semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/import_export/export_import_with_files.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle policy deny-env and allowlist semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle replay semantic comparison semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise battle include/exclude selection semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/operator/scenarios/inspection_only.json",
+      "owner": "team-runtime",
+      "evidence_class": "operator",
+      "trust_property": "observability",
+      "why_exists": "exercise operator inspection-only scenario semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/operator/scenarios/inspection_only.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "observability"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
     }
   ],
   "fixture_families": [

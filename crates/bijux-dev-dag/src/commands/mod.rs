@@ -4930,7 +4930,10 @@ fn run_battle_scenario_mapping_validate() -> Result<(), String> {
         }
     }
 
-    let known: BTreeSet<&str> = records.iter().map(|(scenario, _)| scenario.as_str()).collect();
+    let known: BTreeSet<&str> = records
+        .iter()
+        .map(|(scenario, _)| scenario.as_str())
+        .collect();
     for mapped in scenario_trust_map.keys() {
         if !known.contains(mapped.as_str()) {
             return Err(format!("battle trust map has orphan scenario `{mapped}`"));
@@ -4944,10 +4947,9 @@ fn run_battle_scenario_mapping_validate() -> Result<(), String> {
             registry_path.display()
         ));
     }
-    let registry: Value = serde_json::from_str(
-        &fs::read_to_string(&registry_path).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    let registry: Value =
+        serde_json::from_str(&fs::read_to_string(&registry_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
     let registry_entries = registry
         .get("entries")
         .and_then(Value::as_array)
@@ -4974,10 +4976,9 @@ fn run_battle_scenario_mapping_validate() -> Result<(), String> {
     }
 
     let metadata_path = root.join("evidence/battle/metadata.json");
-    let metadata: Value = serde_json::from_str(
-        &fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    let metadata: Value =
+        serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
     let scenarios = metadata
         .get("scenarios")
         .and_then(Value::as_object)
@@ -6048,10 +6049,9 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
 
     run_battle_scenario_mapping_validate()?;
 
-    let metadata: Value = serde_json::from_str(
-        &fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    let metadata: Value =
+        serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
     if metadata
         .get("scenarios")
         .and_then(Value::as_object)
@@ -7740,9 +7740,10 @@ fn run_replay_contract_guard() -> Result<(), String> {
     if !commands_src.contains("DiffModeArg::Semantic") {
         return Err("replay contract requires semantic diff mode in CLI surfaces".to_string());
     }
-    let replay_battle =
-        fs::read_to_string(root.join("evidence/battle/workflows/replay/replay_semantic_comparison.json"))
-            .map_err(|err| err.to_string())?;
+    let replay_battle = fs::read_to_string(
+        root.join("evidence/battle/workflows/replay/replay_semantic_comparison.json"),
+    )
+    .map_err(|err| err.to_string())?;
     if !replay_battle.contains("replay_mandatory_proof") {
         return Err("replay battle scenario must assert replay_mandatory_proof".to_string());
     }

@@ -4,6 +4,8 @@
     "evidence/authoring/examples",
     "evidence/authoring/patterns",
     "evidence/authoring/negative",
+    "evidence/battle/workflows",
+    "evidence/operator/scenarios",
     "benchmarks/scenarios",
     "comparisons/scenarios",
     "tests/cache/fixtures",
@@ -15,7 +17,12 @@
     "crates/bijux-dag-runtime/tests/fixtures"
   ],
   "exempt_paths": [
-    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep"
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
+    "evidence/battle/metadata.json",
+    "evidence/battle/registries/scenario_registry.json",
+    "evidence/battle/registries/.gitkeep",
+    "evidence/battle/workflows/.gitkeep",
+    "evidence/operator/scenarios/.gitkeep"
   ],
   "forbidden_globs": [
     "benchmarks/fixtures/distributed/*",
