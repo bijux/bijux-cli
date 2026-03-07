@@ -1,0 +1,1 @@
+{"scenario_id":"memory-replay-path","class":"replay","resource_focus":"memory","graph":"benchmarks/fixtures/large_dag.json"}

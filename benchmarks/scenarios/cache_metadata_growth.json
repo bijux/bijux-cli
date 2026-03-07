@@ -1,0 +1,1 @@
+{"scenario_id":"cache-metadata-growth","class":"cache-lookup","resource_focus":"metadata-volume","graph":"benchmarks/fixtures/large_dag.json"}
