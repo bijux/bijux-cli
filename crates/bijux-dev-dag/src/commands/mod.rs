@@ -5113,10 +5113,17 @@ fn run_authoring_ux_guard() -> Result<(), String> {
 
     let contract =
         fs::read_to_string(root.join("docs/spec/AUTHORING_UX_CONTRACT.md")).map_err(|err| err.to_string())?;
+    let guide =
+        fs::read_to_string(root.join("docs/user/AUTHORING_GUIDE.md")).map_err(|err| err.to_string())?;
     for rel in required_examples.iter().chain(required_bad.iter()) {
         if !contract.contains(rel) {
             return Err(format!(
                 "authoring contract must reference executable fixture: {rel}"
+            ));
+        }
+        if !guide.contains(rel) {
+            return Err(format!(
+                "authoring user guide must reference executable fixture: {rel}"
             ));
         }
     }
