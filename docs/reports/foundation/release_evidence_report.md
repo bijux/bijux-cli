@@ -3,6 +3,7 @@
 ## Scope
 
 Aggregates high-trust release evidence and rejects readiness based on raw test counts alone.
+raw test totals are insufficient
 
 ## Required evidence surfaces
 
