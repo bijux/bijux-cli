@@ -2,15 +2,15 @@ use bijux_dag_artifacts::{
     build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
     write_json_atomic_durable, Manifest, RunOutputsIndex, VerificationMode,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
 use std::fs;
+use std::path::PathBuf;
 use thiserror as _;
 
-fn workspace_root() -> std::path::PathBuf {
-    bijux_dag_testkit::workspace_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
+fn workspace_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
 fn sample_manifest(run_id: &str) -> Manifest {
