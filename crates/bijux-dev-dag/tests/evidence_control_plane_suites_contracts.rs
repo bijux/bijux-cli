@@ -103,6 +103,52 @@ fn release_evidence_set_assets_exist_and_are_registered() {
             );
         }
     }
+
+    for field in ["required_families", "advisory_families"] {
+        let entries = release_set[field]
+            .as_array()
+            .expect("release family list should be array");
+        assert!(
+            !entries.is_empty(),
+            "release evidence family list cannot be empty: {field}"
+        );
+        for entry in entries {
+            assert!(
+                entry.as_str().is_some(),
+                "release evidence family entry must be a string in {field}"
+            );
+        }
+    }
+
+    let minimum_sets = release_set["minimum_blocking_sets"]
+        .as_object()
+        .expect("release minimum_blocking_sets should be object");
+    assert!(
+        !minimum_sets.is_empty(),
+        "release minimum_blocking_sets cannot be empty"
+    );
+    let blocking: BTreeSet<&str> = release_set["blocking_assets"]
+        .as_array()
+        .expect("blocking_assets array")
+        .iter()
+        .map(|entry| entry.as_str().expect("blocking asset id"))
+        .collect();
+    for (set_id, assets) in minimum_sets {
+        let assets = assets
+            .as_array()
+            .expect("minimum blocking set entry should be array");
+        assert!(
+            !assets.is_empty(),
+            "minimum blocking set cannot be empty: {set_id}"
+        );
+        for entry in assets {
+            let id = entry.as_str().expect("minimum blocking set asset id");
+            assert!(
+                blocking.contains(id),
+                "minimum blocking set `{set_id}` references non-blocking asset `{id}`"
+            );
+        }
+    }
 }
 
 #[test]
@@ -118,4 +164,26 @@ fn evidence_suite_summary_models_exist() {
             "missing evidence suite summary surface: {rel}"
         );
     }
+}
+
+#[test]
+fn release_evidence_policy_exists_and_declares_governance_rules() {
+    let root = repo_root();
+    let policy: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/release_evidence_policy.json"))
+            .expect("read release evidence policy"),
+    )
+    .expect("parse release evidence policy");
+    assert_eq!(
+        policy["release_set_source"]
+            .as_str()
+            .expect("release_set_source"),
+        "evidence/release/release_evidence_set.json"
+    );
+    assert!(
+        policy["legacy_roots_must_remain_deleted"]
+            .as_array()
+            .expect("legacy roots array")
+            .contains(&serde_json::Value::String("comparisons/scenarios/".to_string()))
+    );
 }

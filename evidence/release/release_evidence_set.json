@@ -1,5 +1,35 @@
 {
   "version": "1",
+  "required_families": [
+    "battle",
+    "compat",
+    "cache",
+    "replay",
+    "operator",
+    "perf",
+    "fault"
+  ],
+  "advisory_families": [
+    "compare"
+  ],
+  "minimum_blocking_sets": {
+    "battle": [
+      "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json"
+    ],
+    "compat": [
+      "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json"
+    ],
+    "cache_replay": [
+      "evidence/cache/replay/match_case.json"
+    ],
+    "operator": [
+      "evidence/fault/classes/fault_classes.json"
+    ],
+    "perf": [
+      "evidence/perf/scenarios/tiny_canonical.json"
+    ]
+  },
   "blocking_assets": [
     "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
     "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
