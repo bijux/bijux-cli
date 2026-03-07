@@ -139,6 +139,13 @@ enum CommandLine {
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog
     FaultSummary,
+    /// Validate run and cache storage artifacts and report anomalies
+    StorageHealth {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
     /// Enumerate unsafe blocks and owner files
     UnsafeAudit,
     /// Enumerate known public error codes and owners
@@ -925,6 +932,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_backend_contract_guard(),
     },
     SuiteDef {
+        id: "storage-boundaries",
+        description: "storage contract docs and runtime path ownership checks",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_storage_boundary_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1395,6 +1411,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_fault_summary_report(),
+        ),
+        CommandLine::StorageHealth { run_dir, cache_dir } => run_command_reported(
+            &context,
+            "storage-health",
+            CommandEffect::Validation,
+            json!({"run_dir": run_dir, "cache_dir": cache_dir}),
+            || run_storage_health(&run_dir, cache_dir.as_deref()),
         ),
         CommandLine::UnsafeAudit => run_command_reported(
             &context,
@@ -4549,6 +4572,127 @@ fn run_backend_contract_guard() -> Result<(), String> {
     if !payload.contains("fake_and_process_like_backends_have_parity_on_basic_scenario") {
         return Err("backend contract missing fake-backend parity test".to_string());
     }
+    Ok(())
+}
+
+fn run_storage_boundary_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/STORAGE_CONTRACT.md",
+        "docs/architecture/storage-layout-ownership.md",
+        "crates/bijux-dag-runtime/src/store.rs",
+        "crates/bijux-dag-runtime/tests/storage_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "storage boundaries missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let runtime_src = root.join("crates/bijux-dag-runtime/src");
+    let mut violations = Vec::new();
+    let mut stack = vec![runtime_src];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("rs") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .to_string();
+            if rel.ends_with("store.rs") || rel.ends_with("lib.rs") || rel.ends_with("engine.rs") {
+                continue;
+            }
+            let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            if text.contains("staging_path().join(\"nodes\")")
+                || text.contains("manifest.json")
+                || text.contains("outputs.index.json")
+            {
+                violations.push(rel);
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "runtime modules use ad-hoc storage paths outside approved modules: {}",
+            violations.join(", ")
+        ))
+    }
+}
+
+fn run_storage_health(run_dir: &Path, cache_dir: Option<&Path>) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let mut anomalies = Vec::new();
+    let manifest = run_path.join("manifest.json");
+    if !manifest.exists() {
+        anomalies.push("missing manifest.json".to_string());
+    } else {
+        let payload = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;
+        let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        if parsed.get("run_id").is_none() {
+            anomalies.push("manifest missing run_id".to_string());
+        }
+    }
+    let outputs = run_path.join("outputs.index.json");
+    if !outputs.exists() {
+        anomalies.push("missing outputs.index.json".to_string());
+    }
+    if let Some(cache_path) = cache_dir {
+        let cache_abs = root.join(cache_path);
+        if cache_abs.exists() {
+            for entry in fs::read_dir(&cache_abs).map_err(|err| err.to_string())? {
+                let entry = entry.map_err(|err| err.to_string())?;
+                let path = entry.path();
+                if !path.is_dir() {
+                    continue;
+                }
+                let meta = path.join("meta.json");
+                if !meta.exists() {
+                    anomalies.push(format!(
+                        "cache entry missing meta.json: {}",
+                        path.display()
+                    ));
+                    continue;
+                }
+                let payload = fs::read_to_string(&meta).map_err(|err| err.to_string())?;
+                let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+                if parsed.get("fingerprint").is_none() {
+                    anomalies.push(format!(
+                        "cache meta missing fingerprint: {}",
+                        meta.display()
+                    ));
+                }
+            }
+        }
+    }
+    let response = json!({
+        "run_dir": run_dir,
+        "cache_dir": cache_dir,
+        "healthy": anomalies.is_empty(),
+        "anomalies": anomalies
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 

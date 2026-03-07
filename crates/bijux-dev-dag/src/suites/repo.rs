@@ -28,6 +28,7 @@ pub const IDS: &[&str] = &[
     "concurrency-model",
     "runtime-unsafe-audit",
     "backend-contract",
+    "storage-boundaries",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
