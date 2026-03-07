@@ -24,3 +24,7 @@
 
 ## Trust mapping
 `battle` assets must declare `trust_properties_protected` and include at least one trust property from policy.
+
+## Shared rule references
+- Metadata schema: `evidence/_meta/schemas/evidence_asset.schema.json`
+- Naming and structure policy: `evidence/_meta/asset_authoring_rules.md`

@@ -11,8 +11,12 @@
 - `evidence/operator`: operator inspection and diagnostics scenarios.
 - `evidence/perf`: performance scenarios and controlled baselines.
 - `evidence/compare`: cross-system comparison scenarios and baselines.
+- `evidence/_meta`: shared schemas, registries, and generated evidence maps.
 
 ## Governance
 - Contract: `evidence/CONTRACT.md`
 - Taxonomy: `evidence/taxonomy.md`
 - Ownership ledger: `evidence/ownership/evidence_ledger.json`
+- Shared asset rules: `evidence/_meta/asset_authoring_rules.md`
+- Shared metadata schema: `evidence/_meta/schemas/evidence_asset.schema.json`
+- Generated directory map: `evidence/_meta/maps/directory_map.json`

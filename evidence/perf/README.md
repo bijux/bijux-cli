@@ -1,3 +1,9 @@
-# Perf Evidence
+# Performance Evidence
 
-Domain-owned evidence assets for `perf` trust and behavior validation.
+Purpose: workload scenarios and approved baselines for performance trust.
+
+Subdirectories:
+- `scenarios/`
+- `baselines/`
+
+See `CONTRACT.md` for performance-specific enforcement rules.

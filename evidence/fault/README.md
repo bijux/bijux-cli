@@ -1,3 +1,6 @@
 # Fault Evidence
 
-Domain-owned evidence assets for `fault` trust and behavior validation.
+Purpose: fault class scenarios and expected resilience behavior.
+
+Subdirectories:
+- `classes/`

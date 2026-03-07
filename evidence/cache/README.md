@@ -1,3 +1,7 @@
 # Cache Evidence
 
-Domain-owned evidence assets for `cache` trust and behavior validation.
+Purpose: cache correctness scenarios including warm/cold and corruption behavior.
+
+Subdirectories:
+- `scenarios/`
+- `corrupt/`

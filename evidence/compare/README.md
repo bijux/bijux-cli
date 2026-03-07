@@ -1,3 +1,9 @@
-# Compare Evidence
+# Comparison Evidence
 
-Domain-owned evidence assets for `compare` trust and behavior validation.
+Purpose: executable cross-system comparison scenarios and baselines.
+
+Subdirectories:
+- `scenarios/`
+- `baselines/`
+
+See `CONTRACT.md` for comparison-specific enforcement rules.

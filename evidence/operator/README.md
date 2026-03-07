@@ -1,3 +1,6 @@
 # Operator Evidence
 
-Domain-owned evidence assets for `operator` trust and behavior validation.
+Purpose: operator inspection and diagnostics scenarios.
+
+Subdirectories:
+- `scenarios/`

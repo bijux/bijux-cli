@@ -1,3 +1,8 @@
 # Authoring Evidence
 
-Domain-owned evidence assets for `authoring` trust and behavior validation.
+Purpose: canonical authoring examples, patterns, and negative authoring cases.
+
+Subdirectories:
+- `examples/`
+- `patterns/`
+- `negative/`
