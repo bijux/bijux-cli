@@ -774,6 +774,281 @@
         "replay_equivalence_expected": false,
         "cache_integrity_expected": false
       }
+    },
+    "adversarial-concurrency-retry-determinism": {
+      "grade": "battle",
+      "why_exists": "Stress deterministic scheduling semantics under concurrency and retries.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "timeout-retry-accounting"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-post-success-artifact-corruption": {
+      "grade": "battle",
+      "why_exists": "Prove corruption introduced after apparent success is detected and not silently accepted.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "artifact-integrity",
+        "run-dir-resilience"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-cache-proof-corruption-plausible-outputs": {
+      "grade": "battle",
+      "why_exists": "Reject corrupted cache proof even when outputs look plausible.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "cache-integrity",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": true
+      }
+    },
+    "adversarial-replay-semantic-drift-detection": {
+      "grade": "battle",
+      "why_exists": "Detect subtle semantic replay drift beyond structural equality.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "replay-equivalence",
+        "plan-truth"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag replay diff"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-import-export-semantic-loss-rejected": {
+      "grade": "battle",
+      "why_exists": "Reject import/export roundtrips that preserve shape but lose trust-critical semantics.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "artifact-integrity",
+        "replay-equivalence"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-operator-only-recovery-path": {
+      "grade": "battle",
+      "why_exists": "Prove operator inspection is mandatory for safe recovery in high-failure workflows.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "operator-observability",
+        "run-dir-resilience"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-policy-denial-blocks-unsafe-execution": {
+      "grade": "battle",
+      "why_exists": "Prove policy denial blocks tempting unsafe execution paths.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "policy-enforcement",
+        "secret-redaction"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-missing-outputs-superficial-success-rejected": {
+      "grade": "battle",
+      "why_exists": "Reject superficially successful runs that miss declared outputs.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "failure-propagation",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-tie-break-stability-under-contention": {
+      "grade": "battle",
+      "why_exists": "Protect tie-break stability and starvation prevention under heavy contention.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "plan-truth"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-cancel-retry-bookkeeping-integrity": {
+      "grade": "battle",
+      "why_exists": "Protect bookkeeping integrity when cancellation and retries interleave.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "timeout-retry-accounting",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-path-escape-via-declared-outputs-blocked": {
+      "grade": "battle",
+      "why_exists": "Block path escape attempts through declared outputs.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "artifact-integrity",
+        "policy-enforcement"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-env-leakage-via-adapters-blocked": {
+      "grade": "battle",
+      "why_exists": "Block environment leakage attempts through adapters.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "secret-redaction",
+        "policy-enforcement"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-partial-run-dir-not-finalized": {
+      "grade": "battle",
+      "why_exists": "Ensure partial run-dir state never appears finalized.",
+      "delete_review": "retain",
+      "release_blocking": false,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "run-dir-resilience",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
+    },
+    "adversarial-imported-runs-remain-visible": {
+      "grade": "battle",
+      "why_exists": "Ensure imported runs remain visibly imported across operator and replay surfaces.",
+      "delete_review": "retain",
+      "release_blocking": false,
+      "owning_family": "adversarial",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "operator-observability"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     }
   }
 }

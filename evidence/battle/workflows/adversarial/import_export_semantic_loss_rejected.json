@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-import-export-semantic-loss-rejected",
+  "graph_fixture": "diamond",
+  "assertions": [
+    "roundtrip_preserves_trust_critical_semantics",
+    "semantic_loss_rejected_even_when_shape_matches",
+    "imported_run_is_labeled_and_traceable"
+  ]
+}

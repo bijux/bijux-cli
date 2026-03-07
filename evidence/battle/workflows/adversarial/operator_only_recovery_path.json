@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-operator-only-recovery-path",
+  "graph_fixture": "ugly_realistic_dag_workflow",
+  "assertions": [
+    "recovery_requires_inspect_timeline_explain_failure",
+    "no_unsafe_automatic_recovery_path",
+    "operator_guidance_contains_actionable_steps"
+  ]
+}

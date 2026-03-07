@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-imported-runs-remain-visible",
+  "graph_fixture": "diamond",
+  "assertions": [
+    "imported_runs_tagged_as_imported",
+    "operator_surfaces_preserve_import_origin",
+    "replay_and_cache_use_import_visibility_guards"
+  ]
+}

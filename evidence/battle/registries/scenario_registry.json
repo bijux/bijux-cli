@@ -4,11 +4,132 @@
   "generated_from": "evidence/battle/workflows",
   "entries": [
     {
-      "scenario": "cache-hit-second-run",
-      "path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "scenario": "adversarial-cache-proof-corruption-plausible-outputs",
+      "path": "evidence/battle/workflows/adversarial/cache_proof_corruption_plausible_outputs.json",
       "trust_properties": [
         "tp_cache_integrity",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "adversarial-cancel-retry-bookkeeping-integrity",
+      "path": "evidence/battle/workflows/adversarial/cancel_retry_bookkeeping_integrity.json",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "adversarial-concurrency-retry-determinism",
+      "path": "evidence/battle/workflows/adversarial/concurrency_retry_determinism.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_timeout_retry_accounting"
+      ]
+    },
+    {
+      "scenario": "adversarial-env-leakage-via-adapters-blocked",
+      "path": "evidence/battle/workflows/adversarial/env_leakage_via_adapters_blocked.json",
+      "trust_properties": [
+        "tp_secret_redaction",
+        "tp_policy_enforcement"
+      ]
+    },
+    {
+      "scenario": "adversarial-import-export-semantic-loss-rejected",
+      "path": "evidence/battle/workflows/adversarial/import_export_semantic_loss_rejected.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_artifact_integrity",
         "tp_replay_equivalence"
+      ]
+    },
+    {
+      "scenario": "adversarial-imported-runs-remain-visible",
+      "path": "evidence/battle/workflows/adversarial/imported_runs_remain_visible.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_operator_observability"
+      ]
+    },
+    {
+      "scenario": "adversarial-missing-outputs-superficial-success-rejected",
+      "path": "evidence/battle/workflows/adversarial/missing_outputs_superficial_success_rejected.json",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "adversarial-operator-only-recovery-path",
+      "path": "evidence/battle/workflows/adversarial/operator_only_recovery_path.json",
+      "trust_properties": [
+        "tp_operator_observability",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "adversarial-partial-run-dir-not-finalized",
+      "path": "evidence/battle/workflows/adversarial/partial_run_dir_not_finalized.json",
+      "trust_properties": [
+        "tp_run_dir_resilience",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "adversarial-path-escape-via-declared-outputs-blocked",
+      "path": "evidence/battle/workflows/adversarial/path_escape_via_declared_outputs_blocked.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_policy_enforcement"
+      ]
+    },
+    {
+      "scenario": "adversarial-policy-denial-blocks-unsafe-execution",
+      "path": "evidence/battle/workflows/adversarial/policy_denial_blocks_unsafe_execution.json",
+      "trust_properties": [
+        "tp_policy_enforcement",
+        "tp_secret_redaction"
+      ]
+    },
+    {
+      "scenario": "adversarial-post-success-artifact-corruption",
+      "path": "evidence/battle/workflows/adversarial/post_success_artifact_corruption.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "adversarial-replay-semantic-drift-detection",
+      "path": "evidence/battle/workflows/adversarial/replay_semantic_drift_detection.json",
+      "trust_properties": [
+        "tp_replay_equivalence",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "scenario": "adversarial-tie-break-stability-under-contention",
+      "path": "evidence/battle/workflows/adversarial/tie_break_stability_under_contention.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "scenario": "artifact_heavy_workflow",
+      "path": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "branch_join_workflow",
+      "path": "evidence/battle/workflows/runtime/branch_join_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_state_machine_legality"
       ]
     },
     {
@@ -17,6 +138,55 @@
       "trust_properties": [
         "tp_cache_integrity",
         "tp_deterministic_scheduling"
+      ]
+    },
+    {
+      "scenario": "cache-hit-second-run",
+      "path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_replay_equivalence"
+      ]
+    },
+    {
+      "scenario": "cache_invalidation_workflow",
+      "path": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_deterministic_scheduling"
+      ]
+    },
+    {
+      "scenario": "container-execution-if-supported",
+      "path": "evidence/battle/workflows/container_execution_if_supported.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "corruption_workflow",
+      "path": "evidence/battle/workflows/runtime/corruption_workflow.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "e2e-minimal-parse-validate-run-inspect-replay",
+      "path": "evidence/battle/workflows/e2e_minimal.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_replay_equivalence",
+        "tp_operator_observability"
+      ]
+    },
+    {
+      "scenario": "e2e_matrix",
+      "path": "evidence/battle/workflows/e2e_matrix.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_operator_observability"
       ]
     },
     {
@@ -60,6 +230,14 @@
       ]
     },
     {
+      "scenario": "failure_heavy_workflow",
+      "path": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
       "scenario": "happy-diamond-outputs-and-manifest-totals",
       "path": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
       "trust_properties": [
@@ -99,63 +277,6 @@
       "trust_properties": [
         "tp_import_export_compatibility",
         "tp_artifact_integrity"
-      ]
-    },
-    {
-      "scenario": "policy-deny-env-clean-env-allowlist",
-      "path": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
-      "trust_properties": [
-        "tp_policy_enforcement",
-        "tp_config_policy_determinism",
-        "tp_secret_redaction"
-      ]
-    },
-    {
-      "scenario": "replay-semantic-comparison",
-      "path": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
-      "trust_properties": [
-        "tp_replay_equivalence",
-        "tp_plan_truth"
-      ]
-    },
-    {
-      "scenario": "artifact_heavy_workflow",
-      "path": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
-      "trust_properties": [
-        "tp_artifact_integrity",
-        "tp_state_machine_legality"
-      ]
-    },
-    {
-      "scenario": "branch_join_workflow",
-      "path": "evidence/battle/workflows/runtime/branch_join_workflow.json",
-      "trust_properties": [
-        "tp_deterministic_scheduling",
-        "tp_state_machine_legality"
-      ]
-    },
-    {
-      "scenario": "cache_invalidation_workflow",
-      "path": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
-      "trust_properties": [
-        "tp_cache_integrity",
-        "tp_deterministic_scheduling"
-      ]
-    },
-    {
-      "scenario": "corruption_workflow",
-      "path": "evidence/battle/workflows/runtime/corruption_workflow.json",
-      "trust_properties": [
-        "tp_artifact_integrity",
-        "tp_run_dir_resilience"
-      ]
-    },
-    {
-      "scenario": "failure_heavy_workflow",
-      "path": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
-      "trust_properties": [
-        "tp_failure_propagation",
-        "tp_state_machine_legality"
       ]
     },
     {
@@ -216,12 +337,29 @@
       ]
     },
     {
+      "scenario": "policy-deny-env-clean-env-allowlist",
+      "path": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "trust_properties": [
+        "tp_policy_enforcement",
+        "tp_config_policy_determinism",
+        "tp_secret_redaction"
+      ]
+    },
+    {
       "scenario": "policy_violation_workflow",
       "path": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
       "trust_properties": [
         "tp_policy_enforcement",
         "tp_secret_redaction",
         "tp_config_policy_determinism"
+      ]
+    },
+    {
+      "scenario": "replay-semantic-comparison",
+      "path": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "trust_properties": [
+        "tp_replay_equivalence",
+        "tp_plan_truth"
       ]
     },
     {
@@ -266,6 +404,14 @@
       ]
     },
     {
+      "scenario": "selection-include-exclude-filters",
+      "path": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
       "scenario": "timeout_workflow",
       "path": "evidence/battle/workflows/runtime/timeout_workflow.json",
       "trust_properties": [
@@ -288,30 +434,6 @@
       "trust_properties": [
         "tp_import_export_compatibility",
         "tp_replay_equivalence"
-      ]
-    },
-    {
-      "scenario": "selection-include-exclude-filters",
-      "path": "evidence/battle/workflows/selection/include_exclude_filters.json",
-      "trust_properties": [
-        "tp_plan_truth",
-        "tp_state_machine_legality"
-      ]
-    },
-    {
-      "scenario": "e2e_matrix",
-      "path": "evidence/battle/workflows/e2e_matrix.json",
-      "trust_properties": [
-        "tp_plan_truth",
-        "tp_operator_observability"
-      ]
-    },
-    {
-      "scenario": "e2e_matrix",
-      "path": "evidence/battle/workflows/e2e_matrix.json",
-      "trust_properties": [
-        "tp_plan_truth",
-        "tp_operator_observability"
       ]
     }
   ]

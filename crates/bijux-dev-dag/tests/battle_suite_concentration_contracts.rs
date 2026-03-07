@@ -100,6 +100,17 @@ fn collect_json_files(root: &Path, out: &mut Vec<PathBuf>) {
 #[test]
 fn battle_trust_mapping_and_metadata_have_no_orphans() {
     let root = repo_root();
+    let release_subset: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_release_blocking_subset.json"))
+            .expect("read release subset policy"),
+    )
+    .expect("parse release subset policy");
+    let advisory: BTreeSet<String> = release_subset["advisory_scenarios"]
+        .as_array()
+        .expect("advisory_scenarios array")
+        .iter()
+        .map(|value| value.as_str().expect("advisory scenario id").to_string())
+        .collect();
     let policy: BattleTrustPolicy = serde_json::from_str(
         &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
             .expect("battle policy"),
@@ -177,7 +188,14 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
         assert_eq!(scenario_metadata.grade, "battle");
         assert!(!scenario_metadata.why_exists.trim().is_empty());
         assert_eq!(scenario_metadata.delete_review, "retain");
-        assert!(scenario_metadata.release_blocking);
+        if advisory.contains(scenario) {
+            assert!(
+                !scenario_metadata.release_blocking,
+                "advisory scenario must not be release-blocking: {scenario}"
+            );
+        } else {
+            assert!(scenario_metadata.release_blocking);
+        }
         assert!(!scenario_metadata.owning_family.trim().is_empty());
         assert!(!scenario_metadata.expected_outcome_class.trim().is_empty());
         assert!(!scenario_metadata.expected_invariant_classes.is_empty());

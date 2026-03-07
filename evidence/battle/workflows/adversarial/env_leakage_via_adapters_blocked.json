@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-env-leakage-via-adapters-blocked",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "adapter_env_leakage_denied",
+    "secret_redaction_enforced_in_traces",
+    "policy_surface_records_leakage_attempt"
+  ]
+}

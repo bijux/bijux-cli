@@ -1,0 +1,9 @@
+{
+  "scenario_id": "adversarial-post-success-artifact-corruption",
+  "graph_fixture": "graph_retry",
+  "assertions": [
+    "artifact_verifier_rejects_post_success_tamper",
+    "run_status_not_promoted_after_corruption",
+    "operator_inspection_exposes_corruption_class"
+  ]
+}
