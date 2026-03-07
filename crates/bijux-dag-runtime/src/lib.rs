@@ -1,75 +1,143 @@
+#[path = "adapters/adapter.rs"]
 mod adapter;
 pub mod adapters;
+#[path = "adapters/conformance.rs"]
 pub mod adapter_conformance;
+#[path = "adapters/api.rs"]
 pub mod adapter_api;
+#[path = "adapters/sdk.rs"]
 mod adapter_sdk;
+#[path = "internal/control/api.rs"]
 pub mod api;
+#[path = "internal/analysis/adaptive_scheduler.rs"]
 mod adaptive_scheduler;
+#[path = "internal/workflow/ai_operator_assist.rs"]
 mod ai_operator_assist;
+#[path = "internal/identity/auth_identity.rs"]
 mod auth_identity;
+#[path = "internal/identity/authz_policy.rs"]
 mod authz_policy;
+#[path = "adapters/async_adapter.rs"]
 mod async_adapter;
+#[path = "backend/runtime/backend_cluster.rs"]
 mod backend_cluster;
+#[path = "backend/runtime/batch_execution.rs"]
 mod batch_execution;
+#[path = "internal/control/clock.rs"]
 mod clock;
+#[path = "backend/runtime/container_execution.rs"]
 mod container_execution;
+#[path = "internal/control/config.rs"]
 pub mod config;
+#[path = "diagnostics/runtime/control_plane.rs"]
 mod control_plane;
+#[path = "diagnostics/runtime/control_plane_api.rs"]
 mod control_plane_api;
+#[path = "internal/analysis/cost_optimization.rs"]
 mod cost_optimization;
+#[path = "backend/distributed/coordination.rs"]
 mod coordination;
 pub mod cache;
+#[path = "internal/analysis/dataset_semantics.rs"]
 mod dataset_semantics;
+#[path = "backend/distributed/distributed.rs"]
 mod distributed;
+#[path = "runtime_core/execution/engine.rs"]
 mod engine;
+#[path = "runtime_core/execution/flow.rs"]
 pub mod execution;
+#[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
+#[path = "backend/distributed/distribution_readiness.rs"]
 mod distribution_readiness;
+#[path = "runtime_core/execution/context.rs"]
 pub mod execution_context;
+#[path = "runtime_core/planning/execution_plan.rs"]
 mod execution_plan;
+#[path = "adapters/external.rs"]
 mod external_adapter;
+#[path = "backend/distributed/federated_scheduling.rs"]
 mod federated_scheduling;
+#[path = "internal/ext/formal_verification.rs"]
 mod formal_verification;
+#[path = "backend/distributed/geo_federation.rs"]
 mod geo_federation;
+#[path = "backend/distributed/ha_scheduler.rs"]
 mod ha_scheduler;
+#[path = "internal/control/io.rs"]
 mod io;
 pub mod policy;
+#[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
+#[path = "runtime_core/governance/invariants.rs"]
 pub mod invariants;
+#[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
+#[path = "runtime_core/execution/node_result.rs"]
 pub mod node_result;
+#[path = "diagnostics/runtime/observability.rs"]
 mod observability;
+#[path = "diagnostics/runtime/observability_deep.rs"]
 mod observability_deep;
+#[path = "diagnostics/runtime/operations_governance.rs"]
 mod operations_governance;
+#[path = "artifacts/storage/path_authorization.rs"]
 mod path_authorization;
+#[path = "runtime_core/planning/planner.rs"]
 mod planner;
+#[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
+#[path = "internal/ext/extension_catalog.rs"]
 mod extension_catalog;
+#[path = "artifacts/storage/recovery.rs"]
 mod recovery;
+#[path = "backend/runtime/remote_executor.rs"]
 mod remote_executor;
+#[path = "backend/runtime/remote_execution_model.rs"]
 mod remote_execution_model;
+#[path = "adapters/runtime_registry.rs"]
 mod registry;
+#[path = "runtime_core/execution/run_context.rs"]
 pub mod run_context;
 pub mod runtime_core;
+#[path = "internal/control/services.rs"]
 pub mod services;
+#[path = "runtime_core/execution/run_state.rs"]
 mod run_state;
+#[path = "runtime_core/governance/semantics.rs"]
 mod runtime_semantics;
+#[path = "runtime_core/governance/sacred_execution.rs"]
 mod sacred_execution;
+#[path = "runtime_core/execution/scheduler.rs"]
 mod scheduler;
+#[path = "runtime_core/execution/scheduler_workload.rs"]
 mod scheduler_workload;
+#[path = "internal/identity/security_env.rs"]
 mod security_env;
+#[path = "artifacts/storage/semantic_lineage.rs"]
 mod semantic_lineage;
+#[path = "internal/identity/secrets_security.rs"]
 mod secrets_security;
+#[path = "runtime_core/execution/state_machine.rs"]
 pub mod state_machine;
+#[path = "artifacts/storage/store.rs"]
 mod store;
+#[path = "internal/identity/supply_chain_trust.rs"]
 mod supply_chain_trust;
+#[path = "internal/control/task_contract.rs"]
 mod task_contract;
+#[path = "internal/control/task_types.rs"]
 mod task_types;
+#[path = "internal/identity/tenancy.rs"]
 mod tenancy;
+#[path = "artifacts/storage/trace.rs"]
 pub mod trace;
+#[path = "internal/control/selectors.rs"]
 pub mod selectors;
+#[path = "backend/runtime/subprocess.rs"]
 pub mod subprocess;
 pub mod builtins;
+#[path = "internal/control/runtime.rs"]
 mod runtime;
 mod backend;
 mod replay;
@@ -77,22 +145,30 @@ mod artifacts;
 mod diagnostics;
 mod error;
 mod internal;
+#[path = "artifacts/storage/upgrade_compatibility.rs"]
 mod upgrade_compatibility;
+#[path = "internal/perf/performance_capacity.rs"]
 mod performance_capacity;
+#[path = "internal/workflow/workflow_product.rs"]
 mod workflow_product;
 #[cfg(test)]
+#[path = "internal/testing/test_support.rs"]
 mod test_support;
 #[cfg(test)]
+#[path = "internal/testing/runtime_boundary_tests.rs"]
 mod runtime_boundary_tests;
 #[cfg(test)]
+#[path = "internal/testing/adapter_contract_tests.rs"]
 mod adapter_contract_tests;
 #[cfg(test)]
+#[path = "internal/testing/invariants_tests.rs"]
 mod invariants_tests;
 #[cfg(test)]
+#[path = "internal/testing/runtime_policy_trace_tests.rs"]
 mod runtime_policy_trace_tests;
 #[cfg(test)]
+#[path = "internal/testing/state_machine_tests.rs"]
 mod state_machine_tests;
-
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
     write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
