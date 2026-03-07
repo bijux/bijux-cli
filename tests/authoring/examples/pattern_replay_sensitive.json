@@ -2,7 +2,7 @@
   "spec": "0.1",
   "meta": {"name": "pattern_replay_sensitive", "owners": [], "tags": ["replay"]},
   "nodes": [
-    {"id": "deterministic_step", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "det"}}
+    {"id": "deterministic_step", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "deterministic_step/out"}], "params": {"value": "det"}}
   ],
   "edges": []
 }

@@ -2,9 +2,9 @@
   "spec": "0.1",
   "meta": {"name": "pattern_fanout", "owners": [], "tags": []},
   "nodes": [
-    {"id": "source", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "s"}},
-    {"id": "n1", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "1"}},
-    {"id": "n2", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "2"}}
+    {"id": "source", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "source/out"}], "params": {"value": "s"}},
+    {"id": "n1", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "n1/out"}], "params": {"value": "1"}},
+    {"id": "n2", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "n2/out"}], "params": {"value": "2"}}
   ],
   "edges": [
     {"from": {"node_id": "source", "port": "out"}, "to": {"node_id": "n1", "port": "in"}},

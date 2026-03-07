@@ -9,8 +9,7 @@
       "outputs": [{"name": "out", "path": "out/data.json"}],
       "params": {"argv": ["/bin/sh", "-c", "printf '{\"ok\":true}' > ../outputs/out/data.json"]},
       "effects": ["filesystem", "network"],
-      "retry": {"max_attempts": 2, "backoff_ms": 100},
-      "resources": {"cpu": 1}
+      "resources": {"cpu": 1, "mem_mb": 256}
     },
     {
       "id": "transform",

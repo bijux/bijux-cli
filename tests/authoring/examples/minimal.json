@@ -6,7 +6,7 @@
       "id": "const_hello",
       "kind": "const",
       "inputs": [],
-      "outputs": [{"name": "out", "path": "out"}],
+      "outputs": [{"name": "out", "path": "const_hello/out"}],
       "params": {"value": "hello"}
     }
   ],
