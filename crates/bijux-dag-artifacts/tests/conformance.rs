@@ -4,6 +4,10 @@ use bijux_dag_artifacts::paths::is_normalized_relative_path;
 use bijux_dag_artifacts::proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
 use bijux_dag_artifacts::schema::{validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode};
 use bijux_dag_artifacts::{write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex};
+use hex as _;
+use serde as _;
+use sha2 as _;
+use thiserror as _;
 use std::fs;
 
 #[test]

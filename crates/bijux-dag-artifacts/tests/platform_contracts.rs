@@ -5,6 +5,12 @@ use bijux_dag_artifacts::platform::{
     run_store_conformance,
 };
 use bijux_dag_artifacts::store::ArtifactStoreBackend;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
 
 #[derive(Default)]
 struct MemoryStore(std::sync::Mutex<std::collections::BTreeMap<String, Vec<u8>>>);

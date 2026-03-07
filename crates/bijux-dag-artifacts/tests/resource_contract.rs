@@ -1,5 +1,10 @@
 use bijux_dag_artifacts::{Manifest, NodeTrace, RunSummary};
+use hex as _;
+use serde as _;
 use serde_json::json;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
 
 #[test]
 fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
