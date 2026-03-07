@@ -17,6 +17,7 @@
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
 - [Scheduler state-space contract](./spec/SCHEDULER_STATESPACE_CONTRACT.md)
+- [Execution acceptance gates](./spec/EXECUTION_ACCEPTANCE_GATES.md)
 - [Security policy](./SECURITY.md)
 - [Secure DAG authoring patterns](./SECURE_DAG_AUTHORING.md)
 - [Secret leak incident response playbook](./SECRET_LEAK_INCIDENT_PLAYBOOK.md)

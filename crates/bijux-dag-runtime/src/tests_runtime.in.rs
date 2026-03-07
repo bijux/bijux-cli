@@ -1139,4 +1139,51 @@ mod tests {
             assert!(run_dir.join("manifest.json").exists());
         }
     }
+
+    #[test]
+    fn run_id_collision_is_deterministic_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let options = RuntimeConfig {
+            run_id: Some("fixed-run-id".to_string()),
+            ..RuntimeConfig::default()
+        };
+        let first = runtime.run(&sample_graph(), dir.path(), options.clone());
+        assert!(first.is_ok());
+        let second = runtime.run(&sample_graph(), dir.path(), options);
+        assert!(second.is_err());
+    }
+
+    #[test]
+    fn latest_symlink_updates_do_not_mutate_previous_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let latest = dir.path().join("latest");
+        let runtime = Runtime::new();
+        let first = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    latest_symlink: Some(latest.clone()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+        let first_manifest = fs::read_to_string(first.join("manifest.json")).unwrap();
+
+        let second = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    latest_symlink: Some(latest.clone()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+        let first_manifest_after = fs::read_to_string(first.join("manifest.json")).unwrap();
+        let second_manifest = fs::read_to_string(second.join("manifest.json")).unwrap();
+        assert_eq!(first_manifest, first_manifest_after);
+        assert_ne!(first_manifest_after, second_manifest);
+    }
 }

@@ -980,6 +980,19 @@ pub fn execute(
     }
     manifest.finished_unix_ms = finished_unix_ms;
     manifest.node_counts = count_nodes(&status_map);
+    let trace_statuses: Vec<NodeStatus> = status_map.values().cloned().collect();
+    let invariant_counts = crate::invariants::RunNodeCounts {
+        success: manifest.node_counts.success,
+        failed: manifest.node_counts.failed,
+        skipped: manifest.node_counts.skipped,
+        cached: manifest.node_counts.cached,
+    };
+    if !crate::invariants::run_summary_invariant_ok(invariant_counts, &trace_statuses) {
+        return Err(RuntimeError::Executor(
+            "run summary invariant violated: manifest totals do not match trace totals"
+                .to_string(),
+        ));
+    }
     manifest.run_summary = Some(bijux_dag_artifacts::RunSummary {
         total_nodes: manifest.node_counts.success
             + manifest.node_counts.failed
