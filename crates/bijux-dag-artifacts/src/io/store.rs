@@ -1,8 +1,28 @@
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArtifactStoreSupportLevel {
+    Implemented,
+    ModeledOnly,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArtifactStoreCapabilities {
+    pub support_level: ArtifactStoreSupportLevel,
+    pub can_write_bytes: bool,
+    pub can_read_bytes: bool,
+}
+
 pub trait ArtifactStoreBackend: Send + Sync {
     fn write_bytes(&self, key: &str, bytes: &[u8]) -> Result<(), String>;
     fn read_bytes(&self, key: &str) -> Result<Vec<u8>, String>;
+    fn capabilities(&self) -> ArtifactStoreCapabilities {
+        ArtifactStoreCapabilities {
+            support_level: ArtifactStoreSupportLevel::Implemented,
+            can_write_bytes: true,
+            can_read_bytes: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +64,14 @@ impl ArtifactStoreBackend for ObjectArtifactStore {
     }
 
     fn read_bytes(&self, _key: &str) -> Result<Vec<u8>, String> {
-        Err("object store backend is not implemented in this runtime".to_string())
+        Err("object store backend is modeled-only in this runtime".to_string())
+    }
+
+    fn capabilities(&self) -> ArtifactStoreCapabilities {
+        ArtifactStoreCapabilities {
+            support_level: ArtifactStoreSupportLevel::ModeledOnly,
+            can_write_bytes: false,
+            can_read_bytes: false,
+        }
     }
 }

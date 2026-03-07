@@ -125,6 +125,19 @@ pub struct ArtifactGarbageCollectionPlan {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArtifactGarbageCollectionExplainEntry {
+    pub artifact_id: ArtifactId,
+    pub action: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArtifactGarbageCollectionExplain {
+    pub lineage_snapshot_id: String,
+    pub entries: Vec<ArtifactGarbageCollectionExplainEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ArtifactImportCompatibility {
     pub source_spec_version: String,
     pub target_spec_version: String,
@@ -214,6 +227,34 @@ pub fn plan_lineage_safe_gc(
         preserved_artifacts: preserved,
         collectable_artifacts: collectable,
         lineage_snapshot_id: lineage_snapshot_id.into(),
+    }
+}
+
+pub fn explain_lineage_safe_gc(
+    referenced_artifacts: &[ArtifactId],
+    all_artifacts: &[ArtifactId],
+    lineage_snapshot_id: impl Into<String>,
+) -> ArtifactGarbageCollectionExplain {
+    let referenced: BTreeSet<_> = referenced_artifacts.iter().cloned().collect();
+    let mut entries = Vec::new();
+    for artifact in all_artifacts {
+        if referenced.contains(artifact) {
+            entries.push(ArtifactGarbageCollectionExplainEntry {
+                artifact_id: artifact.clone(),
+                action: "preserve".to_string(),
+                reason: "artifact is referenced by active lineage".to_string(),
+            });
+        } else {
+            entries.push(ArtifactGarbageCollectionExplainEntry {
+                artifact_id: artifact.clone(),
+                action: "collect".to_string(),
+                reason: "artifact is unreferenced in active lineage snapshot".to_string(),
+            });
+        }
+    }
+    ArtifactGarbageCollectionExplain {
+        lineage_snapshot_id: lineage_snapshot_id.into(),
+        entries,
     }
 }
 
