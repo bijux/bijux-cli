@@ -6,23 +6,26 @@ mod cli_model;
 mod commands;
 #[path = "commands/config_surface.rs"]
 mod config_surface;
+#[path = "replay/diff.rs"]
+mod diff;
 #[path = "commands/dispatch.rs"]
 mod dispatch;
 #[path = "inspect/doctor_cmd.rs"]
 mod doctor_cmd;
-#[path = "replay/diff.rs"]
-mod diff;
 mod explain;
 #[path = "explain/cmd.rs"]
 mod explain_cmd;
 #[path = "commands/export_cmd.rs"]
 mod export_cmd;
+mod format;
 #[path = "read/fs_input.rs"]
 mod fs_input;
-mod format;
 mod graph;
 #[path = "graph/cmd.rs"]
 mod graph_cmd;
+#[path = "commands/import_cmd.rs"]
+mod import_cmd;
+mod inspect;
 mod migrate;
 mod read;
 #[path = "read/read_graph.rs"]
@@ -30,18 +33,15 @@ mod read_graph;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
-#[path = "inspect/run_views.rs"]
-mod run_views;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
+#[path = "inspect/run_views.rs"]
+mod run_views;
 #[path = "inspect/status_cmd.rs"]
 mod status_cmd;
 #[path = "graph/validate_cmd.rs"]
 mod validate_cmd;
 mod write;
-#[path = "commands/import_cmd.rs"]
-mod import_cmd;
-mod inspect;
 
 pub use config_surface::{
     config_fingerprint, default_runtime_config, normalize_runtime_config, policy_evaluation_trace,
@@ -59,8 +59,11 @@ use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{
-    adapter_registry_dump, build_plan, registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeConfig, Selector, SelectorSet,
+    adapter_registry_dump, build_plan, registered_adapters, CacheMode, MaterializeMode, Runtime,
+    RuntimeConfig, Selector, SelectorSet,
 };
+#[cfg(test)]
+use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, CacheModeArg, Commands, ConfigCommands, DagCli,
@@ -78,13 +81,9 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tar::{Archive, Builder};
 use thiserror as _;
-#[cfg(test)]
-use bijux_dag_testkit as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command()
-        .name("dag")
-        .subcommand_required(false)
+    DagCli::command().name("dag").subcommand_required(false)
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
@@ -97,7 +96,6 @@ pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
     let cli = DagCli::from_arg_matches(matches).map_err(|_| ExitCode::from(2))?;
     run(cli)
 }
-
 
 #[derive(Debug, Serialize)]
 struct LintDiagnostic {
@@ -619,7 +617,14 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 let run_dir = resolve_run_dir(root, run_id);
                 let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
                 if cli.json {
-                    return emit_json(&cli, "dag.runs.show", true, summary, Vec::new(), ExitCode::SUCCESS);
+                    return emit_json(
+                        &cli,
+                        "dag.runs.show",
+                        true,
+                        summary,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
                 }
                 println!("{}", format_show_human(&summary));
                 Ok(ExitCode::SUCCESS)
@@ -628,7 +633,14 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 let run_dir = resolve_run_dir(root, run_id);
                 let summary = inspect_summary(&run_dir).map_err(|_| ExitCode::from(3))?;
                 if cli.json {
-                    return emit_json(&cli, "dag.runs.inspect", true, summary, Vec::new(), ExitCode::SUCCESS);
+                    return emit_json(
+                        &cli,
+                        "dag.runs.inspect",
+                        true,
+                        summary,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
                 }
                 println!("{}", format_inspect_human(&summary));
                 Ok(ExitCode::SUCCESS)
@@ -637,7 +649,14 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 let run_dir = resolve_run_dir(root, run_id);
                 let tree = run_tree(&run_dir).map_err(|_| ExitCode::from(3))?;
                 if cli.json {
-                    return emit_json(&cli, "dag.runs.tree", true, tree, Vec::new(), ExitCode::SUCCESS);
+                    return emit_json(
+                        &cli,
+                        "dag.runs.tree",
+                        true,
+                        tree,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
                 }
                 println!("{}", serde_json::to_string_pretty(&tree).unwrap());
                 Ok(ExitCode::SUCCESS)
@@ -695,7 +714,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 print_human_diff(&serde_json::to_value(&diff).unwrap());
                 if *explain {
                     println!("explain: graph fingerprint change implies cache invalidation");
-                    println!("replay_reason: {}", diff.replay_equivalence.reason_report.summary);
+                    println!(
+                        "replay_reason: {}",
+                        diff.replay_equivalence.reason_report.summary
+                    );
                     if !diff.replay_equivalence.cause_groups.is_empty() {
                         println!(
                             "replay_cause_groups: {}",
@@ -725,7 +747,11 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         ok,
                         report,
                         Vec::new(),
-                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                        if ok {
+                            ExitCode::SUCCESS
+                        } else {
+                            ExitCode::from(3)
+                        },
                     );
                 }
                 println!("status: {}", if ok { "ok" } else { "invalid" });
@@ -745,7 +771,11 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         ok,
                         report,
                         Vec::new(),
-                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                        if ok {
+                            ExitCode::SUCCESS
+                        } else {
+                            ExitCode::from(3)
+                        },
                     );
                 }
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
@@ -885,10 +915,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 if explain {
                     println!("explain: graph fingerprint change implies cache invalidation");
                     println!("explain: node fingerprint changes indicate recomputation scope");
-                    println!(
-                        "replay_equivalent: {}",
-                        diff.replay_equivalence.equivalent
-                    );
+                    println!("replay_equivalent: {}", diff.replay_equivalence.equivalent);
                     if !diff.replay_equivalence.reasons.is_empty() {
                         println!(
                             "replay_difference_reasons: {:?}",
@@ -1147,7 +1174,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Status { run_dir } => {
             let manifest = read_file(&run_dir.join("manifest.json"))?;
             let nodes_dir = run_dir.join("nodes");
-            let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
+            let manifest_json =
+                serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
             let mut statuses = Vec::new();
             if nodes_dir.exists() {
                 for entry in fs::read_dir(nodes_dir).map_err(|_| ExitCode::from(3))? {
@@ -1155,7 +1183,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     let trace_path = entry.path().join("trace.json");
                     if trace_path.exists() {
                         let t = read_file(&trace_path)?;
-                        statuses.push(serde_json::from_str::<Value>(&t).unwrap_or(Value::String(t)));
+                        statuses
+                            .push(serde_json::from_str::<Value>(&t).unwrap_or(Value::String(t)));
                     }
                 }
             }
@@ -1648,7 +1677,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         "dag.import",
                         false,
                         summary,
-                        vec![json!({"message":"unsupported bundle version","remediation":"export with export-bundle/v0.1"})],
+                        vec![
+                            json!({"message":"unsupported bundle version","remediation":"export with export-bundle/v0.1"}),
+                        ],
                         ExitCode::from(3),
                     );
                 }
@@ -1785,7 +1816,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_dir,
             export_bundle,
         } => {
-            let provided = dag.is_some() as u8 + run_dir.is_some() as u8 + export_bundle.is_some() as u8;
+            let provided =
+                dag.is_some() as u8 + run_dir.is_some() as u8 + export_bundle.is_some() as u8;
             if provided != 1 {
                 return Err(ExitCode::from(2));
             }
@@ -1809,7 +1841,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                             "dag.version-inspect",
                             false,
                             report,
-                            vec![json!({"message":"unsupported graph schema version","remediation":"use spec 0.1"} )],
+                            vec![
+                                json!({"message":"unsupported graph schema version","remediation":"use spec 0.1"} ),
+                            ],
                             ExitCode::from(2),
                         );
                     }
@@ -1818,7 +1852,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             if let Some(path) = run_dir {
                 let manifest = read_file(&path.join("manifest.json"))?;
-                let parsed: Value = serde_json::from_str(&manifest).map_err(|_| ExitCode::from(3))?;
+                let parsed: Value =
+                    serde_json::from_str(&manifest).map_err(|_| ExitCode::from(3))?;
                 let run_version = parsed
                     .get("manifest_version")
                     .cloned()
@@ -1833,7 +1868,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                             "dag.version-inspect",
                             false,
                             report,
-                            vec![json!({"message":"unsupported run-dir format version","remediation":"use run-manifest/v0.1"} )],
+                            vec![
+                                json!({"message":"unsupported run-dir format version","remediation":"use run-manifest/v0.1"} ),
+                            ],
                             ExitCode::from(2),
                         );
                     }
@@ -1842,7 +1879,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             if let Some(path) = export_bundle {
                 let payload = read_file(path)?;
-                let parsed: Value = serde_json::from_str(&payload).map_err(|_| ExitCode::from(3))?;
+                let parsed: Value =
+                    serde_json::from_str(&payload).map_err(|_| ExitCode::from(3))?;
                 let bundle_version = parsed
                     .get("export_bundle_version")
                     .cloned()
@@ -1866,7 +1904,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                             "dag.version-inspect",
                             false,
                             report,
-                            vec![json!({"message":"unsupported export bundle version","remediation":"use export-bundle/v0.1"} )],
+                            vec![
+                                json!({"message":"unsupported export bundle version","remediation":"use export-bundle/v0.1"} ),
+                            ],
                             ExitCode::from(2),
                         );
                     }
@@ -1901,8 +1941,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     materialize_inputs: materialize_inputs.map(map_materialize_surface),
                     policy: None,
                 };
-                let effective =
-                    resolve_effective_config(cli_override, explicit, env_cfg, default_runtime_config());
+                let effective = resolve_effective_config(
+                    cli_override,
+                    explicit,
+                    env_cfg,
+                    default_runtime_config(),
+                );
                 let payload = serde_json::to_value(&effective).map_err(|_| ExitCode::from(3))?;
                 if cli.json {
                     return emit_json(
@@ -2039,12 +2083,15 @@ fn env_partial_runtime_config() -> Option<PartialRuntimeSurfaceConfig> {
     }
 }
 
-fn load_partial_config(path: Option<&Path>) -> Result<Option<PartialRuntimeSurfaceConfig>, ExitCode> {
+fn load_partial_config(
+    path: Option<&Path>,
+) -> Result<Option<PartialRuntimeSurfaceConfig>, ExitCode> {
     let Some(path) = path else {
         return Ok(None);
     };
     let payload = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
-    let parsed = serde_json::from_str::<PartialRuntimeSurfaceConfig>(&payload).map_err(|_| ExitCode::from(2))?;
+    let parsed = serde_json::from_str::<PartialRuntimeSurfaceConfig>(&payload)
+        .map_err(|_| ExitCode::from(2))?;
     Ok(Some(parsed))
 }
 
@@ -2213,10 +2260,7 @@ fn verify_cache_dir(dir: &Path) -> Result<serde_json::Value, ExitCode> {
     Ok(json!({ "checked": checked, "corrupt": corrupt, "corrupt_keys": corrupt_keys }))
 }
 
-fn verify_cache_dirs(
-    local: &Path,
-    remote: Option<&Path>,
-) -> Result<serde_json::Value, ExitCode> {
+fn verify_cache_dirs(local: &Path, remote: Option<&Path>) -> Result<serde_json::Value, ExitCode> {
     let local_report = verify_cache_dir(local)?;
     let mut checked_total = local_report["checked"].as_u64().unwrap_or(0);
     let mut corrupt_total = local_report["corrupt"].as_u64().unwrap_or(0);
@@ -2370,8 +2414,10 @@ fn explain_cache_key(
     }
     let mut meta = Value::Null;
     if meta_path.exists() {
-        meta = serde_json::from_str::<Value>(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
-            .map_err(|_| ExitCode::from(3))?;
+        meta = serde_json::from_str::<Value>(
+            &fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?,
+        )
+        .map_err(|_| ExitCode::from(3))?;
         if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(key) {
             reasons.push("node_fingerprint mismatch".to_string());
         }
@@ -2381,13 +2427,19 @@ fn explain_cache_key(
             reasons.push("adapter_id mismatch".to_string());
         }
         if !expected_adapter_version.is_empty()
-            && meta.get("adapter_version").and_then(|v| v.as_str()) != Some(expected_adapter_version)
+            && meta.get("adapter_version").and_then(|v| v.as_str())
+                != Some(expected_adapter_version)
         {
             reasons.push("adapter_version mismatch".to_string());
         }
     }
     let eligible = reasons.is_empty()
-        && verify_cache_entry_cli(entry.as_path(), key, expected_adapter_id, expected_adapter_version)?;
+        && verify_cache_entry_cli(
+            entry.as_path(),
+            key,
+            expected_adapter_id,
+            expected_adapter_version,
+        )?;
     if !eligible && reasons.is_empty() {
         reasons.push("output proof verification failed".to_string());
     }
@@ -2472,8 +2524,10 @@ fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<Value, ExitC
         if !meta_path.exists() {
             return Ok(json!({}));
         }
-        serde_json::from_str::<Value>(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
-            .map_err(|_| ExitCode::from(3))
+        serde_json::from_str::<Value>(
+            &fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?,
+        )
+        .map_err(|_| ExitCode::from(3))
     }
     let a_path = cache_dir.join(key_a);
     let b_path = cache_dir.join(key_b);
@@ -2664,7 +2718,8 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
                 }
             }
             if deep {
-                let typed_parse: Result<bijux_dag_artifacts::NodeTrace, _> = serde_json::from_str(&data);
+                let typed_parse: Result<bijux_dag_artifacts::NodeTrace, _> =
+                    serde_json::from_str(&data);
                 if typed_parse.is_err() {
                     errors.push(format!(
                         "trace schema parse failed: {}",
@@ -2688,8 +2743,14 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
                 }
             }
             if deep {
-                let started = val.get("started_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
-                let finished = val.get("finished_unix_ms").and_then(|v| v.as_u64()).unwrap_or(0);
+                let started = val
+                    .get("started_unix_ms")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0);
+                let finished = val
+                    .get("finished_unix_ms")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0);
                 if !bijux_dag_runtime::invariants::trace_time_order_ok(started, finished) {
                     invariant_violations.push(format!(
                         "INV-TRACE-TIME-001 violation in {}",
@@ -2706,15 +2767,16 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
         skipped: manifest.node_counts.skipped,
         cached: manifest.node_counts.cached,
     };
-    if !bijux_dag_runtime::invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses) {
-        invariant_violations.push("INV-RUN-COUNTS-001 manifest totals do not match node traces".to_string());
+    if !bijux_dag_runtime::invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses)
+    {
+        invariant_violations
+            .push("INV-RUN-COUNTS-001 manifest totals do not match node traces".to_string());
     }
     if manifest.status == "completed"
         && !bijux_dag_runtime::invariants::terminal_run_has_terminal_node(&observed_statuses)
     {
-        invariant_violations.push(
-            "INV-RUN-TERMINAL-001 completed run has no terminal node statuses".to_string(),
-        );
+        invariant_violations
+            .push("INV-RUN-TERMINAL-001 completed run has no terminal node statuses".to_string());
     }
 
     if deep || strict {
@@ -2728,7 +2790,10 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
     if strict {
         for rel in ["graph.snapshot.json", "nodes"] {
             if !run_dir.join(rel).exists() {
-                errors.push(format!("strict verify missing required run artifact: {}", rel));
+                errors.push(format!(
+                    "strict verify missing required run artifact: {}",
+                    rel
+                ));
             }
         }
         if manifest.manifest_version != "run-manifest/v0.1" {
@@ -2768,16 +2833,11 @@ fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
     }
 }
 
-
 include!("graph/helpers.in.rs");
 
 fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     let mut violations = Vec::new();
-    if bundle
-        .get("bundle_version")
-        .and_then(|v| v.as_str())
-        != Some("export-bundle/v0.1")
-    {
+    if bundle.get("bundle_version").and_then(|v| v.as_str()) != Some("export-bundle/v0.1") {
         violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
     }
     match bundle.get("export_mode").and_then(|v| v.as_str()) {
@@ -2790,7 +2850,11 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     if bundle.get("graph_snapshot").is_none() {
         violations.push("INV-EXPORT-VERIFY-001 missing graph_snapshot".to_string());
     }
-    if bundle.get("node_traces").and_then(|v| v.as_object()).is_none() {
+    if bundle
+        .get("node_traces")
+        .and_then(|v| v.as_object())
+        .is_none()
+    {
         violations.push("INV-EXPORT-VERIFY-001 missing node_traces map".to_string());
     }
     if bundle.get("outputs").and_then(|v| v.as_object()).is_none() {
@@ -2800,7 +2864,9 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("manifest-only")
         && !matches!(files, None | Some(serde_json::Value::Null))
     {
-        violations.push("INV-EXPORT-MODE-001 manifest-only bundle must not include files payload".to_string());
+        violations.push(
+            "INV-EXPORT-MODE-001 manifest-only bundle must not include files payload".to_string(),
+        );
     }
     if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("with-files")
         && !files.is_some_and(|v| v.is_object())
@@ -2859,7 +2925,11 @@ mod invariant_bundle_tests {
         });
         let violations = verify_bundle_invariants(&bundle);
         assert!(!violations.is_empty());
-        assert!(violations.iter().any(|v| v.contains("INV-EXPORT-VERIFY-001")));
-        assert!(violations.iter().any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
+        assert!(violations
+            .iter()
+            .any(|v| v.contains("INV-EXPORT-VERIFY-001")));
+        assert!(violations
+            .iter()
+            .any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
     }
 }

@@ -137,10 +137,16 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
     let mut events = Vec::new();
     for (node_id, trace) in traces {
         let start = trace.get("started_unix_ms").cloned().unwrap_or(Value::Null);
-        let finish = trace.get("finished_unix_ms").cloned().unwrap_or(Value::Null);
+        let finish = trace
+            .get("finished_unix_ms")
+            .cloned()
+            .unwrap_or(Value::Null);
         let status = trace.get("status").cloned().unwrap_or(Value::Null);
         let attempt = trace.get("attempt").and_then(Value::as_u64).unwrap_or(1);
-        let cache_hit = trace.get("cache_hit").and_then(Value::as_bool).unwrap_or(false);
+        let cache_hit = trace
+            .get("cache_hit")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let event_kind = if cache_hit {
             "cache_hit"
         } else if attempt > 1 {
@@ -158,7 +164,11 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
             "event_kind": event_kind
         }));
     }
-    events.sort_by_key(|e| e.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0));
+    events.sort_by_key(|e| {
+        e.get("started_unix_ms")
+            .and_then(Value::as_u64)
+            .unwrap_or(0)
+    });
     Ok(json!({"events": events}))
 }
 
@@ -167,7 +177,11 @@ pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
     let mut failed = Vec::new();
     let mut skipped = Vec::new();
     for (node_id, trace) in traces {
-        match trace.get("status").and_then(Value::as_str).unwrap_or("unknown") {
+        match trace
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+        {
             "failed" => failed.push(node_id),
             "skipped" => skipped.push(node_id),
             _ => {}
@@ -213,11 +227,22 @@ pub fn runs_summary(root: &Path) -> Result<Value, std::io::Error> {
         if summary.get("status").and_then(Value::as_str) == Some("failed") {
             failed_run_count += 1;
         }
-        if summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) == 0 {
+        if summary
+            .get("retry_count")
+            .and_then(Value::as_u64)
+            .unwrap_or(0)
+            == 0
+        {
             replay_equivalent_runs += 1;
         }
-        total_retries += summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) as usize;
-        total_cache_hits += summary.get("cache_hits").and_then(Value::as_u64).unwrap_or(0) as usize;
+        total_retries += summary
+            .get("retry_count")
+            .and_then(Value::as_u64)
+            .unwrap_or(0) as usize;
+        total_cache_hits += summary
+            .get("cache_hits")
+            .and_then(Value::as_u64)
+            .unwrap_or(0) as usize;
         total_artifacts += summary
             .get("artifact_count")
             .and_then(Value::as_u64)
@@ -357,12 +382,18 @@ fn read_outputs_count(run_dir: &Path) -> usize {
             v.get("files")
                 .and_then(Value::as_array)
                 .map(|arr| arr.len())
-                .or_else(|| v.get("outputs").and_then(Value::as_array).map(|arr| arr.len()))
+                .or_else(|| {
+                    v.get("outputs")
+                        .and_then(Value::as_array)
+                        .map(|arr| arr.len())
+                })
         })
         .unwrap_or(0)
 }
 
-fn read_node_traces(run_dir: &Path) -> Result<std::collections::BTreeMap<String, Value>, std::io::Error> {
+fn read_node_traces(
+    run_dir: &Path,
+) -> Result<std::collections::BTreeMap<String, Value>, std::io::Error> {
     let mut map = std::collections::BTreeMap::new();
     let nodes_dir = run_dir.join("nodes");
     if !nodes_dir.exists() {
