@@ -170,6 +170,10 @@ enum CommandLine {
     ComparisonEvidenceReport,
     /// Verify release artifact command surfaces and machine-readable outputs
     ReleaseArtifactVerify,
+    /// Summarize drift classes and checker coverage
+    DriftDashboard,
+    /// Print repository trust status by domain
+    RepoTrustSummary,
     /// Summarize version support by versioned surface
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
@@ -1082,6 +1086,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_adoption_surfaces_guard(),
     },
     SuiteDef {
+        id: "anti-drift-governance",
+        description: "anti-drift policy docs checks dashboard and trust evidence alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_anti_drift_governance_guard(),
+    },
+    SuiteDef {
         id: "multi-run-analytics",
         description: "multi-run analytics contracts commands schemas and tests alignment",
         domain: "governance",
@@ -1638,6 +1651,20 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_release_artifact_verification_suite(),
+        ),
+        CommandLine::DriftDashboard => run_command_reported(
+            &context,
+            "drift-dashboard",
+            CommandEffect::Validation,
+            json!({}),
+            || run_drift_dashboard(),
+        ),
+        CommandLine::RepoTrustSummary => run_command_reported(
+            &context,
+            "repo-trust-summary",
+            CommandEffect::Validation,
+            json!({}),
+            || run_repo_trust_summary(),
         ),
         CommandLine::CompatibilityReport => run_command_reported(
             &context,
@@ -5748,6 +5775,87 @@ fn run_release_artifact_verification_suite() -> Result<(), String> {
                 "release binary verification doc missing required check `{}`",
                 token
             ));
+        }
+    }
+    Ok(())
+}
+
+fn run_drift_dashboard() -> Result<(), String> {
+    let root = repo_root()?;
+    let payload = json!({
+        "drift_classes": [
+            {"name":"docs drift","severity":"blocker","check":"repo-docs"},
+            {"name":"schema drift","severity":"blocker","check":"docs-schema-ref"},
+            {"name":"contract drift","severity":"blocker","check":"docs-contract-ref"},
+            {"name":"cli drift","severity":"blocker","check":"cli-freeze"},
+            {"name":"test drift","severity":"warning","check":"contract-test-links"},
+            {"name":"fixture drift","severity":"warning","check":"docs-coverage"},
+            {"name":"benchmark drift","severity":"warning","check":"performance-claims"},
+            {"name":"dependency drift","severity":"warning","check":"dependency-policy"}
+        ],
+        "dashboard_doc": "docs/tracking/DRIFT_DASHBOARD.md",
+        "anti_drift_policy": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_repo_trust_summary() -> Result<(), String> {
+    let root = repo_root()?;
+    let payload = json!({
+        "contracts": {
+            "invariants": root.join("docs/spec/FORMAL_INVARIANTS.md").exists(),
+            "comparison_harness": root.join("docs/spec/COMPARISON_HARNESS_CONTRACT.md").exists(),
+            "adoption_surfaces": root.join("docs/spec/ADOPTION_SURFACES.md").exists(),
+            "anti_drift": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
+        },
+        "tracking": {
+            "invariant_coverage": root.join("docs/tracking/INVARIANT_COVERAGE.md").exists(),
+            "drift_dashboard": root.join("docs/tracking/DRIFT_DASHBOARD.md").exists()
+        },
+        "evidence_index": root.join("docs/reference/REPO_TRUST_EVIDENCE_INDEX.md").exists()
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_anti_drift_governance_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/ANTI_DRIFT_POLICY.md",
+        "docs/tracking/DRIFT_DASHBOARD.md",
+        "docs/reference/REPO_TRUST_EVIDENCE_INDEX.md",
+        ".github/pull_request_template.md",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "anti-drift governance surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let policy = fs::read_to_string(root.join("docs/spec/ANTI_DRIFT_POLICY.md"))
+        .map_err(|err| err.to_string())?;
+    for token in [
+        "docs drift",
+        "schema drift",
+        "contract drift",
+        "cli drift",
+        "same-change alignment rule",
+    ] {
+        if !policy.to_ascii_lowercase().contains(&token.to_ascii_lowercase()) {
+            return Err(format!("anti-drift policy missing `{}`", token));
         }
     }
     Ok(())
