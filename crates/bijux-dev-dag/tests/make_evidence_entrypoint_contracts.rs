@@ -65,7 +65,9 @@ fn evidence_verify_orchestration_is_only_in_evidence_makefile() {
                 continue;
             }
             if rel != "make/evidence.mk" {
-                violations.push(format!("{rel}: evidence target defined outside make/evidence.mk"));
+                violations.push(format!(
+                    "{rel}: evidence target defined outside make/evidence.mk"
+                ));
             }
         }
     }

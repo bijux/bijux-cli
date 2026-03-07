@@ -82,7 +82,8 @@ fn adversarial_battle_scenarios_exist_and_are_mapped() {
 fn adversarial_metadata_has_invariant_operator_and_replay_cache_bundles() {
     let root = repo_root();
     let metadata: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/battle/metadata.json")).expect("read battle metadata"),
+        &fs::read_to_string(root.join("evidence/battle/metadata.json"))
+            .expect("read battle metadata"),
     )
     .expect("parse battle metadata");
 
@@ -125,7 +126,8 @@ fn adversarial_release_blocking_subset_is_enforced_and_registry_has_no_duplicate
     )
     .expect("parse release subset policy");
     let metadata: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/battle/metadata.json")).expect("read battle metadata"),
+        &fs::read_to_string(root.join("evidence/battle/metadata.json"))
+            .expect("read battle metadata"),
     )
     .expect("parse battle metadata");
     let registry: serde_json::Value = serde_json::from_str(
@@ -161,7 +163,10 @@ fn adversarial_release_blocking_subset_is_enforced_and_registry_has_no_duplicate
     let mut seen = BTreeSet::new();
     for entry in registry["entries"].as_array().expect("registry entries") {
         let scenario = entry["scenario"].as_str().expect("registry scenario");
-        assert!(seen.insert(scenario.to_string()), "duplicate scenario in registry: {scenario}");
+        assert!(
+            seen.insert(scenario.to_string()),
+            "duplicate scenario in registry: {scenario}"
+        );
     }
 }
 

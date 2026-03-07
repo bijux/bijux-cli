@@ -88,7 +88,9 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
             let scenario = value.as_str().expect("advisory scenario id");
             format!(
                 "evidence/battle/workflows/adversarial/{}.json",
-                scenario.trim_start_matches("adversarial-").replace('-', "_")
+                scenario
+                    .trim_start_matches("adversarial-")
+                    .replace('-', "_")
             )
         })
         .collect();

@@ -66,7 +66,9 @@ fn overreach_policy_entries_are_complete_and_valid() {
             "overreach entry reason must be set: {}",
             entry.module
         );
-        let module_path = root.join("crates/bijux-dag-runtime/src").join(&entry.module);
+        let module_path = root
+            .join("crates/bijux-dag-runtime/src")
+            .join(&entry.module);
         assert!(
             module_path.exists(),
             "runtime overreach module path missing: {}",

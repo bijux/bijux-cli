@@ -269,7 +269,8 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
     let manifest_path = root.join("evidence/release/release_evidence.json");
     if manifest_path.exists() {
         let manifest_payload = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
-        let manifest: Value = serde_json::from_str(&manifest_payload).map_err(|err| err.to_string())?;
+        let manifest: Value =
+            serde_json::from_str(&manifest_payload).map_err(|err| err.to_string())?;
         if manifest["version"].as_str() != Some("1")
             || manifest["source"].as_str() != Some("evidence/release/release_evidence_set.json")
         {

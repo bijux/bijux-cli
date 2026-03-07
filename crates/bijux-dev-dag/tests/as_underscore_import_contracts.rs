@@ -37,7 +37,10 @@ fn collect_rs_files(root: &Path, out: &mut Vec<PathBuf>) {
             let entry = entry.expect("entry");
             let path = entry.path();
             if path.is_dir() {
-                let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
+                let name = path
+                    .file_name()
+                    .and_then(|v| v.to_str())
+                    .unwrap_or_default();
                 if matches!(name, "target" | "artifacts" | ".git") {
                     continue;
                 }
@@ -127,8 +130,9 @@ fn as_underscore_policy_exceptions_have_reasons() {
 #[test]
 fn as_underscore_audit_report_stays_in_sync_with_crate_counts() {
     let root = repo_root();
-    let report = fs::read_to_string(root.join("docs/reports/foundation/as_underscore_import_audit.md"))
-        .expect("read as underscore audit report");
+    let report =
+        fs::read_to_string(root.join("docs/reports/foundation/as_underscore_import_audit.md"))
+            .expect("read as underscore audit report");
 
     let mut files = Vec::new();
     collect_rs_files(&root.join("crates"), &mut files);

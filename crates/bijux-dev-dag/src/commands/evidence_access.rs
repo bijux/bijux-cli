@@ -50,7 +50,9 @@ pub fn load_registry_release_blocking_flags(root: &Path) -> Result<BTreeMap<Stri
     Ok(flags)
 }
 
-pub fn load_registry_release_assets(root: &Path) -> Result<BTreeMap<String, RegistryReleaseAsset>, String> {
+pub fn load_registry_release_assets(
+    root: &Path,
+) -> Result<BTreeMap<String, RegistryReleaseAsset>, String> {
     let payload = fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
         .map_err(|err| err.to_string())?;
     let registry: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;

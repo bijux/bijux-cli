@@ -35,13 +35,24 @@ pub fn evidence_registry_path(workspace_root: &Path) -> PathBuf {
 
 pub fn load_evidence_registry_checked(workspace_root: &Path) -> Result<Value, String> {
     let path = evidence_registry_path(workspace_root);
-    let text = fs::read_to_string(&path)
-        .map_err(|error| format!("failed to read evidence registry at {}: {error}", path.display()))?;
-    serde_json::from_str(&text)
-        .map_err(|error| format!("failed to parse evidence registry at {}: {error}", path.display()))
+    let text = fs::read_to_string(&path).map_err(|error| {
+        format!(
+            "failed to read evidence registry at {}: {error}",
+            path.display()
+        )
+    })?;
+    serde_json::from_str(&text).map_err(|error| {
+        format!(
+            "failed to parse evidence registry at {}: {error}",
+            path.display()
+        )
+    })
 }
 
-pub fn resolve_evidence_asset_by_id_checked(registry: &Value, asset_id: &str) -> Result<Value, String> {
+pub fn resolve_evidence_asset_by_id_checked(
+    registry: &Value,
+    asset_id: &str,
+) -> Result<Value, String> {
     let assets = registry["assets"]
         .as_array()
         .expect("evidence registry assets array");

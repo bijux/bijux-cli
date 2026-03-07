@@ -48,12 +48,7 @@ fn trust_properties_have_executable_test_mappings() {
         .as_array()
         .expect("battle trust_properties")
         .iter()
-        .map(|entry| {
-            entry["id"]
-                .as_str()
-                .expect("trust property id")
-                .to_string()
-        })
+        .map(|entry| entry["id"].as_str().expect("trust property id").to_string())
         .collect();
 
     let mut mapped = BTreeSet::new();
@@ -100,8 +95,9 @@ fn trust_properties_have_executable_test_mappings() {
 #[test]
 fn trust_property_test_report_is_present_and_mentions_focus_on_trust() {
     let root = repo_root();
-    let report = fs::read_to_string(root.join("docs/reports/foundation/trust_property_to_test_report.md"))
-        .expect("read trust-property-to-test report");
+    let report =
+        fs::read_to_string(root.join("docs/reports/foundation/trust_property_to_test_report.md"))
+            .expect("read trust-property-to-test report");
     assert!(
         report.contains("trust-proof coverage") || report.contains("trust property"),
         "report must center trust-property coverage language"

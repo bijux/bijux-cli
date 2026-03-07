@@ -44,7 +44,10 @@ fn release_evidence_outputs_and_verify_surfaces_exist() {
         "evidence/reports/what_this_release_does_not_prove.md",
         "evidence/reports/unsupported_or_simulated_areas.md",
     ] {
-        assert!(root.join(rel).exists(), "missing release evidence output: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing release evidence output: {rel}"
+        );
     }
 
     let command_source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
@@ -65,8 +68,10 @@ fn release_evidence_outputs_and_verify_surfaces_exist() {
 #[test]
 fn release_verify_enforces_manifest_drift_and_ambiguous_classification_failure() {
     let root = repo_root();
-    let source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/evidence_control_plane.rs"))
-        .expect("read evidence control plane source");
+    let source = fs::read_to_string(
+        root.join("crates/bijux-dev-dag/src/commands/evidence_control_plane.rs"),
+    )
+    .expect("read evidence control plane source");
 
     assert!(
         source.contains("release evidence manifest drift detected"),
