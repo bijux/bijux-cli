@@ -241,7 +241,7 @@ pub use auth_identity::{
     SchedulerBootstrapTrustFlow, TrustDomain, TrustHealthReport, WorkerBootstrapTrustFlow,
     WorkerCredentialBinding,
 };
-pub use execution_plan::ExecutionPlan;
+pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 pub use execution_backend::{
     bind_backend_or_error, execute_with_backend, BackendBindingRequest, BackendCapabilities,
     BackendContext, BackendError, BackendKind, BackendLifecycleResult, EngineOutcome,

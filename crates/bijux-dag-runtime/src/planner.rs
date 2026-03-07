@@ -1,6 +1,7 @@
-use crate::execution_plan::ExecutionPlan;
+use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
-use bijux_dag_core::{Graph, Node};
+use bijux_dag_core::{Graph, Node, NodeKind};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
@@ -27,7 +28,53 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
             }
         }
     }
+    let planned_dependencies = canonical
+        .edges
+        .iter()
+        .map(|edge| PlannedDependency {
+            from: edge.from.node_id.clone(),
+            to: edge.to.node_id.clone(),
+        })
+        .collect::<Vec<_>>();
+    let planned_nodes = canonical
+        .nodes
+        .iter()
+        .map(|node| PlannedNode {
+            id: node.id.clone(),
+            kind: node.kind.as_str().to_string(),
+            deps: dep_map
+                .get(&node.id)
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .collect(),
+            outputs: node.outputs.clone(),
+            retry: node.retry.clone(),
+            timeout_ms: node.timeout_ms,
+        })
+        .collect::<Vec<_>>();
+    let graph_fingerprint = canonical
+        .graph_fingerprint()
+        .unwrap_or_else(|_| "graph-fingerprint-unavailable".to_string());
+    let planner_fingerprint = planner_fingerprint(&planned_nodes, &planned_dependencies, &order)
+        .unwrap_or_else(|_| "planner-fingerprint-unavailable".to_string());
+
+    let mut diagnostics = Vec::new();
+    for node in &canonical.nodes {
+        if !node_kind_supported(node.kind.as_str()) {
+            diagnostics.push(format!("P4013:{}:unsupported-node-kind", node.id));
+        }
+        if node.resources.is_some() && !runtime_resource_capability_supported(&node.kind) {
+            diagnostics.push(format!("P4021:{}:unsupported-runtime-capability", node.id));
+        }
+    }
     ExecutionPlan {
+        planner_contract_version: "bijux-dag-runtime-planner/v1".to_string(),
+        graph_fingerprint,
+        planner_fingerprint,
+        planned_nodes,
+        planned_dependencies,
+        diagnostics,
         nodes: graph.nodes.clone(),
         order,
         dep_map,
@@ -35,6 +82,25 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         adj,
         filter_reasons,
     }
+}
+
+fn planner_fingerprint(
+    nodes: &[PlannedNode],
+    deps: &[PlannedDependency],
+    order: &[String],
+) -> Result<String, String> {
+    let payload = serde_json::to_vec(&(nodes, deps, order)).map_err(|err| err.to_string())?;
+    let mut hasher = Sha256::new();
+    hasher.update(payload);
+    Ok(hex::encode(hasher.finalize()))
+}
+
+fn node_kind_supported(kind: &str) -> bool {
+    matches!(kind, "const" | "shell" | "container")
+}
+
+fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
+    matches!(kind, NodeKind::Shell | NodeKind::Container)
 }
 
 fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {
