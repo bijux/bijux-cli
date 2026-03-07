@@ -3,7 +3,7 @@ use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
 use sha2::Digest;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -606,6 +606,33 @@ const REPO_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_repo_api_guard(),
+    },
+    SuiteDef {
+        id: "test-taxonomy",
+        description: "test file naming taxonomy and e2e shell-out boundary",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_test_taxonomy_guard(),
+    },
+    SuiteDef {
+        id: "test-classification",
+        description: "test family classification report and category coverage",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_test_classification_report(),
+    },
+    SuiteDef {
+        id: "test-policy",
+        description: "schema fixtures runtime transitions and cache mode coverage policies",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_test_policy_guard(),
     },
 ];
 
@@ -2457,4 +2484,181 @@ fn now_millis() -> u128 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0)
+}
+
+#[derive(Debug, Deserialize)]
+struct TestTaxonomyPolicy {
+    required_prefixes: Vec<String>,
+    legacy_allowlist: Vec<String>,
+}
+
+fn run_test_taxonomy_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_path = root.join("configs/policy/test_taxonomy.json");
+    let policy_text = fs::read_to_string(&policy_path).map_err(|err| err.to_string())?;
+    let policy: TestTaxonomyPolicy = serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+
+    let allowlist: BTreeSet<String> = policy.legacy_allowlist.into_iter().collect();
+    let prefixes = policy.required_prefixes;
+    let mut violations = Vec::new();
+
+    let mut dirs = vec![root.join("crates"), root.join("tests")];
+    while let Some(dir) = dirs.pop() {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                dirs.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("rs") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            if !rel.contains("/tests/") && !rel.starts_with("tests/") {
+                continue;
+            }
+            let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
+            if !prefixes.iter().any(|prefix| name.starts_with(prefix)) && !allowlist.contains(&rel) {
+                violations.push(format!("test file must use taxonomy prefix: {rel}"));
+            }
+
+            let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            let is_e2e = rel.starts_with("tests/e2e/") || name.starts_with("e2e_");
+            let shells_out = content.contains("-p\", \"bijux-dag-cli\"")
+                || content.contains("Command::new(\"cargo\")")
+                || content.contains("Command::new(\"bijux\")");
+            if shells_out && !is_e2e {
+                violations.push(format!(
+                    "non-e2e test shells out to production binary path: {rel}"
+                ));
+            }
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_test_classification_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let categories = ["unit_", "contract_", "integration_", "e2e_", "perf_", "compat_", "fault_"];
+    let mut counts: BTreeMap<String, u64> = categories
+        .iter()
+        .map(|category| ((*category).to_string(), 0_u64))
+        .collect();
+
+    let mut dirs = vec![root.join("crates"), root.join("tests")];
+    while let Some(dir) = dirs.pop() {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                dirs.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("rs") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            if !rel.contains("/tests/") && !rel.starts_with("tests/") {
+                continue;
+            }
+            let name = path.file_name().and_then(|v| v.to_str()).unwrap_or_default();
+            for category in categories {
+                if name.starts_with(category) {
+                    if let Some(value) = counts.get_mut(category) {
+                        *value += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    let missing: Vec<String> = counts
+        .iter()
+        .filter(|(_, count)| **count == 0)
+        .map(|(category, _)| category.clone())
+        .collect();
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "counts": counts,
+            "missing_categories": missing,
+        }))
+        .map_err(|err| err.to_string())?
+    );
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("missing test categories: {}", missing.join(", ")))
+    }
+}
+
+fn run_test_policy_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut violations = Vec::new();
+
+    let schema_fixtures_ok = root
+        .join("configs/schema/fixtures")
+        .join("v0.1")
+        .join("positive")
+        .exists()
+        && root
+            .join("configs/schema/fixtures")
+            .join("v0.1")
+            .join("negative")
+            .exists();
+    if !schema_fixtures_ok {
+        violations.push("schema fixtures must have positive and negative coverage".to_string());
+    }
+
+    let state_test = root.join("crates/bijux-dag-runtime/src/state_machine_tests.rs");
+    let state_text = fs::read_to_string(&state_test).map_err(|err| err.to_string())?;
+    for state in ["queued", "ready", "running", "succeeded", "failed", "cached", "skipped", "cancelled"] {
+        if !state_text.contains(state) {
+            violations.push(format!("runtime transition coverage missing state: {state}"));
+        }
+    }
+
+    let cache_test = root.join("crates/bijux-dag-runtime/src/tests_runtime.in.rs");
+    let cache_text = fs::read_to_string(&cache_test).map_err(|err| err.to_string())?;
+    for mode in ["CacheMode::Off", "CacheMode::Read", "CacheMode::ReadWrite"] {
+        if !cache_text.contains(mode) {
+            violations.push(format!("cache mode coverage missing mode: {mode}"));
+        }
+    }
+
+    let output_contract = root.join("crates/bijux-dag-app/tests/output_contract.rs");
+    let cli_contract = root.join("crates/bijux-dag-app/tests/cli_contract.rs");
+    if !(output_contract.exists() && cli_contract.exists()) {
+        violations.push(
+            "public command policy requires integration and error-path app command tests".to_string(),
+        );
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
 }

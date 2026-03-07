@@ -130,6 +130,7 @@ version = "0.1.0"
 dependencies = [
  "bijux-dag-artifacts",
  "bijux-dag-core",
+ "bijux-dag-testkit",
  "ctrlc",
  "hex",
  "serde",
@@ -143,6 +144,8 @@ dependencies = [
 name = "bijux-dag-testkit"
 version = "0.1.0"
 dependencies = [
+ "bijux-dag-artifacts",
+ "bijux-dag-core",
  "serde",
  "serde_json",
  "tempfile",

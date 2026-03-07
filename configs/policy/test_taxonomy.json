@@ -1,0 +1,23 @@
+{
+  "required_prefixes": [
+    "unit_",
+    "contract_",
+    "integration_",
+    "e2e_",
+    "perf_",
+    "compat_",
+    "fault_"
+  ],
+  "legacy_allowlist": [
+    "crates/bijux-dag-app/tests/output_contract.rs",
+    "crates/bijux-dag-app/tests/cli_contract.rs",
+    "crates/bijux-dag-artifacts/tests/conformance.rs",
+    "crates/bijux-dag-artifacts/tests/platform_contracts.rs",
+    "crates/bijux-dev-dag/tests/crate_taxonomy_guardrails.rs",
+    "crates/bijux-dev-dag/tests/file_size_guardrails.rs",
+    "crates/bijux-dev-dag/tests/no_cli_in_runtime.rs",
+    "crates/bijux-dev-dag/tests/no_core_io.rs",
+    "crates/bijux-dev-dag/tests/no_runtime_in_core.rs",
+    "crates/bijux-dev-dag/tests/source_layout_guardrails.rs"
+  ]
+}
