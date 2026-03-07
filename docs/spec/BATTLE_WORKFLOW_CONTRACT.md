@@ -43,3 +43,4 @@ Each scenario fixture must include:
 
 - State-machine conformance is mandatory evidence for battle workflows.
 - Node and run transitions must satisfy the state-machine contract and invariant IDs.
+- Replay battle scenarios must include mandatory replay proof assertions and semantic diff evidence.

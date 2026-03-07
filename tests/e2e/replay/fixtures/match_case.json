@@ -1,0 +1,6 @@
+{
+  "case": "match",
+  "run_a": "run-a",
+  "run_b": "run-b",
+  "expect": "equivalent"
+}

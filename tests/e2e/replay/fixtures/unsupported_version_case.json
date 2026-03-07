@@ -1,0 +1,7 @@
+{
+  "case": "unsupported_version",
+  "run_a": "run-a",
+  "run_b": "run-b-unsupported",
+  "expect": "unsupported_version_error",
+  "reason": "unsupported_run_format"
+}

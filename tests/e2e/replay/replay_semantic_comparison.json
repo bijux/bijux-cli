@@ -3,6 +3,7 @@
   "graph_fixture": "graph_replay",
   "assertions": [
     "replay_runs",
-    "replay_equivalence_report_present"
+    "replay_equivalence_report_present",
+    "replay_mandatory_proof"
   ]
 }

@@ -1,22 +1,77 @@
-# Replay Contract
+# Replay contract
 
 ## Scope
-Defines replay guarantees, comparison semantics, and non-goals.
+Defines replay semantics, semantic diff interpretation, provenance boundaries, and explicit non-goals.
 
-## Guarantees
-- Replay compares against captured run artifacts.
-- Replay diagnostics identify semantic differences.
+## Replay definition
+Replay in this repository means:
 
-## Non-goals
-- Replay does not promise equivalence to ambient host state not captured in artifacts.
+- execute from captured graph + runtime artifacts
+- compare semantic outputs and node outcomes against prior run evidence
+- emit explicit reason report for equivalence or mismatch
+
+Replay is not a byte-for-byte filesystem restore mechanism.
+
+## Authoritative inputs
+
+Replay may consult:
+
+- `manifest.json`
+- graph snapshot and graph fingerprint
+- node traces and statuses
+- outputs index and output hashes
+- provenance markers and replay source metadata
+
+Replay must not consult ambient host state as authoritative evidence.
+
+## Semantic diff mode
+
+`dag diff` and `dag runs diff` support semantic comparison mode and emit:
+
+- replay equivalence boolean
+- mismatch reasons
+- grouped mismatch causes
+- replay reason summary
+
+## Replay explain mode
+
+`--explain` output groups mismatch causes by class:
+
+- `manifest_drift`
+- `graph_semantics`
+- `node_outcomes`
+- `artifact_payload`
+
+## Fixture families
+
+Replay fixture family includes:
+
+- `tests/e2e/replay/fixtures/match_case.json`
+- `tests/e2e/replay/fixtures/mismatch_case.json`
+- `tests/e2e/replay/fixtures/corruption_case.json`
+- `tests/e2e/replay/fixtures/unsupported_version_case.json`
+
+## What replay cannot prove
+
+Replay cannot prove:
+
+- equivalence to uncaptured external side effects
+- equivalence when authoritative artifacts are missing
+- compatibility across unsupported historical or future formats
+- equivalence of non-semantic metadata fields intentionally ignored by contract
 
 ## Related tests
+
 - `tests/e2e/replay/*`
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
+- `crates/bijux-dag-app/tests/replay_contract.rs`
+- `crates/bijux-dag-app/src/diff.rs` unit tests
 
 ## Related schemas
+
+- `configs/schema/operator/replay_diff.schema.json`
 - `configs/schema/run_manifest.schema.json`
 - `configs/schema/node_trace.schema.json`
 
 ## Versioning and change policy
-Replay semantics changes require explicit compatibility decision and updated e2e coverage.
+Replay semantics changes require explicit compatibility decision and updated replay fixture and schema coverage.
