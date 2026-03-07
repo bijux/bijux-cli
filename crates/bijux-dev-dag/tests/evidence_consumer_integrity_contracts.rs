@@ -220,3 +220,92 @@ fn evidence_consumer_report_exists_and_lists_key_surfaces() {
         );
     }
 }
+
+#[test]
+fn evidence_consumption_by_crate_report_exists_and_covers_core_crates() {
+    let root = repo_root();
+    let report = root.join("evidence/reports/evidence_consumption_by_crate.md");
+    assert!(
+        report.exists(),
+        "missing crate-level evidence consumption report"
+    );
+    let text = fs::read_to_string(report).expect("read report");
+    for required in [
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-artifacts",
+        "bijux-dev-dag",
+    ] {
+        assert!(
+            text.contains(required),
+            "crate-level evidence report missing crate: {required}"
+        );
+    }
+}
+
+#[test]
+fn evidence_access_helper_contract_doc_exists() {
+    let root = repo_root();
+    let doc = root.join("docs/spec/TESTKIT_EVIDENCE_ACCESS_CONTRACT.md");
+    assert!(doc.exists(), "missing testkit evidence access contract doc");
+    let text = fs::read_to_string(doc).expect("read contract doc");
+    for token in [
+        "load_evidence_registry_checked",
+        "resolve_evidence_asset_by_id_checked",
+        "evidence_asset_ids",
+        "read-only",
+    ] {
+        assert!(
+            text.contains(token),
+            "testkit evidence access contract doc missing token: {token}"
+        );
+    }
+}
+
+#[test]
+fn test_surfaces_do_not_mutate_evidence_assets() {
+    let root = repo_root();
+    let mut files = Vec::new();
+    collect_files(&root.join("crates"), &mut files);
+
+    let mut violations = Vec::new();
+    let forbidden_inline_patterns = [
+        "fs::write(\"evidence/",
+        "fs::write(root.join(\"evidence/",
+        "fs::write(repo_root().join(\"evidence/",
+        "fs::remove_file(\"evidence/",
+        "fs::remove_file(root.join(\"evidence/",
+        "fs::remove_file(repo_root().join(\"evidence/",
+        "fs::rename(\"evidence/",
+        "fs::rename(root.join(\"evidence/",
+        "fs::rename(repo_root().join(\"evidence/",
+        "fs::create_dir_all(\"evidence/",
+        "fs::create_dir_all(root.join(\"evidence/",
+        "fs::create_dir_all(repo_root().join(\"evidence/",
+    ];
+
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .expect("strip")
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !rel.contains("/tests/") || !rel.ends_with(".rs") {
+            continue;
+        }
+        let text = fs::read_to_string(&file).expect("read file");
+        if forbidden_inline_patterns
+            .iter()
+            .any(|pattern| text.contains(pattern))
+        {
+            violations.push(rel);
+        }
+    }
+
+    assert!(
+        violations.is_empty(),
+        "test surfaces must treat evidence as read-only; mutating patterns found: {}",
+        violations.join(", ")
+    );
+}
