@@ -1,18 +1,11 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
-use bijux_dag_core::{Graph, Node, NodeKind};
-use sha2::{Digest, Sha256};
+use bijux_dag_core::{Graph, Node, NodeKind, PlanOptions, PlannerSeverity};
 use std::collections::{BTreeSet, HashMap};
 
 pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     let canonical = graph.canonicalize();
-    let order = canonical
-        .nodes
-        .iter()
-        .map(|n| n.id.clone())
-        .collect::<Vec<String>>();
     let dep_map = build_dep_map(graph);
-    let (indegree, adj) = build_graph_index(graph);
     let mut filter_reasons = HashMap::new();
     for node in &graph.nodes {
         if let Some(reason) = filter_reason(node, &options.selectors) {
@@ -32,38 +25,117 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
             }
         }
     }
-    let planned_dependencies = canonical
-        .edges
-        .iter()
-        .map(|edge| PlannedDependency {
-            from: edge.from.node_id.clone(),
-            to: edge.to.node_id.clone(),
-        })
-        .collect::<Vec<_>>();
-    let planned_nodes = canonical
+    let selected_nodes = graph
         .nodes
         .iter()
-        .map(|node| PlannedNode {
-            id: node.id.clone(),
-            kind: node.kind.as_str().to_string(),
-            deps: dep_map
-                .get(&node.id)
-                .cloned()
-                .unwrap_or_default()
-                .into_iter()
+        .filter_map(|node| (!filter_reasons.contains_key(&node.id)).then_some(node.id.clone()))
+        .collect::<BTreeSet<_>>();
+    let lowered = bijux_dag_core::lower_graph_to_execution_plan(
+        graph,
+        PlanOptions {
+            selected_nodes,
+            supported_kinds: canonical
+                .nodes
+                .iter()
+                .map(|node| node.kind.as_str().to_string())
                 .collect(),
-            outputs: node.outputs.clone(),
-            retry: node.retry.clone(),
-            timeout_ms: node.timeout_ms,
-        })
-        .collect::<Vec<_>>();
-    let graph_fingerprint = canonical
-        .graph_fingerprint()
-        .unwrap_or_else(|_| "graph-fingerprint-unavailable".to_string());
-    let planner_fingerprint = planner_fingerprint(&planned_nodes, &planned_dependencies, &order)
-        .unwrap_or_else(|_| "planner-fingerprint-unavailable".to_string());
+        },
+    );
 
-    let mut diagnostics = Vec::new();
+    let (
+        planner_contract_version,
+        graph_fingerprint,
+        planner_fingerprint,
+        planned_nodes,
+        planned_dependencies,
+        order,
+        mut diagnostics,
+    ) = match lowered {
+        Ok(plan) => {
+            let mut diagnostics = plan
+                .diagnostics
+                .iter()
+                .map(|diag| {
+                    let severity = match diag.severity {
+                        PlannerSeverity::Error => "error",
+                        PlannerSeverity::Warning => "warning",
+                    };
+                    format!("{}:{}:{}", diag.id, severity, diag.message)
+                })
+                .collect::<Vec<_>>();
+            (
+                plan.planner_contract_version,
+                plan.graph_fingerprint,
+                plan.planner_fingerprint,
+                plan.nodes
+                    .iter()
+                    .map(|node| PlannedNode {
+                        id: node.id.clone(),
+                        kind: node.kind.clone(),
+                        deps: node.deps.clone(),
+                        outputs: node.outputs.clone(),
+                        retry: node.retry.clone(),
+                        timeout_ms: node.timeout_ms,
+                    })
+                    .collect::<Vec<_>>(),
+                plan.edges
+                    .iter()
+                    .map(|edge| PlannedDependency {
+                        from: edge.from.clone(),
+                        to: edge.to.clone(),
+                    })
+                    .collect::<Vec<_>>(),
+                plan.ordering,
+                {
+                    diagnostics.sort();
+                    diagnostics
+                },
+            )
+        }
+        Err(error) => {
+            let mut diagnostics = vec![format!("P4000:error:planner-lowering-failure:{}", error)];
+            diagnostics.sort();
+            (
+                "bijux-dag-runtime-planner/v1".to_string(),
+                canonical
+                    .graph_fingerprint()
+                    .unwrap_or_else(|_| "graph-fingerprint-unavailable".to_string()),
+                "planner-fingerprint-unavailable".to_string(),
+                canonical
+                    .nodes
+                    .iter()
+                    .map(|node| PlannedNode {
+                        id: node.id.clone(),
+                        kind: node.kind.as_str().to_string(),
+                        deps: dep_map
+                            .get(&node.id)
+                            .cloned()
+                            .unwrap_or_default()
+                            .into_iter()
+                            .collect(),
+                        outputs: node.outputs.clone(),
+                        retry: node.retry.clone(),
+                        timeout_ms: node.timeout_ms,
+                    })
+                    .collect::<Vec<_>>(),
+                canonical
+                    .edges
+                    .iter()
+                    .map(|edge| PlannedDependency {
+                        from: edge.from.node_id.clone(),
+                        to: edge.to.node_id.clone(),
+                    })
+                    .collect::<Vec<_>>(),
+                canonical
+                    .nodes
+                    .iter()
+                    .map(|node| node.id.clone())
+                    .collect::<Vec<_>>(),
+                diagnostics,
+            )
+        }
+    };
+
     for node in &canonical.nodes {
         if !node_kind_supported(node.kind.as_str()) {
             diagnostics.push(format!("P4013:{}:unsupported-node-kind", node.id));
@@ -72,8 +144,13 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
             diagnostics.push(format!("P4021:{}:unsupported-runtime-capability", node.id));
         }
     }
+    diagnostics.sort();
+    diagnostics.dedup();
+    let (indegree, adj) = build_graph_index_from_plan(&planned_nodes, &planned_dependencies);
+    let plan_dep_map = build_dep_map_from_plan(&planned_dependencies);
+
     ExecutionPlan {
-        planner_contract_version: "bijux-dag-runtime-planner/v1".to_string(),
+        planner_contract_version,
         graph_fingerprint,
         planner_fingerprint,
         planned_nodes,
@@ -81,22 +158,11 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         diagnostics,
         nodes: graph.nodes.clone(),
         order,
-        dep_map,
+        dep_map: plan_dep_map,
         indegree,
         adj,
         filter_reasons,
     }
-}
-
-fn planner_fingerprint(
-    nodes: &[PlannedNode],
-    deps: &[PlannedDependency],
-    order: &[String],
-) -> Result<String, String> {
-    let payload = serde_json::to_vec(&(nodes, deps, order)).map_err(|err| err.to_string())?;
-    let mut hasher = Sha256::new();
-    hasher.update(payload);
-    Ok(hex::encode(hasher.finalize()))
 }
 
 fn node_kind_supported(kind: &str) -> bool {
@@ -131,6 +197,37 @@ fn build_graph_index(graph: &Graph) -> (HashMap<String, usize>, HashMap<String, 
             v.push(to.clone());
         }
         if let Some(d) = indegree.get_mut(&to) {
+            *d += 1;
+        }
+    }
+    (indegree, adj)
+}
+
+fn build_dep_map_from_plan(plan_deps: &[PlannedDependency]) -> HashMap<String, BTreeSet<String>> {
+    let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
+    for edge in plan_deps {
+        map.entry(edge.to.clone())
+            .or_default()
+            .insert(edge.from.clone());
+    }
+    map
+}
+
+fn build_graph_index_from_plan(
+    nodes: &[PlannedNode],
+    deps: &[PlannedDependency],
+) -> (HashMap<String, usize>, HashMap<String, Vec<String>>) {
+    let mut indegree: HashMap<String, usize> = HashMap::new();
+    let mut adj: HashMap<String, Vec<String>> = HashMap::new();
+    for node in nodes {
+        indegree.insert(node.id.clone(), 0);
+        adj.insert(node.id.clone(), Vec::new());
+    }
+    for edge in deps {
+        if let Some(v) = adj.get_mut(&edge.from) {
+            v.push(edge.to.clone());
+        }
+        if let Some(d) = indegree.get_mut(&edge.to) {
             *d += 1;
         }
     }
