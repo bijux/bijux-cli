@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "categories": [
+    "parse",
+    "schema",
+    "validation",
+    "config",
+    "policy",
+    "execution",
+    "io",
+    "replay",
+    "cache",
+    "compatibility",
+    "internal"
+  ],
+  "codes": [
+    { "code": "BJX-PARSE-001", "category": "parse", "owner": "bijux-dag-core", "description": "Input is not valid DAG JSON" },
+    { "code": "BJX-SCHEMA-001", "category": "schema", "owner": "bijux-dag-core", "description": "JSON shape violates schema contract" },
+    { "code": "BJX-VALIDATION-001", "category": "validation", "owner": "bijux-dag-core", "description": "Semantic graph validation failed" },
+    { "code": "BJX-CONFIG-001", "category": "config", "owner": "bijux-dag-app", "description": "Invalid configuration input" },
+    { "code": "BJX-POLICY-001", "category": "policy", "owner": "bijux-dag-runtime", "description": "Policy denied requested behavior" },
+    { "code": "BJX-EXEC-001", "category": "execution", "owner": "bijux-dag-runtime", "description": "Node execution failed" },
+    { "code": "BJX-IO-001", "category": "io", "owner": "bijux-dag-app", "description": "Filesystem or artifact I/O operation failed" },
+    { "code": "BJX-REPLAY-001", "category": "replay", "owner": "bijux-dag-app", "description": "Replay mismatch against recorded artifacts" },
+    { "code": "BJX-CACHE-001", "category": "cache", "owner": "bijux-dag-runtime", "description": "Cache contract or proof mismatch" },
+    { "code": "BJX-COMPAT-001", "category": "compatibility", "owner": "bijux-dev-dag", "description": "Compatibility contract violation" },
+    { "code": "BJX-INTERNAL-001", "category": "internal", "owner": "bijux-dag-cli", "description": "Unexpected internal failure path" }
+  ]
+}
