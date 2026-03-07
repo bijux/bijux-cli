@@ -1598,6 +1598,40 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", v);
             Ok(ExitCode::SUCCESS)
         }
+        Commands::Capabilities => {
+            let payload = json!({
+                "format": "capabilities/v1",
+                "binary_version": env!("CARGO_PKG_VERSION"),
+                "graph_schema_version": SPEC_VERSION,
+                "surfaces": {
+                    "cli": {"status": "supported"},
+                    "run_directory": {"status": "supported"},
+                    "export_bundle": {"status": "supported"},
+                    "library_crates": {"status": "experimental"}
+                },
+                "execution_modes": {
+                    "local_process": "implemented",
+                    "container": "simulated",
+                    "remote": "simulated",
+                    "batch_hpc": "simulated"
+                },
+                "operator_commands": [
+                    "runs.list","runs.show","runs.inspect","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure"
+                ]
+            });
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.capabilities",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::VersionInspect {
             dag,
             run_dir,

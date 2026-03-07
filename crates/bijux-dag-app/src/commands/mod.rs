@@ -193,6 +193,7 @@ pub(crate) enum Commands {
         #[arg(long)]
         export_bundle: Option<PathBuf>,
     },
+    Capabilities,
     Version,
 }
 
