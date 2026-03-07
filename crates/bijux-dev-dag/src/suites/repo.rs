@@ -25,4 +25,7 @@ pub const IDS: &[&str] = &[
     "contract-coverage-report",
     "error-code-registry",
     "error-code-doc-tests",
+    "config-lint",
+    "config-drift",
+    "ambient-env-guard",
 ];

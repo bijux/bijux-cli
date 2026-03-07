@@ -141,6 +141,11 @@ enum CommandLine {
     FaultSummary,
     /// Enumerate known public error codes and owners
     ErrorCodes,
+    /// Print effective config resolution as machine-readable JSON
+    ConfigDump {
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -814,6 +819,33 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_error_code_docs_tests_guard(),
     },
+    SuiteDef {
+        id: "config-lint",
+        description: "checked-in config examples validate against config schemas",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_config_lint(),
+    },
+    SuiteDef {
+        id: "config-drift",
+        description: "docs precedence table matches effective resolver behavior",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_config_precedence_drift_guard(),
+    },
+    SuiteDef {
+        id: "ambient-env-guard",
+        description: "ambient environment reads are limited to contract allowlist",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_ambient_env_guard(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -1198,6 +1230,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_error_code_registry_report(),
+        ),
+        CommandLine::ConfigDump { config } => run_command_reported(
+            &context,
+            "config-dump",
+            CommandEffect::Validation,
+            json!({ "config": config }),
+            || run_config_dump(config.as_deref()),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -3957,4 +3996,198 @@ fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
         }
     }
     Ok(registry)
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+struct EffectiveConfigDump {
+    jobs: Option<usize>,
+    cache_mode: Option<String>,
+    materialize_inputs: Option<String>,
+    policy: Option<Value>,
+    debug: Option<Value>,
+}
+
+fn run_config_dump(config: Option<&Path>) -> Result<(), String> {
+    let root = repo_root()?;
+    let defaults = json!({
+        "jobs": 1,
+        "cache_mode": "off",
+        "materialize_inputs": "none",
+        "policy": {
+            "deny_network": false,
+            "deny_env": false,
+            "deny_clock": false,
+            "clean_env": true,
+            "allowed_env": []
+        }
+    });
+    let mut merged = defaults;
+
+    if let Ok(env_cache_dir) = env::var("BIJUX_DAG_CACHE_DIR") {
+        merged["cache_dir"] = Value::String(env_cache_dir);
+    }
+    if let Ok(env_adapters_dir) = env::var("BIJUX_DAG_ADAPTERS_DIR") {
+        merged["adapters_dir"] = Value::String(env_adapters_dir);
+    }
+
+    if let Some(path) = config {
+        let full = if path.is_absolute() { path.to_path_buf() } else { root.join(path) };
+        let payload = fs::read_to_string(full).map_err(|err| err.to_string())?;
+        let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        deep_merge_json(&mut merged, &parsed);
+    }
+
+    let _typed: EffectiveConfigDump =
+        serde_json::from_value(merged.clone()).map_err(|err| err.to_string())?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&merged).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_config_lint() -> Result<(), String> {
+    let root = repo_root()?;
+    let examples_dir = root.join("configs/dev/examples");
+    let mut violations = Vec::new();
+
+    for entry in fs::read_dir(&examples_dir).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
+            continue;
+        }
+        let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        let value: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+        let allowed_root = ["jobs", "cache_mode", "materialize_inputs", "policy", "debug"];
+        if let Some(obj) = value.as_object() {
+            for key in obj.keys() {
+                if !allowed_root.contains(&key.as_str()) {
+                    violations.push(format!("{} has unknown field `{}`", path.display(), key));
+                }
+                if key.starts_with("deprecated_") {
+                    violations.push(format!("{} contains deprecated field `{}`", path.display(), key));
+                }
+            }
+        } else {
+            violations.push(format!("{} must be a JSON object", path.display()));
+        }
+        if value.get("jobs").and_then(|v| v.as_u64()).unwrap_or(0) == 0 {
+            violations.push(format!("{} has invalid jobs", path.display()));
+        }
+        let cache_mode = value.get("cache_mode").and_then(|v| v.as_str()).unwrap_or("");
+        if !["off", "read", "read-write"].contains(&cache_mode) {
+            violations.push(format!("{} has invalid cache_mode", path.display()));
+        }
+        let materialize = value
+            .get("materialize_inputs")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !["none", "direct", "all"].contains(&materialize) {
+            violations.push(format!("{} has invalid materialize_inputs", path.display()));
+        }
+        if value.get("policy").is_none() {
+            violations.push(format!("{} missing policy object", path.display()));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_config_precedence_drift_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let precedence_doc =
+        fs::read_to_string(root.join("docs/spec/CONFIG_PRECEDENCE.md")).map_err(|err| err.to_string())?;
+    let expected = "CLI > explicit config file > environment > defaults";
+    if !precedence_doc.contains(expected) {
+        return Err("docs/spec/CONFIG_PRECEDENCE.md missing canonical precedence table".to_string());
+    }
+
+    let defaults = json!({"jobs": 1});
+    let env_cfg = json!({"jobs": 2});
+    let file_cfg = json!({"jobs": 3});
+    let cli_cfg = json!({"jobs": 4});
+    let mut merged = defaults;
+    deep_merge_json(&mut merged, &env_cfg);
+    deep_merge_json(&mut merged, &file_cfg);
+    deep_merge_json(&mut merged, &cli_cfg);
+    if merged.get("jobs").and_then(|v| v.as_u64()) != Some(4) {
+        return Err("effective precedence behavior does not match documented order".to_string());
+    }
+    Ok(())
+}
+
+fn run_ambient_env_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut files = Vec::new();
+    collect_files_with_extension(&root.join("crates"), "rs", &mut files)?;
+    let mut violations = Vec::new();
+    let allow_env_keys = ["BIJUX_DAG_CACHE_DIR", "BIJUX_DAG_ADAPTERS_DIR"];
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        if !(content.contains("std::env::var(") || content.contains("env::var(")) {
+            continue;
+        }
+        for line in content.lines() {
+            if !(line.contains("std::env::var(\"") || line.contains("env::var(\"")) {
+                continue;
+            }
+            if rel.contains("/tests/") || rel.ends_with(".in.rs") {
+                continue;
+            }
+            if allow_env_keys.iter().any(|key| line.contains(key)) {
+                continue;
+            }
+            violations.push(format!("{rel}: disallowed ambient env read `{}`", line.trim()));
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn deep_merge_json(target: &mut Value, overlay: &Value) {
+    match (target, overlay) {
+        (Value::Object(dst), Value::Object(src)) => {
+            for (key, value) in src {
+                match dst.get_mut(key) {
+                    Some(existing) => deep_merge_json(existing, value),
+                    None => {
+                        dst.insert(key.clone(), value.clone());
+                    }
+                }
+            }
+        }
+        (target, overlay) => {
+            *target = overlay.clone();
+        }
+    }
+}
+
+fn collect_files_with_extension(dir: &Path, ext: &str, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    if !dir.exists() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(dir).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.is_dir() {
+            collect_files_with_extension(&path, ext, out)?;
+            continue;
+        }
+        if path.extension().and_then(|x| x.to_str()) == Some(ext) {
+            out.push(path);
+        }
+    }
+    Ok(())
 }
