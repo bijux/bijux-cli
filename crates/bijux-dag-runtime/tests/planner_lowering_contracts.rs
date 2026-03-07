@@ -92,3 +92,34 @@ fn fan_in_fan_out_and_disconnected_lowering_are_supported() {
     assert!(plan.planned_nodes.iter().any(|n| n.id == "join"));
     assert!(plan.planned_nodes.iter().any(|n| n.id == "isolated"));
 }
+
+#[test]
+fn schema_validation_errors_are_distinct_from_planner_errors() {
+    let schema_err = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"bad","kind":"const","inputs":[],"outputs":[{"name":"out","path":"../escape"}],"params":{"value":1}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect_err("invalid output path must fail schema/graph validation");
+    assert!(schema_err.to_string().contains("output path"));
+
+    let planner_graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"bad-cap","kind":"const","inputs":[],"outputs":[{"name":"out","path":"bad/out"}],"resources":{"cpu":1,"mem_mb":64},"params":{"value":1}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph should parse");
+    let plan = build_plan(&planner_graph, &RuntimeConfig::default());
+    assert!(plan
+        .diagnostics
+        .iter()
+        .any(|d| d.contains("P4021") && d.contains("unsupported-runtime-capability")));
+}
