@@ -3,7 +3,7 @@ use bijux_dag_artifacts::lineage::{write_lineage_snapshot, ArtifactLineageEdge, 
 use bijux_dag_artifacts::paths::is_normalized_relative_path;
 use bijux_dag_artifacts::proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
 use bijux_dag_artifacts::schema::{validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode};
-use bijux_dag_artifacts::{write_outputs_index, OutputsIndex};
+use bijux_dag_artifacts::{write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex};
 use std::fs;
 
 #[test]
@@ -130,4 +130,15 @@ fn write_outputs_index_rejects_escaping_paths() {
     .unwrap();
     let msg = err.to_string();
     assert!(msg.contains("path violation"));
+}
+
+#[test]
+fn corruption_payloads_fail_schema_parse() {
+    let truncated_manifest = r#"{\"run_id\":\"r1\",\"status\":\"ok\""#;
+    let missing_trace_fields = r#"{\"node_id\":\"n1\",\"status\":\"ok\"}"#;
+    let altered_outputs_index = r#"{\"files\":[{\"path\":\"out.txt\"}]}"#;
+
+    assert!(serde_json::from_str::<Manifest>(truncated_manifest).is_err());
+    assert!(serde_json::from_str::<NodeTrace>(missing_trace_fields).is_err());
+    assert!(serde_json::from_str::<RunOutputsIndex>(altered_outputs_index).is_err());
 }
