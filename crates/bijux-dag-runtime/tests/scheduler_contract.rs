@@ -1,6 +1,7 @@
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     build_plan, build_scheduler, DependencyCounter, LocalExecutor, ReadyQueue, RuntimeConfig,
+    scheduler_debug_event_log,
     failure_allows_downstream_readiness, scheduler_contract_profile, scheduler_invariants_hold,
     FailurePropagationMode, SchedulerPolicy, SchedulerState, Selector, SelectorSet,
 };
@@ -193,4 +194,84 @@ fn changing_concurrency_budget_does_not_change_node_set_semantics() {
         .map(|n| n.id.clone())
         .collect::<std::collections::BTreeSet<_>>();
     assert_eq!(nodes_low, nodes_high);
+}
+
+#[test]
+fn cancellation_prevents_new_scheduling_batches() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let options = RuntimeConfig::default();
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision = scheduler.next_batch(
+        &graph,
+        &mut ready,
+        &options,
+        std::time::Instant::now(),
+        true,
+    );
+    assert!(decision.batch.is_empty());
+    assert!(decision.cancelled);
+}
+
+#[test]
+fn timeout_is_distinct_from_failure_path_in_scheduler_decision() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let mut options = RuntimeConfig::default();
+    options.run_timeout_ms = Some(0);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let started = std::time::Instant::now() - std::time::Duration::from_millis(1);
+    let decision = scheduler.next_batch(&graph, &mut ready, &options, started, false);
+    assert!(decision.timed_out);
+    assert!(!decision.cancelled);
+    assert!(decision.batch.is_empty());
+}
+
+#[test]
+fn simultaneous_predecessor_completions_do_not_duplicate_enqueue() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"const","outputs":[{"name":"out","path":"b/out"}],"params":{"value":1}},
+            {"id":"c","kind":"const","inputs":["in1","in2"],"outputs":[{"name":"out","path":"c/out"}],"params":{"value":1}}
+          ],
+          "edges": [
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"in1"}},
+            {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"in2"}}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let mut state = SchedulerState::from_plan(&plan);
+    let _ = state.complete_success("a");
+    let _ = state.complete_success("b");
+    let ready_c_count = state
+        .ready_snapshot()
+        .into_iter()
+        .filter(|n| n == "c")
+        .count();
+    assert_eq!(ready_c_count, 1);
+}
+
+#[test]
+fn scheduler_debug_event_log_is_timeline_reconstructable() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let mut state = SchedulerState::from_plan(&plan);
+    state.complete_success("a");
+    state.complete_cached("b");
+    let events = scheduler_debug_event_log(&state);
+    assert!(!events.is_empty());
+    let mut last = 0;
+    for event in events {
+        assert!(event.sequence > last);
+        last = event.sequence;
+    }
 }

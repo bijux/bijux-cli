@@ -639,6 +639,10 @@ pub fn scheduler_invariants_hold(state: &SchedulerState) -> bool {
     !retry_conflict
 }
 
+pub fn scheduler_debug_event_log(state: &SchedulerState) -> Vec<SchedulerEvent> {
+    state.events().to_vec()
+}
+
 pub fn validate_cron_expression(expression: &str) -> Result<(), String> {
     let fields: Vec<&str> = expression.split_whitespace().collect();
     if fields.len() != 5 {

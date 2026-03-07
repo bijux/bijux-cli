@@ -397,7 +397,7 @@ pub use coordination::{
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
     failure_allows_downstream_readiness, failure_mode_name, scheduler_contract_profile,
-    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
+    scheduler_debug_event_log, scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
     validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
     DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
     FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,

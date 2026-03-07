@@ -5071,6 +5071,7 @@ fn run_scheduler_invariants_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/SCHEDULER_CONTRACT.md",
+        "docs/spec/SCHEDULER_STATE_TRANSITIONS.md",
         "crates/bijux-dag-runtime/tests/scheduler_contract.rs",
     ];
     let mut missing = Vec::new();

@@ -10,6 +10,7 @@ cache/skip/failure downstream readiness semantics, and scheduler debug artifacts
 
 - Canonical scheduling unit: `node`
 - Attempt handling is modeled as node lifecycle events with retry requeue.
+- Unit identity remains node-stable across retries; attempt updates are modeled in event detail.
 
 ## Runtime Model
 
@@ -72,11 +73,18 @@ Event kinds:
 - `node_skipped`
 - `node_failed`
 
+Debug mode requirement:
+
+- Scheduler state exposes structured event log via `SchedulerState::events()`.
+- Event sequencing is strictly increasing and timeline-reconstructable.
+
 ## Determinism Requirements
 
 - For a fixed graph and fixed event sequence, `ready_queue` evolution is deterministic.
 - A downstream node becomes ready at most once.
 - Concurrency level (`jobs`, `max_parallelism`) does not change scheduler semantic node set.
+- Cancellation prevents new scheduling batches.
+- Timeout is represented as a scheduling timeout outcome and not conflated with node failure.
 
 ## Invariants
 
@@ -94,6 +102,12 @@ Runtime emits scheduler timeline data in run artifacts. Control plane command:
 
 This command emits scheduler-relevant timeline entries from
 `observability.timeline.json` for completed runs.
+
+## Legal state transitions
+
+Legal scheduler state transitions are documented in:
+
+- `docs/spec/SCHEDULER_STATE_TRANSITIONS.md`
 
 ## Versioning
 
