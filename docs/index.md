@@ -18,6 +18,7 @@
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
+- [Sacred execution flow](./spec/SACRED_EXECUTION_FLOW.md)
 - [Scheduler state-space contract](./spec/SCHEDULER_STATESPACE_CONTRACT.md)
 - [Execution acceptance gates](./spec/EXECUTION_ACCEPTANCE_GATES.md)
 - [Security policy](./SECURITY.md)

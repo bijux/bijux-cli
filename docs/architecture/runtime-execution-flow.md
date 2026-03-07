@@ -7,6 +7,15 @@ Execution path:
 4. Trace writer persists per-node trace, attempt events, and resolved params.
 5. Artifact persistence writes manifest, outputs indexes, provenance, and run summary.
 
+Centralized sacred hooks:
+- `sacred_execution::resolve_dependencies`
+- `sacred_execution::ready_queue_from_dependencies`
+- `sacred_execution::run_materialize_inputs`
+- `sacred_execution::run_cache_lookup`
+- `sacred_execution::run_retry_logic`
+- `sacred_execution::run_write_trace`
+- `sacred_execution::run_cache_write`
+
 Data-flow contract:
 - Planner and policy evaluation are deterministic for identical input state.
 - Trace writing is append-only per node attempt and final status.
