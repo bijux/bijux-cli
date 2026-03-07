@@ -22,6 +22,7 @@
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)
+- [Battle workflow contract](./spec/BATTLE_WORKFLOW_CONTRACT.md)
 - [Test philosophy](./spec/TEST_PHILOSOPHY.md)
 - [Test trust contract](./spec/TEST_TRUST_CONTRACT.md)
 - [Runtime test trust audit](./architecture/test_trust_audit.md)
