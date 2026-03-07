@@ -1,0 +1,1 @@
+{"scenario":"artifact-lineage-cross-product","products":["bijux-dag","bijux-atlas"],"expected":"lineage-preserved"}
