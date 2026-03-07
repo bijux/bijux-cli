@@ -1,0 +1,31 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "families": {
+    "graph_schema": {
+      "supported": [
+        "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json"
+      ],
+      "unsupported": [
+        "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_past/minimal.dag.json"
+      ]
+    },
+    "run_dir": {
+      "supported": [
+        "evidence/compat/run_dir/v0_1_supported/manifest.json"
+      ],
+      "unsupported": [
+        "evidence/compat/run_dir/unsupported_future/manifest.json"
+      ]
+    },
+    "export_bundle": {
+      "supported": [
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json"
+      ],
+      "unsupported": [
+        "evidence/compat/export_bundle/unsupported_past/bundle.json"
+      ]
+    }
+  }
+}

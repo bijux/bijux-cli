@@ -12,10 +12,11 @@
     "evidence/compare",
     "benchmarks/scenarios",
     "comparisons/scenarios",
-    "tests/cache/fixtures",
+    "evidence/cache",
+    "evidence/compat",
+    "evidence/fault",
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
-    "tests/fault/fixtures",
     "crates/bijux-dag-core/tests/fixtures",
     "crates/bijux-dag-artifacts/tests/fixtures",
     "crates/bijux-dag-runtime/tests/fixtures"

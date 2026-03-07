@@ -1,0 +1,31 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "corrupt_fixtures": {
+    "evidence/cache/corrupt/missing_meta.json": {
+      "corruption_class": "missing_meta",
+      "expected_diagnostic": "cache-entry-missing-meta"
+    },
+    "evidence/cache/corrupt/hash_mismatch.json": {
+      "corruption_class": "proof_hash_mismatch",
+      "expected_diagnostic": "cache-proof-hash-mismatch"
+    },
+    "evidence/cache/corrupt/unsupported_metadata_version.json": {
+      "corruption_class": "unsupported_metadata_version",
+      "expected_diagnostic": "cache-metadata-version-unsupported"
+    },
+    "evidence/cache/corrupt/truncated_meta.json": {
+      "corruption_class": "truncated_metadata_payload",
+      "expected_diagnostic": "cache-metadata-parse-failed"
+    },
+    "evidence/cache/corrupt/missing_outputs_proof.json": {
+      "corruption_class": "missing_outputs_proof",
+      "expected_diagnostic": "cache-entry-missing-outputs-proof"
+    }
+  },
+  "scenarios": {
+    "evidence/cache/scenarios/warm_cold.json": {
+      "coverage": "warm-cold-semantic-equivalence"
+    }
+  }
+}

@@ -5274,7 +5274,11 @@ struct FaultClassEntry {
 
 fn run_fault_summary_report() -> Result<(), String> {
     let root = repo_root()?;
-    let catalog_path = root.join("tests/fault/fixtures/fault_classes.json");
+    let catalog_path = root.join("evidence/fault/classes/fault_classes.json");
+    let metadata_path = root.join("evidence/fault/metadata.json");
+    if !metadata_path.exists() {
+        return Err("missing fault metadata: evidence/fault/metadata.json".to_string());
+    }
     let payload = fs::read_to_string(&catalog_path).map_err(|err| err.to_string())?;
     let catalog: FaultClassCatalog =
         serde_json::from_str(&payload).map_err(|err| err.to_string())?;
@@ -7156,14 +7160,14 @@ fn run_artifact_hardening_guard() -> Result<(), String> {
         "docs/spec/ARTIFACT_OWNERSHIP_TABLE.md",
         "docs/spec/ARTIFACT_LIFECYCLE.md",
         "configs/schema/operator/run_verify_report.schema.json",
-        "tests/compatibility/export_bundle/v0.1/bundle.json",
-        "tests/compatibility/export_bundle/unsupported_past/bundle.json",
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+        "evidence/compat/export_bundle/unsupported_past/bundle.json",
         "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
         "crates/bijux-dag-artifacts/src/storage/hardening.rs",
         "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
         "crates/bijux-dev-dag/tests/run_dir_import_export_hardening_contracts.rs",
-        "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
-        "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+        "evidence/fault/corrupt_runs/missing_manifest_version.json",
+        "evidence/fault/corrupt_runs/invalid_outputs_index.json",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing artifact hardening artifact: {rel}"));
@@ -7571,13 +7575,14 @@ fn run_versioning_compatibility_guard() -> Result<(), String> {
         "docs/spec/VERSION_COMPATIBILITY_DRIFT_POLICY.md",
     ];
     let required_fixtures = [
-        "tests/compatibility/graph_schema/v0.1/minimal.dag.json",
-        "tests/compatibility/graph_schema/unsupported_future/minimal.dag.json",
-        "tests/compatibility/graph_schema/unsupported_past/minimal.dag.json",
-        "tests/compatibility/run_dir/v0.1/manifest.json",
-        "tests/compatibility/run_dir/unsupported_future/manifest.json",
-        "tests/compatibility/export_bundle/v0.1/bundle.json",
-        "tests/compatibility/export_bundle/unsupported_past/bundle.json",
+        "evidence/compat/metadata.json",
+        "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+        "evidence/compat/run_dir/v0_1_supported/manifest.json",
+        "evidence/compat/run_dir/unsupported_future/manifest.json",
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+        "evidence/compat/export_bundle/unsupported_past/bundle.json",
     ];
     let mut missing = Vec::new();
     for rel in required_docs.iter().chain(required_fixtures.iter()) {
@@ -7612,12 +7617,13 @@ fn run_cache_evolution_guard() -> Result<(), String> {
         "docs/reports/foundation/cache_hardening_report.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
         "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
-        "tests/cache/fixtures/corrupt/missing_meta.json",
-        "tests/cache/fixtures/corrupt/hash_mismatch.json",
-        "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
-        "tests/cache/fixtures/corrupt/truncated_meta.json",
-        "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
-        "tests/cache/fixtures/warm_cold/scenario.json",
+        "evidence/cache/metadata.json",
+        "evidence/cache/corrupt/missing_meta.json",
+        "evidence/cache/corrupt/hash_mismatch.json",
+        "evidence/cache/corrupt/unsupported_metadata_version.json",
+        "evidence/cache/corrupt/truncated_meta.json",
+        "evidence/cache/corrupt/missing_outputs_proof.json",
+        "evidence/cache/scenarios/warm_cold.json",
         "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
         "crates/bijux-dag-runtime/tests/cache_contracts.rs",
         "crates/bijux-dev-dag/tests/cache_hardening_contracts.rs",
@@ -7633,6 +7639,26 @@ fn run_cache_evolution_guard() -> Result<(), String> {
             "cache evolution required surfaces missing: {}",
             missing.join(", ")
         ));
+    }
+    let cache_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/cache/metadata.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let corrupt_fixtures = cache_metadata
+        .get("corrupt_fixtures")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "cache metadata missing corrupt_fixtures object".to_string())?;
+    for fixture in [
+        "evidence/cache/corrupt/missing_meta.json",
+        "evidence/cache/corrupt/hash_mismatch.json",
+        "evidence/cache/corrupt/unsupported_metadata_version.json",
+        "evidence/cache/corrupt/truncated_meta.json",
+        "evidence/cache/corrupt/missing_outputs_proof.json",
+    ] {
+        if !corrupt_fixtures.contains_key(fixture) {
+            return Err(format!("cache metadata missing corruption entry: {fixture}"));
+        }
     }
     let model = fs::read_to_string(root.join("docs/spec/CACHE_EVOLUTION_MODEL.md"))
         .map_err(|err| err.to_string())?;
@@ -8629,19 +8655,19 @@ fn run_compatibility_report() -> Result<(), String> {
     let report = json!({
         "graph_schema": {
             "current": "0.1",
-            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/v0.1"))?,
-            "unsupported_future_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/unsupported_future"))?,
-            "unsupported_past_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/unsupported_past"))?
+            "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/v0_1_supported"))?,
+            "unsupported_future_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_future"))?,
+            "unsupported_past_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_past"))?
         },
         "run_dir": {
             "current": "run-manifest/v0.1",
-            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/run_dir/v0.1"))?,
-            "unsupported_future_fixtures": collect_fixture_count(&root.join("tests/compatibility/run_dir/unsupported_future"))?
+            "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/run_dir/v0_1_supported"))?,
+            "unsupported_future_fixtures": collect_fixture_count(&root.join("evidence/compat/run_dir/unsupported_future"))?
         },
         "export_bundle": {
             "current": "export-bundle/v0.1",
-            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/v0.1"))?,
-            "unsupported_past_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/unsupported_past"))?
+            "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/v0_1_supported"))?,
+            "unsupported_past_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/unsupported_past"))?
         }
     });
     println!(
@@ -8662,8 +8688,8 @@ fn run_cache_coverage_report() -> Result<(), String> {
                 "coverage_ledger": root.join("docs/tracking/CACHE_CORRECTNESS_COVERAGE.md").exists()
             },
             "fixtures": {
-                "corruption": collect_fixture_count(&root.join("tests/cache/fixtures/corrupt"))?,
-                "warm_cold": collect_fixture_count(&root.join("tests/cache/fixtures/warm_cold"))?
+                "corruption": collect_fixture_count(&root.join("evidence/cache/corrupt"))?,
+                "warm_cold": collect_fixture_count(&root.join("evidence/cache/scenarios"))?
             },
             "tests": {
                 "app_cache_evolution_contract": root.join("crates/bijux-dag-app/tests/cache_evolution_contract.rs").exists(),

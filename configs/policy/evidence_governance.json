@@ -6,12 +6,17 @@
     "evidence/authoring/negative",
     "evidence/battle/workflows",
     "evidence/operator/scenarios",
+    "evidence/cache/corrupt",
+    "evidence/cache/scenarios",
+    "evidence/compat/graph_schema",
+    "evidence/compat/export_bundle",
+    "evidence/compat/run_dir",
+    "evidence/fault/classes",
+    "evidence/fault/corrupt_runs",
     "benchmarks/scenarios",
     "comparisons/scenarios",
-    "tests/cache/fixtures",
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
-    "tests/fault/fixtures",
     "crates/bijux-dag-core/tests/fixtures",
     "crates/bijux-dag-artifacts/tests/fixtures",
     "crates/bijux-dag-runtime/tests/fixtures"
@@ -22,7 +27,13 @@
     "evidence/battle/registries/scenario_registry.json",
     "evidence/battle/registries/.gitkeep",
     "evidence/battle/workflows/.gitkeep",
-    "evidence/operator/scenarios/.gitkeep"
+    "evidence/operator/scenarios/.gitkeep",
+    "evidence/cache/corrupt/.gitkeep",
+    "evidence/cache/scenarios/.gitkeep",
+    "evidence/compat/graph_schema/.gitkeep",
+    "evidence/compat/export_bundle/.gitkeep",
+    "evidence/compat/run_dir/.gitkeep",
+    "evidence/fault/classes/.gitkeep"
   ],
   "forbidden_globs": [
     "benchmarks/fixtures/distributed/*",
@@ -32,7 +43,11 @@
     "comparisons/external/*",
     "examples/*.dag.json",
     "tests/authoring/examples/*.json",
-    "tests/authoring/bad/*.json"
+    "tests/authoring/bad/*.json",
+    "tests/cache/fixtures/*",
+    "tests/compatibility/*",
+    "tests/fault/fixtures/*",
+    "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/*"
   ],
   "allowed_decisions": [
     "keep",
