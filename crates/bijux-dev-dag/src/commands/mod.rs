@@ -998,6 +998,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_batch_execution_boundary_guard(),
     },
     SuiteDef {
+        id: "operator-ux",
+        description: "operator command index and run inspection UX contract alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_operator_ux_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -5003,6 +5012,52 @@ fn run_batch_execution_boundary_guard() -> Result<(), String> {
     }
     if batch_doc.contains("production-ready") || batch_doc.contains("ga-ready") {
         return Err("batch execution model contains unsupported maturity claim".to_string());
+    }
+    Ok(())
+}
+
+fn run_operator_ux_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/OPERATOR_UX_CONTRACT.md",
+        "docs/user/OPERATOR_COMMAND_INDEX.md",
+        "docs/reference/COMMAND_TAXONOMY.md",
+        "crates/bijux-dag-app/tests/operator_ux_contract.rs",
+        "configs/schema/operator/run_list.schema.json",
+        "configs/schema/operator/run_inspect.schema.json",
+        "configs/schema/operator/run_tree.schema.json",
+        "configs/schema/operator/run_timeline.schema.json",
+        "configs/schema/operator/run_explain_failure.schema.json",
+        "configs/schema/operator/run_doctor.schema.json",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "operator ux contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+    let index = fs::read_to_string(root.join("docs/user/OPERATOR_COMMAND_INDEX.md"))
+        .map_err(|err| err.to_string())?;
+    for command in [
+        "dag runs list",
+        "dag runs show",
+        "dag runs inspect",
+        "dag runs tree",
+        "dag runs timeline",
+        "dag runs diff",
+        "dag runs verify",
+        "dag runs doctor",
+        "dag runs explain-failure",
+    ] {
+        if !index.contains(command) {
+            return Err(format!("operator command index missing `{command}`"));
+        }
     }
     Ok(())
 }
