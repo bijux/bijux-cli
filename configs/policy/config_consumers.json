@@ -1,0 +1,65 @@
+{
+  "version": "1",
+  "owners": {
+    "policy": "repository-governance",
+    "verification": "dev-control-plane"
+  },
+  "consumer_rules": [
+    {
+      "glob": "configs/CONTRACT.md",
+      "consumer": "documentation-contract"
+    },
+    {
+      "glob": "configs/deployment/*.toml",
+      "consumer": "dev-control-plane"
+    },
+    {
+      "glob": "configs/dev/*.json",
+      "consumer": "dag-app-config-surface"
+    },
+    {
+      "glob": "configs/dev/examples/*.json",
+      "consumer": "dag-app-config-surface"
+    },
+    {
+      "glob": "configs/nextest/*.toml",
+      "consumer": "test-runner"
+    },
+    {
+      "glob": "configs/nextest/*.md",
+      "consumer": "test-runner"
+    },
+    {
+      "glob": "configs/policy/*.json",
+      "consumer": "repo-governance-suites"
+    },
+    {
+      "glob": "configs/release/*.json",
+      "consumer": "release-verification"
+    },
+    {
+      "glob": "configs/rust/*.toml",
+      "consumer": "fmt-and-lint-tooling"
+    },
+    {
+      "glob": "configs/schedules/*.json",
+      "consumer": "runtime-scheduler-contracts"
+    },
+    {
+      "glob": "configs/schema/*.json",
+      "consumer": "schema-validation-and-contract-tests"
+    },
+    {
+      "glob": "configs/schema/*/*.json",
+      "consumer": "schema-validation-and-contract-tests"
+    },
+    {
+      "glob": "configs/schema/*/*/*.json",
+      "consumer": "schema-validation-and-contract-tests"
+    },
+    {
+      "glob": "configs/schema/*/*/*/*.json",
+      "consumer": "schema-validation-and-contract-tests"
+    }
+  ]
+}

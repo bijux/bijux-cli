@@ -1,0 +1,36 @@
+{
+  "version": "1",
+  "owners": {
+    "policy": "repository-governance",
+    "verification": "dev-control-plane"
+  },
+  "docs_root_markdown_budget": 100,
+  "banned_docs": [
+    "docs/ELITE_MVP_SCORECARD.md",
+    "docs/PLATFORM_MATURITY_SCORECARD.md",
+    "docs/WORLD_CLASS_PLATFORM_SCORECARD.md",
+    "docs/AI_ASSISTED_MATURITY_LADDER.md"
+  ],
+  "banned_phrases": [
+    "elite mvp scorecard",
+    "world-class platform scorecard",
+    "platform maturity scorecard"
+  ],
+  "title_normalization_stopwords": [
+    "a",
+    "an",
+    "and",
+    "for",
+    "of",
+    "the",
+    "to",
+    "with"
+  ],
+  "allowed_duplicate_titles": [
+    "README"
+  ],
+  "roadmap_growth_freeze": {
+    "enabled": true,
+    "authority": "docs/reports/foundation/renovation_burndown_report.md"
+  }
+}
