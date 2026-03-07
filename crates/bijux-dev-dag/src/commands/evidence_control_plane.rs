@@ -66,6 +66,23 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
     }
 
     let registry_release_flags = load_registry_release_blocking_flags(&root)?;
+    let registry_payload =
+        fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
+            .map_err(|err| err.to_string())?;
+    let registry: Value = serde_json::from_str(&registry_payload).map_err(|err| err.to_string())?;
+    let registry_assets = registry["assets"]
+        .as_array()
+        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
+    let mut registry_kind_by_id = BTreeMap::new();
+    for asset in registry_assets {
+        let id = asset["id"]
+            .as_str()
+            .ok_or_else(|| "registry asset missing id".to_string())?;
+        let kind = asset["kind"]
+            .as_str()
+            .ok_or_else(|| format!("registry asset `{id}` missing kind"))?;
+        registry_kind_by_id.insert(id.to_string(), kind.to_string());
+    }
 
     if required_families.is_empty() {
         return Err("release evidence set required_families cannot be empty".to_string());
@@ -88,6 +105,15 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
     }
 
     let mut blocking_ids = BTreeSet::new();
+    let required_families_set: BTreeSet<String> = required_families
+        .iter()
+        .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+        .collect();
+    let advisory_families_set: BTreeSet<String> = advisory_families
+        .iter()
+        .filter_map(|entry| entry.as_str().map(ToOwned::to_owned))
+        .collect();
+    let mut blocking_family_coverage = BTreeSet::new();
     for asset in blocking_assets {
         let id = asset
             .as_str()
@@ -115,6 +141,20 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
                 "blocking release asset is not release_blocking in registry: `{id}`"
             ));
         }
+        let kind = registry_kind_by_id
+            .get(id)
+            .ok_or_else(|| format!("registry kind missing for `{id}`"))?;
+        if advisory_families_set.contains(kind) {
+            return Err(format!(
+                "ambiguous evidence classification: blocking asset `{id}` belongs to advisory family `{kind}`"
+            ));
+        }
+        if !required_families_set.contains(kind) {
+            return Err(format!(
+                "ambiguous evidence classification: blocking asset `{id}` has family `{kind}` not listed in required_families"
+            ));
+        }
+        blocking_family_coverage.insert(kind.clone());
         if !blocking_ids.insert(id.to_string()) {
             return Err(format!("duplicate blocking release asset id: `{id}`"));
         }
@@ -135,6 +175,19 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
                 "advisory release asset is marked release_blocking in registry: `{id}`"
             ));
         }
+        let kind = registry_kind_by_id
+            .get(id)
+            .ok_or_else(|| format!("registry kind missing for `{id}`"))?;
+        if required_families_set.contains(kind) {
+            return Err(format!(
+                "ambiguous evidence classification: advisory asset `{id}` belongs to required family `{kind}`"
+            ));
+        }
+        if !advisory_families_set.contains(kind) {
+            return Err(format!(
+                "ambiguous evidence classification: advisory asset `{id}` has family `{kind}` not listed in advisory_families"
+            ));
+        }
         if blocking_ids.contains(id) {
             return Err(format!(
                 "release evidence asset cannot be both blocking and advisory: `{id}`"
@@ -142,6 +195,14 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         }
         if !advisory_ids.insert(id.to_string()) {
             return Err(format!("duplicate advisory release asset id: `{id}`"));
+        }
+    }
+
+    for required in ["replay", "cache", "operator"] {
+        if !blocking_family_coverage.contains(required) {
+            return Err(format!(
+                "release evidence set missing blocking coverage for required trust family `{required}`"
+            ));
         }
     }
 
@@ -161,6 +222,27 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
                     "minimum blocking set `{set_id}` references `{id}` not present in blocking_assets"
                 ));
             }
+        }
+    }
+
+    let expected_manifest = json!({
+        "version": "1",
+        "source": "evidence/release/release_evidence_set.json",
+        "required_families": required_families_set,
+        "advisory_families": advisory_families_set,
+        "minimum_blocking_sets": minimum_sets,
+        "blocking_assets": blocking_ids,
+        "advisory_assets": advisory_ids
+    });
+    let manifest_path = root.join("evidence/release/release_evidence.json");
+    if manifest_path.exists() {
+        let manifest_payload = fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?;
+        let manifest: Value = serde_json::from_str(&manifest_payload).map_err(|err| err.to_string())?;
+        if manifest != expected_manifest {
+            return Err(
+                "release evidence manifest drift detected; regenerate with `cargo run -p bijux-dev-dag -- repo release-evidence-report`"
+                    .to_string(),
+            );
         }
     }
     Ok(())
@@ -234,6 +316,7 @@ pub(super) fn run_release_evidence_report(
     json_out: &Path,
     proves_out: &Path,
     limits_out: &Path,
+    unsupported_out: &Path,
 ) -> Result<(), String> {
     let root = repo_root()?;
     let release_payload =
@@ -347,12 +430,27 @@ pub(super) fn run_release_evidence_report(
 
     fs::write(root.join(proves_out), proves_lines.join("\n")).map_err(|err| err.to_string())?;
     fs::write(root.join(limits_out), limits_lines.join("\n")).map_err(|err| err.to_string())?;
+    let unsupported_lines = vec![
+        "# Unsupported Or Simulated Areas".to_string(),
+        String::new(),
+        "This release does not claim production support for advisory-only evidence surfaces and simulated scenarios.".to_string(),
+        String::new(),
+        "Advisory evidence families:".to_string(),
+        advisory_families
+            .iter()
+            .map(|family| format!("- `{family}`"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    ];
+    fs::write(root.join(unsupported_out), unsupported_lines.join("\n"))
+        .map_err(|err| err.to_string())?;
     println!(
         "{}",
         json!({
             "json_report": json_out.to_string_lossy(),
             "proves_report": proves_out.to_string_lossy(),
             "limits_report": limits_out.to_string_lossy(),
+            "unsupported_report": unsupported_out.to_string_lossy(),
         })
     );
     Ok(())

@@ -392,6 +392,11 @@ pub(super) enum RepoCommand {
             default_value = "evidence/reports/what_this_release_does_not_prove.md"
         )]
         limits_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "evidence/reports/unsupported_or_simulated_areas.md"
+        )]
+        unsupported_out: PathBuf,
     },
 }
 

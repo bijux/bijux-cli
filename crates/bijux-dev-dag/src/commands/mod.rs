@@ -520,6 +520,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 json_out,
                 proves_out,
                 limits_out,
+                unsupported_out,
             } => run_command_reported(
                 &context,
                 "repo.release-evidence-report",
@@ -527,9 +528,17 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({
                     "json_out": json_out,
                     "proves_out": proves_out,
-                    "limits_out": limits_out
+                    "limits_out": limits_out,
+                    "unsupported_out": unsupported_out
                 }),
-                || run_release_evidence_report(&json_out, &proves_out, &limits_out),
+                || {
+                    run_release_evidence_report(
+                        &json_out,
+                        &proves_out,
+                        &limits_out,
+                        &unsupported_out,
+                    )
+                },
             ),
         },
         CommandLine::Verify { command } => match command {

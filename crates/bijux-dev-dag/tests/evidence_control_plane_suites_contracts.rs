@@ -162,6 +162,7 @@ fn evidence_suite_summary_models_exist() {
         "evidence/release/release_evidence.json",
         "evidence/reports/what_this_release_proves.md",
         "evidence/reports/what_this_release_does_not_prove.md",
+        "evidence/reports/unsupported_or_simulated_areas.md",
         ".github/workflows/evidence-verify.yml",
     ] {
         assert!(
