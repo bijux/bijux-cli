@@ -133,7 +133,7 @@ use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use store::{ArtifactStore, CacheStore};
+use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 pub use task_contract::{
     default_forced_cleanup, build_task_contract, validate_task_contracts, ForcedCancellationCleanup,
     IdempotencyMode, NodeProvenance, OutputMaterializationPolicy, RuntimeState,
@@ -221,6 +221,7 @@ pub use execution_backend::{
     ExecutionAttemptRecord, ExecutionBackend, FakeBackend, ProcessLikeBackend,
 };
 pub use local_executor::LocalExecutor;
+pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
@@ -459,7 +460,7 @@ pub struct RunContext {
     pub resolved_params: HashMap<String, Value>,
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
-    pub store: ArtifactStore,
+    pub store: RuntimeArtifactStore,
     pub policy: PolicyConfig,
 }
 
@@ -1287,7 +1288,7 @@ fn try_cache_read(
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let cache_store = match cache_dir {
-        Some(d) => Some(CacheStore::new(d, Arc::clone(&fs))),
+        Some(d) => Some(RuntimeCacheStore::new(d, Arc::clone(&fs))),
         None => {
             return Ok(CacheRead {
                 hit: false,
@@ -1413,7 +1414,7 @@ fn try_cache_write(
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let store = match cache_dir {
-        Some(d) => CacheStore::new(d, Arc::clone(&fs)),
+        Some(d) => RuntimeCacheStore::new(d, Arc::clone(&fs)),
         None => return Ok(()),
     };
     let key = node_fingerprint.to_string();
