@@ -26,4 +26,9 @@ This directory defines the repository make surface with one root include and cle
 - `make test-all`: runs full suite including ignored tests, then verifies battle and evidence consumer integrity through `bijux-dev-dag`.
 - `make coverage`: runs full suite including ignored tests.
 - `make evidence-all`: runs the single evidence validation entrypoint (`bijux-dev-dag verify evidence-foundation`).
+- `make evidence-schema`: runs schema-level evidence checks.
+- `make evidence-registry`: runs registry integrity and drift checks.
+- `make evidence-consumers`: runs consumer integrity and bypass checks.
+- `make evidence-release-set`: validates release evidence set references.
+- `make evidence-summary`: generates machine-readable and human-readable evidence suite summary reports.
 - `make contract-all`: runs all contracts plus evidence foundation verification.

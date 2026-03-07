@@ -1,0 +1,27 @@
+name: Evidence Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  evidence-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: verify evidence foundation
+        run: cargo run -p bijux-dev-dag -- verify evidence-foundation --report artifacts/reports/evidence-foundation.json
+      - name: verify release evidence set
+        run: cargo run -p bijux-dev-dag -- verify evidence-release-set --report artifacts/reports/evidence-release-set.json
+      - name: generate evidence summary reports
+        run: cargo run -p bijux-dev-dag -- repo evidence-summary-report --report artifacts/reports/evidence-summary.json
+      - name: upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-verify-reports
+          path: artifacts/reports
+          if-no-files-found: warn

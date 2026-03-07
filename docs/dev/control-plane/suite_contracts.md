@@ -22,3 +22,23 @@ The `foundation` command executes `checks`, `tests`, `contracts`, `repo`, and `d
 
 - `configs/schema/dev-control/command_report.schema.json`
 - `configs/schema/dev-control/suite_selection_report.schema.json`
+- `configs/schema/control_plane/evidence_suite_report.schema.json`
+
+## Evidence verification suites
+
+Evidence verification is first-class and must remain visible in control-plane usage and CI:
+
+- `verify evidence-schema`
+- `verify evidence-registry`
+- `verify evidence-authoring`
+- `verify evidence-battle`
+- `verify evidence-cache`
+- `verify evidence-replay`
+- `verify evidence-compat`
+- `verify evidence-fault`
+- `verify evidence-perf`
+- `verify evidence-compare`
+- `verify evidence-consumers`
+- `verify evidence-drift`
+- `verify evidence-release-set`
+- `verify evidence-foundation`

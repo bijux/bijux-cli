@@ -62,6 +62,21 @@ contracts-all: contract-all ## Compatibility alias for contract-all
 evidence-all: ## Run evidence governance verification entrypoint
 	$(call run_or_fail,Run evidence foundation verification,$(DEV_TOOL) verify evidence-foundation)
 
+evidence-schema: ## Run evidence schema verification
+	$(call run_or_fail,Run evidence schema verification,$(DEV_TOOL) verify evidence-schema)
+
+evidence-registry: ## Run evidence registry verification
+	$(call run_or_fail,Run evidence registry verification,$(DEV_TOOL) verify evidence-registry)
+
+evidence-consumers: ## Run evidence consumer verification
+	$(call run_or_fail,Run evidence consumer verification,$(DEV_TOOL) verify evidence-consumers)
+
+evidence-release-set: ## Run release evidence set verification
+	$(call run_or_fail,Run release evidence set verification,$(DEV_TOOL) verify evidence-release-set)
+
+evidence-summary: ## Generate evidence suite summary reports
+	$(call run_or_fail,Generate evidence summary reports,$(DEV_TOOL) repo evidence-summary-report)
+
 release-verify: ## Run release verification
 	$(call run_or_fail,Run release verification,$(DEV_TOOL) release verify)
 
@@ -105,5 +120,6 @@ help: ## Show available make targets
 	awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: all checks checks-fast checks-all docs security compat golden tests-all contract-all contracts-all evidence-all
+.PHONY: evidence-schema evidence-registry evidence-consumers evidence-release-set evidence-summary
 .PHONY: release-verify repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
 .PHONY: memory-smoke artifact-verify ci sanity help help-contract make-target-list
