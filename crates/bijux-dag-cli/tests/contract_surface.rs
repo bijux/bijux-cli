@@ -7,8 +7,24 @@ use tempfile as _;
 use std::process::Command;
 use tempfile::{tempdir, NamedTempFile};
 
-fn dag_binary() -> String {
-    env!("CARGO_BIN_EXE_bijux").to_string()
+fn dag_command() -> Command {
+    if let Some(path) = option_env!("CARGO_BIN_EXE_bijux") {
+        if std::path::Path::new(path).exists() {
+            return Command::new(path);
+        }
+    }
+
+    let mut command = Command::new("cargo");
+    command.args([
+        "run",
+        "--quiet",
+        "-p",
+        "bijux-dag-cli",
+        "--bin",
+        "bijux",
+        "--",
+    ]);
+    command
 }
 
 fn write_temp_dag() -> String {
@@ -46,7 +62,7 @@ fn write_temp_dag() -> String {
 
 #[test]
 fn dag_validate_help_is_stable_enough() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", "--help"])
         .output()
         .expect("validate help");
@@ -59,7 +75,7 @@ fn dag_validate_help_is_stable_enough() {
 
 #[test]
 fn dag_unknown_subcommand_fails_with_code() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["foo"])
         .output()
         .expect("unknown subcommand");
@@ -70,7 +86,7 @@ fn dag_unknown_subcommand_fails_with_code() {
 #[test]
 fn dag_validate_json_schema_contract() {
     let dag = write_temp_dag();
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", &dag, "--json"])
         .output()
         .expect("json validate");
@@ -84,10 +100,7 @@ fn dag_validate_json_schema_contract() {
 
 #[test]
 fn dag_root_help_lists_umbrella_commands() {
-    let output = Command::new(dag_binary())
-        .arg("--help")
-        .output()
-        .expect("global help");
+    let output = dag_command().arg("--help").output().expect("global help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -98,10 +111,7 @@ fn dag_root_help_lists_umbrella_commands() {
 
 #[test]
 fn dag_command_help_surface_contract() {
-    let output = Command::new(dag_binary())
-        .args(["dag"])
-        .output()
-        .expect("dag help");
+    let output = dag_command().args(["dag"]).output().expect("dag help");
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -114,7 +124,7 @@ fn dag_command_help_surface_contract() {
 
 #[test]
 fn dag_run_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "run", "--help"])
         .output()
         .expect("run help");
@@ -134,7 +144,7 @@ fn dag_run_help_surface_contract() {
 
 #[test]
 fn dag_replay_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "replay", "--help"])
         .output()
         .expect("replay help");
@@ -148,7 +158,7 @@ fn dag_replay_help_surface_contract() {
 
 #[test]
 fn dag_diff_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "diff", "--help"])
         .output()
         .expect("diff help");
@@ -161,7 +171,7 @@ fn dag_diff_help_surface_contract() {
 
 #[test]
 fn dag_explain_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "explain", "--help"])
         .output()
         .expect("explain help");
@@ -174,7 +184,7 @@ fn dag_explain_help_surface_contract() {
 
 #[test]
 fn dag_cache_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "cache", "--help"])
         .output()
         .expect("cache help");
@@ -188,7 +198,7 @@ fn dag_cache_help_surface_contract() {
 
 #[test]
 fn dag_adapters_help_surface_contract() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "adapters", "--help"])
         .output()
         .expect("adapters help");
@@ -203,7 +213,7 @@ fn dag_adapters_help_surface_contract() {
 #[test]
 fn dag_validate_text_output_contract() {
     let dag = write_temp_dag();
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", &dag])
         .output()
         .expect("validate text");
@@ -215,7 +225,7 @@ fn dag_validate_text_output_contract() {
 
 #[test]
 fn dag_validate_invalid_argument_fails() {
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", "non-existent-dag.json"])
         .output()
         .expect("invalid validate arg");
@@ -233,7 +243,7 @@ fn dag_validate_rejects_invalid_spec_with_validation_exit_code() {
     )
     .expect("write invalid spec");
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", invalid_path.to_str().unwrap()])
         .output()
         .expect("invalid validate");
@@ -247,7 +257,7 @@ fn dag_run_exit_code_success() {
     let dag = write_temp_dag();
     let out_dir = tempfile::tempdir().expect("run out");
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args([
             "dag",
             "run",
@@ -289,7 +299,7 @@ fn dag_run_runtime_failure_returns_nonzero_exit() {
     };
     let out_dir = tempfile::tempdir().expect("run out");
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args([
             "dag",
             "run",
@@ -306,10 +316,7 @@ fn dag_run_runtime_failure_returns_nonzero_exit() {
 
 #[test]
 fn dag_rag_is_not_implemented_with_stable_exit_code() {
-    let output = Command::new(dag_binary())
-        .arg("rag")
-        .output()
-        .expect("rag command");
+    let output = dag_command().arg("rag").output().expect("rag command");
 
     assert!(!output.status.success());
     assert_eq!(output.status.code(), Some(2));
@@ -319,10 +326,7 @@ fn dag_rag_is_not_implemented_with_stable_exit_code() {
 
 #[test]
 fn dag_rar_is_not_implemented_with_stable_exit_code() {
-    let output = Command::new(dag_binary())
-        .arg("rar")
-        .output()
-        .expect("rar command");
+    let output = dag_command().arg("rar").output().expect("rar command");
 
     assert!(!output.status.success());
     assert_eq!(output.status.code(), Some(2));
@@ -334,7 +338,7 @@ fn dag_rar_is_not_implemented_with_stable_exit_code() {
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");
-    let run = Command::new(dag_binary())
+    let run = dag_command()
         .args([
             "dag",
             "run",
@@ -349,7 +353,7 @@ fn dag_status_json_schema_contract() {
         serde_json::from_slice(&run.stdout).expect("parse run payload");
     let run_path = run_payload["data"]["run_dir"].as_str().unwrap();
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "status", "--json", run_path])
         .output()
         .expect("status json");
@@ -369,7 +373,7 @@ fn dag_diff_json_schema_contract() {
     let first_run_dir = tempfile::tempdir().expect("first run out");
     let second_run_dir = tempfile::tempdir().expect("second run out");
 
-    let run_a = Command::new(dag_binary())
+    let run_a = dag_command()
         .args([
             "dag",
             "run",
@@ -380,7 +384,7 @@ fn dag_diff_json_schema_contract() {
         ])
         .output()
         .expect("run a");
-    let run_b = Command::new(dag_binary())
+    let run_b = dag_command()
         .args([
             "dag",
             "run",
@@ -399,7 +403,7 @@ fn dag_diff_json_schema_contract() {
     let run_a_path = payload_a["data"]["run_dir"].as_str().unwrap();
     let run_b_path = payload_b["data"]["run_dir"].as_str().unwrap();
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "diff", "--json", run_a_path, run_b_path])
         .output()
         .expect("diff json");
@@ -416,7 +420,7 @@ fn dag_diff_json_schema_contract() {
 #[test]
 fn dag_validate_json_exists_with_human_and_machine_contracts() {
     let dag = write_temp_dag();
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args(["dag", "validate", &dag])
         .output()
         .expect("validate text");
@@ -424,7 +428,7 @@ fn dag_validate_json_exists_with_human_and_machine_contracts() {
     assert!(output.status.success());
     assert!(!String::from_utf8_lossy(&output.stdout).contains("{\"ok\""));
 
-    let output_json = Command::new(dag_binary())
+    let output_json = dag_command()
         .args(["dag", "validate", "--json", &dag])
         .output()
         .expect("validate json");
@@ -442,7 +446,7 @@ fn dag_run_json_output_contract_and_exit_code() {
     let dag = write_temp_dag();
     let out_dir = tempdir().expect("temp out");
 
-    let output = Command::new(dag_binary())
+    let output = dag_command()
         .args([
             "dag",
             "run",
