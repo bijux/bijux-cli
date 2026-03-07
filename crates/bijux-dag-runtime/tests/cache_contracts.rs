@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,7 +11,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported, CacheKeyInput,
+    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
+    CacheKeyInput,
 };
 use serde_json::json;
 

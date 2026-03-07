@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -145,7 +145,10 @@ fn resolves_environment_values_with_parent_and_overrides() {
         overrides: BTreeMap::from([("JOBS".to_string(), "8".to_string())]),
     };
     let resolved = resolve_environment_values(&child, Some(&parent));
-    assert_eq!(resolved.get("CACHE_DIR"), Some(&"artifacts/cache".to_string()));
+    assert_eq!(
+        resolved.get("CACHE_DIR"),
+        Some(&"artifacts/cache".to_string())
+    );
     assert_eq!(resolved.get("LOG_LEVEL"), Some(&"info".to_string()));
     assert_eq!(resolved.get("JOBS"), Some(&"8".to_string()));
 }

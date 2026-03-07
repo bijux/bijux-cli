@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,10 +11,10 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    can_renew_credential, credential_is_expired, local_dev_bypass_allowed, readiness_for_federation,
-    trust_health_report, AuthProvider, AuthenticationBoundary, AuthenticationEvent,
-    AuthenticationEventKind, CredentialLifecycle, IdentityPrincipal, IdentityPrincipalKind,
-    IdentityProviderCompatibilityRule, LocalDevAuthBypassRule,
+    can_renew_credential, credential_is_expired, local_dev_bypass_allowed,
+    readiness_for_federation, trust_health_report, AuthProvider, AuthenticationBoundary,
+    AuthenticationEvent, AuthenticationEventKind, CredentialLifecycle, IdentityPrincipal,
+    IdentityPrincipalKind, IdentityProviderCompatibilityRule, LocalDevAuthBypassRule,
 };
 
 #[test]
@@ -108,7 +108,9 @@ fn federation_readiness_requires_full_auth_event_audit() {
         preserves_subject_id: true,
         preserves_audit_chain: true,
     };
-    assert!(bijux_dag_runtime::migrate_identity_provider_compatible(&compatibility));
+    assert!(bijux_dag_runtime::migrate_identity_provider_compatible(
+        &compatibility
+    ));
 }
 
 #[test]

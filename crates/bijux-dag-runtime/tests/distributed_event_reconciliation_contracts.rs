@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -55,9 +55,7 @@ impl ReconciledState {
         if event.seq < current_seq {
             return;
         }
-        if event.seq == current_seq
-            && self.status.get(&event.node_id) == Some(&event.status)
-        {
+        if event.seq == current_seq && self.status.get(&event.node_id) == Some(&event.status) {
             return;
         }
 

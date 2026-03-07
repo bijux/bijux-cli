@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -104,6 +104,10 @@ fn maturity_progression_and_root_cause_hints_are_stable() {
     assert_eq!(final_level, AiAssistMaturityLevel::GuardedRecommendations);
 
     let hints = root_cause_domain_hints(&load_failure_summary());
-    assert!(hints.iter().any(|hint| hint.likely_domain == "policy-issue"));
-    assert!(hints.iter().any(|hint| hint.likely_domain == "artifact-issue"));
+    assert!(hints
+        .iter()
+        .any(|hint| hint.likely_domain == "policy-issue"));
+    assert!(hints
+        .iter()
+        .any(|hint| hint.likely_domain == "artifact-issue"));
 }

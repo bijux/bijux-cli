@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -15,7 +15,8 @@ use bijux_dag_runtime::{
     evaluate_dry_run, invalidate_decision_cache, is_action_allowed_in_environment,
     validate_custom_role, Action, ActionKind, CustomRoleDefinition, DecisionType,
     EnvironmentAuthorizationRule, PolicyDecisionCache, PolicyDecisionCacheEntry,
-    PolicyEvaluationRequest, ResourceKind, ResourceRef, ResourceScope, SubjectIdentity, SubjectKind,
+    PolicyEvaluationRequest, ResourceKind, ResourceRef, ResourceScope, SubjectIdentity,
+    SubjectKind,
 };
 
 #[test]
@@ -64,14 +65,18 @@ fn environment_and_dry_run_decisions_are_deterministic() {
         environment: "prod".to_string(),
         denied_actions: vec!["policy.manage".to_string()],
     }];
-    assert!(is_action_allowed_in_environment("run.submit", "prod", &rules));
-    assert!(!is_action_allowed_in_environment("policy.manage", "prod", &rules));
+    assert!(is_action_allowed_in_environment(
+        "run.submit",
+        "prod",
+        &rules
+    ));
+    assert!(!is_action_allowed_in_environment(
+        "policy.manage",
+        "prod",
+        &rules
+    ));
 
-    let dry_run = evaluate_dry_run(
-        &request,
-        &["run.submit".to_string()],
-        "2026.03",
-    );
+    let dry_run = evaluate_dry_run(&request, &["run.submit".to_string()], "2026.03");
     assert!(dry_run.would_allow);
 }
 
@@ -119,7 +124,10 @@ fn cache_invalidation_and_acceptance_checks_hold() {
     assert_eq!(cache.entries[0].cache_key, key);
 
     let acceptance = evaluate_authorization_acceptance(
-        &[("run.submit".to_string(), DecisionType::Allow), ("platform.administer".to_string(), DecisionType::Deny)],
+        &[
+            ("run.submit".to_string(), DecisionType::Allow),
+            ("platform.administer".to_string(), DecisionType::Deny),
+        ],
         &[true, true],
     );
     assert!(acceptance.no_cross_tenant_escalation);

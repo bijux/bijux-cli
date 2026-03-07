@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -75,6 +75,14 @@ fn cross_backend_replay_rules_are_enforced() {
             reason: "incompatible runtime assumptions".to_string(),
         },
     ];
-    assert!(replay_allowed_across_backends("local", "kubernetes", &rules));
-    assert!(!replay_allowed_across_backends("kubernetes", "slurm", &rules));
+    assert!(replay_allowed_across_backends(
+        "local",
+        "kubernetes",
+        &rules
+    ));
+    assert!(!replay_allowed_across_backends(
+        "kubernetes",
+        "slurm",
+        &rules
+    ));
 }
