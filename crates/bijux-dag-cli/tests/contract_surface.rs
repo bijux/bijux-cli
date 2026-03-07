@@ -396,6 +396,16 @@ fn dag_diff_json_schema_contract() {
         ])
         .output()
         .expect("run b");
+    assert!(
+        run_a.status.success(),
+        "run a failed: {}",
+        String::from_utf8_lossy(&run_a.stderr)
+    );
+    assert!(
+        run_b.status.success(),
+        "run b failed: {}",
+        String::from_utf8_lossy(&run_b.stderr)
+    );
 
     let payload_a: serde_json::Value =
         serde_json::from_slice(&run_a.stdout).expect("parse run a payload");
