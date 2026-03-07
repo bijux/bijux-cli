@@ -1,0 +1,302 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "generated_from": "evidence/battle/workflows",
+  "entries": [
+    {
+      "scenario": "cache-hit-second-run",
+      "path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_replay_equivalence"
+      ]
+    },
+    {
+      "scenario": "cache-fingerprint-change-invalidates-cache",
+      "path": "evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_deterministic_scheduling"
+      ]
+    },
+    {
+      "scenario": "failure-missing-outputs-rejected",
+      "path": "evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "failure-node-failure-downstream-skipped",
+      "path": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "failure-retry-then-success-accounting",
+      "path": "evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_failure_propagation"
+      ]
+    },
+    {
+      "scenario": "failure-timeout-error-classification",
+      "path": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_failure_propagation"
+      ]
+    },
+    {
+      "scenario": "failure-validation-failure-no-partial-run-dir",
+      "path": "evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "happy-diamond-outputs-and-manifest-totals",
+      "path": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "happy-parse-validate-run-inspect-replay",
+      "path": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_operator_observability",
+        "tp_replay_equivalence"
+      ]
+    },
+    {
+      "scenario": "happy-real-world-orchestration-stress",
+      "path": "evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_failure_propagation",
+        "tp_config_policy_determinism"
+      ]
+    },
+    {
+      "scenario": "import-export-metadata-only",
+      "path": "evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "import-export-with-files",
+      "path": "evidence/battle/workflows/import_export/export_import_with_files.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "policy-deny-env-clean-env-allowlist",
+      "path": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "trust_properties": [
+        "tp_policy_enforcement",
+        "tp_config_policy_determinism",
+        "tp_secret_redaction"
+      ]
+    },
+    {
+      "scenario": "replay-semantic-comparison",
+      "path": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "trust_properties": [
+        "tp_replay_equivalence",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "scenario": "artifact_heavy_workflow",
+      "path": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "branch_join_workflow",
+      "path": "evidence/battle/workflows/runtime/branch_join_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "cache_invalidation_workflow",
+      "path": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
+      "trust_properties": [
+        "tp_cache_integrity",
+        "tp_deterministic_scheduling"
+      ]
+    },
+    {
+      "scenario": "corruption_workflow",
+      "path": "evidence/battle/workflows/runtime/corruption_workflow.json",
+      "trust_properties": [
+        "tp_artifact_integrity",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "failure_heavy_workflow",
+      "path": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
+      "trust_properties": [
+        "tp_failure_propagation",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "import_export_workflow",
+      "path": "evidence/battle/workflows/runtime/import_export_workflow.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "large_dag_workflow",
+      "path": "evidence/battle/workflows/runtime/large_dag_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_timeout_retry_accounting"
+      ]
+    },
+    {
+      "scenario": "malformed_run_dir_workflow",
+      "path": "evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
+      "trust_properties": [
+        "tp_run_dir_resilience",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "medium_workflow",
+      "path": "evidence/battle/workflows/runtime/medium_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_state_machine_legality",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "scenario": "multi_root_workflow",
+      "path": "evidence/battle/workflows/runtime/multi_root_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_state_machine_legality"
+      ]
+    },
+    {
+      "scenario": "operator_debugging_workflow",
+      "path": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
+      "trust_properties": [
+        "tp_operator_observability",
+        "tp_failure_propagation"
+      ]
+    },
+    {
+      "scenario": "operator_inspection_workflow",
+      "path": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
+      "trust_properties": [
+        "tp_operator_observability",
+        "tp_run_dir_resilience"
+      ]
+    },
+    {
+      "scenario": "policy_violation_workflow",
+      "path": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
+      "trust_properties": [
+        "tp_policy_enforcement",
+        "tp_secret_redaction",
+        "tp_config_policy_determinism"
+      ]
+    },
+    {
+      "scenario": "replay_divergence_workflow",
+      "path": "evidence/battle/workflows/runtime/replay_divergence_workflow.json",
+      "trust_properties": [
+        "tp_replay_equivalence",
+        "tp_artifact_integrity"
+      ]
+    },
+    {
+      "scenario": "resource_contention_workflow",
+      "path": "evidence/battle/workflows/runtime/resource_contention_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_timeout_retry_accounting"
+      ]
+    },
+    {
+      "scenario": "retry_storm_workflow",
+      "path": "evidence/battle/workflows/runtime/retry_storm_workflow.json",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_failure_propagation"
+      ]
+    },
+    {
+      "scenario": "scheduler_fairness_workflow",
+      "path": "evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_failure_propagation",
+        "tp_plan_truth"
+      ]
+    },
+    {
+      "scenario": "secret_leakage_workflow",
+      "path": "evidence/battle/workflows/runtime/secret_leakage_workflow.json",
+      "trust_properties": [
+        "tp_secret_redaction",
+        "tp_policy_enforcement"
+      ]
+    },
+    {
+      "scenario": "timeout_workflow",
+      "path": "evidence/battle/workflows/runtime/timeout_workflow.json",
+      "trust_properties": [
+        "tp_timeout_retry_accounting",
+        "tp_failure_propagation"
+      ]
+    },
+    {
+      "scenario": "ugly_realistic_dag_workflow",
+      "path": "evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
+      "trust_properties": [
+        "tp_deterministic_scheduling",
+        "tp_failure_propagation",
+        "tp_config_policy_determinism"
+      ]
+    },
+    {
+      "scenario": "version_compatibility_workflow",
+      "path": "evidence/battle/workflows/runtime/version_compatibility_workflow.json",
+      "trust_properties": [
+        "tp_import_export_compatibility",
+        "tp_replay_equivalence"
+      ]
+    },
+    {
+      "scenario": "selection-include-exclude-filters",
+      "path": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_state_machine_legality"
+      ]
+    }
+  ]
+}

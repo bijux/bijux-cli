@@ -46,31 +46,42 @@ fn repo_root() -> PathBuf {
 }
 
 fn battle_fixture_ids(root: &Path) -> BTreeSet<String> {
-    let fixture_dir = root.join("crates/bijux-dag-runtime/tests/fixtures/battle_workflows");
+    let fixture_dir = root.join("evidence/battle/workflows");
+    let mut files = Vec::new();
+    collect_json_files(&fixture_dir, &mut files);
     let mut ids = BTreeSet::new();
-    for entry in fs::read_dir(&fixture_dir).expect("battle fixture dir") {
-        let path = entry.expect("fixture entry").path();
-        if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
-            continue;
-        }
-        if path.file_name().and_then(|name| name.to_str()) == Some("metadata.json") {
-            continue;
-        }
+    for path in files {
         let raw = fs::read_to_string(&path).expect("battle fixture read");
         let doc: serde_json::Value = serde_json::from_str(&raw).expect("battle fixture parse");
         let scenario = doc
             .get("scenario")
             .and_then(serde_json::Value::as_str)
+            .or_else(|| doc.get("scenario_id").and_then(serde_json::Value::as_str))
             .expect("scenario id")
             .to_string();
-        let stem = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .expect("file stem utf8");
-        assert_eq!(scenario, stem, "scenario id must match filename");
+        if doc.get("scenario").is_some() {
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .expect("file stem utf8");
+            assert_eq!(scenario, stem, "scenario id must match filename");
+        }
         ids.insert(scenario);
     }
     ids
+}
+
+fn collect_json_files(root: &Path, out: &mut Vec<PathBuf>) {
+    for entry in fs::read_dir(root).expect("read battle fixture dir") {
+        let path = entry.expect("fixture entry").path();
+        if path.is_dir() {
+            collect_json_files(&path, out);
+            continue;
+        }
+        if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            out.push(path);
+        }
+    }
 }
 
 #[test]
@@ -82,10 +93,7 @@ fn battle_trust_mapping_and_metadata_have_no_orphans() {
     )
     .expect("battle policy parse");
     let metadata: BattleMetadata = serde_json::from_str(
-        &fs::read_to_string(
-            root.join("crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json"),
-        )
-        .expect("battle metadata"),
+        &fs::read_to_string(root.join("evidence/battle/metadata.json")).expect("battle metadata"),
     )
     .expect("battle metadata parse");
 

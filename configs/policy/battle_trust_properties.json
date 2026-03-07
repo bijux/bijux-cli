@@ -95,26 +95,156 @@
     "timeout_workflow"
   ],
   "scenario_trust_map": {
-    "artifact_heavy_workflow": ["tp_artifact_integrity", "tp_state_machine_legality"],
-    "branch_join_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality"],
-    "cache_invalidation_workflow": ["tp_cache_integrity", "tp_deterministic_scheduling"],
-    "corruption_workflow": ["tp_artifact_integrity", "tp_run_dir_resilience"],
-    "failure_heavy_workflow": ["tp_failure_propagation", "tp_state_machine_legality"],
-    "import_export_workflow": ["tp_import_export_compatibility", "tp_artifact_integrity"],
-    "large_dag_workflow": ["tp_deterministic_scheduling", "tp_timeout_retry_accounting"],
-    "medium_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality", "tp_plan_truth"],
-    "multi_root_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality"],
-    "operator_debugging_workflow": ["tp_operator_observability", "tp_failure_propagation"],
-    "operator_inspection_workflow": ["tp_operator_observability", "tp_run_dir_resilience"],
-    "policy_violation_workflow": ["tp_policy_enforcement", "tp_secret_redaction", "tp_config_policy_determinism"],
-    "replay_divergence_workflow": ["tp_replay_equivalence", "tp_artifact_integrity"],
-    "resource_contention_workflow": ["tp_deterministic_scheduling", "tp_timeout_retry_accounting"],
-    "retry_storm_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
-    "scheduler_fairness_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation", "tp_plan_truth"],
-    "secret_leakage_workflow": ["tp_secret_redaction", "tp_policy_enforcement"],
-    "timeout_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
-    "version_compatibility_workflow": ["tp_import_export_compatibility", "tp_replay_equivalence"],
-    "malformed_run_dir_workflow": ["tp_run_dir_resilience", "tp_state_machine_legality"],
-    "ugly_realistic_dag_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation", "tp_config_policy_determinism"]
+    "artifact_heavy_workflow": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "branch_join_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality"
+    ],
+    "cache_invalidation_workflow": [
+      "tp_cache_integrity",
+      "tp_deterministic_scheduling"
+    ],
+    "corruption_workflow": [
+      "tp_artifact_integrity",
+      "tp_run_dir_resilience"
+    ],
+    "failure_heavy_workflow": [
+      "tp_failure_propagation",
+      "tp_state_machine_legality"
+    ],
+    "import_export_workflow": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "large_dag_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_timeout_retry_accounting"
+    ],
+    "medium_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality",
+      "tp_plan_truth"
+    ],
+    "multi_root_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_state_machine_legality"
+    ],
+    "operator_debugging_workflow": [
+      "tp_operator_observability",
+      "tp_failure_propagation"
+    ],
+    "operator_inspection_workflow": [
+      "tp_operator_observability",
+      "tp_run_dir_resilience"
+    ],
+    "policy_violation_workflow": [
+      "tp_policy_enforcement",
+      "tp_secret_redaction",
+      "tp_config_policy_determinism"
+    ],
+    "replay_divergence_workflow": [
+      "tp_replay_equivalence",
+      "tp_artifact_integrity"
+    ],
+    "resource_contention_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_timeout_retry_accounting"
+    ],
+    "retry_storm_workflow": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "scheduler_fairness_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_plan_truth"
+    ],
+    "secret_leakage_workflow": [
+      "tp_secret_redaction",
+      "tp_policy_enforcement"
+    ],
+    "timeout_workflow": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "version_compatibility_workflow": [
+      "tp_import_export_compatibility",
+      "tp_replay_equivalence"
+    ],
+    "malformed_run_dir_workflow": [
+      "tp_run_dir_resilience",
+      "tp_state_machine_legality"
+    ],
+    "ugly_realistic_dag_workflow": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_config_policy_determinism"
+    ],
+    "cache-hit-second-run": [
+      "tp_cache_integrity",
+      "tp_replay_equivalence"
+    ],
+    "cache-fingerprint-change-invalidates-cache": [
+      "tp_cache_integrity",
+      "tp_deterministic_scheduling"
+    ],
+    "failure-missing-outputs-rejected": [
+      "tp_failure_propagation",
+      "tp_artifact_integrity"
+    ],
+    "failure-node-failure-downstream-skipped": [
+      "tp_failure_propagation",
+      "tp_state_machine_legality"
+    ],
+    "failure-retry-then-success-accounting": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "failure-timeout-error-classification": [
+      "tp_timeout_retry_accounting",
+      "tp_failure_propagation"
+    ],
+    "failure-validation-failure-no-partial-run-dir": [
+      "tp_plan_truth",
+      "tp_run_dir_resilience"
+    ],
+    "happy-diamond-outputs-and-manifest-totals": [
+      "tp_artifact_integrity",
+      "tp_state_machine_legality"
+    ],
+    "happy-parse-validate-run-inspect-replay": [
+      "tp_plan_truth",
+      "tp_operator_observability",
+      "tp_replay_equivalence"
+    ],
+    "happy-real-world-orchestration-stress": [
+      "tp_deterministic_scheduling",
+      "tp_failure_propagation",
+      "tp_config_policy_determinism"
+    ],
+    "import-export-metadata-only": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "import-export-with-files": [
+      "tp_import_export_compatibility",
+      "tp_artifact_integrity"
+    ],
+    "policy-deny-env-clean-env-allowlist": [
+      "tp_policy_enforcement",
+      "tp_config_policy_determinism",
+      "tp_secret_redaction"
+    ],
+    "replay-semantic-comparison": [
+      "tp_replay_equivalence",
+      "tp_plan_truth"
+    ],
+    "selection-include-exclude-filters": [
+      "tp_plan_truth",
+      "tp_state_machine_legality"
+    ]
   }
 }

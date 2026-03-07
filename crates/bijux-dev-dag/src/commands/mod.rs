@@ -294,6 +294,10 @@ enum RepoCommand {
         #[arg(long, default_value_t = false)]
         create_missing: bool,
     },
+    /// List battle scenarios and mapped trust properties
+    BattleScenarios,
+    /// Validate battle scenario trust-property mappings
+    BattleValidate,
 }
 
 #[derive(Subcommand)]
@@ -1700,6 +1704,20 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::ReadWrite,
                 json!({ "out": out, "create_missing": create_missing }),
                 || run_evidence_directory_map(&out, create_missing),
+            ),
+            RepoCommand::BattleScenarios => run_command_reported(
+                &context,
+                "repo.battle-scenarios",
+                CommandEffect::Validation,
+                json!({}),
+                || run_battle_scenarios_report(),
+            ),
+            RepoCommand::BattleValidate => run_command_reported(
+                &context,
+                "repo.battle-validate",
+                CommandEffect::Validation,
+                json!({}),
+                || run_battle_scenario_mapping_validate(),
             ),
         },
         CommandLine::Schedule { command } => match command {
@@ -4805,6 +4823,177 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
     Ok(())
 }
 
+fn load_battle_scenario_records(root: &Path) -> Result<Vec<(String, String)>, String> {
+    let workflows_root = root.join("evidence/battle/workflows");
+    let mut files = Vec::new();
+    collect_files_with_extension(&workflows_root, "json", &mut files)?;
+    files.sort();
+
+    let mut records = Vec::new();
+    for path in files {
+        let raw = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        let doc: Value = serde_json::from_str(&raw).map_err(|err| err.to_string())?;
+        let scenario_id = doc
+            .get("scenario")
+            .and_then(Value::as_str)
+            .or_else(|| doc.get("scenario_id").and_then(Value::as_str))
+            .or_else(|| path.file_stem().and_then(|stem| stem.to_str()))
+            .ok_or_else(|| format!("unable to determine scenario id for {}", path.display()))?
+            .to_string();
+        let rel = path
+            .strip_prefix(root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        records.push((scenario_id, rel));
+    }
+
+    Ok(records)
+}
+
+fn run_battle_scenarios_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let records = load_battle_scenario_records(&root)?;
+    let policy_path = root.join("configs/policy/battle_trust_properties.json");
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(policy_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let scenario_trust_map = policy
+        .get("scenario_trust_map")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "battle trust policy missing scenario_trust_map".to_string())?;
+    let mut rows = Vec::new();
+    for (scenario, path) in records {
+        let mapped = scenario_trust_map
+            .get(&scenario)
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        rows.push(json!({
+            "scenario": scenario,
+            "path": path,
+            "trust_properties": mapped,
+        }));
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "version": "1",
+            "battle_scenarios": rows
+        }))
+        .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_battle_scenario_mapping_validate() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy_path = root.join("configs/policy/battle_trust_properties.json");
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(policy_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    let trust_ids: BTreeSet<&str> = trust_properties
+        .iter()
+        .filter_map(|entry| entry.get("id").and_then(Value::as_str))
+        .collect();
+    let scenario_trust_map = policy
+        .get("scenario_trust_map")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "battle trust policy missing scenario_trust_map".to_string())?;
+    let records = load_battle_scenario_records(&root)?;
+
+    for (scenario, _) in &records {
+        let mapped = scenario_trust_map
+            .get(scenario)
+            .and_then(Value::as_array)
+            .ok_or_else(|| {
+                format!("battle scenario `{scenario}` is missing trust-property mapping")
+            })?;
+        if mapped.is_empty() {
+            return Err(format!(
+                "battle scenario `{scenario}` must map to at least one trust property"
+            ));
+        }
+        for trust in mapped {
+            let trust = trust
+                .as_str()
+                .ok_or_else(|| format!("non-string trust property mapping for `{scenario}`"))?;
+            if !trust_ids.contains(trust) {
+                return Err(format!(
+                    "battle scenario `{scenario}` maps unknown trust property `{trust}`"
+                ));
+            }
+        }
+    }
+
+    let known: BTreeSet<&str> = records.iter().map(|(scenario, _)| scenario.as_str()).collect();
+    for mapped in scenario_trust_map.keys() {
+        if !known.contains(mapped.as_str()) {
+            return Err(format!("battle trust map has orphan scenario `{mapped}`"));
+        }
+    }
+
+    let registry_path = root.join("evidence/battle/registries/scenario_registry.json");
+    if !registry_path.exists() {
+        return Err(format!(
+            "missing battle scenario registry: {}",
+            registry_path.display()
+        ));
+    }
+    let registry: Value = serde_json::from_str(
+        &fs::read_to_string(&registry_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let registry_entries = registry
+        .get("entries")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle scenario registry must contain entries array".to_string())?;
+    for entry in registry_entries {
+        let scenario = entry
+            .get("scenario")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "battle scenario registry entry missing scenario".to_string())?;
+        let path = entry
+            .get("path")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "battle scenario registry entry missing path".to_string())?;
+        if !known.contains(scenario) {
+            return Err(format!(
+                "battle scenario registry entry `{scenario}` points to non-existent scenario"
+            ));
+        }
+        if !root.join(path).exists() {
+            return Err(format!(
+                "battle scenario registry path missing for `{scenario}`: {path}"
+            ));
+        }
+    }
+
+    let metadata_path = root.join("evidence/battle/metadata.json");
+    let metadata: Value = serde_json::from_str(
+        &fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let scenarios = metadata
+        .get("scenarios")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "battle metadata must contain scenarios object".to_string())?;
+    for scenario in known {
+        if !scenarios.contains_key(scenario) {
+            return Err(format!(
+                "battle metadata missing scenario entry `{scenario}` in evidence/battle/metadata.json"
+            ));
+        }
+    }
+
+    println!("battle scenario mapping validation passed");
+    Ok(())
+}
+
 fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -5779,8 +5968,7 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     let root = repo_root()?;
 
     let policy_path = root.join("configs/policy/battle_trust_properties.json");
-    let metadata_path =
-        root.join("crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json");
+    let metadata_path = root.join("evidence/battle/metadata.json");
     let harness_path =
         root.join("crates/bijux-dag-runtime/tests/battle_workflow_harness_contracts.rs");
 
@@ -5858,9 +6046,12 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
         );
     }
 
-    let metadata: Value =
-        serde_json::from_str(&fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?)
-            .map_err(|err| err.to_string())?;
+    run_battle_scenario_mapping_validate()?;
+
+    let metadata: Value = serde_json::from_str(
+        &fs::read_to_string(&metadata_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
     if metadata
         .get("scenarios")
         .and_then(Value::as_object)
@@ -7239,7 +7430,7 @@ fn run_operator_ux_guard() -> Result<(), String> {
         "docs/user/OPERATOR_INSPECTION_GUIDE.md",
         "docs/reference/COMMAND_TAXONOMY.md",
         "crates/bijux-dag-app/tests/operator_ux_contract.rs",
-        "tests/e2e/operator/inspection_only.json",
+        "evidence/operator/scenarios/inspection_only.json",
         "configs/schema/operator/run_list.schema.json",
         "configs/schema/operator/run_show.schema.json",
         "configs/schema/operator/run_inspect.schema.json",
@@ -7550,7 +7741,7 @@ fn run_replay_contract_guard() -> Result<(), String> {
         return Err("replay contract requires semantic diff mode in CLI surfaces".to_string());
     }
     let replay_battle =
-        fs::read_to_string(root.join("tests/e2e/replay/replay_semantic_comparison.json"))
+        fs::read_to_string(root.join("evidence/battle/workflows/replay/replay_semantic_comparison.json"))
             .map_err(|err| err.to_string())?;
     if !replay_battle.contains("replay_mandatory_proof") {
         return Err("replay battle scenario must assert replay_mandatory_proof".to_string());
