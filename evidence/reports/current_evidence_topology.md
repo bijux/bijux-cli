@@ -6,24 +6,22 @@ Snapshot date: 2026-03-07
 
 | scope | files |
 |---|---:|
-| examples | 0 |
-| evidence/perf/scenarios | 22 |
-| benchmarks/fixtures | 15 |
-| evidence/compare/scenarios | 11 |
-| tests/authoring | 0 |
-| tests/cache | 6 |
-| tests/compatibility | 7 |
-| tests/e2e | 25 |
-| tests/fault | 2 |
-| tests/integration_fixtures | 2 |
+| evidence/authoring | 20 |
+| evidence/battle | 53 |
+| evidence/cache | 10 |
+| evidence/compat | 8 |
+| evidence/fault | 3 |
+| evidence/operator | 1 |
+| evidence/perf | 22 |
+| evidence/compare | 11 |
+| configs/schema/fixtures | 16 |
 | crates/bijux-dag-runtime/tests/fixtures | 59 |
 | crates/bijux-dag-artifacts/tests/fixtures | 2 |
-| configs/schema/fixtures | 16 |
 
 ## Ownership Summary
 
 | ownership | files |
 |---|---:|
-| root-owned | 90 |
-| crate-owned | 61 |
-| schema-owned | 16 |
+| evidence-owned | 128 |
+| crate-owned fixtures | 61 |
+| schema-owned fixtures | 16 |
