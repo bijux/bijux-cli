@@ -160,6 +160,7 @@
 - [Audit report contract](./spec/AUDIT_REPORT_CONTRACT.md)
 - [Proof bundle schema v0.1](./spec/PROOF_BUNDLE_SCHEMA_v0.1.json)
 - [Proof report format](./reference/PROOF_REPORT_FORMAT.md)
+- [Signed vs unsigned proof trust boundary](./reports/foundation/signed_vs_unsigned_proof_trust_boundary.md)
 - [Kubernetes support matrix](./reference/K8S_SUPPORT_MATRIX.md)
 - [HPC support matrix](./reference/HPC_SUPPORT_MATRIX.md)
 - [HPC and DNA boundary](./reference/HPC_AND_DNA_BOUNDARY.md)

@@ -20,6 +20,7 @@ This is the normative contract for `bijux` command surfaces.
 - `dag run`: run orchestration and manifest emission.
 - `dag replay`: replay semantics and comparability behavior.
 - `dag prove`: proof bundle generation and completeness reporting surface.
+- `dag proof-summary`: operator-facing concise proof summary surface.
 - `dag diff`: run comparison behavior.
 - `dag explain`: explain diagnostics for runs/validation.
 - `dag node`: node-focused diagnostics and inspection.

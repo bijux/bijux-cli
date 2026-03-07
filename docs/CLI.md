@@ -9,6 +9,7 @@ bijux dag validate <dag>
 bijux dag run <dag> --out <runs/>
 bijux dag replay <run-dir> --out <runs/>
 bijux dag prove <run-dir>
+bijux dag proof-summary <run-dir>
 bijux dag diff <runA> <runB>
 bijux dag explain <run-dir> [--node <id>]
 bijux dag show-effective-plan <dag>
