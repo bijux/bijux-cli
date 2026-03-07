@@ -2,6 +2,10 @@
 
 use std::process::{Command, Output};
 
+pub fn command(program: &str) -> Command {
+    Command::new(program)
+}
+
 pub fn output(command: &str, args: &[&str]) -> std::io::Result<Output> {
     Command::new(command).args(args).output()
 }

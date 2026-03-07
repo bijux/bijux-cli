@@ -118,7 +118,6 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use store::{ArtifactStore, CacheStore};
@@ -585,7 +584,7 @@ impl Adapter for ShellAdapter {
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
-        let mut cmd = Command::new(&args[0]);
+        let mut cmd = subprocess::command(&args[0]);
         cmd.args(&args[1..]);
         cmd.current_dir(&work_dir);
         if exec.policy.clean_env {
@@ -714,7 +713,7 @@ impl Adapter for ContainerAdapter {
             });
         }
 
-        let mut cmd = Command::new(engine);
+        let mut cmd = subprocess::command(engine);
         cmd.arg("run").arg("--rm");
 
         if !node.effects.contains(&Effect::Network) || exec.policy.deny_network {
