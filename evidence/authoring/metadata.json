@@ -1,0 +1,106 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "assets": {
+    "evidence/authoring/examples/hello.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/examples/etl-constant-to-shell.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/examples/cached-branched-report.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/examples/failure-heavy-retry.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/examples/multi-output-artifact.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/examples/replay-heavy-branching.dag.json": {
+      "group": "examples",
+      "expected_validation": "pass",
+      "consumers": ["dag-validate", "docs-examples"]
+    },
+    "evidence/authoring/patterns/minimal.json": {
+      "group": "minimal",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/medium.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_chain.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_diamond.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_fanout.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_aggregation.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_cache_heavy.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/patterns/pattern_replay_sensitive.json": {
+      "group": "patterns",
+      "expected_validation": "pass",
+      "consumers": ["authoring-patterns", "core-contracts"]
+    },
+    "evidence/authoring/negative/cycle.json": {
+      "group": "negative",
+      "expected_validation": "fail",
+      "consumers": ["authoring-negative-contracts"],
+      "expected_rule_ids": ["DAG-VAL-001"]
+    },
+    "evidence/authoring/negative/invalid_refs.json": {
+      "group": "negative",
+      "expected_validation": "fail",
+      "consumers": ["authoring-negative-contracts"],
+      "expected_rule_ids": ["DAG-VAL-002"]
+    },
+    "evidence/authoring/negative/invalid_selectors.json": {
+      "group": "negative",
+      "expected_validation": "fail",
+      "consumers": ["authoring-negative-contracts"],
+      "expected_rule_ids": ["DAG-VAL-003"]
+    },
+    "evidence/authoring/negative/undeclared_outputs.json": {
+      "group": "negative",
+      "expected_validation": "fail",
+      "consumers": ["authoring-negative-contracts"],
+      "expected_rule_ids": ["DAG-VAL-004"]
+    },
+    "evidence/authoring/negative/unsupported_adapter_payload.json": {
+      "group": "negative",
+      "expected_validation": "fail",
+      "consumers": ["authoring-negative-contracts"],
+      "expected_rule_ids": ["DAG-VAL-005"]
+    }
+  }
+}

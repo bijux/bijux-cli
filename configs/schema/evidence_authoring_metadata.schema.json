@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_authoring_metadata.schema.json",
+  "type": "object",
+  "required": ["version", "owner", "assets"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "assets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["group", "expected_validation", "consumers"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "enum": ["examples", "patterns", "negative", "minimal"]
+          },
+          "expected_validation": {
+            "type": "string",
+            "enum": ["pass", "fail"]
+          },
+          "expected_rule_ids": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "consumers": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

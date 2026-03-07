@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_compare_metadata.schema.json",
+  "type": "object",
+  "required": ["version", "owner", "scenarios", "baselines"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "scenarios": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["target_system", "scenario_equivalence_note", "limitation_note"],
+        "properties": {
+          "target_system": { "type": "string", "minLength": 1 },
+          "scenario_equivalence_note": { "type": "string", "minLength": 1 },
+          "limitation_note": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}

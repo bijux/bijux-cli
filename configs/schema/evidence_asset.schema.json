@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_asset.schema.json",
+  "title": "Evidence Asset",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "owner",
+    "status",
+    "canonical_path",
+    "consumers"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["authoring", "battle", "cache", "compat", "fault", "operator", "perf", "compare"]
+    },
+    "owner": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "minLength": 1 },
+    "canonical_path": { "type": "string", "minLength": 1 },
+    "consumers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "trust_properties": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "release_blocking": { "type": "boolean" },
+    "derived_from": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "duplicate_of": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "simulation_status": {
+      "type": "string",
+      "enum": ["implemented", "simulated"]
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/evidence_battle_metadata.schema.json",
+  "type": "object",
+  "required": ["owner", "scenarios"],
+  "properties": {
+    "owner": { "type": "string", "minLength": 1 },
+    "review_interval_days": { "type": "integer", "minimum": 1 },
+    "scenarios": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["grade", "why_exists", "delete_review"],
+        "properties": {
+          "grade": { "type": "string", "minLength": 1 },
+          "why_exists": { "type": "string", "minLength": 1 },
+          "delete_review": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
