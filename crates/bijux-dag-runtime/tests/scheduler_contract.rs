@@ -1,7 +1,8 @@
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     build_plan, build_scheduler, DependencyCounter, LocalExecutor, ReadyQueue, RuntimeConfig,
-    SchedulerPolicy, Selector, SelectorSet,
+    failure_allows_downstream_readiness, scheduler_contract_profile, scheduler_invariants_hold,
+    FailurePropagationMode, SchedulerPolicy, SchedulerState, Selector, SelectorSet,
 };
 
 fn graph_text() -> &'static str {
@@ -66,4 +67,130 @@ fn planner_dependency_closure_keeps_upstream_for_partial_rerun() {
     assert!(!plan.filter_reasons.contains_key("a"));
     assert!(!plan.filter_reasons.contains_key("b"));
     assert!(!plan.filter_reasons.contains_key("c"));
+}
+
+#[test]
+fn scheduler_contract_profile_is_explicit_and_stable() {
+    let profile = scheduler_contract_profile();
+    assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
+    assert_eq!(format!("{:?}", profile.model), "EventDriven");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+}
+
+#[test]
+fn ready_queue_evolution_is_deterministic_for_fixed_event_sequence() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let options = RuntimeConfig::default();
+    let plan = build_plan(&graph, &options);
+    let mut state = SchedulerState::from_plan(&plan);
+
+    assert_eq!(state.ready_snapshot(), vec!["a".to_string()]);
+    let newly_ready = state.complete_success("a");
+    assert_eq!(newly_ready, vec!["b".to_string()]);
+    assert_eq!(state.ready_snapshot(), vec!["a".to_string(), "b".to_string()]);
+    state.complete_success("b");
+    assert!(state.ready_snapshot().contains(&"c".to_string()));
+    assert!(scheduler_invariants_hold(&state));
+}
+
+#[test]
+fn retry_requeue_preserves_readiness_accounting() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let options = RuntimeConfig::default();
+    let plan = build_plan(&graph, &options);
+    let mut state = SchedulerState::from_plan(&plan);
+
+    state.queue_retry("a");
+    assert_eq!(state.retry_snapshot(), vec!["a".to_string()]);
+    state.requeue_retries();
+    assert!(state.retry_snapshot().is_empty());
+    assert!(state.ready_snapshot().contains(&"a".to_string()));
+    assert!(scheduler_invariants_hold(&state));
+}
+
+#[test]
+fn downstream_node_becomes_ready_exactly_once_with_two_predecessors() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"const","outputs":[{"name":"out","path":"b/out"}],"params":{"value":1}},
+            {"id":"c","kind":"const","inputs":["in1","in2"],"outputs":[{"name":"out","path":"c/out"}],"params":{"value":1}}
+          ],
+          "edges": [
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"in1"}},
+            {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"in2"}}
+          ]
+        }"#,
+    )
+    .unwrap();
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let mut state = SchedulerState::from_plan(&plan);
+
+    let mut ready_hits = 0usize;
+    for node in ["a", "b"] {
+        let new_nodes = state.complete_success(node);
+        if new_nodes.iter().any(|v| v == "c") {
+            ready_hits += 1;
+        }
+    }
+    assert_eq!(ready_hits, 1);
+}
+
+#[test]
+fn cached_and_skipped_predecessors_satisfy_readiness_semantics() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let mut state = SchedulerState::from_plan(&plan);
+
+    let from_cache = state.complete_cached("a");
+    assert_eq!(from_cache, vec!["b".to_string()]);
+    let from_skip = state.complete_skipped("b");
+    assert_eq!(from_skip, vec!["c".to_string()]);
+}
+
+#[test]
+fn failure_propagation_modes_drive_downstream_readiness_policy() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+
+    let mut fail_fast = SchedulerState::from_plan(&plan);
+    let unlocked = fail_fast.complete_failed("a", FailurePropagationMode::FailFast);
+    assert!(unlocked.is_empty());
+    assert!(!failure_allows_downstream_readiness(
+        FailurePropagationMode::FailFast
+    ));
+
+    let mut isolate = SchedulerState::from_plan(&plan);
+    let unlocked_isolate = isolate.complete_failed("a", FailurePropagationMode::IsolateBranch);
+    assert_eq!(unlocked_isolate, vec!["b".to_string()]);
+    assert!(failure_allows_downstream_readiness(
+        FailurePropagationMode::IsolateBranch
+    ));
+}
+
+#[test]
+fn changing_concurrency_budget_does_not_change_node_set_semantics() {
+    let graph = parse_graph_strict(graph_text()).unwrap();
+    let mut low = RuntimeConfig::default();
+    low.jobs = 1;
+    low.scheduler_policy.max_parallelism = 1;
+    let mut high = RuntimeConfig::default();
+    high.jobs = 16;
+    high.scheduler_policy.max_parallelism = 16;
+
+    let plan_low = build_plan(&graph, &low);
+    let plan_high = build_plan(&graph, &high);
+    let nodes_low = plan_low
+        .nodes
+        .iter()
+        .map(|n| n.id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    let nodes_high = plan_high
+        .nodes
+        .iter()
+        .map(|n| n.id.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(nodes_low, nodes_high);
 }

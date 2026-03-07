@@ -2,7 +2,7 @@ use crate::execution_plan::ExecutionPlan;
 use crate::RuntimeConfig;
 use bijux_dag_core::Graph;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -165,6 +165,200 @@ pub struct ExecutionCheckpoint {
     pub scheduled: Vec<String>,
     pub blocked_by_budget: Vec<String>,
     pub generated_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SchedulerUnit {
+    Node,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SchedulerModel {
+    EventDriven,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SchedulerPriorityModel {
+    StaticAbsent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ReadyTieBreak {
+    LexicographicNodeId,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SchedulerContractProfile {
+    pub canonical_unit: SchedulerUnit,
+    pub model: SchedulerModel,
+    pub priority_model: SchedulerPriorityModel,
+    pub ready_tie_break: ReadyTieBreak,
+}
+
+pub fn scheduler_contract_profile() -> SchedulerContractProfile {
+    SchedulerContractProfile {
+        canonical_unit: SchedulerUnit::Node,
+        model: SchedulerModel::EventDriven,
+        priority_model: SchedulerPriorityModel::StaticAbsent,
+        ready_tie_break: ReadyTieBreak::LexicographicNodeId,
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SchedulerEventKind {
+    NodeReady,
+    NodeScheduled,
+    NodeBlockedByBudget,
+    NodeRetryQueued,
+    NodeRetryRequeued,
+    NodeCached,
+    NodeSkipped,
+    NodeFailed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SchedulerEvent {
+    pub sequence: u64,
+    pub kind: SchedulerEventKind,
+    pub node_id: String,
+    pub detail: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SchedulerState {
+    indegree: BTreeMap<String, usize>,
+    adjacency: BTreeMap<String, Vec<String>>,
+    ready: ReadyQueue,
+    retry_queue: BTreeSet<String>,
+    completion_by_node: BTreeMap<String, String>,
+    events: Vec<SchedulerEvent>,
+    next_seq: u64,
+}
+
+impl SchedulerState {
+    pub fn from_plan(plan: &ExecutionPlan) -> Self {
+        let mut indegree = BTreeMap::new();
+        for (k, v) in &plan.indegree {
+            indegree.insert(k.clone(), *v);
+        }
+        let mut adjacency = BTreeMap::new();
+        for (k, v) in &plan.adj {
+            adjacency.insert(k.clone(), v.clone());
+        }
+        Self {
+            ready: ReadyQueue::from_indegree(&plan.indegree),
+            indegree,
+            adjacency,
+            retry_queue: BTreeSet::new(),
+            completion_by_node: BTreeMap::new(),
+            events: Vec::new(),
+            next_seq: 1,
+        }
+    }
+
+    pub fn ready_snapshot(&self) -> Vec<String> {
+        self.ready.snapshot_sorted()
+    }
+
+    pub fn retry_snapshot(&self) -> Vec<String> {
+        self.retry_queue.iter().cloned().collect()
+    }
+
+    pub fn events(&self) -> &[SchedulerEvent] {
+        &self.events
+    }
+
+    pub fn complete_success(&mut self, node_id: &str) -> Vec<String> {
+        self.mark_completion(node_id, "success")
+    }
+
+    pub fn complete_cached(&mut self, node_id: &str) -> Vec<String> {
+        self.mark_event(SchedulerEventKind::NodeCached, node_id, None);
+        self.mark_completion(node_id, "cached")
+    }
+
+    pub fn complete_skipped(&mut self, node_id: &str) -> Vec<String> {
+        self.mark_event(SchedulerEventKind::NodeSkipped, node_id, None);
+        self.mark_completion(node_id, "skipped")
+    }
+
+    pub fn complete_failed(
+        &mut self,
+        node_id: &str,
+        mode: FailurePropagationMode,
+    ) -> Vec<String> {
+        self.mark_event(
+            SchedulerEventKind::NodeFailed,
+            node_id,
+            Some(format!("mode={}", failure_mode_name(mode))),
+        );
+        self.completion_by_node
+            .insert(node_id.to_string(), "failed".to_string());
+        if failure_allows_downstream_readiness(mode) {
+            self.release_downstream(node_id)
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn queue_retry(&mut self, node_id: &str) {
+        if self.retry_queue.insert(node_id.to_string()) {
+            self.mark_event(SchedulerEventKind::NodeRetryQueued, node_id, None);
+        }
+    }
+
+    pub fn requeue_retries(&mut self) {
+        let pending = self.retry_queue.iter().cloned().collect::<Vec<_>>();
+        for node_id in pending {
+            self.retry_queue.remove(&node_id);
+            self.ready.insert(node_id.clone());
+            self.mark_event(SchedulerEventKind::NodeRetryRequeued, &node_id, None);
+        }
+    }
+
+    pub fn mark_scheduled(&mut self, node_id: &str) {
+        self.mark_event(SchedulerEventKind::NodeScheduled, node_id, None);
+    }
+
+    fn mark_completion(&mut self, node_id: &str, status: &str) -> Vec<String> {
+        self.completion_by_node
+            .insert(node_id.to_string(), status.to_string());
+        self.release_downstream(node_id)
+    }
+
+    fn release_downstream(&mut self, node_id: &str) -> Vec<String> {
+        let mut newly_ready = Vec::new();
+        if let Some(children) = self.adjacency.get(node_id).cloned() {
+            for child in children {
+                if let Some(counter) = self.indegree.get_mut(&child) {
+                    *counter = counter.saturating_sub(1);
+                    if *counter == 0 {
+                        self.ready.insert(child.clone());
+                        self.mark_event(SchedulerEventKind::NodeReady, &child, None);
+                        newly_ready.push(child);
+                    }
+                }
+            }
+        }
+        newly_ready.sort();
+        newly_ready.dedup();
+        newly_ready
+    }
+
+    fn mark_event(&mut self, kind: SchedulerEventKind, node_id: &str, detail: Option<String>) {
+        self.events.push(SchedulerEvent {
+            sequence: self.next_seq,
+            kind,
+            node_id: node_id.to_string(),
+            detail,
+        });
+        self.next_seq += 1;
+    }
 }
 
 pub trait SchedulerEventHook: Send + Sync {
@@ -416,6 +610,33 @@ pub fn build_scheduler(policy: &SchedulerPolicy) -> Box<dyn Scheduler + Send> {
     } else {
         Box::new(DeterministicScheduler)
     }
+}
+
+pub fn failure_allows_downstream_readiness(mode: FailurePropagationMode) -> bool {
+    !matches!(mode, FailurePropagationMode::FailFast)
+}
+
+pub fn failure_mode_name(mode: FailurePropagationMode) -> &'static str {
+    match mode {
+        FailurePropagationMode::FailFast => "fail_fast",
+        FailurePropagationMode::IsolateBranch => "isolate_branch",
+        FailurePropagationMode::ContinueIndependent => "continue_independent",
+        FailurePropagationMode::QuorumLikeFuture => "quorum_like_future",
+    }
+}
+
+pub fn scheduler_invariants_hold(state: &SchedulerState) -> bool {
+    let mut seen = BTreeSet::new();
+    for event in &state.events {
+        if !seen.insert(event.sequence) {
+            return false;
+        }
+    }
+    let retry_conflict = state
+        .retry_queue
+        .iter()
+        .any(|id| state.ready.ordered.contains(id));
+    !retry_conflict
 }
 
 pub fn validate_cron_expression(expression: &str) -> Result<(), String> {

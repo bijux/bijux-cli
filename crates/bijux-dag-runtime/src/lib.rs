@@ -350,13 +350,16 @@ pub use run_state::{
 };
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
-    validate_cron_expression, validate_schedule_policy_combination, validate_schedule_registry,
-    BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter,
-    DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest, FailurePropagationMode,
-    NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
-    ScheduleAuditRecord, ScheduleDefinition, ScheduleDryRunPreview, ScheduleRegistry,
-    ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerEventHook,
-    SchedulerFairness, SchedulerPolicy, ThroughputScheduler, TriggerSpec,
+    failure_allows_downstream_readiness, failure_mode_name, scheduler_contract_profile,
+    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
+    validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
+    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
+    FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,
+    QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition,
+    ScheduleDryRunPreview, ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission,
+    Scheduler, SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
+    SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
+    SchedulerUnit, ThroughputScheduler, TriggerSpec,
 };
 pub use semantic_lineage::{
     detect_lineage_conflicts, export_lineage_format, lineage_quality_score, policy_hook_allows_operation,
