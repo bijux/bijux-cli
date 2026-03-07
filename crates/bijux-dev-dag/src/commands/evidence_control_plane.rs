@@ -247,3 +247,128 @@ pub(super) fn run_evidence_summary_report(
     );
     Ok(())
 }
+
+pub(super) fn run_release_evidence_report(
+    json_out: &Path,
+    proves_out: &Path,
+    limits_out: &Path,
+) -> Result<(), String> {
+    let root = repo_root()?;
+    let release_payload = fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
+        .map_err(|err| err.to_string())?;
+    let release_set: Value = serde_json::from_str(&release_payload).map_err(|err| err.to_string())?;
+    let blocking_assets = release_set["blocking_assets"]
+        .as_array()
+        .ok_or_else(|| "release evidence set missing blocking_assets array".to_string())?;
+    let advisory_assets = release_set["advisory_assets"]
+        .as_array()
+        .ok_or_else(|| "release evidence set missing advisory_assets array".to_string())?;
+    let required_families = release_set["required_families"]
+        .as_array()
+        .ok_or_else(|| "release evidence set missing required_families array".to_string())?
+        .iter()
+        .map(|entry| {
+            entry
+                .as_str()
+                .ok_or_else(|| "required_families entry must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let advisory_families = release_set["advisory_families"]
+        .as_array()
+        .ok_or_else(|| "release evidence set missing advisory_families array".to_string())?
+        .iter()
+        .map(|entry| {
+            entry
+                .as_str()
+                .ok_or_else(|| "advisory_families entry must be string".to_string())
+                .map(ToOwned::to_owned)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let minimum_sets = release_set["minimum_blocking_sets"]
+        .as_object()
+        .ok_or_else(|| "release evidence set missing minimum_blocking_sets object".to_string())?;
+    let mut minimum_map = BTreeMap::new();
+    for (id, entries) in minimum_sets {
+        let assets = entries
+            .as_array()
+            .ok_or_else(|| format!("minimum_blocking_sets `{id}` must be array"))?
+            .iter()
+            .map(|entry| {
+                entry
+                    .as_str()
+                    .ok_or_else(|| format!("minimum_blocking_sets `{id}` entry must be string"))
+                    .map(ToOwned::to_owned)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        minimum_map.insert(id.clone(), assets);
+    }
+
+    let summary = json!({
+        "version": "1",
+        "source": "evidence/release/release_evidence_set.json",
+        "required_families": required_families,
+        "advisory_families": advisory_families,
+        "minimum_blocking_sets": minimum_map,
+        "blocking_assets": blocking_assets,
+        "advisory_assets": advisory_assets
+    });
+
+    if let Some(parent) = root.join(json_out).parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    fs::write(
+        root.join(json_out),
+        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+
+    let mut proves_lines = vec![
+        "# What This Release Proves".to_string(),
+        String::new(),
+        "The following evidence assets are release-blocking and required for release readiness:".to_string(),
+        String::new(),
+    ];
+    for entry in blocking_assets {
+        let id = entry
+            .as_str()
+            .ok_or_else(|| "blocking asset id must be string".to_string())?;
+        proves_lines.push(format!("- `{id}`"));
+    }
+    proves_lines.push(String::new());
+    proves_lines.push("Required release evidence families:".to_string());
+    for family in &required_families {
+        proves_lines.push(format!("- `{family}`"));
+    }
+
+    let mut limits_lines = vec![
+        "# What This Release Does Not Prove".to_string(),
+        String::new(),
+        "The following evidence assets are advisory and are excluded from release-blocking readiness:".to_string(),
+        String::new(),
+    ];
+    for entry in advisory_assets {
+        let id = entry
+            .as_str()
+            .ok_or_else(|| "advisory asset id must be string".to_string())?;
+        limits_lines.push(format!("- `{id}`"));
+    }
+    limits_lines.push(String::new());
+    limits_lines.push("Advisory-only families:".to_string());
+    for family in &advisory_families {
+        limits_lines.push(format!("- `{family}`"));
+    }
+
+    fs::write(root.join(proves_out), proves_lines.join("\n")).map_err(|err| err.to_string())?;
+    fs::write(root.join(limits_out), limits_lines.join("\n")).map_err(|err| err.to_string())?;
+    println!(
+        "{}",
+        json!({
+            "json_report": json_out.to_string_lossy(),
+            "proves_report": proves_out.to_string_lossy(),
+            "limits_report": limits_out.to_string_lossy(),
+        })
+    );
+    Ok(())
+}

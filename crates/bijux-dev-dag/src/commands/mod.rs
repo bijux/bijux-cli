@@ -41,6 +41,7 @@ use evidence_access::{
 };
 use evidence_control_plane::{
     run_evidence_release_set_verify, run_evidence_suite_policy_verify, run_evidence_summary_report,
+    run_release_evidence_report,
 };
 use evidence_registry::{
     run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
@@ -514,6 +515,21 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::ReadWrite,
                 json!({ "json_out": json_out, "markdown_out": markdown_out }),
                 || run_evidence_summary_report(&json_out, &markdown_out),
+            ),
+            RepoCommand::ReleaseEvidenceReport {
+                json_out,
+                proves_out,
+                limits_out,
+            } => run_command_reported(
+                &context,
+                "repo.release-evidence-report",
+                CommandEffect::ReadWrite,
+                json!({
+                    "json_out": json_out,
+                    "proves_out": proves_out,
+                    "limits_out": limits_out
+                }),
+                || run_release_evidence_report(&json_out, &proves_out, &limits_out),
             ),
         },
         CommandLine::Verify { command } => match command {

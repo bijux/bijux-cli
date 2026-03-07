@@ -23,10 +23,12 @@ fn verify_commands_include_replay_and_release_set() {
     for token in [
         "EvidenceReplay",
         "EvidenceReleaseSet",
+        "ReleaseEvidenceReport",
         "verify.evidence-replay",
         "verify.evidence-release-set",
         "run_evidence_replay_verify()",
         "run_evidence_release_set_verify()",
+        "run_release_evidence_report(",
     ] {
         assert!(
             source.contains(token),
@@ -157,6 +159,9 @@ fn evidence_suite_summary_models_exist() {
     for rel in [
         "configs/schema/control_plane/evidence_suite_report.schema.json",
         "evidence/reports/evidence_verification_summary.md",
+        "evidence/release/release_evidence.json",
+        "evidence/reports/what_this_release_proves.md",
+        "evidence/reports/what_this_release_does_not_prove.md",
         ".github/workflows/evidence-verify.yml",
     ] {
         assert!(

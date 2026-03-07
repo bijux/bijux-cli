@@ -28,6 +28,8 @@ fn foundation_hardening_registry_and_reports_exist() {
         "docs/reports/foundation/release_evidence_report.md",
         "docs/reports/foundation/repository_proof_statement.md",
         "docs/reports/foundation/foundation_final_report.md",
+        "evidence/reports/repository_root_pillars.md",
+        "evidence/reports/evidence_status_memo.md",
     ] {
         assert!(
             root.join(required).exists(),
@@ -49,12 +51,17 @@ fn foundation_hardening_registry_references_known_suite_ids() {
         .expect("suite_ids should exist");
     assert!(!ids.is_empty(), "suite_ids should not be empty");
 
-    let source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+    let mod_source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
         .expect("read command source");
+    let suite_source = fs::read_to_string(
+        root.join("crates/bijux-dev-dag/src/commands/suite_catalog.rs"),
+    )
+    .expect("read suite catalog source");
     for id in ids {
         let id = id.as_str().expect("suite id should be string");
         assert!(
-            source.contains(&format!("id: \"{id}\"")),
+            mod_source.contains(&format!("id: \"{id}\""))
+                || suite_source.contains(&format!("id: \"{id}\"")),
             "foundation hardening suite id must map to a defined suite: {id}"
         );
     }

@@ -381,6 +381,21 @@ pub(super) enum RepoCommand {
         )]
         markdown_out: PathBuf,
     },
+    /// Generate release evidence summary and release proof scope reports
+    ReleaseEvidenceReport {
+        #[arg(long, default_value = "evidence/release/release_evidence.json")]
+        json_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "evidence/reports/what_this_release_proves.md"
+        )]
+        proves_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "evidence/reports/what_this_release_does_not_prove.md"
+        )]
+        limits_out: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
