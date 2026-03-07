@@ -247,6 +247,13 @@ pub struct K8sBackendVersionMetadata {
     pub cluster_uid: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct K8sCapabilityDeclaration {
+    pub supports_node_selector: bool,
+    pub supports_node_affinity: bool,
+    pub supports_pod_affinity: bool,
+}
+
 const TERMINAL_PHASES: [&str; 3] = ["Succeeded", "Failed", "Cancelled"];
 
 pub fn matches_placement_policy(
@@ -418,4 +425,46 @@ pub fn canonical_k8s_terminal_events(events: &[K8sWatchEvent]) -> BTreeMap<Strin
         out.insert(event.node_id.clone(), event);
     }
     out
+}
+
+pub fn reconcile_k8s_watch_stream(
+    previous_terminal: &BTreeMap<String, K8sWatchEvent>,
+    events: &[K8sWatchEvent],
+) -> BTreeMap<String, K8sWatchEvent> {
+    let mut merged = previous_terminal.clone();
+    for (node_id, event) in canonical_k8s_terminal_events(events) {
+        match merged.get(&node_id) {
+            Some(existing) if existing.sequence > event.sequence => {}
+            _ => {
+                merged.insert(node_id, event);
+            }
+        }
+    }
+    merged
+}
+
+pub fn k8s_capability_declaration() -> K8sCapabilityDeclaration {
+    K8sCapabilityDeclaration {
+        supports_node_selector: true,
+        supports_node_affinity: true,
+        supports_pod_affinity: true,
+    }
+}
+
+pub fn reject_unsupported_k8s_fields(fields: &[String]) -> Result<(), String> {
+    let blocked = [
+        "hostNetwork",
+        "hostPID",
+        "privileged",
+        "hostPath",
+        "runtimeClassName",
+    ];
+    for field in fields {
+        if blocked.iter().any(|blocked_name| field == blocked_name) {
+            return Err(format!(
+                "unsupported kubernetes-only field is rejected at dag layer: {field}"
+            ));
+        }
+    }
+    Ok(())
 }

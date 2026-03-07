@@ -220,18 +220,19 @@ pub use authz_policy::{
 };
 pub use backend_cluster::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
-    classify_k8s_failure, equivalent_to_local, map_node_policy_to_k8s_job,
-    map_node_resources_to_k8s, matches_placement_policy, normalize_backend_failure,
-    outputs_logs_equivalent, quota_saturation_percent, replay_allowed_across_backends,
+    classify_k8s_failure, equivalent_to_local, k8s_capability_declaration,
+    map_node_policy_to_k8s_job, map_node_resources_to_k8s, matches_placement_policy,
+    normalize_backend_failure, outputs_logs_equivalent, quota_saturation_percent,
+    reconcile_k8s_watch_stream, reject_unsupported_k8s_fields, replay_allowed_across_backends,
     validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
     BackendCapabilityDescriptor, BackendCleanupGuarantee, BackendConformanceSuite,
     BackendFailureMappingRule, BackendLogCollectionContract, BackendMaintenanceMode,
     BackendOutageSimulationFixture, BackendProductionReadinessChecklist, BackendQuotaMetrics,
     BackendReadinessProbe, CrossBackendReplayRule, GenericBatchExecutorContract,
-    ImageResolutionProvenance, K8sBackendVersionMetadata, K8sFailureClass,
-    K8sInjectionAvailability, K8sInjectionRequest, K8sJobPolicyMapping, K8sResourceMapping,
-    K8sResourceRequest, K8sWatchEvent, KubernetesExecutorContractV2, NodeAffinityHint,
-    NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
+    ImageResolutionProvenance, K8sBackendVersionMetadata, K8sCapabilityDeclaration,
+    K8sFailureClass, K8sInjectionAvailability, K8sInjectionRequest, K8sJobPolicyMapping,
+    K8sResourceMapping, K8sResourceRequest, K8sWatchEvent, KubernetesExecutorContractV2,
+    NodeAffinityHint, NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
     RemoteArtifactStagingProtocol, SlurmExecutorContract, WorkdirSemantics, WorkdirVolumeKind,
 };
 pub use batch_execution::{

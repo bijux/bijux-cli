@@ -377,6 +377,20 @@ fn fsck_alias_surface_runs_on_valid_run_dir() {
 }
 
 #[test]
+fn capabilities_backend_query_supports_kubernetes() {
+    let output = dag_command()
+        .args(["dag", "capabilities", "--backend", "kubernetes", "--json"])
+        .output()
+        .expect("capabilities backend");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("capabilities backend json");
+    assert_eq!(payload["command"], "dag.capabilities");
+    assert_eq!(payload["data"]["backend"], "kubernetes");
+    assert_eq!(payload["data"]["status"], "simulated");
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");

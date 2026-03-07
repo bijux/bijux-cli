@@ -244,7 +244,10 @@ pub(crate) enum Commands {
         #[arg(long)]
         export_bundle: Option<PathBuf>,
     },
-    Capabilities,
+    Capabilities {
+        #[arg(long)]
+        backend: Option<String>,
+    },
     Version,
     Config {
         #[command(subcommand)]

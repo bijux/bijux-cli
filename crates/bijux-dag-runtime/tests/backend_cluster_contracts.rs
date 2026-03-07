@@ -12,9 +12,10 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
-    classify_k8s_failure, equivalent_to_local, map_node_policy_to_k8s_job,
-    map_node_resources_to_k8s, matches_placement_policy, normalize_backend_failure,
-    outputs_logs_equivalent, quota_saturation_percent, replay_allowed_across_backends,
+    classify_k8s_failure, equivalent_to_local, k8s_capability_declaration,
+    map_node_policy_to_k8s_job, map_node_resources_to_k8s, matches_placement_policy,
+    normalize_backend_failure, outputs_logs_equivalent, quota_saturation_percent,
+    reconcile_k8s_watch_stream, reject_unsupported_k8s_fields, replay_allowed_across_backends,
     validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
     BackendCapabilityDescriptor, BackendFailureMappingRule, BackendMaintenanceMode,
     BackendReadinessProbe, CrossBackendReplayRule, K8sInjectionAvailability, K8sInjectionRequest,
@@ -258,4 +259,49 @@ fn k8s_terminal_event_reduction_is_deterministic_under_async_duplicate_watch_eve
     assert_eq!(reduced["train"].sequence, 4);
     assert_eq!(reduced["extract"].phase, "Failed");
     assert_eq!(reduced["extract"].sequence, 9);
+}
+
+#[test]
+fn watcher_reconnect_reconciles_without_corrupting_terminal_state() {
+    let initial = BTreeMap::from([(
+        "extract".to_string(),
+        K8sWatchEvent {
+            node_id: "extract".to_string(),
+            phase: "Succeeded".to_string(),
+            observed_at_millis: 10,
+            sequence: 10,
+        },
+    )]);
+    let reconnect_events = vec![
+        K8sWatchEvent {
+            node_id: "extract".to_string(),
+            phase: "Succeeded".to_string(),
+            observed_at_millis: 8,
+            sequence: 9,
+        },
+        K8sWatchEvent {
+            node_id: "train".to_string(),
+            phase: "Succeeded".to_string(),
+            observed_at_millis: 11,
+            sequence: 11,
+        },
+    ];
+    let merged = reconcile_k8s_watch_stream(&initial, &reconnect_events);
+    assert_eq!(merged["extract"].sequence, 10);
+    assert_eq!(merged["train"].sequence, 11);
+}
+
+#[test]
+fn node_selector_affinity_capabilities_are_declared() {
+    let caps = k8s_capability_declaration();
+    assert!(caps.supports_node_selector);
+    assert!(caps.supports_node_affinity);
+    assert!(caps.supports_pod_affinity);
+}
+
+#[test]
+fn unsupported_kubernetes_only_fields_are_rejected_by_contract() {
+    assert!(reject_unsupported_k8s_fields(&["hostNetwork".to_string()]).is_err());
+    assert!(reject_unsupported_k8s_fields(&["runtimeClassName".to_string()]).is_err());
+    assert!(reject_unsupported_k8s_fields(&["safeField".to_string()]).is_ok());
 }

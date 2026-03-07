@@ -2088,7 +2088,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", v);
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Capabilities => {
+        Commands::Capabilities { backend } => {
             let payload = json!({
                 "format": "capabilities/v1",
                 "binary_version": env!("CARGO_PKG_VERSION"),
@@ -2109,6 +2109,52 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
                 ]
             });
+            let payload = if let Some(name) = backend.as_deref() {
+                match name {
+                    "k8s" | "kubernetes" => {
+                        let version = bijux_dag_runtime::K8sBackendVersionMetadata {
+                            k8s_version: "simulated-v1.30".to_string(),
+                            api_server: "simulated-control-plane".to_string(),
+                            cluster_uid: "simulated-cluster".to_string(),
+                        };
+                        let caps = bijux_dag_runtime::k8s_capability_declaration();
+                        json!({
+                            "format": "capabilities/v1",
+                            "backend": "kubernetes",
+                            "status": "simulated",
+                            "capabilities": {
+                                "node_selector": caps.supports_node_selector,
+                                "node_affinity": caps.supports_node_affinity,
+                                "pod_affinity": caps.supports_pod_affinity
+                            },
+                            "version_metadata": version,
+                            "notes": [
+                                "kubernetes execution remains simulated in this repository",
+                                "capability declaration is contract-level and evidence-backed"
+                            ]
+                        })
+                    }
+                    other => {
+                        return emit_json(
+                            &cli,
+                            "dag.capabilities",
+                            false,
+                            json!({
+                                "format": "capabilities/v1",
+                                "backend": other,
+                                "status": "unsupported-backend-query"
+                            }),
+                            vec![json!({
+                                "message": format!("unsupported backend query: {other}"),
+                                "remediation": "use --backend kubernetes"
+                            })],
+                            ExitCode::from(2),
+                        );
+                    }
+                }
+            } else {
+                payload
+            };
             if cli.json {
                 return emit_json(
                     &cli,
