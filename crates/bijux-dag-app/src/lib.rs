@@ -37,6 +37,7 @@ mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
 mod replay;
+mod routes;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
 #[path = "replay/service.rs"]
@@ -1129,13 +1130,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::WhyRerun { run_a, run_b } => {
-            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
-            let payload = json!({
-                "root_cause_summary": diff.replay_equivalence.reason_report.summary,
-                "equivalent": diff.replay_equivalence.equivalent,
-                "reasons": diff.replay_equivalence.reasons,
-                "cause_groups": diff.replay_equivalence.cause_groups
-            });
+            let payload = routes::diagnostics_routes::why_rerun_payload(run_a, run_b)?;
             if cli.json {
                 return emit_json(
                     &cli,
@@ -1181,13 +1176,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::TraceArtifact { run_dir, artifact_id } => {
-            let details = inspect_artifact(run_dir, artifact_id)?;
-            let payload = json!({
-                "artifact_id": details["artifact_id"],
-                "path": details["path"],
-                "provenance": details["provenance"],
-                "lineage": details["lineage"]
-            });
+            let payload = routes::diagnostics_routes::trace_artifact_payload(run_dir, artifact_id)?;
             if cli.json {
                 return emit_json(
                     &cli,
@@ -2358,7 +2347,7 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
     Ok(map)
 }
 
-fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
+pub(crate) fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
     let (node_id, file_name) = artifact_id
         .split_once(':')
         .ok_or_else(|| ExitCode::from(2))?;

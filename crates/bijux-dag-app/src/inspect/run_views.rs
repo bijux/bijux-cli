@@ -69,6 +69,12 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     Ok(json!({
         "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
         "status": manifest.get("status").cloned().unwrap_or(Value::Null),
+        "submission_source": manifest
+            .get("run_metadata")
+            .and_then(|m| m.get("submission_source"))
+            .cloned()
+            .or_else(|| manifest.get("submission_source").cloned())
+            .unwrap_or_else(|| json!("manual")),
         "graph_fingerprint": manifest.get("graph_fingerprint").cloned().unwrap_or(Value::Null),
         "timing_ms": {
             "started": manifest.get("started_unix_ms").cloned().unwrap_or(Value::Null),
@@ -397,11 +403,20 @@ pub fn runs_flakes(root: &Path) -> Result<Value, std::io::Error> {
     Ok(json!({"flakes": flaky}))
 }
 
-pub fn format_inspect_human(summary: &Value) -> String {
+pub fn render_run_summary(summary: &Value) -> String {
+    let origin = match summary
+        .get("submission_source")
+        .and_then(Value::as_str)
+        .unwrap_or("manual")
+    {
+        "import" => "imported",
+        _ => "native",
+    };
     format!(
-        "run_id: {}\nstatus: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
+        "run_id: {}\nstatus: {}\norigin: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
         summary.get("run_id").unwrap_or(&Value::Null),
         summary.get("status").unwrap_or(&Value::Null),
+        origin,
         summary.get("integrity_state").unwrap_or(&Value::Null),
         summary.get("retry_count").unwrap_or(&Value::Null),
         summary.get("cache_hits").unwrap_or(&Value::Null),
@@ -409,12 +424,14 @@ pub fn format_inspect_human(summary: &Value) -> String {
     )
 }
 
+pub fn format_inspect_human(summary: &Value) -> String {
+    render_run_summary(summary)
+}
+
 pub fn format_show_human(summary: &Value) -> String {
     format!(
-        "run_id: {}\nstatus: {}\nintegrity_state: {}\ntiming_ms: {}",
-        summary.get("run_id").unwrap_or(&Value::Null),
-        summary.get("status").unwrap_or(&Value::Null),
-        summary.get("integrity_state").unwrap_or(&Value::Null),
+        "{}\ntiming_ms: {}",
+        render_run_summary(summary),
         summary.get("timing_ms").unwrap_or(&Value::Null),
     )
 }
