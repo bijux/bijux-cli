@@ -1,0 +1,112 @@
+{
+  "version": "1",
+  "owners": {
+    "policy": "runtime-foundation",
+    "verification": "dev-control-plane"
+  },
+  "classification_rules": [
+    {
+      "class": "critical",
+      "match": [
+        "battle_workflow_harness_contracts.rs",
+        "engine_correctness_contracts.rs",
+        "runtime_semantics_contracts.rs",
+        "runtime_scheduler_determinism_contracts.rs",
+        "runtime_state_machine_contracts.rs",
+        "state_machine_transitions.rs",
+        "runtime_policy_contracts.rs",
+        "runtime_cache_contracts.rs",
+        "runtime_artifact_contracts.rs",
+        "runtime_failure_contracts.rs",
+        "runtime_replay_contracts.rs",
+        "runtime_import_export_contracts.rs",
+        "runtime_recovery_contracts.rs",
+        "runtime_node_execution_contracts.rs",
+        "scheduler_contract.rs",
+        "security_model_contracts.rs",
+        "security_policy_contracts.rs"
+      ]
+    },
+    {
+      "class": "useful",
+      "match": [
+        "*_contracts.rs",
+        "*_contract.rs",
+        "*_modes.rs"
+      ]
+    },
+    {
+      "class": "shallow",
+      "match": [
+        "control_plane_registry.rs",
+        "observability_events.rs",
+        "artifact_manifest_conformance.rs"
+      ]
+    },
+    {
+      "class": "cosmetic",
+      "match": []
+    },
+    {
+      "class": "duplicate",
+      "match": []
+    }
+  ],
+  "must_never_break": [
+    "battle_workflow_harness_contracts.rs",
+    "engine_correctness_contracts.rs",
+    "runtime_semantics_contracts.rs",
+    "runtime_scheduler_determinism_contracts.rs",
+    "runtime_state_machine_contracts.rs",
+    "state_machine_transitions.rs",
+    "runtime_policy_contracts.rs",
+    "runtime_cache_contracts.rs",
+    "runtime_artifact_contracts.rs",
+    "runtime_failure_contracts.rs",
+    "runtime_replay_contracts.rs",
+    "runtime_import_export_contracts.rs",
+    "runtime_recovery_contracts.rs",
+    "runtime_node_execution_contracts.rs",
+    "scheduler_contract.rs",
+    "security_model_contracts.rs",
+    "security_policy_contracts.rs"
+  ],
+  "required_semantic_surfaces": {
+    "scheduler_edge_case": "runtime_scheduler_contracts.rs",
+    "artifact_corruption": "runtime_artifact_contracts.rs",
+    "replay_mismatch": "runtime_replay_contracts.rs",
+    "cache_proof_failure": "runtime_adversarial_contracts.rs",
+    "path_escape_and_env_leakage": "security_model_contracts.rs",
+    "state_machine_illegal_transition": "state_machine_transitions.rs",
+    "import_export_provenance": "runtime_import_export_contracts.rs",
+    "operator_inspection": "workflow_product_contracts.rs"
+  },
+  "snapshot_surface_policy": {
+    "allowed_assertion_files": [
+      "crates/bijux-dag-core/tests/serde_roundtrip.rs",
+      "crates/bijux-dag-cli/tests/contract_surface.rs",
+      "crates/bijux-dev-dag/tests/crate_taxonomy_v2_contracts.rs"
+    ],
+    "forbidden_macros": [
+      "insta::assert_snapshot",
+      "insta::assert_json_snapshot"
+    ]
+  },
+  "trust_coverage_families": {
+    "semantic": ["runtime_semantics_contracts.rs", "engine_correctness_contracts.rs"],
+    "adversarial": ["runtime_adversarial_contracts.rs"],
+    "failure": ["runtime_failure_contracts.rs"],
+    "replay": ["runtime_replay_contracts.rs"],
+    "scheduler": ["runtime_scheduler_contracts.rs", "scheduler_contract.rs"],
+    "policy": ["runtime_policy_contracts.rs"],
+    "cache": ["runtime_cache_contracts.rs"],
+    "artifact": ["runtime_artifact_contracts.rs"],
+    "state_machine": ["runtime_state_machine_contracts.rs", "state_machine_transitions.rs"],
+    "recovery": ["runtime_recovery_contracts.rs"],
+    "import_export": ["runtime_import_export_contracts.rs"],
+    "node_execution": ["runtime_node_execution_contracts.rs"],
+    "scheduler_determinism": ["runtime_scheduler_determinism_contracts.rs"],
+    "security": ["security_model_contracts.rs", "security_policy_contracts.rs"],
+    "battle": ["battle_workflow_harness_contracts.rs"]
+  }
+}
