@@ -84,3 +84,63 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
     }
     Ok(map)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::run_diff_from_dirs;
+    use std::fs;
+
+    fn write(path: &std::path::Path, value: &str) {
+        fs::write(path, value).expect("write test file");
+    }
+
+    #[test]
+    fn replay_service_marks_identical_runs_equivalent() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run_a = tmp.path().join("run-a");
+        let run_b = tmp.path().join("run-b");
+        fs::create_dir_all(&run_a).expect("create run-a");
+        fs::create_dir_all(&run_b).expect("create run-b");
+        write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(
+            &run_a.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(
+            &run_b.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+
+        let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
+        assert!(diff.replay_equivalence.equivalent);
+        assert!(diff.replay_equivalence.reasons.is_empty());
+    }
+
+    #[test]
+    fn replay_service_reports_graph_mismatch() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run_a = tmp.path().join("run-a");
+        let run_b = tmp.path().join("run-b");
+        fs::create_dir_all(&run_a).expect("create run-a");
+        fs::create_dir_all(&run_b).expect("create run-b");
+        write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(
+            &run_a.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(
+            &run_b.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-2"}"#,
+        );
+
+        let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(diff
+            .replay_equivalence
+            .reasons
+            .iter()
+            .any(|reason| { reason.contains("graph fingerprint differs") }));
+    }
+}
