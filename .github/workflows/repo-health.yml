@@ -1,0 +1,21 @@
+name: Repo Health
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  repo-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: generate hotspot reports
+        run: ./scripts/repo_health/generate_hotspot_reports.sh
+      - name: verify generated hotspot reports are committed
+        run: git diff --exit-code docs/reports/foundation/file_size_hotspot_report.md docs/reports/foundation/long_function_hotspot_report.md docs/reports/foundation/public_api_hotspot_report.md docs/reports/foundation/dependency_cycle_report.md
+      - name: run repo health contract tests
+        run: cargo test -p bijux-dev-dag --test repo_health_contracts
