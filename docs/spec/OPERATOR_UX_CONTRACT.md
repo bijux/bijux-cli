@@ -9,7 +9,7 @@
 
 ## Operator command classes
 - run-time: `dag run`, `dag replay`
-- inspect-time: `dag runs list|show|inspect|tree|timeline|diff|explain-failure`
+- inspect-time: `dag runs list|show|inspect|tree|timeline|diff|explain-failure|summary|compare|trend|failures|flakes`
 - repair-time: `dag runs doctor`
 - repo-time: `bijux-dev-dag repo run --domain governance`
 
@@ -23,6 +23,11 @@
 - `dag runs verify <run_id> --root <runs_dir> [--deep]`
 - `dag runs doctor <run_id> --root <runs_dir>`
 - `dag runs explain-failure <run_id> --root <runs_dir>`
+- `dag runs summary --root <runs_dir>`
+- `dag runs compare <run_a> <run_b> --root <runs_dir>`
+- `dag runs trend --root <runs_dir>`
+- `dag runs failures --root <runs_dir>`
+- `dag runs flakes --root <runs_dir>`
 
 ## Exit semantics
 - `0`: command succeeded and reported healthy/valid result

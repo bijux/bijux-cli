@@ -10,6 +10,11 @@
 - `dag runs verify <run_id> --root <runs_dir> [--deep]`
 - `dag runs doctor <run_id> --root <runs_dir>`
 - `dag runs explain-failure <run_id> --root <runs_dir>`
+- `dag runs summary --root <runs_dir>`
+- `dag runs compare <run_a> <run_b> --root <runs_dir>`
+- `dag runs trend --root <runs_dir>`
+- `dag runs failures --root <runs_dir>`
+- `dag runs flakes --root <runs_dir>`
 
 ## Debug/internal commands
 - `dag diff` (legacy alias)

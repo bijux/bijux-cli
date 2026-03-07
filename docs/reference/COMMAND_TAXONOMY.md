@@ -4,7 +4,7 @@
 - `dag validate`
 - `dag run`
 - `dag replay`
-- `dag runs list|show|inspect|tree|timeline|diff|verify|doctor|explain-failure`
+- `dag runs list|show|inspect|tree|timeline|diff|verify|doctor|explain-failure|summary|compare|trend|failures|flakes`
 - `dag export`
 - `dag import`
 
