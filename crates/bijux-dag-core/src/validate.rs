@@ -7,7 +7,7 @@ pub enum ValidationDomain {
     Topology,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationRule {
     pub id: &'static str,
     pub severity: Severity,
@@ -85,5 +85,5 @@ fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {
     validation_rule_registry()
         .iter()
         .find(|rule| rule.id == code)
-        .map(|rule| rule.domain)
+        .map(|rule| rule.domain.clone())
 }

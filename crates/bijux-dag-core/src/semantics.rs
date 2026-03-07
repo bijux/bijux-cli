@@ -155,7 +155,7 @@ pub struct SemanticDiffReport {
     pub changed_edges: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NormalizedSemanticGraph {
     pub graph: Graph,
     pub partition_expansion_contracts: Vec<String>,

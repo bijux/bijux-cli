@@ -1,8 +1,11 @@
-use crate::compile::{compile_graph, DagCompileResult};
+use crate::compile::{compile_graph_contract, DagCompileResult};
 use crate::{
-    parse_graph_strict, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue,
-    PortRef, Resources, RetryPolicy,
+    parse_graph_strict, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef,
+    Resources, RetryPolicy,
 };
+use crate::graph::{GraphContract, GraphExecutionPolicy};
+use crate::meta::{DagId, DagVersionId};
+use crate::resources::GraphDefaults;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -86,11 +89,27 @@ impl DagBuilder {
     }
 
     pub fn compile(self) -> Result<DagCompileResult, crate::GraphError> {
-        compile_graph(&self.build())
+        let graph = self.build();
+        let contract = GraphContract {
+            dag_id: DagId("builder".to_string()),
+            dag_version_id: DagVersionId("v0".to_string()),
+            graph,
+            namespace: None,
+            owners: Vec::new(),
+            labels: BTreeMap::new(),
+            annotations: BTreeMap::new(),
+            environment_tags: Vec::new(),
+            defaults: GraphDefaults::default(),
+            execution_policy: GraphExecutionPolicy {
+                fail_fast: true,
+                deterministic_dispatch: true,
+            },
+            node_groups: Vec::new(),
+        };
+        compile_graph_contract(&contract)
     }
 }
 
-#[derive(Default)]
 pub struct NodeBuilder {
     id: String,
     kind: NodeKind,
@@ -104,6 +123,25 @@ pub struct NodeBuilder {
     effects: Vec<Effect>,
     env_allowlist: Vec<String>,
     group: Option<String>,
+}
+
+impl Default for NodeBuilder {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            kind: NodeKind::Const,
+            inputs: Vec::new(),
+            outputs: Vec::new(),
+            params: ParamValue::Literal(Value::Null),
+            timeout_ms: None,
+            resources: None,
+            tags: Vec::new(),
+            retry: RetryPolicy::default(),
+            effects: Vec::new(),
+            env_allowlist: Vec::new(),
+            group: None,
+        }
+    }
 }
 
 impl NodeBuilder {
@@ -228,7 +266,23 @@ pub fn simulate_graph(graph: &Graph) -> Vec<String> {
 }
 
 pub fn dry_run_preview(graph: &Graph) -> DagDryRunPreview {
-    let compile_result = compile_graph(graph);
+    let contract = GraphContract {
+        dag_id: DagId("dry-run".to_string()),
+        dag_version_id: DagVersionId("v0".to_string()),
+        graph: graph.clone(),
+        namespace: None,
+        owners: Vec::new(),
+        labels: BTreeMap::new(),
+        annotations: BTreeMap::new(),
+        environment_tags: Vec::new(),
+        defaults: GraphDefaults::default(),
+        execution_policy: GraphExecutionPolicy {
+            fail_fast: true,
+            deterministic_dispatch: true,
+        },
+        node_groups: Vec::new(),
+    };
+    let compile_result = compile_graph_contract(&contract);
     let diagnostics = compile_result
         .as_ref()
         .map(|r| {
@@ -237,7 +291,7 @@ pub fn dry_run_preview(graph: &Graph) -> DagDryRunPreview {
                 .map(|d| format!("{}: {}", d.code, d.message))
                 .collect::<Vec<_>>()
         })
-        .unwrap_or_else(|err| vec![err.to_string()]);
+        .unwrap_or_else(|err: &crate::GraphError| vec![err.to_string()]);
     DagDryRunPreview {
         node_count: graph.nodes.len(),
         edge_count: graph.edges.len(),
