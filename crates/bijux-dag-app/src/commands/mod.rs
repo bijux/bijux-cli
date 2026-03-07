@@ -135,6 +135,8 @@ pub(crate) enum Commands {
     Diff {
         run_a: PathBuf,
         run_b: PathBuf,
+        #[arg(long, value_enum, default_value_t = DiffModeArg::Semantic)]
+        mode: DiffModeArg,
         #[arg(long)]
         explain: bool,
     },
@@ -226,6 +228,8 @@ pub(crate) enum RunsCommands {
     Diff {
         run_a: PathBuf,
         run_b: PathBuf,
+        #[arg(long, value_enum, default_value_t = DiffModeArg::Semantic)]
+        mode: DiffModeArg,
         #[arg(long)]
         explain: bool,
     },
@@ -363,6 +367,11 @@ pub(crate) enum MaterializeModeArg {
     Copy,
     Hardlink,
     Symlink,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum DiffModeArg {
+    Semantic,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]

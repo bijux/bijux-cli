@@ -31,6 +31,15 @@ pub struct OutputDiff {
 pub struct ReplayEquivalenceReport {
     pub equivalent: bool,
     pub reasons: Vec<String>,
+    pub reason_report: ReplayReasonReport,
+    pub cause_groups: BTreeMap<String, usize>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReplayReasonReport {
+    pub summary: String,
+    pub compared_dimensions: Vec<String>,
+    pub mismatch_dimensions: Vec<String>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -161,18 +170,39 @@ pub fn build_run_diff(
     }
 
     let mut reasons = Vec::new();
+    let mut cause_groups: BTreeMap<String, usize> = BTreeMap::new();
+    let compared_dimensions = vec![
+        "manifest".to_string(),
+        "graph_fingerprint".to_string(),
+        "nodes".to_string(),
+        "outputs".to_string(),
+    ];
+    let mut mismatch_dimensions = Vec::new();
     if !manifest_diff.is_empty() {
         reasons.push("manifest fields differ".to_string());
+        mismatch_dimensions.push("manifest".to_string());
+        cause_groups.insert("manifest_drift".to_string(), 1);
     }
     if graph_fingerprint.is_some() {
         reasons.push("graph fingerprint differs".to_string());
+        mismatch_dimensions.push("graph_fingerprint".to_string());
+        cause_groups.insert("graph_semantics".to_string(), 1);
     }
     if !node_diff.is_empty() {
         reasons.push("node status or fingerprint differs".to_string());
+        mismatch_dimensions.push("nodes".to_string());
+        cause_groups.insert("node_outcomes".to_string(), node_diff.len());
     }
     if !out_diff.is_empty() {
         reasons.push("output content differs".to_string());
+        mismatch_dimensions.push("outputs".to_string());
+        cause_groups.insert("artifact_payload".to_string(), out_diff.len());
     }
+    let summary = if reasons.is_empty() {
+        "runs are semantically equivalent under replay contract".to_string()
+    } else {
+        "runs are not semantically equivalent under replay contract".to_string()
+    };
 
     RunDiff {
         manifest: manifest_diff,
@@ -182,6 +212,12 @@ pub fn build_run_diff(
         replay_equivalence: ReplayEquivalenceReport {
             equivalent: reasons.is_empty(),
             reasons,
+            reason_report: ReplayReasonReport {
+                summary,
+                compared_dimensions,
+                mismatch_dimensions,
+            },
+            cause_groups,
         },
     }
 }
@@ -234,6 +270,11 @@ mod tests {
         assert!(diff.outputs.is_empty());
         assert!(diff.replay_equivalence.equivalent);
         assert!(diff.replay_equivalence.reasons.is_empty());
+        assert_eq!(
+            diff.replay_equivalence.reason_report.summary,
+            "runs are semantically equivalent under replay contract"
+        );
+        assert!(diff.replay_equivalence.cause_groups.is_empty());
     }
 
     #[test]
@@ -257,5 +298,40 @@ mod tests {
         assert_eq!(d.changed, vec!["a.txt"]);
         assert!(!diff.replay_equivalence.equivalent);
         assert!(!diff.replay_equivalence.reasons.is_empty());
+        assert_eq!(
+            diff.replay_equivalence
+                .cause_groups
+                .get("artifact_payload")
+                .copied(),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn non_semantic_manifest_fields_are_ignored() {
+        let a = json!({
+            "run_id": "a",
+            "created_unix_ms": 1,
+            "started_unix_ms": 2,
+            "finished_unix_ms": 3
+        });
+        let b = json!({
+            "run_id": "b",
+            "created_unix_ms": 9,
+            "started_unix_ms": 10,
+            "finished_unix_ms": 11
+        });
+        let diff = build_run_diff(
+            a,
+            b,
+            "fp".to_string(),
+            "fp".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(diff.replay_equivalence.equivalent);
+        assert!(diff.replay_equivalence.reasons.is_empty());
     }
 }

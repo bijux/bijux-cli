@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux/operator/replay_diff.schema.json",
+  "title": "ReplayDiffReport",
+  "type": "object",
+  "required": ["replay_equivalence"],
+  "properties": {
+    "manifest": { "type": "object" },
+    "graph_fingerprint": { "type": ["object", "null"] },
+    "nodes": { "type": "object" },
+    "outputs": { "type": "object" },
+    "replay_equivalence": {
+      "type": "object",
+      "required": ["equivalent", "reasons", "reason_report", "cause_groups"],
+      "properties": {
+        "equivalent": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reason_report": {
+          "type": "object",
+          "required": ["summary", "compared_dimensions", "mismatch_dimensions"],
+          "properties": {
+            "summary": { "type": "string" },
+            "compared_dimensions": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "mismatch_dimensions": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "cause_groups": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

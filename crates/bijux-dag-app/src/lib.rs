@@ -623,7 +623,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
                 Ok(ExitCode::SUCCESS)
             }
-            RunsCommands::Diff { run_a, run_b, explain } => {
+            RunsCommands::Diff {
+                run_a,
+                run_b,
+                mode: _mode,
+                explain,
+            } => {
                 let manifest_a = read_file(&run_a.join("manifest.json"))?;
                 let manifest_b = read_file(&run_b.join("manifest.json"))?;
                 let snap_a = load_snapshot(run_a)?;
@@ -655,6 +660,13 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 print_human_diff(&serde_json::to_value(&diff).unwrap());
                 if *explain {
                     println!("explain: graph fingerprint change implies cache invalidation");
+                    println!("replay_reason: {}", diff.replay_equivalence.reason_report.summary);
+                    if !diff.replay_equivalence.cause_groups.is_empty() {
+                        println!(
+                            "replay_cause_groups: {}",
+                            serde_json::to_string(&diff.replay_equivalence.cause_groups).unwrap()
+                        );
+                    }
                 }
                 Ok(ExitCode::SUCCESS)
             }
@@ -797,6 +809,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Diff {
             run_a,
             run_b,
+            mode: _mode,
             explain,
         } => {
             let explain = *explain;
@@ -840,6 +853,16 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         println!(
                             "replay_difference_reasons: {:?}",
                             diff.replay_equivalence.reasons
+                        );
+                    }
+                    println!(
+                        "replay_reason: {}",
+                        diff.replay_equivalence.reason_report.summary
+                    );
+                    if !diff.replay_equivalence.cause_groups.is_empty() {
+                        println!(
+                            "replay_cause_groups: {}",
+                            serde_json::to_string(&diff.replay_equivalence.cause_groups).unwrap()
                         );
                     }
                 }
