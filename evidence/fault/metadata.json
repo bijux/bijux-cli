@@ -22,5 +22,67 @@
   "corrupt_run_fixtures": [
     "evidence/fault/corrupt_runs/invalid_outputs_index.json",
     "evidence/fault/corrupt_runs/missing_manifest_version.json"
-  ]
+  ],
+  "fault_profiles": {
+    "filesystem.permission_denied": {
+      "expected_fault_class": "filesystem.permission_denied",
+      "expected_system_reaction": "run-directory creation fails with explicit permission diagnostic"
+    },
+    "filesystem.disk_pressure_simulation": {
+      "expected_fault_class": "filesystem.disk_pressure_simulation",
+      "expected_system_reaction": "write failure is surfaced without partial silent success"
+    },
+    "filesystem.trace_write_failure": {
+      "expected_fault_class": "filesystem.trace_write_failure",
+      "expected_system_reaction": "trace corruption is detectable during verification"
+    },
+    "filesystem.index_write_failure": {
+      "expected_fault_class": "filesystem.index_write_failure",
+      "expected_system_reaction": "outputs index corruption is detectable during verification"
+    },
+    "subprocess.non_zero_exit": {
+      "expected_fault_class": "subprocess.non_zero_exit",
+      "expected_system_reaction": "failure class remains explicit and traceable"
+    },
+    "subprocess.timeout": {
+      "expected_fault_class": "subprocess.timeout",
+      "expected_system_reaction": "timeout class is preserved in error payload"
+    },
+    "subprocess.external_kill": {
+      "expected_fault_class": "subprocess.external_kill",
+      "expected_system_reaction": "external kill is classified and reported"
+    },
+    "environment.missing_required": {
+      "expected_fault_class": "environment.missing_required",
+      "expected_system_reaction": "missing environment contract fails before success state"
+    },
+    "config.malformed": {
+      "expected_fault_class": "config.malformed",
+      "expected_system_reaction": "malformed configuration fails validation path"
+    },
+    "corruption.manifest_tamper": {
+      "expected_fault_class": "corruption.manifest_tamper",
+      "expected_system_reaction": "tamper is detected during verification"
+    },
+    "corruption.missing_trace": {
+      "expected_fault_class": "corruption.missing_trace",
+      "expected_system_reaction": "manifest-to-trace mismatch is detectable"
+    },
+    "corruption.cache_metadata_mismatch": {
+      "expected_fault_class": "corruption.cache_metadata_mismatch",
+      "expected_system_reaction": "cache metadata mismatch forces miss and diagnostic"
+    },
+    "concurrency.run_id_collision": {
+      "expected_fault_class": "concurrency.run_id_collision",
+      "expected_system_reaction": "collision avoids silent overwrite"
+    },
+    "concurrency.latest_alias_race": {
+      "expected_fault_class": "concurrency.latest_alias_race",
+      "expected_system_reaction": "latest alias race remains bounded and deterministic"
+    },
+    "artifact.half_valid_marker": {
+      "expected_fault_class": "artifact.half_valid_marker",
+      "expected_system_reaction": "half-valid states are rejected by strict verification"
+    }
+  }
 }

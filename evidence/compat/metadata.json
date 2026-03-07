@@ -27,5 +27,32 @@
         "evidence/compat/export_bundle/unsupported_past/bundle.json"
       ]
     }
+  },
+  "decision_matrix": {
+    "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json": {
+      "decision": "supported"
+    },
+    "evidence/compat/graph_schema/unsupported_future/minimal.dag.json": {
+      "decision": "unsupported_future"
+    },
+    "evidence/compat/graph_schema/unsupported_past/minimal.dag.json": {
+      "decision": "unsupported_past"
+    },
+    "evidence/compat/run_dir/v0_1_supported/manifest.json": {
+      "decision": "supported"
+    },
+    "evidence/compat/run_dir/unsupported_future/manifest.json": {
+      "decision": "unsupported_future"
+    },
+    "evidence/compat/export_bundle/v0_1_supported/bundle.json": {
+      "decision": "supported"
+    },
+    "evidence/compat/export_bundle/unsupported_past/bundle.json": {
+      "decision": "unsupported_past"
+    },
+    "evidence/compat/scenarios/legacy_fixture_validation.json": {
+      "decision": "corrupt",
+      "note": "legacy fixture intentionally encodes invalid legacy shape behavior"
+    }
   }
 }

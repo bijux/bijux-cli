@@ -27,5 +27,32 @@
     "evidence/cache/scenarios/warm_cold.json": {
       "coverage": "warm-cold-semantic-equivalence"
     }
+  },
+  "cache_proof_outcomes": {
+    "evidence/cache/corrupt/missing_meta.json": "cache_proof_failure",
+    "evidence/cache/corrupt/hash_mismatch.json": "cache_proof_failure",
+    "evidence/cache/corrupt/unsupported_metadata_version.json": "cache_unsupported_metadata",
+    "evidence/cache/corrupt/truncated_meta.json": "cache_metadata_parse_failure",
+    "evidence/cache/corrupt/missing_outputs_proof.json": "cache_proof_failure",
+    "evidence/cache/scenarios/warm_cold.json": "cache_warm_cold_equivalence"
+  },
+  "replay_outcomes": {
+    "evidence/cache/replay/match_case.json": "replay_match",
+    "evidence/cache/replay/mismatch_case.json": "replay_mismatch",
+    "evidence/cache/replay/corruption_case.json": "replay_corruption_rejected",
+    "evidence/cache/replay/unsupported_version_case.json": "replay_unsupported_version"
+  },
+  "consumer_boundaries": {
+    "cache_allowed_consumers": [
+      "cache-contracts",
+      "runtime-tests",
+      "battle-suite"
+    ],
+    "replay_allowed_consumers": [
+      "e2e-contracts",
+      "runtime-tests",
+      "battle-suite",
+      "replay-suite"
+    ]
   }
 }

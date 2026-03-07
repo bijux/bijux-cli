@@ -124,6 +124,7 @@ fn evidence_schema_files_exist() {
     for rel in [
         "configs/schema/evidence_asset.schema.json",
         "configs/schema/evidence_family.schema.json",
+        "configs/schema/evidence_cache_metadata.schema.json",
         "configs/schema/evidence_battle_metadata.schema.json",
         "configs/schema/evidence_perf_metadata.schema.json",
         "configs/schema/evidence_compare_metadata.schema.json",

@@ -5148,6 +5148,7 @@ fn run_evidence_schema_verify() -> Result<(), String> {
     let schema_files = [
         "configs/schema/evidence_asset.schema.json",
         "configs/schema/evidence_family.schema.json",
+        "configs/schema/evidence_cache_metadata.schema.json",
         "configs/schema/evidence_battle_metadata.schema.json",
         "configs/schema/evidence_perf_metadata.schema.json",
         "configs/schema/evidence_compare_metadata.schema.json",
@@ -5302,6 +5303,7 @@ fn run_evidence_schema_verify() -> Result<(), String> {
     }
 
     let metadata_files = [
+        ("evidence/cache/metadata.json", "cache metadata"),
         ("evidence/battle/metadata.json", "battle metadata"),
         ("evidence/perf/metadata.json", "perf metadata"),
         ("evidence/compare/metadata.json", "compare metadata"),
