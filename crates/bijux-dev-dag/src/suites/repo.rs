@@ -30,6 +30,7 @@ pub const IDS: &[&str] = &[
     "backend-contract",
     "storage-boundaries",
     "observability-contract",
+    "extensibility-contract",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",

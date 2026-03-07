@@ -955,6 +955,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_observability_contract_guard(),
     },
     SuiteDef {
+        id: "extensibility-contract",
+        description: "extensibility contract docs schema tests and status report alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_extensibility_contract_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -4792,6 +4801,45 @@ fn run_observability_contract_guard() -> Result<(), String> {
     if !test_text.contains("required_runtime_event_names_are_present_for_reference_sequence") {
         return Err("observability contract test for required runtime event names is missing".to_string());
     }
+    Ok(())
+}
+
+fn run_extensibility_contract_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/EXTENSIBILITY_CONTRACT.md",
+        "docs/reference/INTERNAL_HOOK_PROMOTION_CHECKLIST.md",
+        "configs/schema/extension_descriptor.schema.json",
+        "crates/bijux-dag-runtime/tests/plugin_ecosystem_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "extensibility contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let report = json!({
+        "extension_points": [
+            { "name": "adapter", "stability": "stable", "owner": "bijux-dag-runtime" },
+            { "name": "execution-backend", "stability": "experimental", "owner": "bijux-dag-runtime" },
+            { "name": "internal-hook", "stability": "internal", "owner": "bijux-dag-runtime" }
+        ],
+        "source_contract": "docs/spec/EXTENSIBILITY_CONTRACT.md"
+    });
+    let report_dir = root.join("artifacts/reports");
+    fs::create_dir_all(&report_dir).map_err(|err| err.to_string())?;
+    fs::write(
+        report_dir.join("extensibility_contract_report.json"),
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
     Ok(())
 }
 
