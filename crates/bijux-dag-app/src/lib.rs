@@ -45,8 +45,8 @@ use bijux_dag_runtime::{
 };
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    AdaptersCommands, CacheCommands, CacheModeArg, Commands, DagCli, GraphFormatArg,
-    MaterializeModeArg, MigrateCommands, RunsCommands,
+    AdaptersCommands, CacheCommands, CacheModeArg, Commands, ConfigCommands, DagCli,
+    GraphFormatArg, MaterializeModeArg, MigrateCommands, PolicyCommands, RunsCommands,
 };
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -1786,6 +1786,94 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
             Ok(ExitCode::SUCCESS)
         }
+        Commands::Config { command } => match command {
+            ConfigCommands::ShowEffective {
+                config,
+                jobs,
+                cache_mode,
+                materialize_inputs,
+            } => {
+                let explicit = load_partial_config(config.as_deref())?;
+                let env_cfg = env_partial_runtime_config();
+                let cli_override = PartialRuntimeSurfaceConfig {
+                    jobs: *jobs,
+                    cache_mode: cache_mode.map(map_cache_mode_surface),
+                    materialize_inputs: materialize_inputs.map(map_materialize_surface),
+                    policy: None,
+                };
+                let effective =
+                    resolve_effective_config(cli_override, explicit, env_cfg, default_runtime_config());
+                let payload = serde_json::to_value(&effective).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.config.show-effective",
+                        true,
+                        payload,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+        },
+        Commands::Policy { command } => match command {
+            PolicyCommands::ShowEffective {
+                config,
+                deny_network,
+                deny_env,
+                deny_clock,
+                clean_env,
+                allow_env,
+            } => {
+                let explicit = load_partial_config(config.as_deref())?;
+                let env_cfg = env_partial_runtime_config();
+                let cli_policy = if *deny_network
+                    || *deny_env
+                    || *deny_clock
+                    || *clean_env
+                    || !allow_env.is_empty()
+                {
+                    Some(PolicySurfaceConfig {
+                        deny_network: *deny_network,
+                        deny_env: *deny_env,
+                        deny_clock: *deny_clock,
+                        clean_env: *clean_env,
+                        allowed_env: allow_env.clone(),
+                    })
+                } else {
+                    None
+                };
+                let effective = resolve_effective_config(
+                    PartialRuntimeSurfaceConfig {
+                        policy: cli_policy,
+                        ..PartialRuntimeSurfaceConfig::default()
+                    },
+                    explicit,
+                    env_cfg,
+                    default_runtime_config(),
+                );
+                let trace = policy_evaluation_trace(&effective.policy);
+                let payload = json!({
+                    "effective_policy": effective.policy,
+                    "trace": trace,
+                    "config_fingerprint": config_fingerprint(&effective),
+                });
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.policy.show-effective",
+                        true,
+                        payload,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+        },
     }
 }
 
@@ -1803,6 +1891,66 @@ fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
 
 fn env_cache_dir() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
+}
+
+fn env_partial_runtime_config() -> Option<PartialRuntimeSurfaceConfig> {
+    let mut partial = PartialRuntimeSurfaceConfig::default();
+    if let Ok(raw_jobs) = std::env::var("BIJUX_DAG_JOBS")
+        && let Ok(jobs) = raw_jobs.parse::<usize>()
+    {
+        partial.jobs = Some(jobs);
+    }
+    if let Ok(raw_cache_mode) = std::env::var("BIJUX_DAG_CACHE_MODE") {
+        partial.cache_mode = match raw_cache_mode.to_ascii_lowercase().as_str() {
+            "off" => Some(CacheModeSurface::Off),
+            "read" => Some(CacheModeSurface::Read),
+            "read-write" | "readwrite" => Some(CacheModeSurface::ReadWrite),
+            _ => None,
+        };
+    }
+    if let Ok(raw_materialize) = std::env::var("BIJUX_DAG_MATERIALIZE_INPUTS") {
+        partial.materialize_inputs = match raw_materialize.to_ascii_lowercase().as_str() {
+            "none" => Some(MaterializeInputsSurface::None),
+            "direct" => Some(MaterializeInputsSurface::Direct),
+            "all" => Some(MaterializeInputsSurface::All),
+            _ => None,
+        };
+    }
+    if let Ok(raw_policy) = std::env::var("BIJUX_DAG_POLICY_JSON")
+        && let Ok(policy) = serde_json::from_str::<PolicySurfaceConfig>(&raw_policy)
+    {
+        partial.policy = Some(policy);
+    }
+    if partial == PartialRuntimeSurfaceConfig::default() {
+        None
+    } else {
+        Some(partial)
+    }
+}
+
+fn load_partial_config(path: Option<&Path>) -> Result<Option<PartialRuntimeSurfaceConfig>, ExitCode> {
+    let Some(path) = path else {
+        return Ok(None);
+    };
+    let payload = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
+    let parsed = serde_json::from_str::<PartialRuntimeSurfaceConfig>(&payload).map_err(|_| ExitCode::from(2))?;
+    Ok(Some(parsed))
+}
+
+fn map_cache_mode_surface(mode: CacheModeArg) -> CacheModeSurface {
+    match mode {
+        CacheModeArg::Off => CacheModeSurface::Off,
+        CacheModeArg::Read => CacheModeSurface::Read,
+        CacheModeArg::Readwrite => CacheModeSurface::ReadWrite,
+    }
+}
+
+fn map_materialize_surface(mode: MaterializeModeArg) -> MaterializeInputsSurface {
+    match mode {
+        MaterializeModeArg::Copy => MaterializeInputsSurface::All,
+        MaterializeModeArg::Hardlink => MaterializeInputsSurface::Direct,
+        MaterializeModeArg::Symlink => MaterializeInputsSurface::Direct,
+    }
 }
 
 #[derive(serde::Deserialize)]

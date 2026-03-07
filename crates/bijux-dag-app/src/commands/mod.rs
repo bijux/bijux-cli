@@ -197,6 +197,14 @@ pub(crate) enum Commands {
     },
     Capabilities,
     Version,
+    Config {
+        #[command(subcommand)]
+        command: ConfigCommands,
+    },
+    Policy {
+        #[command(subcommand)]
+        command: PolicyCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -352,6 +360,38 @@ pub(crate) enum MigrateCommands {
         from: String,
         #[arg(long)]
         to: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ConfigCommands {
+    ShowEffective {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        jobs: Option<usize>,
+        #[arg(long, value_enum)]
+        cache_mode: Option<CacheModeArg>,
+        #[arg(long, value_enum)]
+        materialize_inputs: Option<MaterializeModeArg>,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PolicyCommands {
+    ShowEffective {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        deny_network: bool,
+        #[arg(long)]
+        deny_env: bool,
+        #[arg(long)]
+        deny_clock: bool,
+        #[arg(long)]
+        clean_env: bool,
+        #[arg(long, action = clap::ArgAction::Append)]
+        allow_env: Vec<String>,
     },
 }
 
