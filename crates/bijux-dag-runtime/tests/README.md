@@ -1,7 +1,18 @@
 # Runtime crate tests
 
-This directory is reserved for runtime behavior contracts:
+This directory contains runtime behavior contract suites grouped by trust surface.
 
-- Execution ordering and scheduling semantics.
-- Cache and replay semantics.
-- Runtime trace and artifact contract tests.
+- semantic: deterministic runtime behavior
+- adversarial: hostile or malformed conditions
+- failure: explicit failure-path semantics
+- replay: mismatch and equivalence behavior
+- scheduler: readiness ordering and edge behavior
+- policy: policy violation semantics
+- cache: invalidation and poisoning resistance
+- artifact: corruption and lineage checks
+- cancellation: terminal cancellation behavior
+- state-machine: terminal consistency checks
+- recovery: continuation and checkpoint behavior
+- import-export: manifest integrity expectations
+- node-execution: dependency and retry behavior
+- scheduler-determinism: stable ordering guarantees
