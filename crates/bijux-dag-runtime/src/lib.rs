@@ -63,6 +63,8 @@ mod test_support;
 mod runtime_boundary_tests;
 #[cfg(test)]
 mod adapter_contract_tests;
+#[cfg(test)]
+mod runtime_policy_trace_tests;
 
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_artifacts::{
