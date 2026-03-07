@@ -1,5 +1,7 @@
 # bijux-dag-cli Contract
 
+Responsibility: Thin process entrypoint that delegates to app command surfaces.
+
 ## Scope
 `bijux-dag-cli` is a thin binary wiring crate. It owns argument entrypoint wiring and final error-to-exit mapping only.
 

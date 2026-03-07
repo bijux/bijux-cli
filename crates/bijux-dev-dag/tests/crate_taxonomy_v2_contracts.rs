@@ -135,10 +135,44 @@ fn crate_taxonomy_v2_docs_and_contract_files_are_present_and_named() {
             contract_text.contains(name),
             "CONTRACT should contain crate name for {name}"
         );
+        assert!(
+            readme_text.contains(&format!("Responsibility: {responsibility}")),
+            "README responsibility drift detected for {name}"
+        );
+        assert!(
+            contract_text.contains(&format!("Responsibility: {responsibility}")),
+            "CONTRACT responsibility drift detected for {name}"
+        );
     }
 
     let taxonomy_doc = repo_root().join("docs/spec/CRATE_TAXONOMY_v2.md");
     assert!(taxonomy_doc.exists(), "missing CRATE_TAXONOMY_v2.md");
+}
+
+#[test]
+fn crate_responsibility_and_taxonomy_docs_cover_all_workspace_crates() {
+    let policy = read_json("configs/policy/crate_taxonomy_v2.json");
+    let names: Vec<String> = policy["workspace_crates"]
+        .as_array()
+        .expect("workspace_crates array")
+        .iter()
+        .map(|entry| entry["name"].as_str().expect("crate name").to_string())
+        .collect();
+    let taxonomy_doc =
+        fs::read_to_string(repo_root().join("docs/spec/CRATE_TAXONOMY_v2.md")).expect("read doc");
+    let responsibility_doc =
+        fs::read_to_string(repo_root().join("docs/spec/CRATE_RESPONSIBILITY_STATEMENTS.md"))
+            .expect("read doc");
+    for name in names {
+        assert!(
+            taxonomy_doc.contains(&format!("`{name}`")),
+            "CRATE_TAXONOMY_v2 missing crate {name}"
+        );
+        assert!(
+            responsibility_doc.contains(&format!("`{name}`")),
+            "CRATE_RESPONSIBILITY_STATEMENTS missing crate {name}"
+        );
+    }
 }
 
 #[test]

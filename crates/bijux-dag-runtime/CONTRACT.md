@@ -1,5 +1,7 @@
 # bijux-dag-runtime contract
 
+Responsibility: Execution engine, scheduler behavior, policy enforcement, replay semantics, and runtime diagnostics.
+
 ## Responsibility
 `bijux-dag-runtime` owns execution planning, runtime policy enforcement, node execution orchestration, trace emission, and artifact persistence orchestration.
 

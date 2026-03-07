@@ -1,5 +1,7 @@
 # bijux-dag-artifacts contract
 
+Responsibility: Run artifact models, persistence services, integrity proofs, and lifecycle policy helpers.
+
 ## Responsibility
 `bijux-dag-artifacts` owns artifact data models and artifact persistence APIs.
 It is explicitly a `format + IO` crate.

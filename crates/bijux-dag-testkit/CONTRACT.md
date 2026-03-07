@@ -1,5 +1,7 @@
 # bijux-dag-testkit Contract
 
+Responsibility: Shared deterministic test fixtures, builders, and assertion helpers for workspace crates.
+
 ## Scope
 `bijux-dag-testkit` provides reusable test-only fixtures, builders, matchers, and harness utilities shared across crates and top-level suites.
 

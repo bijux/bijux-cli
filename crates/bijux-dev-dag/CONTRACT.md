@@ -1,5 +1,7 @@
 # bijux-dev-dag contract
 
+Responsibility: Repository governance control-plane, suite orchestration, and release verification automation.
+
 ## Authority
 
 `bijux-dev-dag` is the repository control-plane authority for policy validation,

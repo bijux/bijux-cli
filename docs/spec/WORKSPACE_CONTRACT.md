@@ -1,6 +1,7 @@
 # Workspace contract
 
 This document defines crate responsibilities and allowed dependency directions.
+Taxonomy authority is defined in `configs/policy/crate_taxonomy_v2.json` and `docs/spec/CRATE_TAXONOMY_v2.md`.
 
 ## Scope
 Defines workspace crate responsibility boundaries and allowed dependency directions.

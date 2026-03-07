@@ -1,5 +1,7 @@
 # bijux-dag-app Contract
 
+Responsibility: Application orchestration services, command response modeling, and user-facing render flows.
+
 ## Scope
 `bijux-dag-app` owns application orchestration for user commands. It translates validated CLI models into calls to core/runtime/artifacts APIs and formats typed responses.
 

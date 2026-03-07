@@ -1,5 +1,7 @@
 # bijux-dag-core contract
 
+Responsibility: DAG schema, parsing, canonicalization, validation, and deterministic semantic graph logic.
+
 ## Responsibility
 `bijux-dag-core` owns DAG model, parse, validation, resolve, canonicalization, topology, and fingerprint semantics.
 
