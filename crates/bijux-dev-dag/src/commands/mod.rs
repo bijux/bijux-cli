@@ -5704,6 +5704,19 @@ fn run_adoption_surfaces_guard() -> Result<(), String> {
 
     let quickstart = fs::read_to_string(root.join("docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md"))
         .map_err(|err| err.to_string())?;
+    let install =
+        fs::read_to_string(root.join("docs/user/INSTALLATION.md")).map_err(|err| err.to_string())?;
+    for required_cmd in [
+        "cargo build -p bijux-dag-cli --release",
+        "cargo run -p bijux-dag-cli -- dag version",
+    ] {
+        if !install.contains(required_cmd) {
+            return Err(format!(
+                "installation doc missing clean-environment command `{}`",
+                required_cmd
+            ));
+        }
+    }
     for forbidden in ["kubernetes", "hpc", "production-grade remote"] {
         if quickstart.to_ascii_lowercase().contains(forbidden) {
             return Err(format!(
