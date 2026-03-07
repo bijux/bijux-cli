@@ -14,6 +14,7 @@ pub mod config;
 mod control_plane;
 mod control_plane_api;
 mod cost_optimization;
+mod coordination;
 pub mod cache;
 mod dataset_semantics;
 mod distributed;
@@ -347,6 +348,11 @@ pub use run_state::{
     validate_node_transition, validate_run_transition, NodeState, NodeTransition, ReplayNodeAction,
     ReplayNodeProvenance, RunAttempt, RunCompactionPolicy, RunComparison, RunId, RunSnapshot,
     RunState, RunSummaryV2, RunTransition, TransitionCause,
+};
+pub use coordination::{
+    merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
+    RuntimeCoordinationSnapshot, RuntimeCoordinationState, ThreadSafetyAuditRecord,
+    TraceWriteRecord,
 };
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
