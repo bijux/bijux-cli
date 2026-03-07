@@ -22,6 +22,7 @@ Defines precedence and behavior for CLI args, config files, environment, and def
 - `docs/spec/CONFIG_PRECEDENCE.md`
 - `docs/reference/CONFIG_INPUT_INVENTORY.md`
 - `docs/spec/CONFIG_STATE_BOUNDARIES.md`
+- `docs/spec/CONFIG_DEPRECATION.md`
 
 ## Versioning and change policy
 Deprecated fields must include migration notes and validation behavior.

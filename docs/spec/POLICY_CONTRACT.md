@@ -7,6 +7,7 @@ Defines policy inputs, enforcement points, and decision visibility.
 - Policy evaluation is deterministic for identical inputs.
 - Deny decisions include a machine-readable reason.
 - Debug mode may emit policy evaluation traces.
+- Policy traces follow `docs/spec/POLICY_EVALUATION_TRACE.md`.
 
 ## Related tests
 - `tests/e2e/policy/*`
