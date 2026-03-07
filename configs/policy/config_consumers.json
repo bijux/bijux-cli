@@ -60,6 +60,10 @@
     {
       "glob": "configs/schema/*/*/*/*.json",
       "consumer": "schema-validation-and-contract-tests"
+    },
+    {
+      "glob": "configs/suites/*.json",
+      "consumer": "repo-governance-suites"
     }
   ]
 }
