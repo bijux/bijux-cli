@@ -5259,6 +5259,19 @@ fn run_cache_evolution_guard() -> Result<(), String> {
             return Err(format!("cache evolution model missing section `{token}`"));
         }
     }
+    let app_commands =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
+    let cache_surface_count = ["Ls", "Pack", "Unpack", "Gc", "Verify", "Explain", "Stats", "PruneSimulate"]
+        .iter()
+        .filter(|name| app_commands.contains(&format!("CacheCommands::{}", name)))
+        .count();
+    if cache_surface_count >= 8
+        && !root
+            .join("crates/bijux-dag-app/tests/cache_evolution_contract.rs")
+            .exists()
+    {
+        return Err("cache command surface expanded without cache evolution coverage tests".to_string());
+    }
     Ok(())
 }
 
