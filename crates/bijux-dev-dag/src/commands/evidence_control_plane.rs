@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-use super::evidence_access::load_registry_release_blocking_flags;
+use super::evidence_access::{load_registry_release_assets, load_registry_release_blocking_flags};
 use super::repo_root;
 
 pub(super) fn run_evidence_suite_policy_verify() -> Result<(), String> {
@@ -66,25 +66,11 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
     }
 
     let registry_release_flags = load_registry_release_blocking_flags(&root)?;
-    let registry_payload =
-        fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
-            .map_err(|err| err.to_string())?;
-    let registry: Value = serde_json::from_str(&registry_payload).map_err(|err| err.to_string())?;
-    let registry_assets = registry["assets"]
-        .as_array()
-        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
-    let mut registry_kind_by_id = BTreeMap::new();
-    let mut registry_asset_by_id = BTreeMap::new();
-    for asset in registry_assets {
-        let id = asset["id"]
-            .as_str()
-            .ok_or_else(|| "registry asset missing id".to_string())?;
-        let kind = asset["kind"]
-            .as_str()
-            .ok_or_else(|| format!("registry asset `{id}` missing kind"))?;
-        registry_kind_by_id.insert(id.to_string(), kind.to_string());
-        registry_asset_by_id.insert(id.to_string(), asset.clone());
-    }
+    let registry_release_assets = load_registry_release_assets(&root)?;
+    let registry_kind_by_id: BTreeMap<String, String> = registry_release_assets
+        .iter()
+        .map(|(id, asset)| (id.clone(), asset.kind.clone()))
+        .collect();
 
     if required_families.is_empty() {
         return Err("release evidence set required_families cannot be empty".to_string());
@@ -146,29 +132,20 @@ pub(super) fn run_evidence_release_set_verify() -> Result<(), String> {
         let kind = registry_kind_by_id
             .get(id)
             .ok_or_else(|| format!("registry kind missing for `{id}`"))?;
-        let registry_asset = registry_asset_by_id
+        let registry_asset = registry_release_assets
             .get(id)
             .ok_or_else(|| format!("registry asset missing for `{id}`"))?;
-        let owner = registry_asset["owner"]
-            .as_str()
-            .ok_or_else(|| format!("registry asset `{id}` missing owner"))?;
-        if owner.trim().is_empty() {
+        if registry_asset.owner.trim().is_empty() {
             return Err(format!(
                 "release-blocking asset `{id}` must have one clear owner in registry"
             ));
         }
-        let consumers = registry_asset["consumers"]
-            .as_array()
-            .ok_or_else(|| format!("registry asset `{id}` missing consumers array"))?;
-        if consumers.is_empty() {
+        if registry_asset.consumers.is_empty() {
             return Err(format!(
                 "release-blocking asset `{id}` must have at least one consumer suite"
             ));
         }
-        let trust_properties = registry_asset["trust_properties"]
-            .as_array()
-            .ok_or_else(|| format!("registry asset `{id}` missing trust_properties array"))?;
-        if trust_properties.is_empty() {
+        if registry_asset.trust_properties.is_empty() {
             return Err(format!(
                 "release-blocking asset `{id}` must declare trust-property mapping"
             ));

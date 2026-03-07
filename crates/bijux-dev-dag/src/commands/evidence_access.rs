@@ -12,6 +12,16 @@ pub struct EvidenceAsset {
     pub trust_properties: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RegistryReleaseAsset {
+    pub id: String,
+    pub kind: String,
+    pub owner: String,
+    pub consumers: Vec<String>,
+    pub trust_properties: Vec<String>,
+    pub release_blocking: bool,
+}
+
 pub fn load_registry_assets(root: &Path) -> Result<Vec<EvidenceAsset>, String> {
     let payload = fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
         .map_err(|err| err.to_string())?;
@@ -38,6 +48,69 @@ pub fn load_registry_release_blocking_flags(root: &Path) -> Result<BTreeMap<Stri
         flags.insert(id, release_blocking);
     }
     Ok(flags)
+}
+
+pub fn load_registry_release_assets(root: &Path) -> Result<BTreeMap<String, RegistryReleaseAsset>, String> {
+    let payload = fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
+        .map_err(|err| err.to_string())?;
+    let registry: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let assets = registry["assets"]
+        .as_array()
+        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
+    let mut map = BTreeMap::new();
+    for asset in assets {
+        let id = asset["id"]
+            .as_str()
+            .ok_or_else(|| "registry asset missing string id".to_string())?
+            .to_string();
+        let kind = asset["kind"]
+            .as_str()
+            .ok_or_else(|| format!("registry asset `{id}` missing kind"))?
+            .to_string();
+        let owner = asset["owner"]
+            .as_str()
+            .ok_or_else(|| format!("registry asset `{id}` missing owner"))?
+            .to_string();
+        let consumers = asset["consumers"]
+            .as_array()
+            .ok_or_else(|| format!("registry asset `{id}` has non-array consumers"))?
+            .iter()
+            .map(|entry| {
+                entry
+                    .as_str()
+                    .ok_or_else(|| format!("registry asset `{id}` has non-string consumer"))
+                    .map(ToOwned::to_owned)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let trust_properties = asset["trust_properties"]
+            .as_array()
+            .ok_or_else(|| format!("registry asset `{id}` has non-array trust_properties"))?
+            .iter()
+            .map(|entry| {
+                entry
+                    .as_str()
+                    .ok_or_else(|| {
+                        format!("registry asset `{id}` has non-string trust property entry")
+                    })
+                    .map(ToOwned::to_owned)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let release_blocking = asset["release_blocking"]
+            .as_bool()
+            .ok_or_else(|| format!("registry asset `{id}` missing release_blocking bool"))?;
+        map.insert(
+            id.clone(),
+            RegistryReleaseAsset {
+                id,
+                kind,
+                owner,
+                consumers,
+                trust_properties,
+                release_blocking,
+            },
+        );
+    }
+    Ok(map)
 }
 
 pub fn parse_registry_assets(registry: &Value) -> Result<Vec<EvidenceAsset>, String> {
