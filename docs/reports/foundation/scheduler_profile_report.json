@@ -1,0 +1,8 @@
+{
+  "format": "scheduler-profile/v0.1",
+  "canonical_unit": "node",
+  "model": "event_driven",
+  "priority_model": "static_absent",
+  "ready_tie_break": "lexicographic_node_id",
+  "readiness_rule": "all dependencies resolved before node becomes ready"
+}
