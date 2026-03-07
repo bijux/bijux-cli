@@ -2,8 +2,7 @@
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
 use bijux_dag_core::{
-    Edge, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy,
-    SPEC_VERSION,
+    Edge, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy, SPEC_VERSION,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -26,7 +25,12 @@ pub fn graph_chain() -> Graph {
 
 pub fn graph_diamond() -> Graph {
     graph_from_nodes(
-        vec![const_node("a"), shell_node("b"), shell_node("c"), shell_node("d")],
+        vec![
+            const_node("a"),
+            shell_node("b"),
+            shell_node("c"),
+            shell_node("d"),
+        ],
         vec![
             ("a", "out", "b", "in"),
             ("a", "out", "c", "in"),
@@ -39,7 +43,10 @@ pub fn graph_diamond() -> Graph {
 pub fn graph_fanout() -> Graph {
     graph_from_nodes(
         vec![const_node("root"), shell_node("left"), shell_node("right")],
-        vec![("root", "out", "left", "in"), ("root", "out", "right", "in")],
+        vec![
+            ("root", "out", "left", "in"),
+            ("root", "out", "right", "in"),
+        ],
     )
 }
 
@@ -111,7 +118,10 @@ pub fn assert_node_event_sequence(statuses: &[&str]) {
         while cursor < order.len() && order[cursor] != *status {
             cursor += 1;
         }
-        assert!(cursor < order.len(), "illegal status sequence element: {status}");
+        assert!(
+            cursor < order.len(),
+            "illegal status sequence element: {status}"
+        );
     }
 }
 
@@ -150,8 +160,11 @@ pub fn create_corrupted_run_dir(base: &Path, kind: &str) -> PathBuf {
         }
         "tampered_outputs_index" => {
             fs::create_dir_all(run.join("outputs")).expect("create outputs dir");
-            fs::write(run.join("outputs").join("index.json"), "{\"files\":[{\"path\":\"../x\"}]}")
-                .expect("tamper outputs index");
+            fs::write(
+                run.join("outputs").join("index.json"),
+                "{\"files\":[{\"path\":\"../x\"}]}",
+            )
+            .expect("tamper outputs index");
         }
         _ => {}
     }
