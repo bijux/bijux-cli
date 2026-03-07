@@ -676,12 +676,6 @@
       "hard_keep": true
     },
     {
-      "module": "runtime_core/engine.rs",
-      "classification": "core-runtime",
-      "decision": "keep",
-      "rationale": "core runtime execution and planning kernel surface"
-    },
-    {
       "module": "runtime_core/execution/context.rs",
       "classification": "core-runtime",
       "decision": "keep",
@@ -742,12 +736,6 @@
       "hard_keep": true
     },
     {
-      "module": "runtime_core/execution_context.rs",
-      "classification": "core-runtime",
-      "decision": "keep",
-      "rationale": "core runtime execution and planning kernel surface"
-    },
-    {
       "module": "runtime_core/governance/invariants.rs",
       "classification": "core-runtime",
       "decision": "keep",
@@ -766,19 +754,7 @@
       "rationale": "core runtime execution and planning kernel surface"
     },
     {
-      "module": "runtime_core/invariants.rs",
-      "classification": "core-runtime",
-      "decision": "keep",
-      "rationale": "core runtime execution and planning kernel surface"
-    },
-    {
       "module": "runtime_core/mod.rs",
-      "classification": "core-runtime",
-      "decision": "keep",
-      "rationale": "core runtime execution and planning kernel surface"
-    },
-    {
-      "module": "runtime_core/planner_bridge.rs",
       "classification": "core-runtime",
       "decision": "keep",
       "rationale": "core runtime execution and planning kernel surface"
@@ -799,12 +775,6 @@
     },
     {
       "module": "runtime_core/planning/planner_analysis.rs",
-      "classification": "core-runtime",
-      "decision": "keep",
-      "rationale": "core runtime execution and planning kernel surface"
-    },
-    {
-      "module": "runtime_core/scheduler.rs",
       "classification": "core-runtime",
       "decision": "keep",
       "rationale": "core runtime execution and planning kernel surface"
@@ -863,6 +833,8 @@
     "workflow_product": "move",
     "tenancy": "move",
     "provenance_compliance": "move",
-    "supply_chain_trust": "move"
+    "supply_chain_trust": "move",
+    "execution_plan_home": "runtime_core/planning/execution_plan.rs",
+    "planner_bridge_home": "runtime_core/planning/planner.rs"
   }
 }

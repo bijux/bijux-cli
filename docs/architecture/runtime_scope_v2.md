@@ -1,11 +1,15 @@
 # Runtime Scope v2
 
-## Scope Decision
-Runtime ownership is constrained to deterministic execution kernel concerns: planning bridge, execution core, scheduler, state machine, backend binding, cache, policy, replay, diagnostics.
+## Runtime Contraction Outcome (61-80)
+- Runtime ownership is constrained to engine, scheduler, state machine, backend binding, cache, policy, replay, diagnostics.
+- Speculative, productization, and distributed-future modules are explicitly marked `move` and blocked from scope creep by policy guardrails.
+- Execution plan home is fixed to `runtime_core/planning/execution_plan.rs`.
+- Planning bridge home is fixed to `runtime_core/planning/planner.rs`.
+- Top-level runtime module freeze allows only approved root directories and `lib.rs`.
 
 ## Classification Summary
 - `backend`: 26 modules
-- `core-runtime`: 42 modules
+- `core-runtime`: 37 modules
 - `diagnostics`: 7 modules
 - `policy`: 3 modules
 - `replay`: 4 modules
@@ -14,7 +18,7 @@ Runtime ownership is constrained to deterministic execution kernel concerns: pla
 - `support`: 28 modules
 - `wrong-crate`: 1 modules
 
-## Named Decisions (41-58)
+## Named Decisions (44-58)
 - `geo_federation`: `move`
 - `ha_scheduler`: `move`
 - `federated_scheduling`: `move`
@@ -29,8 +33,10 @@ Runtime ownership is constrained to deterministic execution kernel concerns: pla
 - `tenancy`: `move`
 - `provenance_compliance`: `move`
 - `supply_chain_trust`: `move`
+- `execution_plan_home`: `runtime_core/planning/execution_plan.rs`
+- `planner_bridge_home`: `runtime_core/planning/planner.rs`
 
-## Remote, Container, Batch Maturity
+## Remote, Container, Batch Maturity (58)
 - `backend/runtime/batch_execution.rs`: `simulated-only`
 - `backend/runtime/container_execution.rs`: `simulated-only`
 - `backend/runtime/remote_execution_model.rs`: `future`
@@ -57,7 +63,7 @@ Runtime ownership is constrained to deterministic execution kernel concerns: pla
 - `runtime_core/planning/execution_plan.rs`
 - `runtime_core/planning/planner.rs`
 
-## Full Module Inventory
+## Full Module Inventory (41-43)
 | Module | Classification | Decision | Notes |
 | --- | --- | --- | --- |
 | `adapters/adapter.rs` | `backend` | `keep` | adapter integration surface required for node execution |
@@ -167,7 +173,6 @@ Runtime ownership is constrained to deterministic execution kernel concerns: pla
 | `replay/explain.rs` | `replay` | `keep` | replay diff verification behavior |
 | `replay/mod.rs` | `replay` | `keep` | replay diff verification behavior |
 | `replay/verifier.rs` | `replay` | `keep` | replay diff verification behavior |
-| `runtime_core/engine.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/execution/context.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/execution/engine.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/execution/flow.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
@@ -177,17 +182,13 @@ Runtime ownership is constrained to deterministic execution kernel concerns: pla
 | `runtime_core/execution/scheduler.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/execution/scheduler_workload.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/execution/state_machine.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
-| `runtime_core/execution_context.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/governance/invariants.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/governance/sacred_execution.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/governance/semantics.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
-| `runtime_core/invariants.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/mod.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
-| `runtime_core/planner_bridge.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/planning/execution_plan.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/planning/planner.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/planning/planner_analysis.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
-| `runtime_core/scheduler.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/state/mod.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/state/node_state.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
 | `runtime_core/state/run_state.rs` | `core-runtime` | `keep` | core runtime execution and planning kernel surface |
