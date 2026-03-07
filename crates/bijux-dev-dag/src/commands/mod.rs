@@ -4400,6 +4400,7 @@ fn run_evidence_consumers_verify() -> Result<(), String> {
         "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
         "configs/policy/evidence_governance.json",
         "configs/policy/evidence_path_policy.json",
+        "configs/policy/release_evidence_policy.json",
     ];
     for file in files {
         let rel = file
