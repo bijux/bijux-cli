@@ -6873,6 +6873,7 @@ fn run_cache_evolution_guard() -> Result<(), String> {
     let required = [
         "docs/spec/CACHE_CONTRACT.md",
         "docs/spec/CACHE_EVOLUTION_MODEL.md",
+        "docs/reports/foundation/cache_hardening_report.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
         "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
         "tests/cache/fixtures/corrupt/missing_meta.json",
@@ -6883,6 +6884,7 @@ fn run_cache_evolution_guard() -> Result<(), String> {
         "tests/cache/fixtures/warm_cold/scenario.json",
         "crates/bijux-dag-app/tests/cache_evolution_contract.rs",
         "crates/bijux-dag-runtime/tests/cache_contracts.rs",
+        "crates/bijux-dev-dag/tests/cache_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -6936,6 +6938,24 @@ fn run_cache_evolution_guard() -> Result<(), String> {
                 ));
             }
         }
+    }
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    let has_cache_integrity = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_cache_integrity")
+    });
+    if !has_cache_integrity {
+        return Err("cache evolution requires tp_cache_integrity trust property".to_string());
     }
     Ok(())
 }
@@ -8088,6 +8108,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "docs-config-reduction",
         "scheduler-invariants",
         "backend-contract",
+        "cache-evolution",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
