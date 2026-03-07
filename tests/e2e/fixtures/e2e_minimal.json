@@ -1,6 +1,6 @@
 {
   "scenario_id": "e2e-minimal-parse-validate-run-inspect-replay",
-  "graph": "examples/hello.dag.json",
+  "graph": "evidence/authoring/examples/hello.dag.json",
   "steps": [
     "validate",
     "run",

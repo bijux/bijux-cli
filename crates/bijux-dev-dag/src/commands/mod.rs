@@ -2279,7 +2279,7 @@ fn run_ci() -> Result<(), String> {
             "--",
             "dag",
             "run",
-            "examples/hello.dag.json",
+            "evidence/authoring/examples/hello.dag.json",
             "--out",
             runs.to_str().expect("utf-8"),
         ],
@@ -3689,7 +3689,7 @@ fn run_golden() -> Result<(), String> {
     let runs = scratch.join("runs");
     fs::create_dir_all(&runs).map_err(|err| err.to_string())?;
 
-    let example = "examples/hello.dag.json";
+    let example = "evidence/authoring/examples/hello.dag.json";
     for _ in 0..2 {
         run_with_root(
             &root,
@@ -4794,6 +4794,11 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
                 "path is forbidden by evidence governance freeze policy: {rel}"
             ));
         }
+        if rel.starts_with("tests/authoring/examples/") || rel.starts_with("tests/authoring/bad/") {
+            return Err(format!(
+                "authoring evidence outside evidence/authoring is forbidden: {rel}"
+            ));
+        }
     }
 
     println!("evidence metadata validation passed");
@@ -5043,7 +5048,7 @@ fn run_e2e_matrix() -> Result<(), String> {
                 "--",
                 "dag",
                 "validate",
-                "examples/hello.dag.json",
+                "evidence/authoring/examples/hello.dag.json",
             ],
         )
     })
@@ -7297,21 +7302,21 @@ fn run_authoring_ux_guard() -> Result<(), String> {
         "docs/user/AUTHORING_GUIDE.md",
     ];
     let required_examples = [
-        "tests/authoring/examples/minimal.json",
-        "tests/authoring/examples/medium.json",
-        "tests/authoring/examples/pattern_chain.json",
-        "tests/authoring/examples/pattern_diamond.json",
-        "tests/authoring/examples/pattern_fanout.json",
-        "tests/authoring/examples/pattern_aggregation.json",
-        "tests/authoring/examples/pattern_cache_heavy.json",
-        "tests/authoring/examples/pattern_replay_sensitive.json",
+        "evidence/authoring/patterns/minimal.json",
+        "evidence/authoring/patterns/medium.json",
+        "evidence/authoring/patterns/pattern_chain.json",
+        "evidence/authoring/patterns/pattern_diamond.json",
+        "evidence/authoring/patterns/pattern_fanout.json",
+        "evidence/authoring/patterns/pattern_aggregation.json",
+        "evidence/authoring/patterns/pattern_cache_heavy.json",
+        "evidence/authoring/patterns/pattern_replay_sensitive.json",
     ];
     let required_bad = [
-        "tests/authoring/bad/undeclared_outputs.json",
-        "tests/authoring/bad/invalid_refs.json",
-        "tests/authoring/bad/cycle.json",
-        "tests/authoring/bad/invalid_selectors.json",
-        "tests/authoring/bad/unsupported_adapter_payload.json",
+        "evidence/authoring/negative/undeclared_outputs.json",
+        "evidence/authoring/negative/invalid_refs.json",
+        "evidence/authoring/negative/cycle.json",
+        "evidence/authoring/negative/invalid_selectors.json",
+        "evidence/authoring/negative/unsupported_adapter_payload.json",
     ];
     let mut missing = Vec::new();
     for rel in required_docs

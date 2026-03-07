@@ -43,7 +43,7 @@ fn write_graph(path: &Path, payload: serde_json::Value) {
 fn fault_permission_denied_run_dir_creation() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tmp");
-    let graph = root.join("examples/hello.dag.json");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let locked = temp.path().join("locked");
     fs::create_dir_all(&locked).expect("create locked");
 

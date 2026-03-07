@@ -72,7 +72,7 @@ fn e2e_minimal_parse_validate_run_inspect_replay() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
 
-    let graph = root.join("examples/hello.dag.json");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let graph_s = output_path_string(&graph);
     let out_s = output_path_string(&out_dir);
 
@@ -315,7 +315,7 @@ fn e2e_cache_hit_second_run_and_invalidation() {
 fn e2e_replay_semantic_comparison_and_import_export() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
-    let graph_path = root.join("examples/hello.dag.json");
+    let graph_path = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
 

@@ -12,6 +12,8 @@ fn dag_validate_routes() {
     let dag = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")
+        .join("evidence")
+        .join("authoring")
         .join("examples")
         .join("hello.dag.json");
     let out = Command::new(bin)

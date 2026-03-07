@@ -18,14 +18,14 @@ fn load(path: &str) -> String {
 #[test]
 fn canonical_examples_parse_and_validate() {
     for path in [
-        "tests/authoring/examples/minimal.json",
-        "tests/authoring/examples/medium.json",
-        "tests/authoring/examples/pattern_chain.json",
-        "tests/authoring/examples/pattern_diamond.json",
-        "tests/authoring/examples/pattern_fanout.json",
-        "tests/authoring/examples/pattern_aggregation.json",
-        "tests/authoring/examples/pattern_cache_heavy.json",
-        "tests/authoring/examples/pattern_replay_sensitive.json",
+        "evidence/authoring/patterns/minimal.json",
+        "evidence/authoring/patterns/medium.json",
+        "evidence/authoring/patterns/pattern_chain.json",
+        "evidence/authoring/patterns/pattern_diamond.json",
+        "evidence/authoring/patterns/pattern_fanout.json",
+        "evidence/authoring/patterns/pattern_aggregation.json",
+        "evidence/authoring/patterns/pattern_cache_heavy.json",
+        "evidence/authoring/patterns/pattern_replay_sensitive.json",
     ] {
         let graph = parse_graph_strict(&load(path)).expect("parse canonical example");
         let diags = graph.validate_with_warnings();
@@ -41,11 +41,11 @@ fn canonical_examples_parse_and_validate() {
 #[test]
 fn bad_examples_fail_parse_or_validation() {
     for path in [
-        "tests/authoring/bad/undeclared_outputs.json",
-        "tests/authoring/bad/invalid_refs.json",
-        "tests/authoring/bad/cycle.json",
-        "tests/authoring/bad/invalid_selectors.json",
-        "tests/authoring/bad/unsupported_adapter_payload.json",
+        "evidence/authoring/negative/undeclared_outputs.json",
+        "evidence/authoring/negative/invalid_refs.json",
+        "evidence/authoring/negative/cycle.json",
+        "evidence/authoring/negative/invalid_selectors.json",
+        "evidence/authoring/negative/unsupported_adapter_payload.json",
     ] {
         let parsed = parse_graph_strict(&load(path));
         match parsed {
@@ -65,7 +65,7 @@ fn bad_examples_fail_parse_or_validation() {
 
 #[test]
 fn canonicalization_is_stable_and_non_destructive() {
-    let payload = load("tests/authoring/examples/medium.json");
+    let payload = load("evidence/authoring/patterns/medium.json");
     let graph = parse_graph_strict(&payload).expect("parse medium");
     let canonical_once = graph.to_canonical_json().expect("canonical once");
     let parsed_again = parse_graph_strict(&canonical_once).expect("parse canonical");

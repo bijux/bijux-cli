@@ -86,7 +86,7 @@ fn standard_verify_tolerates_missing_optional_provenance_file() {
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
-    let graph = root.join("examples/hello.dag.json");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
 
     let run = run_json(
         &[
@@ -118,7 +118,7 @@ fn export_modes_emit_documented_payload_shapes() {
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
-    let graph = root.join("examples/hello.dag.json");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
         &[
             "run",
