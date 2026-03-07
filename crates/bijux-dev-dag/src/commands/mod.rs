@@ -5277,6 +5277,15 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     if !has_plan_truth {
         return Err("battle trust policy must include tp_plan_truth".to_string());
     }
+    let has_state_machine_legality = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_state_machine_legality")
+    });
+    if !has_state_machine_legality {
+        return Err("battle trust policy must include tp_state_machine_legality".to_string());
+    }
 
     let required_scenarios = policy
         .get("required_scenarios")
@@ -5284,6 +5293,24 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
         .ok_or_else(|| "battle trust policy missing required_scenarios".to_string())?;
     if required_scenarios.is_empty() {
         return Err("battle trust policy required_scenarios must not be empty".to_string());
+    }
+    let scenario_trust_map = policy
+        .get("scenario_trust_map")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "battle trust policy missing scenario_trust_map".to_string())?;
+    let state_machine_mapped = scenario_trust_map.values().any(|value| {
+        value.as_array().is_some_and(|ids| {
+            ids.iter().any(|id| {
+                id.as_str()
+                    .is_some_and(|v| v == "tp_state_machine_legality")
+            })
+        })
+    });
+    if !state_machine_mapped {
+        return Err(
+            "battle trust policy must map at least one scenario to tp_state_machine_legality"
+                .to_string(),
+        );
     }
 
     let metadata: Value =
@@ -6008,8 +6035,13 @@ fn run_state_machine_contract_guard() -> Result<(), String> {
     let required = [
         "docs/spec/STATE_MACHINE_CONTRACT.md",
         "docs/spec/STATE_MACHINE_VISUALIZATION.md",
+        "docs/reports/foundation/state_machine_hardening_report.md",
         "crates/bijux-dag-runtime/tests/state_machine_transitions.rs",
         "crates/bijux-dag-runtime/tests/state_machine_contracts.rs",
+        "crates/bijux-dag-runtime/tests/runtime_state_machine_contracts.rs",
+        "crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json",
+        "crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json",
+        "crates/bijux-dev-dag/tests/state_machine_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -6061,6 +6093,19 @@ fn run_state_machine_contract_guard() -> Result<(), String> {
             return Err(format!(
                 "state machine contract missing documented run state `{}`",
                 state
+            ));
+        }
+    }
+    for token in [
+        "INV-NODE-TRANSITION-*",
+        "INV-NODE-TERMINAL-REVERT-001",
+        "INV-RUN-TRANSITION-*",
+        "INV-RUN-FAILED-CAUSAL-001",
+    ] {
+        if !contract.contains(token) {
+            return Err(format!(
+                "state machine contract missing documented invariant token `{}`",
+                token
             ));
         }
     }
