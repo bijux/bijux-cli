@@ -1,0 +1,8 @@
+{
+  "scenario_id": "replay-fidelity-score",
+  "class": "replay",
+  "size": "score",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/large_dag.json"
+}

@@ -2,6 +2,8 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use super::benchmark_harness::verify_scenario_registry;
+
 fn repo_root() -> Result<PathBuf, String> {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     Ok(manifest_dir.join("../.."))
@@ -48,6 +50,7 @@ fn collect_perf_scenario_files(root: &Path) -> Result<Vec<String>, String> {
 
 pub(super) fn run_perf_evidence_policy_verify() -> Result<(), String> {
     let root = repo_root()?;
+    verify_scenario_registry(&root)?;
     let metadata = load_perf_metadata(&root)?;
     let scenarios = metadata["scenarios"]
         .as_object()

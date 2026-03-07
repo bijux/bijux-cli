@@ -1,13 +1,19 @@
-# 
+# Benchmark Scenarios
 
 - scope: `evidence/perf/scenarios`
 
+- evidence/perf/scenarios/artifact_lineage_completeness.json
 - evidence/perf/scenarios/cache_heavy_canonical.json
 - evidence/perf/scenarios/cache_heavy_lookup.json
 - evidence/perf/scenarios/cache_metadata_growth.json
 - evidence/perf/scenarios/deep_canonical.json
 - evidence/perf/scenarios/deep_scheduler_overhead.json
+- evidence/perf/scenarios/determinism_score.json
+- evidence/perf/scenarios/diff_canonical.json
+- evidence/perf/scenarios/explainability_quality.json
+- evidence/perf/scenarios/failure_injection_canonical.json
 - evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json
+- evidence/perf/scenarios/large_artifact_canonical.json
 - evidence/perf/scenarios/manifest_trace_volume_growth.json
 - evidence/perf/scenarios/manifest_trace_write_amplification.json
 - evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json
@@ -17,9 +23,13 @@
 - evidence/perf/scenarios/memory_import_export_path.json
 - evidence/perf/scenarios/memory_parse_validate_large_graph.json
 - evidence/perf/scenarios/memory_replay_path.json
+- evidence/perf/scenarios/portability_canonical.json
+- evidence/perf/scenarios/portability_success_rate.json
 - evidence/perf/scenarios/replay_canonical.json
+- evidence/perf/scenarios/replay_fidelity_score.json
 - evidence/perf/scenarios/replay_verification_cost.json
 - evidence/perf/scenarios/resource_budgets.json
+- evidence/perf/scenarios/tenk_nodes_canonical.json
 - evidence/perf/scenarios/tiny_canonical.json
 - evidence/perf/scenarios/tiny_parse_validate.json
 - evidence/perf/scenarios/wide_canonical.json

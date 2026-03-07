@@ -1,0 +1,8 @@
+{
+  "scenario_id": "determinism-score",
+  "class": "replay",
+  "size": "score",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/scheduler_linear_32.json"
+}

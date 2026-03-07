@@ -13,6 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod authoring_evidence;
 mod battle_evidence;
+mod benchmark_harness;
 mod compare_evidence;
 mod evidence_access;
 mod evidence_control_plane;

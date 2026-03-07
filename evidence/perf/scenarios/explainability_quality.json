@@ -1,0 +1,8 @@
+{
+  "scenario_id": "explainability-quality",
+  "class": "validate",
+  "size": "score",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/scheduler_diamond_fanout.json"
+}

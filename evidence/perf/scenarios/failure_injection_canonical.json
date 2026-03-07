@@ -1,0 +1,8 @@
+{
+  "scenario_id": "failure-injection-canonical",
+  "class": "execute-local",
+  "size": "failure-injection",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "evidence/perf/fixtures/scheduler_diamond_fanout.json"
+}
