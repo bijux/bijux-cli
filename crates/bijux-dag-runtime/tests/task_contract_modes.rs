@@ -1,3 +1,15 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{Graph, NodeKind};
 use bijux_dag_runtime::{
     build_task_contract, validate_task_contracts, NodeProvenance, RuntimeConfig, TaskFailureReason,
@@ -16,6 +28,35 @@ fn fixture(path: &str) -> Graph {
 #[test]
 fn task_contract_supports_all_isolation_modes() {
     let mut graph = fixture("linear.dag.json");
+    graph.nodes.push(bijux_dag_core::Node {
+        id: "subprocess_mode".to_string(),
+        kind: NodeKind::Shell,
+        inputs: vec![],
+        outputs: vec![bijux_dag_core::FileOutput {
+            name: "out".to_string(),
+            path: "subprocess_mode/out".to_string(),
+        }],
+        params: bijux_dag_core::ParamValue::Object(
+            [(
+                "argv".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(json!("/bin/sh")),
+                    bijux_dag_core::ParamValue::Literal(json!("-c")),
+                    bijux_dag_core::ParamValue::Literal(json!("echo ok")),
+                ]),
+            )]
+            .into_iter()
+            .collect(),
+        ),
+        container: None,
+        timeout_ms: None,
+        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 128 }),
+        tags: vec![],
+        retry: bijux_dag_core::RetryPolicy::default(),
+        effects: vec![bijux_dag_core::Effect::Filesystem],
+        env_allowlist: vec![],
+        group: None,
+    });
     graph.nodes.push(bijux_dag_core::Node {
         id: "container_mode".to_string(),
         kind: NodeKind::Container,

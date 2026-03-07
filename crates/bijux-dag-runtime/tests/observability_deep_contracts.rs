@@ -1,3 +1,15 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_runtime::{
     build_diagnostics, build_investigation_bundle, build_topology_overlay, detect_metric_drift,
     observability_contract_status, redact_event_details, render_timeline_text, root_cause_graph,
@@ -92,7 +104,7 @@ fn redaction_sampling_bundle_and_drift_contracts() {
     );
     assert_eq!(sampled.len(), 2);
 
-    let bundle = build_investigation_bundle("run-1", "artifacts/runs/run-1");
+    let bundle = build_investigation_bundle("run-1");
     assert_eq!(bundle.run_id, "run-1");
 
     let mut current = BTreeMap::new();

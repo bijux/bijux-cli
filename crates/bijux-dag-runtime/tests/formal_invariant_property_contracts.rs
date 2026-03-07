@@ -1,5 +1,17 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{parse_graph_strict, Severity};
-use bijux_dag_runtime::build_plan;
+use bijux_dag_runtime::{build_plan, RuntimeConfig};
 use serde_json::json;
 
 fn chain_graph(node_count: usize) -> String {
@@ -33,8 +45,9 @@ fn generated_chain_graphs_preserve_acyclic_unique_and_deterministic_plan() {
             "graph size {size} has validation errors"
         );
 
-        let plan_a = build_plan(&graph).expect("plan a");
-        let plan_b = build_plan(&graph).expect("plan b");
+        let options = RuntimeConfig::default();
+        let plan_a = build_plan(&graph, &options);
+        let plan_b = build_plan(&graph, &options);
         let a = serde_json::to_value(plan_a).expect("serialize a");
         let b = serde_json::to_value(plan_b).expect("serialize b");
         assert_eq!(a, b, "plan should be deterministic for generated graph size {size}");

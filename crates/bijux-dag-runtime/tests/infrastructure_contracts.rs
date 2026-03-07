@@ -1,12 +1,24 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_runtime::{
-    negotiate_backend_capabilities, BackendCapabilities, BackendCapabilityRequirement,
+    negotiate_backend_capabilities, BackendCapabilityRequirement, InfrastructureBackendCapabilities,
     BackendExecutionCompletion, BackendExecutionRequest, ExecutorBackend,
 };
 use std::collections::BTreeMap;
 
 #[test]
 fn rejects_backend_when_required_capability_is_missing() {
-    let capabilities = BackendCapabilities {
+    let capabilities = InfrastructureBackendCapabilities {
         supports_container: false,
         supports_network_isolation: true,
         supports_env_allowlist: true,
