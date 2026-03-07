@@ -14,16 +14,18 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+fn workspace_root() -> PathBuf {
+    bijux_dag_testkit::workspace_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
+}
 
 fn fixture_dir() -> PathBuf {
-    Path::new("../../evidence/battle/workflows/runtime").to_path_buf()
+    workspace_root().join("evidence/battle/workflows/runtime")
 }
 
 fn load_fixture(name: &str) -> Value {
-    let path = fixture_dir().join(name);
-    let raw = fs::read_to_string(&path).expect("battle workflow fixture should exist");
-    serde_json::from_str(&raw).expect("battle workflow fixture should be valid json")
+    bijux_dag_testkit::read_json(&fixture_dir().join(name))
 }
 
 fn fixture_files() -> Vec<PathBuf> {
@@ -84,13 +86,13 @@ struct ScenarioMetadata {
 }
 
 fn load_policy() -> BattleTrustPolicy {
-    let raw = fs::read_to_string("../../configs/policy/battle_trust_properties.json")
+    let raw = fs::read_to_string(workspace_root().join("configs/policy/battle_trust_properties.json"))
         .expect("battle trust policy should exist");
     serde_json::from_str(&raw).expect("battle trust policy should parse")
 }
 
 fn load_metadata() -> BattleMetadata {
-    let raw = fs::read_to_string("../../evidence/battle/metadata.json")
+    let raw = fs::read_to_string(workspace_root().join("evidence/battle/metadata.json"))
         .expect("battle metadata should exist");
     serde_json::from_str(&raw).expect("battle metadata should parse")
 }

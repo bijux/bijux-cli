@@ -2,11 +2,16 @@ use bijux_dag_artifacts::{
     build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
     write_json_atomic_durable, Manifest, RunOutputsIndex, VerificationMode,
 };
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
 use std::fs;
 use thiserror as _;
+
+fn workspace_root() -> std::path::PathBuf {
+    bijux_dag_testkit::workspace_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
+}
 
 fn sample_manifest(run_id: &str) -> Manifest {
     Manifest {
@@ -91,16 +96,19 @@ fn import_export_and_replay_artifact_payloads_validate() {
     let parsed: RunOutputsIndex = serde_json::from_value(valid_outputs).unwrap();
     assert!(parsed.files.is_empty());
 
-    let invalid_raw =
-        fs::read_to_string("../../evidence/fault/corrupt_runs/invalid_outputs_index.json").unwrap();
+    let invalid_raw = fs::read_to_string(
+        workspace_root().join("evidence/fault/corrupt_runs/invalid_outputs_index.json"),
+    )
+    .unwrap();
     assert!(serde_json::from_str::<RunOutputsIndex>(&invalid_raw).is_err());
 }
 
 #[test]
 fn corruption_fixtures_are_detected_and_cleanup_plan_is_bounded() {
-    let corrupted =
-        fs::read_to_string("../../evidence/fault/corrupt_runs/missing_manifest_version.json")
-            .unwrap();
+    let corrupted = fs::read_to_string(
+        workspace_root().join("evidence/fault/corrupt_runs/missing_manifest_version.json"),
+    )
+    .unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&corrupted).unwrap();
     assert!(parsed.get("manifest_version").is_none());
 
