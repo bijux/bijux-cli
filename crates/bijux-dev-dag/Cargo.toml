@@ -15,4 +15,6 @@ serde_json = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 bijux-dag-core = { path = "../bijux-dag-core" }
+bijux-dag-artifacts = { path = "../bijux-dag-artifacts" }
+bijux-dag-runtime = { path = "../bijux-dag-runtime" }
 tempfile = { workspace = true }
