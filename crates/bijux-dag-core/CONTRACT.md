@@ -3,6 +3,15 @@
 ## Responsibility
 `bijux-dag-core` owns DAG model, parse, validation, resolve, canonicalization, topology, and fingerprint semantics.
 
+## Internal boundaries
+- `src/lib.rs` is the only root Rust file.
+- `build/*`: builder and compile surfaces.
+- `graph/*`: graph model and topology components.
+- `pipeline/*`: parse, resolve, and validate pipeline surfaces.
+- `analysis/*`: effects, fingerprint, and semantic analysis.
+- `planner/*`: lowering and planning surfaces.
+- `contracts/*`: error and compatibility contract types.
+
 ## Purity boundary
 Core is pure logic and data transformation.
 
