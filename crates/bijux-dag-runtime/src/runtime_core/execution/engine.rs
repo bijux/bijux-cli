@@ -89,6 +89,7 @@ pub fn execute(
         operator: options.operator.clone(),
         labels: options.labels.clone(),
         parent_run_id: options.parent_run_id.clone(),
+        source_run_id: options.parent_run_id.clone(),
     });
     run_dir.write_manifest(&manifest)?;
 
