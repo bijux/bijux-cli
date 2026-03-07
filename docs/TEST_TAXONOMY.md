@@ -10,12 +10,11 @@
 
 ## Contract Classes
 
-- Syntax compatibility: fixed fixture contracts for spec parsing and fingerprinting.
-- Execution contracts: deterministic node execution and manifest shape.
-- Replay contracts: same input graph must produce same run graph fingerprint and node outputs.
-- Cache contracts: repeatability and cache hit behavior under explicit cache modes.
-- CLI contracts: help stability, JSON envelope shape, and invalid-argument behavior.
-- Repository contracts: crate dependency layering and forbidden edge enforcement.
+- unit: crate-local behavior checks.
+- contract: schema/CLI/surface invariants and compatibility guarantees.
+- integration: multi-module behavior with real artifacts.
+- conformance: backend and protocol semantics across fixtures.
+- benchmark: performance/equivalence quality measurements with evidence artifacts.
 
 ## Governance
 

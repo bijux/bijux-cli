@@ -1,0 +1,43 @@
+# File Size Hotspot Report
+
+Generated from Rust source line counts.
+
+- 8388 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/mod.rs
+- 3755 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/src/lib.rs
+- 1996 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/lib.rs
+- 1221 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-core/src/lib.rs
+- 1211 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs
+- 1201 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/internal/testing/tests_runtime.in.rs
+- 882 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/tests/run_dir_import_export_contract.rs
+- 798 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs
+- 726 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-cli/tests/contract_surface.rs
+- 691 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/backend/runtime/backend_cluster.rs
+- 589 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/cli.rs
+- 536 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-core/tests/validation_coverage.rs
+- 533 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/src/commands/mod.rs
+- 532 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/evidence_control_plane.rs
+- 519 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/tests/e2e_integration_scenarios.rs
+- 498 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/tests/policy_cache_contract.rs
+- 495 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/tests/evidence_governance_contract.rs
+- 477 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/src/inspect/run_views.rs
+- 459 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/tests/backend_cluster_contracts.rs
+- 440 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/backend/distributed/distributed.rs
+- 421 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/evidence_access.rs
+- 421 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/battle_evidence.rs
+- 421 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/src/replay/diff.rs
+- 400 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/execution/run_state.rs
+- 390 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-core/src/analysis/semantics.rs
+- 384 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/planning/planner_analysis.rs
+- 379 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/planning/planner.rs
+- 373 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-app/tests/fault_resilience_integration.rs
+- 370 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/internal/control/task_contract.rs
+- 360 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/runtime_core/execution/scheduler_workload.rs
+- 354 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-artifacts/src/layout/platform.rs
+- 346 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/tests/execution_backend_contract.rs
+- 331 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/internal/identity/authz_policy.rs
+- 328 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/authoring_evidence.rs
+- 326 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/internal/control/task_types.rs
+- 322 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-testkit/src/lib.rs
+- 321 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs
+- 319 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dag-core/src/build/builder.rs
+- 315 lines :: /Users/bijan/bijux/bijux-dag/crates/bijux-dev-dag/src/commands/evidence_registry.rs
