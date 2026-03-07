@@ -115,6 +115,7 @@ dependencies = [
 name = "bijux-dag-artifacts"
 version = "0.1.0"
 dependencies = [
+ "bijux-dag-testkit",
  "hex",
  "serde",
  "serde_json",
