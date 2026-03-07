@@ -1,16 +1,30 @@
+#[path = "io/fs.rs"]
 pub mod fs;
+#[path = "integrity/hash.rs"]
 pub mod hash;
+#[path = "storage/hardening.rs"]
 pub mod hardening;
+#[path = "integrity/index.rs"]
 pub mod index;
+#[path = "lifecycle/lineage.rs"]
 pub mod lineage;
+#[path = "storage/models.rs"]
 pub mod models;
+#[path = "layout/paths.rs"]
 pub mod paths;
+#[path = "layout/platform.rs"]
 pub mod platform;
+#[path = "integrity/proof.rs"]
 pub mod proof;
+#[path = "lifecycle/promotion.rs"]
 pub mod promotion;
+#[path = "lifecycle/retention.rs"]
 pub mod retention;
+#[path = "integrity/schema.rs"]
 pub mod schema;
+#[path = "storage/services.rs"]
 pub mod services;
+#[path = "io/store.rs"]
 pub mod store;
 
 pub use hardening::{build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode};
