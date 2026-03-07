@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: help all test checks checks-fast checks-all tests-all contracts-all release-verify
 .PHONY: lint docs fmt security compat golden repo-deps public-surface ci artifacts-clean surface-explain doctor sanity benchmark-baseline memory-smoke artifact-verify
 
-DEV_TOOL := cargo run -p bijux-dev-dag --
+DEV_TOOL := cargo run -p bijux-dev-dag --bin bijux-dev-dag --
 RUN_DIR := artifacts/runs
 REPORT_DIR := artifacts/reports
 TARGET_DIR := artifacts/target
