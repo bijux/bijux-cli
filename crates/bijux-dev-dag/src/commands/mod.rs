@@ -246,6 +246,11 @@ enum DagCommand {
         #[arg(long)]
         run_dir: PathBuf,
     },
+    /// Emit scheduler timeline view from completed run artifacts
+    SchedulerTimeline {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
     /// Debug dependency closure and blocked nodes from a graph
     Debug {
         #[arg(long)]
@@ -882,6 +887,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_planner_alignment_guard(),
     },
     SuiteDef {
+        id: "scheduler-invariants",
+        description: "scheduler contract and invariants test surfaces are present",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_scheduler_invariants_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1137,6 +1151,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({"run_dir": run_dir}),
                 || run_dag_visualize(&run_dir),
+            ),
+            DagCommand::SchedulerTimeline { run_dir } => run_command_reported(
+                &context,
+                "dag.scheduler-timeline",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_scheduler_timeline(&run_dir),
             ),
             DagCommand::Debug { graph } => run_command_reported(
                 &context,
@@ -1880,6 +1901,50 @@ fn run_dag_visualize(run_dir: &Path) -> Result<(), String> {
     let path = root.join(run_dir).join("observability.graph-visualization.json");
     let payload = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     println!("{payload}");
+    Ok(())
+}
+
+fn run_dag_scheduler_timeline(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let manifest_path = root.join(run_dir).join("manifest.json");
+    if !manifest_path.exists() {
+        return Err(format!(
+            "run directory does not contain manifest.json: {}",
+            manifest_path.display()
+        ));
+    }
+    let timeline_path = root.join(run_dir).join("observability.timeline.json");
+    let payload = fs::read_to_string(&timeline_path).map_err(|err| err.to_string())?;
+    let parsed: Value = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    let entries = parsed
+        .get("entries")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let scheduler_entries = entries
+        .into_iter()
+        .filter(|row| {
+            row.get("category")
+                .and_then(|v| v.as_str())
+                .map(|category| {
+                    matches!(
+                        category,
+                        "schedule" | "dispatch" | "retry" | "cache_hit" | "cache_miss"
+                    )
+                })
+                .unwrap_or(false)
+        })
+        .collect::<Vec<_>>();
+    let response = json!({
+        "run_dir": run_dir,
+        "timeline_path": timeline_path.strip_prefix(&root).map_err(|err| err.to_string())?,
+        "scheduler_entry_count": scheduler_entries.len(),
+        "entries": scheduler_entries,
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 
@@ -4317,6 +4382,28 @@ fn run_planner_alignment_guard() -> Result<(), String> {
     } else {
         Err(format!(
             "planner alignment missing required surfaces: {}",
+            missing.join(", ")
+        ))
+    }
+}
+
+fn run_scheduler_invariants_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/SCHEDULER_CONTRACT.md",
+        "crates/bijux-dag-runtime/tests/scheduler_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "scheduler invariant coverage missing required surfaces: {}",
             missing.join(", ")
         ))
     }

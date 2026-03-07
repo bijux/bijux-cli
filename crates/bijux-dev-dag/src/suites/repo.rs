@@ -24,6 +24,7 @@ pub const IDS: &[&str] = &[
     "contract-versioning-policy",
     "contract-coverage-report",
     "planner-alignment",
+    "scheduler-invariants",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
