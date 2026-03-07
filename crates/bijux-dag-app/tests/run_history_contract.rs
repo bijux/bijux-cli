@@ -62,7 +62,10 @@ fn runs_history_and_id_explain_are_json_capable() {
             root.to_string_lossy().as_ref(),
         ])
         .expect("parse history");
-    assert_eq!(dag_run(&history).expect("history run"), std::process::ExitCode::SUCCESS);
+    assert_eq!(
+        dag_run(&history).expect("history run"),
+        std::process::ExitCode::SUCCESS
+    );
 
     let explain = dag_command()
         .try_get_matches_from([
@@ -75,5 +78,8 @@ fn runs_history_and_id_explain_are_json_capable() {
             root.to_string_lossy().as_ref(),
         ])
         .expect("parse id-explain");
-    assert_eq!(dag_run(&explain).expect("explain run"), std::process::ExitCode::SUCCESS);
+    assert_eq!(
+        dag_run(&explain).expect("explain run"),
+        std::process::ExitCode::SUCCESS
+    );
 }

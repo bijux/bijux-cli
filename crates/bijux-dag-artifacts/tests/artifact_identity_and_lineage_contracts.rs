@@ -1,12 +1,16 @@
-use bijux_dag_artifacts::lineage::ArtifactLineageSnapshot;
-use bijux_dag_artifacts::index::{ArtifactId, ArtifactMaterializationRecord, ArtifactMaterializationSource};
-use bijux_dag_artifacts::store::{
-    ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
+use bijux_dag_artifacts::index::{
+    ArtifactId, ArtifactMaterializationRecord, ArtifactMaterializationSource,
 };
+use bijux_dag_artifacts::lineage::ArtifactLineageSnapshot;
 use bijux_dag_artifacts::platform::{
     explain_lineage_safe_gc, lineage_dependencies, lineage_dependents, plan_lineage_safe_gc,
 };
-use bijux_dag_artifacts::{hash::sha256_hex, write_outputs_index, OutputsIndex, RunOutputFile, RunOutputsIndex};
+use bijux_dag_artifacts::store::{
+    ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
+};
+use bijux_dag_artifacts::{
+    hash::sha256_hex, write_outputs_index, OutputsIndex, RunOutputFile, RunOutputsIndex,
+};
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -116,7 +120,10 @@ fn gc_plan_and_explain_outputs_stay_consistent() {
         ArtifactId("train:model.bin".to_string()),
     ];
     let plan = plan_lineage_safe_gc(&referenced, &all, "lineage-snapshot-1");
-    assert_eq!(plan.preserved_artifacts, vec![ArtifactId("transform:clean.csv".to_string())]);
+    assert_eq!(
+        plan.preserved_artifacts,
+        vec![ArtifactId("transform:clean.csv".to_string())]
+    );
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-snapshot-1");
     assert_eq!(explain.lineage_snapshot_id, "lineage-snapshot-1");
     assert_eq!(explain.entries.len(), 3);
@@ -130,7 +137,10 @@ fn gc_plan_and_explain_outputs_stay_consistent() {
 fn artifact_store_capabilities_use_typed_support_levels() {
     let fs_store = FilesystemArtifactStore::new(".");
     let fs_caps = fs_store.capabilities();
-    assert_eq!(fs_caps.support_level, ArtifactStoreSupportLevel::Implemented);
+    assert_eq!(
+        fs_caps.support_level,
+        ArtifactStoreSupportLevel::Implemented
+    );
     assert!(fs_caps.can_write_bytes);
     assert!(fs_caps.can_read_bytes);
 

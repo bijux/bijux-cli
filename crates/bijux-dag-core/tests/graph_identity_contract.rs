@@ -36,10 +36,7 @@ fn graph_id_changes_on_semantic_command_resource_and_env_changes() {
         "argv": ["/bin/sh", "-c", "echo b"]
     }));
     let mut changed_res = base.clone();
-    changed_res.nodes[0].resources = Some(bijux_dag_core::Resources {
-        cpu: 2,
-        mem_mb: 64,
-    });
+    changed_res.nodes[0].resources = Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 64 });
     let mut changed_env = base.clone();
     changed_env.nodes[0].env_allowlist.push("B".to_string());
     assert_ne!(base.graph_id().unwrap(), changed_cmd.graph_id().unwrap());
@@ -57,7 +54,10 @@ fn graph_id_path_and_line_ending_normalization_contracts_hold() {
         r#"{{"spec":"{}","nodes":[{{"id":"n","kind":"const","outputs":[{{"name":"out","path":"dir/out.txt"}}]}}],"edges":[]}}"#,
         SPEC_VERSION
     ));
-    assert_eq!(with_backslash.graph_id().unwrap(), with_slash.graph_id().unwrap());
+    assert_eq!(
+        with_backslash.graph_id().unwrap(),
+        with_slash.graph_id().unwrap()
+    );
 
     let lf = format!(
         "{{\"spec\":\"{}\",\n\"nodes\":[],\n\"edges\":[]\n}}\n",
@@ -110,7 +110,10 @@ fn selected_subgraph_identity_is_deterministic() {
 
 #[test]
 fn graph_fingerprint_explain_output_is_machine_readable() {
-    let graph = parse_graph(&format!(r#"{{"spec":"{}","nodes":[],"edges":[]}}"#, SPEC_VERSION));
+    let graph = parse_graph(&format!(
+        r#"{{"spec":"{}","nodes":[],"edges":[]}}"#,
+        SPEC_VERSION
+    ));
     let explain = graph.graph_fingerprint_explain().expect("explain");
     assert_eq!(explain.hash_algorithm, "sha256");
     assert!(!explain.graph_id.as_str().is_empty());

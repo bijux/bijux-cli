@@ -41,7 +41,11 @@ fn cli_contract_mentions_hash_graph_and_canonical_diff_surfaces() {
     let root = repo_root();
     let cli_contract =
         fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).expect("read cli contract");
-    for token in ["dag hash graph", "dag canonical-diff", "dag canonical-bytes"] {
+    for token in [
+        "dag hash graph",
+        "dag canonical-diff",
+        "dag canonical-bytes",
+    ] {
         assert!(
             cli_contract.contains(token),
             "cli contract missing graph identity command token: {token}"

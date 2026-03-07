@@ -5,8 +5,8 @@ use clap as _;
 use hex as _;
 use serde as _;
 use serde_json as _;
-use std::path::Path;
 use sha2 as _;
+use std::path::Path;
 use tempfile as _;
 
 fn repo_root() -> &'static Path {

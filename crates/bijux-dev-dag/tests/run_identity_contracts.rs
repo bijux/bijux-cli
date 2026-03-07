@@ -61,7 +61,13 @@ fn run_inspection_commands_require_explicit_root_argument() {
         .find("pub(crate) enum RunsCommands")
         .expect("runs enum start");
     let runs_source = &source[runs_enum_start..];
-    for block in ["History {", "IdExplain {", "Show {", "Inspect {", "Timeline {"] {
+    for block in [
+        "History {",
+        "IdExplain {",
+        "Show {",
+        "Inspect {",
+        "Timeline {",
+    ] {
         let pos = runs_source
             .find(block)
             .unwrap_or_else(|| panic!("missing runs command block: {block}"));

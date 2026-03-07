@@ -24,10 +24,42 @@ fn operator_commands_do_not_panic_on_corrupt_run_dirs() {
     fs::write(run.join("manifest.json"), "{bad-json").expect("write");
 
     let commands = vec![
-        vec!["dag", "--json", "runs", "inspect", "run-bad", "--root", root.to_str().unwrap()],
-        vec!["dag", "--json", "runs", "show", "run-bad", "--root", root.to_str().unwrap()],
-        vec!["dag", "--json", "runs", "timeline", "run-bad", "--root", root.to_str().unwrap()],
-        vec!["dag", "--json", "runs", "tree", "run-bad", "--root", root.to_str().unwrap()],
+        vec![
+            "dag",
+            "--json",
+            "runs",
+            "inspect",
+            "run-bad",
+            "--root",
+            root.to_str().unwrap(),
+        ],
+        vec![
+            "dag",
+            "--json",
+            "runs",
+            "show",
+            "run-bad",
+            "--root",
+            root.to_str().unwrap(),
+        ],
+        vec![
+            "dag",
+            "--json",
+            "runs",
+            "timeline",
+            "run-bad",
+            "--root",
+            root.to_str().unwrap(),
+        ],
+        vec![
+            "dag",
+            "--json",
+            "runs",
+            "tree",
+            "run-bad",
+            "--root",
+            root.to_str().unwrap(),
+        ],
         vec![
             "dag",
             "--json",
@@ -37,7 +69,13 @@ fn operator_commands_do_not_panic_on_corrupt_run_dirs() {
             "--root",
             root.to_str().unwrap(),
         ],
-        vec!["dag", "--json", "trace-artifact", run.to_str().unwrap(), "a:b.txt"],
+        vec![
+            "dag",
+            "--json",
+            "trace-artifact",
+            run.to_str().unwrap(),
+            "a:b.txt",
+        ],
     ];
 
     for cmd in commands {

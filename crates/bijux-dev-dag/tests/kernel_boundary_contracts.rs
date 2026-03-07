@@ -32,7 +32,10 @@ fn kernel_contract_docs_and_reports_exist() {
         "configs/policy/kernel_dependency_policy.json",
         "configs/suites/kernel_smoke.json",
     ] {
-        assert!(root.join(rel).exists(), "missing kernel boundary surface: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing kernel boundary surface: {rel}"
+        );
     }
 }
 
@@ -45,7 +48,9 @@ fn kernel_crates_forbid_cli_and_dev_governance_dependencies() {
     )
     .expect("parse kernel dependency policy");
 
-    let crates = policy["kernel_crates"].as_array().expect("kernel_crates array");
+    let crates = policy["kernel_crates"]
+        .as_array()
+        .expect("kernel_crates array");
     let forbidden = policy["forbidden_dependencies"]
         .as_array()
         .expect("forbidden_dependencies array");
