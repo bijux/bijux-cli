@@ -1,0 +1,7 @@
+{
+  "scenario_id": "failure-validation-failure-no-partial-run-dir",
+  "assertions": [
+    "validate_failure",
+    "no_run_dir_created"
+  ]
+}

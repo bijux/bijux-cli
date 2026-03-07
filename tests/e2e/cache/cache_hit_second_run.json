@@ -1,0 +1,9 @@
+{
+  "scenario_id": "cache-hit-second-run",
+  "graph_fixture": "graph_cache_hit",
+  "assertions": [
+    "first_run_uncached",
+    "second_run_cache_hit",
+    "outputs_identical"
+  ]
+}

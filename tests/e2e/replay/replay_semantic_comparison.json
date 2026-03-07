@@ -1,0 +1,8 @@
+{
+  "scenario_id": "replay-semantic-comparison",
+  "graph_fixture": "graph_replay",
+  "assertions": [
+    "replay_runs",
+    "replay_equivalence_report_present"
+  ]
+}

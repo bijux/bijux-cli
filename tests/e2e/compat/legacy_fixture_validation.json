@@ -1,0 +1,7 @@
+{
+  "scenario_id": "compat-legacy-fixture-validation",
+  "fixture": "configs/schema/fixtures/v0.1/positive/hello.valid.json",
+  "assertions": [
+    "legacy_fixture_still_valid"
+  ]
+}

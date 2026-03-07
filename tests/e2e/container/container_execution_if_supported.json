@@ -1,0 +1,7 @@
+{
+  "scenario_id": "container-execution-if-supported",
+  "assertions": [
+    "container_scenario_runs_when_engine_available",
+    "scenario_skips_when_engine_missing"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "scenario_id": "failure-timeout-error-classification",
+  "graph_fixture": "graph_timeout",
+  "assertions": [
+    "timeout_error_kind_present",
+    "failure_code_timeout"
+  ]
+}

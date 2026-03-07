@@ -1,0 +1,10 @@
+{
+  "scenario_id": "happy-real-world-orchestration-stress",
+  "graph_fixture": "graph_real_world_stress",
+  "node_count": 20,
+  "assertions": [
+    "orchestration_completes",
+    "manifest_trace_totals_match",
+    "no_missing_traces"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "scenario_id": "failure-missing-outputs-rejected",
+  "graph_fixture": "graph_failure",
+  "assertions": [
+    "missing_output_failure",
+    "undeclared_or_missing_output_code"
+  ]
+}
