@@ -1,0 +1,111 @@
+{
+  "owner": "runtime-foundation",
+  "review_interval_days": 90,
+  "scenarios": {
+    "artifact_heavy_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect artifact commit and lineage integrity under heavy materialization pressure.",
+      "delete_review": "retain"
+    },
+    "branch_join_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect join readiness and dependency correctness in branching graphs.",
+      "delete_review": "retain"
+    },
+    "cache_invalidation_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect cache invalidation semantics when upstream identity changes.",
+      "delete_review": "retain"
+    },
+    "corruption_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect corruption classification and operator doctor diagnostics.",
+      "delete_review": "retain"
+    },
+    "failure_heavy_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect failure propagation and failure-class accounting under fanout failure pressure.",
+      "delete_review": "retain"
+    },
+    "import_export_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect bundle import and export integrity across run boundaries.",
+      "delete_review": "retain"
+    },
+    "large_dag_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect scheduler and state behavior at large DAG cardinality.",
+      "delete_review": "retain"
+    },
+    "medium_workflow": {
+      "grade": "battle",
+      "why_exists": "Provide baseline realistic workflow coverage with deterministic execution checks.",
+      "delete_review": "retain"
+    },
+    "multi_root_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect terminal aggregation and coordination semantics with multiple roots.",
+      "delete_review": "retain"
+    },
+    "operator_debugging_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect debugging bundle completeness for failed runs.",
+      "delete_review": "retain"
+    },
+    "operator_inspection_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect inspection timelines and causal failure explainability for operators.",
+      "delete_review": "retain"
+    },
+    "policy_violation_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect policy-denial safety boundaries and non-silent rejection.",
+      "delete_review": "retain"
+    },
+    "replay_divergence_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect replay mismatch detection and explicit divergence evidence.",
+      "delete_review": "retain"
+    },
+    "resource_contention_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect admission behavior and queue backpressure semantics under contention.",
+      "delete_review": "retain"
+    },
+    "retry_storm_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect retry budgeting and bounded backoff behavior in storm conditions.",
+      "delete_review": "retain"
+    },
+    "scheduler_fairness_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect starvation prevention and fairness guarantees under fanout pressure.",
+      "delete_review": "retain"
+    },
+    "secret_leakage_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect secret redaction guarantees across output, traces, and diagnostics.",
+      "delete_review": "retain"
+    },
+    "timeout_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect attempt and run timeout classification and accounting.",
+      "delete_review": "retain"
+    },
+    "version_compatibility_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect version compatibility and replay invariants across supported versions.",
+      "delete_review": "retain"
+    },
+    "malformed_run_dir_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect rejection of malformed run directories with explicit diagnostics.",
+      "delete_review": "retain"
+    },
+    "ugly_realistic_dag_workflow": {
+      "grade": "battle",
+      "why_exists": "Protect real-world complex DAG semantics with mixed fanout and failure domains.",
+      "delete_review": "retain"
+    }
+  }
+}

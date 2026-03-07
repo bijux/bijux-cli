@@ -1,0 +1,1 @@
+{"scenario":"ugly_realistic_dag_workflow","graph":"mixed_fanout_retries","nodes":73,"focus":["mixed_dependency_shapes","deterministic_terminal_outcome"],"expectations":{"terminal":"failed","mixed_failure_domains":true,"deterministic_failure_classification":true}}

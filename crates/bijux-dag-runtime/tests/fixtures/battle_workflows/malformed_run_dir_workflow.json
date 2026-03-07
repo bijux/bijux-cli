@@ -1,0 +1,1 @@
+{"scenario":"malformed_run_dir_workflow","graph":"run_dir_recovery","nodes":11,"focus":["run_dir_validation","corruption_classification"],"expectations":{"terminal":"failed","malformed_run_dir_detected":true,"classification":"run_dir_corruption"}}
