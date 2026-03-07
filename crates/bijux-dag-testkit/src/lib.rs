@@ -136,6 +136,7 @@ pub fn run_cli_in_temp_repo(args: &[&str]) -> CliCommandResult {
     let temp = tempfile::tempdir().expect("tempdir");
     let output = Command::new("cargo")
         .current_dir(temp.path())
+        .env("CARGO_TARGET_DIR", temp.path().join("artifacts/target"))
         .args(args)
         .output()
         .expect("run cli");
