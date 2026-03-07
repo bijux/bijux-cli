@@ -26,6 +26,8 @@ This is the normative contract for `bijux` command surfaces.
 - `dag runs history`: machine-readable ancestry listing for run directories.
 - `dag runs id-explain`: run identity composition and ancestry explanation.
 - `dag artifact-inspect`: artifact identity/provenance/lineage inspection surface.
+- `dag replay --dry-run`: replay planning surface without execution side effects.
+- `dag replay --prove`: replay fidelity proof output surface.
 - `dag cache`: cache inspection and control surfaces.
 - `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.

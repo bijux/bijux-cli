@@ -111,6 +111,10 @@ pub(crate) enum Commands {
         #[arg(long)]
         out: PathBuf,
         #[arg(long)]
+        dry_run: bool,
+        #[arg(long)]
+        prove: bool,
+        #[arg(long)]
         reuse_cache: bool,
         #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
         cache: CacheModeArg,

@@ -656,6 +656,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Replay {
             run_dir,
             out,
+            dry_run,
+            prove,
             reuse_cache,
             cache,
             jobs,
@@ -698,6 +700,46 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 clean_env = true;
             }
             let selectors = parse_selectors(select, exclude)?;
+            if *dry_run {
+                let dry_select = selectors
+                    .include
+                    .iter()
+                    .map(selector_cli_string)
+                    .collect::<Vec<_>>();
+                let dry_exclude = selectors
+                    .exclude
+                    .iter()
+                    .map(selector_cli_string)
+                    .collect::<Vec<_>>();
+                let plan = json!({
+                    "source_run_dir": run_dir,
+                    "target_out_dir": out,
+                    "selectors": {
+                        "select": dry_select,
+                        "exclude": dry_exclude
+                    },
+                    "cache_mode": format!("{cache_mode:?}"),
+                    "jobs": jobs,
+                    "prove_requested": prove
+                });
+                let response = replay_cmd::ReplayCommandResponse {
+                    run_dir: None,
+                    dry_run_plan: Some(plan.clone()),
+                    replay_proof: None,
+                };
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.replay",
+                        true,
+                        serde_json::to_value(&response).map_err(|_| ExitCode::from(3))?,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&plan).unwrap());
+                return Ok(ExitCode::SUCCESS);
+            }
             let options = RuntimeConfig {
                 jobs: *jobs,
                 cpu_budget: *cpu_budget,
@@ -721,8 +763,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let run_path = runtime
                 .run(&snapshot.graph, out, options)
                 .map_err(|_| ExitCode::from(3))?;
+            let replay_proof = if *prove {
+                let diff = replay_service::run_diff_from_dirs(run_dir, &run_path)?;
+                Some(json!({
+                    "fidelity_level": if diff.replay_equivalence.equivalent { "strict_equivalent" } else { "diverged" },
+                    "equivalent": diff.replay_equivalence.equivalent,
+                    "reasons": diff.replay_equivalence.reasons,
+                    "reason_report": diff.replay_equivalence.reason_report,
+                    "cause_groups": diff.replay_equivalence.cause_groups,
+                    "source_run_id": read_run_id(run_dir)?,
+                    "replay_run_id": read_run_id(&run_path)?
+                }))
+            } else {
+                None
+            };
             let response = replay_cmd::ReplayCommandResponse {
-                run_dir: run_path.clone(),
+                run_dir: Some(run_path.clone()),
+                dry_run_plan: None,
+                replay_proof,
             };
             if cli.json {
                 return emit_json(
@@ -2127,6 +2185,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
 
 fn read_file(path: &Path) -> Result<String, ExitCode> {
     fs::read_to_string(path).map_err(|_| ExitCode::from(3))
+}
+
+fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
+    let raw = read_file(&run_dir.join("manifest.json"))?;
+    let value: Value = serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))?;
+    value
+        .get("run_id")
+        .and_then(Value::as_str)
+        .map(std::string::ToString::to_string)
+        .ok_or_else(|| ExitCode::from(3))
+}
+
+fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
+    match selector {
+        bijux_dag_runtime::Selector::IdPrefix(v) => format!("id:{v}"),
+        bijux_dag_runtime::Selector::Tag(v) => format!("tag:{v}"),
+        bijux_dag_runtime::Selector::Kind(v) => format!("kind:{v}"),
+    }
 }
 
 fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
