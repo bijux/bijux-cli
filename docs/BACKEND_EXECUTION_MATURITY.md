@@ -8,6 +8,7 @@ This document defines contract maturity for local, Kubernetes, Slurm, and generi
 - `SlurmExecutorContract`: job submit/poll/cancel with result mapping
 - `GenericBatchExecutorContract`: non-Kubernetes HPC/batch abstraction
 - Normative Kubernetes semantics: `docs/spec/K8S_ADAPTER_CONTRACT.md`
+- Normative HPC semantics: `docs/spec/HPC_ADAPTER_CONTRACT.md`
 
 ## Capability and placement
 
