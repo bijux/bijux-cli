@@ -25,5 +25,7 @@
 
 - `dag fingerprint --explain`
 - `dag hash graph --explain`
+- `dag canonical-diff` (machine-readable raw vs canonical diff)
 
 Schema: `configs/schema/graph_fingerprint_explain.schema.json`
+Schema: `configs/schema/graph_canonical_diff.schema.json`

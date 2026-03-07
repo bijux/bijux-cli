@@ -27,6 +27,7 @@ fn graph_identity_docs_and_schema_exist() {
         "docs/spec/GRAPH_IDENTITY_CONTRACT.md",
         "docs/spec/FINGERPRINTS_v0.1.md",
         "configs/schema/graph_fingerprint_explain.schema.json",
+        "configs/schema/graph_canonical_diff.schema.json",
     ] {
         assert!(
             root.join(rel).exists(),
