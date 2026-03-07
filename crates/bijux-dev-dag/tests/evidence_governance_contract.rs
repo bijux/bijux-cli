@@ -462,5 +462,8 @@ fn evidence_governance_contract_enforces_ownership_and_freeze() {
         {
             panic!("path is forbidden by evidence governance freeze policy: {rel}");
         }
+        if rel.starts_with("tests/authoring/examples/") || rel.starts_with("tests/authoring/bad/") {
+            panic!("authoring evidence outside evidence/authoring is forbidden: {rel}");
+        }
     }
 }

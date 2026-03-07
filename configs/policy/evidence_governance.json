@@ -1,9 +1,11 @@
 {
   "version": "2",
   "managed_roots": [
+    "evidence/authoring/examples",
+    "evidence/authoring/patterns",
+    "evidence/authoring/negative",
     "benchmarks/scenarios",
     "comparisons/scenarios",
-    "examples",
     "tests/cache/fixtures",
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
@@ -21,7 +23,9 @@
     "benchmarks/fixtures/scheduling/enterprise/*",
     "benchmarks/fixtures/scheduling/ha/*",
     "comparisons/external/*",
-    "examples/observability-gold-standard.dag.json"
+    "examples/*.dag.json",
+    "tests/authoring/examples/*.json",
+    "tests/authoring/bad/*.json"
   ],
   "allowed_decisions": [
     "keep",
