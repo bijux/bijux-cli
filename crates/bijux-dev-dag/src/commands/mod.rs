@@ -101,6 +101,15 @@ enum CommandLine {
     ResolveCheck,
     /// Record baseline benchmark artifact
     BenchmarkBaseline,
+    /// Compare benchmark result with a baseline by threshold
+    BenchmarkCompare {
+        #[arg(long)]
+        current: PathBuf,
+        #[arg(long)]
+        baseline: PathBuf,
+        #[arg(long, default_value_t = 0.15)]
+        max_regression_ratio: f64,
+    },
     /// Verify artifact reproducibility and integrity for local runs
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
@@ -656,6 +665,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_fault_summary_report(),
     },
+    SuiteDef {
+        id: "performance-claims",
+        description: "performance claims must reference benchmark evidence",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_performance_claims_guard(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -962,6 +980,21 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::ReadWrite,
             json!({}),
             || run_benchmark_baseline(),
+        ),
+        CommandLine::BenchmarkCompare {
+            current,
+            baseline,
+            max_regression_ratio,
+        } => run_command_reported(
+            &context,
+            "benchmark-compare",
+            CommandEffect::Validation,
+            json!({
+                "current": current,
+                "baseline": baseline,
+                "max_regression_ratio": max_regression_ratio
+            }),
+            || run_benchmark_compare(&current, &baseline, max_regression_ratio),
         ),
         CommandLine::ArtifactVerify => run_command_reported(
             &context,
@@ -1692,13 +1725,17 @@ fn run_benchmark_baseline() -> Result<(), String> {
     let runs_dir = out_dir.join("runs");
     fs::create_dir_all(&runs_dir).map_err(|err| err.to_string())?;
     let fixtures = [
-        "benchmarks/fixtures/large_dag.json",
-        "benchmarks/fixtures/scheduler_linear_32.json",
-        "benchmarks/fixtures/scheduler_parallel_64.json",
-        "benchmarks/fixtures/scheduler_diamond_fanout.json",
+        ("large-dag", "execute-local", "benchmarks/fixtures/large_dag.json"),
+        ("linear-32", "plan", "benchmarks/fixtures/scheduler_linear_32.json"),
+        ("parallel-64", "plan", "benchmarks/fixtures/scheduler_parallel_64.json"),
+        (
+            "diamond-fanout",
+            "manifest-finalize",
+            "benchmarks/fixtures/scheduler_diamond_fanout.json",
+        ),
     ];
-    let mut families = Vec::new();
-    for fixture in fixtures {
+    let mut scenario_results = Vec::new();
+    for (scenario_id, class, fixture) in fixtures {
         let start_ms = now_millis();
         run_with_root(
             &root,
@@ -1716,16 +1753,43 @@ fn run_benchmark_baseline() -> Result<(), String> {
             ],
         )?;
         let end_ms = now_millis();
-        families.push(json!({
+        scenario_results.push(json!({
+            "scenario_id": scenario_id,
+            "class": class,
             "fixture": fixture,
             "elapsed_ms": end_ms.saturating_sub(start_ms),
         }));
     }
+
+    let rust_version = Command::new("rustc")
+        .arg("--version")
+        .output()
+        .ok()
+        .and_then(|out| String::from_utf8(out.stdout).ok())
+        .unwrap_or_else(|| "unknown".to_string())
+        .trim()
+        .to_string();
+    let commit_sha = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .ok()
+        .and_then(|out| String::from_utf8(out.stdout).ok())
+        .unwrap_or_else(|| "unknown".to_string())
+        .trim()
+        .to_string();
+    let machine = json!({
+        "os": env::consts::OS,
+        "arch": env::consts::ARCH
+    });
+
     let report = json!({
-        "harness_version": "benchmark-harness/v1",
+        "benchmark_format": "benchmark-report/v1",
         "profile": "deterministic-regression-baseline",
         "runner": "cargo run -p bijux-dag-cli -- dag run",
-        "families": families,
+        "commit_sha": commit_sha,
+        "rust_version": rust_version,
+        "machine": machine,
+        "scenario_results": scenario_results,
         "recorded_at_unix_ms": now_millis()
     });
     fs::write(
@@ -2753,5 +2817,124 @@ fn run_fault_summary_report() -> Result<(), String> {
         Ok(())
     } else {
         Err("fault class catalog has missing tested_by mappings".to_string())
+    }
+}
+
+fn run_benchmark_compare(current: &Path, baseline: &Path, max_regression_ratio: f64) -> Result<(), String> {
+    let root = repo_root()?;
+    let current_path = root.join(current);
+    let baseline_path = root.join(baseline);
+
+    let current_json: Value = serde_json::from_str(
+        &fs::read_to_string(current_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let baseline_json: Value = serde_json::from_str(
+        &fs::read_to_string(baseline_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+
+    let current_items = current_json
+        .get("scenario_results")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "current benchmark report missing scenario_results".to_string())?;
+    let baseline_items = baseline_json
+        .get("scenario_results")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "baseline benchmark report missing scenario_results".to_string())?;
+
+    let mut base_map: std::collections::BTreeMap<String, f64> = std::collections::BTreeMap::new();
+    for item in baseline_items {
+        let scenario = item
+            .get("scenario_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "baseline item missing scenario_id".to_string())?;
+        let elapsed = item
+            .get("elapsed_ms")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| "baseline item missing elapsed_ms".to_string())?;
+        base_map.insert(scenario.to_string(), elapsed);
+    }
+
+    let mut regressions = Vec::new();
+    for item in current_items {
+        let scenario = item
+            .get("scenario_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "current item missing scenario_id".to_string())?;
+        let elapsed = item
+            .get("elapsed_ms")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| "current item missing elapsed_ms".to_string())?;
+        if let Some(base) = base_map.get(scenario) {
+            if *base > 0.0 {
+                let ratio = (elapsed - *base) / *base;
+                if ratio > max_regression_ratio {
+                    regressions.push(json!({
+                        "scenario_id": scenario,
+                        "baseline_ms": base,
+                        "current_ms": elapsed,
+                        "regression_ratio": ratio
+                    }));
+                }
+            }
+        }
+    }
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({"regressions": regressions}))
+            .map_err(|err| err.to_string())?
+    );
+
+    if regressions.is_empty() {
+        Ok(())
+    } else {
+        Err("benchmark regressions exceed threshold".to_string())
+    }
+}
+
+fn run_performance_claims_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs = root.join("docs");
+    let mut violations = Vec::new();
+    let mut stack = vec![docs];
+    while let Some(dir) = stack.pop() {
+        for entry in fs::read_dir(&dir).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|v| v.to_str()) != Some("md") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            for line in text.lines() {
+                let lower = line.to_ascii_lowercase();
+                let claim = lower.contains("performance")
+                    || lower.contains("fast")
+                    || lower.contains("latency")
+                    || lower.contains("throughput");
+                if claim
+                    && !(line.contains("benchmarks/")
+                        || line.contains("artifacts/benchmarks")
+                        || line.contains("PERFORMANCE_STRATEGY.md"))
+                {
+                    violations.push(format!("{rel}: performance claim without evidence link: {line}"));
+                }
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
     }
 }
