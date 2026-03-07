@@ -1,16 +1,16 @@
 use bijux_dag_app::{dag_command, dag_run};
-use clap::{Arg, Command};
+use clap::{Arg, Command as ClapCommand};
 use clap_complete::{generate, shells};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    let mut cmd = Command::new("bijux")
+    let mut cmd = ClapCommand::new("bijux")
         .about("Bijux umbrella CLI")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(dag_command())
         .subcommand(
-            Command::new("completions")
+            ClapCommand::new("completions")
                 .about("Generate shell completion script")
                 .arg(
                     Arg::new("shell")
@@ -19,8 +19,8 @@ fn main() -> ExitCode {
                         .required(true),
                 ),
         )
-        .subcommand(Command::new("rag").about("Not implemented"))
-        .subcommand(Command::new("rar").about("Not implemented"));
+        .subcommand(ClapCommand::new("rag").about("Not implemented"))
+        .subcommand(ClapCommand::new("rar").about("Not implemented"));
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
