@@ -35,6 +35,7 @@ pub const IDS: &[&str] = &[
     "runtime-unsafe-audit",
     "backend-contract",
     "storage-boundaries",
+    "artifact-hardening",
     "observability-contract",
     "extensibility-contract",
     "security-model",

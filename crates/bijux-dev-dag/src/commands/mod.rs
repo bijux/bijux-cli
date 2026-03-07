@@ -146,6 +146,13 @@ enum CommandLine {
         #[arg(long)]
         cache_dir: Option<PathBuf>,
     },
+    /// Audit run-directory integrity and required storage surfaces
+    RunDirAudit {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, default_value_t = false)]
+        strict: bool,
+    },
     /// Enumerate unsafe blocks and owner files
     UnsafeAudit,
     /// Enumerate known public error codes and owners
@@ -1023,6 +1030,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_storage_boundary_guard(),
     },
     SuiteDef {
+        id: "artifact-hardening",
+        description: "run-directory hardening contracts and corruption fixtures are present",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_artifact_hardening_guard(),
+    },
+    SuiteDef {
         id: "observability-contract",
         description: "observability contract docs tests and required artifacts alignment",
         domain: "governance",
@@ -1642,6 +1658,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({"run_dir": run_dir, "cache_dir": cache_dir}),
             || run_storage_health(&run_dir, cache_dir.as_deref()),
+        ),
+        CommandLine::RunDirAudit { run_dir, strict } => run_command_reported(
+            &context,
+            "run-dir-audit",
+            CommandEffect::Validation,
+            json!({"run_dir": run_dir, "strict": strict}),
+            || run_run_dir_audit(&run_dir, strict),
         ),
         CommandLine::UnsafeAudit => run_command_reported(
             &context,
@@ -5156,6 +5179,40 @@ fn run_storage_health(run_dir: &Path, cache_dir: Option<&Path>) -> Result<(), St
         "{}",
         serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn run_run_dir_audit(run_dir: &Path, strict: bool) -> Result<(), String> {
+    let root = repo_root()?;
+    let mode = if strict {
+        bijux_dag_artifacts::VerificationMode::Strict
+    } else {
+        bijux_dag_artifacts::VerificationMode::Standard
+    };
+    let report =
+        bijux_dag_artifacts::verify_run_dir(root.join(run_dir), mode).map_err(|err| err.to_string())?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_artifact_hardening_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/RUN_DIR_STORAGE_CONTRACT.md",
+        "docs/spec/ARTIFACT_OWNERSHIP_TABLE.md",
+        "docs/spec/ARTIFACT_LIFECYCLE.md",
+        "crates/bijux-dag-artifacts/src/hardening.rs",
+        "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
+        "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
+        "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing artifact hardening artifact: {rel}"));
+        }
+    }
     Ok(())
 }
 
