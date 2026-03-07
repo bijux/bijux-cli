@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -14,9 +14,8 @@ use bijux_dag_runtime::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
     replay_determinism_holds, verification_gate_passed, verification_maturity_label,
-    ArtifactIntegrityInvariant, InvariantDefinition, LineageInvariantProof,
-    PolicyInvariantProof, ReplayDeterminismInvariant, VerificationGate,
-    VerificationMaturityLabel,
+    ArtifactIntegrityInvariant, InvariantDefinition, LineageInvariantProof, PolicyInvariantProof,
+    ReplayDeterminismInvariant, VerificationGate, VerificationMaturityLabel,
 };
 use std::collections::BTreeSet;
 

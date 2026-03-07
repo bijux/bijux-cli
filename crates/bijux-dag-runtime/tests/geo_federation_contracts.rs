@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -34,8 +34,14 @@ fn region_write_routing_allows_only_configured_regions() {
         ]),
     };
 
-    assert!(region_write_allowed(&rule, &RegionId("eu-north".to_string())));
-    assert!(!region_write_allowed(&rule, &RegionId("ap-south".to_string())));
+    assert!(region_write_allowed(
+        &rule,
+        &RegionId("eu-north".to_string())
+    ));
+    assert!(!region_write_allowed(
+        &rule,
+        &RegionId("ap-south".to_string())
+    ));
 }
 
 #[test]

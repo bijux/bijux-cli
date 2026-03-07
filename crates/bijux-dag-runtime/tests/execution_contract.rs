@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -41,7 +41,8 @@ fn simple_const_graph() -> String {
 }
 
 fn read_counts(manifest: &Path) -> (u32, u32, u32, u32) {
-    let data: Value = serde_json::from_str(&fs::read_to_string(manifest).expect("manifest")).unwrap();
+    let data: Value =
+        serde_json::from_str(&fs::read_to_string(manifest).expect("manifest")).unwrap();
     let counts = &data["node_counts"];
     (
         counts["success"].as_u64().unwrap_or(0) as u32,
@@ -62,7 +63,8 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
         .expect("runtime run");
 
     let manifest = run_dir.join("manifest.json");
-    let data: Value = serde_json::from_str(&fs::read_to_string(&manifest).expect("read manifest")).unwrap();
+    let data: Value =
+        serde_json::from_str(&fs::read_to_string(&manifest).expect("read manifest")).unwrap();
     assert_eq!(data["status"], "success");
     assert_eq!(data["graph_fingerprint"].as_str().is_some(), true);
 
@@ -74,10 +76,7 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
     let rendered = fs::read_to_string(&output_file).expect("output file");
     assert_eq!(rendered.trim(), "\"hello\"");
 
-    let trace_file = run_dir
-        .join("nodes")
-        .join("const1")
-        .join("trace.json");
+    let trace_file = run_dir.join("nodes").join("const1").join("trace.json");
     let trace: Value = serde_json::from_str(&fs::read_to_string(&trace_file).expect("trace"))
         .expect("trace parse");
     assert_eq!(trace["status"], "success");
@@ -104,7 +103,10 @@ fn runtime_replay_contract_preserves_fingerprint_and_outputs() {
         &fs::read_to_string(run_two.join("manifest.json")).expect("manifest two"),
     )
     .expect("manifest parse");
-    assert_eq!(manifest_one["graph_fingerprint"], manifest_two["graph_fingerprint"]);
+    assert_eq!(
+        manifest_one["graph_fingerprint"],
+        manifest_two["graph_fingerprint"]
+    );
 
     let first_output = fs::read_to_string(
         run_one

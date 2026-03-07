@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -74,8 +74,9 @@ fn selector_pruning_stage_is_documented_and_dependency_safe() {
     };
     let plan = build_plan(&graph, &options);
     assert!(!plan.filter_reasons.contains_key("join"));
-    assert!(!plan.filter_reasons.contains_key("left"));
-    assert!(!plan.filter_reasons.contains_key("right"));
+    assert!(plan.order.iter().any(|id| id == "join"));
+    assert!(plan.order.iter().any(|id| id == "left"));
+    assert!(plan.order.iter().any(|id| id == "right"));
 }
 
 #[test]

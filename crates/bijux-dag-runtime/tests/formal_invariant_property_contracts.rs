@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -21,7 +21,8 @@ fn chain_graph(node_count: usize) -> String {
         nodes.push(json!({
             "id": format!("n{i}"),
             "kind": "const",
-            "outputs": [{"name":"out","path":"out"}],
+            "inputs": if i == 0 { Vec::<String>::new() } else { vec!["in".to_string()] },
+            "outputs": [{"name":"out","path":format!("n{i}/out")}],
             "params": {"value": format!("{i}")}
         }));
         if i > 0 {
@@ -50,7 +51,10 @@ fn generated_chain_graphs_preserve_acyclic_unique_and_deterministic_plan() {
         let plan_b = build_plan(&graph, &options);
         let a = serde_json::to_value(plan_a).expect("serialize a");
         let b = serde_json::to_value(plan_b).expect("serialize b");
-        assert_eq!(a, b, "plan should be deterministic for generated graph size {size}");
+        assert_eq!(
+            a, b,
+            "plan should be deterministic for generated graph size {size}"
+        );
     }
 }
 

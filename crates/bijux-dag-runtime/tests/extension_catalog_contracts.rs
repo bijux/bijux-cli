@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,9 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    compute_platform_maturity, extension_discovery_inventory, negotiate_plugin_version,
-    detect_extension_compatibility_issues, extension_failure_isolated,
-    extension_point_status_report, internal_hook_ready_for_promotion, register_extension,
+    compute_platform_maturity, detect_extension_compatibility_issues,
+    extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
+    internal_hook_ready_for_promotion, negotiate_plugin_version, register_extension,
     validate_extension_descriptor, validate_plugin_conformance, CapabilityRange,
     ExtensionDescriptor, ExtensionRegistration, InternalHookPromotionChecklist, PluginBoundaryKind,
     PluginIsolationPolicy, PluginMetadata, PluginTrustPolicy,
@@ -101,8 +101,12 @@ fn unknown_extension_versions_and_missing_capabilities_are_reported() {
     let supported = BTreeSet::from(["v0.1".to_string()]);
     let required = BTreeSet::from(["observe".to_string()]);
     let issues = detect_extension_compatibility_issues(&descriptors, &supported, &required);
-    assert!(issues.iter().any(|i| i.reason.contains("unsupported contract version")));
-    assert!(issues.iter().any(|i| i.reason.contains("missing required capability")));
+    assert!(issues
+        .iter()
+        .any(|i| i.reason.contains("unsupported contract version")));
+    assert!(issues
+        .iter()
+        .any(|i| i.reason.contains("missing required capability")));
 }
 
 #[test]

@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -28,8 +28,14 @@ fn load_health() -> Vec<DomainHealthSnapshot> {
 #[test]
 fn health_propagation_blocks_unhealthy_domain() {
     let health = load_health();
-    assert!(domain_healthy(&SchedulerDomainId("eu-core".to_string()), &health));
-    assert!(!domain_healthy(&SchedulerDomainId("us-burst".to_string()), &health));
+    assert!(domain_healthy(
+        &SchedulerDomainId("eu-core".to_string()),
+        &health
+    ));
+    assert!(!domain_healthy(
+        &SchedulerDomainId("us-burst".to_string()),
+        &health
+    ));
 }
 
 #[test]

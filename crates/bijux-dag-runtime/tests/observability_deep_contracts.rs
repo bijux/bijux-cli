@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -42,7 +42,10 @@ fn diagnostics_and_root_cause_graph_are_stable() {
     let diagnostics = build_diagnostics(&events);
     assert_eq!(diagnostics.len(), 2);
     let graph = root_cause_graph(&events);
-    assert_eq!(graph.get("load").cloned().unwrap_or_default(), vec!["transform".to_string()]);
+    assert_eq!(
+        graph.get("load").cloned().unwrap_or_default(),
+        vec!["transform".to_string()]
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -12,7 +12,7 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     build_cost_model, build_performance_maturity_report, compile_environment_profiles,
-    detect_performance_regression, derive_autoscaling_hint, forecast_storage_growth,
+    derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
     synthetic_large_dag_profiles, BenchmarkResult, PerformanceGate,
 };
 

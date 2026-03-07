@@ -13,7 +13,7 @@
     }
   ],
   "effects": [
-    {"effect": "Filesystem", "classification": "Required"}
+    {"effect": "filesystem", "classification": "Required"}
   ],
   "retry_policy": {
     "max_attempts": 1,

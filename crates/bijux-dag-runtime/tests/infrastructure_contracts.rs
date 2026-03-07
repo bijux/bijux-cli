@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,8 +11,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    negotiate_backend_capabilities, BackendCapabilityRequirement, InfrastructureBackendCapabilities,
-    BackendExecutionCompletion, BackendExecutionRequest, ExecutorBackend,
+    negotiate_backend_capabilities, BackendCapabilityRequirement, BackendExecutionCompletion,
+    BackendExecutionRequest, ExecutorBackend, InfrastructureBackendCapabilities,
 };
 use std::collections::BTreeMap;
 
@@ -58,6 +58,12 @@ fn backend_request_and_completion_have_stable_serialization_shape() {
     };
     let request_json = serde_json::to_value(&request).expect("request should serialize");
     let completion_json = serde_json::to_value(&completion).expect("completion should serialize");
-    assert_eq!(request_json.get("run_id").and_then(|v| v.as_str()), Some("run-20260306"));
-    assert_eq!(completion_json.get("status").and_then(|v| v.as_str()), Some("success"));
+    assert_eq!(
+        request_json.get("run_id").and_then(|v| v.as_str()),
+        Some("run-20260306")
+    );
+    assert_eq!(
+        completion_json.get("status").and_then(|v| v.as_str()),
+        Some("success")
+    );
 }

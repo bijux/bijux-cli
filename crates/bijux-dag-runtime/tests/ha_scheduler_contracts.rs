@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -78,11 +78,7 @@ fn recovery_objectives_and_conformance_reports_are_explicit() {
     };
     assert!(failover_recovery_passes(25_000, 3_000, &objectives));
 
-    let report = evaluate_ha_conformance(
-        &["run-1".to_string(), "run-2".to_string()],
-        true,
-        true,
-    );
+    let report = evaluate_ha_conformance(&["run-1".to_string(), "run-2".to_string()], true, true);
     assert!(report.no_duplicate_runs);
     assert!(report.failures.is_empty());
 }

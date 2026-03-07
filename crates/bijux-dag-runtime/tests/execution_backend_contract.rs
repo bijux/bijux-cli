@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -19,9 +19,12 @@ use std::collections::BTreeSet;
 #[test]
 fn fake_backend_can_exercise_engine_without_subprocesses() {
     let backend = FakeBackend::default();
-    let outcome =
-        execute_with_backend(&backend, BackendKind::Shell, &["a".to_string(), "b".to_string()])
-            .expect("fake backend run");
+    let outcome = execute_with_backend(
+        &backend,
+        BackendKind::Shell,
+        &["a".to_string(), "b".to_string()],
+    )
+    .expect("fake backend run");
     assert_eq!(outcome.attempts.len(), 2);
     assert!(outcome.attempts.iter().all(|a| a.attempt == 1));
 }
@@ -39,7 +42,8 @@ fn fake_and_process_like_backends_have_parity_on_basic_scenario() {
 #[test]
 fn backend_capability_mismatch_fails_during_binding() {
     let backend = FakeBackend::default();
-    let err = execute_with_backend(&backend, BackendKind::Container, &["a".to_string()]).unwrap_err();
+    let err =
+        execute_with_backend(&backend, BackendKind::Container, &["a".to_string()]).unwrap_err();
     match err {
         BackendError::Capability(message) => assert!(message.contains("requires")),
         other => panic!("unexpected error: {other}"),
@@ -279,13 +283,15 @@ fn backend_output_collection_rejects_undeclared_outputs() {
 #[test]
 fn backend_registry_includes_capability_descriptors() {
     let registry = backend_registry();
-    assert!(registry.iter().any(|row| row.backend_name == "fake-backend"));
-    assert!(registry.iter().any(|row| row.backend_name == "process-like-backend"));
-    assert!(
-        registry
-            .iter()
-            .all(|row| row.supports_env_shaping && row.supports_timeout && row.supports_stream_capture)
-    );
+    assert!(registry
+        .iter()
+        .any(|row| row.backend_name == "fake-backend"));
+    assert!(registry
+        .iter()
+        .any(|row| row.backend_name == "process-like-backend"));
+    assert!(registry.iter().all(|row| row.supports_env_shaping
+        && row.supports_timeout
+        && row.supports_stream_capture));
 }
 
 #[test]
