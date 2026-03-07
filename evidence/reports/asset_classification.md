@@ -67,7 +67,7 @@ Classification for files in tasks 21-34 scopes.
 | configs/schema/fixtures/v0.1/positive/fan-in.json | schema | transitional | schema-owned | configs/schema/fixtures |  |
 | configs/schema/fixtures/v0.1/positive/fan-out.json | schema | transitional | schema-owned | configs/schema/fixtures |  |
 | configs/schema/fixtures/v0.1/positive/isolated-node.json | schema | transitional | schema-owned | configs/schema/fixtures |  |
-| configs/schema/fixtures/v0.2-draft/positive/placeholder.json | schema | transitional | schema-owned | configs/schema/fixtures |  |
+| configs/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json | schema | transitional | schema-owned | configs/schema/fixtures |  |
 | evidence/fault/corrupt_runs/invalid_outputs_index.json | compat | transitional | crate-owned | evidence/compat |  |
 | evidence/fault/corrupt_runs/missing_manifest_version.json | compat | transitional | crate-owned | evidence/compat |  |
 | crates/bijux-dag-runtime/tests/fixtures/.gitkeep | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |

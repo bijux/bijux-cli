@@ -17,4 +17,4 @@
 - configs/schema/fixtures/v0.1/positive/fan-in.json
 - configs/schema/fixtures/v0.1/positive/fan-out.json
 - configs/schema/fixtures/v0.1/positive/isolated-node.json
-- configs/schema/fixtures/v0.2-draft/positive/placeholder.json
+- configs/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json
