@@ -162,6 +162,8 @@ enum CommandLine {
     },
     /// Report implemented, simulated, and aspirational execution modes
     ExecutionModesReport,
+    /// Summarize version support by versioned surface
+    CompatibilityReport,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -1016,6 +1018,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_authoring_ux_guard(),
     },
     SuiteDef {
+        id: "versioning-compatibility",
+        description: "versioning model fixtures migration policy and no-drift enforcement",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_versioning_compatibility_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1535,6 +1546,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_execution_modes_report(),
+        ),
+        CommandLine::CompatibilityReport => run_command_reported(
+            &context,
+            "compatibility-report",
+            CommandEffect::Validation,
+            json!({}),
+            || run_compatibility_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -5142,6 +5160,51 @@ fn run_authoring_ux_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_versioning_compatibility_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required_docs = [
+        "docs/spec/VERSIONING_MODEL.md",
+        "docs/reference/COMPATIBILITY_MATRIX.md",
+        "docs/spec/SCHEMA_EVOLUTION_RULEBOOK.md",
+        "docs/spec/RUN_DIR_EVOLUTION_RULEBOOK.md",
+        "docs/spec/EXPORT_BUNDLE_EVOLUTION_RULEBOOK.md",
+        "docs/spec/MIGRATION_POLICY.md",
+        "docs/spec/VERSION_COMPATIBILITY_DRIFT_POLICY.md",
+    ];
+    let required_fixtures = [
+        "tests/compatibility/graph_schema/v0.1/minimal.dag.json",
+        "tests/compatibility/graph_schema/unsupported_future/minimal.dag.json",
+        "tests/compatibility/graph_schema/unsupported_past/minimal.dag.json",
+        "tests/compatibility/run_dir/v0.1/manifest.json",
+        "tests/compatibility/run_dir/unsupported_future/manifest.json",
+        "tests/compatibility/export_bundle/v0.1/bundle.json",
+        "tests/compatibility/export_bundle/unsupported_past/bundle.json",
+    ];
+    let mut missing = Vec::new();
+    for rel in required_docs.iter().chain(required_fixtures.iter()) {
+        if !root.join(rel).exists() {
+            missing.push((*rel).to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "versioning compatibility surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let matrix =
+        fs::read_to_string(root.join("docs/reference/COMPATIBILITY_MATRIX.md")).map_err(|err| err.to_string())?;
+    for token in ["graph schema", "run-dir format", "export bundle"] {
+        if !matrix.to_lowercase().contains(token) {
+            return Err(format!(
+                "compatibility matrix missing required surface row: {token}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
     let payload = fs::read_to_string(root.join("configs/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
@@ -5249,6 +5312,45 @@ fn run_execution_modes_report() -> Result<(), String> {
         serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
     );
     Ok(())
+}
+
+fn run_compatibility_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let report = json!({
+        "graph_schema": {
+            "current": "0.1",
+            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/v0.1"))?,
+            "unsupported_future_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/unsupported_future"))?,
+            "unsupported_past_fixtures": collect_fixture_count(&root.join("tests/compatibility/graph_schema/unsupported_past"))?
+        },
+        "run_dir": {
+            "current": "run-manifest/v0.1",
+            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/run_dir/v0.1"))?,
+            "unsupported_future_fixtures": collect_fixture_count(&root.join("tests/compatibility/run_dir/unsupported_future"))?
+        },
+        "export_bundle": {
+            "current": "export-bundle/v0.1",
+            "supported_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/v0.1"))?,
+            "unsupported_past_fixtures": collect_fixture_count(&root.join("tests/compatibility/export_bundle/unsupported_past"))?
+        }
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn collect_fixture_count(dir: &Path) -> Result<usize, String> {
+    if !dir.exists() {
+        return Ok(0);
+    }
+    let count = fs::read_dir(dir)
+        .map_err(|err| err.to_string())?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.path().is_file())
+        .count();
+    Ok(count)
 }
 
 fn run_config_lint() -> Result<(), String> {

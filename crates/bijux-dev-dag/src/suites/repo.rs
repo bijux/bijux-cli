@@ -36,6 +36,7 @@ pub const IDS: &[&str] = &[
     "batch-execution-boundaries",
     "operator-ux",
     "authoring-ux",
+    "versioning-compatibility",
     "error-code-registry",
     "error-code-doc-tests",
     "config-lint",
