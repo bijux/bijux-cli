@@ -14,6 +14,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod authoring_evidence;
 mod battle_evidence;
 mod compare_evidence;
+mod evidence_access;
 mod evidence_registry;
 mod model;
 mod perf_evidence;
@@ -31,6 +32,11 @@ use battle_evidence::{
 use compare_evidence::{
     run_compare_evidence_policy_verify, run_comparison_evidence_report,
     run_comparison_harness_guard,
+};
+use evidence_access::{
+    as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
+    render_consumers_to_families_report, resolve_asset_by_id, resolve_assets_by_consumer,
+    resolve_assets_by_family, resolve_assets_by_trust_property, verify_registry_access_bypass,
 };
 use evidence_registry::{
     run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
@@ -381,6 +387,39 @@ enum RepoCommand {
     PerfEvidenceSummary,
     /// Print release-relevant performance evidence set only
     PerfReleaseSet,
+    /// Resolve one evidence asset by stable asset id
+    EvidenceResolveById {
+        #[arg(long)]
+        id: String,
+    },
+    /// Resolve evidence assets by governed family kind
+    EvidenceResolveByFamily {
+        #[arg(long)]
+        family: String,
+    },
+    /// Resolve evidence assets by trust property id
+    EvidenceResolveByTrustProperty {
+        #[arg(long)]
+        trust_property: String,
+    },
+    /// Resolve evidence assets by consumer surface id
+    EvidenceResolveByConsumer {
+        #[arg(long)]
+        consumer: String,
+    },
+    /// Generate reports that map assets to consumers and consumers to families
+    EvidenceConsumerReports {
+        #[arg(
+            long,
+            default_value = "evidence/reports/evidence_assets_to_consumers.md"
+        )]
+        assets_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "evidence/reports/evidence_consumers_to_families.md"
+        )]
+        consumers_out: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1947,6 +1986,44 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_perf_release_set(),
+            ),
+            RepoCommand::EvidenceResolveById { id } => run_command_reported(
+                &context,
+                "repo.evidence-resolve-by-id",
+                CommandEffect::Validation,
+                json!({ "id": id }),
+                || run_evidence_resolve_by_id(&id),
+            ),
+            RepoCommand::EvidenceResolveByFamily { family } => run_command_reported(
+                &context,
+                "repo.evidence-resolve-by-family",
+                CommandEffect::Validation,
+                json!({ "family": family }),
+                || run_evidence_resolve_by_family(&family),
+            ),
+            RepoCommand::EvidenceResolveByTrustProperty { trust_property } => run_command_reported(
+                &context,
+                "repo.evidence-resolve-by-trust-property",
+                CommandEffect::Validation,
+                json!({ "trust_property": trust_property }),
+                || run_evidence_resolve_by_trust_property(&trust_property),
+            ),
+            RepoCommand::EvidenceResolveByConsumer { consumer } => run_command_reported(
+                &context,
+                "repo.evidence-resolve-by-consumer",
+                CommandEffect::Validation,
+                json!({ "consumer": consumer }),
+                || run_evidence_resolve_by_consumer(&consumer),
+            ),
+            RepoCommand::EvidenceConsumerReports {
+                assets_out,
+                consumers_out,
+            } => run_command_reported(
+                &context,
+                "repo.evidence-consumer-reports",
+                CommandEffect::ReadWrite,
+                json!({ "assets_out": assets_out, "consumers_out": consumers_out }),
+                || run_evidence_consumer_reports(&assets_out, &consumers_out),
             ),
         },
         CommandLine::Verify { command } => match command {
@@ -5408,22 +5485,11 @@ fn parse_string_set(value: &Value, label: &str) -> Result<BTreeSet<String>, Stri
 
 fn run_evidence_family_boundary_verify() -> Result<(), String> {
     let root = repo_root()?;
-    let registry: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
-            .map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
-    let assets = registry["assets"]
-        .as_array()
-        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
+    let assets = load_registry_assets(&root)?;
 
-    for asset in assets {
-        let path = asset["canonical_path"]
-            .as_str()
-            .ok_or_else(|| "registry asset canonical_path must be string".to_string())?;
-        let kind = asset["kind"]
-            .as_str()
-            .ok_or_else(|| format!("registry asset has invalid kind for path `{path}`"))?;
+    for asset in &assets {
+        let path = asset.canonical_path.as_str();
+        let kind = asset.kind.as_str();
         let expected_kind = if path.starts_with("evidence/cache/") {
             Some("cache")
         } else if path.starts_with("evidence/compat/") {
@@ -5456,25 +5522,17 @@ fn run_evidence_family_boundary_verify() -> Result<(), String> {
         "cache consumer_boundaries.replay_allowed_consumers",
     )?;
 
-    for asset in assets {
-        let path = asset["canonical_path"]
-            .as_str()
-            .ok_or_else(|| "registry asset canonical_path must be string".to_string())?;
+    for asset in &assets {
+        let path = asset.canonical_path.as_str();
         if !path.starts_with("evidence/cache/") {
             continue;
         }
-        let consumers = asset["consumers"]
-            .as_array()
-            .ok_or_else(|| format!("registry asset consumers must be array for `{path}`"))?;
         let allowed = if path.starts_with("evidence/cache/replay/") {
             &replay_allowed
         } else {
             &cache_allowed
         };
-        for consumer in consumers {
-            let consumer = consumer
-                .as_str()
-                .ok_or_else(|| format!("registry consumer must be string for `{path}`"))?;
+        for consumer in &asset.consumers {
             if !allowed.contains(consumer) {
                 return Err(format!(
                     "cache/replay consumer misuse: `{path}` uses consumer `{consumer}` outside allowed set"
@@ -5722,8 +5780,71 @@ fn run_evidence_drift_verify() -> Result<(), String> {
     }
 }
 
+fn run_evidence_resolve_by_id(asset_id: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let assets = load_registry_assets(&root)?;
+    let asset = resolve_asset_by_id(&assets, asset_id)?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&evidence_assets_as_json(&[asset]))
+            .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_evidence_resolve_by_family(family: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let assets = load_registry_assets(&root)?;
+    let resolved = resolve_assets_by_family(&assets, family);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&evidence_assets_as_json(&resolved))
+            .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_evidence_resolve_by_trust_property(trust_property: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let assets = load_registry_assets(&root)?;
+    let resolved = resolve_assets_by_trust_property(&assets, trust_property);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&evidence_assets_as_json(&resolved))
+            .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_evidence_resolve_by_consumer(consumer: &str) -> Result<(), String> {
+    let root = repo_root()?;
+    let assets = load_registry_assets(&root)?;
+    let resolved = resolve_assets_by_consumer(&assets, consumer);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&evidence_assets_as_json(&resolved))
+            .map_err(|err| err.to_string())?
+    );
+    Ok(())
+}
+
+fn run_evidence_consumer_reports(assets_out: &Path, consumers_out: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let assets = load_registry_assets(&root)?;
+    let assets_report = render_assets_to_consumers_report(&assets);
+    let consumers_report = render_consumers_to_families_report(&assets);
+    fs::write(root.join(assets_out), assets_report).map_err(|err| err.to_string())?;
+    fs::write(root.join(consumers_out), consumers_report).map_err(|err| err.to_string())?;
+    println!(
+        "{}",
+        json!({"assets_report": assets_out.to_string_lossy(), "consumers_report": consumers_out.to_string_lossy()})
+    );
+    Ok(())
+}
+
 fn run_evidence_consumers_verify() -> Result<(), String> {
     let root = repo_root()?;
+    verify_registry_access_bypass(&root)?;
     let restricted_patterns = [
         "tests/e2e/replay/fixtures/",
         "tests/e2e/fixtures/e2e_minimal.json",
@@ -5738,6 +5859,7 @@ fn run_evidence_consumers_verify() -> Result<(), String> {
     let ignore_paths = [
         "crates/bijux-dev-dag/src/commands/mod.rs",
         "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs",
+        "crates/bijux-dev-dag/tests/evidence_access_contracts.rs",
         "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
         "configs/policy/evidence_governance.json",
         "configs/policy/evidence_path_policy.json",
