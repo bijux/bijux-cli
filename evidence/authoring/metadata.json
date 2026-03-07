@@ -1,104 +1,161 @@
 {
   "version": "1",
-  "owner": "runtime-foundation",
+  "owner": "team-authoring",
   "assets": {
     "evidence/authoring/examples/hello.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/examples/etl-constant-to-shell.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/examples/cached-branched-report.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/examples/failure-heavy-retry.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/examples/multi-output-artifact.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/examples/replay-heavy-branching.dag.json": {
       "group": "examples",
+      "authoring_mode": "illustrative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
     "evidence/authoring/patterns/minimal.json": {
       "group": "minimal",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-graph", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/medium.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag graph-lint", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_chain.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_diamond.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_fanout.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_aggregation.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_cache_heavy.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/patterns/pattern_replay_sensitive.json": {
       "group": "patterns",
+      "authoring_mode": "normative",
       "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag show-effective-plan"],
       "consumers": ["authoring-patterns", "core-contracts"]
     },
     "evidence/authoring/negative/cycle.json": {
       "group": "negative",
+      "authoring_mode": "normative",
       "expected_validation": "fail",
+      "expected_lowering": "none",
+      "command_surfaces": ["dag validate", "dag validate --explain"],
       "consumers": ["authoring-negative-contracts"],
       "expected_rule_ids": ["DAG-VAL-001"]
     },
     "evidence/authoring/negative/invalid_refs.json": {
       "group": "negative",
+      "authoring_mode": "normative",
       "expected_validation": "fail",
+      "expected_lowering": "none",
+      "command_surfaces": ["dag validate", "dag validate --explain"],
       "consumers": ["authoring-negative-contracts"],
       "expected_rule_ids": ["DAG-VAL-002"]
     },
     "evidence/authoring/negative/invalid_selectors.json": {
       "group": "negative",
+      "authoring_mode": "normative",
       "expected_validation": "fail",
+      "expected_lowering": "none",
+      "command_surfaces": ["dag validate", "dag validate --explain"],
       "consumers": ["authoring-negative-contracts"],
       "expected_rule_ids": ["DAG-VAL-003"]
     },
     "evidence/authoring/negative/undeclared_outputs.json": {
       "group": "negative",
+      "authoring_mode": "normative",
       "expected_validation": "fail",
+      "expected_lowering": "none",
+      "command_surfaces": ["dag validate", "dag validate --explain"],
       "consumers": ["authoring-negative-contracts"],
       "expected_rule_ids": ["DAG-VAL-004"]
     },
     "evidence/authoring/negative/unsupported_adapter_payload.json": {
       "group": "negative",
+      "authoring_mode": "normative",
       "expected_validation": "fail",
+      "expected_lowering": "none",
+      "command_surfaces": ["dag validate", "dag validate --explain"],
       "consumers": ["authoring-negative-contracts"],
       "expected_rule_ids": ["DAG-VAL-005"]
     }

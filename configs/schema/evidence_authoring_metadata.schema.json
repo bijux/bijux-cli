@@ -11,15 +11,36 @@
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
-        "required": ["group", "expected_validation", "consumers"],
+        "required": [
+          "group",
+          "authoring_mode",
+          "expected_validation",
+          "expected_lowering",
+          "command_surfaces",
+          "consumers"
+        ],
         "properties": {
           "group": {
             "type": "string",
             "enum": ["examples", "patterns", "negative", "minimal"]
           },
+          "authoring_mode": {
+            "type": "string",
+            "enum": ["normative", "illustrative"]
+          },
           "expected_validation": {
             "type": "string",
             "enum": ["pass", "fail"]
+          },
+          "expected_lowering": {
+            "type": "string",
+            "enum": ["required", "optional", "none"]
+          },
+          "command_surfaces": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
           },
           "expected_rule_ids": {
             "type": "array",

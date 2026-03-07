@@ -3,7 +3,7 @@
 `evidence/` is the repository authority for executable proof assets.
 
 ## Subdomain map
-- `evidence/authoring`: canonical authoring examples and negative authoring cases.
+- `evidence/authoring`: onboarding evidence split into `minimal`, `patterns`, `negative`, and illustrative `examples`.
 - `evidence/battle`: trust-critical end-to-end behavior scenarios.
 - `evidence/cache`: cache reuse and corruption correctness scenarios.
 - `evidence/compat`: version and format compatibility fixtures.

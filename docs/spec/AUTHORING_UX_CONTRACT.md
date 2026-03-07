@@ -9,6 +9,14 @@ YAML/DSL/generated authoring are not normative product surfaces in this reposito
 - Minimal executable DAG: `evidence/authoring/patterns/minimal.json`
 - Medium executable DAG with retries/resources/selectors: `evidence/authoring/patterns/medium.json`
 
+## Authoring evidence classification
+- `minimal`: first-hour onboarding baseline.
+- `patterns`: normative reusable graph structures.
+- `negative`: normative invalid inputs bound to stable validation rule IDs.
+- `examples`: illustrative end-to-end authoring samples.
+
+Battle workflows under `evidence/battle/` are not allowed to be reused as authoring fixtures.
+
 ## Pattern examples
 - chain: `evidence/authoring/patterns/pattern_chain.json`
 - diamond: `evidence/authoring/patterns/pattern_diamond.json`
