@@ -924,6 +924,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_planner_alignment_guard(),
     },
     SuiteDef {
+        id: "runtime-module-triage",
+        description: "runtime module triage sacred boundaries and freeze policy alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_runtime_module_triage_guard(),
+    },
+    SuiteDef {
         id: "scheduler-invariants",
         description: "scheduler contract and invariants test surfaces are present",
         domain: "governance",
@@ -5886,6 +5895,75 @@ fn run_anti_drift_governance_guard() -> Result<(), String> {
     let benchmark_scenarios = root.join("benchmarks/scenarios");
     if !benchmark_scenarios.exists() {
         return Err("benchmark scenario directory missing for anti-drift benchmark check".to_string());
+    }
+    Ok(())
+}
+
+fn run_runtime_module_triage_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/architecture/runtime_module_triage.md",
+        "docs/spec/RUNTIME_PUBLIC_API_BOUNDARY.md",
+        "configs/policy/runtime_module_freeze.json",
+        "crates/bijux-dag-runtime/src/runtime.rs",
+        "crates/bijux-dag-runtime/src/adapters.rs",
+        "crates/bijux-dag-runtime/src/execution.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "runtime module triage surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let freeze_payload = fs::read_to_string(root.join("configs/policy/runtime_module_freeze.json"))
+        .map_err(|err| err.to_string())?;
+    let freeze_json: Value = serde_json::from_str(&freeze_payload).map_err(|err| err.to_string())?;
+    let allowed = freeze_json
+        .get("allowed_modules")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "runtime_module_freeze.json missing allowed_modules".to_string())?;
+    let allowed_set: BTreeSet<String> = allowed
+        .iter()
+        .filter_map(Value::as_str)
+        .map(|s| s.to_string())
+        .collect();
+
+    let mut actual = BTreeSet::new();
+    for entry in fs::read_dir(root.join("crates/bijux-dag-runtime/src")).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.extension().and_then(|v| v.to_str()) != Some("rs") {
+            continue;
+        }
+        if let Some(stem) = path.file_stem().and_then(|v| v.to_str()) {
+            if ![
+                "lib",
+                "runtime_boundary_tests",
+                "adapter_contract_tests",
+                "invariants_tests",
+                "runtime_policy_trace_tests",
+                "state_machine_tests",
+                "tests_runtime.in",
+                "test_support",
+            ]
+            .contains(&stem)
+            {
+                actual.insert(stem.to_string());
+            }
+        }
+    }
+    let unexpected: Vec<String> = actual.difference(&allowed_set).cloned().collect();
+    if !unexpected.is_empty() {
+        return Err(format!(
+            "runtime module freeze violated by modules: {}",
+            unexpected.join(", ")
+        ));
     }
     Ok(())
 }
