@@ -19,6 +19,7 @@ pub mod cache;
 mod dataset_semantics;
 mod distributed;
 mod engine;
+mod execution_backend;
 mod ecosystem_productization;
 mod execution_plan;
 mod external_adapter;
@@ -214,6 +215,11 @@ pub use auth_identity::{
     WorkerCredentialBinding,
 };
 pub use execution_plan::ExecutionPlan;
+pub use execution_backend::{
+    bind_backend_or_error, execute_with_backend, BackendBindingRequest, BackendCapabilities,
+    BackendContext, BackendError, BackendKind, BackendLifecycleResult, EngineOutcome,
+    ExecutionAttemptRecord, ExecutionBackend, FakeBackend, ProcessLikeBackend,
+};
 pub use local_executor::LocalExecutor;
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
