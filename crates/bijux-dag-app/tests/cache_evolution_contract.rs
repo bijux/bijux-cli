@@ -58,4 +58,51 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
         ])
         .expect("parse prune sim");
     assert!(dag_run(&prune).is_ok());
+
+    let diff = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "cache",
+            "diff",
+            "--cache-dir",
+            tmp.path().to_string_lossy().as_ref(),
+            "--key-a",
+            "key-valid",
+            "--key-b",
+            "key-invalid",
+        ])
+        .expect("parse diff");
+    assert!(dag_run(&diff).is_ok());
+
+    let verify = cmd
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "cache",
+            "verify",
+            "--cache-dir",
+            tmp.path().to_string_lossy().as_ref(),
+        ])
+        .expect("parse verify");
+    assert!(dag_run(&verify).is_err());
+}
+
+#[test]
+fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
+    let fixture_root = std::path::Path::new("tests/cache/fixtures");
+    for rel in [
+        "corrupt/missing_meta.json",
+        "corrupt/hash_mismatch.json",
+        "corrupt/unsupported_metadata_version.json",
+        "corrupt/truncated_meta.json",
+        "corrupt/missing_outputs_proof.json",
+    ] {
+        assert!(fixture_root.join(rel).exists(), "missing fixture: {}", rel);
+    }
+
+    let warm_cold = fs::read_to_string(fixture_root.join("warm_cold/scenario.json")).expect("read warm_cold");
+    let parsed: serde_json::Value = serde_json::from_str(&warm_cold).expect("parse warm_cold");
+    let expectations = parsed["expectations"].as_array().expect("expectation list");
+    assert!(expectations.iter().any(|v| v == "warm_and_cold_outputs_semantically_equal"));
 }

@@ -316,6 +316,14 @@ pub(crate) enum CacheCommands {
         #[arg(long)]
         cache_dir: Option<PathBuf>,
     },
+    Diff {
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        key_a: String,
+        #[arg(long)]
+        key_b: String,
+    },
 }
 
 #[derive(Subcommand)]

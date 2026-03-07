@@ -1394,6 +1394,33 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
                 Ok(ExitCode::SUCCESS)
             }
+            CacheCommands::Diff {
+                cache_dir,
+                key_a,
+                key_b,
+            } => {
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .ok_or(ExitCode::from(3))?;
+                let report = cache_diff(&dir, &key_a, &key_b)?;
+                let comparable = report["comparable"].as_bool().unwrap_or(false);
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.cache.diff",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                if !comparable {
+                    return Err(ExitCode::from(3));
+                }
+                Ok(ExitCode::SUCCESS)
+            }
         },
         Commands::Adapters { command } => match command {
             AdaptersCommands::Ls => {
@@ -2154,6 +2181,68 @@ fn cache_prune_simulate(cache_dir: &Path) -> Result<Value, ExitCode> {
     Ok(json!({
         "would_remove": would_remove,
         "policy": "invalid entries only (simulation)"
+    }))
+}
+
+fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<Value, ExitCode> {
+    fn load_meta(entry: &Path) -> Result<Value, ExitCode> {
+        let meta_path = entry.join("meta.json");
+        if !meta_path.exists() {
+            return Ok(json!({}));
+        }
+        serde_json::from_str::<Value>(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))
+    }
+    let a_path = cache_dir.join(key_a);
+    let b_path = cache_dir.join(key_b);
+    let a_exists = a_path.exists();
+    let b_exists = b_path.exists();
+    if !a_exists || !b_exists {
+        return Ok(json!({
+            "key_a": key_a,
+            "key_b": key_b,
+            "comparable": false,
+            "reason": "missing cache entry",
+            "missing": {
+                "key_a": !a_exists,
+                "key_b": !b_exists
+            }
+        }));
+    }
+    let a_meta = load_meta(&a_path)?;
+    let b_meta = load_meta(&b_path)?;
+    let mut differences = Vec::new();
+    for field in [
+        "node_fingerprint",
+        "adapter_id",
+        "adapter_version",
+        "output_schema_version",
+        "policy_fingerprint",
+        "config_fingerprint",
+        "backend_class",
+        "cache_metadata_version",
+        "source_run_id",
+        "cache_source",
+    ] {
+        if a_meta.get(field) != b_meta.get(field) {
+            differences.push(json!({
+                "field": field,
+                "a": a_meta.get(field).cloned().unwrap_or(Value::Null),
+                "b": b_meta.get(field).cloned().unwrap_or(Value::Null),
+            }));
+        }
+    }
+    let a_valid = verify_cache_entry_cli(&a_path, key_a, "", "")?;
+    let b_valid = verify_cache_entry_cli(&b_path, key_b, "", "")?;
+    Ok(json!({
+        "key_a": key_a,
+        "key_b": key_b,
+        "comparable": true,
+        "valid": {
+            "key_a": a_valid,
+            "key_b": b_valid
+        },
+        "differences": differences
     }))
 }
 
