@@ -6,6 +6,7 @@ Execution path:
 3. Adapter execution produces outputs and status.
 4. Trace writer persists per-node trace, attempt events, and resolved params.
 5. Artifact persistence writes manifest, outputs indexes, provenance, and run summary.
+6. Run state advances to terminal status based on canonical node accounting.
 
 Centralized sacred hooks:
 - `sacred_execution::resolve_dependencies`
@@ -20,3 +21,8 @@ Data-flow contract:
 - Planner and policy evaluation are deterministic for identical input state.
 - Trace writing is append-only per node attempt and final status.
 - Artifact persistence is schema-bound by run manifest and trace schemas.
+
+Effect boundaries:
+- run-scoped dependencies are carried by `execution_context::ExecutionContext`.
+- node-scoped dependencies are carried by `execution_context::NodeExecutionContext`.
+- engine code must not bypass sacred cache/trace/retry hooks.
