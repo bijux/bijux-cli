@@ -21,6 +21,9 @@ Defines the make surface for `bijux-dag`.
 - `help` output must be generated from annotated targets (`##`) and must not be hand-coded.
 - Checks, contracts, release, and repository governance execution paths must route through `bijux-dev-dag`.
 - Cargo-native gates (`test`, `test-all`, `lint`, `fmt`, `check`, `audit`) must stay in `make/cargo.mk`.
+- Slow tests are tagged in Rust with `#[ignore = "slow"]`.
+- `test` must skip ignored slow tests, `test-slow` must run only ignored tests.
+- `test-all` and `coverage` must execute all tests including ignored tests.
 
 ## Change policy
 - Any target addition, rename, or removal must update `make/target-list.json`.

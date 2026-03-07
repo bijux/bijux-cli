@@ -91,31 +91,31 @@ lint: ## Run cargo clippy with warnings denied
 	@mkdir -p $(ARTIFACT_ROOT)/lint/$(RUN_ID)
 	@CLIPPY_CONF_DIR=configs/rust CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee $(ARTIFACT_ROOT)/lint/$(RUN_ID)/report.txt
 
-test: ## Run workspace tests with cargo nextest
+test: ## Run workspace fast tests (skip #[ignore = "slow"])
 	@$(call require_tool,cargo-nextest)
 	@printf '%s\n' "run: cargo nextest run --workspace --profile $${NEXTEST_PROFILE:-default} --status-level $${NEXTEST_STATUS_LEVEL:-all} --final-status-level $${NEXTEST_FINAL_STATUS_LEVEL:-all} --show-progress $${NEXTEST_SHOW_PROGRESS:-counter}"
 	@mkdir -p $(ARTIFACT_ROOT)/test/$(RUN_ID)
 	@status=0; report_file="$(ARTIFACT_ROOT)/test/$(RUN_ID)/nextest.log"; \
 	cleanup() { $(cleanup_root_nextest); }; trap cleanup EXIT INT TERM; \
-	CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" -E "$${NEXTEST_FILTER_EXPR:-not test(/(^|::)slow_/)}" 2>&1 | tee "$$report_file"; \
+	CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" $${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} 2>&1 | tee "$$report_file"; \
 	status=$${PIPESTATUS:-$${pipestatus}}; \
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \
 	test $$status -eq 0
 
-test-slow: ## Run only slow_ tests with cargo nextest
+test-slow: ## Run only #[ignore = "slow"] tests
 	@$(call require_tool,cargo-nextest)
-	@printf '%s\n' "run: cargo nextest run --workspace --profile $${NEXTEST_PROFILE:-default} --status-level $${NEXTEST_STATUS_LEVEL:-all} --final-status-level $${NEXTEST_FINAL_STATUS_LEVEL:-all} --show-progress $${NEXTEST_SHOW_PROGRESS:-counter} -E test(/(^|::)slow_/)"
+	@printf '%s\n' "run: cargo nextest run --workspace --run-ignored only --profile $${NEXTEST_PROFILE:-default} --status-level $${NEXTEST_STATUS_LEVEL:-all} --final-status-level $${NEXTEST_FINAL_STATUS_LEVEL:-all} --show-progress $${NEXTEST_SHOW_PROGRESS:-counter}"
 	@mkdir -p $(ARTIFACT_ROOT)/test/$(RUN_ID)
 	@status=0; report_file="$(ARTIFACT_ROOT)/test/$(RUN_ID)/nextest-slow.log"; \
 	cleanup() { $(cleanup_root_nextest); }; trap cleanup EXIT INT TERM; \
-	CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" -E "test(/(^|::)slow_/)" 2>&1 | tee "$$report_file"; \
+	CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo nextest run --color always --cargo-quiet --workspace --config-file configs/nextest/nextest.toml --user-config-file none --target-dir "$(CARGO_TARGET_DIR)" --run-ignored only --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" 2>&1 | tee "$$report_file"; \
 	status=$${PIPESTATUS:-$${pipestatus}}; \
 	$(nextest_summary); \
 	trap - EXIT INT TERM; cleanup; \
 	test $$status -eq 0
 
-test-all: ## Run all workspace tests including slow_ and ignored tests
+test-all: ## Run full workspace test suite including slow and ignored tests
 	@$(call require_tool,cargo-nextest)
 	@printf '%s\n' "run: cargo nextest run --workspace --all-features --run-ignored all --retries 0 --profile $${NEXTEST_PROFILE:-default} --status-level $${NEXTEST_STATUS_LEVEL:-all} --final-status-level $${NEXTEST_FINAL_STATUS_LEVEL:-all} --show-progress $${NEXTEST_SHOW_PROGRESS:-counter}"
 	@mkdir -p $(ARTIFACT_ROOT)/test/$(RUN_ID)
