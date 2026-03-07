@@ -15,6 +15,7 @@ use bijux_dag_runtime::{
     capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
     effective_hpc_retry_policy, equivalent_to_local, hpc_array_job_supported,
     hpc_environment_fingerprint, hpc_log_collection_semantics, hpc_poll_response_recovered,
+    hpc_replay_fidelity_from_module_fingerprints, hpc_resource_fingerprint,
     hpc_scratch_staging_semantics, k8s_capability_declaration, map_node_policy_to_k8s_job,
     map_node_resources_to_k8s, map_node_to_hpc_queue_partition, map_timeout_to_hpc_walltime,
     matches_placement_policy, normalize_backend_failure, outputs_logs_equivalent,
@@ -23,9 +24,9 @@ use bijux_dag_runtime::{
     replay_allowed_across_backends, scratch_retention_required, staged_input_cleanup_required,
     validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
     BackendCapabilityDescriptor, BackendFailureMappingRule, BackendMaintenanceMode,
-    BackendReadinessProbe, CrossBackendReplayRule, HpcNodeExecutionContract,
-    K8sInjectionAvailability, K8sInjectionRequest, K8sWatchEvent, NodeExecutionContract,
-    WorkdirVolumeKind,
+    BackendReadinessProbe, CrossBackendReplayRule, HpcNodeExecutionContract, HpcReplayFidelity,
+    HpcResourceFingerprintInput, K8sInjectionAvailability, K8sInjectionRequest, K8sWatchEvent,
+    NodeExecutionContract, WorkdirVolumeKind,
 };
 use std::collections::BTreeMap;
 
@@ -414,4 +415,45 @@ fn hpc_environment_fingerprint_and_scheduler_version_capture_are_stable() {
     let metadata = capture_hpc_scheduler_version("slurm", "23.11.5");
     assert_eq!(metadata.scheduler_name, "slurm");
     assert_eq!(metadata.scheduler_version, "23.11.5");
+}
+
+#[test]
+fn hpc_resource_fingerprint_changes_with_partition_and_account() {
+    let baseline = HpcResourceFingerprintInput {
+        queue: "default".to_string(),
+        partition: "cpu".to_string(),
+        account: "team-a".to_string(),
+    };
+    let changed_partition = HpcResourceFingerprintInput {
+        queue: "default".to_string(),
+        partition: "gpu".to_string(),
+        account: "team-a".to_string(),
+    };
+    let changed_account = HpcResourceFingerprintInput {
+        queue: "default".to_string(),
+        partition: "cpu".to_string(),
+        account: "team-b".to_string(),
+    };
+    assert_ne!(
+        hpc_resource_fingerprint(&baseline),
+        hpc_resource_fingerprint(&changed_partition)
+    );
+    assert_ne!(
+        hpc_resource_fingerprint(&baseline),
+        hpc_resource_fingerprint(&changed_account)
+    );
+}
+
+#[test]
+fn hpc_module_drift_causes_replay_fidelity_downgrade() {
+    let exact = hpc_replay_fidelity_from_module_fingerprints("abc", "abc");
+    let drift = hpc_replay_fidelity_from_module_fingerprints("abc", "xyz");
+    assert_eq!(exact, HpcReplayFidelity::Exact);
+    assert_eq!(drift, HpcReplayFidelity::Downgraded);
+}
+
+#[test]
+fn hpc_delayed_scheduler_state_propagation_failure_injection_is_detected() {
+    assert!(hpc_poll_response_recovered(20, 30));
+    assert!(!hpc_poll_response_recovered(75, 30));
 }

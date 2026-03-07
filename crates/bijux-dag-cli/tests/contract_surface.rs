@@ -391,6 +391,20 @@ fn capabilities_backend_query_supports_kubernetes() {
 }
 
 #[test]
+fn capabilities_backend_query_supports_hpc() {
+    let output = dag_command()
+        .args(["dag", "capabilities", "--backend", "hpc", "--json"])
+        .output()
+        .expect("capabilities hpc backend");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("capabilities hpc json");
+    assert_eq!(payload["command"], "dag.capabilities");
+    assert_eq!(payload["data"]["backend"], "hpc");
+    assert_eq!(payload["data"]["status"], "simulated");
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");

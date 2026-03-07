@@ -301,6 +301,19 @@ pub struct HpcSchedulerVersionMetadata {
     pub scheduler_version: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HpcResourceFingerprintInput {
+    pub queue: String,
+    pub partition: String,
+    pub account: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HpcReplayFidelity {
+    Exact,
+    Downgraded,
+}
+
 const TERMINAL_PHASES: [&str; 3] = ["Succeeded", "Failed", "Cancelled"];
 
 pub fn matches_placement_policy(
@@ -653,5 +666,26 @@ pub fn capture_hpc_scheduler_version(
     HpcSchedulerVersionMetadata {
         scheduler_name: scheduler_name.to_string(),
         scheduler_version: scheduler_version.to_string(),
+    }
+}
+
+pub fn hpc_resource_fingerprint(input: &HpcResourceFingerprintInput) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.queue.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(input.partition.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(input.account.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+pub fn hpc_replay_fidelity_from_module_fingerprints(
+    source_fingerprint: &str,
+    target_fingerprint: &str,
+) -> HpcReplayFidelity {
+    if source_fingerprint == target_fingerprint {
+        HpcReplayFidelity::Exact
+    } else {
+        HpcReplayFidelity::Downgraded
     }
 }

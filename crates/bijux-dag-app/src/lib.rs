@@ -2134,6 +2134,26 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                             ]
                         })
                     }
+                    "hpc" | "slurm" => {
+                        let version =
+                            bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
+                        let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
+                        json!({
+                            "format": "capabilities/v1",
+                            "backend": "hpc",
+                            "status": "simulated",
+                            "capabilities": {
+                                "queue_partition_mapping": true,
+                                "walltime_mapping": true,
+                                "scheduler_retry_precedence": retry.effective_retry_owner
+                            },
+                            "version_metadata": version,
+                            "notes": [
+                                "hpc execution remains simulated in this repository",
+                                "slurm contract semantics are evidence-backed"
+                            ]
+                        })
+                    }
                     other => {
                         return emit_json(
                             &cli,
@@ -2146,7 +2166,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                             }),
                             vec![json!({
                                 "message": format!("unsupported backend query: {other}"),
-                                "remediation": "use --backend kubernetes"
+                                "remediation": "use --backend kubernetes or --backend hpc"
                             })],
                             ExitCode::from(2),
                         );
