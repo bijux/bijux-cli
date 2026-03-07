@@ -1,0 +1,7 @@
+{
+  "id": "chain",
+  "description": "Linear dependency chain baseline",
+  "shape": "chain",
+  "nodes": 6,
+  "focus": ["correctness", "timeline"]
+}

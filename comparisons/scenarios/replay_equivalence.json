@@ -1,0 +1,6 @@
+{
+  "id": "replay-equivalence",
+  "description": "Replay equivalence and explicit difference reasons",
+  "shape": "medium",
+  "focus": ["replay", "determinism"]
+}

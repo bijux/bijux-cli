@@ -1,0 +1,6 @@
+{
+  "id": "failure-diagnostics",
+  "description": "Failure explainability and grouped root cause surfaces",
+  "shape": "medium",
+  "focus": ["diagnostics", "failure"]
+}

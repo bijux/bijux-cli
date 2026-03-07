@@ -1,0 +1,6 @@
+{
+  "id": "artifact-inspectability",
+  "description": "Run directory and artifact index inspectability quality",
+  "shape": "medium",
+  "focus": ["artifacts", "operator-ux"]
+}

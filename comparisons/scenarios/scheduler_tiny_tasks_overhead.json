@@ -1,0 +1,6 @@
+{
+  "id": "scheduler-tiny-tasks-overhead",
+  "description": "Scheduler overhead profile on many tiny tasks",
+  "shape": "wide-many-tiny",
+  "focus": ["scheduler-overhead", "performance-shape"]
+}

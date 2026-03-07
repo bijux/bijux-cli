@@ -1,0 +1,6 @@
+{
+  "id": "failure-propagation",
+  "description": "Root failure with downstream policy propagation",
+  "shape": "diamond",
+  "focus": ["failure-propagation", "policy"]
+}

@@ -1,0 +1,17 @@
+{
+  "format": "comparison-baseline/v1",
+  "engine": "bijux-dag",
+  "scenarios": [
+    {"id": "chain", "status": "completed", "retries": 0, "cache_hits": 0},
+    {"id": "diamond", "status": "completed", "retries": 0, "cache_hits": 0},
+    {"id": "retry-timeout", "status": "failed", "retries": 2, "cache_hits": 0},
+    {"id": "cache-reuse-shape", "status": "completed", "retries": 0, "cache_hits": 3},
+    {"id": "replay-equivalence", "status": "completed", "retries": 0, "cache_hits": 1},
+    {"id": "failure-propagation", "status": "failed", "retries": 1, "cache_hits": 0},
+    {"id": "determinism", "status": "completed", "retries": 0, "cache_hits": 0},
+    {"id": "operator-inspectability", "status": "completed", "retries": 0, "cache_hits": 0},
+    {"id": "failure-diagnostics", "status": "failed", "retries": 1, "cache_hits": 0},
+    {"id": "scheduler-tiny-tasks-overhead", "status": "completed", "retries": 0, "cache_hits": 0},
+    {"id": "artifact-inspectability", "status": "completed", "retries": 0, "cache_hits": 0}
+  ]
+}

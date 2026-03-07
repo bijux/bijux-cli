@@ -1,0 +1,6 @@
+{
+  "id": "cache-reuse-shape",
+  "description": "Warm vs cold cache semantic reuse",
+  "shape": "fanout",
+  "focus": ["cache", "correctness"]
+}

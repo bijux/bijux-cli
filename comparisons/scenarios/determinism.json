@@ -1,0 +1,6 @@
+{
+  "id": "determinism",
+  "description": "Repeated runs with fixed inputs produce stable outcomes",
+  "shape": "medium",
+  "focus": ["determinism", "replay"]
+}
