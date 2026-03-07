@@ -74,6 +74,11 @@ enum CommandLine {
         #[command(subcommand)]
         command: RepoCommand,
     },
+    /// Run focused repository verification checks
+    Verify {
+        #[command(subcommand)]
+        command: VerifyCommand,
+    },
     /// Validate and preview scheduling definitions
     Schedule {
         #[command(subcommand)]
@@ -298,6 +303,16 @@ enum RepoCommand {
     BattleScenarios,
     /// Validate battle scenario trust-property mappings
     BattleValidate,
+}
+
+#[derive(Subcommand)]
+enum VerifyCommand {
+    /// Validate evidence ownership metadata completeness
+    EvidenceOwnership,
+    /// Validate evidence drift and legacy scenario-root freeze
+    EvidenceDrift,
+    /// Validate that tests and governance consumers reference evidence-owned assets
+    EvidenceConsumers,
 }
 
 #[derive(Subcommand)]
@@ -589,6 +604,15 @@ const TEST_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::ReadWrite,
         run: || run_e2e_matrix(),
     },
+    SuiteDef {
+        id: "evidence-consumer-integrity",
+        description: "tests and fixtures consume evidence-owned scenario assets",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_evidence_consumers_verify(),
+    },
 ];
 
 const CONTRACT_SUITES: &[SuiteDef] = &[
@@ -678,6 +702,19 @@ const CONTRACT_SUITES: &[SuiteDef] = &[
                     "execution_backend_contract",
                 ],
             )
+        },
+    },
+    SuiteDef {
+        id: "evidence-consumer-integrity",
+        description: "evidence ownership, drift, and consumer references are enforceable",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || {
+            run_evidence_ownership_verify()?;
+            run_evidence_drift_verify()?;
+            run_evidence_consumers_verify()
         },
     },
 ];
@@ -1718,6 +1755,29 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_battle_scenario_mapping_validate(),
+            ),
+        },
+        CommandLine::Verify { command } => match command {
+            VerifyCommand::EvidenceOwnership => run_command_reported(
+                &context,
+                "verify.evidence-ownership",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_ownership_verify(),
+            ),
+            VerifyCommand::EvidenceDrift => run_command_reported(
+                &context,
+                "verify.evidence-drift",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_drift_verify(),
+            ),
+            VerifyCommand::EvidenceConsumers => run_command_reported(
+                &context,
+                "verify.evidence-consumers",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_consumers_verify(),
             ),
         },
         CommandLine::Schedule { command } => match command {
@@ -4823,6 +4883,94 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
     Ok(())
 }
 
+fn run_evidence_ownership_verify() -> Result<(), String> {
+    run_evidence_metadata_validate()
+}
+
+fn run_evidence_drift_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let legacy_roots = [
+        "examples",
+        "benchmarks/scenarios",
+        "benchmarks/baselines",
+        "comparisons/scenarios",
+        "comparisons/bijux/baselines",
+        "tests/e2e/fixtures",
+        "tests/e2e/replay/fixtures",
+        "tests/e2e/compat",
+        "tests/e2e/container",
+    ];
+    let mut violations = Vec::new();
+    for legacy_root in legacy_roots {
+        let base = root.join(legacy_root);
+        if !base.exists() {
+            continue;
+        }
+        let mut files = Vec::new();
+        collect_all_files(&base, &mut files)?;
+        for file in files {
+            let rel = file
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            if rel.ends_with(".json") || rel.ends_with(".dag.json") {
+                violations.push(rel);
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "legacy scenario roots still contain scenario assets: {}",
+            violations.join(", ")
+        ))
+    }
+}
+
+fn run_evidence_consumers_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let restricted_patterns = [
+        "tests/e2e/replay/fixtures/",
+        "tests/e2e/fixtures/e2e_minimal.json",
+        "tests/e2e/compat/legacy_fixture_validation.json",
+        "tests/e2e/container/container_execution_if_supported.json",
+        "benchmarks/scenarios/",
+        "comparisons/scenarios/",
+    ];
+    let mut violations = Vec::new();
+    let mut files = Vec::new();
+    collect_all_files(&root, &mut files)?;
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !(rel.ends_with(".rs")
+            || rel.ends_with(".md")
+            || rel.ends_with(".json")
+            || rel.ends_with(".toml"))
+        {
+            continue;
+        }
+        let text = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        for pattern in restricted_patterns {
+            if text.contains(pattern) {
+                violations.push(format!(
+                    "{rel}: contains legacy scenario reference `{pattern}`"
+                ));
+            }
+        }
+    }
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(" | "))
+    }
+}
+
 fn load_battle_scenario_records(root: &Path) -> Result<Vec<(String, String)>, String> {
     let workflows_root = root.join("evidence/battle/workflows");
     let mut files = Vec::new();
@@ -7732,10 +7880,10 @@ fn run_replay_contract_guard() -> Result<(), String> {
         "docs/spec/REPLAY_CONTRACT.md",
         "docs/reports/foundation/replay_hardening_report.md",
         "configs/schema/operator/replay_diff.schema.json",
-        "tests/e2e/replay/fixtures/match_case.json",
-        "tests/e2e/replay/fixtures/mismatch_case.json",
-        "tests/e2e/replay/fixtures/corruption_case.json",
-        "tests/e2e/replay/fixtures/unsupported_version_case.json",
+        "evidence/cache/replay/match_case.json",
+        "evidence/cache/replay/mismatch_case.json",
+        "evidence/cache/replay/corruption_case.json",
+        "evidence/cache/replay/unsupported_version_case.json",
         "crates/bijux-dag-app/tests/replay_contract.rs",
         "crates/bijux-dag-runtime/tests/replay_contract.rs",
         "crates/bijux-dag-runtime/tests/runtime_replay_contracts.rs",
