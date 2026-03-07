@@ -1007,6 +1007,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_operator_ux_guard(),
     },
     SuiteDef {
+        id: "authoring-ux",
+        description: "authoring docs examples and fixture parse/validate alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_authoring_ux_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -5057,6 +5066,70 @@ fn run_operator_ux_guard() -> Result<(), String> {
     ] {
         if !index.contains(command) {
             return Err(format!("operator command index missing `{command}`"));
+        }
+    }
+    Ok(())
+}
+
+fn run_authoring_ux_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required_docs = [
+        "docs/spec/AUTHORING_UX_CONTRACT.md",
+        "docs/user/AUTHORING_GUIDE.md",
+    ];
+    let required_examples = [
+        "tests/authoring/examples/minimal.json",
+        "tests/authoring/examples/medium.json",
+        "tests/authoring/examples/pattern_chain.json",
+        "tests/authoring/examples/pattern_diamond.json",
+        "tests/authoring/examples/pattern_fanout.json",
+        "tests/authoring/examples/pattern_aggregation.json",
+        "tests/authoring/examples/pattern_cache_heavy.json",
+        "tests/authoring/examples/pattern_replay_sensitive.json",
+    ];
+    let required_bad = [
+        "tests/authoring/bad/undeclared_outputs.json",
+        "tests/authoring/bad/invalid_refs.json",
+        "tests/authoring/bad/cycle.json",
+        "tests/authoring/bad/invalid_selectors.json",
+        "tests/authoring/bad/unsupported_adapter_payload.json",
+    ];
+    let mut missing = Vec::new();
+    for rel in required_docs
+        .iter()
+        .chain(required_examples.iter())
+        .chain(required_bad.iter())
+    {
+        if !root.join(rel).exists() {
+            missing.push((*rel).to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "authoring ux required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let contract =
+        fs::read_to_string(root.join("docs/spec/AUTHORING_UX_CONTRACT.md")).map_err(|err| err.to_string())?;
+    for rel in required_examples.iter().chain(required_bad.iter()) {
+        if !contract.contains(rel) {
+            return Err(format!(
+                "authoring contract must reference executable fixture: {rel}"
+            ));
+        }
+    }
+
+    for rel in required_examples {
+        let payload = fs::read_to_string(root.join(rel)).map_err(|err| err.to_string())?;
+        let graph = bijux_dag_core::parse_graph_strict(&payload).map_err(|err| err.to_string())?;
+        let has_error = graph
+            .validate_with_warnings()
+            .iter()
+            .any(|d| d.severity == bijux_dag_core::Severity::Error);
+        if has_error {
+            return Err(format!("authoring example must validate without errors: {rel}"));
         }
     }
     Ok(())
