@@ -106,8 +106,8 @@ fn dag_root_help_lists_umbrella_commands() {
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("dag"));
-    assert!(text.contains("rag"));
-    assert!(text.contains("rar"));
+    assert!(text.contains("completions"));
+    assert!(text.contains("Git for computation graphs"));
 }
 
 #[test]
@@ -316,23 +316,64 @@ fn dag_run_runtime_failure_returns_nonzero_exit() {
 }
 
 #[test]
-fn dag_rag_is_not_implemented_with_stable_exit_code() {
-    let output = dag_command().arg("rag").output().expect("rag command");
-
-    assert!(!output.status.success());
-    assert_eq!(output.status.code(), Some(2));
-    let text = String::from_utf8_lossy(&output.stderr);
-    assert!(text.contains("not implemented"));
+fn completions_generation_supports_all_supported_shells() {
+    for shell in ["bash", "zsh", "fish", "elvish", "powershell"] {
+        let output = dag_command()
+            .args(["completions", "--shell", shell])
+            .output()
+            .expect("completion command");
+        assert!(output.status.success(), "shell {shell} failed");
+        assert!(
+            !output.stdout.is_empty(),
+            "shell {shell} emitted empty completion"
+        );
+    }
 }
 
 #[test]
-fn dag_rar_is_not_implemented_with_stable_exit_code() {
-    let output = dag_command().arg("rar").output().expect("rar command");
+fn fsck_alias_surface_runs_on_valid_run_dir() {
+    let dag = write_temp_dag();
+    let out_dir = tempdir().expect("run out");
+    let run_output = dag_command()
+        .args([
+            "dag",
+            "run",
+            &dag,
+            "--out",
+            out_dir.path().to_str().expect("run out path"),
+        ])
+        .output()
+        .expect("run");
+    assert!(
+        run_output.status.success(),
+        "run must succeed for fsck setup"
+    );
 
-    assert!(!output.status.success());
-    assert_eq!(output.status.code(), Some(2));
-    let text = String::from_utf8_lossy(&output.stderr);
-    assert!(text.contains("not implemented"));
+    let mut entries: Vec<_> = std::fs::read_dir(out_dir.path())
+        .expect("read out dir")
+        .filter_map(Result::ok)
+        .collect();
+    entries.sort_by_key(|entry| entry.file_name());
+    let run_dir = entries
+        .last()
+        .expect("expected run directory")
+        .path()
+        .to_string_lossy()
+        .into_owned();
+
+    let fsck_output = dag_command()
+        .args(["dag", "fsck", &run_dir, "--strict", "--json"])
+        .output()
+        .expect("fsck");
+    assert!(
+        fsck_output.status.success(),
+        "fsck on valid run directory should succeed"
+    );
+
+    let payload: serde_json::Value =
+        serde_json::from_slice(&fsck_output.stdout).expect("fsck json payload");
+    assert_eq!(payload["command"], "dag.fsck");
+    assert_eq!(payload["ok"], true);
 }
 
 #[test]
