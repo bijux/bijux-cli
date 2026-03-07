@@ -405,6 +405,24 @@ fn capabilities_backend_query_supports_hpc() {
 }
 
 #[test]
+fn capabilities_backend_query_supports_remote() {
+    let output = dag_command()
+        .args(["dag", "capabilities", "--backend", "remote", "--json"])
+        .output()
+        .expect("capabilities remote backend");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("capabilities remote json");
+    assert_eq!(payload["command"], "dag.capabilities");
+    assert_eq!(payload["data"]["backend"], "remote");
+    assert_eq!(payload["data"]["status"], "simulated");
+    assert_eq!(
+        payload["data"]["capabilities"]["worker_pool_capability_negotiation"],
+        true
+    );
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");
