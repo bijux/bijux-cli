@@ -1,9 +1,22 @@
 use bijux_dag_app::{dag_command, dag_run};
 use clap::{Arg, Command as ClapCommand};
 use clap_complete::{generate, shells};
+use std::panic::AssertUnwindSafe;
 use std::process::ExitCode;
+#[cfg(test)]
+use serde_json as _;
+#[cfg(test)]
+use tempfile as _;
 
 fn main() -> ExitCode {
+    let argv = std::env::args().collect::<Vec<_>>();
+    if argv.len() == 2 && argv.get(1).is_some_and(|arg| arg == "dag") {
+        let mut dag = dag_command();
+        let _ = dag.print_help();
+        println!();
+        return ExitCode::SUCCESS;
+    }
+
     let mut cmd = ClapCommand ::new("bijux")
         .about("Bijux umbrella CLI")
         .subcommand_required(true)
@@ -24,14 +37,22 @@ fn main() -> ExitCode {
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
-        Some(("dag", sub)) => match std::panic::catch_unwind(|| dag_run(sub)) {
-            Ok(Ok(code)) => code,
-            Ok(Err(code)) => code,
-            Err(_) => {
-                eprintln!("internal error: unexpected panic");
-                ExitCode::from(1)
+        Some(("dag", sub)) => {
+            if sub.subcommand_name().is_none() {
+                let mut dag = dag_command();
+                let _ = dag.print_help();
+                println!();
+                return ExitCode::SUCCESS;
             }
-        },
+            match std::panic::catch_unwind(AssertUnwindSafe(|| dag_run(sub))) {
+                Ok(Ok(code)) => code,
+                Ok(Err(code)) => code,
+                Err(_) => {
+                    eprintln!("internal error: unexpected panic");
+                    ExitCode::from(1)
+                }
+            }
+        }
         Some(("completions", sub)) => {
             let shell = sub.get_one::<String>("shell").map_or("", String::as_str);
             match shell {

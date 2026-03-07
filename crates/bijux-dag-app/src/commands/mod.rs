@@ -131,7 +131,6 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: RunsCommands,
     },
-    #[command(hide = true)]
     Diff {
         run_a: PathBuf,
         run_b: PathBuf,
@@ -140,7 +139,6 @@ pub(crate) enum Commands {
         #[arg(long)]
         explain: bool,
     },
-    #[command(hide = true)]
     Explain {
         run_dir: PathBuf,
         #[arg(long)]
@@ -152,12 +150,10 @@ pub(crate) enum Commands {
         #[arg(long)]
         id: String,
     },
-    #[command(hide = true)]
     Status {
         run_dir: PathBuf,
     },
     #[command(name = "verify")]
-    #[command(hide = true)]
     Verify {
         run_dir: PathBuf,
         #[arg(long)]

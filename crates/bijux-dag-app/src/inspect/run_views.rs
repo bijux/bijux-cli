@@ -36,10 +36,10 @@ fn inspect_integrity_state(run_dir: &Path, manifest: &Value) -> &'static str {
         return "corrupt";
     }
     let supported = ["run-dir/v0.1", "run/v0.1"];
-    if let Some(version) = manifest.get("run_dir_format").and_then(Value::as_str)
-        && !supported.contains(&version)
-    {
-        return "unsupported";
+    if let Some(version) = manifest.get("run_dir_format").and_then(Value::as_str) {
+        if !supported.contains(&version) {
+            return "unsupported";
+        }
     }
     "healthy"
 }

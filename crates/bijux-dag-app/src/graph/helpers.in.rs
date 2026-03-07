@@ -146,10 +146,20 @@ fn doctor_report() -> Result<serde_json::Value, ExitCode> {
 fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let input = read_file(path)?;
     let graph = parse_graph(&input)?;
-    if graph.spec != from {
+    let from_normalized = if from == "0.1" || from == "v0.1" {
+        SPEC_VERSION.to_string()
+    } else {
+        from.to_string()
+    };
+    let to_normalized = if to == "0.1" || to == "v0.1" {
+        SPEC_VERSION.to_string()
+    } else {
+        to.to_string()
+    };
+    if graph.spec != from_normalized {
         return Err(ExitCode::from(3));
     }
-    if from == to {
+    if from_normalized == to_normalized {
         return Ok("no migration needed".to_string());
     }
     Err(ExitCode::from(3))
@@ -157,10 +167,20 @@ fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
 
 fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let snapshot = load_snapshot(path)?;
-    if snapshot.graph.spec != from {
+    let from_normalized = if from == "0.1" || from == "v0.1" {
+        SPEC_VERSION.to_string()
+    } else {
+        from.to_string()
+    };
+    let to_normalized = if to == "0.1" || to == "v0.1" {
+        SPEC_VERSION.to_string()
+    } else {
+        to.to_string()
+    };
+    if snapshot.graph.spec != from_normalized {
         return Err(ExitCode::from(3));
     }
-    if from == to {
+    if from_normalized == to_normalized {
         return Ok("no migration needed".to_string());
     }
     Err(ExitCode::from(3))

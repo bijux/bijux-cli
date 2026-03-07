@@ -77,12 +77,23 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tar::{Archive, Builder};
+use thiserror as _;
+#[cfg(test)]
+use bijux_dag_testkit as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command().name("dag")
+    DagCli::command()
+        .name("dag")
+        .subcommand_required(false)
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
+    if matches.subcommand_name().is_none() {
+        let mut cmd = dag_command();
+        let _ = cmd.print_help();
+        println!();
+        return Ok(ExitCode::SUCCESS);
+    }
     let cli = DagCli::from_arg_matches(matches).map_err(|_| ExitCode::from(2))?;
     run(cli)
 }
@@ -99,6 +110,7 @@ struct LintDiagnostic {
 #[derive(Debug, Serialize)]
 struct JsonEnvelope {
     ok: bool,
+    status: String,
     command: String,
     data: Value,
     diagnostics: Vec<Value>,
@@ -136,6 +148,7 @@ fn emit_json(
         };
         let envelope = JsonEnvelope {
             ok,
+            status: if ok { "ok" } else { "invalid" }.to_string(),
             command: command.to_string(),
             data,
             diagnostics,
@@ -335,6 +348,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     }
                 }
             }
+            if !cli.quiet {
+                println!("status: {}", if fail { "invalid" } else { "ok" });
+            }
             if fail {
                 return Err(ExitCode::from(2));
             }
@@ -462,7 +478,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ShowEffectivePlan { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let plan = build_plan(&graph).map_err(|_| ExitCode::from(2))?;
+            let plan = build_plan(&graph, &RuntimeConfig::default());
             let payload = serde_json::to_value(&plan).map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -561,6 +577,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     clean_env,
                 },
                 selectors,
+                ..RuntimeConfig::default()
             };
             let run_path = runtime
                 .run(&snapshot.graph, out, options)
@@ -952,6 +969,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     clean_env,
                 },
                 selectors,
+                ..RuntimeConfig::default()
             };
             let run_path = runtime
                 .run(&graph, out, options)
@@ -1129,6 +1147,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Status { run_dir } => {
             let manifest = read_file(&run_dir.join("manifest.json"))?;
             let nodes_dir = run_dir.join("nodes");
+            let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
             let mut statuses = Vec::new();
             if nodes_dir.exists() {
                 for entry in fs::read_dir(nodes_dir).map_err(|_| ExitCode::from(3))? {
@@ -1136,7 +1155,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     let trace_path = entry.path().join("trace.json");
                     if trace_path.exists() {
                         let t = read_file(&trace_path)?;
-                        statuses.push(t);
+                        statuses.push(serde_json::from_str::<Value>(&t).unwrap_or(Value::String(t)));
                     }
                 }
             }
@@ -1145,7 +1164,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     &cli,
                     "dag.status",
                     true,
-                    json!({"manifest": manifest, "traces": statuses}),
+                    json!({"manifest": manifest_json, "traces": statuses}),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
@@ -1614,6 +1633,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
             let bundle_version = val
                 .get("bundle_version")
+                .or_else(|| val.get("export_bundle_version"))
                 .and_then(Value::as_str)
                 .unwrap_or("");
             if bundle_version != "export-bundle/v0.1" {
@@ -1635,7 +1655,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("import summary: {}", summary);
                 return Err(ExitCode::from(3));
             }
-            let invariant_violations = verify_bundle_invariants(&val);
+            let mut invariant_violations = verify_bundle_invariants(&val);
+            if val.get("bundle_version").is_none() && val.get("export_bundle_version").is_some() {
+                invariant_violations.retain(|v| {
+                    !v.starts_with("INV-EXPORT-VERSION-001")
+                        && !v.starts_with("INV-EXPORT-MODE-001")
+                        && !v.starts_with("INV-EXPORT-VERIFY-001 missing graph_snapshot")
+                        && !v.starts_with("INV-EXPORT-VERIFY-001 missing outputs map")
+                });
+            }
             let nodes = val
                 .get("node_traces")
                 .and_then(|v| v.as_object())
@@ -1771,7 +1799,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 let input = read_file(path)?;
                 let graph = parse_graph(&input)?;
                 report["graph_schema_version"] = json!(graph.spec);
-                if graph.spec != "0.1" {
+                let supported_graph_spec =
+                    graph.spec == "0.1" || graph.spec == "v0.1" || graph.spec == SPEC_VERSION;
+                if !supported_graph_spec {
                     report["support_status"] = json!("unsupported-graph-schema");
                     if cli.json {
                         return emit_json(
@@ -1954,7 +1984,18 @@ fn read_file(path: &Path) -> Result<String, ExitCode> {
 fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
     match parse_graph_strict(input) {
         Ok(g) => Ok(g),
-        Err(GraphError::InvalidSpec(_)) => Err(ExitCode::from(2)),
+        Err(GraphError::InvalidSpec(_)) => {
+            let mut value = serde_json::from_str::<Value>(input).map_err(|_| ExitCode::from(2))?;
+            if let Some(spec) = value.get("spec").and_then(Value::as_str) {
+                if spec == "0.1" || spec == "v0.1" {
+                    value["spec"] = Value::String(SPEC_VERSION.to_string());
+                    let rewritten = serde_json::to_string(&value).map_err(|_| ExitCode::from(2))?;
+                    return parse_graph_strict(&rewritten).map_err(|_| ExitCode::from(1));
+                }
+            }
+            Err(ExitCode::from(1))
+        }
+        Err(GraphError::Json(_)) => Err(ExitCode::from(2)),
         Err(_) => Err(ExitCode::from(3)),
     }
 }
@@ -1965,10 +2006,10 @@ fn env_cache_dir() -> Option<PathBuf> {
 
 fn env_partial_runtime_config() -> Option<PartialRuntimeSurfaceConfig> {
     let mut partial = PartialRuntimeSurfaceConfig::default();
-    if let Ok(raw_jobs) = std::env::var("BIJUX_DAG_JOBS")
-        && let Ok(jobs) = raw_jobs.parse::<usize>()
-    {
-        partial.jobs = Some(jobs);
+    if let Ok(raw_jobs) = std::env::var("BIJUX_DAG_JOBS") {
+        if let Ok(jobs) = raw_jobs.parse::<usize>() {
+            partial.jobs = Some(jobs);
+        }
     }
     if let Ok(raw_cache_mode) = std::env::var("BIJUX_DAG_CACHE_MODE") {
         partial.cache_mode = match raw_cache_mode.to_ascii_lowercase().as_str() {
@@ -1986,10 +2027,10 @@ fn env_partial_runtime_config() -> Option<PartialRuntimeSurfaceConfig> {
             _ => None,
         };
     }
-    if let Ok(raw_policy) = std::env::var("BIJUX_DAG_POLICY_JSON")
-        && let Ok(policy) = serde_json::from_str::<PolicySurfaceConfig>(&raw_policy)
-    {
-        partial.policy = Some(policy);
+    if let Ok(raw_policy) = std::env::var("BIJUX_DAG_POLICY_JSON") {
+        if let Ok(policy) = serde_json::from_str::<PolicySurfaceConfig>(&raw_policy) {
+            partial.policy = Some(policy);
+        }
     }
     if partial == PartialRuntimeSurfaceConfig::default() {
         None
@@ -2728,7 +2769,7 @@ fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
 }
 
 
-include!("graph_helpers.in.rs");
+include!("graph/helpers.in.rs");
 
 fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     let mut violations = Vec::new();
