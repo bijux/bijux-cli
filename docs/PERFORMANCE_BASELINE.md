@@ -1,12 +1,9 @@
-# Performance baseline (provisional)
+# Performance baseline evidence
 
-- Baseline command: `cargo run -p bijux-dev-dag -- benchmark-baseline`
-- Fixture families:
-  - `benchmarks/fixtures/large_dag.json`
-  - `benchmarks/fixtures/scheduler_linear_32.json`
-  - `benchmarks/fixtures/scheduler_parallel_64.json`
-  - `benchmarks/fixtures/scheduler_diamond_fanout.json`
-- Output artifact: `artifacts/benchmarks/baseline.json`
+Use `cargo run -p bijux-dev-dag -- benchmark-baseline` to record structured system benchmark results.
 
-This baseline is provisional and intended for early trend tracking across graph families.
-It is not a release guarantee until strict measured performance gates are enforced.
+Baseline artifacts are stored under `artifacts/benchmarks/` and compared against
+`benchmarks/baselines/` references.
+
+Performance claims must reference benchmark evidence artifacts. Timing smoke wrappers
+without scenario metadata are not accepted as evidence.

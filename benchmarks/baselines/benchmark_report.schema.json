@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BenchmarkReport",
+  "type": "object",
+  "required": [
+    "benchmark_format",
+    "commit_sha",
+    "rust_version",
+    "machine",
+    "scenario_results"
+  ],
+  "properties": {
+    "benchmark_format": {"type": "string"},
+    "commit_sha": {"type": "string"},
+    "rust_version": {"type": "string"},
+    "machine": {"type": "object"},
+    "scenario_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenario_id", "class", "elapsed_ms"],
+        "properties": {
+          "scenario_id": {"type": "string"},
+          "class": {"type": "string"},
+          "elapsed_ms": {"type": "number"}
+        }
+      }
+    }
+  }
+}

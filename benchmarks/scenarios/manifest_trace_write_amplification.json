@@ -1,0 +1,1 @@
+{"scenario_id":"manifest-trace-write-amplification","class":"manifest-finalize","graph":"benchmarks/fixtures/large_dag.json","focus":"trace-write-amplification"}
