@@ -1,4 +1,5 @@
 {
+  "scenario_id": "e2e_matrix",
   "matrix_id": "e2e-binary-and-crate-entrypoints",
   "entries": [
     {

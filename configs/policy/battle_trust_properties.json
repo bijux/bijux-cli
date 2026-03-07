@@ -115,7 +115,8 @@
     "selection-include-exclude-filters",
     "timeout_workflow",
     "ugly_realistic_dag_workflow",
-    "version_compatibility_workflow"
+    "version_compatibility_workflow",
+    "e2e_matrix"
   ],
   "scenario_trust_map": {
     "artifact_heavy_workflow": [
@@ -276,6 +277,10 @@
     "e2e-minimal-parse-validate-run-inspect-replay": [
       "tp_deterministic_scheduling",
       "tp_replay_equivalence",
+      "tp_operator_observability"
+    ],
+    "e2e_matrix": [
+      "tp_plan_truth",
       "tp_operator_observability"
     ]
   },

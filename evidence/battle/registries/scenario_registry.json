@@ -297,6 +297,22 @@
         "tp_plan_truth",
         "tp_state_machine_legality"
       ]
+    },
+    {
+      "scenario": "e2e_matrix",
+      "path": "evidence/battle/workflows/e2e_matrix.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_operator_observability"
+      ]
+    },
+    {
+      "scenario": "e2e_matrix",
+      "path": "evidence/battle/workflows/e2e_matrix.json",
+      "trust_properties": [
+        "tp_plan_truth",
+        "tp_operator_observability"
+      ]
     }
   ]
 }

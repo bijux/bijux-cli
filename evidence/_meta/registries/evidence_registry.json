@@ -1,5 +1,5 @@
 {
-  "asset_count": 112,
+  "asset_count": 114,
   "assets": [
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
@@ -73,6 +73,25 @@
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "move",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/minimal_consumer.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
       "trust_properties": [
         "schema-compatibility"
       ]
@@ -417,6 +436,26 @@
       "status": "keep",
       "trust_properties": [
         "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/e2e_matrix.json",
+      "consumers": [
+        "e2e-matrix",
+        "battle-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/e2e_matrix.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/e2e_matrix.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "plan-truth",
+        "operator-observability"
       ]
     },
     {
@@ -2054,7 +2093,7 @@
       "kind": "perf",
       "owner": "team-performance",
       "registry_key": "perf:evidence/perf/scenarios/tiny_canonical.json",
-      "release_blocking": false,
+      "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
       "trust_properties": [

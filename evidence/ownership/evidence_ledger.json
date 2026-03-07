@@ -835,6 +835,40 @@
       "why_exists": "provide executable authoring references"
     },
     {
+      "canonical_location": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "canonical_path": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a minimal consumer graph fixture for onboarding and contract validation"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/multi-output-artifact.dag.json",
       "canonical_path": "evidence/authoring/examples/multi-output-artifact.dag.json",
       "consumer_surfaces": [
@@ -2703,6 +2737,42 @@
       ],
       "trust_property": "determinism",
       "why_exists": "container-capable execution scenario remains evidence-owned and policy-governed"
+    },
+    {
+      "canonical_location": "evidence/battle/workflows/e2e_matrix.json",
+      "canonical_path": "evidence/battle/workflows/e2e_matrix.json",
+      "consumer_surfaces": [
+        "e2e-matrix",
+        "battle-suite"
+      ],
+      "consumers": [
+        "e2e-matrix",
+        "battle-suite"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "battle",
+      "id": "evidence/battle/workflows/e2e_matrix.json",
+      "implementation_status": "implemented",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "path": "evidence/battle/workflows/e2e_matrix.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "plan-truth",
+        "operator-observability"
+      ],
+      "trust_properties_protected": [
+        "plan-truth",
+        "operator-observability"
+      ],
+      "trust_property": "plan-truth",
+      "why_exists": "execute the top-level e2e matrix through evidence-owned battle scenario definitions"
     },
     {
       "canonical_location": "evidence/battle/workflows/e2e_minimal.json",
@@ -5761,7 +5831,7 @@
       "kind": "perf",
       "owner": "team-performance",
       "path": "evidence/perf/scenarios/tiny_canonical.json",
-      "release_blocking": false,
+      "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
       "status": "keep",

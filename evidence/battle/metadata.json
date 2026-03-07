@@ -755,6 +755,25 @@
         "replay_equivalence_expected": true,
         "cache_integrity_expected": false
       }
+    },
+    "e2e_matrix": {
+      "grade": "battle",
+      "why_exists": "Preserve the top-level end-to-end matrix contract as battle-owned evidence.",
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "battle",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "plan-truth",
+        "operator-observability"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     }
   }
 }

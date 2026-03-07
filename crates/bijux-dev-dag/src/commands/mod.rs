@@ -7414,7 +7414,7 @@ fn run_adoption_surfaces_guard() -> Result<(), String> {
         "docs/reference/SUPPORT_MATRIX.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
         "docs/user/TRUST_BOUNDARIES.md",
-        "crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json",
+        "evidence/authoring/examples/minimal_consumer.dag.json",
         "crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md",
     ];
     let mut missing = Vec::new();

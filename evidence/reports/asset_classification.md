@@ -170,4 +170,4 @@ Classification for files in tasks 21-34 scopes.
 | evidence/fault/README.md | fault | transitional | root-owned | evidence/fault |  |
 | evidence/fault/classes/fault_classes.json | fault | transitional | root-owned | evidence/fault |  |
 | crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md | helper | canonical | crate-local | crate-local tests/helpers | migrated from root tests |
-| crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json | helper | canonical | crate-local | crate-local tests/helpers | migrated from root tests |
+| evidence/authoring/examples/minimal_consumer.dag.json | authoring | canonical | evidence-owned | evidence/authoring/examples | migrated from root tests |

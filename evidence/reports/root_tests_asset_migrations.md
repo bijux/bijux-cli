@@ -9,4 +9,7 @@ This report records canonical scenario and helper assets moved out of top-level 
 ## Moved To Crate-Local Test Fixtures
 
 - `tests/integration_fixtures/minimal_consumer/README.md` -> `crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md`
-- `tests/integration_fixtures/minimal_consumer/dag.json` -> `crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json`
+
+## Moved To Evidence Authoring
+
+- `tests/integration_fixtures/minimal_consumer/dag.json` -> `evidence/authoring/examples/minimal_consumer.dag.json`
