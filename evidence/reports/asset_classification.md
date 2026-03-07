@@ -129,25 +129,6 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence | candidate speculative asset; verify release relevance |
-| examples/cached-branched-report.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/etl-constant-to-shell.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/failure-heavy-retry.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/hello.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/multi-output-artifact.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/replay-heavy-branching.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/bad/cycle.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/bad/invalid_refs.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/bad/invalid_selectors.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/bad/undeclared_outputs.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/bad/unsupported_adapter_payload.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/medium.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/minimal.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_aggregation.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_cache_heavy.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_chain.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_diamond.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_fanout.json | authoring | transitional | root-owned | evidence/authoring |  |
-| tests/authoring/examples/pattern_replay_sensitive.json | authoring | transitional | root-owned | evidence/authoring |  |
 | tests/cache/fixtures/corrupt/hash_mismatch.json | cache | transitional | root-owned | evidence/cache |  |
 | tests/cache/fixtures/corrupt/missing_meta.json | cache | transitional | root-owned | evidence/cache |  |
 | tests/cache/fixtures/corrupt/missing_outputs_proof.json | cache | transitional | root-owned | evidence/cache |  |
