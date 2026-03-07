@@ -21,6 +21,8 @@
     "security",
     "compat",
     "golden",
+    "evidence-all",
+    "contract-all",
     "tests-all",
     "contracts-all",
     "release-verify",

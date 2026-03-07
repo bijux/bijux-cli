@@ -52,8 +52,14 @@ golden: ## Run runtime contract checks
 tests-all: ## Run all control-plane test suites
 	$(call run_or_fail,Run all test suites,$(DEV_TOOL) tests run)
 
-contracts-all: ## Run all contract suites
+contract-all: ## Run all contract suites with evidence foundation verification
 	$(call run_or_fail,Run all contract suites,$(DEV_TOOL) contracts run)
+	$(call run_or_fail,Run evidence foundation verification,$(DEV_TOOL) verify evidence-foundation)
+
+contracts-all: contract-all ## Compatibility alias for contract-all
+
+evidence-all: ## Run evidence governance verification entrypoint
+	$(call run_or_fail,Run evidence foundation verification,$(DEV_TOOL) verify evidence-foundation)
 
 release-verify: ## Run release verification
 	$(call run_or_fail,Run release verification,$(DEV_TOOL) release verify)
@@ -97,6 +103,6 @@ help: ## Show available make targets
 	printf '%s\n' ""; \
 	awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all checks checks-fast checks-all docs security compat golden tests-all contracts-all
+.PHONY: all checks checks-fast checks-all docs security compat golden tests-all contract-all contracts-all evidence-all
 .PHONY: release-verify repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
 .PHONY: memory-smoke artifact-verify ci sanity help help-contract make-target-list

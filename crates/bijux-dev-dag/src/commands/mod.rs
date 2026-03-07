@@ -307,6 +307,22 @@ enum RepoCommand {
 
 #[derive(Subcommand)]
 enum VerifyCommand {
+    /// Validate complete evidence foundation integrity
+    EvidenceFoundation,
+    /// Validate authoring evidence surfaces
+    EvidenceAuthoring,
+    /// Validate battle evidence surfaces and trust mapping
+    EvidenceBattle,
+    /// Validate cache evidence surfaces
+    EvidenceCache,
+    /// Validate compatibility evidence surfaces
+    EvidenceCompat,
+    /// Validate fault evidence surfaces
+    EvidenceFault,
+    /// Validate performance evidence surfaces
+    EvidencePerf,
+    /// Validate comparison evidence surfaces
+    EvidenceCompare,
     /// Validate evidence ownership metadata completeness
     EvidenceOwnership,
     /// Validate evidence drift and legacy scenario-root freeze
@@ -1758,6 +1774,62 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
         },
         CommandLine::Verify { command } => match command {
+            VerifyCommand::EvidenceFoundation => run_command_reported(
+                &context,
+                "verify.evidence-foundation",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_foundation_verify(),
+            ),
+            VerifyCommand::EvidenceAuthoring => run_command_reported(
+                &context,
+                "verify.evidence-authoring",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_authoring_verify(),
+            ),
+            VerifyCommand::EvidenceBattle => run_command_reported(
+                &context,
+                "verify.evidence-battle",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_battle_verify(),
+            ),
+            VerifyCommand::EvidenceCache => run_command_reported(
+                &context,
+                "verify.evidence-cache",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_cache_verify(),
+            ),
+            VerifyCommand::EvidenceCompat => run_command_reported(
+                &context,
+                "verify.evidence-compat",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_compat_verify(),
+            ),
+            VerifyCommand::EvidenceFault => run_command_reported(
+                &context,
+                "verify.evidence-fault",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_fault_verify(),
+            ),
+            VerifyCommand::EvidencePerf => run_command_reported(
+                &context,
+                "verify.evidence-perf",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_perf_verify(),
+            ),
+            VerifyCommand::EvidenceCompare => run_command_reported(
+                &context,
+                "verify.evidence-compare",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_compare_verify(),
+            ),
             VerifyCommand::EvidenceOwnership => run_command_reported(
                 &context,
                 "verify.evidence-ownership",
@@ -4885,6 +4957,135 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
 
 fn run_evidence_ownership_verify() -> Result<(), String> {
     run_evidence_metadata_validate()
+}
+
+fn run_evidence_domain_verify(domain: &str, required_paths: &[&str]) -> Result<(), String> {
+    let root = repo_root()?;
+    run_evidence_metadata_validate()?;
+    for rel in required_paths {
+        if !root.join(rel).exists() {
+            return Err(format!(
+                "required evidence surface missing for `{domain}`: {rel}"
+            ));
+        }
+    }
+    let ledger: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let entries = ledger["entries"]
+        .as_array()
+        .ok_or_else(|| "evidence ledger entries must be an array".to_string())?;
+    let prefix = format!("evidence/{domain}/");
+    let has_entries = entries.iter().any(|entry| {
+        entry
+            .get("path")
+            .and_then(Value::as_str)
+            .is_some_and(|path| path.starts_with(&prefix))
+    });
+    if !has_entries {
+        return Err(format!(
+            "evidence ledger has no entries for governed domain `{domain}`"
+        ));
+    }
+    Ok(())
+}
+
+fn run_evidence_authoring_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "authoring",
+        &[
+            "evidence/authoring/examples",
+            "evidence/authoring/patterns",
+            "evidence/authoring/negative",
+        ],
+    )
+}
+
+fn run_evidence_battle_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "battle",
+        &[
+            "evidence/battle/workflows",
+            "evidence/battle/metadata.json",
+            "evidence/battle/registries/scenario_registry.json",
+        ],
+    )?;
+    run_battle_scenario_mapping_validate()
+}
+
+fn run_evidence_cache_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "cache",
+        &[
+            "evidence/cache/corrupt",
+            "evidence/cache/scenarios",
+            "evidence/cache/replay",
+        ],
+    )
+}
+
+fn run_evidence_compat_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "compat",
+        &[
+            "evidence/compat/graph_schema",
+            "evidence/compat/export_bundle",
+            "evidence/compat/run_dir",
+            "evidence/compat/scenarios",
+        ],
+    )
+}
+
+fn run_evidence_fault_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "fault",
+        &["evidence/fault/classes", "evidence/fault/corrupt_runs"],
+    )
+}
+
+fn run_evidence_perf_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "perf",
+        &["evidence/perf/scenarios", "evidence/perf/baselines"],
+    )
+}
+
+fn run_evidence_compare_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "compare",
+        &[
+            "evidence/compare/scenarios",
+            "evidence/compare/baselines",
+            "evidence/compare/metadata.json",
+        ],
+    )
+}
+
+fn run_evidence_foundation_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    run_evidence_ownership_verify()?;
+    run_evidence_drift_verify()?;
+    run_evidence_consumers_verify()?;
+    run_evidence_authoring_verify()?;
+    run_evidence_battle_verify()?;
+    run_evidence_cache_verify()?;
+    run_evidence_compat_verify()?;
+    run_evidence_fault_verify()?;
+    run_evidence_perf_verify()?;
+    run_evidence_compare_verify()?;
+    for rel in [
+        "evidence/reports/final_evidence_root_contract_report.md",
+        "evidence/reports/root_topology_before_after.md",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!(
+                "foundation report required for evidence governance is missing: {rel}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn run_evidence_drift_verify() -> Result<(), String> {
@@ -8186,7 +8387,7 @@ fn run_comparison_harness_guard() -> Result<(), String> {
         "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
         "docs/reference/COMPARISON_REPORT_TEMPLATE.md",
         "docs/reference/COMPARISON_LIMITATIONS.md",
-        "comparisons/README.md",
+        "docs/reference/COMPARISON_EVIDENCE_SURFACES.md",
         "evidence/compare/baselines/bijux_v1.json",
         "evidence/compare/metadata.json",
         "crates/bijux-dag-app/tests/comparison_harness_contract.rs",

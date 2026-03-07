@@ -24,6 +24,8 @@ Defines the make surface for `bijux-dag`.
 - Slow tests are tagged in Rust with `#[ignore = "slow"]`.
 - `test` must skip ignored slow tests, `test-slow` must run only ignored tests.
 - `test-all` and `coverage` must execute all tests including ignored tests.
+- `evidence-all` is the canonical make entrypoint for evidence governance verification.
+- `contract-all` must include evidence foundation verification via `bijux-dev-dag verify evidence-foundation`.
 
 ## Change policy
 - Any target addition, rename, or removal must update `make/target-list.json`.
