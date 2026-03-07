@@ -1,3 +1,16 @@
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::pedantic,
+    clippy::return_self_not_must_use,
+    clippy::too_many_lines,
+    clippy::uninlined_format_args,
+    clippy::unreadable_literal,
+    clippy::unwrap_used
+)]
+
 #[cfg(test)]
 use criterion as _;
 use serde::{Deserialize, Serialize};

@@ -173,5 +173,5 @@ fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {
     validation_rule_registry()
         .iter()
         .find(|rule| rule.id == code)
-        .map(|rule| rule.domain.clone())
+        .map(|rule| rule.domain)
 }
