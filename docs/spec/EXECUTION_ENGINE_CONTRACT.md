@@ -69,6 +69,7 @@ New backend kinds cannot land without:
 
 ## Verifying Surfaces
 
+- `docs/spec/BACKEND_CONTRACT.md`
 - `crates/bijux-dag-runtime/src/execution_backend.rs`
 - `crates/bijux-dag-runtime/tests/execution_backend_contract.rs`
 - `bijux-dev-dag repo` suite `backend-contract`

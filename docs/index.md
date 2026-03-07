@@ -26,6 +26,7 @@
 - [Node state machine](./spec/NODE_STATE_MACHINE.md)
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [State machine contract](./spec/STATE_MACHINE_CONTRACT.md)
+- [Backend contract](./spec/BACKEND_CONTRACT.md)
 - [State machine visualization](./spec/STATE_MACHINE_VISUALIZATION.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)

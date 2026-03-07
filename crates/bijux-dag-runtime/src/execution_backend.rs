@@ -19,6 +19,15 @@ pub struct BackendCapabilities {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ExecutionBackendCapabilityDescriptor {
+    pub backend_name: String,
+    pub kind: BackendKind,
+    pub supports_env_shaping: bool,
+    pub supports_timeout: bool,
+    pub supports_stream_capture: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BackendBindingRequest {
     pub node_id: String,
     pub required_kind: BackendKind,
@@ -39,6 +48,7 @@ pub struct BackendContext {
     pub attempt: u32,
     pub args: Vec<String>,
     pub env: BTreeMap<String, String>,
+    pub declared_outputs: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -47,6 +57,7 @@ pub struct BackendLifecycleResult {
     pub exit_code: Option<i32>,
     pub stdout: String,
     pub stderr: String,
+    pub produced_outputs: BTreeSet<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -59,6 +70,8 @@ pub enum BackendError {
     Launch(String),
     #[error("backend observe failed: {0}")]
     Observe(String),
+    #[error("backend observe timed out: {0}")]
+    ObserveTimeout(String),
     #[error("backend finalize failed: {0}")]
     Finalize(String),
     #[error("backend cleanup failed: {0}")]
@@ -118,12 +131,31 @@ pub fn execute_with_backend(
             attempt: 1,
             args: vec!["echo".to_string(), node_id.clone()],
             env: BTreeMap::new(),
+            declared_outputs: BTreeSet::new(),
         };
-        backend.prepare(&ctx)?;
-        backend.launch(&ctx)?;
-        let observed = backend.observe(&ctx)?;
-        backend.finalize(&ctx, &observed)?;
-        backend.cleanup(&ctx)?;
+        let lifecycle = (|| -> Result<BackendLifecycleResult, BackendError> {
+            backend.prepare(&ctx)?;
+            backend.launch(&ctx)?;
+            let observed = backend.observe(&ctx)?;
+            if !observed
+                .produced_outputs
+                .iter()
+                .all(|entry| ctx.declared_outputs.contains(entry))
+            {
+                return Err(BackendError::Finalize(format!(
+                    "backend produced undeclared outputs for {}",
+                    ctx.node_id
+                )));
+            }
+            backend.finalize(&ctx, &observed)?;
+            Ok(observed)
+        })();
+        let cleanup = backend.cleanup(&ctx);
+        let observed = match (lifecycle, cleanup) {
+            (Err(primary), _) => return Err(primary),
+            (Ok(_), Err(cleanup_error)) => return Err(cleanup_error),
+            (Ok(observed), Ok(())) => observed,
+        };
         attempts.push(ExecutionAttemptRecord {
             node_id: node_id.clone(),
             attempt: 1,
@@ -135,9 +167,30 @@ pub fn execute_with_backend(
     Ok(EngineOutcome { attempts })
 }
 
+pub fn backend_registry() -> Vec<ExecutionBackendCapabilityDescriptor> {
+    let fake = FakeBackend::default();
+    let process_like = ProcessLikeBackend;
+    let backends: [&dyn ExecutionBackend; 2] = [&fake, &process_like];
+    backends
+        .iter()
+        .map(|backend| {
+            let caps = backend.capabilities();
+            ExecutionBackendCapabilityDescriptor {
+                backend_name: backend.name().to_string(),
+                kind: caps.kind,
+                supports_env_shaping: caps.supports_env_shaping,
+                supports_timeout: caps.supports_timeout,
+                supports_stream_capture: caps.supports_stream_capture,
+            }
+        })
+        .collect()
+}
+
 #[derive(Default)]
 pub struct FakeBackend {
     pub fail_prepare_for: BTreeSet<String>,
+    pub fail_launch_for: BTreeSet<String>,
+    pub fail_observe_timeout_for: BTreeSet<String>,
     pub fail_finalize_for: BTreeSet<String>,
     pub fail_cleanup_for: BTreeSet<String>,
 }
@@ -163,16 +216,26 @@ impl ExecutionBackend for FakeBackend {
         Ok(())
     }
 
-    fn launch(&self, _ctx: &BackendContext) -> Result<(), BackendError> {
+    fn launch(&self, ctx: &BackendContext) -> Result<(), BackendError> {
+        if self.fail_launch_for.contains(&ctx.node_id) {
+            return Err(BackendError::Launch(format!("launch failed for {}", ctx.node_id)));
+        }
         Ok(())
     }
 
-    fn observe(&self, _ctx: &BackendContext) -> Result<BackendLifecycleResult, BackendError> {
+    fn observe(&self, ctx: &BackendContext) -> Result<BackendLifecycleResult, BackendError> {
+        if self.fail_observe_timeout_for.contains(&ctx.node_id) {
+            return Err(BackendError::ObserveTimeout(format!(
+                "observe timeout for {}",
+                ctx.node_id
+            )));
+        }
         Ok(BackendLifecycleResult {
             status: NodeStatus::Success,
             exit_code: Some(0),
             stdout: String::new(),
             stderr: String::new(),
+            produced_outputs: BTreeSet::new(),
         })
     }
 
@@ -228,6 +291,7 @@ impl ExecutionBackend for ProcessLikeBackend {
             exit_code: Some(0),
             stdout: String::new(),
             stderr: String::new(),
+            produced_outputs: BTreeSet::new(),
         })
     }
 

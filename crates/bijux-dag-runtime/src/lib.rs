@@ -243,9 +243,10 @@ pub use auth_identity::{
 };
 pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 pub use execution_backend::{
-    bind_backend_or_error, execute_with_backend, BackendBindingRequest, BackendCapabilities,
-    BackendContext, BackendError, BackendKind, BackendLifecycleResult, EngineOutcome,
-    ExecutionAttemptRecord, ExecutionBackend, FakeBackend, ProcessLikeBackend,
+    backend_registry, bind_backend_or_error, execute_with_backend, BackendBindingRequest,
+    BackendCapabilities, BackendContext, BackendError, BackendKind, BackendLifecycleResult,
+    EngineOutcome, ExecutionAttemptRecord, ExecutionBackend, ExecutionBackendCapabilityDescriptor,
+    FakeBackend, ProcessLikeBackend,
 };
 pub use local_executor::LocalExecutor;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
