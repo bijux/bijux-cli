@@ -17,6 +17,9 @@
 - Contract: `evidence/CONTRACT.md`
 - Taxonomy: `evidence/taxonomy.md`
 - Ownership ledger: `evidence/ownership/evidence_ledger.json`
+- Canonical generated registry: `evidence/_meta/registries/evidence_registry.json`
 - Shared asset rules: `evidence/_meta/asset_authoring_rules.md`
 - Shared metadata schema: `evidence/_meta/schemas/evidence_asset.schema.json`
 - Generated directory map: `evidence/_meta/maps/directory_map.json`
+
+Informational inventory markdown files under `evidence/inventory/` are non-authoritative summaries. Registry and ledger are authoritative.

@@ -1,0 +1,2125 @@
+{
+  "asset_count": 112,
+  "assets": [
+    {
+      "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/cached-branched-report.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/hello.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/hello.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/hello.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "move",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/multi-output-artifact.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/cycle.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/cycle.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/cycle.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/invalid_refs.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/invalid_refs.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/invalid_refs.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/invalid_selectors.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/invalid_selectors.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/undeclared_outputs.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/undeclared_outputs.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/undeclared_outputs.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/unsupported_adapter_payload.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/medium.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/medium.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/medium.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/minimal.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/minimal.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/minimal.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_aggregation.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_aggregation.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_aggregation.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_cache_heavy.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_chain.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_chain.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_chain.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_diamond.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_diamond.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_diamond.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_fanout.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_fanout.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_fanout.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/container_execution_if_supported.json",
+      "consumers": [
+        "e2e-matrix",
+        "battle-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/container_execution_if_supported.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/container_execution_if_supported.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/e2e_minimal.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/e2e_minimal.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/e2e_minimal.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "failure-propagation"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/failure/missing_outputs_rejected.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/failure/retry_then_success_accounting.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/failure/timeout_error_classification.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/happy_path/real_world_orchestration_stress.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/import_export/export_import_metadata_only.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/import_export/export_import_with_files.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/import_export/export_import_with_files.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/import_export/export_import_with_files.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/branch_join_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/branch_join_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/branch_join_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/corruption_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/corruption_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/corruption_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/failure_heavy_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/import_export_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/import_export_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/import_export_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/large_dag_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/large_dag_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/large_dag_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/medium_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/medium_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/medium_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/multi_root_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/multi_root_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/multi_root_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/operator_debugging_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/operator_inspection_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/policy_violation_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/replay_divergence_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/replay_divergence_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/replay_divergence_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/resource_contention_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/resource_contention_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/resource_contention_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/retry_storm_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/retry_storm_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/retry_storm_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/secret_leakage_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/secret_leakage_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/secret_leakage_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/timeout_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/timeout_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/timeout_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/runtime/version_compatibility_workflow.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/runtime/version_compatibility_workflow.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/runtime/version_compatibility_workflow.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/battle/workflows/selection/include_exclude_filters.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/battle/workflows/selection/include_exclude_filters.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/hash_mismatch.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/hash_mismatch.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/corrupt/hash_mismatch.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/missing_meta.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/missing_meta.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/corrupt/missing_meta.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/missing_outputs_proof.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/missing_outputs_proof.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/corrupt/missing_outputs_proof.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/truncated_meta.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/truncated_meta.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/corrupt/truncated_meta.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/unsupported_metadata_version.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/unsupported_metadata_version.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/corrupt/unsupported_metadata_version.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/corruption_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/corruption_case.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/replay/corruption_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/match_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/match_case.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/replay/match_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/mismatch_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/mismatch_case.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/replay/mismatch_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/unsupported_version_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/unsupported_version_case.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/replay/unsupported_version_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/scenarios/warm_cold.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/scenarios/warm_cold.json",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "registry_key": "battle:evidence/cache/scenarios/warm_cold.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/artifact_inspectability.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/artifact_inspectability.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/artifact_inspectability.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/cache_reuse_shape.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/cache_reuse_shape.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/cache_reuse_shape.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/chain.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/chain.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/chain.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/determinism.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/determinism.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/determinism.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/diamond.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/diamond.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/diamond.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/failure_diagnostics.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/failure_diagnostics.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/failure_diagnostics.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/failure_propagation.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/failure_propagation.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/failure_propagation.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/operator_inspectability.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/operator_inspectability.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/operator_inspectability.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/replay_equivalence.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/replay_equivalence.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/replay_equivalence.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/retry_timeout.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/retry_timeout.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/retry_timeout.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json",
+      "consumers": [
+        "comparison-suite"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json",
+      "kind": "compare",
+      "owner": "team-architecture",
+      "registry_key": "compare:evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "operator-inspection"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/export_bundle/v0_1_supported/bundle.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/run_dir/unsupported_future/manifest.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/run_dir/v0_1_supported/manifest.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/run_dir/v0_1_supported/manifest.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/run_dir/v0_1_supported/manifest.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "consumers": [
+        "compatibility-contracts",
+        "e2e-matrix"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/scenarios/legacy_fixture_validation.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/fault/classes/fault_classes.json",
+      "consumers": [
+        "fault-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/fault/classes/fault_classes.json",
+      "kind": "fault",
+      "owner": "team-runtime",
+      "registry_key": "fault:evidence/fault/classes/fault_classes.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "failure-propagation"
+      ]
+    },
+    {
+      "canonical_path": "evidence/fault/corrupt_runs/invalid_outputs_index.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/fault/corrupt_runs/invalid_outputs_index.json",
+      "kind": "fault",
+      "owner": "team-artifacts",
+      "registry_key": "fault:evidence/fault/corrupt_runs/invalid_outputs_index.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "artifact-integrity"
+      ]
+    },
+    {
+      "canonical_path": "evidence/fault/corrupt_runs/missing_manifest_version.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/fault/corrupt_runs/missing_manifest_version.json",
+      "kind": "fault",
+      "owner": "team-artifacts",
+      "registry_key": "fault:evidence/fault/corrupt_runs/missing_manifest_version.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "artifact-integrity"
+      ]
+    },
+    {
+      "canonical_path": "evidence/operator/scenarios/inspection_only.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/operator/scenarios/inspection_only.json",
+      "kind": "operator",
+      "owner": "team-runtime",
+      "registry_key": "operator:evidence/operator/scenarios/inspection_only.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "observability"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/cache_heavy_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/cache_heavy_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/cache_heavy_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/cache_heavy_lookup.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/cache_heavy_lookup.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/cache_heavy_lookup.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/cache_metadata_growth.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/cache_metadata_growth.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/cache_metadata_growth.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/deep_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/deep_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/deep_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/deep_scheduler_overhead.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/deep_scheduler_overhead.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/deep_scheduler_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "merge",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/manifest_trace_volume_growth.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/manifest_trace_volume_growth.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/manifest_trace_volume_growth.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/manifest_trace_write_amplification.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/manifest_trace_write_amplification.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/manifest_trace_write_amplification.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/medium_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/medium_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/medium_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/medium_execute_local.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/medium_execute_local.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/medium_execute_local.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/memory_execute_many_nodes.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/memory_execute_many_nodes.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/memory_execute_many_nodes.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/memory_import_export_path.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/memory_import_export_path.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/memory_import_export_path.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/memory_parse_validate_large_graph.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/memory_parse_validate_large_graph.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/memory_parse_validate_large_graph.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/memory_replay_path.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/memory_replay_path.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/memory_replay_path.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "move",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/replay_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/replay_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/replay_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/replay_verification_cost.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/replay_verification_cost.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/replay_verification_cost.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/resource_budgets.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/resource_budgets.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/resource_budgets.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/tiny_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/tiny_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/tiny_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/tiny_parse_validate.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/tiny_parse_validate.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/tiny_parse_validate.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/wide_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/wide_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/wide_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/wide_scheduler_overhead.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/wide_scheduler_overhead.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/wide_scheduler_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "merge",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    }
+  ],
+  "owner": "bijux-dev-dag",
+  "source": "evidence/ownership/evidence_ledger.json",
+  "version": "1"
+}
