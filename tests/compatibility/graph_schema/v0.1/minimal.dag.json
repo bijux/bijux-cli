@@ -1,0 +1,8 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "compat_v0_1", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "a", "kind": "const", "inputs": [], "outputs": [{"name":"out","path":"out"}], "params": {"value": "x"}}
+  ],
+  "edges": []
+}

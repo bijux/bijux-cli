@@ -1,0 +1,7 @@
+{
+  "manifest_version": "run-manifest/v0.1",
+  "run_id": "run-compat-1",
+  "spec": "0.1",
+  "graph_fingerprint": "x",
+  "status": "success"
+}

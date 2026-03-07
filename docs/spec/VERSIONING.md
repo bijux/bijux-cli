@@ -1,9 +1,8 @@
 # Versioning
 
-## Semver
-- Crate versions follow semver.
-- Breaking changes to specs require a new spec version file.
+Normative versioning policy moved to:
+- `docs/spec/VERSIONING_MODEL.md`
+- `docs/reference/COMPATIBILITY_MATRIX.md`
+- `docs/spec/MIGRATION_POLICY.md`
 
-## Spec Version Pinning
-- DAG JSON must include `spec` with exact value (e.g. `bijux-dag/v0.1`).
-- Unknown spec versions are rejected.
+This file remains as a compatibility pointer only.
