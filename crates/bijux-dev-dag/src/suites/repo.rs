@@ -18,4 +18,9 @@ pub const IDS: &[&str] = &[
     "docs-schema-ref",
     "docs-contract-ref",
     "docs-coverage",
+    "contract-test-links",
+    "contract-schema-owners",
+    "contract-command-ownership",
+    "contract-versioning-policy",
+    "contract-coverage-report",
 ];

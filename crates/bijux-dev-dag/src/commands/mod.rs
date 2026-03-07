@@ -749,6 +749,51 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_docs_coverage_report(),
     },
+    SuiteDef {
+        id: "contract-test-links",
+        description: "contract docs must link at least one verifying test",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_contract_test_links_guard(),
+    },
+    SuiteDef {
+        id: "contract-schema-owners",
+        description: "schema files must be linked by owning contract docs",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_contract_schema_owner_guard(),
+    },
+    SuiteDef {
+        id: "contract-command-ownership",
+        description: "public commands must be covered by exactly one CLI contract section entry",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_contract_command_ownership_guard(),
+    },
+    SuiteDef {
+        id: "contract-versioning-policy",
+        description: "contract docs must declare versioning and change policy",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_contract_versioning_guard(),
+    },
+    SuiteDef {
+        id: "contract-coverage-report",
+        description: "report missing orphaned and stale contracts",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_contract_coverage_report(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -3436,6 +3481,7 @@ fn run_docs_contract_reference_guard() -> Result<(), String> {
         "bijux-dag-runtime",
         "bijux-dag-app",
         "bijux-dag-cli",
+        "bijux-dag-testkit",
         "bijux-dev-dag",
     ];
     let mut violations = Vec::new();
@@ -3502,6 +3548,7 @@ fn run_docs_index_generate() -> Result<(), String> {
         "bijux-dag-runtime",
         "bijux-dag-app",
         "bijux-dag-cli",
+        "bijux-dag-testkit",
         "bijux-dev-dag",
     ] {
         lines.push(format!("- `{}`", crate_name));
@@ -3523,6 +3570,7 @@ fn run_docs_coverage_report() -> Result<(), String> {
         "bijux-dag-runtime",
         "bijux-dag-app",
         "bijux-dag-cli",
+        "bijux-dag-testkit",
         "bijux-dev-dag",
     ];
 
@@ -3548,4 +3596,240 @@ fn run_docs_coverage_report() -> Result<(), String> {
     } else {
         Err("docs coverage has missing entries".to_string())
     }
+}
+
+fn run_contract_test_links_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut contracts = Vec::new();
+    collect_contract_files(&root.join("docs/spec"), &mut contracts)?;
+    let mut violations = Vec::new();
+
+    for file in contracts {
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        if !content.contains("## Related tests") {
+            let rel = file.strip_prefix(&root).map_err(|err| err.to_string())?;
+            violations.push(format!("{} missing '## Related tests' section", rel.display()));
+            continue;
+        }
+        let mut test_link_count = 0usize;
+        for line in content.lines() {
+            if line.contains("tests/") && line.contains('`') {
+                test_link_count += 1;
+            }
+        }
+        if test_link_count == 0 {
+            let rel = file.strip_prefix(&root).map_err(|err| err.to_string())?;
+            violations.push(format!("{} has no linked test paths", rel.display()));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_contract_schema_owner_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut contracts = Vec::new();
+    collect_contract_files(&root.join("docs/spec"), &mut contracts)?;
+    let mut contract_blob = String::new();
+    for file in contracts {
+        contract_blob.push_str(&fs::read_to_string(file).map_err(|err| err.to_string())?);
+        contract_blob.push('\n');
+    }
+
+    let mut missing = Vec::new();
+    for entry in fs::read_dir(root.join("configs/schema")).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
+            continue;
+        }
+        let rel = path
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        if !contract_blob.contains(&rel) {
+            missing.push(rel);
+        }
+    }
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "schemas missing owning contract links: {}",
+            missing.join(", ")
+        ))
+    }
+}
+
+fn run_contract_command_ownership_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let taxonomy = fs::read_to_string(root.join("docs/CLI_COMMAND_TAXONOMY.md"))
+        .map_err(|err| err.to_string())?;
+    let contract =
+        fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).map_err(|err| err.to_string())?;
+
+    let mut commands = Vec::new();
+    for line in taxonomy.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with("- `") || !trimmed.ends_with('`') {
+            continue;
+        }
+        let value = trimmed
+            .trim_start_matches("- `")
+            .trim_end_matches('`')
+            .to_string();
+        if value.starts_with("migrate ") {
+            if !commands.contains(&"migrate".to_string()) {
+                commands.push("migrate".to_string());
+            }
+        } else {
+            commands.push(value);
+        }
+    }
+
+    let mut violations = Vec::new();
+    for command in commands {
+        let token = format!("`dag {command}`");
+        let count = contract.matches(&token).count();
+        if count != 1 {
+            violations.push(format!(
+                "command ownership token {} appears {} times in docs/spec/CLI_CONTRACT.md",
+                token, count
+            ));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_contract_versioning_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut contracts = Vec::new();
+    collect_contract_files(&root.join("docs/spec"), &mut contracts)?;
+    let mut violations = Vec::new();
+    for file in contracts {
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        if !content.contains("## Versioning and change policy") {
+            let rel = file
+                .strip_prefix(&root)
+                .map_err(|err| err.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            violations.push(format!("{rel} missing versioning policy section"));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_contract_coverage_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut missing = Vec::new();
+    let mut orphaned = Vec::new();
+    let mut stale = Vec::new();
+
+    let crate_names = [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dag-testkit",
+        "bijux-dev-dag",
+    ];
+    for crate_name in crate_names {
+        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
+            missing.push(format!("crate contract missing: {crate_name}"));
+        }
+    }
+
+    let specs = [
+        "CLI_CONTRACT.md",
+        "RUN_DIR_CONTRACT.md",
+        "CACHE_CONTRACT.md",
+        "REPLAY_CONTRACT.md",
+        "ERROR_CONTRACT.md",
+        "TRACE_CONTRACT.md",
+        "IMPORT_EXPORT_CONTRACT.md",
+        "CONFIG_CONTRACT.md",
+        "POLICY_CONTRACT.md",
+        "SELECTOR_CONTRACT.md",
+    ];
+    for file in specs {
+        let path = root.join("docs/spec").join(file);
+        if !path.exists() {
+            missing.push(format!("spec contract missing: docs/spec/{file}"));
+        }
+    }
+
+    for entry in fs::read_dir(root.join("docs/spec")).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.file_name().and_then(|x| x.to_str()).is_some_and(|name| name.ends_with("CONTRACT.md")) {
+            let file_name = path.file_name().and_then(|x| x.to_str()).unwrap_or_default();
+            if !specs.contains(&file_name)
+                && file_name != "WORKSPACE_CONTRACT.md"
+                && file_name != "PROJECT_CONTRACT.md"
+                && file_name != "ADAPTER_CONTRACT.md"
+                && file_name != "EXECUTION_SEMANTICS_CONTRACT.md"
+                && file_name != "SCHEDULER_STATESPACE_CONTRACT.md"
+                && file_name != "DETERMINISTIC_SCHEDULING_CONTRACT.md"
+            {
+                orphaned.push(format!("unknown contract doc: docs/spec/{file_name}"));
+            }
+            let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+            if !content.contains("## Scope") {
+                stale.push(format!("{} missing scope section", file_name));
+            }
+        }
+    }
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "missing": missing,
+            "orphaned": orphaned,
+            "stale": stale
+        }))
+        .map_err(|err| err.to_string())?
+    );
+
+    if missing.is_empty() && orphaned.is_empty() && stale.is_empty() {
+        Ok(())
+    } else {
+        Err("contract coverage report found gaps".to_string())
+    }
+}
+
+fn collect_contract_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    if !dir.exists() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(dir).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if path.is_dir() {
+            collect_contract_files(&path, out)?;
+            continue;
+        }
+        if path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.ends_with("CONTRACT.md"))
+        {
+            out.push(path);
+        }
+    }
+    Ok(())
 }
