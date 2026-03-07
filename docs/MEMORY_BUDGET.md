@@ -1,9 +1,9 @@
-# Memory budget smoke checks (provisional)
+# Memory budget evidence
 
-- Smoke command: `cargo run -p bijux-dev-dag -- memory-smoke`
-- Output artifact: `artifacts/memory/smoke.json`
+- Memory evidence is captured from benchmark and runtime observability artifacts.
+- Output artifacts live under `artifacts/benchmarks/` and run-level observability files.
 - Runtime emits materialization memory sampling in run artifacts:
   - `observability.metrics.json` with `before_materialization_bytes` and `after_materialization_bytes`.
 
-This smoke check is provisional and records early runtime timing and memory signals.
-It is not a release guarantee until strict measured memory gates are enforced.
+Memory budget compliance is release-relevant only when tied to benchmark workload metadata
+and measured environment context.

@@ -19,14 +19,16 @@ This file defines what counts as proof.
 - Measured benchmark artifacts produced by benchmark suites
 - Trend reports with workload metadata
 
-`benchmark-baseline` is currently provisional and must not be used as a release guarantee by itself.
+`benchmark-baseline` must carry workload metadata and environment context before it is used
+as release proof.
 
 ## Memory evidence
 
 - Measured memory artifacts with explicit environment metadata
 - Budget regression checks
 
-`memory-smoke` is currently provisional and must not be used as a release guarantee by itself.
+Memory evidence must come from measured benchmark/observability artifacts; standalone smoke
+timing is not accepted as release proof.
 
 ## Release readiness evidence
 
