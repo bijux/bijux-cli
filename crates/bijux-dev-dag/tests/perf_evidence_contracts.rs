@@ -161,6 +161,7 @@ fn benchmark_registry_covers_required_scenarios_and_metadata_links() {
         "explainability-quality",
         "artifact-lineage-completeness",
         "portability-success-rate",
+        "inspect-history-latency",
     ] {
         assert!(ids.contains(required), "registry missing required id: {required}");
     }

@@ -33,6 +33,7 @@ fn benchmark_scenarios_are_owned_versioned_and_documented() {
         "evidence/perf/scenarios/explainability_quality.json",
         "evidence/perf/scenarios/artifact_lineage_completeness.json",
         "evidence/perf/scenarios/portability_success_rate.json",
+        "evidence/perf/scenarios/inspect_history_latency.json",
     ];
     for rel in required {
         let path = root.join(rel);
@@ -68,6 +69,7 @@ fn benchmark_scenarios_are_owned_versioned_and_documented() {
         "replay_canonical.json",
         "diff_canonical.json",
         "portability_canonical.json",
+        "inspect_history_latency.json",
     ] {
         assert!(
             contract.contains(token),
