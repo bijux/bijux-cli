@@ -6416,14 +6416,16 @@ fn run_artifact_hardening_guard() -> Result<(), String> {
         "docs/spec/RUN_DIR_CONTRACT.md",
         "docs/spec/RUN_DIR_OWNERSHIP.md",
         "docs/spec/IMPORT_EXPORT_CONTRACT.md",
+        "docs/reports/foundation/run_dir_import_export_hardening_report.md",
         "docs/spec/ARTIFACT_OWNERSHIP_TABLE.md",
         "docs/spec/ARTIFACT_LIFECYCLE.md",
         "configs/schema/operator/run_verify_report.schema.json",
         "tests/compatibility/export_bundle/v0.1/bundle.json",
         "tests/compatibility/export_bundle/unsupported_past/bundle.json",
         "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
-        "crates/bijux-dag-artifacts/src/hardening.rs",
+        "crates/bijux-dag-artifacts/src/storage/hardening.rs",
         "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
+        "crates/bijux-dev-dag/tests/run_dir_import_export_hardening_contracts.rs",
         "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
         "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
     ] {
@@ -6435,6 +6437,8 @@ fn run_artifact_hardening_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     for token in [
         "Required entries (authoritative)",
+        "Optional entries",
+        "Derived artifacts (non-authoritative)",
         "Verification behavior",
         "dag verify --strict",
     ] {
@@ -6452,10 +6456,33 @@ fn run_artifact_hardening_guard() -> Result<(), String> {
         "export-bundle/v0.1",
         "dag export --manifest-only",
         "dag export --with-files",
+        "provenance.source",
     ] {
         if !import_export_contract.contains(token) {
             return Err(format!(
                 "import/export contract missing required section `{token}`"
+            ));
+        }
+    }
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    for required in ["tp_run_dir_resilience", "tp_import_export_compatibility"] {
+        let present = trust_properties.iter().any(|property| {
+            property
+                .get("id")
+                .and_then(Value::as_str)
+                .is_some_and(|id| id == required)
+        });
+        if !present {
+            return Err(format!(
+                "artifact hardening requires trust property `{required}`"
             ));
         }
     }
