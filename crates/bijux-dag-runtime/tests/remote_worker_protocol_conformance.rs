@@ -11,11 +11,11 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    artifact_upload_can_commit, classify_heartbeat, is_duplicate_dispatch,
-    normalize_status_events, reject_worker_version_mismatch,
-    worker_pool_satisfies_capability_request, HeartbeatClass, HeartbeatSemantics,
-    RemoteArtifactCommitContract, RemoteArtifactUploadContract, RemoteStatusEvent,
-    WorkerCapabilities, WorkerPoolCapabilityRequest, WorkerVersionCompatibilityRule,
+    artifact_upload_can_commit, classify_heartbeat, is_duplicate_dispatch, normalize_status_events,
+    reject_worker_version_mismatch, worker_pool_satisfies_capability_request, HeartbeatClass,
+    HeartbeatSemantics, RemoteArtifactCommitContract, RemoteArtifactUploadContract,
+    RemoteStatusEvent, WorkerCapabilities, WorkerPoolCapabilityRequest,
+    WorkerVersionCompatibilityRule,
 };
 use std::collections::BTreeSet;
 
@@ -32,9 +32,18 @@ fn conformance_heartbeat_classification_is_stable() {
         inflight_nodes: vec!["n1".to_string()],
     };
 
-    assert_eq!(classify_heartbeat(&hb, 11_000, &policy), HeartbeatClass::Healthy);
-    assert_eq!(classify_heartbeat(&hb, 13_000, &policy), HeartbeatClass::Delayed);
-    assert_eq!(classify_heartbeat(&hb, 16_000, &policy), HeartbeatClass::Lost);
+    assert_eq!(
+        classify_heartbeat(&hb, 11_000, &policy),
+        HeartbeatClass::Healthy
+    );
+    assert_eq!(
+        classify_heartbeat(&hb, 13_000, &policy),
+        HeartbeatClass::Delayed
+    );
+    assert_eq!(
+        classify_heartbeat(&hb, 16_000, &policy),
+        HeartbeatClass::Lost
+    );
 }
 
 #[test]

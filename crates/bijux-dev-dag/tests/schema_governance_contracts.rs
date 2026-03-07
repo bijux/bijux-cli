@@ -27,7 +27,10 @@ fn unified_schema_versioning_and_compatibility_docs_exist() {
         "docs/reference/COMPATIBILITY_MATRIX_GENERATED.md",
         "docs/reports/foundation/schema_changelog.md",
     ] {
-        assert!(root.join(rel).exists(), "missing schema governance doc: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing schema governance doc: {rel}"
+        );
     }
 }
 
@@ -44,7 +47,10 @@ fn compatibility_fixtures_exist_for_graph_run_artifact_and_proof() {
         "evidence/compat/proof_schema/v0_1_supported/minimal.proof.json",
         "evidence/compat/proof_schema/unsupported_past/minimal.proof.json",
     ] {
-        assert!(root.join(rel).exists(), "missing compatibility fixture: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing compatibility fixture: {rel}"
+        );
     }
 }
 
@@ -52,7 +58,8 @@ fn compatibility_fixtures_exist_for_graph_run_artifact_and_proof() {
 fn stable_schema_hashes_are_frozen() {
     let root = repo_root();
     let baseline: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/stable_schema_hashes.json")).expect("read baseline"),
+        &fs::read_to_string(root.join("configs/policy/stable_schema_hashes.json"))
+            .expect("read baseline"),
     )
     .expect("parse baseline");
     let schemas = baseline["schemas"].as_object().expect("schemas object");
@@ -70,11 +77,13 @@ fn stable_schema_hashes_are_frozen() {
 fn stable_json_command_surfaces_are_listed_in_cli_contract() {
     let root = repo_root();
     let baseline: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/policy/stable_json_output_commands.json")).expect("read commands baseline"),
+        &fs::read_to_string(root.join("configs/policy/stable_json_output_commands.json"))
+            .expect("read commands baseline"),
     )
     .expect("parse commands baseline");
     let commands = baseline["commands"].as_array().expect("commands array");
-    let cli_contract = fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).expect("read cli contract");
+    let cli_contract =
+        fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).expect("read cli contract");
     for cmd in commands {
         let cmd = cmd.as_str().expect("command string");
         assert!(
@@ -110,7 +119,8 @@ fn experimental_fields_are_labeled_in_registry_doc() {
 #[test]
 fn release_process_mentions_schema_compatibility_review() {
     let root = repo_root();
-    let doc = fs::read_to_string(root.join("docs/RELEASE_PROCESS.md")).expect("read release process");
+    let doc =
+        fs::read_to_string(root.join("docs/RELEASE_PROCESS.md")).expect("read release process");
     assert!(doc.contains("Schema compatibility review must be completed"));
 }
 

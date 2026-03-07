@@ -46,8 +46,9 @@ fn worker_protocol_contract_doc_exists_with_required_sections() {
 #[test]
 fn distributed_runtime_contract_tests_cover_worker_protocol_semantics() {
     let root = repo_root();
-    let source = fs::read_to_string(root.join("crates/bijux-dag-runtime/tests/distributed_contracts.rs"))
-        .expect("read distributed contract tests");
+    let source =
+        fs::read_to_string(root.join("crates/bijux-dag-runtime/tests/distributed_contracts.rs"))
+            .expect("read distributed contract tests");
 
     for token in [
         "validate_task_lease_semantics",

@@ -25,8 +25,14 @@ fn bundle_format_specs_exist_and_define_v1_identifiers() {
     let cases = [
         ("docs/spec/GRAPH_BUNDLE_FORMAT_v1.md", "graph-bundle/v1"),
         ("docs/spec/RUN_BUNDLE_FORMAT_v1.md", "run-bundle/v1"),
-        ("docs/spec/ARTIFACT_BUNDLE_FORMAT_v1.md", "artifact-bundle/v1"),
-        ("docs/spec/BUNDLE_SCHEMA_REFERENCE.md", "minimal_bundle.json"),
+        (
+            "docs/spec/ARTIFACT_BUNDLE_FORMAT_v1.md",
+            "artifact-bundle/v1",
+        ),
+        (
+            "docs/spec/BUNDLE_SCHEMA_REFERENCE.md",
+            "minimal_bundle.json",
+        ),
         (
             "docs/spec/BUNDLE_MANIFEST_VERSIONING_POLICY.md",
             "export-bundle/v0.1",
@@ -37,15 +43,18 @@ fn bundle_format_specs_exist_and_define_v1_identifiers() {
         let path = root.join(rel);
         assert!(path.exists(), "missing bundle format policy doc: {rel}");
         let text = fs::read_to_string(path).expect("read bundle format doc");
-        assert!(text.contains(token), "bundle spec missing required token: {token}");
+        assert!(
+            text.contains(token),
+            "bundle spec missing required token: {token}"
+        );
     }
 }
 
 #[test]
 fn import_export_contract_and_cli_contract_cover_new_bundle_flags() {
     let root = repo_root();
-    let import_export =
-        fs::read_to_string(root.join("docs/spec/IMPORT_EXPORT_CONTRACT.md")).expect("read import export contract");
+    let import_export = fs::read_to_string(root.join("docs/spec/IMPORT_EXPORT_CONTRACT.md"))
+        .expect("read import export contract");
     for token in [
         "--without-artifacts",
         "--from-run",
@@ -58,7 +67,8 @@ fn import_export_contract_and_cli_contract_cover_new_bundle_flags() {
         );
     }
 
-    let cli = fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).expect("read cli contract");
+    let cli =
+        fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md")).expect("read cli contract");
     for token in [
         "dag export --from-run",
         "dag export --without-artifacts",
@@ -81,8 +91,9 @@ fn bundle_examples_and_benchmark_reports_exist() {
         assert!(root.join(rel).exists(), "missing bundle surface: {rel}");
     }
 
-    let benchmark = fs::read_to_string(root.join("docs/reports/foundation/bundle_export_import_benchmarks.md"))
-        .expect("read bundle benchmark report");
+    let benchmark =
+        fs::read_to_string(root.join("docs/reports/foundation/bundle_export_import_benchmarks.md"))
+            .expect("read bundle benchmark report");
     for token in ["Small bundle benchmark", "Large bundle benchmark"] {
         assert!(
             benchmark.contains(token),

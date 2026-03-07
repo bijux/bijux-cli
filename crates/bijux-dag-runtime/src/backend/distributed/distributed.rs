@@ -286,7 +286,11 @@ pub fn classify_heartbeat(
     }
 }
 
-pub fn is_duplicate_dispatch(dispatched_keys: &mut BTreeSet<String>, run_id: &str, node_id: &str) -> bool {
+pub fn is_duplicate_dispatch(
+    dispatched_keys: &mut BTreeSet<String>,
+    run_id: &str,
+    node_id: &str,
+) -> bool {
     let key = format!("{run_id}:{node_id}");
     !dispatched_keys.insert(key)
 }
@@ -323,7 +327,10 @@ pub fn artifact_upload_can_commit(
         && commit.committed
 }
 
-pub fn verify_remote_artifact_integrity(expected_checksum: &str, transported_checksum: &str) -> bool {
+pub fn verify_remote_artifact_integrity(
+    expected_checksum: &str,
+    transported_checksum: &str,
+) -> bool {
     !expected_checksum.trim().is_empty() && expected_checksum == transported_checksum
 }
 
@@ -337,7 +344,12 @@ pub fn normalize_status_events(
     let mut duplicates = Vec::new();
     let mut seen = BTreeSet::new();
     for event in sorted {
-        let key = (event.run_id.clone(), event.node_id.clone(), event.sequence, event.status.clone());
+        let key = (
+            event.run_id.clone(),
+            event.node_id.clone(),
+            event.sequence,
+            event.status.clone(),
+        );
         if seen.insert(key) {
             deduped.push(event);
         } else {
@@ -347,7 +359,11 @@ pub fn normalize_status_events(
     (deduped, duplicates)
 }
 
-pub fn classify_status_reporting(last_status_unix_ms: u128, now_unix_ms: u128, timeout_ms: u64) -> StatusReportingClass {
+pub fn classify_status_reporting(
+    last_status_unix_ms: u128,
+    now_unix_ms: u128,
+    timeout_ms: u64,
+) -> StatusReportingClass {
     if now_unix_ms.saturating_sub(last_status_unix_ms) > timeout_ms as u128 {
         StatusReportingClass::Partitioned
     } else {
@@ -379,7 +395,10 @@ pub fn worker_pool_satisfies_capability_request(
         return false;
     }
     if let Some(profile) = &request.required_sandbox_profile {
-        return worker.supports_sandbox_profiles.iter().any(|p| p == profile);
+        return worker
+            .supports_sandbox_profiles
+            .iter()
+            .any(|p| p == profile);
     }
     true
 }

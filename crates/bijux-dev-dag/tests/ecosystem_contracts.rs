@@ -28,7 +28,10 @@ fn ecosystem_contract_docs_exist() {
         "docs/reports/foundation/ecosystem_truth_surface.md",
         "docs/tracking/ECOSYSTEM_BACKLOG_BOOTSTRAP.md",
     ] {
-        assert!(root.join(rel).exists(), "missing ecosystem contract doc: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing ecosystem contract doc: {rel}"
+        );
     }
 }
 
@@ -54,14 +57,18 @@ fn cross_repo_workflow_scenarios_exist() {
         "evidence/compat/ecosystem/workflows/cross_repo_artifact_lineage_scenario.json",
         "evidence/compat/ecosystem/workflows/cross_repo_proof_consumption_scenario.json",
     ] {
-        assert!(root.join(rel).exists(), "missing cross-repo scenario: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing cross-repo scenario: {rel}"
+        );
     }
 }
 
 #[test]
 fn command_ownership_doc_references_bijux_and_bijux_dag() {
     let root = repo_root();
-    let body = fs::read_to_string(root.join("docs/reference/BIJUX_COMMAND_OWNERSHIP.md")).expect("read ownership doc");
+    let body = fs::read_to_string(root.join("docs/reference/BIJUX_COMMAND_OWNERSHIP.md"))
+        .expect("read ownership doc");
     assert!(body.contains("root `bijux`"));
     assert!(body.contains("`bijux dag`"));
 }
@@ -69,9 +76,14 @@ fn command_ownership_doc_references_bijux_and_bijux_dag() {
 #[test]
 fn ecosystem_matrix_mentions_all_products() {
     let root = repo_root();
-    let body = fs::read_to_string(root.join("docs/reference/ECOSYSTEM_VERSION_COMPATIBILITY_MATRIX.md")).expect("read matrix");
+    let body =
+        fs::read_to_string(root.join("docs/reference/ECOSYSTEM_VERSION_COMPATIBILITY_MATRIX.md"))
+            .expect("read matrix");
     for token in ["bijux-cli", "bijux-dag", "bijux-atlas", "bijux-dna"] {
-        assert!(body.contains(token), "missing matrix product entry: {token}");
+        assert!(
+            body.contains(token),
+            "missing matrix product entry: {token}"
+        );
     }
 }
 
@@ -87,9 +99,12 @@ fn release_gate_workflow_exists_for_ecosystem_contracts() {
 #[test]
 fn cli_and_atlas_dna_boundaries_are_explicit() {
     let root = repo_root();
-    let cli = fs::read_to_string(root.join("docs/spec/BIJUX_CLI_INTEGRATION_CONTRACT.md")).expect("read cli integration");
-    let atlas = fs::read_to_string(root.join("docs/spec/ATLAS_EXECUTION_CONTRACT.md")).expect("read atlas");
-    let dna = fs::read_to_string(root.join("docs/spec/DNA_EXECUTION_CONTRACT.md")).expect("read dna");
+    let cli = fs::read_to_string(root.join("docs/spec/BIJUX_CLI_INTEGRATION_CONTRACT.md"))
+        .expect("read cli integration");
+    let atlas =
+        fs::read_to_string(root.join("docs/spec/ATLAS_EXECUTION_CONTRACT.md")).expect("read atlas");
+    let dna =
+        fs::read_to_string(root.join("docs/spec/DNA_EXECUTION_CONTRACT.md")).expect("read dna");
 
     assert!(cli.contains("must not alter DAG identity/replay semantics"));
     assert!(atlas.contains("may not redefine"));
@@ -100,8 +115,10 @@ fn cli_and_atlas_dna_boundaries_are_explicit() {
 fn shared_identity_fixture_shape_is_machine_readable() {
     let root = repo_root();
     let payload: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/compat/ecosystem/shared_identity/graph_identity_fixture.json"))
-            .expect("read graph identity fixture"),
+        &fs::read_to_string(
+            root.join("evidence/compat/ecosystem/shared_identity/graph_identity_fixture.json"),
+        )
+        .expect("read graph identity fixture"),
     )
     .expect("parse fixture");
     assert!(payload.get("graph_id").and_then(Value::as_str).is_some());

@@ -6,8 +6,8 @@ use hex as _;
 use serde as _;
 use serde_json::Value;
 use sha2 as _;
-use std::fs;
 use std::collections::BTreeSet;
+use std::fs;
 use std::path::PathBuf;
 use tempfile as _;
 
@@ -163,6 +163,9 @@ fn benchmark_registry_covers_required_scenarios_and_metadata_links() {
         "portability-success-rate",
         "inspect-history-latency",
     ] {
-        assert!(ids.contains(required), "registry missing required id: {required}");
+        assert!(
+            ids.contains(required),
+            "registry missing required id: {required}"
+        );
     }
 }

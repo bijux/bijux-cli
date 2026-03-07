@@ -604,7 +604,13 @@ fn artifact_heavy_bundle_roundtrip_verify_only_is_stable() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -622,8 +628,9 @@ fn artifact_heavy_bundle_roundtrip_verify_only_is_stable() {
         &root,
     );
 
-    let mut bundle: Value = serde_json::from_str(&fs::read_to_string(&bundle_path).expect("read bundle"))
-        .expect("parse bundle");
+    let mut bundle: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle_path).expect("read bundle"))
+            .expect("parse bundle");
     let payload = bundle["files"]
         .as_object()
         .and_then(|m| m.values().next())
@@ -644,11 +651,19 @@ fn artifact_heavy_bundle_roundtrip_verify_only_is_stable() {
             Value::String(payload.clone()),
         );
     }
-    fs::write(&bundle_path, serde_json::to_vec_pretty(&bundle).expect("encode bundle"))
-        .expect("rewrite bundle");
+    fs::write(
+        &bundle_path,
+        serde_json::to_vec_pretty(&bundle).expect("encode bundle"),
+    )
+    .expect("rewrite bundle");
 
     let imported = run_json(
-        &["import", "--json", "--verify-only", &output_path_string(&bundle_path)],
+        &[
+            "import",
+            "--json",
+            "--verify-only",
+            &output_path_string(&bundle_path),
+        ],
         &root,
     );
     assert_eq!(imported["ok"], true);
@@ -662,7 +677,13 @@ fn imported_run_replay_and_diff_against_original_are_stable() {
     fs::create_dir_all(&out_dir).expect("create runs");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let run = run_json(
-        &["run", "--json", &output_path_string(&graph), "--out", &output_path_string(&out_dir)],
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
         &root,
     );
     let run_dir = extract_run_dir(&run);
@@ -678,19 +699,33 @@ fn imported_run_replay_and_diff_against_original_are_stable() {
         ],
         &root,
     );
-    let imported = run_json(&["import", "--json", &output_path_string(&bundle_path)], &root);
+    let imported = run_json(
+        &["import", "--json", &output_path_string(&bundle_path)],
+        &root,
+    );
     assert_eq!(imported["ok"], true);
 
     let replay_out = temp.path().join("replay");
     fs::create_dir_all(&replay_out).expect("create replay out");
     let replay = run_json(
-        &["replay", "--json", &output_path_string(&run_dir), "--out", &output_path_string(&replay_out)],
+        &[
+            "replay",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&replay_out),
+        ],
         &root,
     );
     let replay_dir = extract_run_dir(&replay);
 
     let diff = run_json(
-        &["diff", "--json", &output_path_string(&run_dir), &output_path_string(&replay_dir)],
+        &[
+            "diff",
+            "--json",
+            &output_path_string(&run_dir),
+            &output_path_string(&replay_dir),
+        ],
         &root,
     );
     assert_eq!(diff["ok"], true);
@@ -714,7 +749,10 @@ fn import_tolerates_missing_optional_payloads_and_rejects_missing_required_paylo
         .expect("encode optional bundle"),
     )
     .expect("write optional bundle");
-    let optional_imported = run_json(&["import", "--json", &output_path_string(&optional_bundle)], &root);
+    let optional_imported = run_json(
+        &["import", "--json", &output_path_string(&optional_bundle)],
+        &root,
+    );
     assert_eq!(optional_imported["ok"], true);
 
     let required_bundle = temp.path().join("required-missing.json");
@@ -730,8 +768,10 @@ fn import_tolerates_missing_optional_payloads_and_rejects_missing_required_paylo
         .expect("encode required bundle"),
     )
     .expect("write required bundle");
-    let (code, _stdout, _stderr) =
-        run_dag(&["import", "--json", &output_path_string(&required_bundle)], &root);
+    let (code, _stdout, _stderr) = run_dag(
+        &["import", "--json", &output_path_string(&required_bundle)],
+        &root,
+    );
     assert_ne!(code, 0, "import must fail when required payload is missing");
 }
 
@@ -755,7 +795,10 @@ fn import_rejects_corrupted_file_payload_before_acceptance() {
     )
     .expect("write corrupted bundle");
 
-    let (code, _stdout, _stderr) = run_dag(&["import", "--json", &output_path_string(&corrupted)], &root);
+    let (code, _stdout, _stderr) = run_dag(
+        &["import", "--json", &output_path_string(&corrupted)],
+        &root,
+    );
     assert_ne!(code, 0, "corrupted file payload must be rejected");
 }
 
@@ -767,7 +810,15 @@ fn import_supports_offline_inspection_path_portability_and_line_endings() {
     let raw = "{\n  \"bundle_version\": \"export-bundle/v0.1\",\n  \"export_mode\": \"manifest-only\",\n  \"provenance\": {\"source\": \"native-run\", \"source_run_dir\": \"C:\\\\work\\\\run-1\", \"source_run_id\": \"run-1\", \"parent_run_id\": \"run-0\", \"lineage\": [\"a\", \"b\"]},\n  \"manifest\": {\"manifest_version\": \"run-manifest/v0.1\"},\n  \"graph_snapshot\": {\"spec\":\"bijux-dag/v0.1\",\"nodes\":[],\"edges\":[]},\n  \"node_traces\": {},\n  \"outputs\": {}\n}\n";
     fs::write(&bundle, raw.replace('\n', "\r\n")).expect("write crlf bundle");
 
-    let imported = run_json(&["import", "--json", "--verify-only", &output_path_string(&bundle)], &root);
+    let imported = run_json(
+        &[
+            "import",
+            "--json",
+            "--verify-only",
+            &output_path_string(&bundle),
+        ],
+        &root,
+    );
     assert_eq!(imported["ok"], true);
     assert_eq!(imported["data"]["preservation"]["lineage"], true);
     assert_eq!(imported["data"]["preservation"]["run_ancestry"], true);
@@ -780,7 +831,12 @@ fn import_accepts_supported_older_bundle_fixture_and_export_handles_older_manife
     let root = repo_root();
     let supported = root.join("evidence/compat/export_bundle/v0_1_supported/bundle.json");
     let imported = run_json(
-        &["import", "--json", "--verify-only", &output_path_string(&supported)],
+        &[
+            "import",
+            "--json",
+            "--verify-only",
+            &output_path_string(&supported),
+        ],
         &root,
     );
     assert_eq!(imported["ok"], true);
@@ -868,7 +924,12 @@ fn export_provenance_only_and_redacted_bundle_preserve_source_run_records() {
     assert_eq!(exported["provenance"]["source_run_dir"], "[redacted]");
 
     let imported = run_json(
-        &["import", "--json", "--verify-only", &output_path_string(&bundle)],
+        &[
+            "import",
+            "--json",
+            "--verify-only",
+            &output_path_string(&bundle),
+        ],
         &root,
     );
     assert_eq!(imported["ok"], true);

@@ -46,7 +46,9 @@ fn scenario_registry_and_metadata_are_normalized() {
     .expect("parse metadata");
 
     let entries = registry["entries"].as_array().expect("entries array");
-    let scenarios = metadata["scenarios"].as_object().expect("metadata scenarios");
+    let scenarios = metadata["scenarios"]
+        .as_object()
+        .expect("metadata scenarios");
 
     let mut ids = BTreeSet::new();
     let mut last_id = String::new();
@@ -59,7 +61,10 @@ fn scenario_registry_and_metadata_are_normalized() {
             "registry entries must be sorted by id"
         );
         last_id = id.to_string();
-        assert!(scenarios.contains_key(path), "registry path missing metadata: {path}");
+        assert!(
+            scenarios.contains_key(path),
+            "registry path missing metadata: {path}"
+        );
     }
 }
 
@@ -76,7 +81,10 @@ fn competitor_mapping_docs_and_matrix_template_exist() {
         "docs/reference/COMPETITOR_SCENARIO_MAPPING_LUIGI.md",
         "docs/reference/COMPARISON_MATRIX_TEMPLATE.md",
     ] {
-        assert!(root.join(rel).exists(), "missing competitor mapping surface: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing competitor mapping surface: {rel}"
+        );
     }
 }
 
@@ -88,6 +96,9 @@ fn benchmark_run_and_retention_docs_exist() {
         "docs/spec/BENCHMARK_RESULT_FORMAT.md",
         "docs/spec/BENCHMARK_RAW_DATA_RETENTION.md",
     ] {
-        assert!(root.join(rel).exists(), "missing benchmark governance doc: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing benchmark governance doc: {rel}"
+        );
     }
 }

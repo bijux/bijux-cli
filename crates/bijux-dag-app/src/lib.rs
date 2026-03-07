@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 mod cache;
-mod capability_matrix;
 #[path = "cache/cmd.rs"]
 mod cache_cmd;
+mod capability_matrix;
 #[path = "commands/cli_model.rs"]
 mod cli_model;
 mod commands;
@@ -74,8 +74,8 @@ use bijux_dag_runtime::{
 };
 #[cfg(test)]
 use bijux_dag_testkit as _;
-use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use capability_matrix::backend_capability_payload;
+use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, CacheModeArg, Commands, ConfigCommands, DagCli,
     GraphFormatArg, HashCommands, MaterializeModeArg, MigrateCommands, PolicyCommands,
@@ -864,7 +864,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 .get("complete")
                 .and_then(Value::as_bool)
                 .unwrap_or(false);
-            let status = proof.get("status").and_then(Value::as_str).unwrap_or("incomplete");
+            let status = proof
+                .get("status")
+                .and_then(Value::as_str)
+                .unwrap_or("incomplete");
             let determinism = proof
                 .get("determinism")
                 .and_then(Value::as_str)
@@ -2407,12 +2410,26 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "dag.semantic-portability",
                     supported,
                     payload,
-                    if supported { Vec::new() } else { vec![json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"})] },
-                    if supported { ExitCode::SUCCESS } else { ExitCode::from(2) },
+                    if supported {
+                        Vec::new()
+                    } else {
+                        vec![
+                            json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"}),
+                        ]
+                    },
+                    if supported {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(2)
+                    },
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(if supported { ExitCode::SUCCESS } else { ExitCode::from(2) })
+            Ok(if supported {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(2)
+            })
         }
         Commands::EquivalenceProof {
             run_a,
@@ -2446,7 +2463,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     status != "downgraded",
                     payload,
                     if status == "downgraded" {
-                        vec![json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"})]
+                        vec![
+                            json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"}),
+                        ]
                     } else {
                         Vec::new()
                     },
@@ -2458,7 +2477,11 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(if status == "downgraded" { ExitCode::from(2) } else { ExitCode::SUCCESS })
+            Ok(if status == "downgraded" {
+                ExitCode::from(2)
+            } else {
+                ExitCode::SUCCESS
+            })
         }
         Commands::VersionInspect {
             dag,
@@ -3516,7 +3539,10 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
     }
     match bundle.get("export_mode").and_then(|v| v.as_str()) {
-        Some("manifest-only") | Some("with-files") | Some("without-artifacts") | Some("provenance-only") => {}
+        Some("manifest-only")
+        | Some("with-files")
+        | Some("without-artifacts")
+        | Some("provenance-only") => {}
         _ => violations.push("INV-EXPORT-MODE-001 unsupported or missing export_mode".to_string()),
     }
     if bundle.get("manifest").is_none() {

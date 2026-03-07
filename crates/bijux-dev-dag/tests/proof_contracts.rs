@@ -33,7 +33,10 @@ fn proof_contract_docs_and_schema_exist() {
         "docs/reports/foundation/proof_generation_benchmarks.md",
         "docs/reports/foundation/proof_vs_verification_vs_inspection.md",
     ] {
-        assert!(root.join(rel).exists(), "missing proof contract surface: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing proof contract surface: {rel}"
+        );
     }
 }
 
@@ -42,11 +45,17 @@ fn cli_and_app_surfaces_include_dag_prove_command() {
     let root = repo_root();
     let cmd_source = fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs"))
         .expect("read command source");
-    assert!(cmd_source.contains("Prove"), "commands must include Prove variant");
+    assert!(
+        cmd_source.contains("Prove"),
+        "commands must include Prove variant"
+    );
 
-    let app_source = fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs"))
-        .expect("read app source");
+    let app_source =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app source");
     for token in ["dag.prove", "build_run_proof_bundle(", "incomplete_reasons"] {
-        assert!(app_source.contains(token), "app prove surface missing token: {token}");
+        assert!(
+            app_source.contains(token),
+            "app prove surface missing token: {token}"
+        );
     }
 }

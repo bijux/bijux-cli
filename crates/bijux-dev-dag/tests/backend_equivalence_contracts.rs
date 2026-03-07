@@ -26,7 +26,10 @@ fn backend_equivalence_contract_and_support_surfaces_exist() {
         "evidence/reports/backend_capability_matrix_generated.json",
         "docs/reports/foundation/backend_equivalence_quality_benchmark.md",
     ] {
-        assert!(root.join(rel).exists(), "missing backend equivalence surface: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing backend equivalence surface: {rel}"
+        );
     }
 }
 
@@ -40,7 +43,10 @@ fn backend_equivalence_fixtures_exist_for_cross_backend_pairs() {
         "evidence/compat/backend_equivalence/k8s_vs_imported_local_replay.json",
         "evidence/compat/backend_equivalence/hpc_vs_imported_local_replay.json",
     ] {
-        assert!(root.join(rel).exists(), "missing backend equivalence fixture: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing backend equivalence fixture: {rel}"
+        );
     }
 }
 
@@ -54,17 +60,29 @@ fn generated_matrix_and_support_docs_are_aligned_on_status() {
     .expect("parse matrix");
     let backends = matrix["backends"].as_array().expect("backends array");
 
-    let k8s_doc = fs::read_to_string(root.join("docs/reference/K8S_SUPPORT_MATRIX.md")).expect("k8s");
-    let hpc_doc = fs::read_to_string(root.join("docs/reference/HPC_SUPPORT_MATRIX.md")).expect("hpc");
-    let remote_doc = fs::read_to_string(root.join("docs/reference/REMOTE_SUPPORT_MATRIX.md")).expect("remote");
+    let k8s_doc =
+        fs::read_to_string(root.join("docs/reference/K8S_SUPPORT_MATRIX.md")).expect("k8s");
+    let hpc_doc =
+        fs::read_to_string(root.join("docs/reference/HPC_SUPPORT_MATRIX.md")).expect("hpc");
+    let remote_doc =
+        fs::read_to_string(root.join("docs/reference/REMOTE_SUPPORT_MATRIX.md")).expect("remote");
 
     for backend in backends {
         let name = backend["backend"].as_str().expect("backend name");
         let status = backend["status"].as_str().expect("backend status");
         match name {
-            "kubernetes" => assert!(k8s_doc.contains(status), "k8s doc must include status {status}"),
-            "hpc" => assert!(hpc_doc.contains(status), "hpc doc must include status {status}"),
-            "remote" => assert!(remote_doc.contains(status), "remote doc must include status {status}"),
+            "kubernetes" => assert!(
+                k8s_doc.contains(status),
+                "k8s doc must include status {status}"
+            ),
+            "hpc" => assert!(
+                hpc_doc.contains(status),
+                "hpc doc must include status {status}"
+            ),
+            "remote" => assert!(
+                remote_doc.contains(status),
+                "remote doc must include status {status}"
+            ),
             _ => panic!("unexpected backend in generated matrix: {name}"),
         }
     }

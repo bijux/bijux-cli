@@ -27,7 +27,10 @@ fn proof_schema_compatibility_fixtures_exist() {
         "evidence/compat/proof_bundle/unsupported_past/proof.json",
         "docs/spec/PROOF_BUNDLE_SCHEMA_v0.1.json",
     ] {
-        assert!(root.join(rel).exists(), "missing proof schema fixture: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing proof schema fixture: {rel}"
+        );
     }
 }
 

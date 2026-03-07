@@ -318,12 +318,12 @@ pub use distributed::{
     validate_task_lease_semantics, validate_worker_identity, verify_remote_artifact_integrity,
     worker_alive, worker_pool_satisfies_capability_request, DeliveryGuarantee,
     DistributedExecutionRequest, DistributedExecutionResult, DistributedFailureClass,
-    DistributedReadinessChecklist, DistributedSecurityModel, HeartbeatClass,
-    HeartbeatSemantics, LivenessPolicy, MockRemoteBackend, PlacementHint, ReassignmentRule,
+    DistributedReadinessChecklist, DistributedSecurityModel, HeartbeatClass, HeartbeatSemantics,
+    LivenessPolicy, MockRemoteBackend, PlacementHint, ReassignmentRule,
     RemoteArtifactCommitContract, RemoteArtifactUploadContract, RemoteCancellationContract,
     RemoteLogStreamContract, RemoteStatusEvent, RetryLineageRecord, StatusReportingClass,
-    TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
-    WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration, WorkerSandboxNegotiation,
+    TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
+    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerSandboxNegotiation,
     WorkerVersionCompatibilityRule,
 };
 pub use distribution_readiness::{

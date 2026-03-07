@@ -459,7 +459,13 @@ fn capabilities_backend_query_supports_remote() {
 #[test]
 fn semantic_portability_backend_query_surface_is_available() {
     let output = dag_command()
-        .args(["dag", "semantic-portability", "--backend", "kubernetes", "--json"])
+        .args([
+            "dag",
+            "semantic-portability",
+            "--backend",
+            "kubernetes",
+            "--json",
+        ])
         .output()
         .expect("semantic portability");
     assert!(output.status.success());
@@ -501,8 +507,12 @@ fn equivalence_proof_surface_reports_for_two_runs() {
 
     let run_a_payload: serde_json::Value = serde_json::from_slice(&run_a_out.stdout).expect("a");
     let run_b_payload: serde_json::Value = serde_json::from_slice(&run_b_out.stdout).expect("b");
-    let run_a_dir = run_a_payload["data"]["run_dir"].as_str().expect("run a dir");
-    let run_b_dir = run_b_payload["data"]["run_dir"].as_str().expect("run b dir");
+    let run_a_dir = run_a_payload["data"]["run_dir"]
+        .as_str()
+        .expect("run a dir");
+    let run_b_dir = run_b_payload["data"]["run_dir"]
+        .as_str()
+        .expect("run b dir");
 
     let output = dag_command()
         .args([

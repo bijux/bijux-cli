@@ -29,7 +29,10 @@ fn hotspot_and_repo_reports_exist() {
         "docs/REPO_CONSTITUTION.md",
         "docs/tracking/STRUCTURAL_DEBT_REGISTER.md",
     ] {
-        assert!(root.join(rel).exists(), "missing repo-health surface: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing repo-health surface: {rel}"
+        );
     }
 }
 
@@ -52,7 +55,8 @@ fn app_and_dev_crates_do_not_depend_on_runtime_core_internals() {
                 }
                 let body = fs::read_to_string(&p).expect("read file");
                 assert!(
-                    !body.contains("runtime_core::") && !body.contains("bijux_dag_runtime::runtime_core"),
+                    !body.contains("runtime_core::")
+                        && !body.contains("bijux_dag_runtime::runtime_core"),
                     "app/dev crate must not import runtime_core internals: {}",
                     p.display()
                 );

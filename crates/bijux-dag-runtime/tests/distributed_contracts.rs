@@ -279,5 +279,8 @@ fn cancellation_delivery_and_pool_capability_negotiation_are_checked() {
         required_sandbox_profile: Some("unavailable".to_string()),
         ..request
     };
-    assert!(!worker_pool_satisfies_capability_request(&caps, &impossible));
+    assert!(!worker_pool_satisfies_capability_request(
+        &caps,
+        &impossible
+    ));
 }
