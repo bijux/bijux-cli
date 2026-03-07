@@ -37,7 +37,10 @@ fn only_cli_crate_declares_bin_target() {
         }
     }
 
-    assert!(offenders.is_empty(), "non-cli crates declare [[bin]]: {offenders:?}");
+    assert!(
+        offenders.is_empty(),
+        "non-cli crates declare [[bin]]: {offenders:?}"
+    );
 }
 
 #[test]
@@ -75,7 +78,10 @@ fn cli_main_stays_thin_wiring_only() {
     let cli_main = root().join("crates/bijux-dag-cli/src/main.rs");
     let text = fs::read_to_string(cli_main).expect("read cli main");
     let lines = text.lines().count();
-    assert!(lines <= 120, "cli main grew beyond thin wiring budget: {lines}");
+    assert!(
+        lines <= 120,
+        "cli main grew beyond thin wiring budget: {lines}"
+    );
     assert!(
         !text.contains("std::fs::") && !text.contains("Command::new("),
         "cli main must not contain business logic side-effect plumbing"
