@@ -1,0 +1,121 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "purpose": "map trust properties to executable tests and test value classes",
+  "allowed_value_classes": [
+    "critical",
+    "useful",
+    "decorative",
+    "delete"
+  ],
+  "mappings": [
+    {
+      "trust_property": "tp_deterministic_scheduling",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs",
+        "crates/bijux-dag-runtime/tests/scheduler_contract.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_failure_propagation",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_failure_contracts.rs",
+        "crates/bijux-dag-runtime/tests/runtime_node_execution_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_replay_equivalence",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_replay_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_cache_integrity",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_cache_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_artifact_integrity",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_artifact_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_policy_enforcement",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_policy_contracts.rs",
+        "crates/bijux-dag-runtime/tests/security_policy_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_operator_observability",
+      "value_class": "useful",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/observability_contracts.rs",
+        "crates/bijux-dag-runtime/tests/battle_workflow_harness_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_import_export_compatibility",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_import_export_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_state_machine_legality",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_state_machine_contracts.rs",
+        "crates/bijux-dag-runtime/tests/state_machine_transitions.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_timeout_retry_accounting",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_cancellation_contracts.rs",
+        "crates/bijux-dag-runtime/tests/runtime_recovery_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_secret_redaction",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
+        "crates/bijux-dag-runtime/tests/secrets_security_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_run_dir_resilience",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_recovery_contracts.rs",
+        "crates/bijux-dag-runtime/tests/runtime_import_export_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_plan_truth",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs",
+        "crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs"
+      ]
+    },
+    {
+      "trust_property": "tp_config_policy_determinism",
+      "value_class": "critical",
+      "tests": [
+        "crates/bijux-dag-runtime/tests/runtime_policy_contracts.rs",
+        "crates/bijux-dev-dag/tests/config_policy_hardening_contracts.rs"
+      ]
+    }
+  ]
+}
