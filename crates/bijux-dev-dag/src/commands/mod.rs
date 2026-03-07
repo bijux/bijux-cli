@@ -1245,6 +1245,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_foundation_verification_guard(),
     },
+    SuiteDef {
+        id: "control-plane-surfaces",
+        description: "control-plane verification command surfaces stay present",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_control_plane_surfaces_guard(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -6680,6 +6689,45 @@ fn run_foundation_verification_guard() -> Result<(), String> {
     ] {
         if !crate::suites::repo::IDS.contains(&required) {
             return Err(format!("foundation verification missing suite id: {required}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_control_plane_surfaces_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let commands = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+        .map_err(|err| err.to_string())?;
+    for required in [
+        "enum RepoCommand",
+        "enum ReleaseCommand",
+        "ArtifactVerify",
+        "StorageHealth",
+        "RunDirAudit",
+        "Ci",
+        "ControlCommand::Run",
+        "ReleaseCommand::Verify",
+    ] {
+        if !commands.contains(required) {
+            return Err(format!("missing control-plane command surface: {required}"));
+        }
+    }
+    let foundation = fs::read_to_string(root.join("docs/spec/CONTROL_PLANE_FOUNDATION.md"))
+        .map_err(|err| err.to_string())?;
+    for required in [
+        "repo verification",
+        "docs verification",
+        "naming verification",
+        "crate boundary verification",
+        "fixture verification",
+        "artifact contract verification",
+        "release verification",
+        "ci verification",
+    ] {
+        if !foundation.contains(required) {
+            return Err(format!(
+                "control-plane foundation doc missing required surface: {required}"
+            ));
         }
     }
     Ok(())

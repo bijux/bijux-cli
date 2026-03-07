@@ -59,4 +59,5 @@ pub const IDS: &[&str] = &[
     "config-drift",
     "ambient-env-guard",
     "foundation-verification",
+    "control-plane-surfaces",
 ];

@@ -5,6 +5,7 @@
 - [README](./README.md)
 - [Workspace contract](./spec/WORKSPACE_CONTRACT.md)
 - [Control-plane foundation](./spec/CONTROL_PLANE_FOUNDATION.md)
+- [Control-plane command taxonomy](./spec/CONTROL_PLANE_COMMAND_TAXONOMY.md)
 - [Boundary rules](./spec/BOUNDARY_RULES.md)
 - [Crate ownership contract](./spec/CRATE_OWNERSHIP.md)
 - [Crate responsibility statements](./spec/CRATE_RESPONSIBILITY_STATEMENTS.md)
