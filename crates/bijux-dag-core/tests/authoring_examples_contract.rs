@@ -1,9 +1,18 @@
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::parse_graph_strict;
 use std::fs;
 use std::path::Path;
 
 fn load(path: &str) -> String {
-    fs::read_to_string(Path::new(path)).expect("read fixture")
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    fs::read_to_string(root.join(path)).expect("read fixture")
 }
 
 #[test]

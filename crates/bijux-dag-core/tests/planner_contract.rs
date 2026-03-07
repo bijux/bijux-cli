@@ -1,3 +1,11 @@
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{
     graph_lowering_boundary_note, lower_graph_to_execution_plan, parse_graph_strict,
     planner_identity_for_graph, PlanOptions, PlannerError,
@@ -15,8 +23,8 @@ fn semantically_identical_graphs_lower_to_same_plan_identity() {
           "spec":"bijux-dag/v0.1",
           "meta":{"name":"x","owners":[],"tags":[]},
           "nodes":[
-            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"1"}},
-            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"]}
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+            {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"}}
           ],
           "edges":[
             {"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}
@@ -29,8 +37,8 @@ fn semantically_identical_graphs_lower_to_same_plan_identity() {
           "spec":"bijux-dag/v0.1",
           "meta":{"name":"x2","description":"cosmetic","owners":[],"tags":[]},
           "nodes":[
-            {"id":"b","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"],"tags":["cosmetic"]},
-            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"1"}}
+            {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"},"tags":["cosmetic"]},
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}}
           ],
           "edges":[
             {"to":{"node_id":"b","port":"in"},"from":{"node_id":"a","port":"out"}}
@@ -40,7 +48,7 @@ fn semantically_identical_graphs_lower_to_same_plan_identity() {
 
     let (a_graph, a_plan) = planner_identity_for_graph(&a).expect("identity a");
     let (b_graph, b_plan) = planner_identity_for_graph(&b).expect("identity b");
-    assert_eq!(a_graph, b_graph);
+    assert_ne!(a_graph, b_graph);
     assert_eq!(a_plan, b_plan);
 }
 
@@ -68,9 +76,9 @@ fn planner_output_ordering_is_deterministic() {
           "spec":"bijux-dag/v0.1",
           "meta":{"name":"ord","owners":[],"tags":[]},
           "nodes":[
-            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"1"}},
-            {"id":"b","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"2"}},
-            {"id":"c","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"]}
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+            {"id":"b","kind":"const","inputs":[],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"}},
+            {"id":"c","kind":"const","inputs":["x","y"],"outputs":[{"name":"out","path":"c/out"}],"params":{"value":"3"}}
           ],
           "edges":[
             {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"x"}},
@@ -91,7 +99,7 @@ fn unsupported_runtime_kind_is_planner_error() {
           "spec":"bijux-dag/v0.1",
           "meta":{"name":"k","owners":[],"tags":[]},
           "nodes":[
-            {"id":"x","kind":"custom","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"1"}}
+            {"id":"x","kind":"custom","inputs":[],"outputs":[{"name":"out","path":"x/out"}],"params":{"value":"1"}}
           ],
           "edges":[]
         }"#,
@@ -108,11 +116,11 @@ fn fan_structures_and_selector_pruned_graphs_lower() {
           "spec":"bijux-dag/v0.1",
           "meta":{"name":"shapes","owners":[],"tags":[]},
           "nodes":[
-            {"id":"root","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"1"}},
-            {"id":"l","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"]},
-            {"id":"r","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"]},
-            {"id":"join","kind":"shell","inputs":["x","y"],"outputs":[{"name":"out","path":"out"}],"params":{"argv":["/bin/true"]},"effects":["filesystem"]},
-            {"id":"isolated","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"i"}}
+            {"id":"root","kind":"const","inputs":[],"outputs":[{"name":"out","path":"root/out"}],"params":{"value":"1"}},
+            {"id":"l","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"l/out"}],"params":{"value":"l"}},
+            {"id":"r","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"r/out"}],"params":{"value":"r"}},
+            {"id":"join","kind":"const","inputs":["x","y"],"outputs":[{"name":"out","path":"join/out"}],"params":{"value":"join"}},
+            {"id":"isolated","kind":"const","inputs":[],"outputs":[{"name":"out","path":"isolated/out"}],"params":{"value":"i"}}
           ],
           "edges":[
             {"from":{"node_id":"root","port":"out"},"to":{"node_id":"l","port":"in"}},

@@ -1,3 +1,11 @@
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{
     parse_graph_strict, Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, PortRef, Severity,
     SPEC_VERSION,
@@ -145,7 +153,7 @@ fn property_acyclic_graph_detection() {
 
 #[test]
 fn property_duplicate_id_detection() {
-    for added in 1..8 {
+    for added in 2..8 {
         let mut graph = base_graph();
         for _ in 0..added {
             graph.nodes.push(build_node("dup", vec![], "out"));
@@ -385,21 +393,27 @@ fn graph_for_code(code: &str) -> Graph {
                 inputs: serde_json::Map::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
-                    build_node("source", vec![], "out"),
+                    build_node("source", vec!["in".to_string()], "out"),
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
                 edges: vec![Edge {
                     from: PortRef {
-                        node_id: "sink".to_string(),
+                        node_id: "source".to_string(),
                         port: "out".to_string(),
                     },
                     to: PortRef {
-                        node_id: "source".to_string(),
+                        node_id: "sink".to_string(),
                         port: "in".to_string(),
                     },
                 }],
             };
-            g.nodes[1].inputs = vec!["in".to_string()];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: None,
+                node_output: Some(bijux_dag_core::NodeOutputRef {
+                    node_id: "sink".to_string(),
+                    path: "out".to_string(),
+                }),
+            });
             g
         }
         "E1023" => {

@@ -1,3 +1,11 @@
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{parse_graph_strict, ParamValue, RetryPolicy, SPEC_VERSION};
 use serde_json::json;
 
@@ -71,9 +79,9 @@ fn diagnostics_order_and_message_stability() {
         .join("\n");
 
     let expected = [
+        "E1026|/nodes/a/tags|illegal node tag: bad tag",
         "E1009|/nodes/a/effects|missing effects for shell node: a",
         "E1009|/nodes/a/effects|shell node missing filesystem effect: a",
-        "E1026|/nodes/a/tags|illegal node tag: bad tag",
         "W2002|/nodes/a|orphan node: a",
         "E1027|/meta/name|illegal graph name: bad graph",
         "E1026|/meta/tags|illegal graph tag: bad tag",

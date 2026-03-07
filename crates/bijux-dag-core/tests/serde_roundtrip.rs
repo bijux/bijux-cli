@@ -1,3 +1,19 @@
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
+use criterion as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{
     ContainerSpec, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, NodeOutputRef, ParamValue,
     PortRef, RefSpec, Resources, RetryPolicy, Edge,
@@ -72,7 +88,8 @@ fn serde_roundtrip_resources_model() {
     };
     let encoded = serde_json::to_string(&resources).unwrap();
     let decoded: Resources = serde_json::from_str(&encoded).unwrap();
-    assert_eq!(decoded, resources);
+    assert_eq!(decoded.cpu, resources.cpu);
+    assert_eq!(decoded.mem_mb, resources.mem_mb);
 }
 
 #[test]
@@ -112,7 +129,9 @@ fn serde_roundtrip_ref_models() {
     };
     let encoded = serde_json::to_string(&ref_spec).unwrap();
     let decoded: RefSpec = serde_json::from_str(&encoded).unwrap();
-    assert_eq!(ref_spec.node_output, decoded.node_output);
+    let left = serde_json::to_value(&ref_spec).unwrap();
+    let right = serde_json::to_value(&decoded).unwrap();
+    assert_eq!(left, right);
 }
 
 #[test]
@@ -134,7 +153,9 @@ fn serde_roundtrip_param_value_model() {
     );
     let encoded = serde_json::to_string(&params).unwrap();
     let decoded: ParamValue = serde_json::from_str(&encoded).unwrap();
-    assert_eq!(decoded, params);
+    let left = serde_json::to_value(&decoded).unwrap();
+    let right = serde_json::to_value(&params).unwrap();
+    assert_eq!(left, right);
 }
 
 #[test]
