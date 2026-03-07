@@ -76,6 +76,7 @@ mod replay;
 mod artifacts;
 mod diagnostics;
 mod error;
+mod internal;
 mod upgrade_compatibility;
 mod performance_capacity;
 mod workflow_product;

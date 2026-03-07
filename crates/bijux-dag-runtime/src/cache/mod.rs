@@ -1,4 +1,8 @@
 //! Runtime cache models and helpers.
+pub(crate) mod key;
+pub(crate) mod proof;
+pub(crate) mod store;
+pub(crate) mod lineage;
 
 pub use crate::CacheMode;
 use serde::{Deserialize, Serialize};
