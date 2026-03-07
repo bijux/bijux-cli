@@ -10,6 +10,7 @@ mod authz_policy;
 mod async_adapter;
 mod backend_cluster;
 mod clock;
+mod container_execution;
 pub mod config;
 mod control_plane;
 mod control_plane_api;
@@ -42,6 +43,7 @@ mod planner_intelligence;
 mod plugin_ecosystem;
 mod recovery;
 mod remote_executor;
+mod remote_execution_model;
 mod registry;
 pub mod run_context;
 mod run_state;
@@ -201,6 +203,10 @@ pub use adaptive_scheduler::{
     AdaptiveQueueThrottleDecision, ArtifactPrefetchHint, BackendSuitabilitySignal,
     LearnedDurationProfile, LearningWindowPolicy, SlaDispatchTuningDecision,
 };
+pub use container_execution::{
+    container_env_isolated, map_local_path_to_container, validate_container_contract,
+    validate_container_relative_path, ContainerExecutionContract, ContainerMount,
+};
 pub use ai_operator_assist::{
     anomaly_detected, answer_failure_question, build_investigation_bundle, build_postmortem_seed,
     guardrail_allows, next_maturity_level, recommend_safe_actions, redact_for_ai_export,
@@ -239,6 +245,10 @@ pub use formal_verification::{
     LineageInvariantProof, ModelTestSuite, PolicyInvariantProof, PropertyTestSuite,
     ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
     VerificationMaturityLabel, VerifiedCoreScope,
+};
+pub use remote_execution_model::{
+    execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
+    RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
 };
 pub use federated_scheduling::{
     cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
