@@ -14,7 +14,7 @@ Aggregates high-trust release evidence and rejects readiness based on raw test c
 
 ## Readiness rule
 
-Release readiness depends on the required evidence surfaces above. raw test totals are insufficient without these surfaces.
+Release readiness depends on the required evidence surfaces above. Raw test totals are insufficient without trust-property coverage on these surfaces.
 
 ## Evidence links
 

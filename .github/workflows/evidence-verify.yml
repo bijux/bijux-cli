@@ -15,8 +15,19 @@ jobs:
           toolchain: 1.81
       - name: verify evidence foundation
         run: cargo run -p bijux-dev-dag -- verify evidence-foundation --report artifacts/reports/evidence-foundation.json
+      - name: run battle-first trust subset
+        run: |
+          cargo run -p bijux-dev-dag -- verify evidence-battle --report artifacts/reports/evidence-battle.json
+          cargo run -p bijux-dev-dag -- verify evidence-cache --report artifacts/reports/evidence-cache.json
+          cargo run -p bijux-dev-dag -- verify evidence-replay --report artifacts/reports/evidence-replay.json
+          cargo run -p bijux-dev-dag -- verify evidence-consumers --report artifacts/reports/evidence-consumers.json
       - name: verify release evidence set
         run: cargo run -p bijux-dev-dag -- verify evidence-release-set --report artifacts/reports/evidence-release-set.json
+      - name: run release-first trust subset
+        run: |
+          cargo run -p bijux-dev-dag -- verify evidence-release-set --report artifacts/reports/release-subset-release-set.json
+          cargo run -p bijux-dev-dag -- verify evidence-foundation --report artifacts/reports/release-subset-foundation.json
+          cargo run -p bijux-dev-dag -- repo release-evidence-report --report artifacts/reports/release-subset-evidence-report.json
       - name: generate evidence summary reports
         run: cargo run -p bijux-dev-dag -- repo evidence-summary-report --report artifacts/reports/evidence-summary.json
       - name: upload reports

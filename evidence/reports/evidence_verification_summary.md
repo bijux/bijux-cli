@@ -1,6 +1,7 @@
 # Evidence Verification Summary
 
 This report lists governed evidence verify suites and their enforcement mode.
+The governance center is trust-property coverage and release-proof surfaces, not raw test totals.
 
 | Suite ID | Verify Command | Mode |
 | --- | --- | --- |

@@ -1,0 +1,11 @@
+{
+  "id": "battle-first",
+  "description": "high-trust battle-first subset focused on trust-property proof",
+  "commands": [
+    "cargo run -p bijux-dev-dag -- verify evidence-battle",
+    "cargo run -p bijux-dev-dag -- verify evidence-cache",
+    "cargo run -p bijux-dev-dag -- verify evidence-replay",
+    "cargo run -p bijux-dev-dag -- verify evidence-consumers"
+  ],
+  "report_focus": "trust-property coverage"
+}
