@@ -1,4 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
 
 fn sample_graph() -> &'static str {
     r#"{

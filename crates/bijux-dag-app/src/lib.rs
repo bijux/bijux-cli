@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod cache;
 #[path = "cache/cmd.rs"]
 mod cache_cmd;
