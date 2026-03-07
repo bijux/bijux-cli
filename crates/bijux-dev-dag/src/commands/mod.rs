@@ -15,6 +15,7 @@ mod authoring_evidence;
 mod battle_evidence;
 mod compare_evidence;
 mod evidence_access;
+mod evidence_control_plane;
 mod evidence_registry;
 mod model;
 mod perf_evidence;
@@ -37,6 +38,9 @@ use evidence_access::{
     as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
     render_consumers_to_families_report, resolve_asset_by_id, resolve_assets_by_consumer,
     resolve_assets_by_family, resolve_assets_by_trust_property, verify_registry_access_bypass,
+};
+use evidence_control_plane::{
+    run_evidence_release_set_verify, run_evidence_suite_policy_verify, run_evidence_summary_report,
 };
 use evidence_registry::{
     run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
@@ -420,6 +424,16 @@ enum RepoCommand {
         )]
         consumers_out: PathBuf,
     },
+    /// Emit machine-readable and human-readable evidence suite summary reports
+    EvidenceSummaryReport {
+        #[arg(long, default_value = "artifacts/reports/evidence_suite_summary.json")]
+        json_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "evidence/reports/evidence_verification_summary.md"
+        )]
+        markdown_out: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -436,6 +450,8 @@ enum VerifyCommand {
     EvidenceBattle,
     /// Validate cache evidence surfaces
     EvidenceCache,
+    /// Validate replay evidence surfaces
+    EvidenceReplay,
     /// Validate compatibility evidence surfaces
     EvidenceCompat,
     /// Validate fault evidence surfaces
@@ -450,6 +466,8 @@ enum VerifyCommand {
     EvidenceDrift,
     /// Validate that tests and governance consumers reference evidence-owned assets
     EvidenceConsumers,
+    /// Validate release evidence set references and classification
+    EvidenceReleaseSet,
 }
 
 #[derive(Subcommand)]
@@ -2025,6 +2043,16 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "assets_out": assets_out, "consumers_out": consumers_out }),
                 || run_evidence_consumer_reports(&assets_out, &consumers_out),
             ),
+            RepoCommand::EvidenceSummaryReport {
+                json_out,
+                markdown_out,
+            } => run_command_reported(
+                &context,
+                "repo.evidence-summary-report",
+                CommandEffect::ReadWrite,
+                json!({ "json_out": json_out, "markdown_out": markdown_out }),
+                || run_evidence_summary_report(&json_out, &markdown_out),
+            ),
         },
         CommandLine::Verify { command } => match command {
             VerifyCommand::EvidenceFoundation => run_command_reported(
@@ -2068,6 +2096,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_cache_verify(),
+            ),
+            VerifyCommand::EvidenceReplay => run_command_reported(
+                &context,
+                "verify.evidence-replay",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_replay_verify(),
             ),
             VerifyCommand::EvidenceCompat => run_command_reported(
                 &context,
@@ -2117,6 +2152,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_consumers_verify(),
+            ),
+            VerifyCommand::EvidenceReleaseSet => run_command_reported(
+                &context,
+                "verify.evidence-release-set",
+                CommandEffect::Validation,
+                json!({}),
+                || run_evidence_release_set_verify(),
             ),
         },
         CommandLine::Schedule { command } => match command {
@@ -5657,6 +5699,19 @@ fn run_evidence_cache_verify() -> Result<(), String> {
     run_evidence_family_boundary_verify()
 }
 
+fn run_evidence_replay_verify() -> Result<(), String> {
+    run_evidence_domain_verify(
+        "cache",
+        &[
+            "evidence/cache/replay/match_case.json",
+            "evidence/cache/replay/mismatch_case.json",
+            "evidence/cache/replay/corruption_case.json",
+            "evidence/cache/replay/unsupported_version_case.json",
+        ],
+    )?;
+    run_replay_contract_guard()
+}
+
 fn run_evidence_compat_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "compat",
@@ -5710,6 +5765,7 @@ fn run_evidence_compare_verify() -> Result<(), String> {
 
 fn run_evidence_foundation_verify() -> Result<(), String> {
     let root = repo_root()?;
+    run_evidence_suite_policy_verify()?;
     run_evidence_schema_verify()?;
     run_evidence_registry_verify()?;
     run_evidence_ownership_verify()?;
@@ -5718,13 +5774,16 @@ fn run_evidence_foundation_verify() -> Result<(), String> {
     run_evidence_authoring_verify()?;
     run_evidence_battle_verify()?;
     run_evidence_cache_verify()?;
+    run_evidence_replay_verify()?;
     run_evidence_compat_verify()?;
     run_evidence_fault_verify()?;
     run_evidence_perf_verify()?;
     run_evidence_compare_verify()?;
+    run_evidence_release_set_verify()?;
     for rel in [
         "evidence/reports/final_evidence_root_contract_report.md",
         "evidence/reports/root_topology_before_after.md",
+        "evidence/reports/evidence_verification_summary.md",
     ] {
         if !root.join(rel).exists() {
             return Err(format!(

@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "blocking_assets": [
+    "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+    "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+    "evidence/cache/replay/match_case.json",
+    "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+    "evidence/fault/classes/fault_classes.json",
+    "evidence/perf/scenarios/tiny_canonical.json"
+  ],
+  "advisory_assets": [
+    "evidence/compare/scenarios/chain.json",
+    "evidence/compare/scenarios/diamond.json",
+    "evidence/perf/scenarios/replay_verification_cost.json"
+  ]
+}
