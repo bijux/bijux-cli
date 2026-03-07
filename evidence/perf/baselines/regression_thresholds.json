@@ -1,25 +1,17 @@
 {
-  "version": "v1",
-  "trusted_subset": [
-    {
-      "scenario_id": "tiny-canonical",
-      "max_regression_ratio": 0.15
-    },
-    {
-      "scenario_id": "medium-canonical",
-      "max_regression_ratio": 0.15
-    },
-    {
-      "scenario_id": "many-small-nodes",
-      "max_regression_ratio": 0.2
-    },
-    {
-      "scenario_id": "manifest-trace-write-amplification",
-      "max_regression_ratio": 0.2
-    },
-    {
-      "scenario_id": "replay-verification-cost",
-      "max_regression_ratio": 0.2
-    }
+  "version": "v2",
+  "trusted_release_set": [
+    { "scenario_id": "tiny-canonical", "max_regression_ratio": 0.15 },
+    { "scenario_id": "medium-canonical", "max_regression_ratio": 0.15 },
+    { "scenario_id": "wide-scheduler-overhead", "max_regression_ratio": 0.20 },
+    { "scenario_id": "cache-heavy-canonical", "max_regression_ratio": 0.20 },
+    { "scenario_id": "replay-verification-cost", "max_regression_ratio": 0.20 },
+    { "scenario_id": "manifest-trace-write-amplification", "max_regression_ratio": 0.20 },
+    { "scenario_id": "memory-execute-many-nodes", "max_regression_ratio": 0.20 }
+  ],
+  "advisory_set": [
+    { "scenario_id": "deep-canonical", "max_regression_ratio": 0.25 },
+    { "scenario_id": "replay-canonical", "max_regression_ratio": 0.25 },
+    { "scenario_id": "many-small-nodes", "max_regression_ratio": 0.25 }
   ]
 }

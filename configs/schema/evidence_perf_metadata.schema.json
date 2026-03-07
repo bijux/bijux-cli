@@ -2,21 +2,55 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://bijux.dev/schema/evidence_perf_metadata.schema.json",
   "type": "object",
-  "required": ["version", "owner", "scenarios", "baselines"],
+  "required": [
+    "version",
+    "owner",
+    "contract_reference",
+    "release_relevant_set",
+    "scenarios",
+    "baselines",
+    "obsolete_candidates"
+  ],
   "properties": {
     "version": { "type": "string", "minLength": 1 },
     "owner": { "type": "string", "minLength": 1 },
+    "contract_reference": { "type": "string", "minLength": 1 },
+    "release_relevant_set": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
     "scenarios": {
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
-        "required": ["workload_class", "budget_class", "threshold_owner", "release_blocking"],
+        "required": [
+          "scenario_class",
+          "workload_class",
+          "budget_class",
+          "measurement_method",
+          "baseline_owner",
+          "threshold_owner",
+          "threshold_reference",
+          "release_blocking",
+          "contract_reference"
+        ],
         "properties": {
+          "scenario_class": {
+            "type": "string",
+            "enum": ["core", "advisory", "experimental"]
+          },
           "workload_class": { "type": "string", "minLength": 1 },
           "budget_class": { "type": "string", "minLength": 1 },
+          "measurement_method": { "type": "string", "minLength": 1 },
+          "baseline_owner": { "type": "string", "minLength": 1 },
           "threshold_owner": { "type": "string", "minLength": 1 },
+          "threshold_reference": { "type": "string" },
           "release_blocking": { "type": "boolean" }
+          ,
+          "contract_reference": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": true
       }
@@ -24,6 +58,11 @@
     "baselines": {
       "type": "array",
       "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "obsolete_candidates": {
+      "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
     }
