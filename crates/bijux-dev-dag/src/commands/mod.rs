@@ -107,6 +107,8 @@ enum CommandLine {
     ObservabilityReport,
     /// Execute end-to-end matrix across binary and crate integration entrypoints
     E2eMatrix,
+    /// Report tested and missing fault classes from fault suite catalog
+    FaultSummary,
     /// Run full CI-like sequence
     Ci,
     /// Run CLI compatibility command
@@ -645,6 +647,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_test_policy_guard(),
     },
+    SuiteDef {
+        id: "fault-summary",
+        description: "fault class catalog coverage summary",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_fault_summary_report(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -972,6 +983,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::ReadWrite,
             json!({}),
             || run_e2e_matrix(),
+        ),
+        CommandLine::FaultSummary => run_command_reported(
+            &context,
+            "fault-summary",
+            CommandEffect::Validation,
+            json!({}),
+            || run_fault_summary_report(),
         ),
         CommandLine::Ci => run_command_reported(&context, "ci", CommandEffect::ReadWrite, json!({}), || {
             run_ci()
@@ -2694,4 +2712,46 @@ fn run_e2e_matrix() -> Result<(), String> {
             .to_str()
             .ok_or_else(|| "non-utf8 e2e matrix script path".to_string())?],
     )
+}
+
+#[derive(Debug, Deserialize)]
+struct FaultClassCatalog {
+    fault_classes: Vec<FaultClassEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FaultClassEntry {
+    id: String,
+    tested_by: Vec<String>,
+}
+
+fn run_fault_summary_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let catalog_path = root.join("tests/fault/fixtures/fault_classes.json");
+    let payload = fs::read_to_string(&catalog_path).map_err(|err| err.to_string())?;
+    let catalog: FaultClassCatalog = serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+
+    let mut tested = Vec::new();
+    let mut missing = Vec::new();
+    for entry in catalog.fault_classes {
+        if entry.tested_by.is_empty() {
+            missing.push(entry.id);
+        } else {
+            tested.push(json!({"id": entry.id, "tests": entry.tested_by}));
+        }
+    }
+
+    let summary = json!({
+        "tested_fault_classes": tested,
+        "missing_fault_classes": missing,
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&summary).map_err(|err| err.to_string())?
+    );
+    if summary["missing_fault_classes"].as_array().is_some_and(|items| items.is_empty()) {
+        Ok(())
+    } else {
+        Err("fault class catalog has missing tested_by mappings".to_string())
+    }
 }

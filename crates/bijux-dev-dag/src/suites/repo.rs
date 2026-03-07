@@ -10,4 +10,5 @@ pub const IDS: &[&str] = &[
     "repo-source",
     "repo-manifests",
     "repo-api",
+    "fault-summary",
 ];
