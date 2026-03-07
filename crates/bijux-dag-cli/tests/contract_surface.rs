@@ -4,10 +4,10 @@ use clap_complete as _;
 use serde_json as _;
 use tempfile as _;
 
-use std::io::Write;
 use std::fs;
+use std::io::Write;
 use std::process::Command;
-use tempfile::{NamedTempFile, tempdir};
+use tempfile::{tempdir, NamedTempFile};
 
 fn dag_binary() -> String {
     env!("CARGO_BIN_EXE_bijux").to_string()
@@ -78,8 +78,7 @@ fn dag_validate_json_schema_contract() {
         .expect("json validate");
 
     assert!(output.status.success());
-    let payload: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("validate json");
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
     assert_eq!(payload["command"], "dag.validate");
     assert!(payload["status"].as_str().is_some());
     assert!(payload["data"].is_object());
@@ -109,14 +108,7 @@ fn dag_command_help_surface_contract() {
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     for token in [
-        "validate",
-        "run",
-        "replay",
-        "diff",
-        "explain",
-        "status",
-        "cache",
-        "adapters",
+        "validate", "run", "replay", "diff", "explain", "status", "cache", "adapters",
     ] {
         assert!(text.contains(token));
     }
@@ -131,7 +123,13 @@ fn dag_run_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "--hermetic", "--deny-network", "--clean-env", "run"] {
+    for token in [
+        "--out",
+        "--hermetic",
+        "--deny-network",
+        "--clean-env",
+        "run",
+    ] {
         assert!(text.contains(token));
     }
 }
@@ -463,5 +461,8 @@ fn dag_run_json_output_contract_and_exit_code() {
         serde_json::from_slice(&output.stdout).expect("run json parse");
     assert_eq!(payload["command"], "dag.run");
     assert_eq!(payload["status"], "ok");
-    assert!(payload["data"].get("run_dir").and_then(|v| v.as_str()).is_some());
+    assert!(payload["data"]
+        .get("run_dir")
+        .and_then(|v| v.as_str())
+        .is_some());
 }
