@@ -1038,6 +1038,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_cache_evolution_guard(),
     },
     SuiteDef {
+        id: "multi-run-analytics",
+        description: "multi-run analytics contracts commands schemas and tests alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_multi_run_analytics_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -5271,6 +5280,42 @@ fn run_cache_evolution_guard() -> Result<(), String> {
             .exists()
     {
         return Err("cache command surface expanded without cache evolution coverage tests".to_string());
+    }
+    Ok(())
+}
+
+fn run_multi_run_analytics_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/MULTI_RUN_ANALYTICS_CONTRACT.md",
+        "docs/spec/HISTORY_RETENTION_POLICY.md",
+        "docs/spec/ANALYTICS_EXACTNESS.md",
+        "configs/schema/operator/runs_analytics.schema.json",
+        "crates/bijux-dag-app/tests/multi_run_analytics_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "multi-run analytics required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+    let commands_src =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
+    for token in ["Summary", "Compare", "Trend", "Failures", "Flakes"] {
+        if !commands_src.contains(token) {
+            return Err(format!("runs command surface missing analytics variant `{token}`"));
+        }
+    }
+    let contract = fs::read_to_string(root.join("docs/spec/MULTI_RUN_ANALYTICS_CONTRACT.md"))
+        .map_err(|err| err.to_string())?;
+    if !contract.contains("never mutate authoritative run records") {
+        return Err("multi-run analytics contract must assert non-mutation rule".to_string());
     }
     Ok(())
 }
