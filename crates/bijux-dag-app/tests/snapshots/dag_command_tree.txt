@@ -11,6 +11,7 @@ doctor
 explain
 export
 fingerprint
+fsck
 graph
 graph-lint
 hash

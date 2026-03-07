@@ -37,11 +37,11 @@ mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
 mod replay;
-mod routes;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
 #[path = "replay/service.rs"]
 mod replay_service;
+mod routes;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
 #[path = "inspect/run_views.rs"]
@@ -476,7 +476,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 if *explain {
                     println!("{}", explained.graph_id.as_str());
                     println!("hash_algorithm={}", explained.hash_algorithm);
-                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
+                    println!(
+                        "canonical_json_bytes_len={}",
+                        explained.canonical_json_bytes_len
+                    );
                 } else {
                     println!("{}", explained.graph_id.as_str());
                 }
@@ -507,8 +510,26 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 println!("{}", explained.graph_id.as_str());
                 if *explain {
                     println!("hash_algorithm={}", explained.hash_algorithm);
-                    println!("canonical_json_bytes_len={}", explained.canonical_json_bytes_len);
+                    println!(
+                        "canonical_json_bytes_len={}",
+                        explained.canonical_json_bytes_len
+                    );
                 }
+                Ok(ExitCode::SUCCESS)
+            }
+            HashCommands::Run { run_dir } => {
+                let digest = hash_run_dir(run_dir)?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.hash.run",
+                        true,
+                        json!({"run_hash": digest}),
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{digest}");
                 Ok(ExitCode::SUCCESS)
             }
             HashCommands::Artifact { file } => {
@@ -552,7 +573,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let bytes = graph.canonical_json_bytes().map_err(|_| ExitCode::from(3))?;
+            let bytes = graph
+                .canonical_json_bytes()
+                .map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     &cli,
@@ -1154,7 +1177,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 .clone()
                 .or_else(env_cache_dir)
                 .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
-            let report = explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
+            let report =
+                explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
             let payload = json!({
                 "cache_dir": dir,
                 "key": key,
@@ -1175,7 +1199,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::TraceArtifact { run_dir, artifact_id } => {
+        Commands::TraceArtifact {
+            run_dir,
+            artifact_id,
+        } => {
             let payload = routes::diagnostics_routes::trace_artifact_payload(run_dir, artifact_id)?;
             if cli.json {
                 return emit_json(
@@ -1487,6 +1514,33 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             } else {
                 println!("status: {}", report["status"]);
             }
+            if !ok {
+                return Err(ExitCode::from(3));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::Fsck { run_dir, strict } => {
+            let report = verify_run(run_dir, true, *strict)?;
+            let ok = report
+                .get("status")
+                .and_then(|v| v.as_str())
+                .map(|v| v == "ok")
+                .unwrap_or(false);
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.fsck",
+                    ok,
+                    report,
+                    Vec::new(),
+                    if ok {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(3)
+                    },
+                );
+            }
+            println!("status: {}", report["status"]);
             if !ok {
                 return Err(ExitCode::from(3));
             }
@@ -2052,7 +2106,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "batch_hpc": "simulated"
                 },
                 "operator_commands": [
-                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.artifact","why-rerun","why-cache-missed"
+                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
                 ]
             });
             if cli.json {
@@ -2257,6 +2311,18 @@ fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
         .and_then(Value::as_str)
         .map(std::string::ToString::to_string)
         .ok_or_else(|| ExitCode::from(3))
+}
+
+fn hash_run_dir(run_dir: &Path) -> Result<String, ExitCode> {
+    let mut hasher = Sha256::new();
+    for rel in ["manifest.json", "graph.snapshot.json", "outputs/index.json"] {
+        let path = run_dir.join(rel);
+        if path.exists() {
+            let bytes = fs::read(path).map_err(|_| ExitCode::from(3))?;
+            hasher.update(bytes);
+        }
+    }
+    Ok(hex::encode(hasher.finalize()))
 }
 
 fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {

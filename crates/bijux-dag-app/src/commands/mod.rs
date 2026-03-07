@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(about = "Bijux DAG CLI", long_about = None)]
+#[command(about = "Git for computation graphs", long_about = None)]
 pub(crate) struct DagCli {
     #[arg(long, global = true)]
     pub(crate) json: bool,
@@ -202,6 +202,11 @@ pub(crate) enum Commands {
         #[arg(long)]
         strict: bool,
     },
+    Fsck {
+        run_dir: PathBuf,
+        #[arg(long)]
+        strict: bool,
+    },
     #[command(hide = true)]
     Doctor,
     Migrate {
@@ -257,6 +262,9 @@ pub(crate) enum HashCommands {
         dag: PathBuf,
         #[arg(long)]
         explain: bool,
+    },
+    Run {
+        run_dir: PathBuf,
     },
     Artifact {
         file: PathBuf,

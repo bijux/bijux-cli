@@ -31,9 +31,7 @@ fn main() -> ExitCode {
                         .value_parser(["bash", "zsh", "fish", "elvish", "powershell"])
                         .required(true),
                 ),
-        )
-        .subcommand(Cmd::new("rag").about("Not implemented"))
-        .subcommand(Cmd::new("rar").about("Not implemented"));
+        );
     let matches = cmd.clone().get_matches();
 
     match matches.subcommand() {
@@ -69,10 +67,6 @@ fn main() -> ExitCode {
                 _ => return ExitCode::from(2),
             }
             ExitCode::SUCCESS
-        }
-        Some(("rag", _)) | Some(("rar", _)) => {
-            eprintln!("not implemented");
-            ExitCode::from(2)
         }
         _ => ExitCode::from(2),
     }
