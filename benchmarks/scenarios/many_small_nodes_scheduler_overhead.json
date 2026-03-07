@@ -1,1 +1,1 @@
-{"scenario_id":"many-small-nodes","class":"plan","graph":"benchmarks/fixtures/scheduler_parallel_64.json","focus":"scheduler-overhead"}
+{"scenario_id":"many-small-nodes","class":"plan","graph":"benchmarks/fixtures/scheduler_parallel_64.json","focus":"scheduler-overhead","version":"v1","owner":"bijux-dev-dag"}
