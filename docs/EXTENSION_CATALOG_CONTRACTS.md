@@ -102,4 +102,4 @@ Official plugins require core-team review and security assessment. Community plu
 - Pluggable: adapters, executors, artifact stores, observability exporters.
 - Intentionally unsupported: plugins that bypass policy gates or deterministic guarantees.
 
-See [platform maturity scorecard](./PLATFORM_MATURITY_SCORECARD.md) for readiness tracking.
+Readiness and evidence linkage are tracked in [renovation burndown report](./reports/foundation/renovation_burndown_report.md).
