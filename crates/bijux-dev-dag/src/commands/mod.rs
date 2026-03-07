@@ -7599,9 +7599,12 @@ fn run_sacred_execution_flow_guard() -> Result<(), String> {
     let required = [
         "docs/spec/SACRED_EXECUTION_FLOW.md",
         "docs/architecture/runtime-execution-flow.md",
-        "crates/bijux-dag-runtime/src/sacred_execution.rs",
-        "crates/bijux-dag-runtime/src/execution_context.rs",
+        "docs/reports/foundation/sacred_execution_hardening_report.md",
+        "crates/bijux-dag-runtime/src/runtime_core/governance/sacred_execution.rs",
+        "crates/bijux-dag-runtime/src/runtime_core/execution/context.rs",
+        "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs",
         "crates/bijux-dag-runtime/tests/sacred_execution_flow_contracts.rs",
+        "crates/bijux-dev-dag/tests/sacred_execution_hardening_contracts.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
@@ -7616,8 +7619,10 @@ fn run_sacred_execution_flow_guard() -> Result<(), String> {
         ));
     }
 
-    let engine_src = fs::read_to_string(root.join("crates/bijux-dag-runtime/src/engine.rs"))
-        .map_err(|err| err.to_string())?;
+    let engine_src = fs::read_to_string(
+        root.join("crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs"),
+    )
+    .map_err(|err| err.to_string())?;
     for token in [
         "sacred_execution::run_materialize_inputs",
         "sacred_execution::run_cache_lookup",
@@ -7628,6 +7633,19 @@ fn run_sacred_execution_flow_guard() -> Result<(), String> {
     ] {
         if !engine_src.contains(token) {
             return Err(format!("engine flow missing centralized hook `{}`", token));
+        }
+    }
+    for forbidden in [
+        "crate::try_cache_read(",
+        "crate::try_cache_write(",
+        "crate::write_trace(",
+        "crate::execute_with_retries(",
+    ] {
+        if engine_src.contains(forbidden) {
+            return Err(format!(
+                "engine flow bypasses sacred hook with direct call `{}`",
+                forbidden
+            ));
         }
     }
     Ok(())
