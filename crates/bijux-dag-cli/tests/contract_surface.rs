@@ -15,6 +15,7 @@ fn dag_command() -> Command {
     }
 
     let mut command = Command::new("cargo");
+    command.env("CARGO_TARGET_DIR", "artifacts/target");
     command.args([
         "run",
         "--quiet",
