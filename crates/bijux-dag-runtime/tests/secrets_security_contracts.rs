@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -39,7 +39,10 @@ fn secret_scope_and_delivery_mode_contracts_are_enforced() {
         allowed_modes: vec![SecretInjectionMode::Env, SecretInjectionMode::FileMount],
         deny_process_args: true,
     };
-    assert!(validate_secret_delivery_mode(&SecretInjectionMode::Env, &delivery));
+    assert!(validate_secret_delivery_mode(
+        &SecretInjectionMode::Env,
+        &delivery
+    ));
     assert!(!validate_secret_delivery_mode(
         &SecretInjectionMode::BackendNative,
         &delivery

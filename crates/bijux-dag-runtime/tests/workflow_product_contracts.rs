@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,12 +11,11 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    approval_gate_ready, critical_workflow_ready, evolution_plan_valid,
-    portfolio_observability, product_positioning_note, rollout_is_progressive,
-    wait_state_resumable, workflow_blueprint_valid, workflow_quality_gate_passed,
-    workflow_template_catalog, world_class_score, ApprovalGateNode,
-    CriticalWorkflowDesignation, HumanWaitState, EvolutionPlan,
-    PolicyComposedBlueprint, RolloutWorkflow, WorkflowQualityGate,
+    approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
+    product_positioning_note, rollout_is_progressive, wait_state_resumable,
+    workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
+    world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, EvolutionPlan,
+    HumanWaitState, PolicyComposedBlueprint, RolloutWorkflow, WorkflowQualityGate,
     WorldClassPlatformScorecard,
 };
 use std::collections::BTreeMap;
@@ -76,7 +75,11 @@ fn critical_designation_rollout_and_blueprint_validations_work() {
         rollout_id: "rollout-risk".to_string(),
         source_environment: "staging".to_string(),
         target_environments: vec!["prod-eu".to_string(), "prod-us".to_string()],
-        progressive_steps: vec!["canary-10".to_string(), "canary-50".to_string(), "full".to_string()],
+        progressive_steps: vec![
+            "canary-10".to_string(),
+            "canary-50".to_string(),
+            "full".to_string(),
+        ],
     };
     assert!(rollout_is_progressive(&rollout));
 

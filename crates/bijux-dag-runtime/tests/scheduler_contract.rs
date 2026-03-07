@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -12,10 +12,10 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    build_plan, build_scheduler, DependencyCounter, LocalExecutor, ReadyQueue, RuntimeConfig,
-    scheduler_debug_event_log,
-    failure_allows_downstream_readiness, scheduler_contract_profile, scheduler_invariants_hold,
-    FailurePropagationMode, SchedulerPolicy, SchedulerState, Selector, SelectorSet,
+    build_plan, build_scheduler, failure_allows_downstream_readiness, scheduler_contract_profile,
+    scheduler_debug_event_log, scheduler_invariants_hold, DependencyCounter,
+    FailurePropagationMode, LocalExecutor, ReadyQueue, RuntimeConfig, SchedulerPolicy,
+    SchedulerState, Selector, SelectorSet,
 };
 
 fn graph_text() -> &'static str {
@@ -77,9 +77,9 @@ fn planner_dependency_closure_keeps_upstream_for_partial_rerun() {
         ..RuntimeConfig::default()
     };
     let plan = build_plan(&graph, &options);
-    assert!(!plan.filter_reasons.contains_key("a"));
-    assert!(!plan.filter_reasons.contains_key("b"));
-    assert!(!plan.filter_reasons.contains_key("c"));
+    assert!(plan.order.iter().any(|id| id == "a"));
+    assert!(plan.order.iter().any(|id| id == "b"));
+    assert!(plan.order.iter().any(|id| id == "c"));
 }
 
 #[test]
@@ -87,7 +87,10 @@ fn scheduler_contract_profile_is_explicit_and_stable() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(
+        format!("{:?}", profile.ready_tie_break),
+        "LexicographicNodeId"
+    );
 }
 
 #[test]
@@ -100,7 +103,10 @@ fn ready_queue_evolution_is_deterministic_for_fixed_event_sequence() {
     assert_eq!(state.ready_snapshot(), vec!["a".to_string()]);
     let newly_ready = state.complete_success("a");
     assert_eq!(newly_ready, vec!["b".to_string()]);
-    assert_eq!(state.ready_snapshot(), vec!["a".to_string(), "b".to_string()]);
+    assert_eq!(
+        state.ready_snapshot(),
+        vec!["a".to_string(), "b".to_string()]
+    );
     state.complete_success("b");
     assert!(state.ready_snapshot().contains(&"c".to_string()));
     assert!(scheduler_invariants_hold(&state));

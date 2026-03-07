@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -53,14 +53,27 @@ fn cron_conflict_detection_groups_equal_expressions() {
     ];
     let conflicts = detect_cron_conflicts(&defs);
     assert_eq!(conflicts.len(), 1);
-    assert_eq!(conflicts[0].schedule_ids, vec!["s1".to_string(), "s2".to_string()]);
+    assert_eq!(
+        conflicts[0].schedule_ids,
+        vec!["s1".to_string(), "s2".to_string()]
+    );
 }
 
 #[test]
 fn weighted_priority_sort_is_deterministic() {
     let submissions = vec![
-        ScheduledSubmission { schedule_id: "b".to_string(), run_id: "run-2".to_string(), created_unix_ms: 10, status: bijux_dag_runtime::ScheduleSubmissionStatus::Pending },
-        ScheduledSubmission { schedule_id: "a".to_string(), run_id: "run-1".to_string(), created_unix_ms: 10, status: bijux_dag_runtime::ScheduleSubmissionStatus::Pending },
+        ScheduledSubmission {
+            schedule_id: "b".to_string(),
+            run_id: "run-2".to_string(),
+            created_unix_ms: 10,
+            status: bijux_dag_runtime::ScheduleSubmissionStatus::Pending,
+        },
+        ScheduledSubmission {
+            schedule_id: "a".to_string(),
+            run_id: "run-1".to_string(),
+            created_unix_ms: 10,
+            status: bijux_dag_runtime::ScheduleSubmissionStatus::Pending,
+        },
     ];
     let mut priorities = BTreeMap::new();
     priorities.insert("a".to_string(), PriorityClass::Critical);
@@ -100,12 +113,7 @@ fn trigger_dedup_marks_repeated_keys() {
 
 #[test]
 fn sla_metrics_counts_missed_expectations() {
-    let metrics = evaluate_sla_metrics(
-        &[(20, 10), (5, 10)],
-        &[(50, 40), (39, 40)],
-        2,
-        1,
-    );
+    let metrics = evaluate_sla_metrics(&[(20, 10), (5, 10)], &[(50, 40), (39, 40)], 2, 1);
     assert_eq!(metrics.missed_expected_start, 1);
     assert_eq!(metrics.missed_expected_finish, 1);
     assert_eq!(metrics.queue_saturation_count, 2);

@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -14,8 +14,8 @@ use bijux_dag_runtime::{
     check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
     resolve_tenant_overlay, scope_lineage_query, tenant_provisioning_bootstrap,
     validate_tenant_isolation, TenantConfigOverlay, TenantId, TenantLineageScope,
-    TenantPluginAllowlist, TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
-    TenantRegistryPartition, TenantSchedulerAdmission,
+    TenantPluginAllowlist, TenantPolicyBundleRef, TenantProvisioningSpec,
+    TenantQueueIsolationPolicy, TenantRegistryPartition, TenantSchedulerAdmission,
 };
 use std::collections::BTreeMap;
 
@@ -32,7 +32,10 @@ fn tenant_overlay_and_run_indexing_are_deterministic() {
         &overlay,
     );
     assert_eq!(resolved.get("JOBS"), Some(&"8".to_string()));
-    assert_eq!(compose_tenant_run_id(&tenant, "run_001"), "tenant_alpha::run_001");
+    assert_eq!(
+        compose_tenant_run_id(&tenant, "run_001"),
+        "tenant_alpha::run_001"
+    );
 }
 
 #[test]
@@ -97,8 +100,7 @@ fn tenant_admission_bootstrap_and_isolation_conformance_hold() {
     );
     assert!(admitted);
 
-    let conformance = validate_tenant_isolation(
-        &tenant, &tenant, &tenant, &tenant, &tenant, &tenant,
-    );
+    let conformance =
+        validate_tenant_isolation(&tenant, &tenant, &tenant, &tenant, &tenant, &tenant);
     assert!(conformance.violations.is_empty());
 }

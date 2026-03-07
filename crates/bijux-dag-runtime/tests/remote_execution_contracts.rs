@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -49,7 +49,10 @@ fn remote_handoff_requires_artifact_and_observability_fields() {
 
 #[test]
 fn execution_mode_status_is_explicit_for_container_and_kubernetes() {
-    assert_eq!(execution_mode_status("local"), ExecutionModeStatus::Implemented);
+    assert_eq!(
+        execution_mode_status("local"),
+        ExecutionModeStatus::Implemented
+    );
     assert_eq!(
         execution_mode_status("container"),
         ExecutionModeStatus::Simulated
@@ -58,5 +61,8 @@ fn execution_mode_status_is_explicit_for_container_and_kubernetes() {
         execution_mode_status("kubernetes"),
         ExecutionModeStatus::NotImplemented
     );
-    assert_eq!(execution_mode_status("hpc"), ExecutionModeStatus::NotImplemented);
+    assert_eq!(
+        execution_mode_status("hpc"),
+        ExecutionModeStatus::NotImplemented
+    );
 }

@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -13,8 +13,8 @@ use thiserror as _;
 use bijux_dag_artifacts::NodeCounts;
 use bijux_dag_runtime::{
     check_run_consistency, detect_stuck_run, evaluate_pause_state, should_quarantine_run,
-    validate_and_repair_run_metadata, NodeState, RunPauseMode, RunPausePolicy, RunState,
-    RunSummaryV2, StuckRunPolicy, RunId,
+    validate_and_repair_run_metadata, NodeState, RunId, RunPauseMode, RunPausePolicy, RunState,
+    RunSummaryV2, StuckRunPolicy,
 };
 
 #[test]

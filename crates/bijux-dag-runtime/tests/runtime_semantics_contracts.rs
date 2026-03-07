@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -14,19 +14,34 @@ use bijux_dag_runtime::{
     append_audit_event, artifact_commit_guaranteed, artifact_lineage_complete,
     cache_entry_invalidated, cache_entry_valid, cancellation_is_terminal, classify_failure,
     dependency_resolution_is_complete, deterministic_schedule_order, fairness_is_satisfied,
-    replay_equivalent, recovery_action_required, retry_allowed, run_manifest_valid,
+    recovery_action_required, replay_equivalent, retry_allowed, run_manifest_valid,
     timeout_triggered, trace_event_count_by_category, CacheValidationInput,
-    ManifestVerificationInput, ReadyNode, RecoveryInput, RetryPolicySemantics,
-    RuntimeAuditEvent, RuntimeFailureClass,
+    ManifestVerificationInput, ReadyNode, RecoveryInput, RetryPolicySemantics, RuntimeAuditEvent,
+    RuntimeFailureClass,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
 #[test]
 fn deterministic_scheduling_fairness_and_tie_break_are_stable() {
     let nodes = vec![
-        ReadyNode { node_id: "b".to_string(), priority: 2, attempt: 1, ready_unix_ms: 1000 },
-        ReadyNode { node_id: "a".to_string(), priority: 2, attempt: 1, ready_unix_ms: 1000 },
-        ReadyNode { node_id: "c".to_string(), priority: 1, attempt: 1, ready_unix_ms: 999 },
+        ReadyNode {
+            node_id: "b".to_string(),
+            priority: 2,
+            attempt: 1,
+            ready_unix_ms: 1000,
+        },
+        ReadyNode {
+            node_id: "a".to_string(),
+            priority: 2,
+            attempt: 1,
+            ready_unix_ms: 1000,
+        },
+        ReadyNode {
+            node_id: "c".to_string(),
+            priority: 1,
+            attempt: 1,
+            ready_unix_ms: 999,
+        },
     ];
     let starvation = BTreeMap::from([
         ("c".to_string(), 5_u32),
@@ -42,13 +57,20 @@ fn deterministic_scheduling_fairness_and_tie_break_are_stable() {
 
 #[test]
 fn retry_timeout_cancellation_dependency_and_artifact_commit_are_enforced() {
-    let retry = RetryPolicySemantics { max_attempts: 3, initial_backoff_ms: 100, exponential: true };
+    let retry = RetryPolicySemantics {
+        max_attempts: 3,
+        initial_backoff_ms: 100,
+        exponential: true,
+    };
     assert!(retry_allowed(2, &retry));
     assert!(!retry_allowed(3, &retry));
     assert!(timeout_triggered(10, 50, Some(20)));
     assert!(cancellation_is_terminal(true, true));
     let succeeded = BTreeSet::from(["extract".to_string(), "transform".to_string()]);
-    assert!(dependency_resolution_is_complete(&["extract".to_string()], &succeeded));
+    assert!(dependency_resolution_is_complete(
+        &["extract".to_string()],
+        &succeeded
+    ));
     assert!(artifact_commit_guaranteed(true, true, true));
 }
 
@@ -76,7 +98,10 @@ fn cache_replay_manifest_recovery_lineage_and_failure_classification_are_consist
         ("a/out".to_string(), "extract".to_string()),
         ("b/out".to_string(), "transform".to_string()),
     ]);
-    assert!(artifact_lineage_complete(&["a/out".to_string(), "b/out".to_string()], &lineage));
+    assert!(artifact_lineage_complete(
+        &["a/out".to_string(), "b/out".to_string()],
+        &lineage
+    ));
     assert_eq!(
         classify_failure(false, false, false, true, false, false),
         RuntimeFailureClass::PolicyViolation

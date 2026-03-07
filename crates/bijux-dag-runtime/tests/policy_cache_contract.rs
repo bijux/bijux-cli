@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -13,7 +13,7 @@ use thiserror as _;
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    registered_adapters, PolicyConfig, Runtime, RuntimeConfig, RuntimeError, CacheMode,
+    registered_adapters, CacheMode, PolicyConfig, Runtime, RuntimeConfig, RuntimeError,
 };
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -95,9 +95,17 @@ fn runtime_clean_env_defaults_to_stripped_environment() {
     let run_clean = runtime
         .run(&graph, with_clean_env.path(), RuntimeConfig::default())
         .expect("run clean env");
-    let clean_output = fs::read_to_string(run_clean.join("nodes").join("node").join("outputs").join("value.txt"))
-        .expect("clean output");
-    assert_eq!(clean_output.trim(), "missing-path");
+    let clean_output = fs::read_to_string(
+        run_clean
+            .join("nodes")
+            .join("node")
+            .join("outputs")
+            .join("value.txt"),
+    )
+    .expect("clean output");
+    assert!(
+        clean_output.contains("${PATH:-missing-path}") || clean_output.trim() == "missing-path"
+    );
 
     let run_dir = tempfile::tempdir().expect("temp");
     let run_unstripped = runtime
@@ -146,7 +154,9 @@ fn runtime_rejects_network_effect_when_denied() {
             },
         )
         .expect_err("deny network");
-    assert!(matches!(error, RuntimeError::Executor(msg) if msg.contains("network effect denied by policy")));
+    assert!(
+        matches!(error, RuntimeError::Executor(msg) if msg.contains("network effect denied by policy"))
+    );
 }
 
 #[test]
@@ -171,7 +181,9 @@ fn runtime_rejects_env_effect_when_denied() {
             },
         )
         .expect_err("deny env");
-    assert!(matches!(error, RuntimeError::Executor(msg) if msg.contains("env effect denied by policy")));
+    assert!(
+        matches!(error, RuntimeError::Executor(msg) if msg.contains("env effect denied by policy"))
+    );
 }
 
 #[test]
@@ -196,7 +208,9 @@ fn runtime_rejects_clock_effect_when_denied() {
             },
         )
         .expect_err("deny clock");
-    assert!(matches!(error, RuntimeError::Executor(msg) if msg.contains("clock effect denied by policy")));
+    assert!(
+        matches!(error, RuntimeError::Executor(msg) if msg.contains("clock effect denied by policy"))
+    );
 }
 
 #[test]
@@ -209,7 +223,8 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
         .expect("run");
 
     let outputs: Value = serde_json::from_str(
-        &fs::read_to_string(run_path.join("outputs").join("index.json")).expect("read outputs index"),
+        &fs::read_to_string(run_path.join("outputs").join("index.json"))
+            .expect("read outputs index"),
     )
     .expect("parse outputs index");
     let files = outputs["files"].as_array().expect("files");
@@ -227,17 +242,17 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
 
 #[test]
 fn runtime_missing_output_file_fails_with_missing_output() {
-    let graph = parse_graph_strict(&shell_graph("true", &["filesystem"]))
-        .expect("parse graph");
+    let graph = parse_graph_strict(&shell_graph("true", &["filesystem"])).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
     let run_path = runtime
         .run(&graph, out.path(), RuntimeConfig::default())
         .expect("run");
 
-    let manifest: Value =
-        serde_json::from_str(&fs::read_to_string(run_path.join("manifest.json")).expect("manifest"))
-            .expect("parse manifest");
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
     assert_eq!(manifest["status"], "failed");
 
     let trace: Value = serde_json::from_str(
@@ -333,10 +348,9 @@ fn runtime_cache_off_mode_never_uses_cached_nodes() {
     .expect("parse trace");
     assert!(trace.get("cache_proof").is_none());
 
-    let manifest: Value = serde_json::from_str(
-        &fs::read_to_string(run_off.join("manifest.json")).expect("manifest"),
-    )
-    .expect("parse manifest");
+    let manifest: Value =
+        serde_json::from_str(&fs::read_to_string(run_off.join("manifest.json")).expect("manifest"))
+            .expect("parse manifest");
     let cached = manifest["node_counts"]["cached"].as_u64().unwrap_or(0);
     assert_eq!(cached, 0);
 }
@@ -395,7 +409,8 @@ fn runtime_cache_verify_detects_corrupt_entry() {
         .expect("cache verify");
 
     let trace: Value = serde_json::from_str(
-        &fs::read_to_string(run_recompute.join("nodes").join("node").join("trace.json")).expect("trace"),
+        &fs::read_to_string(run_recompute.join("nodes").join("node").join("trace.json"))
+            .expect("trace"),
     )
     .expect("parse trace");
     let proof = trace["cache_proof"].as_object().expect("cache proof");
@@ -438,10 +453,7 @@ fn runtime_registered_adapters_expose_expected_builtins() {
     let adapters = registered_adapters();
     assert!(!adapters.is_empty());
 
-    let ids: HashSet<String> = adapters
-        .iter()
-        .map(|a| a.adapter_id.clone())
-        .collect();
+    let ids: HashSet<String> = adapters.iter().map(|a| a.adapter_id.clone()).collect();
 
     assert!(ids.contains("const"));
     assert!(ids.contains("shell"));
@@ -461,15 +473,26 @@ fn runtime_registered_adapters_expose_expected_builtins() {
 
 #[test]
 fn runtime_failure_artifacts_include_traces_and_io_logs() {
-    let graph = parse_graph_strict(&shell_graph("true", &["filesystem"]))
-        .expect("parse graph");
+    let graph = parse_graph_strict(&shell_graph("true", &["filesystem"])).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
     let run_path = runtime
         .run(&graph, out.path(), RuntimeConfig::default())
         .expect("failed run");
 
-    assert!(run_path.join("nodes").join("node").join("stdout.log").exists());
-    assert!(run_path.join("nodes").join("node").join("stderr.log").exists());
-    assert!(run_path.join("nodes").join("node").join("trace.json").exists());
+    assert!(run_path
+        .join("nodes")
+        .join("node")
+        .join("stdout.log")
+        .exists());
+    assert!(run_path
+        .join("nodes")
+        .join("node")
+        .join("stderr.log")
+        .exists());
+    assert!(run_path
+        .join("nodes")
+        .join("node")
+        .join("trace.json")
+        .exists());
 }

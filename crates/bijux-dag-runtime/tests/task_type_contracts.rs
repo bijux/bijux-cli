@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -13,8 +13,8 @@ use thiserror as _;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     compatibility_matrix_report, compute_task_contract_fingerprint, default_task_type_registry,
-    generate_task_contract_markdown, validate_cross_node_compatibility, validate_parameter_defaults,
-    AdapterCapabilityDeclaration, TaskContract,
+    generate_task_contract_markdown, validate_cross_node_compatibility,
+    validate_parameter_defaults, AdapterCapabilityDeclaration, TaskContract,
 };
 use std::collections::BTreeMap;
 
@@ -43,7 +43,8 @@ fn cross_node_compatibility_and_fingerprint_are_stable() {
     let consumer = read_contract_fixture("shell.json");
     let diagnostics = validate_cross_node_compatibility(&producer, &consumer);
     assert!(diagnostics.is_empty());
-    let fingerprint = compute_task_contract_fingerprint(&producer).expect("fingerprint should compute");
+    let fingerprint =
+        compute_task_contract_fingerprint(&producer).expect("fingerprint should compute");
     assert_eq!(fingerprint.node_id, producer.node_id);
     let markdown = generate_task_contract_markdown(&consumer);
     assert!(markdown.contains("Task contract"));
@@ -63,8 +64,14 @@ fn compatibility_matrix_report_is_generated_for_graph_snapshot() {
     }"#;
     let graph = parse_graph_strict(graph_text).expect("graph parse should pass");
     let mut contracts = BTreeMap::new();
-    contracts.insert("const-source".to_string(), read_contract_fixture("const.json"));
-    contracts.insert("shell-transform".to_string(), read_contract_fixture("shell.json"));
+    contracts.insert(
+        "const-source".to_string(),
+        read_contract_fixture("const.json"),
+    );
+    contracts.insert(
+        "shell-transform".to_string(),
+        read_contract_fixture("shell.json"),
+    );
     let report = compatibility_matrix_report(&graph, &contracts);
     assert_eq!(report.relationships.len(), 1);
     assert!(report.relationships[0].compatible);

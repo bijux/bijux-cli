@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -12,8 +12,8 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     detect_lineage_conflicts, export_lineage_format, lineage_quality_score,
-    policy_hook_allows_operation, recommended_replay_set, summarize_lineage,
-    LineageExportFormat, PolicyLineageHookInput, SemanticRelationship,
+    policy_hook_allows_operation, recommended_replay_set, summarize_lineage, LineageExportFormat,
+    PolicyLineageHookInput, SemanticRelationship,
 };
 
 fn load_relationships() -> Vec<SemanticRelationship> {

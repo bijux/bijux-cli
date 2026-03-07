@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -20,5 +20,8 @@ fn artifact_corruption_is_classified_and_lineage_missing_is_detected() {
         RuntimeFailureClass::ArtifactCorruption
     );
     let lineage = BTreeMap::from([("a/out".to_string(), "extract".to_string())]);
-    assert!(!artifact_lineage_complete(&["a/out".to_string(), "b/out".to_string()], &lineage));
+    assert!(!artifact_lineage_complete(
+        &["a/out".to_string(), "b/out".to_string()],
+        &lineage
+    ));
 }

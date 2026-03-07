@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -14,7 +14,8 @@ use bijux_dag_runtime::{
     build_provenance_drift_report, can_promote_artifact, evaluate_attestation_compatibility,
     regulated_workflow_reference_example, replay_trust_warnings, require_provenance_completeness,
     ArtifactTrustLabel, AttestationCompatibility, AttestationFormatRule, BinaryComponent,
-    PromotionPolicy, ProvenanceCompletenessPolicy, RunProvenanceAttestation, SignedArtifactManifest,
+    PromotionPolicy, ProvenanceCompletenessPolicy, RunProvenanceAttestation,
+    SignedArtifactManifest,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -49,7 +50,10 @@ fn completeness_policy_requires_expected_material() {
 #[test]
 fn promotion_policy_enforces_label_and_completeness() {
     let policy = PromotionPolicy {
-        allowed_labels: BTreeSet::from([ArtifactTrustLabel::Attested, ArtifactTrustLabel::Approved]),
+        allowed_labels: BTreeSet::from([
+            ArtifactTrustLabel::Attested,
+            ArtifactTrustLabel::Approved,
+        ]),
         require_completeness: true,
     };
 
@@ -127,6 +131,10 @@ fn regulated_reference_requires_signed_attested_release_path() {
     let reference = regulated_workflow_reference_example();
     assert!(reference.requires_signed_artifacts);
     assert!(reference.requires_attested_promotion);
-    assert!(reference.required_labels.contains(&ArtifactTrustLabel::Attested));
-    assert!(reference.required_labels.contains(&ArtifactTrustLabel::Approved));
+    assert!(reference
+        .required_labels
+        .contains(&ArtifactTrustLabel::Attested));
+    assert!(reference
+        .required_labels
+        .contains(&ArtifactTrustLabel::Approved));
 }

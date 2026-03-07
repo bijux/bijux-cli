@@ -1,6 +1,6 @@
-use bijux_dag_runtime as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
@@ -11,7 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_artifacts::{Manifest, NodeCounts, PolicyInfo, RunDir};
-use bijux_dag_runtime::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
+use bijux_dag_runtime::{
+    validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport,
+};
 use std::sync::Arc;
 
 fn sample_manifest(run_id: &str) -> Manifest {
@@ -64,7 +66,7 @@ fn artifact_store_atomic_write_and_manifest_validation_work() {
     let store = ArtifactStore::with_std_fs(run_dir.clone());
     run_dir.write_manifest(&sample_manifest("run-1")).unwrap();
     store
-        .write_atomic_json("metadata/test.json", br#"{"ok":true}"#)
+        .write_atomic_json("test.json", br#"{"ok":true}"#)
         .unwrap();
     let manifest = store.read_validated_run_manifest().unwrap();
     assert_eq!(manifest["run_id"], "run-1");
@@ -75,7 +77,10 @@ fn cache_store_meta_validation_requires_fingerprint() {
     let temp = tempfile::tempdir().unwrap();
     let cache = CacheStore::with_std_fs(temp.path().to_path_buf());
     cache
-        .write_cache_meta_atomic("entry-1", &serde_json::json!({"fingerprint":"abc","version":"v1"}))
+        .write_cache_meta_atomic(
+            "entry-1",
+            &serde_json::json!({"fingerprint":"abc","version":"v1"}),
+        )
         .unwrap();
     let parsed = cache.read_validated_cache_meta("entry-1").unwrap();
     assert_eq!(parsed["fingerprint"], "abc");
