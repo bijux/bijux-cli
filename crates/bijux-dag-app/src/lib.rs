@@ -1,13 +1,28 @@
 mod cache;
+mod cache_cmd;
+mod cli_model;
 mod commands;
+mod dispatch;
+mod doctor_cmd;
 mod diff;
 mod explain;
+mod explain_cmd;
+mod export_cmd;
+mod fs_input;
 mod format;
 mod graph;
+mod graph_cmd;
 mod migrate;
 mod read;
+mod read_graph;
 mod replay;
+mod replay_cmd;
+mod run_cmd;
+mod status_cmd;
+mod validate_cmd;
 mod write;
+mod import_cmd;
+mod inspect;
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
@@ -807,34 +822,6 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 );
             } else if !cli.quiet {
                 println!("{}", msg);
-            }
-            Ok(ExitCode::SUCCESS)
-        }
-        Commands::Compat => {
-            let report = run_compat_suite()?;
-            let ok = report
-                .get("status")
-                .and_then(|v| v.as_str())
-                .map(|v| v == "ok")
-                .unwrap_or(false);
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.compat",
-                    ok,
-                    report,
-                    Vec::new(),
-                    if ok {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
-                );
-            } else {
-                println!("status: {}", report["status"]);
-            }
-            if !ok {
-                return Err(ExitCode::from(3));
             }
             Ok(ExitCode::SUCCESS)
         }

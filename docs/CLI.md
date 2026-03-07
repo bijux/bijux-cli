@@ -22,6 +22,11 @@ bijux dag import <bundle.json>
 `dag verify --deep` performs full artifact integrity checks including path normalization,
 index ordering, and schema-parse verification for stored manifest and trace files.
 
+Command categories and long-term command support decisions are documented in:
+
+- `docs/CLI_COMMAND_TAXONOMY.md`
+- `docs/spec/CLI_BACKWARD_COMPATIBILITY.md`
+
 ## JSON Envelope
 
 All commands accept a global `--json` flag. JSON output is normalized as:

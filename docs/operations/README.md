@@ -76,11 +76,6 @@ bijux dag export runs/run-123 --out export.json
 bijux dag import export.json
 ```
 
-## Compatibility Suite
-```
-bijux dag compat
-```
-
 ## Caching
 Cache modes:
 - `off`

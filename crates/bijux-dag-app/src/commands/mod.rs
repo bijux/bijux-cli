@@ -146,7 +146,6 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: MigrateCommands,
     },
-    Compat,
     Cache {
         #[command(subcommand)]
         command: CacheCommands,
