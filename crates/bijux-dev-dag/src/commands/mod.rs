@@ -11,6 +11,14 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod model;
+mod reporting;
+mod suite_dispatch;
+
+use model::{CommandContext, CommandEffect, SuiteDef};
+use reporting::run_command_reported;
+use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
+
 const CLI_COMMAND_FREEZE_BASELINE: usize = 29;
 const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
@@ -193,6 +201,21 @@ enum CommandLine {
     FoundationReviewReport,
     /// Run full CI-like sequence
     Ci,
+    /// Run control-plane foundation suites across checks tests contracts repo and docs
+    Foundation {
+        #[arg(long)]
+        domain: Option<String>,
+        #[arg(long)]
+        fail_fast: bool,
+        #[arg(long)]
+        include_slow: bool,
+        #[arg(long)]
+        include_internal: bool,
+        #[arg(long, default_value_t = false)]
+        advisory: bool,
+        #[arg(long, default_value_t = false)]
+        why: bool,
+    },
     /// Run CLI compatibility command
     Compat,
 }
@@ -209,6 +232,10 @@ enum ControlCommand {
         include_slow: bool,
         #[arg(long)]
         include_internal: bool,
+        #[arg(long, default_value_t = false)]
+        advisory: bool,
+        #[arg(long, default_value_t = false)]
+        why: bool,
     },
     /// Show known suites
     List,
@@ -233,6 +260,10 @@ enum RepoCommand {
         include_slow: bool,
         #[arg(long)]
         include_internal: bool,
+        #[arg(long, default_value_t = false)]
+        advisory: bool,
+        #[arg(long, default_value_t = false)]
+        why: bool,
     },
     /// Show known repo suites
     List,
@@ -425,31 +456,6 @@ enum ReleaseCommand {
         #[arg(long)]
         suite: String,
     },
-}
-
-#[derive(Copy, Clone)]
-enum CommandEffect {
-    Validation,
-    ReadWrite,
-}
-
-impl CommandEffect {
-    fn label(self) -> &'static str {
-        match self {
-            Self::Validation => "validation",
-            Self::ReadWrite => "read-write",
-        }
-    }
-}
-
-struct SuiteDef {
-    id: &'static str,
-    description: &'static str,
-    domain: &'static str,
-    slow: bool,
-    internal: bool,
-    effect: CommandEffect,
-    run: fn() -> Result<(), String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1371,11 +1377,6 @@ pub fn entry_main() -> ExitCode {
     }
 }
 
-struct CommandContext {
-    json: bool,
-    report: Option<PathBuf>,
-}
-
 fn run(cli: Cli) -> Result<(), String> {
     let context = CommandContext {
         json: cli.json,
@@ -1433,6 +1434,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             } => run_suite_group(
                 &context,
                 "checks",
@@ -1441,6 +1444,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             ),
             ControlCommand::List => run_suite_list(&context, "checks", CHECK_SUITES),
             ControlCommand::Explain { suite } => {
@@ -1453,6 +1458,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             } => run_suite_group(
                 &context,
                 "tests",
@@ -1461,6 +1468,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             ),
             ControlCommand::List => run_suite_list(&context, "tests", TEST_SUITES),
             ControlCommand::Explain { suite } => {
@@ -1473,6 +1482,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             } => run_suite_group(
                 &context,
                 "contracts",
@@ -1481,6 +1492,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             ),
             ControlCommand::List => run_suite_list(&context, "contracts", CONTRACT_SUITES),
             ControlCommand::Explain { suite } => {
@@ -1493,6 +1506,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             } => run_suite_group(
                 &context,
                 "docs",
@@ -1501,6 +1516,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             ),
             ControlCommand::List => run_suite_list(&context, "docs", DOC_SUITES),
             ControlCommand::Explain { suite } => {
@@ -1568,6 +1585,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             } => run_suite_group(
                 &context,
                 "repo",
@@ -1576,6 +1595,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 fail_fast,
                 include_slow,
                 include_internal,
+                advisory,
+                why,
             ),
             RepoCommand::List => run_suite_list(&context, "repo", REPO_SUITES),
             RepoCommand::Explain { suite } => {
@@ -2052,6 +2073,37 @@ fn run(cli: Cli) -> Result<(), String> {
                 run_ci()
             })
         }
+        CommandLine::Foundation {
+            domain,
+            fail_fast,
+            include_slow,
+            include_internal,
+            advisory,
+            why,
+        } => run_command_reported(
+            &context,
+            "foundation",
+            CommandEffect::Validation,
+            json!({
+                "domain": domain,
+                "fail_fast": fail_fast,
+                "include_slow": include_slow,
+                "include_internal": include_internal,
+                "advisory": advisory,
+                "why": why,
+            }),
+            || {
+                run_foundation_suite(
+                    &context,
+                    &domain,
+                    fail_fast,
+                    include_slow,
+                    include_internal,
+                    advisory,
+                    why,
+                )
+            },
+        ),
         CommandLine::Compat => run_command_reported(
             &context,
             "compat",
@@ -2074,186 +2126,6 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
         },
     }
-}
-
-fn run_suite_group(
-    context: &CommandContext,
-    group: &str,
-    suites: &[SuiteDef],
-    domain: &Option<String>,
-    fail_fast: bool,
-    include_slow: bool,
-    include_internal: bool,
-) -> Result<(), String> {
-    let root = repo_root()?;
-    let overrides =
-        crate::suites::load_suite_overrides(&root.join("configs/dev/suite_overrides.json"))?;
-    let disabled: BTreeSet<String> = overrides.disabled_suite_ids.into_iter().collect();
-
-    let selected: Vec<&SuiteDef> = suites
-        .iter()
-        .filter(|suite| domain.as_deref().is_none_or(|d| suite.domain == d))
-        .filter(|suite| include_internal || !suite.internal)
-        .filter(|suite| include_slow || !suite.slow)
-        .filter(|suite| !disabled.contains(suite.id))
-        .collect();
-
-    let mut failed: Vec<String> = Vec::new();
-    for suite in selected {
-        if let Err(error) = run_suite(context, group, suite) {
-            failed.push(format!("{}: {error}", suite.id));
-            if fail_fast {
-                break;
-            }
-        }
-    }
-    if failed.is_empty() {
-        Ok(())
-    } else {
-        Err(format!("{} failed: {}", group, failed.join(", ")))
-    }
-}
-
-fn run_suite(context: &CommandContext, group: &str, suite: &SuiteDef) -> Result<(), String> {
-    run_command_reported(
-        context,
-        &format!("{group}.{}", suite.id),
-        suite.effect,
-        json!({}),
-        suite.run,
-    )
-}
-
-fn run_suite_list(
-    context: &CommandContext,
-    group: &str,
-    suites: &[SuiteDef],
-) -> Result<(), String> {
-    let data = json!({
-        "group": group,
-        "suites": suites.iter().map(|s| json!({"id": s.id, "description": s.description, "domain": s.domain, "slow": s.slow, "internal": s.internal, "effect": s.effect.label()})).collect::<Vec<_>>()
-    });
-    run_text_or_json_report(
-        context,
-        group,
-        &format!("{group}.list"),
-        "read-write",
-        data,
-        || Ok(()),
-        false,
-    )
-}
-
-fn run_suite_explain(
-    context: &CommandContext,
-    group: &str,
-    suite_id: &str,
-    suites: &[SuiteDef],
-) -> Result<(), String> {
-    let suite = suites
-        .iter()
-        .find(|suite| suite.id == suite_id)
-        .ok_or_else(|| format!("suite '{suite_id}' is unknown"))?;
-    let data = json!({
-        "id": suite.id,
-        "group": group,
-        "description": suite.description,
-        "domain": suite.domain,
-        "slow": suite.slow,
-        "internal": suite.internal,
-        "effect": suite.effect.label(),
-    });
-    run_text_or_json_report(
-        context,
-        group,
-        &format!("{group}.explain"),
-        suite.effect.label(),
-        data,
-        || Ok(()),
-        false,
-    )
-}
-
-fn run_command_reported<F>(
-    context: &CommandContext,
-    command: &str,
-    effect: CommandEffect,
-    data: Value,
-    run: F,
-) -> Result<(), String>
-where
-    F: FnOnce() -> Result<(), String>,
-{
-    run_text_or_json_report(context, command, command, effect.label(), data, run, true)
-}
-
-fn run_text_or_json_report(
-    context: &CommandContext,
-    command: &str,
-    command_name: &str,
-    effect: &str,
-    data: Value,
-    run: impl FnOnce() -> Result<(), String>,
-    include_data_on_success: bool,
-) -> Result<(), String> {
-    let result = run();
-    let (status, error) = match &result {
-        Ok(_) => ("ok", None),
-        Err(err) => ("error", Some(err.clone())),
-    };
-
-    let mut report = json!({
-        "command": command_name,
-        "status": status,
-        "effect": effect,
-        "data": data,
-    });
-    if let Some(error) = error {
-        report["error"] = Value::String(error);
-    }
-
-    if context.json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&report).expect("json print")
-        );
-    } else if include_data_on_success || status == "error" {
-        let value = report.to_string();
-        println!("[{command}] {status} ({effect}): {value}",);
-    } else {
-        println!("[{command}] {status} ({effect})");
-    }
-
-    if let Some(report_path) = context.report.as_ref() {
-        let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
-        fs::write(report_path, output).map_err(|err| err.to_string())?;
-    }
-    let _ = append_control_plane_audit(command_name, status, effect);
-
-    result
-}
-
-fn append_control_plane_audit(
-    command_name: &str,
-    status: &str,
-    effect: &str,
-) -> Result<(), String> {
-    let root = repo_root()?;
-    let audit_dir = root.join("artifacts").join("reports");
-    fs::create_dir_all(&audit_dir).map_err(|err| err.to_string())?;
-    let audit_path = audit_dir.join("control-plane-audit.jsonl");
-    let event = json!({
-        "action": command_name,
-        "status": status,
-        "effect": effect,
-        "ts_unix_ms": now_millis(),
-    });
-    let mut file = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&audit_path)
-        .map_err(|err| err.to_string())?;
-    writeln!(file, "{event}").map_err(|err| err.to_string())
 }
 
 fn run_ci() -> Result<(), String> {
@@ -2312,6 +2184,48 @@ fn run_ci() -> Result<(), String> {
             run_dir.to_str().expect("utf-8"),
         ],
     )
+}
+
+fn run_foundation_suite(
+    context: &CommandContext,
+    domain: &Option<String>,
+    fail_fast: bool,
+    include_slow: bool,
+    include_internal: bool,
+    advisory: bool,
+    why: bool,
+) -> Result<(), String> {
+    let groups: [(&str, &[SuiteDef]); 5] = [
+        ("checks", CHECK_SUITES),
+        ("tests", TEST_SUITES),
+        ("contracts", CONTRACT_SUITES),
+        ("repo", REPO_SUITES),
+        ("docs", DOC_SUITES),
+    ];
+    let mut failed = Vec::new();
+    for (group_name, group_suites) in groups {
+        if let Err(err) = run_suite_group(
+            context,
+            group_name,
+            group_suites,
+            domain,
+            fail_fast,
+            include_slow,
+            include_internal,
+            advisory,
+            why,
+        ) {
+            failed.push(format!("{group_name}: {err}"));
+            if fail_fast {
+                break;
+            }
+        }
+    }
+    if failed.is_empty() || advisory {
+        Ok(())
+    } else {
+        Err(format!("foundation suite failed: {}", failed.join(", ")))
+    }
 }
 
 fn run_schedule_validate(file: &Path) -> Result<(), String> {
@@ -4291,7 +4205,7 @@ fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String> {
     Ok((candidates[0].clone(), candidates[1].clone()))
 }
 
-fn repo_root() -> Result<PathBuf, String> {
+pub(crate) fn repo_root() -> Result<PathBuf, String> {
     let mut dir = env::current_dir().map_err(|err| err.to_string())?;
     loop {
         if dir.join("Cargo.toml").exists() {
@@ -4311,7 +4225,7 @@ fn now_secs() -> u64 {
         .unwrap_or(0)
 }
 
-fn now_millis() -> u128 {
+pub(crate) fn now_millis() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
