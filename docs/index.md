@@ -22,6 +22,8 @@
 - [Run state machine](./spec/RUN_STATE_MACHINE.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)
+- [Test philosophy](./spec/TEST_PHILOSOPHY.md)
+- [Runtime test trust audit](./architecture/test_trust_audit.md)
 - [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
 - [Sacred execution flow](./spec/SACRED_EXECUTION_FLOW.md)
 - [Scheduler state-space contract](./spec/SCHEDULER_STATESPACE_CONTRACT.md)
