@@ -25,6 +25,9 @@ Fixtures live in `crates/bijux-dag-runtime/tests/fixtures/battle_workflows` and 
 - branch/join workflow
 - retry storm workflow
 - timeout workflow
+- version compatibility workflow
+- malformed run-dir workflow
+- ugly realistic dag workflow
 - policy violation workflow
 - secret leakage workflow
 - operator debugging workflow
@@ -44,3 +47,23 @@ Each scenario fixture must include:
 - State-machine conformance is mandatory evidence for battle workflows.
 - Node and run transitions must satisfy the state-machine contract and invariant IDs.
 - Replay battle scenarios must include mandatory replay proof assertions and semantic diff evidence.
+
+## Ownership metadata
+
+- Scenario ownership and retention metadata live in `crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json`.
+- Required fields per scenario:
+  - `grade`
+  - `why_exists`
+  - `delete_review`
+
+## Trust property mapping
+
+- Trust properties and scenario coverage are normative in `configs/policy/battle_trust_properties.json`.
+- Every battle scenario must map to one or more trust properties.
+- Orphan mappings and orphan metadata entries are rejected by battle drift checks.
+
+## Verification gates
+
+- `cargo nextest run` executes `battle_workflow_harness_contracts`.
+- `make test-all` must keep battle checks green.
+- `bijux-dev-dag foundation` must include `battle-suite-mandatory` in repo governance checks.
