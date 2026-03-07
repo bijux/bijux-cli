@@ -16,6 +16,26 @@ pub fn read_json(path: &Path) -> Value {
     serde_json::from_str(&text).expect("parse json file")
 }
 
+pub fn workspace_root_from_manifest_dir(manifest_dir: &str) -> PathBuf {
+    PathBuf::from(manifest_dir).join("../..")
+}
+
+pub fn load_evidence_registry(workspace_root: &Path) -> Value {
+    read_json(&workspace_root.join("evidence/_meta/registries/evidence_registry.json"))
+}
+
+pub fn resolve_evidence_asset_by_id(registry: &Value, asset_id: &str) -> Value {
+    let assets = registry["assets"]
+        .as_array()
+        .expect("evidence registry assets array");
+    for asset in assets {
+        if asset["id"].as_str() == Some(asset_id) {
+            return asset.clone();
+        }
+    }
+    panic!("evidence asset id not found: {asset_id}");
+}
+
 pub fn graph_chain() -> Graph {
     graph_from_nodes(
         vec![const_node("a"), shell_node("b"), shell_node("c")],
