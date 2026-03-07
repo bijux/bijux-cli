@@ -933,6 +933,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_runtime_module_triage_guard(),
     },
     SuiteDef {
+        id: "sacred-execution-flow",
+        description: "sacred execution flow docs centralized hooks and engine flow tests alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_sacred_execution_flow_guard(),
+    },
+    SuiteDef {
         id: "scheduler-invariants",
         description: "scheduler contract and invariants test surfaces are present",
         domain: "governance",
@@ -5964,6 +5973,45 @@ fn run_runtime_module_triage_guard() -> Result<(), String> {
             "runtime module freeze violated by modules: {}",
             unexpected.join(", ")
         ));
+    }
+    Ok(())
+}
+
+fn run_sacred_execution_flow_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/SACRED_EXECUTION_FLOW.md",
+        "docs/architecture/runtime-execution-flow.md",
+        "crates/bijux-dag-runtime/src/sacred_execution.rs",
+        "crates/bijux-dag-runtime/src/execution_context.rs",
+        "crates/bijux-dag-runtime/tests/sacred_execution_flow_contracts.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "sacred execution flow required surfaces missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let engine_src =
+        fs::read_to_string(root.join("crates/bijux-dag-runtime/src/engine.rs")).map_err(|err| err.to_string())?;
+    for token in [
+        "sacred_execution::run_materialize_inputs",
+        "sacred_execution::run_cache_lookup",
+        "sacred_execution::run_retry_logic",
+        "sacred_execution::run_write_trace",
+        "sacred_execution::run_cache_write",
+        "sacred_execution::resolve_dependencies",
+    ] {
+        if !engine_src.contains(token) {
+            return Err(format!("engine flow missing centralized hook `{}`", token));
+        }
     }
     Ok(())
 }
