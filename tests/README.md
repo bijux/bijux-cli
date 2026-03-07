@@ -17,6 +17,7 @@ Use this guide to choose where tests belong.
 
 - only place where tests may shell out to production binaries
 - validate full workflows across crates and filesystem artifacts
+- consume canonical scenario assets from `evidence/` rather than owning scenario JSON
 
 ## Taxonomy naming
 

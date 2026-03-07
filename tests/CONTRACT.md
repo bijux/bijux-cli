@@ -4,7 +4,8 @@
 `tests/` contains top-level test suites that validate product-level behavior beyond per-crate unit/module tests.
 
 ## Authority
-This directory is authoritative for end-to-end and resilience coverage definitions.
+This directory is authoritative for top-level test orchestration and execution code.
+Scenario truth is evidence-owned; tests consume scenario assets from `evidence/`.
 
 ## Invariants
 - Test family taxonomy follows `unit_`, `contract_`, `integration_`, `e2e_`, `perf_`, `compat_`, `fault_`.
