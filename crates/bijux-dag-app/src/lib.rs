@@ -1687,8 +1687,32 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::Migrate { command } => {
             let msg = match command {
-                MigrateCommands::Dag { file, from, to } => migrate_dag(file, from, to)?,
-                MigrateCommands::Run { run_dir, from, to } => migrate_run(run_dir, from, to)?,
+                MigrateCommands::Dag {
+                    file,
+                    from,
+                    to,
+                    dry_run,
+                } => {
+                    let result = migrate_dag(file, from, to)?;
+                    if *dry_run {
+                        format!("dry-run: {result}")
+                    } else {
+                        result
+                    }
+                }
+                MigrateCommands::Run {
+                    run_dir,
+                    from,
+                    to,
+                    dry_run,
+                } => {
+                    let result = migrate_run(run_dir, from, to)?;
+                    if *dry_run {
+                        format!("dry-run: {result}")
+                    } else {
+                        result
+                    }
+                }
             };
             if cli.json {
                 return emit_json(

@@ -462,6 +462,8 @@ pub(crate) enum MigrateCommands {
         from: String,
         #[arg(long)]
         to: String,
+        #[arg(long, default_value_t = false)]
+        dry_run: bool,
     },
     Run {
         run_dir: PathBuf,
@@ -469,6 +471,8 @@ pub(crate) enum MigrateCommands {
         from: String,
         #[arg(long)]
         to: String,
+        #[arg(long, default_value_t = false)]
+        dry_run: bool,
     },
 }
 
