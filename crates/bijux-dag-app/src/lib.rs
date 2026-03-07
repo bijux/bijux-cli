@@ -821,6 +821,41 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Commands::Prove { run_dir } => {
+            let proof = build_run_proof_bundle(run_dir)?;
+            let complete = proof
+                .get("complete")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.prove",
+                    complete,
+                    proof,
+                    Vec::new(),
+                    if complete {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(3)
+                    },
+                );
+            }
+            println!("proof id: {}", proof["proof_id"]);
+            println!("status: {}", proof["status"]);
+            println!("complete: {}", complete);
+            println!("determinism: {}", proof["determinism"]);
+            if let Some(reasons) = proof["incomplete_reasons"].as_array() {
+                if !reasons.is_empty() {
+                    println!("incomplete_reasons: {}", proof["incomplete_reasons"]);
+                }
+            }
+            if complete {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
+        }
         Commands::Runs { command } => match command {
             RunsCommands::List { root } => {
                 let runs = list_runs(root).map_err(|_| ExitCode::from(3))?;
@@ -1937,6 +1972,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             out,
             manifest_only,
             without_artifacts,
+            provenance_only,
+            redact,
             with_files,
             include_files,
         } => {
@@ -1959,25 +1996,39 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             if *without_artifacts && include_files_effective {
                 return Err(ExitCode::from(2));
             }
+            if *provenance_only && include_files_effective {
+                return Err(ExitCode::from(2));
+            }
             let manifest = read_file(&resolved_run_dir.join("manifest.json"))?;
             let snapshot = read_file(&resolved_run_dir.join("graph.snapshot.json"))?;
-            let nodes = read_node_traces(&resolved_run_dir)?;
-            let outputs = if *without_artifacts {
+            let nodes = if *provenance_only {
+                HashMap::new()
+            } else {
+                read_node_traces(&resolved_run_dir)?
+            };
+            let outputs = if *without_artifacts || *provenance_only {
                 Default::default()
             } else {
                 read_outputs_indexes(&resolved_run_dir)?
             };
-            let files = if include_files_effective && !*without_artifacts {
+            let files = if include_files_effective && !*without_artifacts && !*provenance_only {
                 Some(collect_output_files(&resolved_run_dir, &outputs)?)
             } else {
                 None
             };
-            let export_mode = if *without_artifacts {
+            let export_mode = if *provenance_only {
+                "provenance-only"
+            } else if *without_artifacts {
                 "without-artifacts"
             } else if include_files_effective {
                 "with-files"
             } else {
                 "manifest-only"
+            };
+            let source_run_dir = if *redact {
+                Value::String("[redacted]".to_string())
+            } else {
+                json!(resolved_run_dir)
             };
             let bundle = json!({
                 "bundle_version": "export-bundle/v0.1",
@@ -1985,7 +2036,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "provenance": {
                     "source": "native-run",
                     "imported": false,
-                    "source_run_dir": resolved_run_dir,
+                    "source_run_dir": source_run_dir,
                 },
                 "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
                 "graph_snapshot": serde_json::from_str::<serde_json::Value>(&snapshot).ok(),
@@ -2074,6 +2125,35 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
+            let preservation_lineage = val
+                .get("provenance")
+                .and_then(|v| v.get("lineage"))
+                .is_some();
+            let preservation_run_ancestry = val
+                .get("provenance")
+                .and_then(|v| v.get("parent_run_id"))
+                .is_some()
+                || val
+                    .get("provenance")
+                    .and_then(|v| v.get("source_run_id"))
+                    .is_some();
+            let preservation_graph_identity = val.get("graph_snapshot").is_some();
+            let preservation_artifact_identity =
+                val.get("outputs").and_then(|v| v.as_object()).is_some();
+            let mut fidelity_downgrade_reasons: Vec<String> = Vec::new();
+            if !preservation_lineage {
+                fidelity_downgrade_reasons.push("missing lineage".to_string());
+            }
+            if !preservation_run_ancestry {
+                fidelity_downgrade_reasons.push("missing run ancestry".to_string());
+            }
+            if !preservation_graph_identity {
+                fidelity_downgrade_reasons.push("missing graph identity context".to_string());
+            }
+            if !preservation_artifact_identity {
+                fidelity_downgrade_reasons.push("missing artifact identity context".to_string());
+            }
+
             let summary = json!({
                 "bundle_version": bundle_version,
                 "export_mode": val.get("export_mode").and_then(Value::as_str).unwrap_or(""),
@@ -2088,23 +2168,18 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 "nodes": nodes,
                 "failed_nodes": failed,
                 "preservation": {
-                    "lineage": val
-                        .get("provenance")
-                        .and_then(|v| v.get("lineage"))
-                        .is_some(),
-                    "run_ancestry": val
-                        .get("provenance")
-                        .and_then(|v| v.get("parent_run_id"))
-                        .is_some()
-                        || val
-                            .get("provenance")
-                            .and_then(|v| v.get("source_run_id"))
-                            .is_some(),
-                    "graph_identity": val.get("graph_snapshot").is_some(),
-                    "artifact_identity": val
-                        .get("outputs")
-                        .and_then(|v| v.as_object())
-                        .is_some()
+                    "lineage": preservation_lineage,
+                    "run_ancestry": preservation_run_ancestry,
+                    "graph_identity": preservation_graph_identity,
+                    "artifact_identity": preservation_artifact_identity
+                },
+                "fidelity": {
+                    "level": if fidelity_downgrade_reasons.is_empty() {
+                        "exact"
+                    } else {
+                        "graded"
+                    },
+                    "downgrade_reasons": fidelity_downgrade_reasons
                 },
                 "invariant_violations": invariant_violations,
             });
@@ -3350,7 +3425,7 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
     }
     match bundle.get("export_mode").and_then(|v| v.as_str()) {
-        Some("manifest-only") | Some("with-files") | Some("without-artifacts") => {}
+        Some("manifest-only") | Some("with-files") | Some("without-artifacts") | Some("provenance-only") => {}
         _ => violations.push("INV-EXPORT-MODE-001 unsupported or missing export_mode".to_string()),
     }
     if bundle.get("manifest").is_none() {
@@ -3423,6 +3498,26 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
             );
         }
     }
+    if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("provenance-only") {
+        if !bundle
+            .get("node_traces")
+            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
+        {
+            violations.push(
+                "INV-EXPORT-MODE-001 provenance-only bundle must include empty node_traces map"
+                    .to_string(),
+            );
+        }
+        if !bundle
+            .get("outputs")
+            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
+        {
+            violations.push(
+                "INV-EXPORT-MODE-001 provenance-only bundle must include empty outputs map"
+                    .to_string(),
+            );
+        }
+    }
     if let Some(traces) = bundle.get("node_traces").and_then(|v| v.as_object()) {
         for (node_id, trace) in traces {
             let trace_node_id = trace.get("node_id").and_then(|v| v.as_str());
@@ -3441,6 +3536,70 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         }
     }
     violations
+}
+
+fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
+    let report = verify_run(run_dir, true, true)?;
+    let status = report
+        .get("status")
+        .and_then(Value::as_str)
+        .unwrap_or("error")
+        .to_string();
+    let errors = report
+        .get("errors")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let invariant_violations = report
+        .get("invariant_violations")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let has_manifest = run_dir.join("manifest.json").exists();
+    let has_snapshot = run_dir.join("graph.snapshot.json").exists();
+    let has_outputs = run_dir.join("outputs").join("index.json").exists();
+    let run_id = read_run_id(run_dir).unwrap_or_else(|_| "unknown".to_string());
+    let proof_id = format!("proof-{}", run_id);
+
+    let mut incomplete_reasons: Vec<String> = Vec::new();
+    if !has_manifest {
+        incomplete_reasons.push("missing manifest".to_string());
+    }
+    if !has_snapshot {
+        incomplete_reasons.push("missing graph snapshot".to_string());
+    }
+    if !has_outputs {
+        incomplete_reasons.push("missing outputs index".to_string());
+    }
+    if !errors.is_empty() {
+        incomplete_reasons.push("verification errors present".to_string());
+    }
+    if !invariant_violations.is_empty() {
+        incomplete_reasons.push("invariant violations present".to_string());
+    }
+
+    let complete = incomplete_reasons.is_empty() && status == "ok";
+    Ok(json!({
+        "schema_version": "proof-bundle/v0.1",
+        "proof_id": proof_id,
+        "run_id": run_id,
+        "run_dir": run_dir,
+        "status": if complete { "complete" } else { "incomplete" },
+        "complete": complete,
+        "determinism": if complete { "verified" } else { "insufficient-evidence" },
+        "integrity": if complete { "verified" } else { "insufficient-evidence" },
+        "replay_evidence": {
+            "available": has_manifest && has_snapshot,
+            "level": if complete { "complete" } else { "partial" }
+        },
+        "integrity_evidence": {
+            "available": has_outputs,
+            "level": if complete { "complete" } else { "partial" }
+        },
+        "incomplete_reasons": incomplete_reasons,
+        "verification_errors": errors,
+        "invariant_violations": invariant_violations
+    }))
 }
 
 #[cfg(test)]

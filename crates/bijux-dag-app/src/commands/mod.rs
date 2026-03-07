@@ -143,6 +143,9 @@ pub(crate) enum Commands {
         #[arg(long)]
         remote_cache_dir: Option<PathBuf>,
     },
+    Prove {
+        run_dir: PathBuf,
+    },
     Graph {
         dag: PathBuf,
         #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
@@ -231,6 +234,10 @@ pub(crate) enum Commands {
         manifest_only: bool,
         #[arg(long)]
         without_artifacts: bool,
+        #[arg(long)]
+        provenance_only: bool,
+        #[arg(long)]
+        redact: bool,
         #[arg(long)]
         with_files: bool,
         #[arg(long)]
