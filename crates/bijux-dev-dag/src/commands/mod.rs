@@ -916,6 +916,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_runtime_unsafe_guard(),
     },
     SuiteDef {
+        id: "backend-contract",
+        description: "execution backend contract docs and parity test alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_backend_contract_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -4510,6 +4519,36 @@ fn run_unsafe_audit_report() -> Result<(), String> {
         }))
         .map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn run_backend_contract_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
+        "docs/spec/ATTEMPT_TRACE_SCHEMA_v0.1.md",
+        "docs/architecture/engine-backend-responsibilities.md",
+        "crates/bijux-dag-runtime/src/execution_backend.rs",
+        "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "backend contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let test_path = root.join("crates/bijux-dag-runtime/tests/execution_backend_contract.rs");
+    let payload = fs::read_to_string(&test_path).map_err(|err| err.to_string())?;
+    if !payload.contains("fake_and_process_like_backends_have_parity_on_basic_scenario") {
+        return Err("backend contract missing fake-backend parity test".to_string());
+    }
     Ok(())
 }
 
