@@ -1,0 +1,8 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "bad_invalid_selectors", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "node", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "x"}, "selector": "not-supported"}
+  ],
+  "edges": []
+}

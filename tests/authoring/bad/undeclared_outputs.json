@@ -1,0 +1,8 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "bad_undeclared_outputs", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "n", "kind": "shell", "inputs": [], "outputs": [], "params": {"argv": ["/bin/sh", "-c", "echo x > ../outputs/out"]}, "effects": ["filesystem"]}
+  ],
+  "edges": []
+}

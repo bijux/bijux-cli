@@ -1,0 +1,16 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "pattern_diamond", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "root", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "x"}},
+    {"id": "left", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "l"}},
+    {"id": "right", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "r"}},
+    {"id": "join", "kind": "const", "inputs": ["left_in", "right_in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "j"}}
+  ],
+  "edges": [
+    {"from": {"node_id": "root", "port": "out"}, "to": {"node_id": "left", "port": "in"}},
+    {"from": {"node_id": "root", "port": "out"}, "to": {"node_id": "right", "port": "in"}},
+    {"from": {"node_id": "left", "port": "out"}, "to": {"node_id": "join", "port": "left_in"}},
+    {"from": {"node_id": "right", "port": "out"}, "to": {"node_id": "join", "port": "right_in"}}
+  ]
+}

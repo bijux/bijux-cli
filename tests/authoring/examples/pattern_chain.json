@@ -1,0 +1,9 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "pattern_chain", "owners": [], "tags": []},
+  "nodes": [
+    {"id": "a", "kind": "const", "inputs": [], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "a"}},
+    {"id": "b", "kind": "const", "inputs": ["in"], "outputs": [{"name": "out", "path": "out"}], "params": {"value": "b"}}
+  ],
+  "edges": [{"from": {"node_id": "a", "port": "out"}, "to": {"node_id": "b", "port": "in"}}]
+}

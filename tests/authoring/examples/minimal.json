@@ -1,0 +1,14 @@
+{
+  "spec": "0.1",
+  "meta": {"name": "minimal", "owners": [], "tags": []},
+  "nodes": [
+    {
+      "id": "const_hello",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "out"}],
+      "params": {"value": "hello"}
+    }
+  ],
+  "edges": []
+}
