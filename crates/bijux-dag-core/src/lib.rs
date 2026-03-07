@@ -3,23 +3,41 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+#[path = "build/compile.rs"]
 pub mod compile;
+#[path = "build/builder.rs"]
 pub mod builder;
+#[path = "graph/canonical.rs"]
 pub mod canonical;
+#[path = "graph/edge.rs"]
 pub mod edge;
+#[path = "contracts/error.rs"]
 pub mod error;
+#[path = "analysis/effects.rs"]
 pub mod effects;
+#[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
+#[path = "graph/graph.rs"]
 pub mod graph;
+#[path = "graph/meta.rs"]
 pub mod meta;
+#[path = "graph/model.rs"]
 pub mod model;
+#[path = "graph/node.rs"]
 pub mod node;
+#[path = "pipeline/parse.rs"]
 pub mod parse;
+#[path = "planner/planner.rs"]
 pub mod planner;
+#[path = "pipeline/resolve.rs"]
 pub mod resolve;
+#[path = "graph/resources.rs"]
 pub mod resources;
+#[path = "analysis/semantics.rs"]
 pub mod semantics;
+#[path = "graph/topology.rs"]
 pub mod topology;
+#[path = "pipeline/validate.rs"]
 pub mod validate;
 pub use builder::{
     dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
