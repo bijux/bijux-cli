@@ -21,19 +21,47 @@ pub fn workspace_root_from_manifest_dir(manifest_dir: &str) -> PathBuf {
 }
 
 pub fn load_evidence_registry(workspace_root: &Path) -> Value {
-    read_json(&workspace_root.join("evidence/_meta/registries/evidence_registry.json"))
+    read_json(&evidence_registry_path(workspace_root))
 }
 
 pub fn resolve_evidence_asset_by_id(registry: &Value, asset_id: &str) -> Value {
+    resolve_evidence_asset_by_id_checked(registry, asset_id)
+        .unwrap_or_else(|error| panic!("{error}"))
+}
+
+pub fn evidence_registry_path(workspace_root: &Path) -> PathBuf {
+    workspace_root.join("evidence/_meta/registries/evidence_registry.json")
+}
+
+pub fn load_evidence_registry_checked(workspace_root: &Path) -> Result<Value, String> {
+    let path = evidence_registry_path(workspace_root);
+    let text = fs::read_to_string(&path)
+        .map_err(|error| format!("failed to read evidence registry at {}: {error}", path.display()))?;
+    serde_json::from_str(&text)
+        .map_err(|error| format!("failed to parse evidence registry at {}: {error}", path.display()))
+}
+
+pub fn resolve_evidence_asset_by_id_checked(registry: &Value, asset_id: &str) -> Result<Value, String> {
     let assets = registry["assets"]
         .as_array()
         .expect("evidence registry assets array");
     for asset in assets {
         if asset["id"].as_str() == Some(asset_id) {
-            return asset.clone();
+            return Ok(asset.clone());
         }
     }
-    panic!("evidence asset id not found: {asset_id}");
+    Err(format!(
+        "evidence asset id not found: {asset_id}; verify evidence registry ownership and consumer mapping"
+    ))
+}
+
+pub fn evidence_asset_ids(registry: &Value) -> BTreeSet<String> {
+    registry["assets"]
+        .as_array()
+        .expect("evidence registry assets array")
+        .iter()
+        .filter_map(|asset| asset["id"].as_str().map(str::to_string))
+        .collect()
 }
 
 pub fn graph_chain() -> Graph {
