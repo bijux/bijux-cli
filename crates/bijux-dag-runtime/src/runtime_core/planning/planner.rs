@@ -19,6 +19,9 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                 expand_dependencies(&node.id, &dep_map, &mut keep);
             }
         }
+        for node_id in &keep {
+            filter_reasons.remove(node_id);
+        }
         for node in &graph.nodes {
             if !keep.contains(&node.id) {
                 filter_reasons.insert(node.id.clone(), "filtered".to_string());

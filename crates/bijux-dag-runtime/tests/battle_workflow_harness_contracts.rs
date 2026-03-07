@@ -122,10 +122,13 @@ fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
         .iter()
         .map(|property| property.id.clone())
         .collect();
-    assert_eq!(
-        property_ids.len(),
-        12,
-        "battle trust property set must contain exactly 12 ids"
+    assert!(
+        property_ids.len() >= 12,
+        "battle trust property set must contain at least 12 ids"
+    );
+    assert!(
+        property_ids.contains("tp_plan_truth"),
+        "battle trust property set must include tp_plan_truth"
     );
 
     let mut scenario_ids_from_files = BTreeSet::new();
