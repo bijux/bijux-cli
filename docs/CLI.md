@@ -18,6 +18,7 @@ bijux dag fsck <run-dir> [--strict]
 bijux dag hash run <run-dir>
 bijux dag hash artifact <file>
 bijux dag capabilities --json
+bijux dag capabilities --backend kubernetes --json
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json

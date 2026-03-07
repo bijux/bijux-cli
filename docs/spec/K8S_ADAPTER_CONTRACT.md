@@ -74,3 +74,29 @@ Terminal phases are `Succeeded`, `Failed`, `Cancelled`; reduction keeps the late
 ## Contract tests
 
 - `crates/bijux-dag-runtime/tests/backend_cluster_contracts.rs`
+
+## Supported and out-of-scope surfaces
+
+Supported contract surfaces in this repository:
+
+- deterministic mapping for resources, timeout, retries, cancellation
+- failure normalization for pod eviction, image pull backoff, pending timeout
+- deterministic watch-event reduction and reconnect reconciliation
+- capability declaration for node selector and affinity support
+
+Out of scope in this repository (must remain explicitly non-claimable):
+
+- production-grade Kubernetes execution backend
+- live cluster watch stream integration
+- PVC lifecycle provisioning and cleanup orchestration
+
+## Intentionally rejected approximations
+
+The adapter contract rejects unsafe approximation of Kubernetes-only fields that would
+change execution meaning without explicit support:
+
+- `hostNetwork`
+- `hostPID`
+- `privileged`
+- `hostPath`
+- `runtimeClassName`

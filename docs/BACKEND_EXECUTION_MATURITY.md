@@ -45,3 +45,8 @@ This document defines contract maturity for local, Kubernetes, Slurm, and generi
 ## Production readiness checklist
 
 Production readiness requires deterministic replay support, passed conformance suite, verified cleanup guarantees, and integrated observability for each backend class.
+
+Kubernetes conformance and evidence linkage:
+
+- `docs/reports/foundation/k8s_conformance_gate_report.md`
+- `docs/reference/K8S_SUPPORT_MATRIX.md`

@@ -35,6 +35,8 @@ fn k8s_adapter_contract_doc_exists_with_required_semantics() {
         "Secret/config injection",
         "Workdir volume semantics",
         "Async watch event handling",
+        "Supported and out-of-scope surfaces",
+        "Intentionally rejected approximations",
     ] {
         assert!(
             text.contains(token),
@@ -62,6 +64,9 @@ fn k8s_runtime_contract_tests_cover_equivalence_and_event_determinism() {
         "K8S_POD_PENDING_TIMEOUT",
         "validate_k8s_injection",
         "canonical_k8s_terminal_events",
+        "reconcile_k8s_watch_stream",
+        "k8s_capability_declaration",
+        "reject_unsupported_k8s_fields",
     ] {
         assert!(
             test_source.contains(token),

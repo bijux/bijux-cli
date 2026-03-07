@@ -32,6 +32,7 @@ Backends that do not satisfy declared requirements must be rejected before dispa
 - Container contract: image, command/args, mount path, environment allowlist.
 - Kubernetes contract: namespace, pod template, image resolution, mount strategy, log collection.
 - HPC contract: queue, scheduler submit/poll/cancel commands.
+- Kubernetes details: `docs/spec/K8S_ADAPTER_CONTRACT.md`.
 
 ## Secrets and artifacts
 
@@ -54,3 +55,8 @@ Backends that do not satisfy declared requirements must be rejected before dispa
 Backend conformance fixture:
 
 - `evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json`
+- `evidence/battle/fixtures/kubernetes/tiny_equivalence.dag.json`
+- `evidence/battle/fixtures/kubernetes/medium_fanout.dag.json`
+- `evidence/battle/fixtures/kubernetes/failure_injection_image_pull_backoff.dag.json`
+
+See support status and evidence linkage in `docs/reference/K8S_SUPPORT_MATRIX.md`.
