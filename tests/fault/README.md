@@ -21,3 +21,9 @@ This suite defines fault classes and expected behavior under failure.
 ## Resume policy
 
 Current product behavior has no run-resume contract. Recovery is replay-driven.
+
+## Coverage report
+
+Run fault coverage summary via:
+
+- `cargo run -p bijux-dev-dag -- fault-summary`
