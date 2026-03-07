@@ -1,0 +1,16 @@
+{
+  "suite_ids": [
+    "planner-alignment",
+    "scheduler-invariants",
+    "state-machine-contract",
+    "sacred-execution-flow",
+    "backend-contract",
+    "artifact-hardening",
+    "cache-evolution",
+    "replay-contract",
+    "config-policy-determinism",
+    "battle-suite-mandatory",
+    "operator-ux",
+    "foundation-verification"
+  ]
+}

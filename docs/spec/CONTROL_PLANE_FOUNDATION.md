@@ -13,6 +13,7 @@
 - fixture verification
 - artifact contract verification
 - release verification
+- foundation hardening verification
 - ci verification
 
 ## Required guard surfaces
@@ -28,6 +29,10 @@
 ## Foundation suite
 
 Suite id `foundation-verification` validates that core governance suites are registered in the repo suite index and the SSOT contract files exist.
+
+## Foundation hardening suite
+
+Command `foundation-hardening` executes curated high-trust suites listed in `configs/suites/foundation_hardening.json`.
 
 ## SSOT rule
 
