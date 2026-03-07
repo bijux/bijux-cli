@@ -134,6 +134,7 @@
 - [Anti-drift policy](./spec/ANTI_DRIFT_POLICY.md)
 - [Drift dashboard](./tracking/DRIFT_DASHBOARD.md)
 - [Repository trust evidence index](./reference/REPO_TRUST_EVIDENCE_INDEX.md)
+- [Planner hardening report](./reports/foundation/planner_hardening_report.md)
 - [Controller backend artifact boundary](./architecture/controller_backend_artifact_boundary.md)
 - [Local-only vs remote-coordinated runtime](./architecture/local_only_vs_remote_coordinated_runtime.md)
 - [Invariant coverage tracking](./tracking/INVARIANT_COVERAGE.md)

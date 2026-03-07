@@ -16,7 +16,7 @@ This document is the single normative authority for planner inputs, lowering sta
 Execution plan uses lowered structures only:
 
 - `PlannedNode`: execution-relevant fields (`id`, `kind`, `deps`, `outputs`, `retry`, `timeout_ms`)
-- `PlannedDependency`: lowered dependency edge (`from`, `to`)
+- `PlannedEdge`: lowered dependency edge (`from`, `to`)
 
 Planner boundary owns graph lowering; runtime execution consumes lowered plan semantics.
 
@@ -63,4 +63,9 @@ Planner lowering coverage includes:
 
 - `crates/bijux-dag-core/tests/planner_contract.rs`
 - `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
+- `crates/bijux-dev-dag/tests/planner_hardening_contracts.rs`
 - `planner-alignment` control-plane suite
+
+## Trust property linkage
+
+Planner guarantees are tracked under battle trust property `tp_plan_truth`.
