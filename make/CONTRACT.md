@@ -7,6 +7,7 @@ Defines the make surface for `bijux-dag`.
 - Root entrypoint: `Makefile`
 - Make orchestration: `make/root.mk`
 - Shared cargo targets: `make/cargo.mk`
+- Evidence wrappers: `make/evidence.mk`
 - Shared helpers: `make/macros.mk`
 - Tracked public target index: `make/target-list.json`
 
@@ -21,6 +22,7 @@ Defines the make surface for `bijux-dag`.
 - `help` output must be generated from annotated targets (`##`) and must not be hand-coded.
 - Checks, contracts, release, and repository governance execution paths must route through `bijux-dev-dag`.
 - Cargo-native gates (`test`, `test-all`, `lint`, `fmt`, `check`, `audit`) must stay in `make/cargo.mk`.
+- Evidence targets must stay in `make/evidence.mk` and only delegate to `bijux-dev-dag`.
 - Slow tests are tagged in Rust with `#[ignore = "slow"]`.
 - `test` must skip ignored slow tests, `test-slow` must run only ignored tests.
 - `test-all` and `coverage` must execute all tests including ignored tests.
