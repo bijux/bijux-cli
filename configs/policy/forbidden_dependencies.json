@@ -1,0 +1,9 @@
+{
+  "format": "forbidden-dependencies/v1",
+  "forbidden_edges": [
+    {"from": "bijux-dag-runtime", "to": "bijux-dag-app"},
+    {"from": "bijux-dag-runtime", "to": "bijux-dag-cli"},
+    {"from": "bijux-dag-core", "to": "bijux-dag-runtime"},
+    {"from": "bijux-dag-core", "to": "bijux-dag-app"}
+  ]
+}

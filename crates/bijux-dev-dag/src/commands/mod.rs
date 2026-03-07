@@ -933,6 +933,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_runtime_module_triage_guard(),
     },
     SuiteDef {
+        id: "crate-boundary-foundation",
+        description: "crate responsibility and dependency boundary enforcement",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_crate_boundary_foundation_guard(),
+    },
+    SuiteDef {
         id: "sacred-execution-flow",
         description: "sacred execution flow docs centralized hooks and engine flow tests alignment",
         domain: "governance",
@@ -6011,6 +6020,50 @@ fn run_sacred_execution_flow_guard() -> Result<(), String> {
     ] {
         if !engine_src.contains(token) {
             return Err(format!("engine flow missing centralized hook `{}`", token));
+        }
+    }
+    Ok(())
+}
+
+fn run_crate_boundary_foundation_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/CRATE_RESPONSIBILITY_STATEMENTS.md",
+        "docs/spec/CRATE_BOUNDARY_CONTRACT.md",
+        "docs/architecture/crate_boundary_adr.md",
+        "docs/architecture/crate_service_interfaces.md",
+        "configs/policy/forbidden_dependencies.json",
+        "crates/bijux-dag-app/tests/crate_boundary_contract.rs",
+        "crates/bijux-dag-runtime/src/services.rs",
+        "crates/bijux-dag-artifacts/src/services.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "crate boundary foundation missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let policy_payload = fs::read_to_string(root.join("configs/policy/forbidden_dependencies.json"))
+        .map_err(|err| err.to_string())?;
+    let policy: Value = serde_json::from_str(&policy_payload).map_err(|err| err.to_string())?;
+    let edges = policy
+        .get("forbidden_edges")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "forbidden dependency policy missing forbidden_edges".to_string())?;
+    for edge in edges {
+        let from = edge.get("from").and_then(Value::as_str).unwrap_or_default();
+        let to = edge.get("to").and_then(Value::as_str).unwrap_or_default();
+        let cargo = fs::read_to_string(root.join(format!("crates/{}/Cargo.toml", from)))
+            .map_err(|err| err.to_string())?;
+        if cargo.contains(to) {
+            return Err(format!("forbidden dependency edge detected: {} -> {}", from, to));
         }
     }
     Ok(())
