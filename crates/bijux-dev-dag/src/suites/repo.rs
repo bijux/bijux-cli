@@ -63,6 +63,7 @@ pub const IDS: &[&str] = &[
     "error-code-doc-tests",
     "config-lint",
     "config-drift",
+    "config-policy-determinism",
     "ambient-env-guard",
     "foundation-verification",
     "foundation-review",

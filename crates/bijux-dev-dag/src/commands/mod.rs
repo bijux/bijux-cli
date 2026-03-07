@@ -1348,6 +1348,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_config_precedence_drift_guard(),
     },
     SuiteDef {
+        id: "config-policy-determinism",
+        description: "config precedence and policy determinism surfaces remain contract-aligned",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_config_policy_determinism_guard(),
+    },
+    SuiteDef {
         id: "ambient-env-guard",
         description: "ambient environment reads are limited to contract allowlist",
         domain: "governance",
@@ -5286,6 +5295,15 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     if !has_state_machine_legality {
         return Err("battle trust policy must include tp_state_machine_legality".to_string());
     }
+    let has_config_policy_determinism = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_config_policy_determinism")
+    });
+    if !has_config_policy_determinism {
+        return Err("battle trust policy must include tp_config_policy_determinism".to_string());
+    }
 
     let required_scenarios = policy
         .get("required_scenarios")
@@ -8056,6 +8074,63 @@ fn run_config_precedence_drift_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_config_policy_determinism_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for required in [
+        "docs/spec/CONFIG_PRECEDENCE_CONTRACT.md",
+        "docs/spec/POLICY_EVALUATION_TRACE.md",
+        "docs/reports/foundation/config_policy_determinism_report.md",
+        "crates/bijux-dag-app/tests/config_precedence_contract.rs",
+        "crates/bijux-dag-app/tests/config_validation_contract.rs",
+        "crates/bijux-dag-app/tests/config_effective_command_contract.rs",
+        "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
+    ] {
+        if !root.join(required).exists() {
+            return Err(format!(
+                "config/policy determinism missing required surface: {required}"
+            ));
+        }
+    }
+
+    let contract = fs::read_to_string(root.join("docs/spec/CONFIG_PRECEDENCE_CONTRACT.md"))
+        .map_err(|err| err.to_string())?;
+    for token in [
+        "CLI > explicit config file > environment > defaults",
+        "Unknown fields in explicit config must fail before execution.",
+        "Malformed config files must fail before execution.",
+        "Policy evaluation trace must be available for operator/debug inspection.",
+    ] {
+        if !contract.contains(token) {
+            return Err(format!(
+                "config precedence contract missing required token `{token}`"
+            ));
+        }
+    }
+
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/battle_trust_properties.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let trust_properties = policy
+        .get("trust_properties")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "battle trust policy missing trust_properties".to_string())?;
+    let has_config_policy = trust_properties.iter().any(|property| {
+        property
+            .get("id")
+            .and_then(Value::as_str)
+            .is_some_and(|id| id == "tp_config_policy_determinism")
+    });
+    if !has_config_policy {
+        return Err(
+            "battle trust policy must include tp_config_policy_determinism as release evidence"
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
 fn run_ambient_env_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -8132,6 +8207,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "backend-contract",
         "cache-evolution",
         "replay-contract",
+        "config-policy-determinism",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {
