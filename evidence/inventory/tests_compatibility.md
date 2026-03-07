@@ -1,11 +1,11 @@
 # 
 
-- scope: `tests/compatibility`
+- scope: `evidence/compat`
 
-- tests/compatibility/export_bundle/unsupported_past/bundle.json
-- tests/compatibility/export_bundle/v0.1/bundle.json
-- tests/compatibility/graph_schema/unsupported_future/minimal.dag.json
-- tests/compatibility/graph_schema/unsupported_past/minimal.dag.json
-- tests/compatibility/graph_schema/v0.1/minimal.dag.json
-- tests/compatibility/run_dir/unsupported_future/manifest.json
-- tests/compatibility/run_dir/v0.1/manifest.json
+- evidence/compat/export_bundle/unsupported_past/bundle.json
+- evidence/compat/export_bundle/v0_1_supported/bundle.json
+- evidence/compat/graph_schema/unsupported_future/minimal.dag.json
+- evidence/compat/graph_schema/unsupported_past/minimal.dag.json
+- evidence/compat/graph_schema/v0_1_supported/minimal.dag.json
+- evidence/compat/run_dir/unsupported_future/manifest.json
+- evidence/compat/run_dir/v0_1_supported/manifest.json

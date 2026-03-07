@@ -17,7 +17,7 @@ This directory is authoritative for end-to-end and resilience coverage definitio
 
 ## Related tests
 - `tests/e2e/*`
-- `tests/fault/*`
+- `evidence/fault/*`
 - `crates/bijux-dev-dag/src/commands/mod.rs` taxonomy guards
 
 ## Related schemas

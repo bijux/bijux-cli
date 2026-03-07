@@ -1,7 +1,7 @@
 # Crate Fixture Inventory
 
-- crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json
-- crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json
+- evidence/fault/corrupt_runs/invalid_outputs_index.json
+- evidence/fault/corrupt_runs/missing_manifest_version.json
 - crates/bijux-dag-core/tests/fixtures/conditional_branch_join.json
 - crates/bijux-dag-core/tests/fixtures/cycle.json
 - crates/bijux-dag-core/tests/fixtures/dangling.json

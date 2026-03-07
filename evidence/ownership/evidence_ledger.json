@@ -685,14 +685,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+      "path": "evidence/fault/corrupt_runs/invalid_outputs_index.json",
       "owner": "team-artifacts",
       "evidence_class": "fault",
       "trust_property": "artifact-integrity",
       "why_exists": "verify corrupt run artifact detection",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+      "canonical_location": "evidence/fault/corrupt_runs/invalid_outputs_index.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -706,14 +706,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
+      "path": "evidence/fault/corrupt_runs/missing_manifest_version.json",
       "owner": "team-artifacts",
       "evidence_class": "fault",
       "trust_property": "artifact-integrity",
       "why_exists": "verify corrupt run artifact detection",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
+      "canonical_location": "evidence/fault/corrupt_runs/missing_manifest_version.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -2428,14 +2428,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/corrupt/hash_mismatch.json",
+      "path": "evidence/cache/corrupt/hash_mismatch.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/corrupt/hash_mismatch.json",
+      "canonical_location": "evidence/cache/corrupt/hash_mismatch.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2449,14 +2449,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/corrupt/missing_meta.json",
+      "path": "evidence/cache/corrupt/missing_meta.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/corrupt/missing_meta.json",
+      "canonical_location": "evidence/cache/corrupt/missing_meta.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2470,14 +2470,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
+      "path": "evidence/cache/corrupt/missing_outputs_proof.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
+      "canonical_location": "evidence/cache/corrupt/missing_outputs_proof.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2491,14 +2491,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/corrupt/truncated_meta.json",
+      "path": "evidence/cache/corrupt/truncated_meta.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/corrupt/truncated_meta.json",
+      "canonical_location": "evidence/cache/corrupt/truncated_meta.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2512,14 +2512,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+      "path": "evidence/cache/corrupt/unsupported_metadata_version.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+      "canonical_location": "evidence/cache/corrupt/unsupported_metadata_version.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2533,14 +2533,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/cache/fixtures/warm_cold/scenario.json",
+      "path": "evidence/cache/scenarios/warm_cold.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "cache-correctness",
       "why_exists": "exercise cache corruption and warm/cold semantics",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/cache/fixtures/warm_cold/scenario.json",
+      "canonical_location": "evidence/cache/scenarios/warm_cold.json",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -2659,14 +2659,14 @@
       "retirement_date": null
     },
     {
-      "path": "tests/fault/fixtures/fault_classes.json",
+      "path": "evidence/fault/classes/fault_classes.json",
       "owner": "team-runtime",
       "evidence_class": "fault",
       "trust_property": "failure-propagation",
       "why_exists": "classify and harden runtime fault handling",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "tests/fault/fixtures/fault_classes.json",
+      "canonical_location": "evidence/fault/classes/fault_classes.json",
       "consumer_surfaces": [
         "fault-contracts",
         "runtime-tests"
@@ -3287,15 +3287,162 @@
       "release_blocking": false,
       "duplicate_of": null,
       "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify supported graph schema fixture remains accepted",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify unsupported future graph schema fixture is rejected",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify unsupported past graph schema fixture is rejected",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/run_dir/v0_1_supported/manifest.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify supported run-dir manifest format remains accepted",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/run_dir/v0_1_supported/manifest.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify unsupported future run-dir manifest format is rejected",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify supported export bundle format remains importable",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "owner": "team-runtime",
+      "evidence_class": "compat",
+      "trust_property": "compatibility",
+      "why_exists": "verify unsupported past export bundle format is rejected",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
     }
   ],
   "fixture_families": [
     {
-      "path": "tests/cache/fixtures",
+      "path": "evidence/cache",
       "status": "canonical",
       "owner": "team-runtime",
       "version": "1",
-      "canonical_location": "tests/cache/fixtures",
+      "canonical_location": "evidence/cache",
       "consumer_surfaces": [
         "cache-contracts",
         "runtime-tests"
@@ -3323,11 +3470,11 @@
       "retirement_date": null
     },
     {
-      "path": "tests/fault/fixtures",
+      "path": "evidence/fault",
       "status": "canonical",
       "owner": "team-runtime",
       "version": "1",
-      "canonical_location": "tests/fault/fixtures",
+      "canonical_location": "evidence/fault",
       "consumer_surfaces": [
         "fault-contracts",
         "runtime-tests"

@@ -31,8 +31,8 @@ fn run_dir_and_import_export_contract_surfaces_exist() {
         "crates/bijux-dag-artifacts/src/storage/hardening.rs",
         "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
         "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
-        "tests/compatibility/export_bundle/v0.1/bundle.json",
-        "tests/compatibility/export_bundle/unsupported_past/bundle.json",
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+        "evidence/compat/export_bundle/unsupported_past/bundle.json",
     ] {
         assert!(
             root.join(required).exists(),

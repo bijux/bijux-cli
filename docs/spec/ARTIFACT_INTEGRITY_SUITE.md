@@ -8,7 +8,7 @@ Defines the artifact integrity verification suite for run-directory storage, man
 
 - `crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs`
 - `crates/bijux-dag-artifacts/tests/conformance.rs`
-- `crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/*`
+- `evidence/fault/corrupt_runs/*`
 
 ## Control-plane enforcement
 

@@ -179,7 +179,7 @@ fn export_modes_emit_documented_payload_shapes() {
 #[test]
 fn import_rejects_unsupported_bundle_version_fixture() {
     let root = repo_root();
-    let unsupported = root.join("tests/compatibility/export_bundle/unsupported_past/bundle.json");
+    let unsupported = root.join("evidence/compat/export_bundle/unsupported_past/bundle.json");
     let (code, stdout, _stderr) = run_dag(
         &["import", "--json", &output_path_string(&unsupported)],
         &root,

@@ -1,10 +1,10 @@
 # 
 
-- scope: `tests/cache`
+- scope: `evidence/cache`
 
-- tests/cache/fixtures/corrupt/hash_mismatch.json
-- tests/cache/fixtures/corrupt/missing_meta.json
-- tests/cache/fixtures/corrupt/missing_outputs_proof.json
-- tests/cache/fixtures/corrupt/truncated_meta.json
-- tests/cache/fixtures/corrupt/unsupported_metadata_version.json
-- tests/cache/fixtures/warm_cold/scenario.json
+- evidence/cache/corrupt/hash_mismatch.json
+- evidence/cache/corrupt/missing_meta.json
+- evidence/cache/corrupt/missing_outputs_proof.json
+- evidence/cache/corrupt/truncated_meta.json
+- evidence/cache/corrupt/unsupported_metadata_version.json
+- evidence/cache/scenarios/warm_cold.json

@@ -24,9 +24,9 @@ fn repo_root() -> PathBuf {
 #[test]
 fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
     let root = repo_root();
-    let supported = root.join("tests/compatibility/graph_schema/v0.1/minimal.dag.json");
+    let supported = root.join("evidence/compat/graph_schema/v0_1_supported/minimal.dag.json");
     let unsupported_future =
-        root.join("tests/compatibility/graph_schema/unsupported_future/minimal.dag.json");
+        root.join("evidence/compat/graph_schema/unsupported_future/minimal.dag.json");
 
     let cmd = dag_command();
     let ok_matches = cmd
@@ -56,8 +56,8 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
 #[test]
 fn supported_and_unsupported_run_dir_formats_are_classified() {
     let root = repo_root();
-    let supported = root.join("tests/compatibility/run_dir/v0.1");
-    let unsupported = root.join("tests/compatibility/run_dir/unsupported_future");
+    let supported = root.join("evidence/compat/run_dir/v0_1_supported");
+    let unsupported = root.join("evidence/compat/run_dir/unsupported_future");
 
     let cmd = dag_command();
     let ok_matches = cmd
@@ -87,8 +87,8 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
 #[test]
 fn supported_and_unsupported_export_bundle_versions_are_classified() {
     let root = repo_root();
-    let supported = root.join("tests/compatibility/export_bundle/v0.1/bundle.json");
-    let unsupported = root.join("tests/compatibility/export_bundle/unsupported_past/bundle.json");
+    let supported = root.join("evidence/compat/export_bundle/v0_1_supported/bundle.json");
+    let unsupported = root.join("evidence/compat/export_bundle/unsupported_past/bundle.json");
 
     let cmd = dag_command();
     let ok_matches = cmd

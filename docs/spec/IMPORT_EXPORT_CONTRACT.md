@@ -27,8 +27,8 @@ Defines export bundle formats, metadata-only behavior, and compatibility expecta
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 - `crates/bijux-dag-app/tests/run_dir_import_export_contract.rs`
 - `crates/bijux-dag-app/tests/version_fixture_contracts.rs`
-- `tests/compatibility/export_bundle/v0.1/bundle.json`
-- `tests/compatibility/export_bundle/unsupported_past/bundle.json`
+- `evidence/compat/export_bundle/v0_1_supported/bundle.json`
+- `evidence/compat/export_bundle/unsupported_past/bundle.json`
 
 ## Related schemas
 - `configs/schema/run_manifest.schema.json`

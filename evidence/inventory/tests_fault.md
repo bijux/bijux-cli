@@ -1,6 +1,6 @@
 # 
 
-- scope: `tests/fault`
+- scope: `evidence/fault`
 
-- tests/fault/README.md
-- tests/fault/fixtures/fault_classes.json
+- evidence/fault/README.md
+- evidence/fault/classes/fault_classes.json
