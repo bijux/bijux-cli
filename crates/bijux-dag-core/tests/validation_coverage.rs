@@ -14,21 +14,8 @@ use bijux_dag_core::{
 #[test]
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
-        "E1001",
-        "E1002",
-        "E1003",
-        "E1004",
-        "E1007",
-        "E1008",
-        "E1009",
-        "E1010",
-        "E1011",
-        "E1020",
-        "E1021",
-        "E1022",
-        "E1023",
-        "E1024",
-        "E1025",
+        "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
+        "E1021", "E1022", "E1023", "E1024", "E1025",
     ];
 
     for code in expected_error_codes {
@@ -140,7 +127,13 @@ fn topo_order_is_dependency_sensitive() {
         ],
     };
     let order = graph.topo_order().unwrap();
-    assert_eq!(order, vec!["a", "b", "c"].iter().map(|s| s.to_string()).collect::<Vec<_>>());
+    assert_eq!(
+        order,
+        vec!["a", "b", "c"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]
@@ -444,7 +437,8 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "W2001" => {
             let mut g = base_graph();
-            g.nodes.push(build_node("isolated", vec!["in".to_string()], "out"));
+            g.nodes
+                .push(build_node("isolated", vec!["in".to_string()], "out"));
             g
         }
         "W2002" => {

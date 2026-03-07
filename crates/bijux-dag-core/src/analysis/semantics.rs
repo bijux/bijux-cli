@@ -315,8 +315,10 @@ pub fn explain_graph(graph: &Graph) -> GraphExplainabilityModel {
 }
 
 pub fn static_analysis(graph: &Graph) -> StaticAnalysisReport {
-    let mut indegree: BTreeMap<String, usize> = graph.nodes.iter().map(|n| (n.id.clone(), 0)).collect();
-    let mut adj: BTreeMap<String, Vec<String>> = graph.nodes.iter().map(|n| (n.id.clone(), vec![])).collect();
+    let mut indegree: BTreeMap<String, usize> =
+        graph.nodes.iter().map(|n| (n.id.clone(), 0)).collect();
+    let mut adj: BTreeMap<String, Vec<String>> =
+        graph.nodes.iter().map(|n| (n.id.clone(), vec![])).collect();
     for edge in &graph.edges {
         *indegree.entry(edge.to.node_id.clone()).or_insert(0) += 1;
         adj.entry(edge.from.node_id.clone())

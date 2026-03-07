@@ -16,28 +16,116 @@ pub struct ValidationRule {
 
 pub fn validation_rule_registry() -> &'static [ValidationRule] {
     &[
-        ValidationRule { id: "E1001", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1002", severity: Severity::Error, domain: ValidationDomain::Topology },
-        ValidationRule { id: "E1003", severity: Severity::Error, domain: ValidationDomain::Topology },
-        ValidationRule { id: "E1004", severity: Severity::Error, domain: ValidationDomain::Topology },
-        ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1006", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1007", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1008", severity: Severity::Error, domain: ValidationDomain::Topology },
-        ValidationRule { id: "E1009", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1010", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1011", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1013", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1020", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1021", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1022", severity: Severity::Error, domain: ValidationDomain::Topology },
-        ValidationRule { id: "E1023", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1024", severity: Severity::Error, domain: ValidationDomain::Semantic },
-        ValidationRule { id: "E1025", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1026", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "E1027", severity: Severity::Error, domain: ValidationDomain::Schema },
-        ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
-        ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
+        ValidationRule {
+            id: "E1001",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1002",
+            severity: Severity::Error,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "E1003",
+            severity: Severity::Error,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "E1004",
+            severity: Severity::Error,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "E1005",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1006",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1007",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1008",
+            severity: Severity::Error,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "E1009",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1010",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1011",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1013",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1020",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1021",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1022",
+            severity: Severity::Error,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "E1023",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1024",
+            severity: Severity::Error,
+            domain: ValidationDomain::Semantic,
+        },
+        ValidationRule {
+            id: "E1025",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1026",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "E1027",
+            severity: Severity::Error,
+            domain: ValidationDomain::Schema,
+        },
+        ValidationRule {
+            id: "W2001",
+            severity: Severity::Warning,
+            domain: ValidationDomain::Topology,
+        },
+        ValidationRule {
+            id: "W2002",
+            severity: Severity::Warning,
+            domain: ValidationDomain::Topology,
+        },
     ]
 }
 

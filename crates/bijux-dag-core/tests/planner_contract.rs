@@ -105,7 +105,8 @@ fn unsupported_runtime_kind_is_planner_error() {
         }"#,
     );
 
-    let error = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect_err("planner error");
+    let error =
+        lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect_err("planner error");
     assert!(matches!(error, PlannerError::UnsupportedNodeKind(_)));
 }
 
@@ -147,5 +148,8 @@ fn fan_structures_and_selector_pruned_graphs_lower() {
     )
     .expect("pruned plan");
 
-    assert!(pruned.nodes.iter().all(|n| ["root", "l", "join"].contains(&n.id.as_str())));
+    assert!(pruned
+        .nodes
+        .iter()
+        .all(|n| ["root", "l", "join"].contains(&n.id.as_str())));
 }

@@ -30,7 +30,9 @@ fn canonical_examples_parse_and_validate() {
         let graph = parse_graph_strict(&load(path)).expect("parse canonical example");
         let diags = graph.validate_with_warnings();
         assert!(
-            diags.iter().all(|d| d.severity != bijux_dag_core::Severity::Error),
+            diags
+                .iter()
+                .all(|d| d.severity != bijux_dag_core::Severity::Error),
             "fixture contains validation error: {path}"
         );
     }
@@ -50,7 +52,9 @@ fn bad_examples_fail_parse_or_validation() {
             Ok(graph) => {
                 let diags = graph.validate_with_warnings();
                 assert!(
-                    diags.iter().any(|d| d.severity == bijux_dag_core::Severity::Error),
+                    diags
+                        .iter()
+                        .any(|d| d.severity == bijux_dag_core::Severity::Error),
                     "expected validation errors for bad fixture: {path}"
                 );
             }

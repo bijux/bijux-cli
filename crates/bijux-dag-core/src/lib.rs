@@ -1,24 +1,24 @@
+#[cfg(test)]
+use criterion as _;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[cfg(test)]
-use criterion as _;
-#[cfg(test)]
 use tempfile as _;
 
-#[path = "build/compile.rs"]
-pub mod compile;
 #[path = "build/builder.rs"]
 pub mod builder;
 #[path = "graph/canonical.rs"]
 pub mod canonical;
+#[path = "build/compile.rs"]
+pub mod compile;
 #[path = "graph/edge.rs"]
 pub mod edge;
-#[path = "contracts/error.rs"]
-pub mod error;
 #[path = "analysis/effects.rs"]
 pub mod effects;
+#[path = "contracts/error.rs"]
+pub mod error;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]

@@ -14,9 +14,8 @@ fn parse_graph(input: &str) -> Graph {
 
 #[test]
 fn canonicalization_order_is_independent_from_node_and_edge_order() -> Result<(), GraphError> {
-    let a = parse_graph(
-        &format!(
-            r#"{{
+    let a = parse_graph(&format!(
+        r#"{{
   "spec": "{}",
   "nodes": [
     {{"id":"b","kind":"const","inputs":[],"outputs":[{{"name":"out","path":"b/out"}}],"params":{{"value":2}}}},
@@ -24,12 +23,10 @@ fn canonicalization_order_is_independent_from_node_and_edge_order() -> Result<()
   ],
   "edges": [{{"from":{{"node_id":"a","port":"out"}},"to":{{"node_id":"b","port":"in"}}}}]
 }}"#,
-            SPEC_VERSION
-        ),
-    );
-    let b = parse_graph(
-        &format!(
-            r#"{{
+        SPEC_VERSION
+    ));
+    let b = parse_graph(&format!(
+        r#"{{
   "spec": "{}",
   "nodes": [
     {{"id":"a","kind":"const","inputs":[],"outputs":[{{"name":"out","path":"a/out"}}],"params":{{"value":1}}}},
@@ -37,9 +34,8 @@ fn canonicalization_order_is_independent_from_node_and_edge_order() -> Result<()
   ],
   "edges": [{{"from":{{"node_id":"a","port":"out"}},"to":{{"node_id":"b","port":"in"}}}}]
 }}"#,
-            SPEC_VERSION
-        ),
-    );
+        SPEC_VERSION
+    ));
 
     assert_eq!(a.to_canonical_json()?, b.to_canonical_json()?);
     assert_eq!(a.graph_fingerprint()?, b.graph_fingerprint()?);
@@ -48,9 +44,8 @@ fn canonicalization_order_is_independent_from_node_and_edge_order() -> Result<()
 
 #[test]
 fn fingerprint_ignores_non_semantic_json_object_field_order() -> Result<(), GraphError> {
-    let first = parse_graph(
-        &format!(
-            r#"{{
+    let first = parse_graph(&format!(
+        r#"{{
   "spec": "{}",
   "inputs": {{"alpha": 1, "beta": 2}},
   "nodes": [
@@ -58,12 +53,10 @@ fn fingerprint_ignores_non_semantic_json_object_field_order() -> Result<(), Grap
   ],
   "edges": []
 }}"#,
-            SPEC_VERSION
-        ),
-    );
-    let second = parse_graph(
-        &format!(
-            r#"{{
+        SPEC_VERSION
+    ));
+    let second = parse_graph(&format!(
+        r#"{{
   "spec": "{}",
   "inputs": {{"beta": 2, "alpha": 1}},
   "nodes": [
@@ -71,9 +64,8 @@ fn fingerprint_ignores_non_semantic_json_object_field_order() -> Result<(), Grap
   ],
   "edges": []
 }}"#,
-            SPEC_VERSION
-        ),
-    );
+        SPEC_VERSION
+    ));
 
     assert_eq!(first.graph_fingerprint()?, second.graph_fingerprint()?);
     Ok(())

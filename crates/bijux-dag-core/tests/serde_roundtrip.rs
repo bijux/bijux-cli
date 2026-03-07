@@ -15,8 +15,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::{
-    ContainerSpec, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, NodeOutputRef, ParamValue,
-    PortRef, RefSpec, Resources, RetryPolicy, Edge,
+    ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, NodeOutputRef,
+    ParamValue, PortRef, RefSpec, Resources, RetryPolicy,
 };
 
 #[test]
@@ -138,8 +138,14 @@ fn serde_roundtrip_ref_models() {
 fn serde_roundtrip_param_value_model() {
     let params = ParamValue::Object(
         [
-            ("value".to_string(), ParamValue::Literal(serde_json::json!(1))),
-            ("list".to_string(), ParamValue::Array(vec![ParamValue::Literal(serde_json::json!(2))])),
+            (
+                "value".to_string(),
+                ParamValue::Literal(serde_json::json!(1)),
+            ),
+            (
+                "list".to_string(),
+                ParamValue::Array(vec![ParamValue::Literal(serde_json::json!(2))]),
+            ),
             (
                 "ref".to_string(),
                 ParamValue::Ref(RefSpec {
@@ -160,7 +166,7 @@ fn serde_roundtrip_param_value_model() {
 
 #[test]
 fn serde_roundtrip_node_kind_model() {
-    let cases = vec!["const", "shell", "container", "custom"]; 
+    let cases = vec!["const", "shell", "container", "custom"];
     for text in cases {
         let node_kind: NodeKind = serde_json::from_str(&format!("\"{}\"", text)).unwrap();
         let encoded = serde_json::to_string(&node_kind).unwrap();
@@ -201,11 +207,11 @@ fn serde_rejects_unknown_root_fields() {
 #[test]
 fn core_public_api_contract_snapshot_stable() {
     let public_symbols = [
-        "parse_graph_strict", 
-        "Graph.validate_with_warnings", 
-        "Graph.validate_strict", 
-        "Graph.graph_fingerprint", 
-        "Graph.to_canonical_json", 
+        "parse_graph_strict",
+        "Graph.validate_with_warnings",
+        "Graph.validate_strict",
+        "Graph.graph_fingerprint",
+        "Graph.to_canonical_json",
     ];
     let snapshot = serde_json::to_string(&public_symbols).unwrap();
     assert_eq!(
@@ -224,7 +230,9 @@ fn strict_parse_then_validation_diagnostics_separation() {
     let text = serde_json::to_string(&graph).unwrap();
     let parsed = bijux_dag_core::parse_graph_strict(&text).unwrap();
     let diags = parsed.validate_with_warnings();
-    assert!(diags.iter().any(|diag| matches!(diag.code.as_str(), "E1008" | "W2001" | "W2002")));
+    assert!(diags
+        .iter()
+        .any(|diag| matches!(diag.code.as_str(), "E1008" | "W2001" | "W2002")));
 }
 
 fn sample_graph() -> Graph {

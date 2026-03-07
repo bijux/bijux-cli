@@ -73,9 +73,15 @@ pub enum PlannerError {
     Fingerprint(String),
 }
 
-pub fn lower_graph_to_execution_plan(graph: &Graph, mut options: PlanOptions) -> Result<ExecutionPlan, PlannerError> {
+pub fn lower_graph_to_execution_plan(
+    graph: &Graph,
+    mut options: PlanOptions,
+) -> Result<ExecutionPlan, PlannerError> {
     let validation_diags = graph.validate_with_warnings();
-    if validation_diags.iter().any(|d| d.severity == crate::Severity::Error) {
+    if validation_diags
+        .iter()
+        .any(|d| d.severity == crate::Severity::Error)
+    {
         return Err(PlannerError::ValidationFailed);
     }
 
@@ -128,7 +134,8 @@ pub fn lower_graph_to_execution_plan(graph: &Graph, mut options: PlanOptions) ->
             diagnostics.push(PlannerDiagnostic {
                 id: "P4016".to_string(),
                 severity: PlannerSeverity::Warning,
-                message: "node has no declared outputs and is treated as execution no-op".to_string(),
+                message: "node has no declared outputs and is treated as execution no-op"
+                    .to_string(),
                 node_id: Some(node.id.clone()),
             });
         }
@@ -241,7 +248,11 @@ fn topo_order_selected(nodes: &[Node], edges: &[Edge]) -> Result<Vec<String>, Pl
     Ok(order)
 }
 
-fn planner_fingerprint(nodes: &[PlannedNode], edges: &[PlannedEdge], ordering: &[String]) -> Result<String, PlannerError> {
+fn planner_fingerprint(
+    nodes: &[PlannedNode],
+    edges: &[PlannedEdge],
+    ordering: &[String],
+) -> Result<String, PlannerError> {
     let mut hasher = Sha256::new();
     let payload = serde_json::to_vec(&(nodes, edges, ordering))
         .map_err(|e| PlannerError::Fingerprint(e.to_string()))?;
@@ -272,7 +283,10 @@ pub fn can_runtime_execute_plan_without_raw_graph() -> bool {
 }
 
 pub fn node_kind_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Const | NodeKind::Shell | NodeKind::Container)
+    matches!(
+        kind,
+        NodeKind::Const | NodeKind::Shell | NodeKind::Container
+    )
 }
 
 pub fn planner_alignment_required_schema() -> &'static str {

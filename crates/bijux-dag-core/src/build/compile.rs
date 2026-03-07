@@ -1,7 +1,9 @@
 use crate::graph::GraphContract;
 use crate::meta::SnapshotMetadata;
 use crate::node::{derive_interface, NodeTypeRegistry, TypedNode};
-use crate::{parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION};
+use crate::{
+    parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

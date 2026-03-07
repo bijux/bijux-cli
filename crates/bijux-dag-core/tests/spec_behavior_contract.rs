@@ -21,14 +21,16 @@ fn parse_rejects_unknown_fields_fixture() {
 
 #[test]
 fn parse_rejects_future_required_behavior_fixture() {
-    let payload =
-        include_str!("../../../configs/schema/fixtures/v0.1/negative/future-required-behavior.json");
+    let payload = include_str!(
+        "../../../configs/schema/fixtures/v0.1/negative/future-required-behavior.json"
+    );
     assert!(parse_graph_strict(payload).is_err());
 }
 
 #[test]
 fn parse_rejects_ambiguous_output_paths_fixture() {
-    let payload = include_str!("../../../configs/schema/fixtures/v0.1/negative/invalid-output-path.json");
+    let payload =
+        include_str!("../../../configs/schema/fixtures/v0.1/negative/invalid-output-path.json");
     assert!(parse_graph_strict(payload).is_err());
 }
 
@@ -54,9 +56,8 @@ fn canonical_graph_shape_coverage() {
 
 #[test]
 fn diagnostics_order_and_message_stability() {
-    let mut graph = parse(
-        &format!(
-            r#"{{
+    let mut graph = parse(&format!(
+        r#"{{
   "spec": "{}",
   "meta": {{"name": "bad graph", "tags": ["good", "bad tag"]}},
   "nodes": [
@@ -64,10 +65,12 @@ fn diagnostics_order_and_message_stability() {
   ],
   "edges": []
 }}"#,
-            SPEC_VERSION
-        ),
-    );
-    graph.nodes[0].retry = RetryPolicy { max_attempts: 1, backoff_ms: 0 };
+        SPEC_VERSION
+    ));
+    graph.nodes[0].retry = RetryPolicy {
+        max_attempts: 1,
+        backoff_ms: 0,
+    };
     graph.nodes[0].effects = vec![];
     graph.nodes[0].params = ParamValue::Literal(json!({"argv":["echo","ok"]}));
 
@@ -93,27 +96,29 @@ fn diagnostics_order_and_message_stability() {
 
 #[test]
 fn canonicalization_stable_across_path_separator_variants() {
-    let a = parse(
-        &format!(
-            r#"{{
+    let a = parse(&format!(
+        r#"{{
   "spec": "{}",
   "nodes": [{{"id":"a","kind":"const","inputs":[],"outputs":[{{"name":"out","path":"dir\\file.txt"}}]}}],
   "edges": []
 }}"#,
-            SPEC_VERSION
-        ),
-    );
-    let b = parse(
-        &format!(
-            r#"{{
+        SPEC_VERSION
+    ));
+    let b = parse(&format!(
+        r#"{{
   "spec": "{}",
   "nodes": [{{"id":"a","kind":"const","inputs":[],"outputs":[{{"name":"out","path":"dir/file.txt"}}]}}],
   "edges": []
 }}"#,
-            SPEC_VERSION
-        ),
-    );
+        SPEC_VERSION
+    ));
 
-    assert_eq!(a.to_canonical_json().expect("canonical"), b.to_canonical_json().expect("canonical"));
-    assert_eq!(a.graph_fingerprint().expect("fp"), b.graph_fingerprint().expect("fp"));
+    assert_eq!(
+        a.to_canonical_json().expect("canonical"),
+        b.to_canonical_json().expect("canonical")
+    );
+    assert_eq!(
+        a.graph_fingerprint().expect("fp"),
+        b.graph_fingerprint().expect("fp")
+    );
 }
