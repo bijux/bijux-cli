@@ -174,6 +174,7 @@ fn battle_perf_and_compare_consumers_reference_evidence_roots_only() {
     let ignore_paths = [
         "crates/bijux-dev-dag/src/commands/mod.rs",
         "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs",
+        "crates/bijux-dev-dag/tests/evidence_access_contracts.rs",
     ];
 
     for file in files {
