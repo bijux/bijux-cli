@@ -36,6 +36,7 @@ pub mod node_result;
 mod observability;
 mod observability_deep;
 mod operations_governance;
+mod path_authorization;
 mod planner;
 mod planner_intelligence;
 mod plugin_ecosystem;
@@ -46,6 +47,7 @@ pub mod run_context;
 mod run_state;
 mod scheduler;
 mod scheduler_enterprise;
+mod security_env;
 mod semantic_lineage;
 mod secrets_security;
 pub mod state_machine;
@@ -97,6 +99,7 @@ pub use planner_intelligence::{
     PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
     PlannerResourceEstimate,
 };
+pub use path_authorization::{authorize_input_path, authorize_output_path};
 pub use plugin_ecosystem::{
     compute_platform_maturity, detect_extension_compatibility_issues,
     extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
@@ -109,6 +112,7 @@ pub use plugin_ecosystem::{
     PluginIsolationPolicy, PluginLifecycleState, PluginLoadingMode, PluginMetadata,
     PluginTrustPolicy,
 };
+pub use security_env::{is_allowed_env_key, is_denied_env_key, shape_environment};
 pub use authz_policy::{
     builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
     evaluate_dry_run, has_permission, invalidate_decision_cache, is_action_allowed_in_environment,
