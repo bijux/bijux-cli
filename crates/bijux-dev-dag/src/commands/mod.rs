@@ -1066,6 +1066,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_test_trust_foundation_guard(),
     },
     SuiteDef {
+        id: "test-trust-cleanup",
+        description: "test trust ledger classification and semantic surface cleanup enforcement",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_test_trust_cleanup_guard(),
+    },
+    SuiteDef {
         id: "battle-suite-mandatory",
         description:
             "battle trust properties and scenario concentration remain mandatory in verification",
@@ -5250,6 +5259,46 @@ fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn run_test_trust_cleanup_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let ledger = root.join("configs/policy/test_trust_ledger.json");
+    if !ledger.exists() {
+        return Err("missing test trust ledger policy".to_string());
+    }
+
+    let docs = root.join("docs/spec/TEST_TRUST_LEDGER.md");
+    if !docs.exists() {
+        return Err("missing test trust ledger spec".to_string());
+    }
+
+    let report = root.join("docs/reports/foundation/test_trust_cleanup_report.md");
+    if !report.exists() {
+        return Err("missing test trust cleanup report".to_string());
+    }
+
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(&ledger).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+
+    let classes = policy
+        .get("classification_rules")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "test trust ledger missing classification_rules".to_string())?;
+    if classes.is_empty() {
+        return Err("classification_rules must not be empty".to_string());
+    }
+
+    let must_never_break = policy
+        .get("must_never_break")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "test trust ledger missing must_never_break".to_string())?;
+    if must_never_break.is_empty() {
+        return Err("must_never_break must not be empty".to_string());
+    }
+
+    Ok(())
+}
+
 fn run_docs_schema_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -7802,6 +7851,7 @@ fn run_foundation_verification_guard() -> Result<(), String> {
         "artifact-hardening",
         "performance-evidence",
         "test-trust-foundation",
+        "test-trust-cleanup",
         "battle-suite-mandatory",
         "runtime-module-triage",
     ] {

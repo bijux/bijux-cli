@@ -32,6 +32,7 @@ pub const IDS: &[&str] = &[
     "sacred-execution-flow",
     "runtime-semantics",
     "test-trust-foundation",
+    "test-trust-cleanup",
     "battle-suite-mandatory",
     "naming-governance",
     "scheduler-invariants",
