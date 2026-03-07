@@ -77,3 +77,28 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
     let explain = explain_plan(&after);
     assert!(!explain.phases.is_empty());
 }
+
+#[test]
+fn planner_rejects_unsupported_runtime_capability_during_lowering() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"resources":{"cpu":1,"mem_mb":64},"params":{"value":1}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph should parse");
+
+    let err = build_planner_analysis(
+        &graph,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails {
+            allow_semantic_optimizations: true,
+        },
+    )
+    .expect_err("planner must fail for unsupported capability requirements");
+    assert!(err.contains("unsupported runtime capability"));
+}

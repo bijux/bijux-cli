@@ -101,6 +101,13 @@ pub fn build_planner_analysis(
     validate_impossible_run_requirements(&normalized_graph)?;
 
     let mut plan = crate::planner::build_plan(&normalized_graph, options);
+    if plan
+        .diagnostics
+        .iter()
+        .any(|d| d.contains("P4013") || d.contains("P4021"))
+    {
+        return Err("planner lowering rejected unsupported runtime capability requirements".to_string());
+    }
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph, plan, &mut annotations, guardrails);
     let resource_estimate = estimate_resources(&plan.nodes);
