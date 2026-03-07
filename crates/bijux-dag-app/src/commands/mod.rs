@@ -265,6 +265,20 @@ pub(crate) enum Commands {
         #[arg(long)]
         backend: Option<String>,
     },
+    #[command(name = "semantic-portability")]
+    SemanticPortability {
+        #[arg(long)]
+        backend: String,
+    },
+    #[command(name = "equivalence-proof")]
+    EquivalenceProof {
+        run_a: PathBuf,
+        run_b: PathBuf,
+        #[arg(long)]
+        backend_a: String,
+        #[arg(long)]
+        backend_b: String,
+    },
     Version,
     Config {
         #[command(subcommand)]

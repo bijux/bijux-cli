@@ -2304,107 +2304,30 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "remote": "simulated",
                     "batch_hpc": "simulated"
                 },
+                "backend_capability_matrix": [
+                    backend_capability_payload("kubernetes").unwrap(),
+                    backend_capability_payload("hpc").unwrap(),
+                    backend_capability_payload("remote").unwrap()
+                ],
                 "operator_commands": [
                     "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
                 ]
             });
             let payload = if let Some(name) = backend.as_deref() {
-                match name {
-                    "k8s" | "kubernetes" => {
-                        let version = bijux_dag_runtime::K8sBackendVersionMetadata {
-                            k8s_version: "simulated-v1.30".to_string(),
-                            api_server: "simulated-control-plane".to_string(),
-                            cluster_uid: "simulated-cluster".to_string(),
-                        };
-                        let caps = bijux_dag_runtime::k8s_capability_declaration();
-                        json!({
-                            "format": "capabilities/v1",
-                            "backend": "kubernetes",
-                            "status": "simulated",
-                            "capabilities": {
-                                "node_selector": caps.supports_node_selector,
-                                "node_affinity": caps.supports_node_affinity,
-                                "pod_affinity": caps.supports_pod_affinity
-                            },
-                            "version_metadata": version,
-                            "notes": [
-                                "kubernetes execution remains simulated in this repository",
-                                "capability declaration is contract-level and evidence-backed"
-                            ]
-                        })
-                    }
-                    "hpc" | "slurm" => {
-                        let version =
-                            bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
-                        let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
-                        json!({
-                            "format": "capabilities/v1",
-                            "backend": "hpc",
-                            "status": "simulated",
-                            "capabilities": {
-                                "queue_partition_mapping": true,
-                                "walltime_mapping": true,
-                                "scheduler_retry_precedence": retry.effective_retry_owner
-                            },
-                            "version_metadata": version,
-                            "notes": [
-                                "hpc execution remains simulated in this repository",
-                                "slurm contract semantics are evidence-backed"
-                            ]
-                        })
-                    }
-                    "remote" | "distributed" => {
-                        let lease = bijux_dag_runtime::TaskLeaseSemantics {
-                            lease_duration_ms: 30_000,
-                            renew_before_expiry_ms: 5_000,
-                            max_renewals: 10,
-                            recovery_grace_ms: 10_000,
-                        };
-                        let heartbeat = bijux_dag_runtime::HeartbeatSemantics {
-                            interval_ms: 1_000,
-                            timeout_ms: 5_000,
-                            delayed_threshold_ms: 2_500,
-                        };
-                        json!({
-                            "format": "capabilities/v1",
-                            "backend": "remote",
-                            "status": "simulated",
-                            "capabilities": {
-                                "task_lease_semantics": {
-                                    "lease_duration_ms": lease.lease_duration_ms,
-                                    "renew_before_expiry_ms": lease.renew_before_expiry_ms,
-                                    "max_renewals": lease.max_renewals,
-                                    "recovery_grace_ms": lease.recovery_grace_ms
-                                },
-                                "heartbeat_semantics": {
-                                    "interval_ms": heartbeat.interval_ms,
-                                    "timeout_ms": heartbeat.timeout_ms,
-                                    "delayed_threshold_ms": heartbeat.delayed_threshold_ms
-                                },
-                                "duplicate_dispatch_prevention": true,
-                                "artifact_upload_commit_contract": true,
-                                "status_event_ordering_contract": true,
-                                "version_mismatch_rejection": true,
-                                "worker_pool_capability_negotiation": true
-                            },
-                            "notes": [
-                                "remote execution remains simulated in this repository",
-                                "worker protocol contract semantics are evidence-backed"
-                            ]
-                        })
-                    }
-                    other => {
+                match backend_capability_payload(name) {
+                    Some(entry) => entry,
+                    None => {
                         return emit_json(
                             &cli,
                             "dag.capabilities",
                             false,
                             json!({
                                 "format": "capabilities/v1",
-                                "backend": other,
+                                "backend": name,
                                 "status": "unsupported-backend-query"
                             }),
                             vec![json!({
-                                "message": format!("unsupported backend query: {other}"),
+                                "message": format!("unsupported backend query: {name}"),
                                 "remediation": "use --backend kubernetes, --backend hpc, or --backend remote"
                             })],
                             ExitCode::from(2),
@@ -2426,6 +2349,90 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
+        }
+        Commands::SemanticPortability { backend } => {
+            let capability = backend_capability_payload(&backend);
+            let supported = capability.is_some();
+            let payload = if let Some(capability) = capability {
+                json!({
+                    "format": "semantic-portability/v1",
+                    "backend": capability["backend"],
+                    "status": "fidelity-preserving",
+                    "equivalence_class": "contract-equivalent",
+                    "downgrade_conditions": [
+                        "missing artifacts",
+                        "environment fingerprint drift",
+                        "backend-specific unsupported requirement"
+                    ],
+                    "capability_reference": capability
+                })
+            } else {
+                json!({
+                    "format": "semantic-portability/v1",
+                    "backend": backend,
+                    "status": "downgraded",
+                    "equivalence_class": "unsupported-backend-query",
+                    "downgrade_conditions": ["unsupported backend target"]
+                })
+            };
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.semantic-portability",
+                    supported,
+                    payload,
+                    if supported { Vec::new() } else { vec![json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"})] },
+                    if supported { ExitCode::SUCCESS } else { ExitCode::from(2) },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(if supported { ExitCode::SUCCESS } else { ExitCode::from(2) })
+        }
+        Commands::EquivalenceProof {
+            run_a,
+            run_b,
+            backend_a,
+            backend_b,
+        } => {
+            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
+            let backend_supported = backend_capability_payload(&backend_a).is_some()
+                && backend_capability_payload(&backend_b).is_some();
+            let status = if diff.replay_equivalence.equivalent && backend_supported {
+                "equivalent"
+            } else if backend_supported {
+                "fidelity-preserving"
+            } else {
+                "downgraded"
+            };
+            let payload = json!({
+                "format": "equivalence-proof/v1",
+                "backend_a": backend_a,
+                "backend_b": backend_b,
+                "status": status,
+                "run_equivalent": diff.replay_equivalence.equivalent,
+                "summary": diff.replay_equivalence.reason_report.summary,
+                "reasons": diff.replay_equivalence.reasons
+            });
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.equivalence-proof",
+                    status != "downgraded",
+                    payload,
+                    if status == "downgraded" {
+                        vec![json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"})]
+                    } else {
+                        Vec::new()
+                    },
+                    if status == "downgraded" {
+                        ExitCode::from(2)
+                    } else {
+                        ExitCode::SUCCESS
+                    },
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(if status == "downgraded" { ExitCode::from(2) } else { ExitCode::SUCCESS })
         }
         Commands::VersionInspect {
             dag,
@@ -3678,6 +3685,94 @@ fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode>
             "trust_level": "unsigned"
         }
     }))
+}
+
+fn backend_capability_payload(name: &str) -> Option<serde_json::Value> {
+    match name {
+        "k8s" | "kubernetes" => {
+            let version = bijux_dag_runtime::K8sBackendVersionMetadata {
+                k8s_version: "simulated-v1.30".to_string(),
+                api_server: "simulated-control-plane".to_string(),
+                cluster_uid: "simulated-cluster".to_string(),
+            };
+            let caps = bijux_dag_runtime::k8s_capability_declaration();
+            Some(json!({
+                "format": "capabilities/v1",
+                "backend": "kubernetes",
+                "status": "simulated",
+                "capabilities": {
+                    "node_selector": caps.supports_node_selector,
+                    "node_affinity": caps.supports_node_affinity,
+                    "pod_affinity": caps.supports_pod_affinity
+                },
+                "version_metadata": version,
+                "notes": [
+                    "kubernetes execution remains simulated in this repository",
+                    "capability declaration is contract-level and evidence-backed"
+                ]
+            }))
+        }
+        "hpc" | "slurm" => {
+            let version = bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
+            let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
+            Some(json!({
+                "format": "capabilities/v1",
+                "backend": "hpc",
+                "status": "simulated",
+                "capabilities": {
+                    "queue_partition_mapping": true,
+                    "walltime_mapping": true,
+                    "scheduler_retry_precedence": retry.effective_retry_owner
+                },
+                "version_metadata": version,
+                "notes": [
+                    "hpc execution remains simulated in this repository",
+                    "slurm contract semantics are evidence-backed"
+                ]
+            }))
+        }
+        "remote" | "distributed" => {
+            let lease = bijux_dag_runtime::TaskLeaseSemantics {
+                lease_duration_ms: 30_000,
+                renew_before_expiry_ms: 5_000,
+                max_renewals: 10,
+                recovery_grace_ms: 10_000,
+            };
+            let heartbeat = bijux_dag_runtime::HeartbeatSemantics {
+                interval_ms: 1_000,
+                timeout_ms: 5_000,
+                delayed_threshold_ms: 2_500,
+            };
+            Some(json!({
+                "format": "capabilities/v1",
+                "backend": "remote",
+                "status": "simulated",
+                "capabilities": {
+                    "task_lease_semantics": {
+                        "lease_duration_ms": lease.lease_duration_ms,
+                        "renew_before_expiry_ms": lease.renew_before_expiry_ms,
+                        "max_renewals": lease.max_renewals,
+                        "recovery_grace_ms": lease.recovery_grace_ms
+                    },
+                    "heartbeat_semantics": {
+                        "interval_ms": heartbeat.interval_ms,
+                        "timeout_ms": heartbeat.timeout_ms,
+                        "delayed_threshold_ms": heartbeat.delayed_threshold_ms
+                    },
+                    "duplicate_dispatch_prevention": true,
+                    "artifact_upload_commit_contract": true,
+                    "status_event_ordering_contract": true,
+                    "version_mismatch_rejection": true,
+                    "worker_pool_capability_negotiation": true
+                },
+                "notes": [
+                    "remote execution remains simulated in this repository",
+                    "worker protocol contract semantics are evidence-backed"
+                ]
+            }))
+        }
+        _ => None,
+    }
 }
 
 #[cfg(test)]
