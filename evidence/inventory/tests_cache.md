@@ -1,7 +1,6 @@
-# Top-Level Cache Scenario Inventory
+# 
 
 - scope: `tests/cache`
-- file_count: 6
 
 - tests/cache/fixtures/corrupt/hash_mismatch.json
 - tests/cache/fixtures/corrupt/missing_meta.json

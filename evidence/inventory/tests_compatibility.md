@@ -1,7 +1,6 @@
-# Top-Level Compatibility Scenario Inventory
+# 
 
 - scope: `tests/compatibility`
-- file_count: 7
 
 - tests/compatibility/export_bundle/unsupported_past/bundle.json
 - tests/compatibility/export_bundle/v0.1/bundle.json

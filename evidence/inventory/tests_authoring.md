@@ -1,7 +1,6 @@
-# Top-Level Authoring Scenario Inventory
+# 
 
 - scope: `tests/authoring`
-- file_count: 13
 
 - tests/authoring/bad/cycle.json
 - tests/authoring/bad/invalid_refs.json

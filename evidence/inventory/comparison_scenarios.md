@@ -1,7 +1,6 @@
-# Comparison Scenario Inventory
+# 
 
 - scope: `comparisons/scenarios`
-- file_count: 11
 
 - comparisons/scenarios/artifact_inspectability.json
 - comparisons/scenarios/cache_reuse_shape.json

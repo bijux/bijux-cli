@@ -1,7 +1,6 @@
-# Runtime Fixture Inventory
+# 
 
 - scope: `crates/bijux-dag-runtime/tests/fixtures`
-- file_count: 59
 
 - crates/bijux-dag-runtime/tests/fixtures/.gitkeep
 - crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json

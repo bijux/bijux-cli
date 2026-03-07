@@ -1,7 +1,6 @@
-# Schema Fixture Inventory
+# 
 
 - scope: `configs/schema/fixtures`
-- file_count: 16
 
 - configs/schema/fixtures/compat/negative/unsupported_future_graph.json
 - configs/schema/fixtures/compat/negative/unsupported_v0_0_graph.json

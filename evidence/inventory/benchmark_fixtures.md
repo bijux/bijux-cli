@@ -1,12 +1,8 @@
-# Benchmark Fixture Inventory
+# 
 
 - scope: `benchmarks/fixtures`
-- file_count: 18
 
 - benchmarks/fixtures/infrastructure/backend_conformance_matrix.json
-- benchmarks/fixtures/infrastructure/backends/backend_degradation.json
-- benchmarks/fixtures/infrastructure/backends/partial_cluster_outage.json
-- benchmarks/fixtures/infrastructure/backends/queue_buildup.json
 - benchmarks/fixtures/large_dag.json
 - benchmarks/fixtures/observability/investigation_bundle_demo.json
 - benchmarks/fixtures/observability/retry_cancel_cache_failure.json

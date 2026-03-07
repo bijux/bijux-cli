@@ -6,11 +6,10 @@ Snapshot date: 2026-03-07
 
 | scope | files |
 |---|---:|
-| examples | 7 |
+| examples | 6 |
 | benchmarks/scenarios | 22 |
-| benchmarks/fixtures | 18 |
+| benchmarks/fixtures | 15 |
 | comparisons/scenarios | 11 |
-| comparisons/external | 4 |
 | tests/authoring | 13 |
 | tests/cache | 6 |
 | tests/compatibility | 7 |
@@ -25,6 +24,6 @@ Snapshot date: 2026-03-07
 
 | ownership | files |
 |---|---:|
-| root-owned | 117 |
+| root-owned | 109 |
 | crate-owned | 61 |
 | schema-owned | 16 |

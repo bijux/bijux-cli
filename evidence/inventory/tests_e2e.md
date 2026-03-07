@@ -1,7 +1,6 @@
-# Top-Level E2E Scenario Inventory
+# 
 
 - scope: `tests/e2e`
-- file_count: 25
 
 - tests/e2e/README.md
 - tests/e2e/cache/cache_hit_second_run.json

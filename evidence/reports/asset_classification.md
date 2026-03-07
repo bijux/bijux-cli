@@ -5,9 +5,6 @@ Classification for files in tasks 21-34 scopes.
 | path | class | status | ownership | canonical_location | notes |
 |---|---|---|---|---|---|
 | benchmarks/fixtures/infrastructure/backend_conformance_matrix.json | perf | transitional | root-owned | evidence/perf |  |
-| benchmarks/fixtures/infrastructure/backends/backend_degradation.json | perf | transitional | root-owned | evidence/perf |  |
-| benchmarks/fixtures/infrastructure/backends/partial_cluster_outage.json | perf | transitional | root-owned | evidence/perf |  |
-| benchmarks/fixtures/infrastructure/backends/queue_buildup.json | perf | transitional | root-owned | evidence/perf |  |
 | benchmarks/fixtures/large_dag.json | perf | transitional | root-owned | evidence/perf |  |
 | benchmarks/fixtures/observability/investigation_bundle_demo.json | perf | transitional | root-owned | evidence/perf |  |
 | benchmarks/fixtures/observability/retry_cancel_cache_failure.json | perf | transitional | root-owned | evidence/perf |  |
@@ -44,10 +41,6 @@ Classification for files in tasks 21-34 scopes.
 | benchmarks/scenarios/tiny_parse_validate.json | perf | transitional | root-owned | evidence/perf |  |
 | benchmarks/scenarios/wide_canonical.json | perf | transitional | root-owned | evidence/perf |  |
 | benchmarks/scenarios/wide_scheduler_overhead.json | perf | transitional | root-owned | evidence/perf |  |
-| comparisons/external/argo_notes.md | compare | transitional | root-owned | evidence/compare |  |
-| comparisons/external/coverage_map.json | compare | transitional | root-owned | evidence/compare |  |
-| comparisons/external/dagster_notes.md | compare | transitional | root-owned | evidence/compare |  |
-| comparisons/external/prefect_notes.md | compare | transitional | root-owned | evidence/compare |  |
 | comparisons/scenarios/artifact_inspectability.json | compare | transitional | root-owned | evidence/compare |  |
 | comparisons/scenarios/cache_reuse_shape.json | compare | transitional | root-owned | evidence/compare |  |
 | comparisons/scenarios/chain.json | compare | transitional | root-owned | evidence/compare |  |
@@ -141,7 +134,6 @@ Classification for files in tasks 21-34 scopes.
 | examples/failure-heavy-retry.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
 | examples/hello.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
 | examples/multi-output-artifact.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
-| examples/observability-gold-standard.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
 | examples/replay-heavy-branching.dag.json | authoring | transitional | root-owned | evidence/authoring |  |
 | tests/authoring/bad/cycle.json | authoring | transitional | root-owned | evidence/authoring |  |
 | tests/authoring/bad/invalid_refs.json | authoring | transitional | root-owned | evidence/authoring |  |

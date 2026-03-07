@@ -1,7 +1,6 @@
-# Benchmark Scenario Inventory
+# 
 
 - scope: `benchmarks/scenarios`
-- file_count: 22
 
 - benchmarks/scenarios/cache_heavy_canonical.json
 - benchmarks/scenarios/cache_heavy_lookup.json
