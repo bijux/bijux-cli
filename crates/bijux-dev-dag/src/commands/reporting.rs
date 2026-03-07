@@ -57,7 +57,13 @@ pub(crate) fn run_text_or_json_report(
         let output = serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?;
         fs::write(report_path, output).map_err(|err| err.to_string())?;
     }
-    let _ = append_control_plane_audit(command_name, status, effect);
+    if std::env::var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND")
+        .ok()
+        .as_deref()
+        != Some("1")
+    {
+        let _ = append_control_plane_audit(command_name, status, effect);
+    }
 
     result
 }
@@ -99,6 +105,7 @@ mod tests {
             json: false,
             report: Some(report_path.clone()),
         };
+        std::env::set_var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND", "1");
         run_text_or_json_report(
             &context,
             "test.command",
@@ -115,5 +122,6 @@ mod tests {
         assert_eq!(value["status"], "ok");
         assert_eq!(value["effect"], "validation");
         assert!(value.get("data").is_some());
+        std::env::remove_var("BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND");
     }
 }
