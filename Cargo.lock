@@ -178,7 +178,9 @@ dependencies = [
 name = "bijux-dev-dag"
 version = "0.1.0"
 dependencies = [
+ "bijux-dag-artifacts",
  "bijux-dag-core",
+ "bijux-dag-runtime",
  "clap",
  "hex",
  "serde",
