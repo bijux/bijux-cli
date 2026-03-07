@@ -699,6 +699,686 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "canonical_path": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "canonical_path": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/failure-heavy-retry.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/hello.dag.json",
+      "canonical_path": "evidence/authoring/examples/hello.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "move",
+      "deletion_review": "move-to-unified-evidence-root",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/hello.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/hello.dag.json",
+      "release_blocking": false,
+      "retirement_date": "2026-12-31",
+      "simulation_status": "implemented",
+      "status": "move",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "canonical_path": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a minimal consumer graph fixture for onboarding and contract validation"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "canonical_path": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/cycle.json",
+      "canonical_path": "evidence/authoring/negative/cycle.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/cycle.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/cycle.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/invalid_refs.json",
+      "canonical_path": "evidence/authoring/negative/invalid_refs.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/invalid_refs.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/invalid_refs.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/invalid_selectors.json",
+      "canonical_path": "evidence/authoring/negative/invalid_selectors.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/invalid_selectors.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/undeclared_outputs.json",
+      "canonical_path": "evidence/authoring/negative/undeclared_outputs.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/undeclared_outputs.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/undeclared_outputs.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "canonical_path": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/unsupported_adapter_payload.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/medium.json",
+      "canonical_path": "evidence/authoring/patterns/medium.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/medium.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/medium.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/minimal.json",
+      "canonical_path": "evidence/authoring/patterns/minimal.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/minimal.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/minimal.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_aggregation.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_aggregation.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_aggregation.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_aggregation.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_cache_heavy.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_chain.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_chain.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_chain.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_chain.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_diamond.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_diamond.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_diamond.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_diamond.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_fanout.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_fanout.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_fanout.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_fanout.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
+      "canonical_location": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "canonical_path": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/patterns/pattern_replay_sensitive.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide canonical authoring pattern references"
+    },
+    {
       "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json",
       "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json",
       "consumer_surfaces": [
@@ -1921,686 +2601,6 @@
       ],
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/cached-branched-report.dag.json",
-      "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/cached-branched-report.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/cached-branched-report.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
-      "canonical_path": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/failure-heavy-retry.dag.json",
-      "canonical_path": "evidence/authoring/examples/failure-heavy-retry.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/failure-heavy-retry.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/failure-heavy-retry.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/hello.dag.json",
-      "canonical_path": "evidence/authoring/examples/hello.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "move",
-      "deletion_review": "move-to-unified-evidence-root",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/hello.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/hello.dag.json",
-      "release_blocking": false,
-      "retirement_date": "2026-12-31",
-      "simulation_status": "implemented",
-      "status": "move",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/minimal_consumer.dag.json",
-      "canonical_path": "evidence/authoring/examples/minimal_consumer.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/minimal_consumer.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/minimal_consumer.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide a minimal consumer graph fixture for onboarding and contract validation"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/multi-output-artifact.dag.json",
-      "canonical_path": "evidence/authoring/examples/multi-output-artifact.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/multi-output-artifact.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/multi-output-artifact.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/replay-heavy-branching.dag.json",
-      "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/replay-heavy-branching.dag.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/negative/cycle.json",
-      "canonical_path": "evidence/authoring/negative/cycle.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/negative/cycle.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/negative/cycle.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide negative authoring validation references"
-    },
-    {
-      "canonical_location": "evidence/authoring/negative/invalid_refs.json",
-      "canonical_path": "evidence/authoring/negative/invalid_refs.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/negative/invalid_refs.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/negative/invalid_refs.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide negative authoring validation references"
-    },
-    {
-      "canonical_location": "evidence/authoring/negative/invalid_selectors.json",
-      "canonical_path": "evidence/authoring/negative/invalid_selectors.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/negative/invalid_selectors.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/negative/invalid_selectors.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide negative authoring validation references"
-    },
-    {
-      "canonical_location": "evidence/authoring/negative/undeclared_outputs.json",
-      "canonical_path": "evidence/authoring/negative/undeclared_outputs.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/negative/undeclared_outputs.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/negative/undeclared_outputs.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide negative authoring validation references"
-    },
-    {
-      "canonical_location": "evidence/authoring/negative/unsupported_adapter_payload.json",
-      "canonical_path": "evidence/authoring/negative/unsupported_adapter_payload.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/negative/unsupported_adapter_payload.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/negative/unsupported_adapter_payload.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide negative authoring validation references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/medium.json",
-      "canonical_path": "evidence/authoring/patterns/medium.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/medium.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/medium.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/minimal.json",
-      "canonical_path": "evidence/authoring/patterns/minimal.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/minimal.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/minimal.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_aggregation.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_aggregation.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_aggregation.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_aggregation.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_cache_heavy.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_cache_heavy.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_cache_heavy.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_cache_heavy.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_chain.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_chain.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_chain.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_chain.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_diamond.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_diamond.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_diamond.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_diamond.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_fanout.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_fanout.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_fanout.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_fanout.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
-    },
-    {
-      "canonical_location": "evidence/authoring/patterns/pattern_replay_sensitive.json",
-      "canonical_path": "evidence/authoring/patterns/pattern_replay_sensitive.json",
-      "consumer_surfaces": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "dag-validate",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/patterns/pattern_replay_sensitive.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/patterns/pattern_replay_sensitive.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide canonical authoring pattern references"
     },
     {
       "canonical_location": "evidence/battle/metadata.json",
