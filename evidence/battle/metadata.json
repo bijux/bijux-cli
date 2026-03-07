@@ -5,192 +5,719 @@
     "artifact_heavy_workflow": {
       "grade": "battle",
       "why_exists": "Protect artifact commit and lineage integrity under heavy materialization pressure.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "artifact-integrity",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "branch_join_workflow": {
       "grade": "battle",
       "why_exists": "Protect join readiness and dependency correctness in branching graphs.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "cache_invalidation_workflow": {
       "grade": "battle",
       "why_exists": "Protect cache invalidation semantics when upstream identity changes.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "cache-integrity",
+        "deterministic-scheduling"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": true
+      }
     },
     "corruption_workflow": {
       "grade": "battle",
       "why_exists": "Protect corruption classification and operator doctor diagnostics.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "artifact-integrity",
+        "run-dir-resilience"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "failure_heavy_workflow": {
       "grade": "battle",
       "why_exists": "Protect failure propagation and failure-class accounting under fanout failure pressure.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "failure-propagation",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "import_export_workflow": {
       "grade": "battle",
       "why_exists": "Protect bundle import and export integrity across run boundaries.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "large_dag_workflow": {
       "grade": "battle",
       "why_exists": "Protect scheduler and state behavior at large DAG cardinality.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "timeout-retry-accounting"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "medium_workflow": {
       "grade": "battle",
       "why_exists": "Provide baseline realistic workflow coverage with deterministic execution checks.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "state-machine-legality",
+        "plan-truth"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "multi_root_workflow": {
       "grade": "battle",
       "why_exists": "Protect terminal aggregation and coordination semantics with multiple roots.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "operator_debugging_workflow": {
       "grade": "battle",
       "why_exists": "Protect debugging bundle completeness for failed runs.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "operator-observability",
+        "failure-propagation"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "operator_inspection_workflow": {
       "grade": "battle",
       "why_exists": "Protect inspection timelines and causal failure explainability for operators.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "operator-observability",
+        "run-dir-resilience"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "policy_violation_workflow": {
       "grade": "battle",
       "why_exists": "Protect policy-denial safety boundaries and non-silent rejection.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "policy-enforcement",
+        "secret-redaction",
+        "config-policy-determinism"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "replay_divergence_workflow": {
       "grade": "battle",
       "why_exists": "Protect replay mismatch detection and explicit divergence evidence.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "replay-equivalence",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
     },
     "resource_contention_workflow": {
       "grade": "battle",
       "why_exists": "Protect admission behavior and queue backpressure semantics under contention.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "timeout-retry-accounting"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "retry_storm_workflow": {
       "grade": "battle",
       "why_exists": "Protect retry budgeting and bounded backoff behavior in storm conditions.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "timeout-retry-accounting",
+        "failure-propagation"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "scheduler_fairness_workflow": {
       "grade": "battle",
       "why_exists": "Protect starvation prevention and fairness guarantees under fanout pressure.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "failure-propagation",
+        "plan-truth"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "secret_leakage_workflow": {
       "grade": "battle",
       "why_exists": "Protect secret redaction guarantees across output, traces, and diagnostics.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "secret-redaction",
+        "policy-enforcement"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "timeout_workflow": {
       "grade": "battle",
       "why_exists": "Protect attempt and run timeout classification and accounting.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "timeout-retry-accounting",
+        "failure-propagation"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "version_compatibility_workflow": {
       "grade": "battle",
       "why_exists": "Protect version compatibility and replay invariants across supported versions.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "replay-equivalence"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
     },
     "malformed_run_dir_workflow": {
       "grade": "battle",
       "why_exists": "Protect rejection of malformed run directories with explicit diagnostics.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "run-dir-resilience",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "ugly_realistic_dag_workflow": {
       "grade": "battle",
       "why_exists": "Protect real-world complex DAG semantics with mixed fanout and failure domains.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "runtime",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "failure-propagation",
+        "config-policy-determinism"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "cache-hit-second-run": {
       "grade": "battle",
       "why_exists": "Protect warm-run cache reuse semantics and replay-visible output stability.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "cache",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "cache-integrity",
+        "replay-equivalence"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": true
+      }
     },
     "cache-fingerprint-change-invalidates-cache": {
       "grade": "battle",
       "why_exists": "Protect cache invalidation when graph or input identity changes.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "cache",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "cache-integrity",
+        "deterministic-scheduling"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": true
+      }
     },
     "failure-missing-outputs-rejected": {
       "grade": "battle",
       "why_exists": "Protect strict output contract enforcement when adapters omit declared outputs.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "failure",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "failure-propagation",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "failure-node-failure-downstream-skipped": {
       "grade": "battle",
       "why_exists": "Protect downstream skip behavior after dependency failure.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "failure",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "failure-propagation",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "failure-retry-then-success-accounting": {
       "grade": "battle",
       "why_exists": "Protect retry accounting and final-success trace consistency.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "failure",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "timeout-retry-accounting",
+        "failure-propagation"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "failure-timeout-error-classification": {
       "grade": "battle",
       "why_exists": "Protect timeout error classification and terminal failure reporting.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "failure",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "timeout-retry-accounting",
+        "failure-propagation"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "failure-validation-failure-no-partial-run-dir": {
       "grade": "battle",
       "why_exists": "Protect pre-run validation rejection without partial run artifact creation.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "failure",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "plan-truth",
+        "run-dir-resilience"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "happy-diamond-outputs-and-manifest-totals": {
       "grade": "battle",
       "why_exists": "Protect manifest totals and output materialization invariants on diamond graphs.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "happy_path",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "artifact-integrity",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "happy-parse-validate-run-inspect-replay": {
       "grade": "battle",
       "why_exists": "Protect end-to-end parse, validate, run, inspect, and replay flow integrity.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "happy_path",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "plan-truth",
+        "operator-observability",
+        "replay-equivalence"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
     },
     "happy-real-world-orchestration-stress": {
       "grade": "battle",
       "why_exists": "Protect complex orchestration completeness and trace accounting under realistic graph pressure.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "happy_path",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "deterministic-scheduling",
+        "failure-propagation",
+        "config-policy-determinism"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect",
+        "dag runs timeline",
+        "dag runs explain-failure"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "import-export-metadata-only": {
       "grade": "battle",
       "why_exists": "Protect metadata-only export and import correctness constraints.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "import_export",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "import-export-with-files": {
       "grade": "battle",
       "why_exists": "Protect export/import roundtrip integrity with file materialization enabled.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "import_export",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "import-export-compatibility",
+        "artifact-integrity"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "policy-deny-env-clean-env-allowlist": {
       "grade": "battle",
       "why_exists": "Protect deny-env and clean-env enforcement with explicit allowlist behavior.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "policy",
+      "expected_outcome_class": "failure-or-deny",
+      "expected_invariant_classes": [
+        "policy-enforcement",
+        "config-policy-determinism",
+        "secret-redaction"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     },
     "replay-semantic-comparison": {
       "grade": "battle",
       "why_exists": "Protect replay semantic comparison with mandatory proof assertions.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "replay",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "replay-equivalence",
+        "plan-truth"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": true,
+        "cache_integrity_expected": false
+      }
     },
     "selection-include-exclude-filters": {
       "grade": "battle",
       "why_exists": "Protect include/exclude selector semantics and manifest consistency.",
-      "delete_review": "retain"
-    },
-    "container-execution-if-supported": {
-      "grade": "battle",
-      "why_exists": "Protect container execution path behavior when container engine is available.",
-      "delete_review": "retain"
-    },
-    "e2e-minimal-parse-validate-run-inspect-replay": {
-      "grade": "battle",
-      "why_exists": "Protect minimal end-to-end parse validate run inspect replay contract path.",
-      "delete_review": "retain"
+      "delete_review": "retain",
+      "release_blocking": true,
+      "owning_family": "selection",
+      "expected_outcome_class": "success-or-equivalence",
+      "expected_invariant_classes": [
+        "plan-truth",
+        "state-machine-legality"
+      ],
+      "expected_operator_inspection_surfaces": [
+        "dag runs inspect"
+      ],
+      "replay_cache_implications": {
+        "replay_equivalence_expected": false,
+        "cache_integrity_expected": false
+      }
     }
   }
 }
