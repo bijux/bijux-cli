@@ -74,6 +74,8 @@ fn bundle_examples_and_benchmark_reports_exist() {
     for rel in [
         "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
         "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+        "evidence/compat/export_bundle/unsupported_past/bundle.json",
         "docs/reports/foundation/bundle_export_import_benchmarks.md",
     ] {
         assert!(root.join(rel).exists(), "missing bundle surface: {rel}");
@@ -85,6 +87,28 @@ fn bundle_examples_and_benchmark_reports_exist() {
         assert!(
             benchmark.contains(token),
             "bundle benchmark report missing section: {token}"
+        );
+    }
+}
+
+#[test]
+fn backward_compatibility_fixture_gate_remains_present() {
+    let root = repo_root();
+    let report =
+        fs::read_to_string(root.join("docs/reports/foundation/bundle_export_import_benchmarks.md"))
+            .expect("read bundle benchmark report");
+    assert!(
+        report.contains("Small bundle benchmark") && report.contains("Large bundle benchmark"),
+        "bundle report must remain present as a release-visibility surface"
+    );
+
+    for rel in [
+        "evidence/compat/export_bundle/v0_1_supported/bundle.json",
+        "evidence/compat/export_bundle/unsupported_past/bundle.json",
+    ] {
+        assert!(
+            root.join(rel).exists(),
+            "missing backward compatibility fixture for release gate: {rel}"
         );
     }
 }

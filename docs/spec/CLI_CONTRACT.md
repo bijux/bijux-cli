@@ -19,6 +19,7 @@ This is the normative contract for `bijux` command surfaces.
 - `dag canonical-bytes`: canonical graph JSON byte emission.
 - `dag run`: run orchestration and manifest emission.
 - `dag replay`: replay semantics and comparability behavior.
+- `dag prove`: proof bundle generation and completeness reporting surface.
 - `dag diff`: run comparison behavior.
 - `dag explain`: explain diagnostics for runs/validation.
 - `dag node`: node-focused diagnostics and inspection.
@@ -38,6 +39,8 @@ This is the normative contract for `bijux` command surfaces.
 - `dag export`: run export bundle generation.
 - `dag export --from-run`: source-explicit export alias for run directory bundles.
 - `dag export --without-artifacts`: metadata-only bundle export that excludes artifact payload and indexes.
+- `dag export --provenance-only`: provenance evidence bundle export without node trace/output payloads.
+- `dag export --redact`: privacy-safe bundle export with redacted sensitive provenance fields.
 - `dag import`: run bundle import behavior.
 - `dag import --verify-only`: bundle verification-only path without runtime mutation.
 - `dag version`: CLI/runtime version reporting.

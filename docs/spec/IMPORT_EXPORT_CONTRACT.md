@@ -12,6 +12,8 @@ Defines export bundle formats, metadata-only behavior, and compatibility expecta
 - `dag export --manifest-only`: exports manifest/snapshot/traces/output indexes without payload files.
 - `dag export --with-files`: exports bundle including output file payloads.
 - `dag export --without-artifacts`: exports manifest/snapshot/traces only, with empty outputs and no file payloads.
+- `dag export --provenance-only`: exports provenance-focused evidence with empty traces and outputs maps.
+- `dag export --redact`: redacts sensitive provenance fields during export.
 - `dag export --manifest-only` and `dag export --with-files` are mutually exclusive.
 - `dag export --from-run <path>` is an explicit source selector equivalent to positional `<run-dir>`.
 
@@ -20,12 +22,16 @@ Defines export bundle formats, metadata-only behavior, and compatibility expecta
 - `export_mode=manifest-only` requires `files` to be absent or `null`.
 - `export_mode=with-files` requires `files` map payload.
 - `export_mode=without-artifacts` requires `outputs` to be an empty map and `files` to be absent or `null`.
+- `export_mode=provenance-only` requires both `node_traces` and `outputs` to be empty maps.
 - `provenance.source` identifies source class (`native-run` today).
 
 ## Import verification mode
 - `dag import --verify-only` performs version + invariant checks and returns summary output.
 - `--verify-only` does not mutate run history state.
 - `dag fsck <bundle.json>` provides bundle invariant verification via the fsck surface.
+
+## Portability fidelity reporting
+- Import summary includes `fidelity.level` (`exact` or `graded`) and `fidelity.downgrade_reasons`.
 
 ## Bundle versioning
 - Current supported bundle version: `export-bundle/v0.1`.

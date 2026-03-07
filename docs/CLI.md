@@ -8,6 +8,7 @@ Bijux provides an umbrella CLI `bijux` with sub-apps. The DAG app is available a
 bijux dag validate <dag>
 bijux dag run <dag> --out <runs/>
 bijux dag replay <run-dir> --out <runs/>
+bijux dag prove <run-dir>
 bijux dag diff <runA> <runB>
 bijux dag explain <run-dir> [--node <id>]
 bijux dag show-effective-plan <dag>
@@ -27,6 +28,8 @@ bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
 bijux dag export --from-run <run-dir> --out bundle.json
 bijux dag export <run-dir> --out bundle.json --without-artifacts
+bijux dag export <run-dir> --out bundle.json --provenance-only
+bijux dag export <run-dir> --out bundle.json --redact
 bijux dag import <bundle.json>
 bijux dag import <bundle.json> --verify-only
 bijux completions --shell zsh

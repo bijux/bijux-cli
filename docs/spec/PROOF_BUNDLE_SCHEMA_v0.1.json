@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.org/schema/proof_bundle_v0.1.json",
+  "title": "Bijux proof bundle v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "proof_id",
+    "run_id",
+    "status",
+    "complete",
+    "determinism",
+    "integrity",
+    "replay_evidence",
+    "integrity_evidence",
+    "incomplete_reasons"
+  ],
+  "properties": {
+    "schema_version": {"const": "proof-bundle/v0.1"},
+    "proof_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["complete", "incomplete"]},
+    "complete": {"type": "boolean"},
+    "determinism": {"type": "string"},
+    "integrity": {"type": "string"},
+    "replay_evidence": {
+      "type": "object",
+      "required": ["available", "level"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "level": {"type": "string"}
+      }
+    },
+    "integrity_evidence": {
+      "type": "object",
+      "required": ["available", "level"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "level": {"type": "string"}
+      }
+    },
+    "incomplete_reasons": {"type": "array", "items": {"type": "string"}},
+    "verification_errors": {"type": "array"},
+    "invariant_violations": {"type": "array"}
+  }
+}
