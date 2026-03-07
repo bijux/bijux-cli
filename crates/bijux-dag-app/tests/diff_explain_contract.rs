@@ -96,3 +96,37 @@ fn why_cache_missed_command_is_json_capable() {
         .expect("parse why-cache-missed");
     assert_eq!(dag_run(&cmd).expect("why-cache-missed"), std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn why_rerun_reports_equivalence_for_identical_runs() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let root = tmp.path().join("runs");
+    let run_a = root.join("run-a");
+    let run_b = root.join("run-b");
+    for run in [&run_a, &run_b] {
+        fs::create_dir_all(run.join("outputs")).expect("mkdir");
+        fs::write(
+            run.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "status":"success","spec":"bijux-dag/v0.1","graph_fingerprint":"g"
+            }))
+            .expect("manifest"),
+        )
+        .expect("write");
+        fs::write(
+            run.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({"graph_fingerprint":"g"})).expect("snap"),
+        )
+        .expect("write");
+    }
+    let cmd = dag_command()
+        .try_get_matches_from([
+            "dag",
+            "--json",
+            "why-rerun",
+            run_a.to_string_lossy().as_ref(),
+            run_b.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert_eq!(dag_run(&cmd).expect("run"), std::process::ExitCode::SUCCESS);
+}

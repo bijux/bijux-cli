@@ -26,6 +26,7 @@ fn diff_semantics_docs_and_schemas_exist() {
         "configs/schema/operator/graph_diff.schema.json",
         "configs/schema/operator/run_diff.schema.json",
         "configs/schema/operator/artifact_trace.schema.json",
+        "docs/reports/foundation/diff_speed_baseline.md",
     ] {
         assert!(repo_root().join(rel).exists(), "missing {rel}");
     }

@@ -400,4 +400,22 @@ mod tests {
             Some(&1usize)
         );
     }
+
+    #[test]
+    fn replay_diff_reports_resource_changes() {
+        let a = json!({"spec":"v","resources":{"cpu":1,"mem_mb":256}});
+        let b = json!({"spec":"v","resources":{"cpu":2,"mem_mb":256}});
+        let diff = build_run_diff(
+            a,
+            b,
+            "fp".to_string(),
+            "fp".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(diff.manifest.contains_key("resources"));
+    }
 }
