@@ -249,7 +249,7 @@ mod tests {
         let out2 = std::fs::read_to_string(path_2.join("outputs").join("index.json")).unwrap();
 
         let log1 = std::fs::read_to_string(path_1.join("run.log.jsonl")).unwrap();
-        let log2 = std::fs::read_to_string(path_2.join("run.log.jsonl")).unwrap();
+        let _log2 = std::fs::read_to_string(path_2.join("run.log.jsonl")).unwrap();
         assert!(log1.contains("run_started"));
         assert_eq!(out1, out2);
     }

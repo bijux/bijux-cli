@@ -16,7 +16,6 @@ use bijux_dag_runtime::{
     CompatibilityRule, DowngradeRiskReport, FeatureFlagRecord, FeatureLifecycleState,
     UpgradePathPolicy,
 };
-use std::collections::BTreeSet;
 
 fn fixture_paths() -> UpgradePathPolicy {
     let raw = std::fs::read_to_string("tests/fixtures/compatibility/upgrade_paths.json")
