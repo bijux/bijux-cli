@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux://schema/execution_plan/v1",
+  "title": "ExecutionPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "planner_contract_version",
+    "spec",
+    "graph_fingerprint",
+    "planner_fingerprint",
+    "nodes",
+    "edges",
+    "ordering",
+    "erased_fields",
+    "diagnostics"
+  ],
+  "properties": {
+    "planner_contract_version": { "type": "string" },
+    "spec": { "type": "string" },
+    "graph_fingerprint": { "type": "string" },
+    "planner_fingerprint": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "deps", "outputs", "retry"],
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string" },
+          "deps": { "type": "array", "items": { "type": "string" } },
+          "outputs": { "type": "array" },
+          "retry": { "type": "object" },
+          "timeout_ms": { "type": ["integer", "null"] }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "ordering": { "type": "array", "items": { "type": "string" } },
+    "erased_fields": { "type": "array", "items": { "type": "string" } },
+    "diagnostics": { "type": "array" }
+  }
+}
