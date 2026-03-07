@@ -9,6 +9,7 @@ mod auth_identity;
 mod authz_policy;
 mod async_adapter;
 mod backend_cluster;
+mod batch_execution;
 mod clock;
 mod container_execution;
 pub mod config;
@@ -191,6 +192,11 @@ pub use backend_cluster::{
     CrossBackendReplayRule, GenericBatchExecutorContract, ImageResolutionProvenance,
     KubernetesExecutorContractV2, NodeAffinityHint, PlacementPolicyRule,
     QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmExecutorContract,
+};
+pub use batch_execution::{
+    cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
+    heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
+    BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
 };
 pub use adapter_sdk::{AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest};
 pub use adaptive_scheduler::{
