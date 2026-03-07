@@ -2,5 +2,5 @@
 
 - scope: `tests/integration_fixtures`
 
-- tests/integration_fixtures/minimal_consumer/README.md
-- tests/integration_fixtures/minimal_consumer/dag.json
+- crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md
+- crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json

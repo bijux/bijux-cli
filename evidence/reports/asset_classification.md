@@ -158,7 +158,7 @@ Classification for files in tasks 21-34 scopes.
 | evidence/battle/workflows/happy_path/real_world_orchestration_stress.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/import_export/export_import_metadata_only.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/import_export/export_import_with_files.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/matrix.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/e2e_matrix.json | battle | canonical | evidence-owned | evidence/battle | migrated from root tests |
 | evidence/operator/scenarios/inspection_only.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/cache/replay/corruption_case.json | battle | transitional | root-owned | evidence/battle |  |
@@ -169,5 +169,5 @@ Classification for files in tasks 21-34 scopes.
 | evidence/battle/workflows/selection/include_exclude_filters.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/fault/README.md | fault | transitional | root-owned | evidence/fault |  |
 | evidence/fault/classes/fault_classes.json | fault | transitional | root-owned | evidence/fault |  |
-| tests/integration_fixtures/minimal_consumer/README.md | helper | transitional | root-owned | crate-local tests/helpers or evidence |  |
-| tests/integration_fixtures/minimal_consumer/dag.json | helper | transitional | root-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md | helper | canonical | crate-local | crate-local tests/helpers | migrated from root tests |
+| crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json | helper | canonical | crate-local | crate-local tests/helpers | migrated from root tests |

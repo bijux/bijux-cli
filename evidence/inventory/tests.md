@@ -44,7 +44,7 @@
 - evidence/battle/workflows/happy_path/real_world_orchestration_stress.json
 - evidence/battle/workflows/import_export/export_import_metadata_only.json
 - evidence/battle/workflows/import_export/export_import_with_files.json
-- tests/e2e/matrix.json
+- evidence/battle/workflows/e2e_matrix.json
 - evidence/operator/scenarios/inspection_only.json
 - evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json
 - evidence/cache/replay/corruption_case.json
@@ -55,5 +55,5 @@
 - evidence/battle/workflows/selection/include_exclude_filters.json
 - evidence/fault/README.md
 - evidence/fault/classes/fault_classes.json
-- tests/integration_fixtures/minimal_consumer/README.md
-- tests/integration_fixtures/minimal_consumer/dag.json
+- crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md
+- crates/bijux-dag-testkit/fixtures/minimal_consumer/dag.json
