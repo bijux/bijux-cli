@@ -13,4 +13,9 @@ pub const IDS: &[&str] = &[
     "fault-summary",
     "performance-claims",
     "resource-budgets-warning",
+    "docs-governance",
+    "docs-links",
+    "docs-schema-ref",
+    "docs-contract-ref",
+    "docs-coverage",
 ];

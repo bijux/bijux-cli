@@ -133,6 +133,8 @@ enum CommandLine {
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
     ObservabilityReport,
+    /// Generate taxonomy-based docs index
+    DocsIndex,
     /// Execute end-to-end matrix across binary and crate integration entrypoints
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog
@@ -702,6 +704,51 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_resource_budget_check(Path::new("artifacts/benchmarks/baseline.json"), false),
     },
+    SuiteDef {
+        id: "docs-governance",
+        description: "docs taxonomy root budget and owners governance checks",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_governance_guard(),
+    },
+    SuiteDef {
+        id: "docs-links",
+        description: "markdown local link checker",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_link_check(),
+    },
+    SuiteDef {
+        id: "docs-schema-ref",
+        description: "schema references in docs must resolve",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_schema_reference_guard(),
+    },
+    SuiteDef {
+        id: "docs-contract-ref",
+        description: "crate README and CONTRACT references must resolve and be linked",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_contract_reference_guard(),
+    },
+    SuiteDef {
+        id: "docs-coverage",
+        description: "docs coverage report for crates and commands",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_docs_coverage_report(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -1058,6 +1105,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_observability_report(),
+        ),
+        CommandLine::DocsIndex => run_command_reported(
+            &context,
+            "docs-index",
+            CommandEffect::ReadWrite,
+            json!({}),
+            || run_docs_index_generate(),
         ),
         CommandLine::E2eMatrix => run_command_reported(
             &context,
@@ -3185,4 +3239,313 @@ fn estimate_trace_bytes(path: &Path) -> Result<u64, String> {
         }
     }
     Ok(total)
+}
+
+fn run_docs_governance_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs_root = root.join("docs");
+    let allowed_dirs = [
+        "spec",
+        "architecture",
+        "user",
+        "dev",
+        "reference",
+        "tracking",
+        "generated",
+        "_tracking",
+        "adr",
+        "operations",
+    ];
+
+    for entry in fs::read_dir(&docs_root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        if !entry.path().is_dir() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !allowed_dirs.contains(&name.as_str()) {
+            return Err(format!("docs taxonomy violation: docs/{name} is not allowed"));
+        }
+    }
+
+    let root_markdown_count = fs::read_dir(&docs_root)
+        .map_err(|err| err.to_string())?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("md"))
+        .count();
+    let max_root_docs = 110usize;
+    if root_markdown_count > max_root_docs {
+        return Err(format!(
+            "docs root budget exceeded: {} > {}",
+            root_markdown_count, max_root_docs
+        ));
+    }
+
+    for rel in [
+        "docs/spec/DOCS_GOVERNANCE.md",
+        "docs/tracking/DOC_OWNERSHIP.json",
+        "docs/tracking/DOCS_PRUNING_CHECKLIST.md",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing docs governance artifact: {rel}"));
+        }
+    }
+
+    let owners: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("docs/tracking/DOC_OWNERSHIP.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    if owners
+        .get("owners")
+        .and_then(Value::as_array)
+        .is_none_or(|items| items.is_empty())
+    {
+        return Err("docs ownership metadata has no owners entries".to_string());
+    }
+
+    for forbidden in ["production-grade", "world-class"] {
+        let mut files = Vec::new();
+        collect_markdown_files(&docs_root, &mut files)?;
+        for file in files {
+            let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+            for line in content.lines() {
+                let lower = line.to_ascii_lowercase();
+                if lower.contains(forbidden) && !line.contains('"') {
+                    return Err(format!(
+                        "marketing maturity phrase not allowed without quote: {}",
+                        forbidden
+                    ));
+                }
+            }
+        }
+    }
+
+    let mut files = Vec::new();
+    collect_markdown_files(&docs_root, &mut files)?;
+    for file in files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        let lower = content.to_ascii_lowercase();
+        for stale in ["bijux-dag-compat", "legacy-cli", "old_runtime_path"] {
+            if lower.contains(stale) {
+                return Err(format!("stale crate/path reference in {rel}: {stale}"));
+            }
+        }
+        if lower.contains("roadmap") && !rel.starts_with("docs/tracking/") {
+            return Err(format!(
+                "speculative roadmap content must live under docs/tracking: {rel}"
+            ));
+        }
+        if content.contains("AUTO-GENERATED") && !rel.starts_with("docs/generated/") {
+            return Err(format!(
+                "generated-doc marker must only appear under docs/generated: {rel}"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn run_docs_link_check() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut files = Vec::new();
+    collect_markdown_files(&root.join("docs"), &mut files)?;
+    let mut violations = Vec::new();
+
+    for file in files {
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        for cap in content.match_indices("](") {
+            let start = cap.0 + 2;
+            if let Some(end_rel) = content[start..].find(')') {
+                let link = &content[start..start + end_rel];
+                if link.starts_with("http://")
+                    || link.starts_with("https://")
+                    || link.starts_with("mailto:")
+                    || link.starts_with('#')
+                {
+                    continue;
+                }
+                let resolved = file.parent().unwrap_or(Path::new(".")).join(link);
+                if !resolved.exists() {
+                    let rel = file
+                        .strip_prefix(&root)
+                        .map_err(|err| err.to_string())?
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    violations.push(format!("{rel}: broken link target {link}"));
+                }
+            }
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_docs_schema_reference_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let mut files = Vec::new();
+    collect_markdown_files(&root.join("docs"), &mut files)?;
+    let mut violations = Vec::new();
+
+    for file in files {
+        let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        for token in content.split_whitespace() {
+            if !token.contains("configs/schema/") {
+                continue;
+            }
+            let clean = token
+                .trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"'));
+            let path = if clean.contains("configs/schema/") {
+                let idx = clean.find("configs/schema/").unwrap_or(0);
+                &clean[idx..]
+            } else {
+                clean
+            };
+            if !root.join(path).exists() {
+                let rel = file
+                    .strip_prefix(&root)
+                    .map_err(|err| err.to_string())?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                violations.push(format!("{rel}: missing schema reference {path}"));
+            }
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_docs_contract_reference_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let crates = [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dev-dag",
+    ];
+    let mut violations = Vec::new();
+
+    let docs_index = fs::read_to_string(root.join("docs/reference/DOCS_INDEX.md"))
+        .map_err(|err| err.to_string())?;
+
+    for crate_name in crates {
+        let crate_dir = root.join("crates").join(crate_name);
+        if !crate_dir.join("README.md").exists() {
+            violations.push(format!("{crate_name} missing README.md"));
+        }
+        if !crate_dir.join("CONTRACT.md").exists() {
+            violations.push(format!("{crate_name} missing CONTRACT.md"));
+        }
+        if !docs_index.contains(crate_name) {
+            violations.push(format!(
+                "docs/reference/DOCS_INDEX.md missing crate mention: {crate_name}"
+            ));
+        }
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_docs_index_generate() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs_root = root.join("docs");
+    let sections = ["spec", "architecture", "user", "dev", "reference", "tracking", "generated"];
+
+    let mut lines = vec![
+        "# Documentation index".to_string(),
+        "".to_string(),
+        "Generated from docs taxonomy.".to_string(),
+        "".to_string(),
+    ];
+
+    for section in sections {
+        let dir = docs_root.join(section);
+        if !dir.exists() {
+            continue;
+        }
+        lines.push(format!("## {}", section));
+        let mut entries: Vec<String> = fs::read_dir(&dir)
+            .map_err(|err| err.to_string())?
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.file_name().to_string_lossy().to_string())
+            .collect();
+        entries.sort();
+        for entry in entries {
+            lines.push(format!("- `{}`", entry));
+        }
+        lines.push(String::new());
+    }
+
+    lines.push("## crate-doc-contracts".to_string());
+    for crate_name in [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dev-dag",
+    ] {
+        lines.push(format!("- `{}`", crate_name));
+    }
+    lines.push(String::new());
+
+    fs::write(
+        docs_root.join("reference").join("DOCS_INDEX.md"),
+        lines.join("\n"),
+    )
+    .map_err(|err| err.to_string())
+}
+
+fn run_docs_coverage_report() -> Result<(), String> {
+    let root = repo_root()?;
+    let crate_names = [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dev-dag",
+    ];
+
+    let mut missing = Vec::new();
+    for crate_name in crate_names {
+        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
+            missing.push(format!("missing contract doc for {crate_name}"));
+        }
+    }
+
+    let command_taxonomy = root.join("docs/CLI_COMMAND_TAXONOMY.md");
+    if !command_taxonomy.exists() {
+        missing.push("missing CLI command taxonomy doc".to_string());
+    }
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({"missing": missing})).map_err(|err| err.to_string())?
+    );
+
+    if missing.is_empty() {
+        Ok(())
+    } else {
+        Err("docs coverage has missing entries".to_string())
+    }
 }
