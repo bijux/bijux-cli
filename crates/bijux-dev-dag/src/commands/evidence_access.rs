@@ -149,6 +149,7 @@ pub fn verify_registry_access_bypass(root: &Path) -> Result<(), String> {
         "crates/bijux-dev-dag/tests/evidence_registry_contracts.rs",
         "crates/bijux-dev-dag/tests/evidence_family_boundary_contracts.rs",
         "crates/bijux-dev-dag/tests/evidence_access_contracts.rs",
+        "crates/bijux-dev-dag/tests/evidence_control_plane_suites_contracts.rs",
         "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs",
     ];
 

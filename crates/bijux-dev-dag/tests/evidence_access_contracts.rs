@@ -63,6 +63,7 @@ fn registry_access_uses_approved_helpers_only() {
         "crates/bijux-dev-dag/tests/evidence_family_boundary_contracts.rs".to_string(),
         "crates/bijux-dev-dag/tests/evidence_consumer_integrity_contracts.rs".to_string(),
         "crates/bijux-dev-dag/tests/evidence_access_contracts.rs".to_string(),
+        "crates/bijux-dev-dag/tests/evidence_control_plane_suites_contracts.rs".to_string(),
         "crates/bijux-dev-dag/tests/evidence_registry_contracts.rs".to_string(),
         "crates/bijux-dag-testkit/src/lib.rs".to_string(),
     ]);
