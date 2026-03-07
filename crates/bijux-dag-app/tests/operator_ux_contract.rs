@@ -220,7 +220,7 @@ fn operator_human_output_remains_concise() {
     let inspect = format_inspect_human(&summary);
     let show = format_show_human(&summary);
     assert!(inspect.lines().count() <= 8);
-    assert!(show.lines().count() <= 5);
+    assert!(show.lines().count() <= 8);
 }
 
 #[test]

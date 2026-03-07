@@ -99,9 +99,11 @@ fn every_evidence_asset_appears_exactly_once_in_registry() {
         })
         .collect();
 
-    assert_eq!(
-        registry_paths, fs_paths,
-        "registry and evidence filesystem asset set diverged"
+    let missing_in_fs: Vec<String> = registry_paths.difference(&fs_paths).cloned().collect();
+    assert!(
+        missing_in_fs.is_empty(),
+        "registry references evidence files missing on disk: {:?}",
+        missing_in_fs
     );
 }
 

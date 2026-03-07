@@ -63,7 +63,7 @@ fn root_messaging_contract_and_support_policy_exist() {
         "docs/spec/ROOT_MESSAGING_CONTRACT.md",
         "docs/reference/EXECUTION_SUPPORT_POLICY.md",
         "docs/reference/POSITIONING_NOTE.md",
-        "ROOT_CAPABILITY_MATRIX.md",
+        "docs/reference/ROOT_CAPABILITY_MATRIX.md",
     ] {
         assert!(
             root.join(required).exists(),

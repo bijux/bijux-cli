@@ -30,6 +30,7 @@
     {
       "class": "useful",
       "match": [
+        "remote_worker_protocol_conformance.rs",
         "*_contracts.rs",
         "*_contract.rs",
         "*_modes.rs"

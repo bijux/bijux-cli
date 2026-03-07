@@ -8,6 +8,7 @@ capabilities
 config
 diff
 doctor
+equivalence-proof
 explain
 export
 fingerprint
@@ -21,9 +22,12 @@ lint
 migrate
 node
 policy
+proof-summary
+prove
 replay
 run
 runs
+semantic-portability
 show-effective-graph
 show-effective-plan
 status
