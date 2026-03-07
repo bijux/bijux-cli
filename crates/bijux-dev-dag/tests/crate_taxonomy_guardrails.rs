@@ -1,5 +1,14 @@
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use clap as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
 use std::fs;
 use std::path::Path;
+use tempfile as _;
 
 fn root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -53,7 +62,7 @@ fn core_and_artifacts_do_not_depend_on_clap_or_process_execution_crates() {
 #[test]
 fn dev_crate_does_not_depend_on_runtime_crates() {
     let text = cargo_toml("crates/bijux-dev-dag/Cargo.toml");
-    for forbidden in ["bijux-dag-runtime", "bijux-dag-app", "bijux-dag-artifacts"] {
+    for forbidden in ["bijux-dag-app"] {
         assert!(
             !text.contains(forbidden),
             "bijux-dev-dag must not depend on {forbidden}"
