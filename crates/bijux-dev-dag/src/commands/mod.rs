@@ -309,6 +309,11 @@ enum DagCommand {
         #[arg(long)]
         run_dir: PathBuf,
     },
+    /// Summarize run observability artifacts for operators
+    RunInspect {
+        #[arg(long)]
+        run_dir: PathBuf,
+    },
     /// Explain artifact lineage and reproducibility from artifacts
     ExplainArtifact {
         #[arg(long)]
@@ -941,6 +946,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_storage_boundary_guard(),
     },
     SuiteDef {
+        id: "observability-contract",
+        description: "observability contract docs tests and required artifacts alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_observability_contract_guard(),
+    },
+    SuiteDef {
         id: "error-code-registry",
         description: "enumerate stable error codes and owner crates",
         domain: "governance",
@@ -1266,6 +1280,13 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({"run_dir": run_dir}),
                 || run_dag_explain_run(&run_dir),
+            ),
+            DagCommand::RunInspect { run_dir } => run_command_reported(
+                &context,
+                "dag.run-inspect",
+                CommandEffect::Validation,
+                json!({"run_dir": run_dir}),
+                || run_dag_run_inspect(&run_dir),
             ),
             DagCommand::ExplainArtifact { run_dir, artifact_id } => run_command_reported(
                 &context,
@@ -2210,6 +2231,56 @@ fn run_dag_explain_run(run_dir: &Path) -> Result<(), String> {
         "what_next": ["inspect failed nodes", "run artifact verification", "review scheduler policy"]
     });
     println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
+    Ok(())
+}
+
+fn run_dag_run_inspect(run_dir: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let run_path = root.join(run_dir);
+    let manifest_path = run_path.join("manifest.json");
+    let timeline_path = run_path.join("observability.timeline.json");
+    let events_path = run_path.join("observability.events.json");
+    let root_causes_path = run_path.join("observability.root-causes.json");
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(&manifest_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let timeline: Value = serde_json::from_str(
+        &fs::read_to_string(&timeline_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let events: Value = serde_json::from_str(
+        &fs::read_to_string(&events_path).map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let root_causes: Value = if root_causes_path.exists() {
+        serde_json::from_str(
+            &fs::read_to_string(&root_causes_path).map_err(|err| err.to_string())?,
+        )
+        .map_err(|err| err.to_string())?
+    } else {
+        json!({"roots":[]})
+    };
+
+    let response = json!({
+        "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
+        "status": manifest.get("status").cloned().unwrap_or(Value::Null),
+        "node_counts": manifest.get("node_counts").cloned().unwrap_or(Value::Null),
+        "event_count": events.as_array().map(|v| v.len()).unwrap_or(0),
+        "timeline_entry_count": timeline.get("entries").and_then(|v| v.as_array()).map(|v| v.len()).unwrap_or(0),
+        "root_causes": root_causes.get("roots").cloned().unwrap_or(json!([])),
+        "artifacts": {
+            "manifest": manifest_path.strip_prefix(&root).map_err(|err| err.to_string())?,
+            "timeline": timeline_path.strip_prefix(&root).map_err(|err| err.to_string())?,
+            "events": events_path.strip_prefix(&root).map_err(|err| err.to_string())?,
+            "root_causes": root_causes_path.strip_prefix(&root).map_err(|err| err.to_string())?,
+        }
+    });
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
+    );
     Ok(())
 }
 
@@ -4693,6 +4764,34 @@ fn run_storage_health(run_dir: &Path, cache_dir: Option<&Path>) -> Result<(), St
         "{}",
         serde_json::to_string_pretty(&response).map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn run_observability_contract_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/OBSERVABILITY_CONTRACT.md",
+        "docs/tracking/OBSERVABILITY_SURFACE_PLAN.md",
+        "crates/bijux-dag-runtime/tests/observability_contracts.rs",
+        "crates/bijux-dag-runtime/src/observability.rs",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "observability contract missing required surfaces: {}",
+            missing.join(", ")
+        ));
+    }
+    let test_text = fs::read_to_string(root.join("crates/bijux-dag-runtime/tests/observability_contracts.rs"))
+        .map_err(|err| err.to_string())?;
+    if !test_text.contains("required_runtime_event_names_are_present_for_reference_sequence") {
+        return Err("observability contract test for required runtime event names is missing".to_string());
+    }
     Ok(())
 }
 
