@@ -1,0 +1,8 @@
+{
+  "scenario_id": "wide-canonical",
+  "class": "plan",
+  "size": "wide",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "benchmarks/fixtures/scheduler_diamond_fanout.json"
+}

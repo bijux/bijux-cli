@@ -10,6 +10,8 @@ This directory is authoritative for benchmark scenario definitions and baseline 
 - Micro and system benchmarks are separated.
 - Baseline format is versioned and machine-readable.
 - Performance claims require evidence artifacts under benchmark outputs or baselines.
+- Canonical scenarios must exist for tiny, medium, wide, deep, cache-heavy, and replay workloads.
+- Scheduler overhead, artifact write amplification, and replay verification cost must have battle scenarios.
 
 ## Allowed changes
 - Add scenarios with workload metadata.
@@ -18,6 +20,7 @@ This directory is authoritative for benchmark scenario definitions and baseline 
 ## Related tests
 - `crates/bijux-dev-dag/src/commands/mod.rs` benchmark compare and performance claim guard
 - `crates/bijux-dag-core/benches/micro_parse_validate.rs`
+- `crates/bijux-dev-dag/tests/benchmark_scenario_contract.rs`
 
 ## Related schemas
 - `benchmarks/baselines/benchmark_report.schema.json`

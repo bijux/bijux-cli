@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "trusted_subset": [
+    {
+      "scenario_id": "tiny-canonical",
+      "max_regression_ratio": 0.15
+    },
+    {
+      "scenario_id": "medium-canonical",
+      "max_regression_ratio": 0.15
+    },
+    {
+      "scenario_id": "many-small-nodes",
+      "max_regression_ratio": 0.2
+    },
+    {
+      "scenario_id": "manifest-trace-write-amplification",
+      "max_regression_ratio": 0.2
+    },
+    {
+      "scenario_id": "replay-verification-cost",
+      "max_regression_ratio": 0.2
+    }
+  ]
+}

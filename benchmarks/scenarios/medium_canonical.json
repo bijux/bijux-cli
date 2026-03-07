@@ -1,0 +1,8 @@
+{
+  "scenario_id": "medium-canonical",
+  "class": "execute-local",
+  "size": "medium",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "benchmarks/fixtures/scheduler_parallel_64.json"
+}

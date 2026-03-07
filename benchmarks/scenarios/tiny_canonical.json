@@ -1,0 +1,8 @@
+{
+  "scenario_id": "tiny-canonical",
+  "class": "parse",
+  "size": "tiny",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "benchmarks/fixtures/scheduler_linear_32.json"
+}

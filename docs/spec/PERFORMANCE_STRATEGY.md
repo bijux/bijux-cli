@@ -1,5 +1,7 @@
 # Performance strategy
 
+Primary authority: `docs/spec/PERFORMANCE_CONTRACT.md`
+
 ## Allowed performance claims
 
 Performance claims are only allowed when backed by committed benchmark evidence artifacts.

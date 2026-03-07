@@ -1,0 +1,8 @@
+{
+  "scenario_id": "deep-canonical",
+  "class": "plan",
+  "size": "deep",
+  "version": "v1",
+  "owner": "bijux-dev-dag",
+  "graph": "benchmarks/fixtures/planner_deep_chain.json"
+}
