@@ -75,6 +75,7 @@
   "allowed_evidence_classes": [
     "authoring",
     "battle",
+    "cache",
     "compat",
     "fault",
     "perf",

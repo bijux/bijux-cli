@@ -5361,6 +5361,177 @@ fn run_evidence_domain_verify(domain: &str, required_paths: &[&str]) -> Result<(
     Ok(())
 }
 
+fn parse_string_set(value: &Value, label: &str) -> Result<BTreeSet<String>, String> {
+    let items = value
+        .as_array()
+        .ok_or_else(|| format!("{label} must be an array"))?;
+    let mut out = BTreeSet::new();
+    for item in items {
+        let name = item
+            .as_str()
+            .ok_or_else(|| format!("{label} entry must be a string"))?;
+        if name.trim().is_empty() {
+            return Err(format!("{label} contains empty string"));
+        }
+        out.insert(name.to_string());
+    }
+    Ok(out)
+}
+
+fn run_evidence_family_boundary_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let registry: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/_meta/registries/evidence_registry.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let assets = registry["assets"]
+        .as_array()
+        .ok_or_else(|| "evidence registry assets must be an array".to_string())?;
+
+    for asset in assets {
+        let path = asset["canonical_path"]
+            .as_str()
+            .ok_or_else(|| "registry asset canonical_path must be string".to_string())?;
+        let kind = asset["kind"]
+            .as_str()
+            .ok_or_else(|| format!("registry asset has invalid kind for path `{path}`"))?;
+        let expected_kind = if path.starts_with("evidence/cache/") {
+            Some("cache")
+        } else if path.starts_with("evidence/compat/") {
+            Some("compat")
+        } else if path.starts_with("evidence/fault/") {
+            Some("fault")
+        } else {
+            None
+        };
+        if let Some(expected) = expected_kind {
+            if kind != expected {
+                return Err(format!(
+                    "mixed-family misuse: `{path}` is classified as `{kind}` but must be `{expected}`"
+                ));
+            }
+        }
+    }
+
+    let cache_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/cache/metadata.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let cache_allowed = parse_string_set(
+        &cache_metadata["consumer_boundaries"]["cache_allowed_consumers"],
+        "cache consumer_boundaries.cache_allowed_consumers",
+    )?;
+    let replay_allowed = parse_string_set(
+        &cache_metadata["consumer_boundaries"]["replay_allowed_consumers"],
+        "cache consumer_boundaries.replay_allowed_consumers",
+    )?;
+
+    for asset in assets {
+        let path = asset["canonical_path"]
+            .as_str()
+            .ok_or_else(|| "registry asset canonical_path must be string".to_string())?;
+        if !path.starts_with("evidence/cache/") {
+            continue;
+        }
+        let consumers = asset["consumers"]
+            .as_array()
+            .ok_or_else(|| format!("registry asset consumers must be array for `{path}`"))?;
+        let allowed = if path.starts_with("evidence/cache/replay/") {
+            &replay_allowed
+        } else {
+            &cache_allowed
+        };
+        for consumer in consumers {
+            let consumer = consumer
+                .as_str()
+                .ok_or_else(|| format!("registry consumer must be string for `{path}`"))?;
+            if !allowed.contains(consumer) {
+                return Err(format!(
+                    "cache/replay consumer misuse: `{path}` uses consumer `{consumer}` outside allowed set"
+                ));
+            }
+        }
+    }
+
+    let compat_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/compat/metadata.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let decision_matrix = compat_metadata["decision_matrix"]
+        .as_object()
+        .ok_or_else(|| "compat metadata decision_matrix must be an object".to_string())?;
+    for (path, entry) in decision_matrix {
+        if !path.starts_with("evidence/compat/") {
+            return Err(format!(
+                "compat decision matrix contains out-of-family asset: {path}"
+            ));
+        }
+        if !root.join(path).exists() {
+            return Err(format!(
+                "compat decision matrix path does not exist: {path}"
+            ));
+        }
+        let decision = entry
+            .get("decision")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("compat decision matrix entry missing decision: {path}"))?;
+        let allowed = [
+            "supported",
+            "unsupported_future",
+            "unsupported_past",
+            "corrupt",
+        ];
+        if !allowed.contains(&decision) {
+            return Err(format!(
+                "compat decision matrix has unknown decision `{decision}` for `{path}`"
+            ));
+        }
+    }
+
+    let fault_metadata: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("evidence/fault/metadata.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let fault_expectations = fault_metadata["fault_expectations"]
+        .as_object()
+        .ok_or_else(|| "fault metadata fault_expectations must be an object".to_string())?;
+    let fault_profiles = fault_metadata["fault_profiles"]
+        .as_object()
+        .ok_or_else(|| "fault metadata fault_profiles must be an object".to_string())?;
+    for fault_class in fault_expectations.keys() {
+        if !fault_profiles.contains_key(fault_class) {
+            return Err(format!(
+                "fault metadata missing fault_profiles entry for fault class `{fault_class}`"
+            ));
+        }
+    }
+    for (fault_class, profile) in fault_profiles {
+        let expected_fault_class = profile
+            .get("expected_fault_class")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                format!("fault profile missing expected_fault_class: `{fault_class}`")
+            })?;
+        let expected_reaction = profile
+            .get("expected_system_reaction")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                format!("fault profile missing expected_system_reaction: `{fault_class}`")
+            })?;
+        if expected_fault_class.trim().is_empty() || expected_reaction.trim().is_empty() {
+            return Err(format!(
+                "fault profile contains empty fields for fault class `{fault_class}`"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 fn run_evidence_authoring_verify() -> Result<(), String> {
     run_evidence_domain_verify(
         "authoring",
@@ -5394,8 +5565,10 @@ fn run_evidence_cache_verify() -> Result<(), String> {
             "evidence/cache/corrupt",
             "evidence/cache/scenarios",
             "evidence/cache/replay",
+            "evidence/cache/metadata.json",
         ],
-    )
+    )?;
+    run_evidence_family_boundary_verify()
 }
 
 fn run_evidence_compat_verify() -> Result<(), String> {
@@ -5408,7 +5581,8 @@ fn run_evidence_compat_verify() -> Result<(), String> {
             "evidence/compat/scenarios",
             "evidence/compat/metadata.json",
         ],
-    )
+    )?;
+    run_evidence_family_boundary_verify()
 }
 
 fn run_evidence_fault_verify() -> Result<(), String> {
@@ -5419,7 +5593,8 @@ fn run_evidence_fault_verify() -> Result<(), String> {
             "evidence/fault/corrupt_runs",
             "evidence/fault/metadata.json",
         ],
-    )
+    )?;
+    run_evidence_family_boundary_verify()
 }
 
 fn run_evidence_perf_verify() -> Result<(), String> {
@@ -5503,11 +5678,14 @@ fn run_evidence_drift_verify() -> Result<(), String> {
             }
         }
     }
+    if let Err(err) = run_evidence_family_boundary_verify() {
+        violations.push(format!("family-boundary-drift: {err}"));
+    }
     if violations.is_empty() {
         Ok(())
     } else {
         Err(format!(
-            "legacy scenario roots still contain scenario assets: {}",
+            "evidence drift violations detected: {}",
             violations.join(", ")
         ))
     }
