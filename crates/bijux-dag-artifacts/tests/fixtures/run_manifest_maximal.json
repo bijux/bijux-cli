@@ -1,0 +1,62 @@
+{
+  "manifest_version": "run-manifest/v0.1",
+  "run_id": "run-maximal",
+  "created_unix_ms": 10,
+  "started_unix_ms": 11,
+  "finished_unix_ms": 12,
+  "graph_snapshot": "graph.snapshot.json",
+  "status": "success",
+  "spec": "bijux-dag/v0.1",
+  "graph_fingerprint": "g-max",
+  "tool_version": "0.1.0",
+  "jobs": 8,
+  "adapters": [
+    {
+      "adapter_id": "shell",
+      "adapter_version": "1",
+      "effects": [
+        "filesystem"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "node_id": "n1",
+      "node_fingerprint": "fp1",
+      "file": "n1/out.txt",
+      "sha256": "abc"
+    }
+  ],
+  "node_counts": {
+    "success": 1,
+    "failed": 0,
+    "skipped": 0,
+    "cached": 0
+  },
+  "policy": {
+    "deny_network": true,
+    "deny_env": false,
+    "deny_clock": true,
+    "clean_env": false
+  },
+  "cache_mode": "readwrite",
+  "cache_dir": "cache",
+  "run_timeout_ms": 1000,
+  "run_metadata": {
+    "submission_source": "manual",
+    "trigger_source": "cli",
+    "operator": "tester",
+    "labels": [
+      "nightly"
+    ],
+    "parent_run_id": "run-parent",
+    "source_run_id": "run-source"
+  },
+  "run_summary": {
+    "total_nodes": 1,
+    "success": 1,
+    "failed": 0,
+    "skipped": 0,
+    "cached": 0
+  }
+}
