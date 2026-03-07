@@ -1429,6 +1429,110 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", v);
             Ok(ExitCode::SUCCESS)
         }
+        Commands::VersionInspect {
+            dag,
+            run_dir,
+            export_bundle,
+        } => {
+            let provided = dag.is_some() as u8 + run_dir.is_some() as u8 + export_bundle.is_some() as u8;
+            if provided != 1 {
+                return Err(ExitCode::from(2));
+            }
+            let mut report = json!({
+                "binary_version": env!("CARGO_PKG_VERSION"),
+                "graph_schema_version": Value::Null,
+                "run_dir_format_version": Value::Null,
+                "export_bundle_format_version": Value::Null,
+            });
+            if let Some(path) = dag {
+                let input = read_file(path)?;
+                let graph = parse_graph(&input)?;
+                report["graph_schema_version"] = json!(graph.spec);
+                if graph.spec != "0.1" {
+                    report["support_status"] = json!("unsupported-graph-schema");
+                    if cli.json {
+                        return emit_json(
+                            &cli,
+                            "dag.version-inspect",
+                            false,
+                            report,
+                            vec![json!({"message":"unsupported graph schema version","remediation":"use spec 0.1"} )],
+                            ExitCode::from(2),
+                        );
+                    }
+                    return Err(ExitCode::from(2));
+                }
+            }
+            if let Some(path) = run_dir {
+                let manifest = read_file(&path.join("manifest.json"))?;
+                let parsed: Value = serde_json::from_str(&manifest).map_err(|_| ExitCode::from(3))?;
+                let run_version = parsed
+                    .get("manifest_version")
+                    .cloned()
+                    .unwrap_or_else(|| json!("run-manifest/v0.1"));
+                report["run_dir_format_version"] = run_version.clone();
+                report["graph_schema_version"] = parsed.get("spec").cloned().unwrap_or(Value::Null);
+                if run_version != json!("run-manifest/v0.1") {
+                    report["support_status"] = json!("unsupported-run-dir-version");
+                    if cli.json {
+                        return emit_json(
+                            &cli,
+                            "dag.version-inspect",
+                            false,
+                            report,
+                            vec![json!({"message":"unsupported run-dir format version","remediation":"use run-manifest/v0.1"} )],
+                            ExitCode::from(2),
+                        );
+                    }
+                    return Err(ExitCode::from(2));
+                }
+            }
+            if let Some(path) = export_bundle {
+                let payload = read_file(path)?;
+                let parsed: Value = serde_json::from_str(&payload).map_err(|_| ExitCode::from(3))?;
+                let bundle_version = parsed
+                    .get("export_bundle_version")
+                    .cloned()
+                    .unwrap_or_else(|| json!("export-bundle/v0.1"));
+                report["export_bundle_format_version"] = bundle_version.clone();
+                report["run_dir_format_version"] = parsed
+                    .get("manifest")
+                    .and_then(|m| m.get("manifest_version"))
+                    .cloned()
+                    .unwrap_or(Value::Null);
+                report["graph_schema_version"] = parsed
+                    .get("manifest")
+                    .and_then(|m| m.get("spec"))
+                    .cloned()
+                    .unwrap_or(Value::Null);
+                if bundle_version != json!("export-bundle/v0.1") {
+                    report["support_status"] = json!("unsupported-export-bundle-version");
+                    if cli.json {
+                        return emit_json(
+                            &cli,
+                            "dag.version-inspect",
+                            false,
+                            report,
+                            vec![json!({"message":"unsupported export bundle version","remediation":"use export-bundle/v0.1"} )],
+                            ExitCode::from(2),
+                        );
+                    }
+                    return Err(ExitCode::from(2));
+                }
+            }
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.version-inspect",
+                    true,
+                    report,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
     }
 }
 

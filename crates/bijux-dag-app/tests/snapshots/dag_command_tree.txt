@@ -21,3 +21,4 @@ status
 validate
 verify
 version
+version-inspect

@@ -185,6 +185,14 @@ pub(crate) enum Commands {
     Import {
         file: PathBuf,
     },
+    VersionInspect {
+        #[arg(long)]
+        dag: Option<PathBuf>,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+        #[arg(long)]
+        export_bundle: Option<PathBuf>,
+    },
     Version,
 }
 
