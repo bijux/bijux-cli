@@ -1,8 +1,9 @@
 {
-  "version": "1",
+  "version": "2",
   "managed_roots": [
     "benchmarks/scenarios",
     "comparisons/scenarios",
+    "comparisons/external",
     "examples",
     "tests/cache/fixtures",
     "tests/e2e/fixtures",
@@ -13,7 +14,11 @@
     "crates/bijux-dag-runtime/tests/fixtures"
   ],
   "exempt_paths": [
-    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep"
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
+    "comparisons/external/argo_notes.md",
+    "comparisons/external/coverage_map.json",
+    "comparisons/external/dagster_notes.md",
+    "comparisons/external/prefect_notes.md"
   ],
   "allowed_decisions": ["keep", "merge", "move", "delete"],
   "allowed_evidence_classes": [
@@ -24,5 +29,14 @@
     "perf",
     "compare",
     "operator"
+  ],
+  "required_metadata_fields": [
+    "path",
+    "owner",
+    "evidence_class",
+    "trust_property",
+    "why_exists",
+    "deletion_review",
+    "decision"
   ]
 }
