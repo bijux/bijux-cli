@@ -1,0 +1,64 @@
+{
+  "version": "2026-03-07",
+  "stabilization_mode": "frozen",
+  "workspace_crates": [
+    {
+      "name": "bijux-dag-core",
+      "path": "crates/bijux-dag-core",
+      "responsibility": "DAG schema, parsing, canonicalization, validation, and deterministic semantic graph logic."
+    },
+    {
+      "name": "bijux-dag-artifacts",
+      "path": "crates/bijux-dag-artifacts",
+      "responsibility": "Run artifact models, persistence services, integrity proofs, and lifecycle policy helpers."
+    },
+    {
+      "name": "bijux-dag-runtime",
+      "path": "crates/bijux-dag-runtime",
+      "responsibility": "Execution engine, scheduler behavior, policy enforcement, replay semantics, and runtime diagnostics."
+    },
+    {
+      "name": "bijux-dag-testkit",
+      "path": "crates/bijux-dag-testkit",
+      "responsibility": "Shared deterministic test fixtures, builders, and assertion helpers for workspace crates."
+    },
+    {
+      "name": "bijux-dag-app",
+      "path": "crates/bijux-dag-app",
+      "responsibility": "Application orchestration services, command response modeling, and user-facing render flows."
+    },
+    {
+      "name": "bijux-dag-cli",
+      "path": "crates/bijux-dag-cli",
+      "responsibility": "Thin process entrypoint that delegates to app command surfaces."
+    },
+    {
+      "name": "bijux-dev-dag",
+      "path": "crates/bijux-dev-dag",
+      "responsibility": "Repository governance control-plane, suite orchestration, and release verification automation."
+    }
+  ],
+  "allowed_workspace_edges": [
+    "bijux-dag-app->bijux-dag-artifacts",
+    "bijux-dag-app->bijux-dag-core",
+    "bijux-dag-app->bijux-dag-runtime",
+    "bijux-dag-app->bijux-dag-testkit",
+    "bijux-dag-cli->bijux-dag-app",
+    "bijux-dag-runtime->bijux-dag-artifacts",
+    "bijux-dag-runtime->bijux-dag-core",
+    "bijux-dag-runtime->bijux-dag-testkit",
+    "bijux-dag-testkit->bijux-dag-artifacts",
+    "bijux-dag-testkit->bijux-dag-core",
+    "bijux-dev-dag->bijux-dag-artifacts",
+    "bijux-dev-dag->bijux-dag-core",
+    "bijux-dev-dag->bijux-dag-runtime"
+  ],
+  "taxonomy_decisions": {
+    "app_single_crate": "keep",
+    "artifacts_scope": "keep-with-subsystem-boundaries",
+    "planning_home": "core-with-runtime-bridge",
+    "runtime_single_crate": "keep-after-scope-contraction",
+    "testkit_growth": "keep-as-shared-test-support",
+    "container_remote_batch_placement": "runtime-future-execution-boundaries"
+  }
+}

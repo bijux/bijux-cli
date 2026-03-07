@@ -1,5 +1,7 @@
 # Crate Responsibility Statements
 
+Authoritative taxonomy policy lives in `configs/policy/crate_taxonomy_v2.json`.
+
 ## `bijux-dag-core`
 - DAG schema, parsing, canonicalization, validation, and semantic graph rules.
 - No CLI or runtime execution orchestration.

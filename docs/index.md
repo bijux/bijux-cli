@@ -12,6 +12,7 @@
 - [Boundary rules](./spec/BOUNDARY_RULES.md)
 - [Crate ownership contract](./spec/CRATE_OWNERSHIP.md)
 - [Crate responsibility statements](./spec/CRATE_RESPONSIBILITY_STATEMENTS.md)
+- [Crate taxonomy v2](./spec/CRATE_TAXONOMY_v2.md)
 - [Crate boundary contract](./spec/CRATE_BOUNDARY_CONTRACT.md)
 - [Evidence model](./spec/EVIDENCE_MODEL.md)
 - [Glossary](./spec/GLOSSARY.md)
