@@ -26,7 +26,10 @@ runs
 show-effective-graph
 show-effective-plan
 status
+trace-artifact
 validate
 verify
 version
 version-inspect
+why-cache-missed
+why-rerun
