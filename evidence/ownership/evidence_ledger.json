@@ -2,161 +2,3034 @@
   "version": "2",
   "generated_at": "2026-03-07",
   "entries": [
-    {"path":"benchmarks/scenarios/cache_heavy_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/cache_heavy_lookup.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/cache_metadata_growth.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/deep_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/deep_scheduler_overhead.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"consolidate-when-canonical-metrics-match","decision":"merge"},
-    {"path":"benchmarks/scenarios/few_heavy_nodes_orchestration_overhead.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/manifest_trace_volume_growth.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/manifest_trace_write_amplification.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/many_small_nodes_scheduler_overhead.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/medium_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/medium_execute_local.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/memory_execute_many_nodes.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/memory_import_export_path.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/memory_parse_validate_large_graph.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/memory_replay_path.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"move-to-unified-evidence-root","decision":"move"},
-    {"path":"benchmarks/scenarios/replay_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/replay_verification_cost.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/resource_budgets.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/tiny_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/tiny_parse_validate.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/wide_canonical.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"retain","decision":"keep"},
-    {"path":"benchmarks/scenarios/wide_scheduler_overhead.json","owner":"team-performance","evidence_class":"perf","trust_property":"resource-accounting","why_exists":"measure parse plan execute replay envelopes","deletion_review":"consolidate-when-canonical-metrics-match","decision":"merge"},
-    {"path":"comparisons/scenarios/artifact_inspectability.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/cache_reuse_shape.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/chain.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/determinism.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/diamond.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/failure_diagnostics.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/failure_propagation.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/operator_inspectability.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/replay_equivalence.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/retry_timeout.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"comparisons/scenarios/scheduler_tiny_tasks_overhead.json","owner":"team-architecture","evidence_class":"compare","trust_property":"operator-inspection","why_exists":"compare bijux behavior against external orchestrators","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json","owner":"team-artifacts","evidence_class":"fault","trust_property":"artifact-integrity","why_exists":"verify corrupt run artifact detection","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json","owner":"team-artifacts","evidence_class":"fault","trust_property":"artifact-integrity","why_exists":"verify corrupt run artifact detection","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/conditional_branch_join.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/cycle.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/dangling.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/dup_id.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/env_allowlist_no_env.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/forward_ref.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/illegal_id.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/invalid_ref.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/missing_effects.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/orphan.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/output_collision.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/partitioned_map_reduce.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/retry_nondet.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/shell_no_fs.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/template_composition.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/unknown_node_output.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-core/tests/fixtures/unreachable.json","owner":"team-core","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"validate core graph parse and validation contracts","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/ai_assist/failure_summary.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/api/control_plane_resources.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/auth/downgraded_scopes.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/auth/expired_credentials.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/auth/revoked_credentials.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/auth/wrong_tenant_credentials.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/compatibility/upgrade_paths.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/cost/cost_attribution.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/datasets/catalog_entries.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/federation/domain_health.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/geo/consistency_boundaries.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/lineage/semantic_relationships.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/operations/slo_indicators.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/secrets/artifact_manifest_leak.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/secrets/env_dump_leak.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/secrets/panic_payload_leak.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/secrets/stderr_leak.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json","owner":"team-runtime","evidence_class":"battle","trust_property":"determinism","why_exists":"exercise runtime subsystem contract fixtures","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/cached-branched-report.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/etl-constant-to-shell.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/failure-heavy-retry.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/hello.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"move-to-unified-evidence-root","decision":"move"},
-    {"path":"examples/multi-output-artifact.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/observability-gold-standard.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"examples/replay-heavy-branching.dag.json","owner":"team-authoring","evidence_class":"authoring","trust_property":"schema-compatibility","why_exists":"provide executable authoring references","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/corrupt/hash_mismatch.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/corrupt/missing_meta.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/corrupt/missing_outputs_proof.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/corrupt/truncated_meta.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/corrupt/unsupported_metadata_version.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/cache/fixtures/warm_cold/scenario.json","owner":"team-runtime","evidence_class":"battle","trust_property":"cache-correctness","why_exists":"exercise cache corruption and warm/cold semantics","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/e2e/fixtures/e2e_minimal.json","owner":"team-runtime","evidence_class":"battle","trust_property":"failure-propagation","why_exists":"drive end-to-end execution invariants","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/e2e/replay/fixtures/corruption_case.json","owner":"team-runtime","evidence_class":"battle","trust_property":"replay-equivalence","why_exists":"validate replay semantic match and mismatch handling","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/e2e/replay/fixtures/match_case.json","owner":"team-runtime","evidence_class":"battle","trust_property":"replay-equivalence","why_exists":"validate replay semantic match and mismatch handling","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/e2e/replay/fixtures/mismatch_case.json","owner":"team-runtime","evidence_class":"battle","trust_property":"replay-equivalence","why_exists":"validate replay semantic match and mismatch handling","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/e2e/replay/fixtures/unsupported_version_case.json","owner":"team-runtime","evidence_class":"battle","trust_property":"replay-equivalence","why_exists":"validate replay semantic match and mismatch handling","deletion_review":"retain","decision":"keep"},
-    {"path":"tests/fault/fixtures/fault_classes.json","owner":"team-runtime","evidence_class":"fault","trust_property":"failure-propagation","why_exists":"classify and harden runtime fault handling","deletion_review":"retain","decision":"keep"}
+    {
+      "path": "benchmarks/scenarios/cache_heavy_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/cache_heavy_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/cache_heavy_lookup.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/cache_heavy_lookup.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/cache_metadata_growth.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/cache_metadata_growth.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/deep_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/deep_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/deep_scheduler_overhead.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "consolidate-when-canonical-metrics-match",
+      "decision": "merge",
+      "canonical_location": "benchmarks/scenarios/deep_scheduler_overhead.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": "2026-09-30"
+    },
+    {
+      "path": "benchmarks/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/manifest_trace_volume_growth.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/manifest_trace_volume_growth.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/manifest_trace_write_amplification.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/manifest_trace_write_amplification.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/many_small_nodes_scheduler_overhead.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/medium_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/medium_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/medium_execute_local.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/medium_execute_local.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/memory_execute_many_nodes.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/memory_execute_many_nodes.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/memory_import_export_path.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/memory_import_export_path.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/memory_parse_validate_large_graph.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/memory_parse_validate_large_graph.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/memory_replay_path.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "move-to-unified-evidence-root",
+      "decision": "move",
+      "canonical_location": "benchmarks/scenarios/memory_replay_path.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "benchmarks/scenarios/replay_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/replay_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/replay_verification_cost.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/replay_verification_cost.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/resource_budgets.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/resource_budgets.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/tiny_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/tiny_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/tiny_parse_validate.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/tiny_parse_validate.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/wide_canonical.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "benchmarks/scenarios/wide_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "benchmarks/scenarios/wide_scheduler_overhead.json",
+      "owner": "team-performance",
+      "evidence_class": "perf",
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes",
+      "deletion_review": "consolidate-when-canonical-metrics-match",
+      "decision": "merge",
+      "canonical_location": "benchmarks/scenarios/wide_scheduler_overhead.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": "2026-09-30"
+    },
+    {
+      "path": "comparisons/scenarios/artifact_inspectability.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/artifact_inspectability.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/cache_reuse_shape.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/cache_reuse_shape.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/chain.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/chain.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/determinism.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/determinism.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/diamond.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/diamond.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/failure_diagnostics.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/failure_diagnostics.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/failure_propagation.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/failure_propagation.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/operator_inspectability.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/operator_inspectability.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/replay_equivalence.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/replay_equivalence.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/retry_timeout.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/retry_timeout.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "comparisons/scenarios/scheduler_tiny_tasks_overhead.json",
+      "owner": "team-architecture",
+      "evidence_class": "compare",
+      "trust_property": "operator-inspection",
+      "why_exists": "compare bijux behavior against external orchestrators",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "comparisons/scenarios/scheduler_tiny_tasks_overhead.json",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "trust_properties_protected": [
+        "operator-inspection"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+      "owner": "team-artifacts",
+      "evidence_class": "fault",
+      "trust_property": "artifact-integrity",
+      "why_exists": "verify corrupt run artifact detection",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/invalid_outputs_index.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "artifact-integrity"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
+      "owner": "team-artifacts",
+      "evidence_class": "fault",
+      "trust_property": "artifact-integrity",
+      "why_exists": "verify corrupt run artifact detection",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures/corrupt_runs/missing_manifest_version.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "artifact-integrity"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/conditional_branch_join.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/conditional_branch_join.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/cycle.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/cycle.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/dangling.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/dangling.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/dup_id.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/dup_id.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/env_allowlist_no_env.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/env_allowlist_no_env.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/forward_ref.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/forward_ref.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/illegal_id.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/illegal_id.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/invalid_ref.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_ref.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/missing_effects.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/missing_effects.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/orphan.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/orphan.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/output_collision.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/output_collision.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/partitioned_map_reduce.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/partitioned_map_reduce.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/shell_no_fs.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/shell_no_fs.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/unknown_node_output.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/unknown_node_output.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures/unreachable.json",
+      "owner": "team-core",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/unreachable.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/adaptive/metrics.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/ai_assist/failure_summary.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/ai_assist/failure_summary.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/api/control_plane_resources.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/api/control_plane_resources.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/auth/downgraded_scopes.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/auth/downgraded_scopes.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/auth/expired_credentials.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/auth/expired_credentials.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/auth/revoked_credentials.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/auth/revoked_credentials.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/auth/wrong_tenant_credentials.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/auth/wrong_tenant_credentials.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/compatibility/upgrade_paths.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/compatibility/upgrade_paths.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/cost/cost_attribution.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/cost/cost_attribution.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/datasets/catalog_entries.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/datasets/catalog_entries.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/federation/domain_health.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/federation/domain_health.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/geo/consistency_boundaries.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/geo/consistency_boundaries.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/lineage/semantic_relationships.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/lineage/semantic_relationships.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_indicators.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_indicators.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/secrets/artifact_manifest_leak.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/secrets/artifact_manifest_leak.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/secrets/env_dump_leak.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/secrets/env_dump_leak.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/secrets/panic_payload_leak.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/secrets/panic_payload_leak.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/secrets/stderr_leak.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/secrets/stderr_leak.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "implementation_status": "simulated",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/cached-branched-report.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/cached-branched-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/etl-constant-to-shell.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/etl-constant-to-shell.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/failure-heavy-retry.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/failure-heavy-retry.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/hello.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "move-to-unified-evidence-root",
+      "decision": "move",
+      "canonical_location": "examples/hello.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "examples/multi-output-artifact.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/multi-output-artifact.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/observability-gold-standard.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/observability-gold-standard.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "examples/replay-heavy-branching.dag.json",
+      "owner": "team-authoring",
+      "evidence_class": "authoring",
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "examples/replay-heavy-branching.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": false,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/corrupt/hash_mismatch.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/corrupt/hash_mismatch.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/corrupt/missing_meta.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/corrupt/missing_meta.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/corrupt/missing_outputs_proof.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/corrupt/truncated_meta.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/corrupt/truncated_meta.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/corrupt/unsupported_metadata_version.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/cache/fixtures/warm_cold/scenario.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/cache/fixtures/warm_cold/scenario.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/fixtures/e2e_minimal.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "failure-propagation",
+      "why_exists": "drive end-to-end execution invariants",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/e2e/fixtures/e2e_minimal.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "failure-propagation"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/replay/fixtures/corruption_case.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/e2e/replay/fixtures/corruption_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/replay/fixtures/match_case.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/e2e/replay/fixtures/match_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/replay/fixtures/mismatch_case.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/e2e/replay/fixtures/mismatch_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/replay/fixtures/unsupported_version_case.json",
+      "owner": "team-runtime",
+      "evidence_class": "battle",
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/e2e/replay/fixtures/unsupported_version_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/fault/fixtures/fault_classes.json",
+      "owner": "team-runtime",
+      "evidence_class": "fault",
+      "trust_property": "failure-propagation",
+      "why_exists": "classify and harden runtime fault handling",
+      "deletion_review": "retain",
+      "decision": "keep",
+      "canonical_location": "tests/fault/fixtures/fault_classes.json",
+      "consumer_surfaces": [
+        "fault-contracts",
+        "runtime-tests"
+      ],
+      "trust_properties_protected": [
+        "failure-propagation"
+      ],
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    }
   ],
   "fixture_families": [
-    {"path":"tests/cache/fixtures","status":"canonical","owner":"team-runtime"},
-    {"path":"tests/e2e/replay/fixtures","status":"canonical","owner":"team-runtime"},
-    {"path":"tests/fault/fixtures","status":"canonical","owner":"team-runtime"},
-    {"path":"crates/bijux-dag-core/tests/fixtures","status":"canonical","owner":"team-core"},
-    {"path":"crates/bijux-dag-artifacts/tests/fixtures","status":"canonical","owner":"team-artifacts"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/performance","status":"duplicate","owner":"team-runtime"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/cost","status":"duplicate","owner":"team-runtime"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/adaptive","status":"duplicate","owner":"team-runtime"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/geo","status":"duplicate","owner":"team-runtime"},
-    {"path":"crates/bijux-dag-runtime/tests/fixtures/federation","status":"duplicate","owner":"team-runtime"}
+    {
+      "path": "tests/cache/fixtures",
+      "status": "canonical",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "tests/cache/fixtures",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "trust_property_protected": "cache-correctness",
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/e2e/replay/fixtures",
+      "status": "canonical",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "tests/e2e/replay/fixtures",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "trust_property_protected": "failure-propagation",
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "tests/fault/fixtures",
+      "status": "canonical",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "tests/fault/fixtures",
+      "consumer_surfaces": [
+        "fault-contracts",
+        "runtime-tests"
+      ],
+      "trust_property_protected": "failure-propagation",
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-core/tests/fixtures",
+      "status": "canonical",
+      "owner": "team-core",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures",
+      "consumer_surfaces": [
+        "core-contracts"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-artifacts/tests/fixtures",
+      "status": "canonical",
+      "owner": "team-artifacts",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures",
+      "consumer_surfaces": [
+        "artifacts-contracts"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "implemented",
+      "release_blocking": true,
+      "duplicate_of": null,
+      "retirement_date": null
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance",
+      "status": "duplicate",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "simulated",
+      "release_blocking": false,
+      "duplicate_of": "tests/e2e/replay/fixtures",
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/cost",
+      "status": "duplicate",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/cost",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "simulated",
+      "release_blocking": false,
+      "duplicate_of": "tests/e2e/replay/fixtures",
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/adaptive",
+      "status": "duplicate",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/adaptive",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "simulated",
+      "release_blocking": false,
+      "duplicate_of": "tests/e2e/replay/fixtures",
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/geo",
+      "status": "duplicate",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/geo",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "simulated",
+      "release_blocking": false,
+      "duplicate_of": "tests/e2e/replay/fixtures",
+      "retirement_date": "2026-12-31"
+    },
+    {
+      "path": "crates/bijux-dag-runtime/tests/fixtures/federation",
+      "status": "duplicate",
+      "owner": "team-runtime",
+      "version": "1",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/federation",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "trust_property_protected": "schema-compatibility",
+      "implementation_status": "simulated",
+      "release_blocking": false,
+      "duplicate_of": "tests/e2e/replay/fixtures",
+      "retirement_date": "2026-12-31"
+    }
   ],
   "benchmark_fixture_audit": [
-    {"path":"benchmarks/fixtures/distributed","decision":"delete","reason":"docs-only simulation fixtures without benchmark scenario linkage"},
-    {"path":"benchmarks/fixtures/scheduling/enterprise","decision":"delete","reason":"docs-only enterprise stress fixtures without benchmark scenario linkage"},
-    {"path":"benchmarks/fixtures/scheduling/ha","decision":"delete","reason":"docs-only high-availability fixtures without benchmark scenario linkage"}
+    {
+      "path": "benchmarks/fixtures/distributed",
+      "decision": "delete",
+      "reason": "docs-only simulation fixtures without benchmark scenario linkage"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/enterprise",
+      "decision": "delete",
+      "reason": "docs-only enterprise stress fixtures without benchmark scenario linkage"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/ha",
+      "decision": "delete",
+      "reason": "docs-only high-availability fixtures without benchmark scenario linkage"
+    }
   ],
   "retired_entries": [
-    {"path":"benchmarks/scenarios/replay_path.json","decision":"delete","replacement":"benchmarks/scenarios/replay_canonical.json","reason":"duplicate replay-path concept consolidated under canonical replay benchmark"},
-    {"path":"benchmarks/fixtures/distributed/transport_protocol_simulation.json","decision":"delete","replacement":"none","reason":"docs-only simulation fixture"},
-    {"path":"benchmarks/fixtures/distributed/worker_lifecycle_simulation.json","decision":"delete","replacement":"none","reason":"docs-only simulation fixture"},
-    {"path":"benchmarks/fixtures/scheduling/enterprise/load_spike.json","decision":"delete","replacement":"none","reason":"docs-only enterprise fixture"},
-    {"path":"benchmarks/fixtures/scheduling/enterprise/mass_backfill.json","decision":"delete","replacement":"none","reason":"docs-only enterprise fixture"},
-    {"path":"benchmarks/fixtures/scheduling/enterprise/trigger_storm.json","decision":"delete","replacement":"none","reason":"docs-only enterprise fixture"},
-    {"path":"benchmarks/fixtures/scheduling/ha/cold_restart_objective.json","decision":"delete","replacement":"none","reason":"docs-only high-availability fixture"},
-    {"path":"benchmarks/fixtures/scheduling/ha/split_brain_failover.json","decision":"delete","replacement":"none","reason":"docs-only high-availability fixture"},
-    {"path":"benchmarks/fixtures/scheduling/ha/trigger_storm_rebalance.json","decision":"delete","replacement":"none","reason":"docs-only high-availability fixture"}
+    {
+      "path": "benchmarks/scenarios/replay_path.json",
+      "decision": "delete",
+      "replacement": "benchmarks/scenarios/replay_canonical.json",
+      "reason": "duplicate replay-path concept consolidated under canonical replay benchmark"
+    },
+    {
+      "path": "benchmarks/fixtures/distributed/transport_protocol_simulation.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only simulation fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/distributed/worker_lifecycle_simulation.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only simulation fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/enterprise/load_spike.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only enterprise fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/enterprise/mass_backfill.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only enterprise fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/enterprise/trigger_storm.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only enterprise fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/ha/cold_restart_objective.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only high-availability fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/ha/split_brain_failover.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only high-availability fixture"
+    },
+    {
+      "path": "benchmarks/fixtures/scheduling/ha/trigger_storm_rebalance.json",
+      "decision": "delete",
+      "replacement": "none",
+      "reason": "docs-only high-availability fixture"
+    }
+  ],
+  "asset_families": [
+    {
+      "family_id": "authoring",
+      "version": "1",
+      "owner": "team-authoring",
+      "trust_property_protected": "schema-compatibility",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "canonical_location": "evidence/authoring",
+      "implementation_status": "implemented",
+      "release_blocking": false
+    },
+    {
+      "family_id": "battle",
+      "version": "1",
+      "owner": "team-runtime",
+      "trust_property_protected": "determinism",
+      "consumer_surfaces": [
+        "runtime-tests",
+        "battle-suites"
+      ],
+      "canonical_location": "evidence/battle",
+      "implementation_status": "implemented",
+      "release_blocking": true
+    },
+    {
+      "family_id": "cache",
+      "version": "1",
+      "owner": "team-runtime",
+      "trust_property_protected": "cache-correctness",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "canonical_location": "evidence/cache",
+      "implementation_status": "implemented",
+      "release_blocking": true
+    },
+    {
+      "family_id": "compat",
+      "version": "1",
+      "owner": "team-runtime",
+      "trust_property_protected": "replay-equivalence",
+      "consumer_surfaces": [
+        "compatibility-contracts"
+      ],
+      "canonical_location": "evidence/compat",
+      "implementation_status": "implemented",
+      "release_blocking": true
+    },
+    {
+      "family_id": "fault",
+      "version": "1",
+      "owner": "team-runtime",
+      "trust_property_protected": "failure-propagation",
+      "consumer_surfaces": [
+        "fault-contracts",
+        "runtime-tests"
+      ],
+      "canonical_location": "evidence/fault",
+      "implementation_status": "implemented",
+      "release_blocking": true
+    },
+    {
+      "family_id": "operator",
+      "version": "1",
+      "owner": "team-runtime",
+      "trust_property_protected": "operator-inspection",
+      "consumer_surfaces": [
+        "operator-contracts"
+      ],
+      "canonical_location": "evidence/operator",
+      "implementation_status": "implemented",
+      "release_blocking": true
+    },
+    {
+      "family_id": "perf",
+      "version": "1",
+      "owner": "team-performance",
+      "trust_property_protected": "resource-accounting",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "canonical_location": "evidence/perf",
+      "implementation_status": "implemented",
+      "release_blocking": false
+    },
+    {
+      "family_id": "compare",
+      "version": "1",
+      "owner": "team-architecture",
+      "trust_property_protected": "operator-inspection",
+      "consumer_surfaces": [
+        "comparison-suite"
+      ],
+      "canonical_location": "evidence/compare",
+      "implementation_status": "implemented",
+      "release_blocking": false
+    }
   ]
 }

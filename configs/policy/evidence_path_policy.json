@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "scenario_extensions": ["json", "dag.json"],
+  "governed_roots": [
+    "benchmarks/scenarios",
+    "comparisons/scenarios",
+    "examples",
+    "tests/cache/fixtures",
+    "tests/e2e/fixtures",
+    "tests/e2e/replay/fixtures",
+    "tests/fault/fixtures",
+    "crates/bijux-dag-core/tests/fixtures",
+    "crates/bijux-dag-artifacts/tests/fixtures",
+    "crates/bijux-dag-runtime/tests/fixtures"
+  ],
+  "schema_fixture_roots": [
+    "configs/schema/fixtures"
+  ],
+  "legacy_scenario_roots": [
+    "benchmarks/fixtures",
+    "tests/compatibility/graph_schema",
+    "crates/bijux-dag-core/tests/compat",
+    "crates/bijux-dag-core/tests/snapshots"
+  ],
+  "helper_allowlist": [
+    "tests/integration_fixtures/*.sh",
+    "crates/bijux-dag-runtime/tests/fixtures/.gitkeep"
+  ]
+}

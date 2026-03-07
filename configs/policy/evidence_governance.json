@@ -20,7 +20,12 @@
     "comparisons/external/dagster_notes.md",
     "comparisons/external/prefect_notes.md"
   ],
-  "allowed_decisions": ["keep", "merge", "move", "delete"],
+  "allowed_decisions": [
+    "keep",
+    "merge",
+    "move",
+    "delete"
+  ],
   "allowed_evidence_classes": [
     "authoring",
     "battle",
@@ -32,11 +37,22 @@
   ],
   "required_metadata_fields": [
     "path",
+    "canonical_location",
     "owner",
     "evidence_class",
+    "consumer_surfaces",
     "trust_property",
+    "trust_properties_protected",
     "why_exists",
+    "implementation_status",
+    "release_blocking",
     "deletion_review",
-    "decision"
+    "decision",
+    "duplicate_of",
+    "retirement_date"
+  ],
+  "allowed_implementation_statuses": [
+    "implemented",
+    "simulated"
   ]
 }
