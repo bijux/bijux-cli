@@ -6969,11 +6969,21 @@ fn run_config_lint() -> Result<(), String> {
 
 fn run_config_precedence_drift_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let precedence_doc =
-        fs::read_to_string(root.join("docs/spec/CONFIG_PRECEDENCE.md")).map_err(|err| err.to_string())?;
+    let precedence_doc = fs::read_to_string(root.join("docs/spec/CONFIG_PRECEDENCE_CONTRACT.md"))
+        .map_err(|err| err.to_string())?;
     let expected = "CLI > explicit config file > environment > defaults";
     if !precedence_doc.contains(expected) {
-        return Err("docs/spec/CONFIG_PRECEDENCE.md missing canonical precedence table".to_string());
+        return Err(
+            "docs/spec/CONFIG_PRECEDENCE_CONTRACT.md missing canonical precedence table".to_string(),
+        );
+    }
+    for token in ["dag config show-effective", "dag policy show-effective"] {
+        if !precedence_doc.contains(token) {
+            return Err(format!(
+                "config precedence contract missing command surface `{}`",
+                token
+            ));
+        }
     }
 
     let defaults = json!({"jobs": 1});
@@ -6995,7 +7005,14 @@ fn run_ambient_env_guard() -> Result<(), String> {
     let mut files = Vec::new();
     collect_files_with_extension(&root.join("crates"), "rs", &mut files)?;
     let mut violations = Vec::new();
-    let allow_env_keys = ["BIJUX_DAG_CACHE_DIR", "BIJUX_DAG_ADAPTERS_DIR"];
+    let allow_env_keys = [
+        "BIJUX_DAG_CACHE_DIR",
+        "BIJUX_DAG_ADAPTERS_DIR",
+        "BIJUX_DAG_JOBS",
+        "BIJUX_DAG_CACHE_MODE",
+        "BIJUX_DAG_MATERIALIZE_INPUTS",
+        "BIJUX_DAG_POLICY_JSON",
+    ];
     for file in files {
         let rel = file
             .strip_prefix(&root)
