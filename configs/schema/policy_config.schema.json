@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bijux://schema/policy_config/v1",
+  "title": "PolicyConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "deny_network": { "type": "boolean" },
+    "deny_env": { "type": "boolean" },
+    "deny_clock": { "type": "boolean" },
+    "clean_env": { "type": "boolean" },
+    "allowed_env": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Z0-9_]+$" },
+      "uniqueItems": true
+    }
+  }
+}

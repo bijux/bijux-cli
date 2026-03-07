@@ -1,0 +1,12 @@
+{
+  "jobs": 1,
+  "cache_mode": "read",
+  "materialize_inputs": "direct",
+  "policy": {
+    "deny_network": true,
+    "deny_env": false,
+    "deny_clock": true,
+    "clean_env": true,
+    "allowed_env": ["PATH", "HOME"]
+  }
+}

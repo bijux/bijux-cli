@@ -15,8 +15,13 @@ Defines precedence and behavior for CLI args, config files, environment, and def
 - `tests/e2e/policy/*`
 
 ## Related schemas
-- `configs/schema/dag.schema.json`
-- `configs/schema/dag.schema.json`
+- `configs/schema/runtime_config.schema.json`
+- `configs/schema/policy_config.schema.json`
+
+## Related docs
+- `docs/spec/CONFIG_PRECEDENCE.md`
+- `docs/reference/CONFIG_INPUT_INVENTORY.md`
+- `docs/spec/CONFIG_STATE_BOUNDARIES.md`
 
 ## Versioning and change policy
 Deprecated fields must include migration notes and validation behavior.
