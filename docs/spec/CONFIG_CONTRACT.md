@@ -14,7 +14,7 @@ Default baseline source: `configs/dev/default_runtime_config.json`.
 
 ## Related tests
 - `crates/bijux-dag-app/tests/cli_contract.rs`
-- `tests/e2e/policy/*`
+- `evidence/battle/workflows/policy/*`
 
 ## Related schemas
 - `configs/schema/runtime_config.schema.json`

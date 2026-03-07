@@ -10,7 +10,7 @@ Defines policy inputs, enforcement points, and decision visibility.
 - Policy traces follow `docs/spec/POLICY_EVALUATION_TRACE.md`.
 
 ## Related tests
-- `tests/e2e/policy/*`
+- `evidence/battle/workflows/policy/*`
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 
 ## Related schemas

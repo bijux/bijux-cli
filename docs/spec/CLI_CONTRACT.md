@@ -35,7 +35,7 @@ This is the normative contract for `bijux` command surfaces.
 ## Related tests
 - `crates/bijux-dag-app/tests/cli_contract.rs`
 - `crates/bijux-dag-app/tests/output_contract.rs`
-- `tests/e2e/happy_path/*`
+- `evidence/battle/workflows/happy_path/*`
 
 ## Versioning and change policy
 Backward compatibility follows [CLI_BACKWARD_COMPATIBILITY.md](/Users/bijan/bijux/bijux-dag/docs/spec/CLI_BACKWARD_COMPATIBILITY.md). Breaking command behavior requires explicit release-note callout.

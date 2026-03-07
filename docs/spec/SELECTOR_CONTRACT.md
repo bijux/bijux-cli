@@ -9,7 +9,7 @@ Defines selection and exclusion semantics for node execution targeting.
 - Invalid selector references fail validation before execution.
 
 ## Related tests
-- `tests/e2e/selection/*`
+- `evidence/battle/workflows/selection/*`
 - `crates/bijux-dag-runtime/tests/selector_filtering_contract.rs`
 
 ## Related schemas

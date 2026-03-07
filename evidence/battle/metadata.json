@@ -106,6 +106,81 @@
       "grade": "battle",
       "why_exists": "Protect real-world complex DAG semantics with mixed fanout and failure domains.",
       "delete_review": "retain"
+    },
+    "cache-hit-second-run": {
+      "grade": "battle",
+      "why_exists": "Protect warm-run cache reuse semantics and replay-visible output stability.",
+      "delete_review": "retain"
+    },
+    "cache-fingerprint-change-invalidates-cache": {
+      "grade": "battle",
+      "why_exists": "Protect cache invalidation when graph or input identity changes.",
+      "delete_review": "retain"
+    },
+    "failure-missing-outputs-rejected": {
+      "grade": "battle",
+      "why_exists": "Protect strict output contract enforcement when adapters omit declared outputs.",
+      "delete_review": "retain"
+    },
+    "failure-node-failure-downstream-skipped": {
+      "grade": "battle",
+      "why_exists": "Protect downstream skip behavior after dependency failure.",
+      "delete_review": "retain"
+    },
+    "failure-retry-then-success-accounting": {
+      "grade": "battle",
+      "why_exists": "Protect retry accounting and final-success trace consistency.",
+      "delete_review": "retain"
+    },
+    "failure-timeout-error-classification": {
+      "grade": "battle",
+      "why_exists": "Protect timeout error classification and terminal failure reporting.",
+      "delete_review": "retain"
+    },
+    "failure-validation-failure-no-partial-run-dir": {
+      "grade": "battle",
+      "why_exists": "Protect pre-run validation rejection without partial run artifact creation.",
+      "delete_review": "retain"
+    },
+    "happy-diamond-outputs-and-manifest-totals": {
+      "grade": "battle",
+      "why_exists": "Protect manifest totals and output materialization invariants on diamond graphs.",
+      "delete_review": "retain"
+    },
+    "happy-parse-validate-run-inspect-replay": {
+      "grade": "battle",
+      "why_exists": "Protect end-to-end parse, validate, run, inspect, and replay flow integrity.",
+      "delete_review": "retain"
+    },
+    "happy-real-world-orchestration-stress": {
+      "grade": "battle",
+      "why_exists": "Protect complex orchestration completeness and trace accounting under realistic graph pressure.",
+      "delete_review": "retain"
+    },
+    "import-export-metadata-only": {
+      "grade": "battle",
+      "why_exists": "Protect metadata-only export and import correctness constraints.",
+      "delete_review": "retain"
+    },
+    "import-export-with-files": {
+      "grade": "battle",
+      "why_exists": "Protect export/import roundtrip integrity with file materialization enabled.",
+      "delete_review": "retain"
+    },
+    "policy-deny-env-clean-env-allowlist": {
+      "grade": "battle",
+      "why_exists": "Protect deny-env and clean-env enforcement with explicit allowlist behavior.",
+      "delete_review": "retain"
+    },
+    "replay-semantic-comparison": {
+      "grade": "battle",
+      "why_exists": "Protect replay semantic comparison with mandatory proof assertions.",
+      "delete_review": "retain"
+    },
+    "selection-include-exclude-filters": {
+      "grade": "battle",
+      "why_exists": "Protect include/exclude selector semantics and manifest consistency.",
+      "delete_review": "retain"
     }
   }
 }

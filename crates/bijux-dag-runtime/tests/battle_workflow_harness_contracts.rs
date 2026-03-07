@@ -17,7 +17,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 fn fixture_dir() -> PathBuf {
-    Path::new("tests/fixtures/battle_workflows").to_path_buf()
+    Path::new("../../evidence/battle/workflows/runtime").to_path_buf()
 }
 
 fn load_fixture(name: &str) -> Value {
@@ -79,7 +79,7 @@ fn load_policy() -> BattleTrustPolicy {
 }
 
 fn load_metadata() -> BattleMetadata {
-    let raw = fs::read_to_string(fixture_dir().join("metadata.json"))
+    let raw = fs::read_to_string("../../evidence/battle/metadata.json")
         .expect("battle metadata should exist");
     serde_json::from_str(&raw).expect("battle metadata should parse")
 }
@@ -183,16 +183,6 @@ fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
         );
     }
 
-    for scenario in metadata.scenarios.keys() {
-        assert!(
-            scenario_ids_from_files.contains(scenario),
-            "metadata contains orphan scenario {scenario}"
-        );
-    }
-    for scenario in policy.scenario_trust_map.keys() {
-        assert!(
-            scenario_ids_from_files.contains(scenario),
-            "trust mapping contains orphan scenario {scenario}"
-        );
-    }
+    // Battle evidence now includes non-runtime consumer scenarios under evidence/battle/workflows.
+    // Runtime harness only enforces that runtime fixtures remain fully mapped and documented.
 }

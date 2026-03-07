@@ -26,7 +26,7 @@ Defines execution semantics for planning, ordering, failure/retry behavior, sele
 ## Related tests
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 - `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
-- `tests/e2e/happy_path/*`
+- `evidence/battle/workflows/happy_path/*`
 
 ## Versioning and change policy
 Execution semantic changes require matching updates to state-machine docs, runtime tests, and replay behavior tests in one change.

@@ -6,7 +6,7 @@ Battle workflows are executable stress scenarios for runtime behavior under real
 
 ## Scenario catalog
 
-Fixtures live in `crates/bijux-dag-runtime/tests/fixtures/battle_workflows` and are validated by `battle_workflow_harness_contracts.rs`.
+Fixtures live in `evidence/battle/workflows/runtime` and are validated by `battle_workflow_harness_contracts.rs`.
 
 ## Required scenarios
 
@@ -50,7 +50,7 @@ Each scenario fixture must include:
 
 ## Ownership metadata
 
-- Scenario ownership and retention metadata live in `crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json`.
+- Scenario ownership and retention metadata live in `evidence/battle/metadata.json`.
 - Required fields per scenario:
   - `grade`
   - `why_exists`

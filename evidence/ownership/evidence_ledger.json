@@ -1231,14 +1231,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json",
+      "path": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/artifact_heavy_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1252,14 +1252,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json",
+      "path": "evidence/battle/workflows/runtime/branch_join_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/branch_join_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1273,14 +1273,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json",
+      "path": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/cache_invalidation_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1294,14 +1294,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json",
+      "path": "evidence/battle/workflows/runtime/corruption_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/corruption_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1315,14 +1315,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json",
+      "path": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/failure_heavy_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1336,14 +1336,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json",
+      "path": "evidence/battle/workflows/runtime/import_export_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/import_export_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1357,14 +1357,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json",
+      "path": "evidence/battle/workflows/runtime/large_dag_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/large_dag_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1378,14 +1378,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json",
+      "path": "evidence/battle/workflows/runtime/medium_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/medium_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1399,14 +1399,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json",
+      "path": "evidence/battle/workflows/runtime/multi_root_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/multi_root_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1420,14 +1420,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json",
+      "path": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1441,14 +1441,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json",
+      "path": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1462,14 +1462,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json",
+      "path": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/policy_violation_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1483,14 +1483,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json",
+      "path": "evidence/battle/workflows/runtime/replay_divergence_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/replay_divergence_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1504,14 +1504,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json",
+      "path": "evidence/battle/workflows/runtime/resource_contention_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/resource_contention_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1525,14 +1525,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json",
+      "path": "evidence/battle/workflows/runtime/retry_storm_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/retry_storm_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1546,14 +1546,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json",
+      "path": "evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/scheduler_fairness_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1567,14 +1567,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json",
+      "path": "evidence/battle/workflows/runtime/secret_leakage_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/secret_leakage_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1588,14 +1588,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json",
+      "path": "evidence/battle/workflows/runtime/timeout_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/timeout_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1609,14 +1609,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json",
+      "path": "evidence/battle/workflows/runtime/version_compatibility_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/version_compatibility_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1630,14 +1630,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json",
+      "path": "evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/malformed_run_dir_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1651,14 +1651,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json",
+      "path": "evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json",
+      "canonical_location": "evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -1672,14 +1672,14 @@
       "retirement_date": null
     },
     {
-      "path": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json",
+      "path": "evidence/battle/metadata.json",
       "owner": "team-runtime",
       "evidence_class": "battle",
       "trust_property": "determinism",
       "why_exists": "exercise runtime subsystem contract fixtures",
       "deletion_review": "retain",
       "decision": "keep",
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json",
+      "canonical_location": "evidence/battle/metadata.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"

@@ -78,28 +78,28 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/auth/expired_credentials.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/auth/revoked_credentials.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/auth/wrong_tenant_credentials.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/artifact_heavy_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/branch_join_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/cache_invalidation_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/corruption_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/failure_heavy_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/import_export_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/large_dag_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/malformed_run_dir_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/medium_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/metadata.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/multi_root_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_debugging_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/operator_inspection_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/policy_violation_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/replay_divergence_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/resource_contention_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/retry_storm_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/scheduler_fairness_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/secret_leakage_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/timeout_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/ugly_realistic_dag_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
-| crates/bijux-dag-runtime/tests/fixtures/battle_workflows/version_compatibility_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/artifact_heavy_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/branch_join_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/cache_invalidation_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/corruption_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/failure_heavy_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/import_export_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/large_dag_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/malformed_run_dir_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/medium_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/metadata.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/multi_root_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/operator_debugging_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/operator_inspection_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/policy_violation_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/replay_divergence_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/resource_contention_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/retry_storm_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/scheduler_fairness_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/secret_leakage_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/timeout_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/ugly_realistic_dag_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
+| evidence/battle/workflows/runtime/version_compatibility_workflow.json | battle | transitional | crate-owned | evidence/battle |  |
 | crates/bijux-dag-runtime/tests/fixtures/compatibility/upgrade_paths.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/cost/cost_attribution.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/datasets/catalog_entries.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
@@ -143,30 +143,30 @@ Classification for files in tasks 21-34 scopes.
 | tests/compatibility/run_dir/unsupported_future/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | tests/compatibility/run_dir/v0.1/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | tests/e2e/README.md | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/cache/cache_hit_second_run.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/cache/fingerprint_change_invalidates_cache.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/cache/cache_hit_second_run.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/compat/legacy_fixture_validation.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/container/container_execution_if_supported.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/failure/missing_outputs_rejected.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/failure/node_failure_downstream_skipped.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/failure/retry_then_success_accounting.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/failure/timeout_error_classification.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/failure/validation_failure_has_no_partial_run_dir.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/failure/missing_outputs_rejected.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/failure/node_failure_downstream_skipped.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/failure/retry_then_success_accounting.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/failure/timeout_error_classification.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/failure/validation_failure_has_no_partial_run_dir.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/fixtures/e2e_minimal.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/happy_path/diamond_outputs_and_manifest_totals.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/happy_path/parse_validate_run_inspect_replay.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/happy_path/real_world_orchestration_stress.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/import_export/export_import_metadata_only.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/import_export/export_import_with_files.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/happy_path/real_world_orchestration_stress.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/import_export/export_import_metadata_only.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/import_export/export_import_with_files.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/matrix.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/operator/inspection_only.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/policy/deny_env_clean_env_allowlist.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/operator/scenarios/inspection_only.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/policy/deny_env_clean_env_allowlist.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/replay/fixtures/corruption_case.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/replay/fixtures/match_case.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/replay/fixtures/mismatch_case.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/e2e/replay/fixtures/unsupported_version_case.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/replay/replay_semantic_comparison.json | battle | transitional | root-owned | evidence/battle |  |
-| tests/e2e/selection/include_exclude_filters.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/replay/replay_semantic_comparison.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/battle/workflows/selection/include_exclude_filters.json | battle | transitional | root-owned | evidence/battle |  |
 | tests/fault/README.md | fault | transitional | root-owned | evidence/fault |  |
 | tests/fault/fixtures/fault_classes.json | fault | transitional | root-owned | evidence/fault |  |
 | tests/integration_fixtures/minimal_consumer/README.md | helper | transitional | root-owned | crate-local tests/helpers or evidence |  |
