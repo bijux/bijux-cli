@@ -1,11 +1,10 @@
 use crate::{
     build_run_outputs_index, cache_dir_from_env, cache_mode_string, collect_outputs_summary,
-    category_from_runtime_event_name, count_nodes, current_process_memory_bytes, execute_with_retries,
-    materialize_inputs, node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters,
-    set_node_fingerprint, summarize_failure_root_causes, try_cache_read, try_cache_write,
-    write_timeline_export, write_trace, CacheProof, DependencyCounter, EffectSet, EventRecord,
-    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult,
-    NodeStatus, ReadyQueue, ReplayNodeAction, RunAttempt, RunId, RunMetrics, RunSnapshot, Runtime,
+    category_from_runtime_event_name, current_process_memory_bytes, node_fingerprint_from_ctx,
+    node_fingerprint_with_inputs, registered_adapters, sacred_execution, set_node_fingerprint,
+    summarize_failure_root_causes, write_timeline_export, CacheProof, EffectSet, EventRecord,
+    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodeResult, NodeStatus,
+    ReplayNodeAction, RunAttempt, RunId, RunMetrics, RunSnapshot, Runtime,
     RuntimeConfig, RuntimeError, SchedulerEventHook, SchedulerMetrics, TimelineEntry, TimelineExport,
 };
 use bijux_dag_artifacts::{
@@ -220,8 +219,8 @@ pub fn execute(
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
     let dep_map = plan.dep_map.clone();
-    let mut dependency_counter = DependencyCounter::from_plan(&plan);
-    let mut ready_queue = ReadyQueue::from_indegree(dependency_counter.indegree_map());
+    let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
+    let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
@@ -404,12 +403,16 @@ pub fn execute(
 
             let adapter_id = adapter.id();
             let adapter_schema = adapter.produces_outputs_schema_version();
-            let inputs_index =
-                materialize_inputs(&ctx, graph, node_id, options.materialize_inputs)?;
+            let inputs_index = sacred_execution::run_materialize_inputs(
+                &ctx,
+                graph,
+                node_id,
+                options.materialize_inputs,
+            )?;
             let base_fp = base_fps.get(&node.id).cloned().unwrap_or_default();
             let node_fp = node_fingerprint_with_inputs(&base_fp, &inputs_index)?;
             set_node_fingerprint(&ctx, &node.id, node_fp.clone());
-            let cache_read = try_cache_read(
+            let cache_read = sacred_execution::run_cache_lookup(
                 &options,
                 &node,
                 &node_fp,
@@ -474,7 +477,7 @@ pub fn execute(
                 .ok()
                 .and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
-            write_trace(
+            sacred_execution::run_write_trace(
                 &ctx,
                 graph,
                 node_id,
@@ -581,6 +584,7 @@ pub fn execute(
         }
 
         for (node_id, node, cache_proof) in &cached {
+            sacred_execution::guard_terminal_node_status(&NodeStatus::Cached)?;
             status_map.insert(node_id.clone(), NodeStatus::Cached);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
@@ -589,7 +593,7 @@ pub fn execute(
                 .ok()
                 .and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
-            write_trace(
+            sacred_execution::run_write_trace(
                 &ctx,
                 graph,
                 node_id,
@@ -629,7 +633,7 @@ pub fn execute(
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
-            try_cache_write(
+            sacred_execution::run_cache_write(
                 &options,
                 node,
                 &node_fp,
@@ -661,7 +665,7 @@ pub fn execute(
                 node.clone(),
                 std::thread::spawn(move || {
                     let started = ctx_clone.clock.now_unix_ms();
-                    let result = execute_with_retries(
+                    let result = sacred_execution::run_retry_logic(
                         adapter.as_ref(),
                         &node_for_thread,
                         &params_for_thread,
@@ -690,6 +694,7 @@ pub fn execute(
         for (node_id, node, started, finished, res) in results {
             match res {
                 Ok(result) => {
+                    sacred_execution::guard_terminal_node_status(&result.status)?;
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     let adapter_hash = runtime
@@ -748,7 +753,7 @@ pub fn execute(
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": node_id,
                     }));
-                    write_trace(
+                    sacred_execution::run_write_trace(
                         &ctx,
                         graph,
                         &node_id,
@@ -803,7 +808,7 @@ pub fn execute(
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
-                    try_cache_write(
+                    sacred_execution::run_cache_write(
                         &options,
                         &node,
                         &node_fp,
@@ -836,6 +841,7 @@ pub fn execute(
                     });
                 }
                 Err(err) => {
+                    sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     status_map.insert(node_id.clone(), NodeStatus::Failed);
@@ -844,7 +850,7 @@ pub fn execute(
                         .adapter_for_kind(&node.kind)
                         .ok()
                         .and_then(|a| a.binary_hash());
-                    write_trace(
+                    sacred_execution::run_write_trace(
                         &ctx,
                         graph,
                         &node_id,
@@ -935,7 +941,7 @@ pub fn execute(
                 let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                 let aschema = runtime.adapter_schema_for_kind(&node.kind);
                 let started = ctx.clock.now_unix_ms();
-                write_trace(
+                sacred_execution::run_write_trace(
                     &ctx,
                     graph,
                     &node.id,
@@ -979,7 +985,7 @@ pub fn execute(
         manifest.status = "failed".to_string();
     }
     manifest.finished_unix_ms = finished_unix_ms;
-    manifest.node_counts = count_nodes(&status_map);
+    manifest.node_counts = sacred_execution::count_terminal_nodes(&status_map);
     let trace_statuses: Vec<NodeStatus> = status_map.values().cloned().collect();
     let invariant_counts = crate::invariants::RunNodeCounts {
         success: manifest.node_counts.success,
