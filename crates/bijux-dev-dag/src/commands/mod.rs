@@ -2183,28 +2183,68 @@ fn run_release_compatibility_matrix() -> Result<(), String> {
 
 fn run_post_release_verify(binary: Option<&Path>) -> Result<(), String> {
     let root = repo_root()?;
-    let script = root.join("tests/post_release/minimal_workflow.sh");
-    if !script.exists() {
-        return Err("missing tests/post_release/minimal_workflow.sh".to_string());
-    }
-    match binary {
-        Some(bin) => {
-            let status = Command::new("env")
-                .arg(format!("BIJUX_RELEASE_BINARY={}", bin.display()))
-                .arg("bash")
-                .arg(&script)
-                .status()
-                .map_err(|err| err.to_string())?;
-            if status.success() { Ok(()) } else { Err("post-release verification failed".to_string()) }
-        }
-        None => run_status("bash", &[script.to_string_lossy().as_ref()]),
-    }
+    let tmp_dir = tempfile::tempdir().map_err(|err| err.to_string())?;
+    let dag_dir = tmp_dir.path();
+    let runs_dir = dag_dir.join("runs");
+    let bin_path = binary
+        .map(|p| {
+            if p.is_absolute() {
+                p.to_path_buf()
+            } else {
+                root.join(p)
+            }
+        })
+        .unwrap_or_else(|| root.join("target/debug/bijux"));
+    let bin = bin_path
+        .to_str()
+        .ok_or_else(|| "non-utf8 release binary path".to_string())?;
+
+    run_with_root(
+        &root,
+        bin,
+        &["dag", "init", "--dir", dag_dir.to_string_lossy().as_ref()],
+    )?;
+    run_with_root(
+        &root,
+        bin,
+        &[
+            "dag",
+            "validate",
+            dag_dir.join("dag.json").to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_with_root(
+        &root,
+        bin,
+        &[
+            "dag",
+            "run",
+            dag_dir.join("dag.json").to_string_lossy().as_ref(),
+            "--runs-dir",
+            runs_dir.to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_with_root(
+        &root,
+        bin,
+        &["dag", "status", runs_dir.to_string_lossy().as_ref()],
+    )?;
+    Ok(())
 }
 
 fn run_release_reproducibility_check(tag: &str) -> Result<(), String> {
     let root = repo_root()?;
-    let script = root.join("scripts/release/verify_tag_reproducibility.sh");
-    run_status("bash", &[script.to_string_lossy().as_ref(), tag])
+    let current_sha = command_stdout(&root, "git", &["rev-parse", "HEAD"])?;
+    let tag_sha = command_stdout(&root, "git", &["rev-list", "-n", "1", tag])?;
+    if current_sha.trim() != tag_sha.trim() {
+        return Err(format!(
+            "reproducibility check failed: HEAD ({}) != tag ({})",
+            current_sha.trim(),
+            tag_sha.trim()
+        ));
+    }
+    println!("reproducibility check passed: {} -> {}", tag, tag_sha.trim());
+    Ok(())
 }
 
 fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
@@ -4064,17 +4104,49 @@ fn run_test_policy_guard() -> Result<(), String> {
 
 fn run_e2e_matrix() -> Result<(), String> {
     let root = repo_root()?;
-    let script = root.join("tests/e2e/run_matrix.sh");
-    if !script.exists() {
-        return Err("missing tests/e2e/run_matrix.sh".to_string());
-    }
     run_with_root(
         &root,
-        "bash",
-        &[script
-            .to_str()
-            .ok_or_else(|| "non-utf8 e2e matrix script path".to_string())?],
+        "cargo",
+        &[
+            "test",
+            "-p",
+            "bijux-dag-app",
+            "--test",
+            "e2e_integration_scenarios",
+        ],
     )
+    .and_then(|_| {
+        run_with_root(
+            &root,
+            "cargo",
+            &[
+                "run",
+                "-p",
+                "bijux-dag-cli",
+                "--",
+                "dag",
+                "validate",
+                "examples/hello.dag.json",
+            ],
+        )
+    })
+}
+
+fn command_stdout(root: &Path, bin: &str, args: &[&str]) -> Result<String, String> {
+    let output = Command::new(bin)
+        .current_dir(root)
+        .args(args)
+        .output()
+        .map_err(|err| format!("failed to execute `{bin}`: {err}"))?;
+    if output.status.success() {
+        String::from_utf8(output.stdout).map_err(|err| err.to_string())
+    } else {
+        Err(format!(
+            "command `{bin} {}` failed with status {}",
+            args.join(" "),
+            output.status
+        ))
+    }
 }
 
 #[derive(Debug, Deserialize)]
