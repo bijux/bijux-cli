@@ -11,11 +11,15 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod authoring_evidence;
 mod evidence_registry;
 mod model;
 mod reporting;
 mod suite_dispatch;
 
+use authoring_evidence::{
+    run_authoring_coverage_report, run_show_effective_all_authoring, run_validate_all_authoring,
+};
 use evidence_registry::{
     run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
     run_evidence_registry_orphans, run_evidence_registry_rebuild, run_evidence_registry_verify,
@@ -297,6 +301,20 @@ enum RepoCommand {
     EvidenceLedger,
     /// Validate evidence metadata completeness and path governance
     EvidenceValidate,
+    /// Validate all authoring evidence assets and policy semantics
+    ValidateAllAuthoring,
+    /// Print effective authoring metadata payload for all assets
+    ShowEffectiveAllAuthoring,
+    /// Generate authoring coverage and unused-asset reports
+    AuthoringCoverageReport {
+        #[arg(
+            long,
+            default_value = "evidence/reports/authoring_coverage_by_docs_and_commands.md"
+        )]
+        out: PathBuf,
+        #[arg(long, default_value = "evidence/reports/authoring_unused_assets.md")]
+        unused_out: PathBuf,
+    },
     /// Normalize evidence ledger ordering and representation
     EvidenceLedgerNormalize {
         #[arg(long, default_value_t = false)]
@@ -1777,6 +1795,27 @@ fn run(cli: Cli) -> Result<(), String> {
                 CommandEffect::Validation,
                 json!({}),
                 || run_evidence_metadata_validate(),
+            ),
+            RepoCommand::ValidateAllAuthoring => run_command_reported(
+                &context,
+                "repo.validate-all-authoring",
+                CommandEffect::Validation,
+                json!({}),
+                || run_validate_all_authoring(),
+            ),
+            RepoCommand::ShowEffectiveAllAuthoring => run_command_reported(
+                &context,
+                "repo.show-effective-all-authoring",
+                CommandEffect::Validation,
+                json!({}),
+                || run_show_effective_all_authoring(),
+            ),
+            RepoCommand::AuthoringCoverageReport { out, unused_out } => run_command_reported(
+                &context,
+                "repo.authoring-coverage-report",
+                CommandEffect::ReadWrite,
+                json!({ "out": out, "unused_out": unused_out }),
+                || run_authoring_coverage_report(&out, &unused_out),
             ),
             RepoCommand::EvidenceLedgerNormalize { check } => run_command_reported(
                 &context,
@@ -5285,7 +5324,8 @@ fn run_evidence_authoring_verify() -> Result<(), String> {
             "evidence/authoring/patterns",
             "evidence/authoring/negative",
         ],
-    )
+    )?;
+    run_validate_all_authoring()
 }
 
 fn run_evidence_battle_verify() -> Result<(), String> {
