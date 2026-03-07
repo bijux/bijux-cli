@@ -41,7 +41,7 @@ use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{
-    adapter_registry_dump, registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeConfig, Selector, SelectorSet,
+    adapter_registry_dump, build_plan, registered_adapters, CacheMode, MaterializeMode, Runtime, RuntimeConfig, Selector, SelectorSet,
 };
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
@@ -373,6 +373,38 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        Commands::GraphLint { dag, strict } => {
+            let input = read_file(dag)?;
+            let graph = parse_graph(&input)?;
+            let lint = lint_graph(&graph);
+            let has_warnings = !lint.is_empty();
+            if cli.json {
+                let diagnostics: Vec<Value> = lint
+                    .iter()
+                    .map(|d| serde_json::to_value(d).unwrap())
+                    .collect();
+                let code = if *strict && has_warnings {
+                    ExitCode::from(2)
+                } else {
+                    ExitCode::SUCCESS
+                };
+                return emit_json(
+                    &cli,
+                    "dag.graph-lint",
+                    !(*strict && has_warnings),
+                    json!({}),
+                    diagnostics,
+                    code,
+                );
+            }
+            for warn in &lint {
+                println!("WARN {} {} {}", warn.code, warn.path, warn.message);
+            }
+            if *strict && has_warnings {
+                return Err(ExitCode::from(2));
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::Fingerprint { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -389,6 +421,42 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             } else {
                 println!("{}", fp);
             }
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::ShowEffectiveGraph { dag } => {
+            let input = read_file(dag)?;
+            let graph = parse_graph(&input)?;
+            let canonical = graph.canonicalize();
+            let payload = serde_json::to_value(&canonical).map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.show-effective-graph",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        Commands::ShowEffectivePlan { dag } => {
+            let input = read_file(dag)?;
+            let graph = parse_graph(&input)?;
+            let plan = build_plan(&graph).map_err(|_| ExitCode::from(2))?;
+            let payload = serde_json::to_value(&plan).map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.show-effective-plan",
+                    true,
+                    payload,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
         Commands::Graph { dag, format } => {

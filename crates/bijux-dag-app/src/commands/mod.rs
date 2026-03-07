@@ -35,7 +35,19 @@ pub(crate) enum Commands {
         #[arg(long)]
         strict: bool,
     },
+    #[command(name = "graph-lint")]
+    GraphLint {
+        dag: PathBuf,
+        #[arg(long)]
+        strict: bool,
+    },
     Fingerprint {
+        dag: PathBuf,
+    },
+    ShowEffectiveGraph {
+        dag: PathBuf,
+    },
+    ShowEffectivePlan {
         dag: PathBuf,
     },
     Run {

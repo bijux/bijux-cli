@@ -6,6 +6,7 @@ doctor
 export
 fingerprint
 graph
+graph-lint
 import
 init
 lint
@@ -14,6 +15,8 @@ node
 replay
 run
 runs
+show-effective-graph
+show-effective-plan
 status
 validate
 verify
