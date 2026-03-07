@@ -51,6 +51,7 @@ golden: ## Run runtime contract checks
 
 tests-all: ## Run all control-plane test suites
 	$(call run_or_fail,Run all test suites,$(DEV_TOOL) tests run)
+	$(call run_or_fail,Run battle evidence verification,$(DEV_TOOL) verify evidence-battle)
 
 contract-all: ## Run all contract suites with evidence foundation verification
 	$(call run_or_fail,Run all contract suites,$(DEV_TOOL) contracts run)
