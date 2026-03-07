@@ -255,5 +255,21 @@
       "tp_replay_equivalence",
       "tp_operator_observability"
     ]
-  }
+  },
+  "release_top_trust_properties": [
+    "tp_deterministic_scheduling",
+    "tp_failure_propagation",
+    "tp_replay_equivalence",
+    "tp_cache_integrity",
+    "tp_artifact_integrity",
+    "tp_policy_enforcement",
+    "tp_operator_observability",
+    "tp_import_export_compatibility",
+    "tp_state_machine_legality",
+    "tp_timeout_retry_accounting",
+    "tp_secret_redaction",
+    "tp_run_dir_resilience",
+    "tp_plan_truth",
+    "tp_config_policy_determinism"
+  ]
 }
