@@ -27,8 +27,26 @@ fn read_json(path: &Path) -> Result<Value, std::io::Error> {
     Ok(serde_json::from_str(&payload).unwrap_or(Value::Null))
 }
 
+fn inspect_integrity_state(run_dir: &Path, manifest: &Value) -> &'static str {
+    let required = ["manifest.json", "snapshot.json", "outputs.index.json"];
+    if required.iter().any(|rel| !run_dir.join(rel).exists()) {
+        return "incomplete";
+    }
+    if manifest.is_null() {
+        return "corrupt";
+    }
+    let supported = ["run-dir/v0.1", "run/v0.1"];
+    if let Some(version) = manifest.get("run_dir_format").and_then(Value::as_str)
+        && !supported.contains(&version)
+    {
+        return "unsupported";
+    }
+    "healthy"
+}
+
 pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     let manifest = read_json(&run_dir.join("manifest.json"))?;
+    let integrity_state = inspect_integrity_state(run_dir, &manifest);
     let traces = read_node_traces(run_dir)?;
     let (retry_total, failed_nodes, cache_hits) = traces.iter().fold(
         (0usize, Vec::<String>::new(), 0usize),
@@ -60,7 +78,8 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
         "retry_count": retry_total,
         "cache_hits": cache_hits,
         "artifact_count": artifact_count,
-        "failed_nodes": failed_nodes
+        "failed_nodes": failed_nodes,
+        "integrity_state": integrity_state
     }))
 }
 
@@ -120,11 +139,23 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
         let start = trace.get("started_unix_ms").cloned().unwrap_or(Value::Null);
         let finish = trace.get("finished_unix_ms").cloned().unwrap_or(Value::Null);
         let status = trace.get("status").cloned().unwrap_or(Value::Null);
+        let attempt = trace.get("attempt").and_then(Value::as_u64).unwrap_or(1);
+        let cache_hit = trace.get("cache_hit").and_then(Value::as_bool).unwrap_or(false);
+        let event_kind = if cache_hit {
+            "cache_hit"
+        } else if attempt > 1 {
+            "retry"
+        } else {
+            "execution"
+        };
         events.push(json!({
             "node_id": node_id,
             "started_unix_ms": start,
             "finished_unix_ms": finish,
-            "status": status
+            "status": status,
+            "attempt": attempt,
+            "cache_hit": cache_hit,
+            "event_kind": event_kind
         }));
     }
     events.sort_by_key(|e| e.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0));
@@ -297,12 +328,23 @@ pub fn runs_flakes(root: &Path) -> Result<Value, std::io::Error> {
 
 pub fn format_inspect_human(summary: &Value) -> String {
     format!(
-        "run_id: {}\nstatus: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
+        "run_id: {}\nstatus: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
         summary.get("run_id").unwrap_or(&Value::Null),
         summary.get("status").unwrap_or(&Value::Null),
+        summary.get("integrity_state").unwrap_or(&Value::Null),
         summary.get("retry_count").unwrap_or(&Value::Null),
         summary.get("cache_hits").unwrap_or(&Value::Null),
         summary.get("artifact_count").unwrap_or(&Value::Null),
+    )
+}
+
+pub fn format_show_human(summary: &Value) -> String {
+    format!(
+        "run_id: {}\nstatus: {}\nintegrity_state: {}\ntiming_ms: {}",
+        summary.get("run_id").unwrap_or(&Value::Null),
+        summary.get("status").unwrap_or(&Value::Null),
+        summary.get("integrity_state").unwrap_or(&Value::Null),
+        summary.get("timing_ms").unwrap_or(&Value::Null),
     )
 }
 

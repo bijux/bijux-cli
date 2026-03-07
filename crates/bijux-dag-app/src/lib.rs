@@ -32,8 +32,9 @@ pub use config_surface::{
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
 pub use run_views::{
-    doctor_run, explain_failure, format_inspect_human, inspect_summary, list_runs, resolve_run_dir,
-    run_timeline, run_tree, runs_compare, runs_failures, runs_flakes, runs_summary, runs_trend,
+    doctor_run, explain_failure, format_inspect_human, format_show_human, inspect_summary,
+    list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare, runs_failures, runs_flakes,
+    runs_summary, runs_trend,
 };
 
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -586,7 +587,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 if cli.json {
                     return emit_json(&cli, "dag.runs.show", true, summary, Vec::new(), ExitCode::SUCCESS);
                 }
-                println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+                println!("{}", format_show_human(&summary));
                 Ok(ExitCode::SUCCESS)
             }
             RunsCommands::Inspect { run_id, root } => {
