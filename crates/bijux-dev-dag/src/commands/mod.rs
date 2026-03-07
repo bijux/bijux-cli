@@ -168,6 +168,8 @@ enum CommandLine {
     InvariantsReport,
     /// Summarize committed comparison evidence surfaces
     ComparisonEvidenceReport,
+    /// Verify release artifact command surfaces and machine-readable outputs
+    ReleaseArtifactVerify,
     /// Summarize version support by versioned surface
     CompatibilityReport,
     /// Report cache correctness coverage surfaces
@@ -1071,6 +1073,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_comparison_harness_guard(),
     },
     SuiteDef {
+        id: "adoption-surfaces",
+        description: "adoption docs capabilities output and release verification alignment",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_adoption_surfaces_guard(),
+    },
+    SuiteDef {
         id: "multi-run-analytics",
         description: "multi-run analytics contracts commands schemas and tests alignment",
         domain: "governance",
@@ -1620,6 +1631,13 @@ fn run(cli: Cli) -> Result<(), String> {
             CommandEffect::Validation,
             json!({}),
             || run_comparison_evidence_report(),
+        ),
+        CommandLine::ReleaseArtifactVerify => run_command_reported(
+            &context,
+            "release-artifact-verify",
+            CommandEffect::Validation,
+            json!({}),
+            || run_release_artifact_verification_suite(),
         ),
         CommandLine::CompatibilityReport => run_command_reported(
             &context,
@@ -5649,6 +5667,76 @@ fn run_comparison_evidence_report() -> Result<(), String> {
         "{}",
         serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?
     );
+    Ok(())
+}
+
+fn run_adoption_surfaces_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "docs/spec/ADOPTION_SURFACES.md",
+        "docs/user/INSTALLATION.md",
+        "docs/user/CI_INTEGRATION.md",
+        "docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md",
+        "docs/reference/SUPPORT_MATRIX.md",
+        "docs/spec/RELEASE_BINARY_VERIFICATION.md",
+        "docs/user/TRUST_BOUNDARIES.md",
+        "tests/integration_fixtures/minimal_consumer/dag.json",
+        "tests/integration_fixtures/minimal_consumer/README.md",
+    ];
+    let mut missing = Vec::new();
+    for rel in required {
+        if !root.join(rel).exists() {
+            missing.push(rel.to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "adoption surfaces required docs/fixtures missing: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let commands_src =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
+    if !commands_src.contains("Capabilities") {
+        return Err("dag capabilities command is required for machine-readable support summary".to_string());
+    }
+
+    let quickstart = fs::read_to_string(root.join("docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md"))
+        .map_err(|err| err.to_string())?;
+    for forbidden in ["kubernetes", "hpc", "production-grade remote"] {
+        if quickstart.to_ascii_lowercase().contains(forbidden) {
+            return Err(format!(
+                "quickstart references unsupported surface `{}` as first-class",
+                forbidden
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn run_release_artifact_verification_suite() -> Result<(), String> {
+    let root = repo_root()?;
+    let commands_src =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/commands/mod.rs")).map_err(|err| err.to_string())?;
+    for command in ["Version", "Capabilities", "Runs"] {
+        if !commands_src.contains(command) {
+            return Err(format!(
+                "release artifact verification requires `{}` command surface",
+                command
+            ));
+        }
+    }
+    let policy = fs::read_to_string(root.join("docs/spec/RELEASE_BINARY_VERIFICATION.md"))
+        .map_err(|err| err.to_string())?;
+    for token in ["dag version --json", "dag capabilities --json"] {
+        if !policy.contains(token) {
+            return Err(format!(
+                "release binary verification doc missing required check `{}`",
+                token
+            ));
+        }
+    }
     Ok(())
 }
 
