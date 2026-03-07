@@ -2,7 +2,7 @@
 
 ## Summary
 
-- Total `use ... as _;` imports: 1731
+- Total `use ... as _;` imports: 1736
 - Non-test/non-bench imports: 36
 - Noise removals in this pass: 0 (all current uses are classified as dependency-touch or target-root exceptions)
 
@@ -15,11 +15,12 @@
 | bijux-dag-cli | 12 |
 | bijux-dag-core | 106 |
 | bijux-dag-runtime | 858 |
+| bijux-dag-testkit | 5 |
 | bijux-dev-dag | 389 |
 
 ## Classification
 
-- Necessary dependency-touch imports in tests and benches: 1695
+- Necessary dependency-touch imports in tests and benches: 1700
 - Necessary dependency-touch imports in crate root entrypoints: 36
 - Necessary trait reachability imports in internal modules: 0
 - Noise imports: 0
