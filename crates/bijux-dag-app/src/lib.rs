@@ -12,8 +12,6 @@ mod config_resolution;
 mod config_surface;
 #[path = "replay/diff.rs"]
 mod diff;
-#[path = "commands/dispatch.rs"]
-mod dispatch;
 #[path = "inspect/doctor_cmd.rs"]
 mod doctor_cmd;
 mod explain;
