@@ -1,0 +1,1 @@
+{"scenario":"policy_violation_workflow","graph":"diamond","nodes":14,"focus":["policy_denial","safe_skip"],"expectations":{"terminal":"failed","policy_violations_min":1}}

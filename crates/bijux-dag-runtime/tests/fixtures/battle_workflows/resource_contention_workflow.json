@@ -1,0 +1,1 @@
+{"scenario":"resource_contention_workflow","graph":"fanout_join","nodes":36,"focus":["resource_queues","admission_control"],"expectations":{"terminal":"success","queue_backpressure_observed":true}}
