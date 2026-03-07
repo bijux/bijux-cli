@@ -25,6 +25,8 @@ pub enum ArtifactError {
     Io(#[from] io::Error),
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("path violation: {0}")]
+    PathViolation(String),
 }
 
 #[derive(Debug, Clone)]
@@ -157,6 +159,11 @@ pub fn write_outputs_index(
 ) -> Result<(), ArtifactError> {
     let mut files = Vec::new();
     for rel in output_paths {
+        if !paths::is_normalized_relative_path(rel) {
+            return Err(ArtifactError::PathViolation(format!(
+                "output path must be normalized relative path: {rel}"
+            )));
+        }
         let path = dir.as_ref().join(rel);
         if !path.is_file() {
             continue;

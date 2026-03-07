@@ -458,6 +458,16 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 if explain {
                     println!("explain: graph fingerprint change implies cache invalidation");
                     println!("explain: node fingerprint changes indicate recomputation scope");
+                    println!(
+                        "replay_equivalent: {}",
+                        diff.replay_equivalence.equivalent
+                    );
+                    if !diff.replay_equivalence.reasons.is_empty() {
+                        println!(
+                            "replay_difference_reasons: {:?}",
+                            diff.replay_equivalence.reasons
+                        );
+                    }
                 }
             }
             Ok(ExitCode::SUCCESS)
@@ -725,8 +735,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Verify { run_dir } => {
-            let report = verify_run(run_dir)?;
+        Commands::Verify { run_dir, deep } => {
+            let report = verify_run(run_dir, *deep)?;
             let ok = report
                 .get("status")
                 .and_then(|v| v.as_str())
@@ -1473,7 +1483,7 @@ fn check_engine(bin: &str) -> serde_json::Value {
     }
 }
 
-fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
+fn verify_run(run_dir: &Path, deep: bool) -> Result<serde_json::Value, ExitCode> {
     let mut errors = Vec::new();
     let manifest_path = run_dir.join("manifest.json");
     let manifest_data = fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?;
@@ -1500,12 +1510,27 @@ fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
     }
 
     let outputs_index_path = run_dir.join("outputs").join("index.json");
+    let mut outputs_count = 0usize;
     if !outputs_index_path.exists() {
         errors.push("missing outputs/index.json".to_string());
     } else {
         let data = fs::read_to_string(&outputs_index_path).map_err(|_| ExitCode::from(3))?;
         let index: RunOutputsIndex = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+        outputs_count = index.files.len();
+        if deep {
+            let mut sorted = index.files.clone();
+            sorted.sort_by(|a, b| a.path.cmp(&b.path));
+            if sorted != index.files {
+                errors.push("outputs/index.json is not canonically ordered".to_string());
+            }
+        }
         for file in index.files {
+            if deep && !bijux_dag_artifacts::paths::is_normalized_relative_path(&file.path) {
+                errors.push(format!(
+                    "output path is not normalized relative path: {}",
+                    file.path
+                ));
+            }
             let path = run_dir.join(&file.path);
             if !path.exists() {
                 errors.push(format!("missing output file: {}", file.path));
@@ -1538,6 +1563,15 @@ fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
             let data = fs::read_to_string(&trace_path).map_err(|_| ExitCode::from(3))?;
             let val: serde_json::Value =
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+            if deep {
+                let typed_parse: Result<bijux_dag_artifacts::NodeTrace, _> = serde_json::from_str(&data);
+                if typed_parse.is_err() {
+                    errors.push(format!(
+                        "trace schema parse failed: {}",
+                        entry.file_name().to_string_lossy()
+                    ));
+                }
+            }
             for key in [
                 "node_id",
                 "status",
@@ -1556,8 +1590,26 @@ fn verify_run(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
         }
     }
 
+    if deep {
+        if serde_json::from_str::<bijux_dag_artifacts::Manifest>(&manifest_data).is_err() {
+            errors.push("manifest schema parse failed".to_string());
+        }
+        if !outputs_index_path.exists() {
+            errors.push("deep verify requires outputs/index.json".to_string());
+        }
+    }
+
     let status = if errors.is_empty() { "ok" } else { "error" };
-    Ok(json!({ "status": status, "errors": errors }))
+    Ok(json!({
+        "status": status,
+        "mode": if deep { "deep" } else { "standard" },
+        "artifacts_checked": {
+            "manifest": manifest_path.exists(),
+            "outputs_index": outputs_index_path.exists(),
+            "outputs_files": outputs_count
+        },
+        "errors": errors
+    }))
 }
 
 fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {

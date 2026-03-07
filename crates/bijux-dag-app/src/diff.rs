@@ -9,6 +9,7 @@ pub struct RunDiff {
     pub graph_fingerprint: Option<Value>,
     pub nodes: BTreeMap<String, NodeDiff>,
     pub outputs: BTreeMap<String, OutputDiff>,
+    pub replay_equivalence: ReplayEquivalenceReport,
 }
 
 #[derive(Debug, Serialize)]
@@ -24,6 +25,12 @@ pub struct OutputDiff {
     pub added: Vec<String>,
     pub removed: Vec<String>,
     pub changed: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReplayEquivalenceReport {
+    pub equivalent: bool,
+    pub reasons: Vec<String>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -153,11 +160,29 @@ pub fn build_run_diff(
         }
     }
 
+    let mut reasons = Vec::new();
+    if !manifest_diff.is_empty() {
+        reasons.push("manifest fields differ".to_string());
+    }
+    if graph_fingerprint.is_some() {
+        reasons.push("graph fingerprint differs".to_string());
+    }
+    if !node_diff.is_empty() {
+        reasons.push("node status or fingerprint differs".to_string());
+    }
+    if !out_diff.is_empty() {
+        reasons.push("output content differs".to_string());
+    }
+
     RunDiff {
         manifest: manifest_diff,
         graph_fingerprint,
         nodes: node_diff,
         outputs: out_diff,
+        replay_equivalence: ReplayEquivalenceReport {
+            equivalent: reasons.is_empty(),
+            reasons,
+        },
     }
 }
 
@@ -207,6 +232,8 @@ mod tests {
         assert!(diff.graph_fingerprint.is_none());
         assert!(diff.nodes.is_empty());
         assert!(diff.outputs.is_empty());
+        assert!(diff.replay_equivalence.equivalent);
+        assert!(diff.replay_equivalence.reasons.is_empty());
     }
 
     #[test]
@@ -228,5 +255,7 @@ mod tests {
         let d = diff.outputs.get("n").unwrap();
         assert_eq!(d.added, vec!["b.txt"]);
         assert_eq!(d.changed, vec!["a.txt"]);
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(!diff.replay_equivalence.reasons.is_empty());
     }
 }

@@ -138,6 +138,8 @@ pub(crate) enum Commands {
     #[command(name = "verify")]
     Verify {
         run_dir: PathBuf,
+        #[arg(long)]
+        deep: bool,
     },
     Doctor,
     Migrate {

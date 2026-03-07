@@ -1,5 +1,6 @@
 use bijux_dag_artifacts::index::{dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactPackManifest};
 use bijux_dag_artifacts::lineage::{write_lineage_snapshot, ArtifactLineageEdge, ArtifactLineageSnapshot};
+use bijux_dag_artifacts::paths::is_normalized_relative_path;
 use bijux_dag_artifacts::proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
 use bijux_dag_artifacts::schema::{validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode};
 use bijux_dag_artifacts::{write_outputs_index, OutputsIndex};
@@ -104,4 +105,29 @@ fn proof_and_pack_contract_types_serialize() {
         "repair": repair,
     });
     assert!(payload.is_object());
+}
+
+#[test]
+fn output_paths_must_be_relative_and_normalized() {
+    assert!(is_normalized_relative_path("nodes/a/outputs/out.txt"));
+    assert!(!is_normalized_relative_path("../escape.txt"));
+    assert!(!is_normalized_relative_path("/absolute/path.txt"));
+    assert!(!is_normalized_relative_path("nodes\\windows\\style.txt"));
+    assert!(!is_normalized_relative_path("nodes//double//slash.txt"));
+}
+
+#[test]
+fn write_outputs_index_rejects_escaping_paths() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("ok.txt"), b"ok").unwrap();
+    let err = write_outputs_index(
+        dir.path(),
+        "node",
+        "fp",
+        &["ok.txt".to_string(), "../escape.txt".to_string()],
+    )
+    .err()
+    .unwrap();
+    let msg = err.to_string();
+    assert!(msg.contains("path violation"));
 }

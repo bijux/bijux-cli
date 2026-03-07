@@ -23,6 +23,13 @@ Use `bijux-dev-dag` to verify local artifact reproducibility:
 
 This command checks manifest output hashes against on-disk output files.
 
+For full integrity checks of a run directory, use:
+
+- `dag verify <run-dir> --deep`
+
+Deep verification validates canonical output index ordering, normalized relative artifact paths,
+and trace/manifest schema parseability from stored JSON evidence.
+
 ## Lifecycle policy
 
 Artifact retention and cleanup policy is defined in:
