@@ -5027,6 +5027,8 @@ fn run_contract_coverage_report() -> Result<(), String> {
                 && file_name != "EXECUTION_SEMANTICS_CONTRACT.md"
                 && file_name != "SCHEDULER_STATESPACE_CONTRACT.md"
                 && file_name != "DETERMINISTIC_SCHEDULING_CONTRACT.md"
+                && file_name != "CONFIG_PRECEDENCE_CONTRACT.md"
+                && file_name != "OPERATOR_INSPECTION_CONTRACT.md"
             {
                 orphaned.push(format!("unknown contract doc: docs/spec/{file_name}"));
             }
@@ -5766,10 +5768,14 @@ fn run_operator_ux_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/OPERATOR_UX_CONTRACT.md",
+        "docs/spec/OPERATOR_INSPECTION_CONTRACT.md",
         "docs/user/OPERATOR_COMMAND_INDEX.md",
+        "docs/user/OPERATOR_INSPECTION_GUIDE.md",
         "docs/reference/COMMAND_TAXONOMY.md",
         "crates/bijux-dag-app/tests/operator_ux_contract.rs",
+        "tests/e2e/operator/inspection_only.json",
         "configs/schema/operator/run_list.schema.json",
+        "configs/schema/operator/run_show.schema.json",
         "configs/schema/operator/run_inspect.schema.json",
         "configs/schema/operator/run_tree.schema.json",
         "configs/schema/operator/run_timeline.schema.json",
@@ -5803,6 +5809,21 @@ fn run_operator_ux_guard() -> Result<(), String> {
     ] {
         if !index.contains(command) {
             return Err(format!("operator command index missing `{command}`"));
+        }
+    }
+    let tests = fs::read_to_string(root.join("crates/bijux-dag-app/tests/operator_ux_contract.rs"))
+        .map_err(|err| err.to_string())?;
+    for required_test in [
+        "operator_inspection_supports_imported_runs",
+        "operator_inspection_distinguishes_unsupported_runs",
+        "operator_inspection_distinguishes_corrupt_runs",
+        "operator_timing_summary_is_trace_coherent",
+    ] {
+        if !tests.contains(required_test) {
+            return Err(format!(
+                "operator ux test coverage missing required case `{}`",
+                required_test
+            ));
         }
     }
     Ok(())
