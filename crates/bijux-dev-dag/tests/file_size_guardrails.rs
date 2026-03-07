@@ -18,6 +18,8 @@ struct SourceLayoutPolicy {
 #[derive(Debug, Deserialize)]
 struct SourceLayoutGlobal {
     max_rust_source_lines: usize,
+    warning_rust_source_lines: Option<usize>,
+    hard_max_rust_source_lines: Option<usize>,
 }
 
 fn line_count(path: &Path) -> usize {
@@ -34,6 +36,8 @@ fn source_files_stay_under_size_budget() {
     let policy_text = fs::read_to_string(&policy_path).expect("read source layout policy");
     let policy: SourceLayoutPolicy =
         serde_json::from_str(&policy_text).expect("parse source layout policy");
+    let warning_budget = policy.global.warning_rust_source_lines.unwrap_or(9000);
+    let hard_budget = policy.global.hard_max_rust_source_lines.unwrap_or(10000);
 
     let mut violations = Vec::new();
     let mut stack = vec![root.join("crates")];
@@ -54,6 +58,15 @@ fn source_files_stay_under_size_budget() {
                 .to_string_lossy()
                 .replace('\\', "/");
             let count = line_count(&path);
+            if count > warning_budget {
+                eprintln!(
+                    "warning: rust source exceeds warning LOC budget: {rel} has {count} lines (warning {warning_budget})"
+                );
+            }
+            assert!(
+                count <= hard_budget,
+                "{rel} has {count} lines (hard max {hard_budget})"
+            );
             let max_lines = policy
                 .transitional_ceiling
                 .get(&rel)
