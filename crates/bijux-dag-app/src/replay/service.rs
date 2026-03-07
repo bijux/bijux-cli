@@ -143,4 +143,63 @@ mod tests {
             .iter()
             .any(|reason| { reason.contains("graph fingerprint differs") }));
     }
+
+    #[test]
+    fn replay_service_accepts_imported_run_without_local_repo_state() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let imported = tmp.path().join("run-imported");
+        let replay = tmp.path().join("run-replay");
+        fs::create_dir_all(&imported).expect("create imported");
+        fs::create_dir_all(&replay).expect("create replay");
+        write(
+            &imported.join("manifest.json"),
+            r#"{"status":"completed","run_metadata":{"submission_source":"import"}}"#,
+        );
+        write(
+            &replay.join("manifest.json"),
+            r#"{"status":"completed","run_metadata":{"submission_source":"manual"}}"#,
+        );
+        write(
+            &imported.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(
+            &replay.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(diff
+            .replay_equivalence
+            .reasons
+            .iter()
+            .any(|reason| reason.contains("manifest fields differ")));
+    }
+
+    #[test]
+    fn replay_service_supports_older_run_manifest_versions_when_shape_is_compatible() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let old = tmp.path().join("run-old");
+        let current = tmp.path().join("run-current");
+        fs::create_dir_all(&old).expect("create old");
+        fs::create_dir_all(&current).expect("create current");
+        write(
+            &old.join("manifest.json"),
+            r#"{"manifest_version":"run-manifest/v0.1","status":"completed"}"#,
+        );
+        write(
+            &current.join("manifest.json"),
+            r#"{"manifest_version":"run-manifest/v0.1","status":"completed"}"#,
+        );
+        write(
+            &old.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(
+            &current.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        let diff = run_diff_from_dirs(&old, &current).expect("build run diff");
+        assert!(diff.replay_equivalence.equivalent);
+    }
 }

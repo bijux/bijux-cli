@@ -334,4 +334,70 @@ mod tests {
         assert!(diff.replay_equivalence.equivalent);
         assert!(diff.replay_equivalence.reasons.is_empty());
     }
+
+    #[test]
+    fn replay_diff_reports_environment_drift_as_manifest_drift() {
+        let a = json!({"spec":"v","policy":{"deny_env":true}});
+        let b = json!({"spec":"v","policy":{"deny_env":false}});
+        let diff = build_run_diff(
+            a,
+            b,
+            "fp".to_string(),
+            "fp".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(!diff.replay_equivalence.equivalent);
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("manifest_drift"),
+            Some(&1usize)
+        );
+    }
+
+    #[test]
+    fn replay_diff_reports_backend_capability_mismatch_as_manifest_drift() {
+        let a = json!({"spec":"v","adapters":[{"adapter_id":"shell","adapter_version":"1"}]});
+        let b = json!({"spec":"v","adapters":[{"adapter_id":"shell","adapter_version":"2"}]});
+        let diff = build_run_diff(
+            a,
+            b,
+            "fp".to_string(),
+            "fp".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(diff
+            .replay_equivalence
+            .reasons
+            .iter()
+            .any(|r| r.contains("manifest fields differ")));
+    }
+
+    #[test]
+    fn replay_diff_reports_missing_artifacts_as_output_difference() {
+        let mut outputs_a = HashMap::new();
+        let mut outputs_b = HashMap::new();
+        outputs_a.insert("n".to_string(), index(vec![("out.txt", "hash-1")]));
+        outputs_b.insert("n".to_string(), index(vec![]));
+        let diff = build_run_diff(
+            json!({"spec":"v"}),
+            json!({"spec":"v"}),
+            "fp".to_string(),
+            "fp".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &outputs_a,
+            &outputs_b,
+        );
+        assert!(!diff.replay_equivalence.equivalent);
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("artifact_payload"),
+            Some(&1usize)
+        );
+    }
 }
