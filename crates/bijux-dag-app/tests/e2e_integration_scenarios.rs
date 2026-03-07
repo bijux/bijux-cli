@@ -1,3 +1,19 @@
+use bijux_dag_app as _;
+use base64 as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
+use clap as _;
+use flate2 as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tar as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_core::{Effect, Graph};
 use bijux_dag_testkit::{graph_chain, graph_diamond, graph_failure, graph_retry, graph_timeout};
 use serde_json::{json, Value};
@@ -347,12 +363,19 @@ fn e2e_container_and_real_world_orchestration() {
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("create runs");
-    let mut graph = graph_chain();
+    let templates = graph_chain();
+    let const_template = templates.nodes[0].clone();
+    let shell_template = templates.nodes[1].clone();
+    let mut graph = templates;
     graph.nodes.clear();
     graph.edges.clear();
     for idx in 0..20 {
         let id = format!("n{idx}");
-        let mut node = graph_chain().nodes[0].clone();
+        let mut node = if idx == 0 {
+            const_template.clone()
+        } else {
+            shell_template.clone()
+        };
         node.id = id.clone();
         node.kind = if idx == 0 { bijux_dag_core::NodeKind::Const } else { bijux_dag_core::NodeKind::Shell };
         if idx > 0 {

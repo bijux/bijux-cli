@@ -1,3 +1,19 @@
+use bijux_dag_app as _;
+use base64 as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
+use clap as _;
+use flate2 as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tar as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_app::{dag_command, dag_run};
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -53,6 +69,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     assert!(dag_run(&stats).is_ok());
 
     let prune = cmd
+        .clone()
         .try_get_matches_from([
             "dag", "--json", "cache", "prune-simulate", "--cache-dir", tmp.path().to_string_lossy().as_ref()
         ])
@@ -60,6 +77,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     assert!(dag_run(&prune).is_ok());
 
     let diff = cmd
+        .clone()
         .try_get_matches_from([
             "dag",
             "--json",
@@ -76,6 +94,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     assert!(dag_run(&diff).is_ok());
 
     let verify = cmd
+        .clone()
         .try_get_matches_from([
             "dag",
             "--json",
@@ -90,7 +109,9 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
 
 #[test]
 fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
-    let fixture_root = std::path::Path::new("tests/cache/fixtures");
+    let fixture_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("tests/cache/fixtures");
     for rel in [
         "corrupt/missing_meta.json",
         "corrupt/hash_mismatch.json",

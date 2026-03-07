@@ -1,10 +1,11 @@
 adapters
 cache
-capabilities
 canonicalize
+capabilities
 config
 diff
 doctor
+explain
 export
 fingerprint
 graph
