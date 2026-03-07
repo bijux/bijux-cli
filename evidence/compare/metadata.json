@@ -1,18 +1,151 @@
 {
-  "version": "1",
+  "version": "2",
   "owner": "runtime-foundation",
+  "purpose": "Executable scenario equivalence evidence for bijux behavior comparisons. Commentary-only notes are not comparison evidence.",
   "scenarios": {
-    "evidence/compare/scenarios/chain.json": {"target_system": "orchestrators", "scenario_equivalence_note": "linear dependency chain semantics", "limitation_note": "runtime setup differences are excluded"},
-    "evidence/compare/scenarios/diamond.json": {"target_system": "orchestrators", "scenario_equivalence_note": "diamond fanout and join equivalence", "limitation_note": "resource scaling is not compared"},
-    "evidence/compare/scenarios/retry_timeout.json": {"target_system": "orchestrators", "scenario_equivalence_note": "retry and timeout behavior equivalence", "limitation_note": "adapter-specific timeout internals excluded"},
-    "evidence/compare/scenarios/cache_reuse_shape.json": {"target_system": "orchestrators", "scenario_equivalence_note": "cache reuse behavior shape", "limitation_note": "cache backend implementation details excluded"},
-    "evidence/compare/scenarios/replay_equivalence.json": {"target_system": "orchestrators", "scenario_equivalence_note": "replay equivalence and mismatch behavior", "limitation_note": "binary artifact internals excluded"},
-    "evidence/compare/scenarios/failure_propagation.json": {"target_system": "orchestrators", "scenario_equivalence_note": "downstream skip and failure propagation semantics", "limitation_note": "scheduler internals excluded"},
-    "evidence/compare/scenarios/determinism.json": {"target_system": "orchestrators", "scenario_equivalence_note": "deterministic behavior claims", "limitation_note": "environment-level nondeterminism excluded"},
-    "evidence/compare/scenarios/operator_inspectability.json": {"target_system": "orchestrators", "scenario_equivalence_note": "operator explainability signal quality", "limitation_note": "UI ergonomics excluded"},
-    "evidence/compare/scenarios/failure_diagnostics.json": {"target_system": "orchestrators", "scenario_equivalence_note": "failure diagnostics clarity", "limitation_note": "vendor-specific diagnostic taxonomies excluded"},
-    "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json": {"target_system": "orchestrators", "scenario_equivalence_note": "scheduler overhead with tiny tasks", "limitation_note": "hardware variance excluded"},
-    "evidence/compare/scenarios/artifact_inspectability.json": {"target_system": "orchestrators", "scenario_equivalence_note": "artifact inspection and traceability", "limitation_note": "storage backend internals excluded"}
+    "evidence/compare/scenarios/chain.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/runtime/medium_workflow.json",
+      "scenario_equivalence_note": "linear dependency chain semantics",
+      "non_equivalence_limits": [
+        "resource-allocator internals",
+        "cluster-level autoscaling behavior"
+      ],
+      "limitation_note": "runtime setup differences are excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/diamond.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "scenario_equivalence_note": "diamond fanout and join equivalence",
+      "non_equivalence_limits": [
+        "resource scaling economics",
+        "vendor-specific queueing internals"
+      ],
+      "limitation_note": "resource scaling is not compared",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/retry_timeout.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/failure/timeout_error_classification.json",
+      "scenario_equivalence_note": "retry and timeout behavior equivalence",
+      "non_equivalence_limits": [
+        "adapter runtime implementation",
+        "external timeout scheduler implementation"
+      ],
+      "limitation_note": "adapter-specific timeout internals excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/cache_reuse_shape.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/cache/cache_hit_second_run.json",
+      "scenario_equivalence_note": "cache reuse behavior shape",
+      "non_equivalence_limits": [
+        "cache backend implementation",
+        "cache persistence layer format"
+      ],
+      "limitation_note": "cache backend implementation details excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/replay_equivalence.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+      "scenario_equivalence_note": "replay equivalence and mismatch behavior",
+      "non_equivalence_limits": [
+        "binary serialization internals",
+        "artifact storage implementation"
+      ],
+      "limitation_note": "binary artifact internals excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/failure_propagation.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/failure/node_failure_downstream_skipped.json",
+      "scenario_equivalence_note": "downstream skip and failure propagation semantics",
+      "non_equivalence_limits": [
+        "scheduler internal queue policy",
+        "engine-specific failure categorization internals"
+      ],
+      "limitation_note": "scheduler internals excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/determinism.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/happy_path/parse_validate_run_inspect_replay.json",
+      "scenario_equivalence_note": "deterministic behavior claims",
+      "non_equivalence_limits": [
+        "host clock scheduling jitter",
+        "external process nondeterminism"
+      ],
+      "limitation_note": "environment-level nondeterminism excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/operator_inspectability.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/runtime/operator_inspection_workflow.json",
+      "scenario_equivalence_note": "operator explainability signal quality",
+      "non_equivalence_limits": [
+        "web UI usability",
+        "workflow IDE integrations"
+      ],
+      "limitation_note": "UI ergonomics excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/failure_diagnostics.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/runtime/operator_debugging_workflow.json",
+      "scenario_equivalence_note": "failure diagnostics clarity",
+      "non_equivalence_limits": [
+        "vendor-specific diagnostic taxonomies",
+        "language-specific stack trace formats"
+      ],
+      "limitation_note": "vendor-specific diagnostic taxonomies excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json",
+      "scenario_equivalence_note": "scheduler overhead with tiny tasks",
+      "non_equivalence_limits": [
+        "hardware profile differences",
+        "container runtime overhead"
+      ],
+      "limitation_note": "hardware variance excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    },
+    "evidence/compare/scenarios/artifact_inspectability.json": {
+      "target_system": "orchestrators",
+      "scenario_class": "factual",
+      "bijux_evidence_asset": "evidence/battle/workflows/happy_path/diamond_outputs_and_manifest_totals.json",
+      "scenario_equivalence_note": "artifact inspection and traceability",
+      "non_equivalence_limits": [
+        "storage backend layout internals",
+        "non-portable filesystem features"
+      ],
+      "limitation_note": "storage backend internals excluded",
+      "release_blocking": false,
+      "measured_bijux_side": true
+    }
   },
   "baselines": [
     "evidence/compare/baselines/bijux_v1.json"
