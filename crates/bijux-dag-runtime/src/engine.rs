@@ -1083,9 +1083,37 @@ pub fn execute(
             / (options.jobs.max(1) as f64 * total_nodes).max(1.0),
         cache_reuse_ratio: cache_hits / total_nodes,
         artifact_volume_bytes: manifest.outputs.len() as u64,
+        planning_ms: 0,
+        scheduling_wait_ms: 0,
+        execution_ms: finished_unix_ms.saturating_sub(started_unix_ms),
+        trace_write_ms: 0,
+        manifest_finalize_ms: 0,
+        replay_compare_ms: 0,
     };
     let scheduler_metrics = SchedulerMetrics {
         queue_depth: 0,
+        ready_count: 0,
+        running_count: 0,
+        completed_count: (manifest.node_counts.success
+            + manifest.node_counts.failed
+            + manifest.node_counts.skipped
+            + manifest.node_counts.cached) as usize,
+        retry_count: run_log_index
+            .iter()
+            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("node_attempt_started"))
+            .count() as u64,
+        cache_hit_count: run_log_index
+            .iter()
+            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("cache_hit"))
+            .count() as u64,
+        cache_miss_count: run_log_index
+            .iter()
+            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("cache_miss"))
+            .count() as u64,
+        failure_count: run_log_index
+            .iter()
+            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("node_failed"))
+            .count() as u64,
         starvation_count: failure_propagation_records
             .iter()
             .filter(|v| v.get("cause").and_then(|x| x.as_str()) == Some("budget"))

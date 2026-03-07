@@ -28,6 +28,44 @@ pub struct EventRecord {
     pub details: serde_json::Value,
 }
 
+pub const REQUIRED_RUNTIME_EVENT_NAMES: &[&str] = &[
+    "run_started",
+    "node_ready",
+    "node_started",
+    "node_attempt_started",
+    "node_attempt_finished",
+    "node_scheduled",
+    "node_failed",
+    "run_finished",
+];
+
+pub fn required_event_fields_present(event: &EventRecord) -> bool {
+    !event.name.trim().is_empty()
+        && event.unix_ms > 0
+        && event.run_id.as_ref().map(|v| !v.is_empty()).unwrap_or(false)
+}
+
+pub fn validate_required_event_names(events: &[EventRecord]) -> Vec<String> {
+    let mut missing = Vec::new();
+    for name in REQUIRED_RUNTIME_EVENT_NAMES {
+        if !events.iter().any(|event| event.name == *name) {
+            missing.push((*name).to_string());
+        }
+    }
+    missing
+}
+
+pub fn event_names_emitted_once(events: &[EventRecord], names: &[&str]) -> bool {
+    names
+        .iter()
+        .all(|name| events.iter().filter(|event| event.name == *name).count() == 1)
+}
+
+pub fn event_contains_sensitive_material(event: &EventRecord) -> bool {
+    let serialized = event.details.to_string().to_lowercase();
+    serialized.contains("secret") || serialized.contains("token") || serialized.contains("password")
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NodeMetrics {
     pub node_id: String,
@@ -46,11 +84,24 @@ pub struct RunMetrics {
     pub parallelism_utilization: f64,
     pub cache_reuse_ratio: f64,
     pub artifact_volume_bytes: u64,
+    pub planning_ms: u128,
+    pub scheduling_wait_ms: u128,
+    pub execution_ms: u128,
+    pub trace_write_ms: u128,
+    pub manifest_finalize_ms: u128,
+    pub replay_compare_ms: u128,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SchedulerMetrics {
     pub queue_depth: usize,
+    pub ready_count: usize,
+    pub running_count: usize,
+    pub completed_count: usize,
+    pub retry_count: u64,
+    pub cache_hit_count: u64,
+    pub cache_miss_count: u64,
+    pub failure_count: u64,
     pub starvation_count: u64,
     pub dispatch_latency_ms: u128,
     pub concurrency_pressure: f64,

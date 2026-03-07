@@ -326,10 +326,12 @@ pub use ecosystem_productization::{
     StabilityMap, UpgradeBundle, VersionedCompatibilityMatrix,
 };
 pub use observability::{
-    category_from_runtime_event_name, current_process_memory_bytes, summarize_failure_root_causes,
-    write_timeline_export, EventCategory, EventRecord, EventSink, FileEventSink,
-    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
-    SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
+    category_from_runtime_event_name, current_process_memory_bytes, event_contains_sensitive_material,
+    event_names_emitted_once, required_event_fields_present, summarize_failure_root_causes,
+    validate_required_event_names, write_timeline_export, EventCategory, EventRecord, EventSink,
+    FileEventSink, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink,
+    RunMetrics, SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport,
+    TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 pub use operations_governance::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
