@@ -48,4 +48,8 @@ fn suite_run_contract_exposes_advisory_and_why_flags() {
         source.contains("CommandLine::Foundation"),
         "foundation super-suite command should be present"
     );
+    assert!(
+        source.contains("CommandLine::FoundationHardening"),
+        "foundation hardening command should be present"
+    );
 }

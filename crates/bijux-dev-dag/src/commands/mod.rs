@@ -216,6 +216,15 @@ enum CommandLine {
         #[arg(long, default_value_t = false)]
         why: bool,
     },
+    /// Run curated high-trust foundation hardening suites only
+    FoundationHardening {
+        #[arg(long, default_value_t = false)]
+        fail_fast: bool,
+        #[arg(long, default_value_t = false)]
+        advisory: bool,
+        #[arg(long, default_value_t = false)]
+        why: bool,
+    },
     /// Run CLI compatibility command
     Compat,
 }
@@ -2141,6 +2150,21 @@ fn run(cli: Cli) -> Result<(), String> {
                 )
             },
         ),
+        CommandLine::FoundationHardening {
+            fail_fast,
+            advisory,
+            why,
+        } => run_command_reported(
+            &context,
+            "foundation-hardening",
+            CommandEffect::Validation,
+            json!({
+                "fail_fast": fail_fast,
+                "advisory": advisory,
+                "why": why,
+            }),
+            || run_foundation_hardening_suite(&context, fail_fast, advisory, why),
+        ),
         CommandLine::Compat => run_command_reported(
             &context,
             "compat",
@@ -2265,6 +2289,71 @@ fn run_foundation_suite(
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct FoundationHardeningConfig {
+    suite_ids: Vec<String>,
+}
+
+fn run_foundation_hardening_suite(
+    context: &CommandContext,
+    fail_fast: bool,
+    advisory: bool,
+    why: bool,
+) -> Result<(), String> {
+    let root = repo_root()?;
+    let config_path = root.join("configs/suites/foundation_hardening.json");
+    let payload = fs::read_to_string(&config_path).map_err(|err| err.to_string())?;
+    let config: FoundationHardeningConfig =
+        serde_json::from_str(&payload).map_err(|err| err.to_string())?;
+    if config.suite_ids.is_empty() {
+        return Err("foundation hardening suite list must not be empty".to_string());
+    }
+
+    let mut failed = Vec::new();
+    for suite_id in &config.suite_ids {
+        let suite = REPO_SUITES
+            .iter()
+            .chain(CONTRACT_SUITES.iter())
+            .chain(TEST_SUITES.iter())
+            .chain(CHECK_SUITES.iter())
+            .chain(DOC_SUITES.iter())
+            .find(|suite| suite.id == suite_id)
+            .ok_or_else(|| format!("unknown foundation hardening suite id: {suite_id}"))?;
+
+        let single = [SuiteDef {
+            id: suite.id,
+            description: suite.description,
+            domain: suite.domain,
+            slow: suite.slow,
+            internal: suite.internal,
+            effect: suite.effect,
+            run: suite.run,
+        }];
+        if let Err(err) = run_suite_group(
+            context,
+            "foundation-hardening",
+            &single,
+            &None,
+            false,
+            true,
+            true,
+            advisory,
+            why,
+        ) {
+            failed.push(format!("{suite_id}: {err}"));
+            if fail_fast {
+                break;
+            }
+        }
+    }
+
+    if failed.is_empty() || advisory {
+        Ok(())
+    } else {
+        Err(format!("foundation hardening failed: {}", failed.join(", ")))
+    }
+}
+
 fn run_schedule_validate(file: &Path) -> Result<(), String> {
     let root = repo_root()?;
     let path = root.join(file);
@@ -2317,8 +2406,10 @@ fn run_release_verify() -> Result<(), String> {
 
 fn run_release_readiness_report() -> Result<(), String> {
     let root = repo_root()?;
+    let release_evidence = check_release_evidence_ready(&root)?;
     let report = json!({
         "timestamp_unix_ms": now_millis(),
+        "release_evidence": release_evidence,
         "contract_coverage": check_contract_coverage_ready(&root),
         "schema_coverage": check_schema_coverage_ready(&root),
         "docs_coverage": check_docs_coverage_ready(&root),
@@ -2342,6 +2433,33 @@ fn run_release_readiness_report() -> Result<(), String> {
         serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
     );
     Ok(())
+}
+
+fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
+    let config_payload =
+        fs::read_to_string(root.join("configs/suites/foundation_hardening.json"))
+            .map_err(|err| err.to_string())?;
+    let config: FoundationHardeningConfig =
+        serde_json::from_str(&config_payload).map_err(|err| err.to_string())?;
+    let required_surfaces = [
+        "docs/reports/foundation/release_evidence_report.md",
+        "docs/reports/foundation/repository_proof_statement.md",
+        "docs/reports/foundation/replay_hardening_report.md",
+        "docs/reports/foundation/cache_hardening_report.md",
+        "docs/reports/foundation/run_dir_import_export_hardening_report.md",
+        "docs/reports/foundation/config_policy_determinism_report.md",
+    ];
+    let missing: Vec<String> = required_surfaces
+        .iter()
+        .filter(|path| !root.join(path).exists())
+        .map(|path| path.to_string())
+        .collect();
+    Ok(json!({
+        "ok": missing.is_empty(),
+        "rule": "release readiness depends on battle, replay, cache, run verification, and config/policy evidence; raw test totals are insufficient",
+        "foundation_hardening_suite_ids": config.suite_ids,
+        "missing": missing,
+    }))
 }
 
 fn run_release_compatibility_matrix() -> Result<(), String> {
@@ -8258,6 +8376,8 @@ fn run_foundation_review_guard() -> Result<(), String> {
         "docs/reports/foundation/artifact_contract_report.md",
         "docs/reports/foundation/performance_evidence_report.md",
         "docs/reports/foundation/test_trust_coverage_report.md",
+        "docs/reports/foundation/release_evidence_report.md",
+        "docs/reports/foundation/repository_proof_statement.md",
         "docs/reports/foundation/cleanup_backlog.md",
         "docs/reports/foundation/subsystem_strength_assessment.md",
         "docs/reports/foundation/foundation_final_report.md",
@@ -8280,6 +8400,7 @@ fn run_control_plane_surfaces_guard() -> Result<(), String> {
         "StorageHealth",
         "RunDirAudit",
         "Ci",
+        "FoundationHardening",
         "ControlCommand::Run",
         "ReleaseCommand::Verify",
     ] {
