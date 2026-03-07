@@ -13,6 +13,7 @@ construction spread across runtime modules.
 | runtime run writes | runtime `engine` + `ArtifactStore` |
 | cache entry paths | runtime `CacheStore` |
 | export/import bundle paths | app/export surfaces (outside runtime execution loop) |
+| per-file run-dir ownership map | `docs/spec/RUN_DIR_OWNERSHIP.md` |
 
 ## Rules
 
