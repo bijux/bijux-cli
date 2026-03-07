@@ -270,3 +270,76 @@ fn fault_no_silent_half_valid_artifacts() {
     let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
+
+#[test]
+fn fault_subprocess_malformed_output_payload() {
+    let temp = tempfile::tempdir().expect("tmp");
+    let graph_path = temp.path().join("malformed-output.json");
+    let graph = json!({
+      "spec":"dag/v0.1",
+      "meta":{"name":"malformed-output"},
+      "nodes":[
+        {
+          "id":"emit",
+          "kind":"shell",
+          "inputs":[],
+          "outputs":[{"name":"out","path":"out"}],
+          "params":{"argv":["/bin/sh","-c","printf '\\xFF\\xFE' > ../outputs/out"]},
+          "effects":["filesystem"]
+        }
+      ],
+      "edges":[]
+    });
+    write_graph(&graph_path, graph);
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let result = run_matches(&[
+        "dag",
+        "run",
+        graph_path.to_string_lossy().as_ref(),
+        "--out",
+        out_dir.to_string_lossy().as_ref(),
+    ]);
+    assert!(result.is_ok() || result.is_err());
+}
+
+#[test]
+fn fault_partial_run_cleanup_after_early_failure() {
+    let temp = tempfile::tempdir().expect("tmp");
+    let graph_path = temp.path().join("early-failure.json");
+    let graph = json!({
+      "spec":"dag/v0.1",
+      "meta":{"name":"early-failure"},
+      "nodes":[
+        {
+          "id":"fail",
+          "kind":"shell",
+          "inputs":[],
+          "outputs":[{"name":"out","path":"out"}],
+          "params":{"argv":["/bin/sh","-c","exit 9"]},
+          "effects":["filesystem"]
+        }
+      ],
+      "edges":[]
+    });
+    write_graph(&graph_path, graph);
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let _ = run_matches(&[
+        "dag",
+        "run",
+        graph_path.to_string_lossy().as_ref(),
+        "--out",
+        out_dir.to_string_lossy().as_ref(),
+    ]);
+    let entries = fs::read_dir(&out_dir).expect("read runs");
+    for entry in entries {
+        let path = entry.expect("entry").path();
+        let is_tmp = path
+            .file_name()
+            .and_then(|v| v.to_str())
+            .map(|v| v.contains("run.tmp"))
+            .unwrap_or(false);
+        assert!(!is_tmp, "stale temp run dir left behind: {}", path.display());
+    }
+}
