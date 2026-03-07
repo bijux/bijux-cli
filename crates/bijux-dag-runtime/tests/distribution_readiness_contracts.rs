@@ -1,3 +1,15 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_runtime::{
     adoption_score, conformance_passes, integration_governance_ready, packaging_ready,
     release_note_summary, upgrade_bundle_valid, DeploymentConformanceResult,

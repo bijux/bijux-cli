@@ -1,3 +1,15 @@
+use bijux_dag_runtime as _;
+use bijux_dag_artifacts as _;
+use bijux_dag_core as _;
+use bijux_dag_testkit as _;
+use ctrlc as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
+
 use bijux_dag_runtime::{
     budget_policy_action, cache_reuse_score, choose_cost_profile, cost_optimization_allowed,
     detect_cost_anomaly, run_budget_allows, scorecard_ready, CostPerformanceProfile,
