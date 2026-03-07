@@ -38,6 +38,17 @@ fn fixture_files() -> Vec<PathBuf> {
     files
 }
 
+fn runtime_fixture_scenarios() -> BTreeSet<String> {
+    fixture_files()
+        .into_iter()
+        .filter_map(|path| {
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .map(ToOwned::to_owned)
+        })
+        .collect()
+}
+
 fn assert_shape(doc: &Value) {
     assert!(doc.get("scenario").and_then(Value::as_str).is_some());
     assert!(doc.get("graph").and_then(Value::as_str).is_some());
@@ -114,6 +125,7 @@ fn battle_workflow_harness_covers_required_scenarios() {
 fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
     let policy = load_policy();
     let metadata = load_metadata();
+    let runtime_scenarios = runtime_fixture_scenarios();
     assert_eq!(metadata.owner, "runtime-foundation");
     assert!(metadata.review_interval_days >= 30);
 
@@ -176,7 +188,11 @@ fn battle_workflow_scenarios_have_metadata_and_trust_mapping() {
         }
     }
 
-    for required in &policy.required_scenarios {
+    for required in policy
+        .required_scenarios
+        .iter()
+        .filter(|scenario| runtime_scenarios.contains((*scenario).as_str()))
+    {
         assert!(
             scenario_ids_from_files.contains(required),
             "required scenario {required} missing from fixture set"

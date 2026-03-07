@@ -25,6 +25,13 @@ fn collect_files(root: &Path, out: &mut Vec<PathBuf>) {
             let entry = entry.expect("entry");
             let path = entry.path();
             if path.is_dir() {
+                let name = path
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or_default();
+                if matches!(name, "target" | "artifacts" | ".git") {
+                    continue;
+                }
                 stack.push(path);
             } else if path.is_file() {
                 out.push(path);
