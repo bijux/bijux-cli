@@ -30,6 +30,7 @@
 - [Cache contract](./spec/CACHE_CONTRACT.md)
 - [Replay contract](./spec/REPLAY_CONTRACT.md)
 - [Config precedence contract](./spec/CONFIG_PRECEDENCE_CONTRACT.md)
+- [Operator inspection contract](./spec/OPERATOR_INSPECTION_CONTRACT.md)
 - [State machine visualization](./spec/STATE_MACHINE_VISUALIZATION.md)
 - [Deterministic scheduling contract](./spec/DETERMINISTIC_SCHEDULING_CONTRACT.md)
 - [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)

@@ -51,3 +51,7 @@ must not depend on ambient repository files.
 Normative operator command taxonomy lives in:
 - `docs/user/OPERATOR_COMMAND_INDEX.md`
 - `docs/reference/COMMAND_TAXONOMY.md`
+
+## Inspection contract ownership
+- `docs/spec/OPERATOR_INSPECTION_CONTRACT.md`
+- `docs/user/OPERATOR_INSPECTION_GUIDE.md`
