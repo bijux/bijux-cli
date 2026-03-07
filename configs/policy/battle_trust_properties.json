@@ -70,6 +70,11 @@
       "id": "tp_plan_truth",
       "name": "Plan truth and lowering determinism",
       "description": "Semantically equivalent graphs lower to identical execution plans and unsupported requirements fail during planning."
+    },
+    {
+      "id": "tp_config_policy_determinism",
+      "name": "Config and policy determinism",
+      "description": "Config precedence, policy merge, and effective debug surfaces resolve deterministically across execution and inspection."
     }
   ],
   "required_scenarios": [
@@ -101,7 +106,7 @@
     "multi_root_workflow": ["tp_deterministic_scheduling", "tp_state_machine_legality"],
     "operator_debugging_workflow": ["tp_operator_observability", "tp_failure_propagation"],
     "operator_inspection_workflow": ["tp_operator_observability", "tp_run_dir_resilience"],
-    "policy_violation_workflow": ["tp_policy_enforcement", "tp_secret_redaction"],
+    "policy_violation_workflow": ["tp_policy_enforcement", "tp_secret_redaction", "tp_config_policy_determinism"],
     "replay_divergence_workflow": ["tp_replay_equivalence", "tp_artifact_integrity"],
     "resource_contention_workflow": ["tp_deterministic_scheduling", "tp_timeout_retry_accounting"],
     "retry_storm_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
@@ -110,6 +115,6 @@
     "timeout_workflow": ["tp_timeout_retry_accounting", "tp_failure_propagation"],
     "version_compatibility_workflow": ["tp_import_export_compatibility", "tp_replay_equivalence"],
     "malformed_run_dir_workflow": ["tp_run_dir_resilience", "tp_state_machine_legality"],
-    "ugly_realistic_dag_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation"]
+    "ugly_realistic_dag_workflow": ["tp_deterministic_scheduling", "tp_failure_propagation", "tp_config_policy_determinism"]
   }
 }
