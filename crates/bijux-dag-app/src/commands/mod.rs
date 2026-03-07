@@ -50,6 +50,11 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: HashCommands,
     },
+    #[command(name = "artifact-inspect")]
+    ArtifactInspect {
+        run_dir: PathBuf,
+        artifact_id: String,
+    },
     CanonicalBytes {
         dag: PathBuf,
     },
@@ -228,6 +233,9 @@ pub(crate) enum HashCommands {
         dag: PathBuf,
         #[arg(long)]
         explain: bool,
+    },
+    Artifact {
+        file: PathBuf,
     },
 }
 

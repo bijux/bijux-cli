@@ -510,7 +510,44 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 }
                 Ok(ExitCode::SUCCESS)
             }
+            HashCommands::Artifact { file } => {
+                let bytes = fs::read(file).map_err(|_| ExitCode::from(3))?;
+                let sha256 = bijux_dag_artifacts::hash::sha256_hex(&bytes);
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.hash.artifact",
+                        true,
+                        json!({
+                            "artifact_sha256": sha256,
+                            "bytes_len": bytes.len()
+                        }),
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{sha256}");
+                Ok(ExitCode::SUCCESS)
+            }
         },
+        Commands::ArtifactInspect {
+            run_dir,
+            artifact_id,
+        } => {
+            let details = inspect_artifact(run_dir, artifact_id)?;
+            if cli.json {
+                return emit_json(
+                    &cli,
+                    "dag.artifact-inspect",
+                    true,
+                    details,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&details).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -1895,7 +1932,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     "batch_hpc": "simulated"
                 },
                 "operator_commands": [
-                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure"
+                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","hash.artifact"
                 ]
             });
             if cli.json {
@@ -2170,6 +2207,56 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
         }
     }
     Ok(map)
+}
+
+fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
+    let (node_id, file_name) = artifact_id
+        .split_once(':')
+        .ok_or_else(|| ExitCode::from(2))?;
+    let manifest_raw = read_file(&run_dir.join("manifest.json"))?;
+    let manifest: bijux_dag_artifacts::Manifest =
+        serde_json::from_str(&manifest_raw).map_err(|_| ExitCode::from(3))?;
+    let run_outputs_raw = read_file(&run_dir.join("outputs").join("index.json"))?;
+    let run_outputs: RunOutputsIndex =
+        serde_json::from_str(&run_outputs_raw).map_err(|_| ExitCode::from(3))?;
+    let output = run_outputs
+        .files
+        .iter()
+        .find(|entry| entry.node_id == node_id && entry.path.ends_with(&format!("/{file_name}")))
+        .ok_or_else(|| ExitCode::from(3))?;
+    let artifact_path = run_dir.join(&output.path);
+    let metadata = fs::metadata(&artifact_path).map_err(|_| ExitCode::from(3))?;
+    let lineage_path = run_dir.join("lineage.snapshot.json");
+    let lineage = if lineage_path.exists() {
+        let data = read_file(&lineage_path)?;
+        let snapshot: bijux_dag_artifacts::lineage::ArtifactLineageSnapshot =
+            serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+        let upstream = bijux_dag_artifacts::platform::lineage_dependencies(&snapshot, artifact_id);
+        let downstream = bijux_dag_artifacts::platform::lineage_dependents(&snapshot, artifact_id);
+        json!({
+            "upstream_artifact_ids": upstream,
+            "downstream_artifact_ids": downstream
+        })
+    } else {
+        json!({
+            "upstream_artifact_ids": [],
+            "downstream_artifact_ids": []
+        })
+    };
+    Ok(json!({
+        "artifact_id": artifact_id,
+        "artifact_sha256": output.sha256,
+        "node_id": output.node_id,
+        "node_fingerprint": output.node_fingerprint,
+        "path": output.path,
+        "size_bytes": metadata.len(),
+        "provenance": {
+            "graph_fingerprint": manifest.graph_fingerprint,
+            "run_id": manifest.run_id,
+            "attempt": 0
+        },
+        "lineage": lineage
+    }))
 }
 
 fn print_human_diff(diff: &serde_json::Value) {

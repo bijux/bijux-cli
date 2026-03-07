@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "artifact_inspect",
+  "type": "object",
+  "required": [
+    "artifact_id",
+    "artifact_sha256",
+    "node_id",
+    "node_fingerprint",
+    "path",
+    "size_bytes",
+    "provenance",
+    "lineage"
+  ],
+  "properties": {
+    "artifact_id": { "type": "string" },
+    "artifact_sha256": { "type": "string" },
+    "node_id": { "type": "string" },
+    "node_fingerprint": { "type": "string" },
+    "path": { "type": "string" },
+    "size_bytes": { "type": "integer", "minimum": 0 },
+    "provenance": {
+      "type": "object",
+      "required": ["graph_fingerprint", "run_id", "attempt"],
+      "properties": {
+        "graph_fingerprint": { "type": "string" },
+        "run_id": { "type": "string" },
+        "attempt": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "required": ["upstream_artifact_ids", "downstream_artifact_ids"],
+      "properties": {
+        "upstream_artifact_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "downstream_artifact_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

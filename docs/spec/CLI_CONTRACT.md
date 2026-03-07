@@ -13,6 +13,7 @@ This is the normative contract for `bijux` command surfaces.
 - `dag lint`: static lint contract surface.
 - `dag fingerprint`: fingerprint introspection output.
 - `dag hash graph`: canonical graph identity alias surface.
+- `dag hash artifact`: file-content artifact hash surface (`sha256`).
 - `dag canonical-diff`: machine-readable raw vs canonical graph diff.
 - `dag canonical-bytes`: canonical graph JSON byte emission.
 - `dag run`: run orchestration and manifest emission.
@@ -24,6 +25,7 @@ This is the normative contract for `bijux` command surfaces.
 - `dag verify`: artifact verification behavior.
 - `dag runs history`: machine-readable ancestry listing for run directories.
 - `dag runs id-explain`: run identity composition and ancestry explanation.
+- `dag artifact-inspect`: artifact identity/provenance/lineage inspection surface.
 - `dag cache`: cache inspection and control surfaces.
 - `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.

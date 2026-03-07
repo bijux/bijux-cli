@@ -1,4 +1,5 @@
 adapters
+artifact-inspect
 cache
 canonical-bytes
 canonical-diff
