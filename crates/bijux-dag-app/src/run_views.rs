@@ -163,6 +163,138 @@ pub fn doctor_run(run_dir: &Path) -> Value {
     })
 }
 
+pub fn runs_summary(root: &Path) -> Result<Value, std::io::Error> {
+    let run_ids = list_runs(root)?;
+    let mut statuses = std::collections::BTreeMap::<String, usize>::new();
+    let mut total_retries = 0usize;
+    let mut total_cache_hits = 0usize;
+    let mut total_artifacts = 0usize;
+    let mut replay_equivalent_runs = 0usize;
+    let mut failed_run_count = 0usize;
+    for run_id in &run_ids {
+        let summary = inspect_summary(&resolve_run_dir(root, run_id))?;
+        let status = summary
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
+        *statuses.entry(status).or_insert(0) += 1;
+        if summary.get("status").and_then(Value::as_str) == Some("failed") {
+            failed_run_count += 1;
+        }
+        if summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) == 0 {
+            replay_equivalent_runs += 1;
+        }
+        total_retries += summary.get("retry_count").and_then(Value::as_u64).unwrap_or(0) as usize;
+        total_cache_hits += summary.get("cache_hits").and_then(Value::as_u64).unwrap_or(0) as usize;
+        total_artifacts += summary
+            .get("artifact_count")
+            .and_then(Value::as_u64)
+            .unwrap_or(0) as usize;
+    }
+    let run_count = run_ids.len();
+    let exact_reports = json!({
+        "failure_distribution": statuses,
+        "cache_usefulness": {
+            "total_cache_hits": total_cache_hits,
+            "average_cache_hits_per_run": if run_count == 0 { 0.0 } else { total_cache_hits as f64 / run_count as f64 }
+        },
+        "replay_equivalence": {
+            "replay_equivalent_runs": replay_equivalent_runs,
+            "run_count": run_count
+        },
+        "determinism": {
+            "failed_runs": failed_run_count,
+            "success_runs": run_count.saturating_sub(failed_run_count)
+        }
+    });
+    Ok(json!({
+        "runs": run_count,
+        "total_retries": total_retries,
+        "total_cache_hits": total_cache_hits,
+        "total_artifacts": total_artifacts
+        ,"reports": exact_reports
+    }))
+}
+
+pub fn runs_compare(root: &Path, run_a: &str, run_b: &str) -> Result<Value, std::io::Error> {
+    let a = inspect_summary(&resolve_run_dir(root, run_a))?;
+    let b = inspect_summary(&resolve_run_dir(root, run_b))?;
+    Ok(json!({
+        "run_a": run_a,
+        "run_b": run_b,
+        "status": {"a": a.get("status"), "b": b.get("status")},
+        "retries": {"a": a.get("retry_count"), "b": b.get("retry_count")},
+        "cache_hits": {"a": a.get("cache_hits"), "b": b.get("cache_hits")},
+        "artifact_count": {"a": a.get("artifact_count"), "b": b.get("artifact_count")},
+        "timing_ms": {"a": a.get("timing_ms"), "b": b.get("timing_ms")}
+    }))
+}
+
+pub fn runs_trend(root: &Path) -> Result<Value, std::io::Error> {
+    let run_ids = list_runs(root)?;
+    let mut points = Vec::new();
+    for run_id in run_ids {
+        let summary = inspect_summary(&resolve_run_dir(root, &run_id))?;
+        points.push(json!({
+            "run_id": run_id,
+            "retry_count": summary.get("retry_count").cloned().unwrap_or(Value::Null),
+            "cache_hits": summary.get("cache_hits").cloned().unwrap_or(Value::Null),
+            "artifact_count": summary.get("artifact_count").cloned().unwrap_or(Value::Null),
+            "status": summary.get("status").cloned().unwrap_or(Value::Null)
+        }));
+    }
+    Ok(json!({"series": points}))
+}
+
+pub fn runs_failures(root: &Path) -> Result<Value, std::io::Error> {
+    let run_ids = list_runs(root)?;
+    let mut counts = std::collections::BTreeMap::<String, usize>::new();
+    for run_id in run_ids {
+        let run_dir = resolve_run_dir(root, &run_id);
+        let traces = read_node_traces(&run_dir)?;
+        for (_node_id, trace) in traces {
+            if trace.get("status").and_then(Value::as_str) == Some("failed") {
+                let kind = trace
+                    .get("failure")
+                    .and_then(|f| f.get("kind"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("unknown")
+                    .to_string();
+                *counts.entry(kind).or_insert(0) += 1;
+            }
+        }
+    }
+    Ok(json!({"failure_distribution": counts}))
+}
+
+pub fn runs_flakes(root: &Path) -> Result<Value, std::io::Error> {
+    let run_ids = list_runs(root)?;
+    let mut by_graph = std::collections::BTreeMap::<String, Vec<String>>::new();
+    for run_id in &run_ids {
+        let summary = inspect_summary(&resolve_run_dir(root, run_id))?;
+        let graph = summary
+            .get("graph_fingerprint")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
+        let status = summary
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
+        by_graph.entry(graph).or_default().push(status);
+    }
+    let mut flaky = Vec::new();
+    for (graph, statuses) in by_graph {
+        let uniq: std::collections::BTreeSet<_> = statuses.iter().collect();
+        if uniq.len() > 1 {
+            flaky.push(json!({"graph_fingerprint": graph, "statuses": statuses}));
+        }
+    }
+    Ok(json!({"flakes": flaky}))
+}
+
 pub fn format_inspect_human(summary: &Value) -> String {
     format!(
         "run_id: {}\nstatus: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",

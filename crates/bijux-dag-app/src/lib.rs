@@ -32,8 +32,8 @@ pub use config_surface::{
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
 pub use run_views::{
-    doctor_run, explain_failure, format_inspect_human, inspect_summary, list_runs,
-    resolve_run_dir, run_timeline, run_tree,
+    doctor_run, explain_failure, format_inspect_human, inspect_summary, list_runs, resolve_run_dir,
+    run_timeline, run_tree, runs_compare, runs_failures, runs_flakes, runs_summary, runs_trend,
 };
 
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -709,6 +709,81 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     return emit_json(
                         &cli,
                         "dag.runs.explain-failure",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Summary { root } => {
+                let report = runs_summary(root).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.summary",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Compare { run_a, run_b, root } => {
+                let report = runs_compare(root, run_a, run_b).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.compare",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Trend { root } => {
+                let report = runs_trend(root).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.trend",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Failures { root } => {
+                let report = runs_failures(root).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.failures",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            RunsCommands::Flakes { root } => {
+                let report = runs_flakes(root).map_err(|_| ExitCode::from(3))?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.runs.flakes",
                         true,
                         report,
                         Vec::new(),

@@ -245,6 +245,28 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         root: PathBuf,
     },
+    Summary {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Compare {
+        run_a: String,
+        run_b: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Trend {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Failures {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Flakes {
+        #[arg(long)]
+        root: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
