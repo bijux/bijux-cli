@@ -39,6 +39,7 @@
 - [Battle trust properties](./spec/BATTLE_TRUST_PROPERTIES.md)
 - [Test philosophy](./spec/TEST_PHILOSOPHY.md)
 - [Test trust contract](./spec/TEST_TRUST_CONTRACT.md)
+- [Test trust ledger](./spec/TEST_TRUST_LEDGER.md)
 - [Runtime test trust audit](./architecture/test_trust_audit.md)
 - [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
 - [Sacred execution flow](./spec/SACRED_EXECUTION_FLOW.md)
