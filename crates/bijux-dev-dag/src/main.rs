@@ -452,6 +452,15 @@ const CONTRACT_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_validation_rule_docs_guard(),
     },
+    SuiteDef {
+        id: "schema-contracts",
+        description: "schema source files and fixtures are present and versioned",
+        domain: "contracts",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_schema_contracts_guard(),
+    },
 ];
 
 const DOC_SUITES: &[SuiteDef] = &[
@@ -554,6 +563,42 @@ const REPO_SUITES: &[SuiteDef] = &[
         internal: false,
         effect: CommandEffect::Validation,
         run: || run_public_export_docs_guard(),
+    },
+    SuiteDef {
+        id: "repo-docs",
+        description: "doc root required governance contracts and budgets",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_docs_guard(),
+    },
+    SuiteDef {
+        id: "repo-source",
+        description: "source layout policy and disallowed imports",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_source_guard(),
+    },
+    SuiteDef {
+        id: "repo-manifests",
+        description: "workspace Cargo manifest conventions",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_manifests_guard(),
+    },
+    SuiteDef {
+        id: "repo-api",
+        description: "crate API docs coverage baseline",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_api_guard(),
     },
 ];
 
@@ -2140,6 +2185,103 @@ fn run_validation_rule_docs_guard() -> Result<(), String> {
             missing.join(", ")
         ))
     }
+}
+
+fn run_schema_contracts_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required = [
+        "configs/schema/dag.schema.json",
+        "configs/schema/run_manifest.schema.json",
+        "configs/schema/node_trace.schema.json",
+        "configs/schema/outputs_index.schema.json",
+        "configs/schema/fixtures/v0.1/positive/empty-graph.json",
+        "configs/schema/fixtures/v0.1/negative/unknown-field.json",
+    ];
+    for rel in required {
+        let path = root.join(rel);
+        if !path.exists() {
+            return Err(format!("missing schema contract file: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_docs_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/WORKSPACE_CONTRACT.md",
+        "docs/spec/BOUNDARY_RULES.md",
+        "docs/spec/CRATE_OWNERSHIP.md",
+        "docs/spec/EVIDENCE_MODEL.md",
+        "docs/spec/GLOSSARY.md",
+        "docs/spec/CRATE_API_POLICY.md",
+        "docs/spec/ADAPTER_CONTRACT.md",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing required docs contract: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_source_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let policy = root.join("configs/policy/source_layout.json");
+    if !policy.exists() {
+        return Err("missing source layout policy".into());
+    }
+    let runtime_lib = fs::read_to_string(root.join("crates/bijux-dag-runtime/src/lib.rs"))
+        .map_err(|err| err.to_string())?;
+    if runtime_lib.contains("use clap::") {
+        return Err("runtime crate must not import clap".into());
+    }
+    Ok(())
+}
+
+fn run_repo_manifests_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let workspace = fs::read_to_string(root.join("Cargo.toml")).map_err(|err| err.to_string())?;
+    if !workspace.contains("[workspace]") || !workspace.contains("members = [") {
+        return Err("workspace Cargo.toml missing workspace members contract".into());
+    }
+    for crate_name in [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dev-dag",
+    ] {
+        let manifest = root
+            .join("crates")
+            .join(crate_name)
+            .join("Cargo.toml");
+        let text = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;
+        if !text.contains("[lints]") || !text.contains("workspace = true") {
+            return Err(format!("{crate_name} manifest missing workspace lint contract"));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_api_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+        .map_err(|err| err.to_string())?;
+    for crate_name in [
+        "bijux-dag-core",
+        "bijux-dag-artifacts",
+        "bijux-dag-runtime",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+    ] {
+        if !docs.contains(crate_name) {
+            return Err(format!(
+                "crate api policy missing coverage mention for {crate_name}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {

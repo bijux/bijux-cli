@@ -13,6 +13,15 @@
 `bijux-dag-core` exports stable model, parse, resolve, validation, topology, and fingerprint API surfaces.
 Core exports must remain deterministic and side-effect free.
 
+## Runtime boundary
+`bijux-dag-runtime` exports runtime API/config/policy/result/context surfaces and keeps adapter execution internals behind module boundaries.
+
+## App boundary
+`bijux-dag-app` exports orchestration entrypoints and keeps clap command model and rendering internals module-scoped.
+
+## Dev boundary
+`bijux-dev-dag` exports repository governance command surfaces and enforces workspace contracts.
+
 ## Artifact boundary
 `bijux-dag-artifacts` is an artifact model and persistence API crate.
 - It may own artifact storage operations through stable APIs.
