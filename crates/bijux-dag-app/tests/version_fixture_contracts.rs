@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -25,7 +25,8 @@ fn repo_root() -> PathBuf {
 fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
     let root = repo_root();
     let supported = root.join("tests/compatibility/graph_schema/v0.1/minimal.dag.json");
-    let unsupported_future = root.join("tests/compatibility/graph_schema/unsupported_future/minimal.dag.json");
+    let unsupported_future =
+        root.join("tests/compatibility/graph_schema/unsupported_future/minimal.dag.json");
 
     let cmd = dag_command();
     let ok_matches = cmd

@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -32,7 +32,11 @@ fn run_matches(args: &[&str]) -> Result<std::process::ExitCode, std::process::Ex
 }
 
 fn write_graph(path: &Path, payload: serde_json::Value) {
-    fs::write(path, serde_json::to_vec_pretty(&payload).expect("serialize graph")).expect("write graph");
+    fs::write(
+        path,
+        serde_json::to_vec_pretty(&payload).expect("serialize graph"),
+    )
+    .expect("write graph");
 }
 
 #[test]
@@ -249,7 +253,11 @@ fn fault_stale_cache_metadata_mismatch() {
     let temp = tempfile::tempdir().expect("tmp");
     let cache = temp.path().join("cache");
     fs::create_dir_all(cache.join("abc")).expect("mkdir");
-    fs::write(cache.join("abc").join("meta.json"), "{\"fingerprint\":\"old\"}").expect("write");
+    fs::write(
+        cache.join("abc").join("meta.json"),
+        "{\"fingerprint\":\"old\"}",
+    )
+    .expect("write");
     let result = run_matches(&[
         "dag",
         "cache",
@@ -356,6 +364,10 @@ fn fault_partial_run_cleanup_after_early_failure() {
             .and_then(|v| v.to_str())
             .map(|v| v.contains("run.tmp"))
             .unwrap_or(false);
-        assert!(!is_tmp, "stale temp run dir left behind: {}", path.display());
+        assert!(
+            !is_tmp,
+            "stale temp run dir left behind: {}",
+            path.display()
+        );
     }
 }

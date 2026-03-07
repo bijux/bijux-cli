@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -28,7 +28,11 @@ fn sha256_hex(bytes: &[u8]) -> String {
 fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
     let entry = base.join(key);
     fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
-    let content = if valid { b"ok".to_vec() } else { b"bad".to_vec() };
+    let content = if valid {
+        b"ok".to_vec()
+    } else {
+        b"bad".to_vec()
+    };
     fs::write(entry.join("outputs/out.txt"), &content).expect("write output");
     let index = json!({
         "files": [{
@@ -38,11 +42,17 @@ fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
             "node_fingerprint": key
         }]
     });
-    fs::write(entry.join("outputs/index.json"), serde_json::to_vec_pretty(&index).expect("index json"))
-        .expect("write index");
+    fs::write(
+        entry.join("outputs/index.json"),
+        serde_json::to_vec_pretty(&index).expect("index json"),
+    )
+    .expect("write index");
     let meta = json!({"node_fingerprint": key, "adapter_id": "shell", "adapter_version": "1"});
-    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta).expect("meta json"))
-        .expect("write meta");
+    fs::write(
+        entry.join("meta.json"),
+        serde_json::to_vec_pretty(&meta).expect("meta json"),
+    )
+    .expect("write meta");
 }
 
 #[test]
@@ -55,7 +65,14 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let explain = cmd
         .clone()
         .try_get_matches_from([
-            "dag", "--json", "cache", "explain", "--cache-dir", tmp.path().to_string_lossy().as_ref(), "--key", "key-valid"
+            "dag",
+            "--json",
+            "cache",
+            "explain",
+            "--cache-dir",
+            tmp.path().to_string_lossy().as_ref(),
+            "--key",
+            "key-valid",
         ])
         .expect("parse explain");
     assert!(dag_run(&explain).is_ok());
@@ -63,7 +80,12 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let stats = cmd
         .clone()
         .try_get_matches_from([
-            "dag", "--json", "cache", "stats", "--cache-dir", tmp.path().to_string_lossy().as_ref()
+            "dag",
+            "--json",
+            "cache",
+            "stats",
+            "--cache-dir",
+            tmp.path().to_string_lossy().as_ref(),
         ])
         .expect("parse stats");
     assert!(dag_run(&stats).is_ok());
@@ -71,7 +93,12 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let prune = cmd
         .clone()
         .try_get_matches_from([
-            "dag", "--json", "cache", "prune-simulate", "--cache-dir", tmp.path().to_string_lossy().as_ref()
+            "dag",
+            "--json",
+            "cache",
+            "prune-simulate",
+            "--cache-dir",
+            tmp.path().to_string_lossy().as_ref(),
         ])
         .expect("parse prune sim");
     assert!(dag_run(&prune).is_ok());
@@ -122,8 +149,11 @@ fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
         assert!(fixture_root.join(rel).exists(), "missing fixture: {}", rel);
     }
 
-    let warm_cold = fs::read_to_string(fixture_root.join("warm_cold/scenario.json")).expect("read warm_cold");
+    let warm_cold =
+        fs::read_to_string(fixture_root.join("warm_cold/scenario.json")).expect("read warm_cold");
     let parsed: serde_json::Value = serde_json::from_str(&warm_cold).expect("parse warm_cold");
     let expectations = parsed["expectations"].as_array().expect("expectation list");
-    assert!(expectations.iter().any(|v| v == "warm_and_cold_outputs_semantically_equal"));
+    assert!(expectations
+        .iter()
+        .any(|v| v == "warm_and_cold_outputs_semantically_equal"));
 }

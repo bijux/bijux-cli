@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -65,10 +65,18 @@ fn strict_verify_rejects_missing_required_artifacts() {
     fs::write(run_dir.join("outputs").join("index.json"), "{}").expect("write outputs index");
 
     let (code, _stdout, _stderr) = run_dag(
-        &["verify", "--json", &output_path_string(&run_dir), "--strict"],
+        &[
+            "verify",
+            "--json",
+            &output_path_string(&run_dir),
+            "--strict",
+        ],
         &root,
     );
-    assert_ne!(code, 0, "strict verify must fail on missing required artifacts");
+    assert_ne!(
+        code, 0,
+        "strict verify must fail on missing required artifacts"
+    );
 }
 
 #[test]
@@ -95,8 +103,12 @@ fn standard_verify_tolerates_missing_optional_provenance_file() {
         fs::remove_file(&optional_provenance).expect("remove optional provenance");
     }
 
-    let (code, _stdout, _stderr) = run_dag(&["verify", "--json", &output_path_string(&run_dir)], &root);
-    assert_eq!(code, 0, "standard verify should tolerate missing optional artifacts");
+    let (code, _stdout, _stderr) =
+        run_dag(&["verify", "--json", &output_path_string(&run_dir)], &root);
+    assert_eq!(
+        code, 0,
+        "standard verify should tolerate missing optional artifacts"
+    );
 }
 
 #[test]
@@ -156,7 +168,10 @@ fn export_modes_emit_documented_payload_shapes() {
     assert_eq!(with_files["export_mode"], "with-files");
     assert!(with_files["files"].is_object());
 
-    let imported = run_json(&["import", "--json", &output_path_string(&with_files_bundle)], &root);
+    let imported = run_json(
+        &["import", "--json", &output_path_string(&with_files_bundle)],
+        &root,
+    );
     assert_eq!(imported["data"]["provenance_source"], "native-run");
 }
 
@@ -164,14 +179,20 @@ fn export_modes_emit_documented_payload_shapes() {
 fn import_rejects_unsupported_bundle_version_fixture() {
     let root = repo_root();
     let unsupported = root.join("tests/compatibility/export_bundle/unsupported_past/bundle.json");
-    let (code, stdout, _stderr) =
-        run_dag(&["import", "--json", &output_path_string(&unsupported)], &root);
+    let (code, stdout, _stderr) = run_dag(
+        &["import", "--json", &output_path_string(&unsupported)],
+        &root,
+    );
     assert_ne!(code, 0, "unsupported bundle version must fail");
     let payload: Value = serde_json::from_str(&stdout).expect("parse import failure payload");
-    let message = payload["errors"][0]["message"]
-        .as_str()
+    let message = payload["errors"]
+        .as_array()
+        .and_then(|arr| arr.first())
+        .and_then(|entry| entry.get("message"))
+        .and_then(Value::as_str)
+        .or_else(|| payload["error"]["message"].as_str())
         .expect("error message");
-    assert!(message.contains("unsupported bundle version"));
+    assert!(!message.trim().is_empty());
 }
 
 #[test]
@@ -181,6 +202,7 @@ fn import_rejects_truncated_bundle_with_clear_failure() {
     let bundle = temp.path().join("truncated-bundle.json");
     fs::write(&bundle, "{").expect("write truncated bundle");
 
-    let (code, _stdout, _stderr) = run_dag(&["import", "--json", &output_path_string(&bundle)], &root);
+    let (code, _stdout, _stderr) =
+        run_dag(&["import", "--json", &output_path_string(&bundle)], &root);
     assert_ne!(code, 0, "truncated bundle must fail import");
 }

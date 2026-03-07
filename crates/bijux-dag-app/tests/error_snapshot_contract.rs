@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -55,7 +55,8 @@ fn representative_json_error_snapshot_is_stable() {
         }
     });
 
-    let rendered = serde_json::to_string_pretty(&snapshot).expect("snapshot json");
-    let expected = include_str!("snapshots/error_json_shape.json");
-    assert_eq!(rendered.trim(), expected.trim());
+    let expected: serde_json::Value =
+        serde_json::from_str(include_str!("snapshots/error_json_shape.json"))
+            .expect("parse expected snapshot");
+    assert_eq!(snapshot, expected);
 }

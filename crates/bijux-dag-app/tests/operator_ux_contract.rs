@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -15,9 +15,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::{
-    dag_command, dag_run,
-    doctor_run, explain_failure, format_inspect_human, format_show_human, inspect_summary, list_runs,
-    run_timeline, run_tree,
+    dag_command, dag_run, doctor_run, explain_failure, format_inspect_human, format_show_human,
+    inspect_summary, list_runs, run_timeline, run_tree,
 };
 use serde_json::json;
 use std::fs;
@@ -121,10 +120,16 @@ fn operator_inspection_distinguishes_corrupt_runs() {
     let tmp = tempfile::tempdir().expect("tmpdir");
     let run = tmp.path().join("run-corrupt");
     fs::create_dir_all(run.join("nodes").join("a")).expect("mkdir");
-    fs::write(run.join("snapshot.json"), serde_json::to_vec_pretty(&json!({"graph":{"nodes":[],"edges":[]}})).unwrap())
-        .expect("write snapshot");
-    fs::write(run.join("outputs.index.json"), serde_json::to_vec_pretty(&json!({"files":[]})).unwrap())
-        .expect("write outputs");
+    fs::write(
+        run.join("snapshot.json"),
+        serde_json::to_vec_pretty(&json!({"graph":{"nodes":[],"edges":[]}})).unwrap(),
+    )
+    .expect("write snapshot");
+    fs::write(
+        run.join("outputs.index.json"),
+        serde_json::to_vec_pretty(&json!({"files":[]})).unwrap(),
+    )
+    .expect("write outputs");
     fs::write(run.join("manifest.json"), "{bad-json").expect("write bad manifest");
     let summary = inspect_summary(&run).expect("summary");
     assert_eq!(summary["integrity_state"], "corrupt");

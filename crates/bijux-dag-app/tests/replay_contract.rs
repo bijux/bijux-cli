@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -33,8 +33,9 @@ fn replay_fixture_family_exists() {
 #[test]
 fn replay_battle_scenario_declares_mandatory_proof() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let payload = std::fs::read_to_string(repo.join("tests/e2e/replay/replay_semantic_comparison.json"))
-        .expect("read replay battle scenario");
+    let payload =
+        std::fs::read_to_string(repo.join("tests/e2e/replay/replay_semantic_comparison.json"))
+            .expect("read replay battle scenario");
     let value: serde_json::Value =
         serde_json::from_str(&payload).expect("parse replay battle scenario");
     let assertions = value["assertions"].as_array().expect("assertions array");

@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -19,7 +19,14 @@ use serde_json::json;
 use std::fs;
 use std::path::Path;
 
-fn write_run(base: &Path, run_id: &str, status: &str, graph_fp: &str, attempt: u64, failure_kind: Option<&str>) {
+fn write_run(
+    base: &Path,
+    run_id: &str,
+    status: &str,
+    graph_fp: &str,
+    attempt: u64,
+    failure_kind: Option<&str>,
+) {
     let run = base.join(run_id);
     fs::create_dir_all(run.join("nodes").join("n1")).expect("mkdir node");
     fs::write(
@@ -37,7 +44,8 @@ fn write_run(base: &Path, run_id: &str, status: &str, graph_fp: &str, attempt: u
     .expect("write manifest");
     fs::write(
         run.join("snapshot.json"),
-        serde_json::to_vec_pretty(&json!({"graph":{"nodes":[{"id":"n1"}],"edges":[]}})).expect("snapshot"),
+        serde_json::to_vec_pretty(&json!({"graph":{"nodes":[{"id":"n1"}],"edges":[]}}))
+            .expect("snapshot"),
     )
     .expect("write snapshot");
     fs::write(
@@ -78,8 +86,14 @@ fn analytics_commands_return_expected_aggregates() {
 
     let summary = runs_summary(tmp.path()).expect("summary");
     assert_eq!(summary["runs"], 3);
-    assert_eq!(summary["reports"]["cache_usefulness"]["total_cache_hits"], 2);
-    assert_eq!(summary["reports"]["replay_equivalence"]["replay_equivalent_runs"], 2);
+    assert_eq!(
+        summary["reports"]["cache_usefulness"]["total_cache_hits"],
+        2
+    );
+    assert_eq!(
+        summary["reports"]["replay_equivalence"]["replay_equivalent_runs"],
+        2
+    );
 
     let compare = runs_compare(tmp.path(), "run-a", "run-b").expect("compare");
     assert_eq!(compare["run_a"], "run-a");
@@ -102,7 +116,11 @@ fn analytics_tolerate_incomplete_or_corrupt_history() {
     fs::write(tmp.path().join("run-x").join("manifest.json"), "{bad").expect("manifest");
     fs::create_dir_all(tmp.path().join("run-x").join("nodes").join("n1")).expect("nodes");
     fs::write(
-        tmp.path().join("run-x").join("nodes").join("n1").join("trace.json"),
+        tmp.path()
+            .join("run-x")
+            .join("nodes")
+            .join("n1")
+            .join("trace.json"),
         "{bad",
     )
     .expect("trace");

@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -15,8 +15,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::{
-    default_runtime_config, policy_evaluation_trace, PartialRuntimeSurfaceConfig, PolicySurfaceConfig,
-    resolve_effective_config,
+    default_runtime_config, policy_evaluation_trace, resolve_effective_config,
+    PartialRuntimeSurfaceConfig, PolicySurfaceConfig,
 };
 
 #[test]
@@ -59,6 +59,10 @@ fn strict_and_permissive_modes_differ_in_effect_policy() {
 
     let strict_trace = policy_evaluation_trace(&strict.policy);
     let permissive_trace = policy_evaluation_trace(&permissive.policy);
-    assert!(strict_trace.iter().any(|e| e.contains("rule:deny_network decision:deny")));
-    assert!(permissive_trace.iter().any(|e| e.contains("rule:deny_network decision:allow")));
+    assert!(strict_trace
+        .iter()
+        .any(|e| e.contains("rule:deny_network decision:deny")));
+    assert!(permissive_trace
+        .iter()
+        .any(|e| e.contains("rule:deny_network decision:allow")));
 }

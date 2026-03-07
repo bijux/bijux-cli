@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -15,8 +15,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::{
-    config_fingerprint, default_runtime_config, normalize_runtime_config, CacheModeSurface,
-    PartialRuntimeSurfaceConfig, PolicySurfaceConfig, resolve_effective_config,
+    config_fingerprint, default_runtime_config, normalize_runtime_config, resolve_effective_config,
+    CacheModeSurface, PartialRuntimeSurfaceConfig, PolicySurfaceConfig,
 };
 
 #[test]

@@ -1,5 +1,5 @@
-use bijux_dag_app as _;
 use base64 as _;
+use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -48,7 +48,10 @@ fn comparison_scenarios_have_required_ids_and_unique_names() {
         "scheduler-tiny-tasks-overhead",
         "artifact-inspectability",
     ] {
-        assert!(ids.contains(required), "missing required scenario id {required}");
+        assert!(
+            ids.contains(required),
+            "missing required scenario id {required}"
+        );
     }
 }
 
