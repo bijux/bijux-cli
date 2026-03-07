@@ -27,6 +27,8 @@ mod fs_input;
 mod graph;
 #[path = "graph/cmd.rs"]
 mod graph_cmd;
+#[path = "graph/helpers.rs"]
+mod graph_helpers;
 #[path = "commands/import_cmd.rs"]
 mod import_cmd;
 mod inspect;
@@ -68,7 +70,7 @@ use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{parse_graph_strict, Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{
     adapter_registry_dump, build_plan, registered_adapters, CacheMode, MaterializeMode, Runtime,
-    RuntimeConfig, Selector, SelectorSet,
+    RuntimeConfig,
 };
 #[cfg(test)]
 use bijux_dag_testkit as _;
@@ -84,6 +86,7 @@ use config_resolution::{
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use graph_helpers::*;
 use serde::Serialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -592,12 +595,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let run_path = runtime
                 .run(&snapshot.graph, out, options)
                 .map_err(|_| ExitCode::from(3))?;
+            let response = replay_cmd::ReplayCommandResponse {
+                run_dir: run_path.clone(),
+            };
             if cli.json {
                 return emit_json(
                     &cli,
                     "dag.replay",
                     true,
-                    json!({ "run_dir": run_path }),
+                    serde_json::to_value(&response).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
@@ -973,12 +979,15 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let run_path = runtime
                 .run(&graph, out, options)
                 .map_err(|_| ExitCode::from(3))?;
+            let response = run_cmd::RunCommandResponse {
+                run_dir: run_path.clone(),
+            };
             if cli.json {
                 return emit_json(
                     &cli,
                     "dag.run",
                     true,
-                    json!({ "run_dir": run_path }),
+                    serde_json::to_value(&response).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
@@ -2708,8 +2717,6 @@ fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
         MaterializeModeArg::Symlink => MaterializeMode::Symlink,
     }
 }
-
-include!("graph/helpers.in.rs");
 
 fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     let mut violations = Vec::new();

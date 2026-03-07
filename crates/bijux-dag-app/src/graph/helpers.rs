@@ -1,4 +1,17 @@
-fn parse_selectors(include: &[String], exclude: &[String]) -> Result<SelectorSet, ExitCode> {
+use crate::{
+    check_engine, env_cache_dir, load_snapshot, parse_graph, read_file, Graph, LintDiagnostic,
+    Severity, SPEC_VERSION,
+};
+use bijux_dag_runtime::{registered_adapters, Selector, SelectorSet};
+use serde_json::json;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
+
+pub(crate) fn parse_selectors(
+    include: &[String],
+    exclude: &[String],
+) -> Result<SelectorSet, ExitCode> {
     let mut set = SelectorSet {
         include: Vec::new(),
         exclude: Vec::new(),
@@ -12,7 +25,7 @@ fn parse_selectors(include: &[String], exclude: &[String]) -> Result<SelectorSet
     Ok(set)
 }
 
-fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
+pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
     if let Some(rest) = raw.strip_prefix("id:") {
         return Ok(Selector::IdPrefix(rest.to_string()));
     }
@@ -25,7 +38,7 @@ fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
     Err(ExitCode::from(2))
 }
 
-fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
+pub(crate) fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
     let mut out = Vec::new();
     for diag in graph.validate_with_warnings() {
         if diag.severity == Severity::Warning {
@@ -80,7 +93,7 @@ fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
     out
 }
 
-fn graph_to_dot(graph: &Graph) -> String {
+pub(crate) fn graph_to_dot(graph: &Graph) -> String {
     let g = graph.canonicalize();
     let mut out = String::from("digraph bijux {\n");
     for node in &g.nodes {
@@ -96,7 +109,7 @@ fn graph_to_dot(graph: &Graph) -> String {
     out
 }
 
-fn doctor_report() -> Result<serde_json::Value, ExitCode> {
+pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
     let cache_dir = env_cache_dir();
     let cache_status = if let Some(dir) = cache_dir.as_ref() {
         if fs::create_dir_all(dir).is_ok() {
@@ -143,7 +156,7 @@ fn doctor_report() -> Result<serde_json::Value, ExitCode> {
     }))
 }
 
-fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
+pub(crate) fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let input = read_file(path)?;
     let graph = parse_graph(&input)?;
     let from_normalized = if from == "0.1" || from == "v0.1" {
@@ -165,7 +178,7 @@ fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     Err(ExitCode::from(3))
 }
 
-fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
+pub(crate) fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     let snapshot = load_snapshot(path)?;
     let from_normalized = if from == "0.1" || from == "v0.1" {
         SPEC_VERSION.to_string()
@@ -186,9 +199,9 @@ fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
     Err(ExitCode::from(3))
 }
 
-fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
-    let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../bijux-dag-core/tests/compat/v0.1");
+pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
+    let base =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../bijux-dag-core/tests/compat/v0.1");
     if !base.exists() {
         return Ok(json!({"status":"ok","errors":[]}));
     }
