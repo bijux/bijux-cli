@@ -30,6 +30,7 @@ fn output_path_string(path: &Path) -> String {
 fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
     let output = Command::new("cargo")
         .current_dir(cwd)
+        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
         .args(["run", "-p", "bijux-dag-cli", "--", "dag"])
         .args(args)
         .output()

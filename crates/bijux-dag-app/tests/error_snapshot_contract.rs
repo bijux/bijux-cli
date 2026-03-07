@@ -27,6 +27,7 @@ fn examples_file(file_name: &str) -> String {
 #[test]
 fn representative_json_error_snapshot_is_stable() {
     let output = Command::new("cargo")
+        .env("CARGO_TARGET_DIR", "artifacts/target")
         .args([
             "run",
             "-p",

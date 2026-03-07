@@ -27,6 +27,7 @@ fn examples_file(file_name: &str) -> String {
 #[test]
 fn app_text_validate_output_contract() {
     let output = Command::new("cargo")
+        .env("CARGO_TARGET_DIR", "artifacts/target")
         .args([
             "run",
             "-p",
@@ -47,6 +48,7 @@ fn app_text_validate_output_contract() {
 #[test]
 fn app_json_validate_output_contract() {
     let output = Command::new("cargo")
+        .env("CARGO_TARGET_DIR", "artifacts/target")
         .args([
             "run",
             "-p",
