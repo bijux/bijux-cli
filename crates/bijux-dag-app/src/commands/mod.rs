@@ -222,11 +222,15 @@ pub(crate) enum Commands {
         command: AdaptersCommands,
     },
     Export {
-        run_dir: PathBuf,
+        run_dir: Option<PathBuf>,
+        #[arg(long)]
+        from_run: Option<PathBuf>,
         #[arg(long)]
         out: PathBuf,
         #[arg(long)]
         manifest_only: bool,
+        #[arg(long)]
+        without_artifacts: bool,
         #[arg(long)]
         with_files: bool,
         #[arg(long)]
@@ -235,6 +239,8 @@ pub(crate) enum Commands {
     },
     Import {
         file: PathBuf,
+        #[arg(long)]
+        verify_only: bool,
     },
     VersionInspect {
         #[arg(long)]

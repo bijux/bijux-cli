@@ -24,7 +24,10 @@ bijux dag capabilities --backend remote --json
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
+bijux dag export --from-run <run-dir> --out bundle.json
+bijux dag export <run-dir> --out bundle.json --without-artifacts
 bijux dag import <bundle.json>
+bijux dag import <bundle.json> --verify-only
 bijux completions --shell zsh
 ```
 

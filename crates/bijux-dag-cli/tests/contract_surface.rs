@@ -423,6 +423,26 @@ fn capabilities_backend_query_supports_remote() {
 }
 
 #[test]
+fn export_import_help_includes_bundle_control_flags() {
+    let export_help = dag_command()
+        .args(["dag", "export", "--help"])
+        .output()
+        .expect("export help");
+    assert!(export_help.status.success());
+    let export_text = String::from_utf8_lossy(&export_help.stdout);
+    assert!(export_text.contains("--from-run"));
+    assert!(export_text.contains("--without-artifacts"));
+
+    let import_help = dag_command()
+        .args(["dag", "import", "--help"])
+        .output()
+        .expect("import help");
+    assert!(import_help.status.success());
+    let import_text = String::from_utf8_lossy(&import_help.stdout);
+    assert!(import_text.contains("--verify-only"));
+}
+
+#[test]
 fn dag_status_json_schema_contract() {
     let dag = write_temp_dag();
     let run_dir = tempfile::tempdir().expect("run out");

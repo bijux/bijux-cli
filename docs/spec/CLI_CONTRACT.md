@@ -36,7 +36,10 @@ This is the normative contract for `bijux` command surfaces.
 - `dag cache`: cache inspection and control surfaces.
 - `dag adapters`: adapter registry and capability inspection.
 - `dag export`: run export bundle generation.
+- `dag export --from-run`: source-explicit export alias for run directory bundles.
+- `dag export --without-artifacts`: metadata-only bundle export that excludes artifact payload and indexes.
 - `dag import`: run bundle import behavior.
+- `dag import --verify-only`: bundle verification-only path without runtime mutation.
 - `dag version`: CLI/runtime version reporting.
 - `dag doctor`: operator diagnostics surface.
 - `dag migrate`: migration workflows (`migrate dag`, `migrate run`).

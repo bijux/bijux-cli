@@ -177,6 +177,96 @@ fn export_modes_emit_documented_payload_shapes() {
 }
 
 #[test]
+fn export_without_artifacts_and_import_verify_only_roundtrip_contract() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let bundle = temp.path().join("bundle-without-artifacts.json");
+
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            "--from-run",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&bundle),
+            "--without-artifacts",
+        ],
+        &root,
+    );
+
+    let exported: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle).expect("read exported bundle"))
+            .expect("parse exported bundle");
+    assert_eq!(exported["export_mode"], "without-artifacts");
+    assert_eq!(exported["outputs"], serde_json::json!({}));
+    assert!(exported["files"].is_null());
+
+    let imported = run_json(
+        &[
+            "import",
+            "--json",
+            "--verify-only",
+            &output_path_string(&bundle),
+        ],
+        &root,
+    );
+    assert_eq!(imported["ok"], true);
+    assert_eq!(imported["data"]["verify_only"], true);
+}
+
+#[test]
+fn graph_snapshot_only_bundle_roundtrip_is_stable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let bundle = temp.path().join("bundle-graph-only-roundtrip.json");
+
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&bundle),
+            "--manifest-only",
+        ],
+        &root,
+    );
+    let imported = run_json(&["import", "--json", &output_path_string(&bundle)], &root);
+    assert_eq!(imported["ok"], true);
+    assert_eq!(imported["data"]["export_mode"], "manifest-only");
+}
+
+#[test]
 fn import_rejects_unsupported_bundle_version_fixture() {
     let root = repo_root();
     let unsupported = root.join("evidence/compat/export_bundle/unsupported_past/bundle.json");

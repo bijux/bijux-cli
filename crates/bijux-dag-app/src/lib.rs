@@ -1915,31 +1915,59 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         },
         Commands::Export {
             run_dir,
+            from_run,
             out,
             manifest_only,
+            without_artifacts,
             with_files,
             include_files,
         } => {
+            let resolved_run_dir = match (run_dir, from_run) {
+                (Some(positional), None) => positional.clone(),
+                (None, Some(flagged)) => flagged.clone(),
+                (Some(positional), Some(flagged)) => {
+                    if positional == flagged {
+                        positional.clone()
+                    } else {
+                        return Err(ExitCode::from(2));
+                    }
+                }
+                (None, None) => return Err(ExitCode::from(2)),
+            };
             let include_files_effective = *with_files || *include_files;
             if *manifest_only && include_files_effective {
                 return Err(ExitCode::from(2));
             }
-            let manifest = read_file(&run_dir.join("manifest.json"))?;
-            let snapshot = read_file(&run_dir.join("graph.snapshot.json"))?;
-            let nodes = read_node_traces(run_dir)?;
-            let outputs = read_outputs_indexes(run_dir)?;
-            let files = if include_files_effective {
-                Some(collect_output_files(run_dir, &outputs)?)
+            if *without_artifacts && include_files_effective {
+                return Err(ExitCode::from(2));
+            }
+            let manifest = read_file(&resolved_run_dir.join("manifest.json"))?;
+            let snapshot = read_file(&resolved_run_dir.join("graph.snapshot.json"))?;
+            let nodes = read_node_traces(&resolved_run_dir)?;
+            let outputs = if *without_artifacts {
+                Default::default()
+            } else {
+                read_outputs_indexes(&resolved_run_dir)?
+            };
+            let files = if include_files_effective && !*without_artifacts {
+                Some(collect_output_files(&resolved_run_dir, &outputs)?)
             } else {
                 None
             };
+            let export_mode = if *without_artifacts {
+                "without-artifacts"
+            } else if include_files_effective {
+                "with-files"
+            } else {
+                "manifest-only"
+            };
             let bundle = json!({
                 "bundle_version": "export-bundle/v0.1",
-                "export_mode": if include_files_effective { "with-files" } else { "manifest-only" },
+                "export_mode": export_mode,
                 "provenance": {
                     "source": "native-run",
                     "imported": false,
-                    "source_run_dir": run_dir,
+                    "source_run_dir": resolved_run_dir,
                 },
                 "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
                 "graph_snapshot": serde_json::from_str::<serde_json::Value>(&snapshot).ok(),
@@ -1967,7 +1995,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Import { file } => {
+        Commands::Import { file, verify_only } => {
             let data = read_file(file)?;
             let val: serde_json::Value =
                 serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
@@ -2031,6 +2059,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             let summary = json!({
                 "bundle_version": bundle_version,
                 "export_mode": val.get("export_mode").and_then(Value::as_str).unwrap_or(""),
+                "verify_only": verify_only,
                 "has_manifest": val.get("manifest").is_some(),
                 "has_graph_snapshot": val.get("graph_snapshot").is_some(),
                 "provenance_source": val
@@ -3284,7 +3313,7 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
     }
     match bundle.get("export_mode").and_then(|v| v.as_str()) {
-        Some("manifest-only") | Some("with-files") => {}
+        Some("manifest-only") | Some("with-files") | Some("without-artifacts") => {}
         _ => violations.push("INV-EXPORT-MODE-001 unsupported or missing export_mode".to_string()),
     }
     if bundle.get("manifest").is_none() {
@@ -3315,6 +3344,23 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
         && !files.is_some_and(|v| v.is_object())
     {
         violations.push("INV-EXPORT-MODE-001 with-files bundle must include files map".to_string());
+    }
+    if bundle.get("export_mode").and_then(|v| v.as_str()) == Some("without-artifacts") {
+        if !bundle
+            .get("outputs")
+            .is_some_and(|v| v.as_object().is_some_and(|m| m.is_empty()))
+        {
+            violations.push(
+                "INV-EXPORT-MODE-001 without-artifacts bundle must include empty outputs map"
+                    .to_string(),
+            );
+        }
+        if !matches!(files, None | Some(serde_json::Value::Null)) {
+            violations.push(
+                "INV-EXPORT-MODE-001 without-artifacts bundle must not include files payload"
+                    .to_string(),
+            );
+        }
     }
     if let Some(traces) = bundle.get("node_traces").and_then(|v| v.as_object()) {
         for (node_id, trace) in traces {
