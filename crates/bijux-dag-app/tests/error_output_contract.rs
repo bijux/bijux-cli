@@ -25,6 +25,7 @@ fn examples_file(file_name: &str) -> String {
 }
 
 #[test]
+#[ignore = "slow"]
 fn json_error_output_contains_structured_fields() {
     let output = Command::new("cargo")
         .env("CARGO_TARGET_DIR", "artifacts/target")

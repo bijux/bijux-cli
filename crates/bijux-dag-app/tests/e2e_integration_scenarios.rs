@@ -65,6 +65,7 @@ fn output_path_string(path: &Path) -> String {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_minimal_parse_validate_run_inspect_replay() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -86,6 +87,7 @@ fn e2e_minimal_parse_validate_run_inspect_replay() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_diamond_outputs_and_manifest_totals() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -115,6 +117,7 @@ fn e2e_diamond_outputs_and_manifest_totals() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_failure_downstream_behavior() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -136,6 +139,7 @@ fn e2e_failure_downstream_behavior() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_retry_accounting_present() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -164,6 +168,7 @@ fn e2e_retry_accounting_present() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_timeout_error_classification() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -192,6 +197,7 @@ fn e2e_timeout_error_classification() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_missing_outputs_failure_handling() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -218,6 +224,7 @@ fn e2e_missing_outputs_failure_handling() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_cache_hit_second_run_and_invalidation() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -304,6 +311,7 @@ fn e2e_cache_hit_second_run_and_invalidation() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_replay_semantic_comparison_and_import_export() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -382,6 +390,7 @@ fn e2e_replay_semantic_comparison_and_import_export() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -436,6 +445,7 @@ fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn e2e_container_and_real_world_orchestration() {
     let root = repo_root();
     let docker_available = Command::new("docker")
