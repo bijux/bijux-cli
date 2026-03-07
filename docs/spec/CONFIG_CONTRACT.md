@@ -22,6 +22,7 @@ Default baseline source: `configs/dev/default_runtime_config.json`.
 
 ## Related docs
 - `docs/spec/CONFIG_PRECEDENCE.md`
+- `docs/spec/CONFIG_PRECEDENCE_CONTRACT.md`
 - `docs/reference/CONFIG_INPUT_INVENTORY.md`
 - `docs/spec/CONFIG_STATE_BOUNDARIES.md`
 - `docs/spec/CONFIG_DEPRECATION.md`
