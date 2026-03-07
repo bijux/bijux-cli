@@ -951,6 +951,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_sacred_execution_flow_guard(),
     },
     SuiteDef {
+        id: "naming-governance",
+        description: "naming policy glossary and runtime naming lint enforcement",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_naming_governance_guard(),
+    },
+    SuiteDef {
         id: "scheduler-invariants",
         description: "scheduler contract and invariants test surfaces are present",
         domain: "governance",
@@ -4263,6 +4272,66 @@ fn run_docs_link_check() -> Result<(), String> {
         }
     }
 
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn run_naming_governance_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let required_docs = [
+        "docs/spec/NAMING_GUIDELINES.md",
+        "docs/spec/TERMINOLOGY_GLOSSARY.md",
+        "docs/spec/NAMING_PHILOSOPHY.md",
+        "docs/spec/NAMING_REVIEW_POLICY.md",
+        "docs/architecture/naming_audit.md",
+        "configs/policy/naming_rules.json",
+    ];
+    for rel in required_docs {
+        if !root.join(rel).exists() {
+            return Err(format!("missing naming governance artifact: {rel}"));
+        }
+    }
+
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/policy/naming_rules.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let banned_terms = policy
+        .get("runtime_module_banned_terms")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "naming_rules.json missing runtime_module_banned_terms".to_string())?
+        .iter()
+        .filter_map(Value::as_str)
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    if banned_terms.is_empty() {
+        return Err("runtime_module_banned_terms must not be empty".to_string());
+    }
+
+    let mut runtime_files = Vec::new();
+    collect_files_with_extension(&root.join("crates/bijux-dag-runtime/src"), "rs", &mut runtime_files)?;
+    let mut violations = Vec::new();
+    for file in runtime_files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let stem = file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        for term in &banned_terms {
+            if stem.contains(term) {
+                violations.push(format!("{rel}: banned runtime module term `{term}`"));
+            }
+        }
+    }
     if violations.is_empty() {
         Ok(())
     } else {
