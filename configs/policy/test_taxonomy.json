@@ -18,6 +18,7 @@
     "crates/bijux-dev-dag/tests/no_cli_in_runtime.rs",
     "crates/bijux-dev-dag/tests/no_core_io.rs",
     "crates/bijux-dev-dag/tests/no_runtime_in_core.rs",
-    "crates/bijux-dev-dag/tests/source_layout_guardrails.rs"
+    "crates/bijux-dev-dag/tests/source_layout_guardrails.rs",
+    "crates/bijux-dag-app/tests/fault_resilience_integration.rs"
   ]
 }
