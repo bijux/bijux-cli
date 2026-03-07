@@ -28,6 +28,7 @@ pub const IDS: &[&str] = &[
     "crate-boundary-foundation",
     "sacred-execution-flow",
     "runtime-semantics",
+    "test-trust-foundation",
     "naming-governance",
     "scheduler-invariants",
     "concurrency-model",

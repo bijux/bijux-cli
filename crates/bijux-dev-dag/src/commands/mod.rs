@@ -960,6 +960,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         run: || run_runtime_semantics_guard(),
     },
     SuiteDef {
+        id: "test-trust-foundation",
+        description: "runtime trust test catalog and contract coverage enforcement",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_test_trust_foundation_guard(),
+    },
+    SuiteDef {
         id: "naming-governance",
         description: "naming policy glossary and runtime naming lint enforcement",
         domain: "governance",
@@ -4358,6 +4367,50 @@ fn run_runtime_semantics_guard() -> Result<(), String> {
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing runtime semantics artifact: {rel}"));
+        }
+    }
+    Ok(())
+}
+
+fn run_test_trust_foundation_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    for rel in [
+        "docs/spec/TEST_TRUST_CONTRACT.md",
+        "docs/spec/TEST_PHILOSOPHY.md",
+        "docs/architecture/test_trust_audit.md",
+        "crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json",
+    ] {
+        if !root.join(rel).exists() {
+            return Err(format!("missing test trust artifact: {rel}"));
+        }
+    }
+
+    let catalog: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let object = catalog
+        .as_object()
+        .ok_or_else(|| "test_trust_catalog.json must be an object".to_string())?;
+    if object.is_empty() {
+        return Err("test_trust_catalog.json must contain at least one class".to_string());
+    }
+    for (class, files) in object {
+        let files = files
+            .as_array()
+            .ok_or_else(|| format!("catalog class `{class}` must be an array"))?;
+        if files.is_empty() {
+            return Err(format!("catalog class `{class}` must not be empty"));
+        }
+        for file in files {
+            let rel = file
+                .as_str()
+                .ok_or_else(|| format!("catalog class `{class}` contains non-string entry"))?;
+            let full = root.join("crates/bijux-dag-runtime/tests").join(rel);
+            if !full.exists() {
+                return Err(format!("catalog references missing test file: crates/bijux-dag-runtime/tests/{rel}"));
+            }
         }
     }
     Ok(())
