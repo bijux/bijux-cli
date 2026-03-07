@@ -1,0 +1,11 @@
+{
+  "ownership_format": "docs-ownership/v1",
+  "owners": [
+    {"path": "docs/spec", "owner_surface": "repository-governance"},
+    {"path": "docs/architecture", "owner_surface": "platform-architecture"},
+    {"path": "docs/user", "owner_surface": "user-experience"},
+    {"path": "docs/dev", "owner_surface": "developer-productivity"},
+    {"path": "docs/reference", "owner_surface": "reference-contracts"},
+    {"path": "docs/tracking", "owner_surface": "program-tracking"}
+  ]
+}
