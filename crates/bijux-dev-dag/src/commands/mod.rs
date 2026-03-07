@@ -1254,6 +1254,15 @@ const REPO_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_control_plane_surfaces_guard(),
     },
+    SuiteDef {
+        id: "repo-hygiene-suite",
+        description: "repo hygiene suite aggregates core repository guardrails",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_repo_hygiene_suite_guard(),
+    },
 ];
 
 pub fn entry_main() -> ExitCode {
@@ -6728,6 +6737,28 @@ fn run_control_plane_surfaces_guard() -> Result<(), String> {
             return Err(format!(
                 "control-plane foundation doc missing required surface: {required}"
             ));
+        }
+    }
+    Ok(())
+}
+
+fn run_repo_hygiene_suite_guard() -> Result<(), String> {
+    for required in [
+        "repo-docs",
+        "repo-source",
+        "repo-manifests",
+        "repo-api",
+        "root-directory-guard",
+        "executable-guard",
+        "docs-governance",
+        "docs-links",
+        "docs-schema-ref",
+        "config-lint",
+        "config-drift",
+        "ambient-env-guard",
+    ] {
+        if !crate::suites::repo::IDS.contains(&required) {
+            return Err(format!("repo hygiene suite missing required guard: {required}"));
         }
     }
     Ok(())

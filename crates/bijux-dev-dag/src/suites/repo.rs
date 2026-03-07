@@ -60,4 +60,5 @@ pub const IDS: &[&str] = &[
     "ambient-env-guard",
     "foundation-verification",
     "control-plane-surfaces",
+    "repo-hygiene-suite",
 ];

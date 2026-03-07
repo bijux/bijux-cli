@@ -33,3 +33,4 @@
 - `release verify`
 - `release post-release-verify`
 - `ci`
+- `repo-hygiene-suite`
