@@ -1248,6 +1248,77 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 }
                 Ok(ExitCode::SUCCESS)
             }
+            CacheCommands::Explain {
+                cache_dir,
+                key,
+                expected_adapter_id,
+                expected_adapter_version,
+            } => {
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .ok_or(ExitCode::from(3))?;
+                let report = explain_cache_key(
+                    &dir,
+                    key,
+                    expected_adapter_id.as_deref().unwrap_or(""),
+                    expected_adapter_version.as_deref().unwrap_or(""),
+                )?;
+                let hit = report["eligible"].as_bool().unwrap_or(false);
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.cache.explain",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                if !hit {
+                    return Err(ExitCode::from(3));
+                }
+                Ok(ExitCode::SUCCESS)
+            }
+            CacheCommands::Stats { cache_dir } => {
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .ok_or(ExitCode::from(3))?;
+                let report = cache_stats(&dir)?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.cache.stats",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
+            CacheCommands::PruneSimulate { cache_dir } => {
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .ok_or(ExitCode::from(3))?;
+                let report = cache_prune_simulate(&dir)?;
+                if cli.json {
+                    return emit_json(
+                        &cli,
+                        "dag.cache.prune-simulate",
+                        true,
+                        report,
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                Ok(ExitCode::SUCCESS)
+            }
         },
         Commands::Adapters { command } => match command {
             AdaptersCommands::Ls => {
@@ -1830,6 +1901,146 @@ fn verify_cache_entry_cli(
         }
     }
     Ok(true)
+}
+
+fn explain_cache_key(
+    cache_dir: &Path,
+    key: &str,
+    expected_adapter_id: &str,
+    expected_adapter_version: &str,
+) -> Result<Value, ExitCode> {
+    let entry = cache_dir.join(key);
+    let mut reasons = Vec::new();
+    if !entry.exists() {
+        reasons.push("missing cache entry directory".to_string());
+        return Ok(json!({
+            "key": key,
+            "eligible": false,
+            "reasons": reasons
+        }));
+    }
+    let meta_path = entry.join("meta.json");
+    let index_path = entry.join("outputs").join("index.json");
+    if !meta_path.exists() {
+        reasons.push("missing meta.json".to_string());
+    }
+    if !index_path.exists() {
+        reasons.push("missing outputs/index.json".to_string());
+    }
+    let mut meta = Value::Null;
+    if meta_path.exists() {
+        meta = serde_json::from_str::<Value>(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
+        if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(key) {
+            reasons.push("node_fingerprint mismatch".to_string());
+        }
+        if !expected_adapter_id.is_empty()
+            && meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_adapter_id)
+        {
+            reasons.push("adapter_id mismatch".to_string());
+        }
+        if !expected_adapter_version.is_empty()
+            && meta.get("adapter_version").and_then(|v| v.as_str()) != Some(expected_adapter_version)
+        {
+            reasons.push("adapter_version mismatch".to_string());
+        }
+    }
+    let eligible = reasons.is_empty()
+        && verify_cache_entry_cli(entry.as_path(), key, expected_adapter_id, expected_adapter_version)?;
+    if !eligible && reasons.is_empty() {
+        reasons.push("output proof verification failed".to_string());
+    }
+    Ok(json!({
+        "key": key,
+        "eligible": eligible,
+        "entry_dir": entry,
+        "meta": meta,
+        "reasons": reasons
+    }))
+}
+
+fn cache_stats(cache_dir: &Path) -> Result<Value, ExitCode> {
+    if !cache_dir.exists() {
+        return Ok(json!({
+            "entries": 0,
+            "bytes": 0u64,
+            "invalid_entries": 0,
+            "hit_potential": "none"
+        }));
+    }
+    let mut entries = 0u64;
+    let mut bytes = 0u64;
+    let mut invalid_entries = 0u64;
+    for dirent in fs::read_dir(cache_dir).map_err(|_| ExitCode::from(3))? {
+        let dirent = dirent.map_err(|_| ExitCode::from(3))?;
+        if !dirent.path().is_dir() {
+            continue;
+        }
+        entries += 1;
+        let key = dirent.file_name().to_string_lossy().to_string();
+        let path = dirent.path();
+        let valid = verify_cache_entry_cli(&path, &key, "", "")?;
+        if !valid {
+            invalid_entries += 1;
+        }
+        bytes += dir_size_bytes(&path)?;
+    }
+    let hit_potential = if entries == 0 {
+        "none"
+    } else if invalid_entries == 0 {
+        "high"
+    } else if invalid_entries * 2 < entries {
+        "medium"
+    } else {
+        "low"
+    };
+    Ok(json!({
+        "entries": entries,
+        "bytes": bytes,
+        "invalid_entries": invalid_entries,
+        "hit_potential": hit_potential
+    }))
+}
+
+fn cache_prune_simulate(cache_dir: &Path) -> Result<Value, ExitCode> {
+    if !cache_dir.exists() {
+        return Ok(json!({"would_remove": [], "reason": "cache directory missing"}));
+    }
+    let mut would_remove = Vec::new();
+    for dirent in fs::read_dir(cache_dir).map_err(|_| ExitCode::from(3))? {
+        let dirent = dirent.map_err(|_| ExitCode::from(3))?;
+        if !dirent.path().is_dir() {
+            continue;
+        }
+        let key = dirent.file_name().to_string_lossy().to_string();
+        let valid = verify_cache_entry_cli(&dirent.path(), &key, "", "")?;
+        if !valid {
+            would_remove.push(key);
+        }
+    }
+    would_remove.sort();
+    Ok(json!({
+        "would_remove": would_remove,
+        "policy": "invalid entries only (simulation)"
+    }))
+}
+
+fn dir_size_bytes(path: &Path) -> Result<u64, ExitCode> {
+    let mut total = 0u64;
+    let mut entries: Vec<_> = fs::read_dir(path)
+        .map_err(|_| ExitCode::from(3))?
+        .filter_map(|e| e.ok())
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let p = entry.path();
+        if p.is_dir() {
+            total += dir_size_bytes(&p)?;
+        } else {
+            total += fs::metadata(&p).map_err(|_| ExitCode::from(3))?.len();
+        }
+    }
+    Ok(total)
 }
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {

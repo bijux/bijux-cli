@@ -1,0 +1,61 @@
+use bijux_dag_app::{dag_command, dag_run};
+use serde_json::json;
+use sha2::{Digest, Sha256};
+use std::fs;
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    hex::encode(hasher.finalize())
+}
+
+fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
+    let entry = base.join(key);
+    fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
+    let content = if valid { b"ok".to_vec() } else { b"bad".to_vec() };
+    fs::write(entry.join("outputs/out.txt"), &content).expect("write output");
+    let index = json!({
+        "files": [{
+            "path": "out.txt",
+            "sha256": if valid { sha256_hex(b"ok") } else { sha256_hex(b"other") },
+            "node_id": "n",
+            "node_fingerprint": key
+        }]
+    });
+    fs::write(entry.join("outputs/index.json"), serde_json::to_vec_pretty(&index).expect("index json"))
+        .expect("write index");
+    let meta = json!({"node_fingerprint": key, "adapter_id": "shell", "adapter_version": "1"});
+    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta).expect("meta json"))
+        .expect("write meta");
+}
+
+#[test]
+fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    write_cache_entry(tmp.path(), "key-valid", true);
+    write_cache_entry(tmp.path(), "key-invalid", false);
+
+    let cmd = dag_command();
+    let explain = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag", "--json", "cache", "explain", "--cache-dir", tmp.path().to_string_lossy().as_ref(), "--key", "key-valid"
+        ])
+        .expect("parse explain");
+    assert!(dag_run(&explain).is_ok());
+
+    let stats = cmd
+        .clone()
+        .try_get_matches_from([
+            "dag", "--json", "cache", "stats", "--cache-dir", tmp.path().to_string_lossy().as_ref()
+        ])
+        .expect("parse stats");
+    assert!(dag_run(&stats).is_ok());
+
+    let prune = cmd
+        .try_get_matches_from([
+            "dag", "--json", "cache", "prune-simulate", "--cache-dir", tmp.path().to_string_lossy().as_ref()
+        ])
+        .expect("parse prune sim");
+    assert!(dag_run(&prune).is_ok());
+}

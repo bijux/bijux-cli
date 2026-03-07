@@ -275,6 +275,24 @@ pub(crate) enum CacheCommands {
         #[arg(long)]
         remote: Option<PathBuf>,
     },
+    Explain {
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        key: String,
+        #[arg(long)]
+        expected_adapter_id: Option<String>,
+        #[arg(long)]
+        expected_adapter_version: Option<String>,
+    },
+    Stats {
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
+    PruneSimulate {
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
