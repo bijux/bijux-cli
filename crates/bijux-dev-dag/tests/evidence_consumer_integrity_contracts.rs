@@ -6,7 +6,6 @@ use hex as _;
 use serde as _;
 use serde_json as _;
 use sha2 as _;
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tempfile as _;
@@ -142,11 +141,6 @@ fn top_level_tests_do_not_keep_migrated_scenario_assets() {
     let mut files = Vec::new();
     collect_files(&root.join("tests"), &mut files);
 
-    let allowed = BTreeSet::from([
-        "tests/e2e/matrix.json".to_string(),
-        "tests/integration_fixtures/minimal_consumer/dag.json".to_string(),
-    ]);
-
     for file in files {
         let rel = file
             .strip_prefix(&root)
@@ -156,11 +150,7 @@ fn top_level_tests_do_not_keep_migrated_scenario_assets() {
         if !(rel.ends_with(".json") || rel.ends_with(".dag.json")) {
             continue;
         }
-        assert!(
-            allowed.contains(&rel),
-            "top-level tests contains migrated scenario asset: {}",
-            rel
-        );
+        panic!("top-level tests contains canonical scenario asset: {}", rel);
     }
 }
 
