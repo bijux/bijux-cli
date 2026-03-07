@@ -466,6 +466,8 @@ fn export_import_help_includes_bundle_control_flags() {
     let export_text = String::from_utf8_lossy(&export_help.stdout);
     assert!(export_text.contains("--from-run"));
     assert!(export_text.contains("--without-artifacts"));
+    assert!(export_text.contains("--provenance-only"));
+    assert!(export_text.contains("--redact"));
 
     let import_help = dag_command()
         .args(["dag", "import", "--help"])
@@ -474,6 +476,17 @@ fn export_import_help_includes_bundle_control_flags() {
     assert!(import_help.status.success());
     let import_text = String::from_utf8_lossy(&import_help.stdout);
     assert!(import_text.contains("--verify-only"));
+}
+
+#[test]
+fn prove_help_and_json_surface_are_available() {
+    let help = dag_command()
+        .args(["dag", "prove", "--help"])
+        .output()
+        .expect("prove help");
+    assert!(help.status.success());
+    let text = String::from_utf8_lossy(&help.stdout);
+    assert!(text.contains("dag prove"));
 }
 
 #[test]

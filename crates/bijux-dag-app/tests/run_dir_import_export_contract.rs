@@ -825,3 +825,58 @@ fn import_accepts_supported_older_bundle_fixture_and_export_handles_older_manife
     );
     assert_eq!(exported["ok"], true);
 }
+
+#[test]
+fn export_provenance_only_and_redacted_bundle_preserve_source_run_records() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
+    let before_manifest = fs::read(run_dir.join("manifest.json")).expect("read manifest before");
+
+    let bundle = temp.path().join("bundle-provenance-redacted.json");
+    let _ = run_json(
+        &[
+            "export",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&bundle),
+            "--provenance-only",
+            "--redact",
+        ],
+        &root,
+    );
+
+    let exported: Value =
+        serde_json::from_str(&fs::read_to_string(&bundle).expect("read bundle")).expect("parse");
+    assert_eq!(exported["export_mode"], "provenance-only");
+    assert_eq!(exported["node_traces"], serde_json::json!({}));
+    assert_eq!(exported["outputs"], serde_json::json!({}));
+    assert_eq!(exported["provenance"]["source_run_dir"], "[redacted]");
+
+    let imported = run_json(
+        &["import", "--json", "--verify-only", &output_path_string(&bundle)],
+        &root,
+    );
+    assert_eq!(imported["ok"], true);
+    assert_eq!(imported["data"]["fidelity"]["level"], "graded");
+
+    let after_manifest = fs::read(run_dir.join("manifest.json")).expect("read manifest after");
+    assert_eq!(
+        before_manifest, after_manifest,
+        "redacted export must not mutate source run records"
+    );
+}
