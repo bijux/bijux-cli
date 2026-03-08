@@ -123,7 +123,10 @@ pub(crate) fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), Ex
         return Err(ExitCode::from(3));
     }
     if let Some(obj) = meta.as_object_mut() {
-        obj.insert("cache_source".to_string(), Value::String("pack".to_string()));
+        obj.insert(
+            "cache_source".to_string(),
+            Value::String("pack".to_string()),
+        );
     }
     fs::write(&meta_path, serde_json::to_vec_pretty(&meta).unwrap())
         .map_err(|_| ExitCode::from(3))?;
@@ -153,8 +156,7 @@ pub(crate) fn unpack_cache_archive_bounded<R: std::io::Read>(
         if !(kind.is_file() || kind.is_dir()) {
             return Err(ExitCode::from(3));
         }
-        total_bytes =
-            total_bytes.saturating_add(header.size().map_err(|_| ExitCode::from(3))?);
+        total_bytes = total_bytes.saturating_add(header.size().map_err(|_| ExitCode::from(3))?);
         if total_bytes > MAX_CACHE_ARCHIVE_TOTAL_BYTES {
             return Err(ExitCode::from(3));
         }
