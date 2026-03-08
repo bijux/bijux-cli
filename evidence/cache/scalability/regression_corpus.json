@@ -1,0 +1,55 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "large-dag-scalability-completion-contracts",
+  "cases": [
+    {
+      "id": "planner-1000-nodes",
+      "coverage": ["dag-1000", "planner-scalability", "telemetry-large-dag"]
+    },
+    {
+      "id": "planner-10000-nodes",
+      "coverage": ["dag-10000", "planner-scalability", "memory-footprint"]
+    },
+    {
+      "id": "very-large-fan-out",
+      "coverage": ["fan-out-large", "scheduler-scalability"]
+    },
+    {
+      "id": "very-large-fan-in",
+      "coverage": ["fan-in-large", "scheduler-scalability"]
+    },
+    {
+      "id": "deep-dependency-chain",
+      "coverage": ["deep-chain", "runtime-memory"]
+    },
+    {
+      "id": "artifact-generation-under-large-dag",
+      "coverage": ["artifact-generation", "artifact-store-stress"]
+    },
+    {
+      "id": "replay-planning-under-large-dag",
+      "coverage": ["replay-planning", "planner-scalability"]
+    },
+    {
+      "id": "diff-under-large-dag",
+      "coverage": ["diff-performance", "ordering-stability"]
+    },
+    {
+      "id": "provenance-traversal-under-large-dag",
+      "coverage": ["provenance-traversal", "query-latency"]
+    },
+    {
+      "id": "explain-under-large-dag",
+      "coverage": ["explain-large-dag", "operator-diagnostics"]
+    },
+    {
+      "id": "large-run-history-dataset",
+      "coverage": ["run-history-stress", "telemetry-large-dag"]
+    },
+    {
+      "id": "runtime-profiling-large-dag",
+      "coverage": ["runtime-profiling", "cpu-memory-regression"]
+    }
+  ]
+}
