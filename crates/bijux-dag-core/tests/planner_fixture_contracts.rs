@@ -30,6 +30,8 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
     let resource_heavy = load_graph("resource_heavy.dag.json");
     let retry_heavy = load_graph("retry_heavy.dag.json");
     let replay_oriented = load_graph("replay_oriented.dag.json");
+    let imported_bundle_replay = load_graph("imported_bundle_replay.dag.json");
+    let selective_replay = load_graph("selective_replay.dag.json");
 
     let resource_plan = lower_graph_to_execution_plan(&resource_heavy, PlanOptions::default())
         .expect("resource-heavy lowers");
@@ -46,6 +48,31 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
         .expect("replay oriented lowers");
     assert!(replay_plan.ordering.contains(&"source".to_string()));
     assert!(replay_plan.ordering.contains(&"replay_check".to_string()));
+
+    let imported_plan =
+        lower_graph_to_execution_plan(&imported_bundle_replay, PlanOptions::default())
+            .expect("imported bundle replay lowers");
+    assert!(imported_plan.ordering.contains(&"hydrate_import".to_string()));
+    assert!(imported_plan.ordering.contains(&"replay_check".to_string()));
+
+    let selective_plan = lower_graph_to_execution_plan(
+        &selective_replay,
+        PlanOptions {
+            selected_nodes: ["source", "branch_a", "sink"]
+                .into_iter()
+                .map(str::to_string)
+                .collect(),
+            ..PlanOptions::default()
+        },
+    )
+    .expect("selective replay lowers");
+    assert!(
+        selective_plan
+            .nodes
+            .iter()
+            .all(|node| ["source", "branch_a", "sink"].contains(&node.id.as_str())),
+        "selected replay plan must stay in chosen closure"
+    );
 }
 
 #[test]

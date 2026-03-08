@@ -123,6 +123,17 @@ fn fixture_retry_nondet() {
 }
 
 #[test]
+fn fixture_conflicting_retry_timeout_policy() {
+    let input = fixture("conflicting_retry_timeout_policy.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(
+        has_code(&diags, "E1011"),
+        "non-deterministic shell node with retries must be rejected"
+    );
+}
+
+#[test]
 fn fixture_unknown_node_output() {
     let input = fixture("unknown_node_output.json");
     let graph = parse_graph_strict(&input).unwrap();
