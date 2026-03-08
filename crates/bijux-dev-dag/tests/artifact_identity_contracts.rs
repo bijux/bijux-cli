@@ -6,9 +6,9 @@ use hex as _;
 use serde as _;
 use serde_json as _;
 use sha2 as _;
+use std::fs;
 use std::path::Path;
 use tempfile as _;
-use std::fs;
 
 fn repo_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -41,11 +41,16 @@ fn artifact_capability_report_command_is_wired_and_report_is_implementation_back
         "repo.artifact-capability-reports",
         "run_repo_artifact_capability_reports",
     ] {
-        assert!(source.contains(token), "missing artifact capability command token: {token}");
+        assert!(
+            source.contains(token),
+            "missing artifact capability command token: {token}"
+        );
     }
 
-    let report = fs::read_to_string(root.join("docs/reports/foundation/artifact_store_capability_matrix.md"))
-        .expect("artifact capability matrix report");
+    let report = fs::read_to_string(
+        root.join("docs/reports/foundation/artifact_store_capability_matrix.md"),
+    )
+    .expect("artifact capability matrix report");
     assert!(report.contains("filesystem store"));
     assert!(report.contains("object store model"));
     assert!(report.contains("implemented"));

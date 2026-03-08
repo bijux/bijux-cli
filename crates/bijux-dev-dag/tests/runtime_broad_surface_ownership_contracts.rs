@@ -35,13 +35,17 @@ fn repo_root() -> PathBuf {
 #[test]
 fn every_broad_runtime_module_has_ownership_classification() {
     let root = repo_root();
-    let raw = std::fs::read_to_string(root.join("configs/policy/runtime_broad_surface_ownership.json"))
-        .expect("read ownership policy");
+    let raw =
+        std::fs::read_to_string(root.join("configs/policy/runtime_broad_surface_ownership.json"))
+            .expect("read ownership policy");
     let policy: OwnershipPolicy = serde_json::from_str(&raw).expect("parse ownership policy");
 
     let mut seen = BTreeSet::new();
     for entry in policy.entries {
-        assert!(seen.insert(entry.module.clone()), "duplicate module policy entry");
+        assert!(
+            seen.insert(entry.module.clone()),
+            "duplicate module policy entry"
+        );
         assert!(
             matches!(
                 entry.surface_status.as_str(),
@@ -55,14 +59,24 @@ fn every_broad_runtime_module_has_ownership_classification() {
             "missing ownership_category for {}",
             entry.module
         );
-        assert!(!entry.owner_repo.trim().is_empty(), "missing owner_repo for {}", entry.module);
+        assert!(
+            !entry.owner_repo.trim().is_empty(),
+            "missing owner_repo for {}",
+            entry.module
+        );
         assert!(
             matches!(entry.decision.as_str(), "keep" | "quarantine" | "delete"),
             "invalid decision for {}",
             entry.module
         );
-        let module_path = root.join("crates/bijux-dag-runtime/src").join(&entry.module);
-        assert!(module_path.exists(), "missing runtime module: {}", module_path.display());
+        let module_path = root
+            .join("crates/bijux-dag-runtime/src")
+            .join(&entry.module);
+        assert!(
+            module_path.exists(),
+            "missing runtime module: {}",
+            module_path.display()
+        );
     }
 }
 
@@ -79,6 +93,9 @@ fn generated_runtime_surface_reports_exist() {
         "docs/reports/foundation/runtime_keep_quarantine_delete_review.md",
         "docs/architecture/runtime_quarantine_rationale.md",
     ] {
-        assert!(root.join(rel).exists(), "missing runtime surface report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing runtime surface report: {rel}"
+        );
     }
 }

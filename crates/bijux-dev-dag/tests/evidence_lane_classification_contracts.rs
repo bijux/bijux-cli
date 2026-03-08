@@ -28,7 +28,12 @@ fn evidence_command_classification_policy_is_defined() {
         .as_array()
         .expect("release_critical_verify_commands array")
         .iter()
-        .map(|entry| entry.as_str().expect("release-critical command").to_string())
+        .map(|entry| {
+            entry
+                .as_str()
+                .expect("release-critical command")
+                .to_string()
+        })
         .collect();
     let advisory: BTreeSet<String> = policy["advisory_verify_commands"]
         .as_array()
@@ -41,7 +46,10 @@ fn evidence_command_classification_policy_is_defined() {
         !release_critical.is_empty(),
         "release-critical evidence command set cannot be empty"
     );
-    assert!(!advisory.is_empty(), "advisory evidence command set cannot be empty");
+    assert!(
+        !advisory.is_empty(),
+        "advisory evidence command set cannot be empty"
+    );
     assert!(
         release_critical.is_disjoint(&advisory),
         "release-critical and advisory command sets must not overlap"
@@ -82,7 +90,12 @@ fn full_lane_exercises_all_release_critical_evidence_commands() {
         .as_array()
         .expect("release_critical_verify_commands array")
         .iter()
-        .map(|entry| entry.as_str().expect("release-critical command").to_string())
+        .map(|entry| {
+            entry
+                .as_str()
+                .expect("release-critical command")
+                .to_string()
+        })
         .collect();
 
     let make_root = fs::read_to_string(root.join("make/root.mk")).expect("read make/root.mk");
@@ -144,8 +157,9 @@ fn stale_note_only_reports_removed_from_evidence_reports_root() {
 #[test]
 fn evidence_command_owner_map_covers_governed_verify_commands() {
     let root = repo_root();
-    let map = fs::read_to_string(root.join("docs/reports/foundation/evidence_command_owner_map.md"))
-        .expect("read evidence command owner map");
+    let map =
+        fs::read_to_string(root.join("docs/reports/foundation/evidence_command_owner_map.md"))
+            .expect("read evidence command owner map");
     let policy: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(root.join("configs/policy/evidence_suite_policy.json"))
             .expect("read evidence suite policy"),

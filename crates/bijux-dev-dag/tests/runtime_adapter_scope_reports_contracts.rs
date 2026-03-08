@@ -31,7 +31,10 @@ fn runtime_adapter_scope_catalog_and_reports_exist() {
         "docs/reports/foundation/implemented_backend_surfaces_report.md",
         "docs/reports/foundation/simulated_backend_surfaces_report.md",
     ] {
-        assert!(root.join(rel).exists(), "missing runtime scope report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing runtime scope report: {rel}"
+        );
     }
 }
 
@@ -54,21 +57,20 @@ fn every_adapter_surface_has_ownership_category() {
             ),
             "unsupported category: {category}"
         );
-        assert!(
-            !entry["owner"]
-                .as_str()
-                .expect("owner string")
-                .trim()
-                .is_empty()
-        );
+        assert!(!entry["owner"]
+            .as_str()
+            .expect("owner string")
+            .trim()
+            .is_empty());
     }
 }
 
 #[test]
 fn backend_support_report_keeps_mode_separation_explicit() {
     let root = repo_root();
-    let support = fs::read_to_string(root.join("docs/reports/foundation/backend_support_matrix.md"))
-        .expect("read backend support matrix");
+    let support =
+        fs::read_to_string(root.join("docs/reports/foundation/backend_support_matrix.md"))
+            .expect("read backend support matrix");
     assert!(support.contains("| local | implemented |"));
     assert!(support.contains("| fake-batch-backend | simulated |"));
     assert!(support.contains("| slurm-backend | aspirational |"));

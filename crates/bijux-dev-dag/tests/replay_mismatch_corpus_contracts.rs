@@ -15,8 +15,8 @@ fn replay_mismatch_fixture_corpus_is_structured_for_regression_reuse() {
         .canonicalize()
         .expect("workspace root");
     let corpus_path = root.join("evidence/cache/replay/mismatch_fixture_corpus.json");
-    let payload: Value = serde_json::from_str(&std::fs::read_to_string(corpus_path).expect("corpus"))
-        .expect("json");
+    let payload: Value =
+        serde_json::from_str(&std::fs::read_to_string(corpus_path).expect("corpus")).expect("json");
 
     assert_eq!(payload["version"], "v1");
     let cases = payload["cases"].as_array().expect("cases");

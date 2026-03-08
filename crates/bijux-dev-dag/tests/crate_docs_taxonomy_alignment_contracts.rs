@@ -48,6 +48,9 @@ fn governance_taxonomy_docs_exist() {
     ];
 
     for doc in docs {
-        assert!(Path::new(doc).exists(), "required governance doc missing: {doc}");
+        assert!(
+            Path::new(doc).exists(),
+            "required governance doc missing: {doc}"
+        );
     }
 }

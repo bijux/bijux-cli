@@ -67,9 +67,7 @@ fn scheduler_profile_report_matches_runtime_contract_surface() {
     let fixture_sources = value["fixture_sources"]
         .as_array()
         .expect("fixture_sources should be an array");
-    assert!(
-        fixture_sources
-            .iter()
-            .any(|item| item.as_str() == Some("crates/bijux-dag-runtime/tests/scheduler_contract.rs"))
-    );
+    assert!(fixture_sources
+        .iter()
+        .any(|item| item.as_str() == Some("crates/bijux-dag-runtime/tests/scheduler_contract.rs")));
 }

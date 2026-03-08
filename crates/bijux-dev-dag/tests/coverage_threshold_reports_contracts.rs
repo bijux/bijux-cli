@@ -35,8 +35,10 @@ fn coverage_threshold_reports_and_allowlist_are_tracked() {
 fn protected_zero_coverage_allowlist_has_entries() {
     let root = workspace_root();
     let payload: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(root.join("configs/policy/protected_zero_coverage_allowlist.json"))
-            .expect("read allowlist"),
+        &std::fs::read_to_string(
+            root.join("configs/policy/protected_zero_coverage_allowlist.json"),
+        )
+        .expect("read allowlist"),
     )
     .expect("parse allowlist");
 

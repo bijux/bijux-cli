@@ -12,8 +12,9 @@ use tempfile as _;
 fn foundation_now_suite_lists_identity_replay_artifact_and_scheduler_checks() {
     let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../configs/suites/foundation_now.json");
-    let suite: Value = serde_json::from_str(&std::fs::read_to_string(&suite_path).expect("read suite"))
-        .expect("parse suite");
+    let suite: Value =
+        serde_json::from_str(&std::fs::read_to_string(&suite_path).expect("read suite"))
+            .expect("parse suite");
 
     assert_eq!(suite["id"], "foundation-now");
     let commands = suite["commands"].as_array().expect("commands array");

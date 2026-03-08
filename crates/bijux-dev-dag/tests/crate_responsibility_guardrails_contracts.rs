@@ -32,13 +32,17 @@ fn repo_root() -> PathBuf {
 #[test]
 fn crate_responsibility_guardrails_policy_is_well_formed_and_complete() {
     let root = repo_root();
-    let raw = std::fs::read_to_string(root.join("configs/policy/crate_responsibility_guardrails.json"))
-        .expect("read guardrails policy");
+    let raw =
+        std::fs::read_to_string(root.join("configs/policy/crate_responsibility_guardrails.json"))
+            .expect("read guardrails policy");
     let policy: GuardrailsPolicy = serde_json::from_str(&raw).expect("parse guardrails policy");
     let mut ids = std::collections::BTreeSet::new();
     for check in &policy.checks {
         assert!(ids.insert(check.id.clone()), "duplicate check id");
-        assert!(!check.forbidden_tokens.is_empty(), "empty forbidden token set");
+        assert!(
+            !check.forbidden_tokens.is_empty(),
+            "empty forbidden token set"
+        );
         assert!(
             root.join(&check.crate_path).exists(),
             "crate path missing for check {}",
@@ -50,8 +54,9 @@ fn crate_responsibility_guardrails_policy_is_well_formed_and_complete() {
 #[test]
 fn crate_responsibility_guardrails_enforce_forbidden_tokens() {
     let root = repo_root();
-    let raw = std::fs::read_to_string(root.join("configs/policy/crate_responsibility_guardrails.json"))
-        .expect("read guardrails policy");
+    let raw =
+        std::fs::read_to_string(root.join("configs/policy/crate_responsibility_guardrails.json"))
+            .expect("read guardrails policy");
     let policy: GuardrailsPolicy = serde_json::from_str(&raw).expect("parse guardrails policy");
 
     for check in &policy.checks {
@@ -106,6 +111,9 @@ fn crate_responsibility_reports_exist_and_are_generated() {
         "docs/reports/foundation/artifacts_pub_use_audit.md",
         "docs/reports/foundation/module_scope_name_review.md",
     ] {
-        assert!(root.join(rel).exists(), "missing crate responsibility report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing crate responsibility report: {rel}"
+        );
     }
 }

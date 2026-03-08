@@ -12,8 +12,8 @@ use tempfile as _;
 fn run_history_resilience_fast_suite_keeps_damaged_run_no_panic_coverage() {
     let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../configs/suites/run_history_resilience_fast.json");
-    let payload: Value = serde_json::from_str(&std::fs::read_to_string(suite_path).expect("suite"))
-        .expect("json");
+    let payload: Value =
+        serde_json::from_str(&std::fs::read_to_string(suite_path).expect("suite")).expect("json");
 
     assert_eq!(payload["id"], "run-history-resilience-fast");
     let commands = payload["commands"]

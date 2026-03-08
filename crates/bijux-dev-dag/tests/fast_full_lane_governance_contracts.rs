@@ -30,7 +30,10 @@ fn fast_full_lane_docs_and_reports_exist() {
         "docs/reports/foundation/smoke_contract_regression_board.md",
         "docs/reports/foundation/next_iteration_candidate_ranking.md",
     ] {
-        assert!(repo_root().join(rel).exists(), "missing governance artifact: {rel}");
+        assert!(
+            repo_root().join(rel).exists(),
+            "missing governance artifact: {rel}"
+        );
     }
 }
 
@@ -42,7 +45,10 @@ fn lane_inventories_are_generated_artifacts() {
     ] {
         let raw = std::fs::read_to_string(repo_root().join(rel)).expect("read inventory");
         let value: serde_json::Value = serde_json::from_str(&raw).expect("inventory json");
-        assert!(value.get("generated_from").is_some(), "missing generated_from in {rel}");
+        assert!(
+            value.get("generated_from").is_some(),
+            "missing generated_from in {rel}"
+        );
     }
 }
 

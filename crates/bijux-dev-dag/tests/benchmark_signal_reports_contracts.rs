@@ -29,6 +29,9 @@ fn benchmark_signal_reports_exist_for_product_relevant_latency_dimensions() {
         "docs/reports/foundation/scheduler_overhead_large_dag_report.md",
         "docs/reports/foundation/semantic_diff_equivalence_cost_report.md",
     ] {
-        assert!(root.join(rel).exists(), "missing benchmark signal report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing benchmark signal report: {rel}"
+        );
     }
 }

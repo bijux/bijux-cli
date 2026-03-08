@@ -60,7 +60,9 @@ fn advanced_semantics_modules_are_classified_with_allowed_categories() {
             "invalid advanced semantics category for {module}: {category}"
         );
         assert!(
-            root.join("crates/bijux-dag-runtime/src").join(module).exists(),
+            root.join("crates/bijux-dag-runtime/src")
+                .join(module)
+                .exists(),
             "advanced semantics module path does not exist: {module}"
         );
     }

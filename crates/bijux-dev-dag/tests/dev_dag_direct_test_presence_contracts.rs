@@ -32,7 +32,10 @@ fn listed_helper_modules_contain_direct_unit_tests() {
         "crates/bijux-dev-dag/src/tooling/mod.rs",
     ] {
         let src = fs::read_to_string(root.join(rel)).expect("read module source");
-        assert!(src.contains("#[cfg(test)]"), "missing unit-test module in {rel}");
+        assert!(
+            src.contains("#[cfg(test)]"),
+            "missing unit-test module in {rel}"
+        );
         assert!(src.contains("#[test]"), "missing direct test in {rel}");
     }
 }

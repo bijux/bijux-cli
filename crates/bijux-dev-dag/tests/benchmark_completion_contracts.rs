@@ -53,7 +53,10 @@ fn benchmark_regression_policy_and_trend_summary_exist() {
         let ratio = policy["max_regression_ratio"][key]
             .as_f64()
             .expect("regression ratio must be f64");
-        assert!(ratio >= 0.0 && ratio <= 1.0, "invalid regression ratio for {key}");
+        assert!(
+            ratio >= 0.0 && ratio <= 1.0,
+            "invalid regression ratio for {key}"
+        );
     }
     assert_eq!(
         policy["requires_raw_data_for_performance_claims"]
@@ -91,7 +94,10 @@ fn benchmark_docs_cover_scorecards_types_hygiene_and_review() {
         "docs/reports/foundation/benchmark_fixture_simplification_report.md",
         "docs/reference/BENCHMARK_REVIEW_CHECKLIST.md",
     ] {
-        assert!(root.join(rel).exists(), "missing benchmark guidance doc: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing benchmark guidance doc: {rel}"
+        );
     }
 }
 
@@ -105,7 +111,10 @@ fn benchmark_suite_focus_reports_and_coverage_map_exist() {
         "docs/reports/foundation/benchmark_suite_runtime_event_state_machine.md",
         "docs/reports/foundation/benchmark_coverage_map.md",
     ] {
-        assert!(root.join(rel).exists(), "missing benchmark suite report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing benchmark suite report: {rel}"
+        );
     }
 }
 

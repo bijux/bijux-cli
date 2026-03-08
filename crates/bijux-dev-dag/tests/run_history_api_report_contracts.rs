@@ -15,8 +15,8 @@ fn generated_run_history_api_report_tracks_operator_run_schemas() {
         .canonicalize()
         .expect("workspace root");
     let report_path = root.join("docs/reports/foundation/run_history_api_report.json");
-    let payload: Value = serde_json::from_str(&std::fs::read_to_string(report_path).expect("report"))
-        .expect("json");
+    let payload: Value =
+        serde_json::from_str(&std::fs::read_to_string(report_path).expect("report")).expect("json");
 
     assert_eq!(payload["generated_from"], "configs/schema/operator");
     let surfaces = payload["surfaces"].as_object().expect("surfaces");
@@ -26,9 +26,15 @@ fn generated_run_history_api_report_tracks_operator_run_schemas() {
         "run_inspect.schema.json",
         "run_history.schema.json",
     ] {
-        assert!(surfaces.contains_key(required), "missing schema entry: {required}");
         assert!(
-            surfaces[required].as_array().map(|v| !v.is_empty()).unwrap_or(false),
+            surfaces.contains_key(required),
+            "missing schema entry: {required}"
+        );
+        assert!(
+            surfaces[required]
+                .as_array()
+                .map(|v| !v.is_empty())
+                .unwrap_or(false),
             "schema entry should list required fields: {required}"
         );
     }

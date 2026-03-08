@@ -52,13 +52,11 @@ fn cli_and_app_surfaces_include_dag_prove_command() {
 
     let app_lib =
         fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
-    let app_routes = fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/replay_routes.rs"))
-        .expect("read app replay routes");
+    let app_routes =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/replay_routes.rs"))
+            .expect("read app replay routes");
     for token in ["dag.prove", "build_run_proof_bundle(", "incomplete_reasons"] {
         let present = app_lib.contains(token) || app_routes.contains(token);
-        assert!(
-            present,
-            "app prove surface missing token: {token}"
-        );
+        assert!(present, "app prove surface missing token: {token}");
     }
 }

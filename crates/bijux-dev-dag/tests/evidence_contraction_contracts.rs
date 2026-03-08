@@ -40,7 +40,11 @@ fn evidence_family_governance_policy_requires_purpose_and_ownership_docs() {
     for family in policy["families"].as_array().expect("families array") {
         let name = family["name"].as_str().expect("family name");
         assert!(
-            !family["purpose"].as_str().expect("family purpose").trim().is_empty(),
+            !family["purpose"]
+                .as_str()
+                .expect("family purpose")
+                .trim()
+                .is_empty(),
             "family purpose must be non-empty: {name}"
         );
         let class = family["release_class"].as_str().expect("release class");
@@ -48,7 +52,10 @@ fn evidence_family_governance_policy_requires_purpose_and_ownership_docs() {
             matches!(class, "blocking" | "advisory"),
             "invalid release class for {name}: {class}"
         );
-        for doc in family["ownership_docs"].as_array().expect("ownership docs array") {
+        for doc in family["ownership_docs"]
+            .as_array()
+            .expect("ownership docs array")
+        {
             let doc = doc.as_str().expect("ownership doc path");
             assert!(
                 root.join(doc).exists(),
@@ -61,10 +68,9 @@ fn evidence_family_governance_policy_requires_purpose_and_ownership_docs() {
 #[test]
 fn evidence_command_families_stay_separated_by_dedicated_modules() {
     let root = repo_root();
-    let authoring = fs::read_to_string(
-        root.join("crates/bijux-dev-dag/src/commands/authoring_evidence.rs"),
-    )
-    .expect("read authoring evidence command module");
+    let authoring =
+        fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/authoring_evidence.rs"))
+            .expect("read authoring evidence command module");
     let battle =
         fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/battle_evidence.rs"))
             .expect("read battle evidence command module");
@@ -91,11 +97,12 @@ fn evidence_command_families_stay_separated_by_dedicated_modules() {
 #[test]
 fn evidence_dashboards_exist_in_human_and_machine_readable_forms() {
     let root = repo_root();
-    assert!(root.join("docs/reports/foundation/evidence_dashboard.md").exists());
-    assert!(
-        root.join("docs/reports/foundation/evidence_dashboard.json")
-            .exists()
-    );
+    assert!(root
+        .join("docs/reports/foundation/evidence_dashboard.md")
+        .exists());
+    assert!(root
+        .join("docs/reports/foundation/evidence_dashboard.json")
+        .exists());
 
     let dashboard_json: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(root.join("docs/reports/foundation/evidence_dashboard.json"))
@@ -128,7 +135,10 @@ fn evidence_release_note_and_internal_only_docs_exist() {
         "docs/spec/EVIDENCE_RELEASE_NOTE_TRUST.md",
         "docs/spec/EVIDENCE_INTERNAL_ONLY_SURFACES.md",
     ] {
-        assert!(root.join(rel).exists(), "missing evidence documentation: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing evidence documentation: {rel}"
+        );
     }
 }
 
