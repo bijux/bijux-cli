@@ -1,0 +1,10 @@
+{
+  "id": "fixture-contraction-verification",
+  "description": "Verification suite for fixture inventory governance, canonical tagging, and contraction reporting outputs.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test fixture_contraction_521_540_contracts",
+    "cargo test -p bijux-dev-dag --test fixture_loader_governance_contracts",
+    "cargo test -p bijux-dev-dag --test fixture_tooling_completion_contracts",
+    "cargo test -p bijux-dev-dag --test fixture_helpers_fast_suite_contracts"
+  ]
+}
