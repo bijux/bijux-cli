@@ -1,0 +1,24 @@
+{
+  "id": "system-reliability-verification",
+  "version": "v1",
+  "checks": [
+    "runtime-reliability-targets",
+    "artifact-reliability-targets",
+    "replay-reliability-targets",
+    "scheduler-reliability-targets",
+    "reliability-target-tests",
+    "regression-fixtures",
+    "stress-suite",
+    "telemetry-reporting",
+    "anomaly-detection",
+    "runtime-reliability-benchmarks",
+    "artifact-reliability-benchmarks",
+    "replay-reliability-benchmarks",
+    "diagnostics-tooling",
+    "failure-simulation-tests",
+    "monitoring-tests",
+    "architecture-review",
+    "verification-tools",
+    "verification-suite"
+  ]
+}
