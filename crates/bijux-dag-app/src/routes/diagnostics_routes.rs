@@ -77,6 +77,7 @@ mod tests {
     use crate::commands::{Commands, DagCli};
     use crate::ExitCode;
     use serde_json::json;
+    use serde_json::Value;
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -149,8 +150,22 @@ mod tests {
                     .expect("index"),
             )
             .expect("write index");
+            fs::write(
+                run.join("nodes/extract/outputs/index.json"),
+                serde_json::to_vec_pretty(&json!({"files":[{"node_id":"extract","node_fingerprint":"fp1","sha256":"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881","path":"nodes/extract/outputs/data.txt"}]}))
+                    .expect("node index"),
+            )
+            .expect("write node index");
         }
         (dir, run_a, run_b)
+    }
+
+    fn read_json(path: &Path) -> Value {
+        serde_json::from_str(&fs::read_to_string(path).expect("read json")).expect("parse json")
+    }
+
+    fn write_json(path: &Path, value: &Value) {
+        fs::write(path, serde_json::to_vec_pretty(value).expect("encode json")).expect("write json");
     }
 
     #[test]
@@ -184,5 +199,73 @@ mod tests {
         });
         assert!(why.is_ok());
         assert!(trace.is_ok());
+    }
+
+    #[test]
+    fn why_rerun_reports_graph_drift_group() {
+        let (_tmp, run_a, run_b) = write_diff_ready_runs();
+        let mut snap = read_json(&run_b.join("graph.snapshot.json"));
+        snap["graph"]["nodes"][0]["params"]["value"] = json!("changed");
+        snap["graph_fingerprint"] = json!("g2");
+        write_json(&run_b.join("graph.snapshot.json"), &snap);
+
+        let mut manifest = read_json(&run_b.join("manifest.json"));
+        manifest["graph_fingerprint"] = json!("g2");
+        write_json(&run_b.join("manifest.json"), &manifest);
+
+        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        assert_eq!(payload["equivalent"], false);
+        assert!(payload["cause_groups"].get("graph_semantics").is_some());
+    }
+
+    #[test]
+    fn why_rerun_reports_environment_drift_group() {
+        let (_tmp, run_a, run_b) = write_diff_ready_runs();
+        let mut manifest = read_json(&run_b.join("manifest.json"));
+        manifest["policy"]["deny_env"] = json!(false);
+        write_json(&run_b.join("manifest.json"), &manifest);
+
+        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        assert_eq!(payload["equivalent"], false);
+        assert!(payload["cause_groups"].get("manifest_drift").is_some());
+    }
+
+    #[test]
+    fn why_rerun_reports_artifact_drift_group() {
+        let (_tmp, run_a, run_b) = write_diff_ready_runs();
+        let mut outputs = read_json(&run_b.join("nodes/extract/outputs/index.json"));
+        outputs["files"][0]["sha256"] =
+            json!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        write_json(&run_b.join("nodes/extract/outputs/index.json"), &outputs);
+
+        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        assert_eq!(payload["equivalent"], false);
+        assert!(payload["cause_groups"].get("artifact_payload").is_some());
+    }
+
+    #[test]
+    fn why_rerun_reports_replay_ancestry_drift_group() {
+        let (_tmp, run_a, run_b) = write_diff_ready_runs();
+        let mut manifest_a = read_json(&run_a.join("manifest.json"));
+        manifest_a["run_metadata"] = json!({
+            "parent_run_id":"run-parent-a",
+            "source_run_id":"run-source-a",
+            "submission_source":"replay",
+            "trigger_source":"cli"
+        });
+        write_json(&run_a.join("manifest.json"), &manifest_a);
+        let mut manifest = read_json(&run_b.join("manifest.json"));
+        manifest["run_metadata"] = json!({
+            "parent_run_id":"run-parent-b",
+            "source_run_id":"run-source-b",
+            "submission_source":"replay",
+            "trigger_source":"cli"
+        });
+        manifest["jobs"] = json!(2);
+        write_json(&run_b.join("manifest.json"), &manifest);
+
+        let payload = why_rerun_payload(&run_a, &run_b).expect("why rerun");
+        assert_eq!(payload["equivalent"], false);
+        assert!(payload["cause_groups"].get("manifest_drift").is_some());
     }
 }
