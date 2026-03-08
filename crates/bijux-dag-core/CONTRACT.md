@@ -12,6 +12,7 @@ Responsibility: DAG schema, parsing, canonicalization, validation, and determini
 - `graph/topology.rs` owns deterministic ordering.
 - `pipeline/*` owns parse, resolve, and validate entrypoints.
 - `analysis/*` owns fingerprinting and semantic analysis.
+- `build/contract.rs` owns optional packaging metadata and default application.
 - `planner/*` owns lowering and planning surfaces.
 - `build/*` owns authoring helpers and compile-oriented wrappers around the kernel.
 - `contracts/*` owns error and compatibility contract types.
@@ -37,3 +38,4 @@ Validation diagnostics must carry stable IDs and severities and remain documente
 - Domain types should stay independent from compile-orchestration conveniences.
 - New algorithms belong in focused modules, not in `src/lib.rs`.
 - Integration-oriented wrappers must not become the primary place where core semantics live.
+- Core compilation must work directly from `Graph`; contract wrappers are optional adapters, not the primary API.

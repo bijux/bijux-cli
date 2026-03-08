@@ -12,7 +12,10 @@ The crate is organized around a thin root module and focused service modules:
 - `pipeline/validate.rs`: validation rules and diagnostics
 - `pipeline/resolve.rs`: parameter reference resolution
 - `analysis/fingerprint.rs`: graph and node identity
+- `build/contract.rs`: optional packaging and default-application wrappers
 - `planner/planner.rs`: execution-plan lowering
+
+The default compile path is graph-first. Packaging metadata is available, but not required, for core compilation.
 
 ## Boundaries
 This crate should stay pure and deterministic. It must not absorb:
