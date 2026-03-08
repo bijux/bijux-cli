@@ -1,0 +1,24 @@
+{
+  "id": "system-conceptual-integrity-verification",
+  "version": "v1",
+  "checks": [
+    "conceptual-architecture-overview",
+    "execution-model-overview",
+    "artifact-model-overview",
+    "replay-model-overview",
+    "diff-model-overview",
+    "provenance-model-overview",
+    "backend-abstraction-overview",
+    "runtime-execution-overview",
+    "scheduler-behavior-overview",
+    "determinism-overview",
+    "conceptual-consistency-tests",
+    "system-boundary-consistency",
+    "architecture-conformance",
+    "conceptual-drift-detection",
+    "documentation-generation",
+    "anomaly-detection",
+    "architecture-verification-tooling",
+    "architecture-verification-suite"
+  ]
+}
