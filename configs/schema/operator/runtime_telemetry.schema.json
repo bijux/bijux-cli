@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "runtime-telemetry",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "run_duration_ms",
+    "node_durations_ms",
+    "scheduler",
+    "cache",
+    "artifact_io",
+    "backend_capability",
+    "failure_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "runtime-telemetry/v0.1"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "node_durations_ms": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "required": ["queued_nodes", "max_concurrency"],
+      "properties": {
+        "queued_nodes": {"type": "integer", "minimum": 0},
+        "max_concurrency": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "cache": {
+      "type": "object",
+      "required": ["hits", "misses"],
+      "properties": {
+        "hits": {"type": "integer", "minimum": 0},
+        "misses": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "replay": {
+      "type": "object"
+    },
+    "diff": {
+      "type": "object"
+    },
+    "prove_verify": {
+      "type": "object"
+    },
+    "artifact_io": {
+      "type": "object"
+    },
+    "backend_capability": {
+      "type": "object"
+    },
+    "failure_mode": {
+      "type": "string",
+      "enum": ["none", "failure", "cancelled", "partial-rerun"]
+    }
+  },
+  "additionalProperties": true
+}
