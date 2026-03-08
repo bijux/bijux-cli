@@ -1,0 +1,17 @@
+{
+  "id": "internal-invariants-verification",
+  "description": "Internal invariant assertions, violation detection, telemetry, stress, fuzz, and debugging verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/scheduler_hardening_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/runtime_engine_scheduler_fast_suite_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/internal_invariants_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/invariants/regression_corpus.json",
+    "docs/reports/foundation/internal_invariants_telemetry_report.md",
+    "docs/reports/foundation/internal_invariants_debugging_report.md",
+    "docs/reports/foundation/internal_invariants_coverage_report.md",
+    "docs/reports/foundation/internal_invariants_performance_report.md"
+  ]
+}

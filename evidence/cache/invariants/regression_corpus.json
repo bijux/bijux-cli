@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "domain": "internal-invariants",
+  "cases": [
+    {"id": "graph-state-invariants", "coverage": ["graph-state", "invariant-assertion"], "source": "docs/spec/FORMAL_INVARIANTS.md"},
+    {"id": "planner-state-invariants", "coverage": ["planner-state", "invariant-assertion"], "source": "docs/spec/PLANNER_CONTRACT.md"},
+    {"id": "runtime-state-invariants", "coverage": ["runtime-state", "invariant-assertion"], "source": "crates/bijux-dag-runtime/src/runtime_core/governance/invariants.rs"},
+    {"id": "scheduler-state-invariants", "coverage": ["scheduler-state", "invariant-assertion"], "source": "crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs"},
+    {"id": "artifact-store-state-invariants", "coverage": ["artifact-store-state", "invariant-assertion"], "source": "docs/spec/STORAGE_CONTRACT.md"},
+    {"id": "run-history-state-invariants", "coverage": ["run-history-state", "invariant-assertion"], "source": "docs/spec/RUN_HISTORY_CONTRACT.md"},
+    {"id": "invariant-violation-detection", "coverage": ["violation-detection", "failure-logging"], "source": "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs"},
+    {"id": "invariant-failure-logging", "coverage": ["failure-logging", "debug-tooling"], "source": "docs/spec/ERROR_CONTRACT.md"},
+    {"id": "invariant-monitoring-telemetry", "coverage": ["monitoring-telemetry", "anomaly-detection"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
+    {"id": "invariant-regression-fixtures", "coverage": ["regression-fixtures", "verification-suite"], "source": "evidence/cache/invariants/regression_corpus.json"},
+    {"id": "invariant-stress", "coverage": ["stress", "performance-impact"], "source": "configs/suites/runtime_engine_scheduler_fast.json"},
+    {"id": "invariant-fuzz", "coverage": ["fuzz", "anomaly-detection"], "source": "crates/bijux-dag-core/tests/validation_contracts_21_40.rs"},
+    {"id": "invariant-coverage-reporting", "coverage": ["coverage-reporting", "verification-suite"], "source": "docs/reports/foundation/internal_invariants_coverage_report.md"},
+    {"id": "invariant-performance-impact", "coverage": ["performance-impact", "benchmarking"], "source": "docs/reports/foundation/internal_invariants_performance_report.md"},
+    {"id": "invariant-debug-tooling", "coverage": ["debug-tooling", "trace-capture"], "source": "crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs"},
+    {"id": "invariant-trace-capture", "coverage": ["trace-capture", "failure-simulation"], "source": "docs/spec/SCHEDULER_CONTRACT.md"},
+    {"id": "invariant-failure-simulation", "coverage": ["failure-simulation", "violation-detection"], "source": "crates/bijux-dag-runtime/tests/runtime_engine_invariants_contracts.rs"},
+    {"id": "invariant-verification-suite", "coverage": ["verification-suite", "documentation"], "source": "configs/suites/internal_invariants_verification.json"}
+  ]
+}
