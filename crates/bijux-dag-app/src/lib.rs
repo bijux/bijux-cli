@@ -1546,243 +1546,20 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             redact,
             with_files,
             include_files,
-        } => {
-            let resolved_run_dir = match (run_dir, from_run) {
-                (Some(positional), None) => positional.clone(),
-                (None, Some(flagged)) => flagged.clone(),
-                (Some(positional), Some(flagged)) => {
-                    if positional == flagged {
-                        positional.clone()
-                    } else {
-                        return Err(ExitCode::from(2));
-                    }
-                }
-                (None, None) => return Err(ExitCode::from(2)),
-            };
-            let include_files_effective = *with_files || *include_files;
-            if *manifest_only && include_files_effective {
-                return Err(ExitCode::from(2));
-            }
-            if *without_artifacts && include_files_effective {
-                return Err(ExitCode::from(2));
-            }
-            if *provenance_only && include_files_effective {
-                return Err(ExitCode::from(2));
-            }
-            let manifest = read_file(&resolved_run_dir.join("manifest.json"))?;
-            let snapshot = read_file(&resolved_run_dir.join("graph.snapshot.json"))?;
-            let nodes = if *provenance_only {
-                HashMap::new()
-            } else {
-                read_node_traces(&resolved_run_dir)?
-            };
-            let outputs = if *without_artifacts || *provenance_only {
-                Default::default()
-            } else {
-                read_outputs_indexes(&resolved_run_dir)?
-            };
-            let files = if include_files_effective && !*without_artifacts && !*provenance_only {
-                Some(collect_output_files(&resolved_run_dir, &outputs)?)
-            } else {
-                None
-            };
-            let export_mode = if *provenance_only {
-                "provenance-only"
-            } else if *without_artifacts {
-                "without-artifacts"
-            } else if include_files_effective {
-                "with-files"
-            } else {
-                "manifest-only"
-            };
-            let source_run_dir = if *redact {
-                Value::String("[redacted]".to_string())
-            } else {
-                json!(resolved_run_dir)
-            };
-            let bundle = json!({
-                "bundle_version": "export-bundle/v0.1",
-                "export_mode": export_mode,
-                "provenance": {
-                    "source": "native-run",
-                    "imported": false,
-                    "source_run_dir": source_run_dir,
-                },
-                "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
-                "graph_snapshot": serde_json::from_str::<serde_json::Value>(&snapshot).ok(),
-                "node_traces": nodes,
-                "outputs": outputs,
-                "files": files,
-            });
-            let bundle_invariant_violations = verify_bundle_invariants(&bundle);
-            if !bundle_invariant_violations.is_empty() {
-                return Err(ExitCode::from(3));
-            }
-            fs::write(out, serde_json::to_vec_pretty(&bundle).unwrap())
-                .map_err(|_| ExitCode::from(3))?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.export",
-                    true,
-                    json!({ "bundle": out }),
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            } else if !cli.quiet {
-                println!("bundle: {}", out.display());
-            }
-            Ok(ExitCode::SUCCESS)
-        }
+        } => routes::export_import_routes::handle_export_command(
+            &cli,
+            run_dir,
+            from_run,
+            out,
+            *manifest_only,
+            *without_artifacts,
+            *provenance_only,
+            *redact,
+            *with_files,
+            *include_files,
+        ),
         Commands::Import { file, verify_only } => {
-            let data = read_file(file)?;
-            let val: serde_json::Value =
-                serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
-            let bundle_version = val
-                .get("bundle_version")
-                .or_else(|| val.get("export_bundle_version"))
-                .and_then(Value::as_str)
-                .unwrap_or("");
-            if bundle_version != "export-bundle/v0.1" {
-                let summary = json!({
-                    "error": "unsupported export bundle version",
-                    "supported": "export-bundle/v0.1",
-                    "found": bundle_version
-                });
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.import",
-                        false,
-                        summary,
-                        vec![
-                            json!({"message":"unsupported bundle version","remediation":"export with export-bundle/v0.1"}),
-                        ],
-                        ExitCode::from(3),
-                    );
-                }
-                println!("import summary: {}", summary);
-                return Err(ExitCode::from(3));
-            }
-            let mut invariant_violations = verify_bundle_invariants(&val);
-            if val.get("bundle_version").is_none() && val.get("export_bundle_version").is_some() {
-                invariant_violations.retain(|v| {
-                    !v.starts_with("INV-EXPORT-VERSION-001")
-                        && !v.starts_with("INV-EXPORT-MODE-001")
-                        && !v.starts_with("INV-EXPORT-VERIFY-001 missing graph_snapshot")
-                        && !v.starts_with("INV-EXPORT-VERIFY-001 missing outputs map")
-                });
-            }
-            let nodes = val
-                .get("node_traces")
-                .and_then(|v| v.as_object())
-                .map(|o| o.len())
-                .unwrap_or(0);
-            let failed = val
-                .get("node_traces")
-                .and_then(|v| v.as_object())
-                .map(|o| {
-                    o.iter()
-                        .filter_map(|(k, v)| {
-                            if v.get("status")
-                                == Some(&serde_json::Value::String("failed".to_string()))
-                            {
-                                Some(k.clone())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
-            let preservation_lineage = val
-                .get("provenance")
-                .and_then(|v| v.get("lineage"))
-                .is_some();
-            let preservation_run_ancestry = val
-                .get("provenance")
-                .and_then(|v| v.get("parent_run_id"))
-                .is_some()
-                || val
-                    .get("provenance")
-                    .and_then(|v| v.get("source_run_id"))
-                    .is_some();
-            let preservation_graph_identity = val.get("graph_snapshot").is_some();
-            let preservation_artifact_identity =
-                val.get("outputs").and_then(|v| v.as_object()).is_some();
-            let mut fidelity_downgrade_reasons: Vec<String> = Vec::new();
-            if !preservation_lineage {
-                fidelity_downgrade_reasons.push("missing lineage".to_string());
-            }
-            if !preservation_run_ancestry {
-                fidelity_downgrade_reasons.push("missing run ancestry".to_string());
-            }
-            if !preservation_graph_identity {
-                fidelity_downgrade_reasons.push("missing graph identity context".to_string());
-            }
-            if !preservation_artifact_identity {
-                fidelity_downgrade_reasons.push("missing artifact identity context".to_string());
-            }
-
-            let summary = json!({
-                "bundle_version": bundle_version,
-                "export_mode": val.get("export_mode").and_then(Value::as_str).unwrap_or(""),
-                "verify_only": verify_only,
-                "has_manifest": val.get("manifest").is_some(),
-                "has_graph_snapshot": val.get("graph_snapshot").is_some(),
-                "provenance_source": val
-                    .get("provenance")
-                    .and_then(|v| v.get("source"))
-                    .and_then(Value::as_str)
-                    .unwrap_or(""),
-                "nodes": nodes,
-                "failed_nodes": failed,
-                "preservation": {
-                    "lineage": preservation_lineage,
-                    "run_ancestry": preservation_run_ancestry,
-                    "graph_identity": preservation_graph_identity,
-                    "artifact_identity": preservation_artifact_identity
-                },
-                "fidelity": {
-                    "level": if fidelity_downgrade_reasons.is_empty() {
-                        "exact"
-                    } else {
-                        "graded"
-                    },
-                    "downgrade_reasons": fidelity_downgrade_reasons
-                },
-                "invariant_violations": invariant_violations,
-            });
-            if !summary["invariant_violations"]
-                .as_array()
-                .is_some_and(|v| v.is_empty())
-            {
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.import",
-                        false,
-                        summary,
-                        Vec::new(),
-                        ExitCode::from(3),
-                    );
-                }
-                println!("import summary: {}", summary);
-                return Err(ExitCode::from(3));
-            }
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.import",
-                    true,
-                    summary,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            } else {
-                println!("import summary: {}", summary);
-            }
-            Ok(ExitCode::SUCCESS)
+            routes::export_import_routes::handle_import_command(&cli, file, *verify_only)
         }
         Commands::Version => {
             let v = format!("bijux-dag {} ({})", env!("CARGO_PKG_VERSION"), SPEC_VERSION);
@@ -1800,119 +1577,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Capabilities { backend } => {
-            let payload = json!({
-                "format": "capabilities/v1",
-                "binary_version": env!("CARGO_PKG_VERSION"),
-                "graph_schema_version": SPEC_VERSION,
-                "surfaces": {
-                    "cli": {"status": "supported"},
-                    "run_directory": {"status": "supported"},
-                    "export_bundle": {"status": "supported"},
-                    "library_crates": {"status": "experimental"}
-                },
-                "execution_modes": {
-                    "local_process": "implemented",
-                    "container": "simulated",
-                    "remote": "simulated",
-                    "batch_hpc": "simulated"
-                },
-                "backend_capability_matrix": [
-                    backend_capability_payload("kubernetes").unwrap(),
-                    backend_capability_payload("hpc").unwrap(),
-                    backend_capability_payload("remote").unwrap()
-                ],
-                "operator_commands": [
-                    "runs.list","runs.show","runs.inspect","runs.history","runs.id-explain","runs.tree","runs.timeline","runs.diff","runs.verify","runs.doctor","runs.explain-failure","artifact-inspect","trace-artifact","hash.run","hash.artifact","why-rerun","why-cache-missed","fsck"
-                ]
-            });
-            let payload = if let Some(name) = backend.as_deref() {
-                match backend_capability_payload(name) {
-                    Some(entry) => entry,
-                    None => {
-                        return emit_json(
-                            &cli,
-                            "dag.capabilities",
-                            false,
-                            json!({
-                                "format": "capabilities/v1",
-                                "backend": name,
-                                "status": "unsupported-backend-query"
-                            }),
-                            vec![json!({
-                                "message": format!("unsupported backend query: {name}"),
-                                "remediation": "use --backend kubernetes, --backend hpc, or --backend remote"
-                            })],
-                            ExitCode::from(2),
-                        );
-                    }
-                }
-            } else {
-                payload
-            };
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.capabilities",
-                    true,
-                    payload,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(ExitCode::SUCCESS)
+            routes::surface_routes::handle_capabilities_command(&cli, backend)
         }
         Commands::SemanticPortability { backend } => {
-            let capability = backend_capability_payload(&backend);
-            let supported = capability.is_some();
-            let payload = if let Some(capability) = capability {
-                json!({
-                    "format": "semantic-portability/v1",
-                    "backend": capability["backend"],
-                    "status": "fidelity-preserving",
-                    "equivalence_class": "contract-equivalent",
-                    "downgrade_conditions": [
-                        "missing artifacts",
-                        "environment fingerprint drift",
-                        "backend-specific unsupported requirement"
-                    ],
-                    "capability_reference": capability
-                })
-            } else {
-                json!({
-                    "format": "semantic-portability/v1",
-                    "backend": backend,
-                    "status": "downgraded",
-                    "equivalence_class": "unsupported-backend-query",
-                    "downgrade_conditions": ["unsupported backend target"]
-                })
-            };
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.semantic-portability",
-                    supported,
-                    payload,
-                    if supported {
-                        Vec::new()
-                    } else {
-                        vec![
-                            json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"}),
-                        ]
-                    },
-                    if supported {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(2)
-                    },
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(if supported {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(2)
-            })
+            routes::surface_routes::handle_semantic_portability_command(&cli, backend)
         }
         Commands::EquivalenceProof {
             run_a,
@@ -2211,7 +1879,9 @@ pub(crate) fn load_snapshot(run_dir: &Path) -> Result<GraphSnapshot, ExitCode> {
     serde_json::from_str(&snap).map_err(|_| ExitCode::from(3))
 }
 
-fn read_node_traces(run_dir: &Path) -> Result<HashMap<String, serde_json::Value>, ExitCode> {
+pub(crate) fn read_node_traces(
+    run_dir: &Path,
+) -> Result<HashMap<String, serde_json::Value>, ExitCode> {
     let mut map = HashMap::new();
     let nodes_dir = run_dir.join("nodes");
     if nodes_dir.exists() {
@@ -2234,7 +1904,9 @@ fn read_node_traces(run_dir: &Path) -> Result<HashMap<String, serde_json::Value>
     Ok(map)
 }
 
-fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>, ExitCode> {
+pub(crate) fn read_outputs_indexes(
+    run_dir: &Path,
+) -> Result<HashMap<String, OutputsIndex>, ExitCode> {
     let mut map = HashMap::new();
     let nodes_dir = run_dir.join("nodes");
     if nodes_dir.exists() {
@@ -2339,7 +2011,7 @@ pub(crate) fn print_human_diff(diff: &serde_json::Value) {
     println!("outputs changed: {}", outputs);
 }
 
-fn collect_output_files(
+pub(crate) fn collect_output_files(
     run_dir: &Path,
     outputs: &HashMap<String, OutputsIndex>,
 ) -> Result<serde_json::Value, ExitCode> {
@@ -3075,7 +2747,7 @@ fn collect_json_diff_paths(path: &str, left: &Value, right: &Value, out: &mut Ve
     }
 }
 
-fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
+pub(crate) fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     let mut violations = Vec::new();
     if bundle.get("bundle_version").and_then(|v| v.as_str()) != Some("export-bundle/v0.1") {
         violations.push("INV-EXPORT-VERSION-001 unsupported or missing bundle_version".to_string());
