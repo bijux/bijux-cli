@@ -37,6 +37,7 @@ fn capability_query_docs_are_generated_not_handwritten() {
     .expect("capability query docs");
     assert!(raw.contains("generated_from:"));
     assert!(raw.contains("format: `capabilities/v1`"));
+    assert!(raw.contains("local"));
     assert!(raw.contains("kubernetes"));
     assert!(raw.contains("hpc"));
     assert!(raw.contains("remote"));

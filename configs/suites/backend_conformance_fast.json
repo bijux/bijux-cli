@@ -1,0 +1,12 @@
+{
+  "id": "backend-conformance-fast",
+  "description": "Fast backend conformance subset for local implemented and modeled capability surfaces.",
+  "commands": [
+    "cargo test -p bijux-dag-app --lib capability_query_output_is_stable_for_local",
+    "cargo test -p bijux-dag-app --lib capability_query_output_is_stable_for_kubernetes",
+    "cargo test -p bijux-dag-app --lib capability_query_output_is_stable_for_hpc",
+    "cargo test -p bijux-dag-app --lib capability_query_output_is_stable_for_remote",
+    "cargo test -p bijux-dag-runtime --test adapter_registry_capability_contracts",
+    "cargo test -p bijux-dev-dag --test backend_capability_docs_generation_contracts"
+  ]
+}
