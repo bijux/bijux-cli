@@ -1,0 +1,130 @@
+{
+  "version": "2026-03-08",
+  "governed_families": [
+    {
+      "family": "graph",
+      "fixture_purpose": "Deterministic DAG shape, schema, and canonicalization contract coverage.",
+      "fixture_owner": "core-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-core",
+      "owner_suite": "planner_fixture_contracts",
+      "roots": [
+        "configs/schema/fixtures",
+        "crates/bijux-dag-core/tests/fixtures"
+      ]
+    },
+    {
+      "family": "run",
+      "fixture_purpose": "Run manifest, run history, and run identity contract coverage.",
+      "fixture_owner": "app-runtime-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-app",
+      "owner_suite": "runs_routes_tests",
+      "roots": [
+        "crates/bijux-dag-app/tests/fixtures",
+        "crates/bijux-dag-artifacts/tests/fixtures",
+        "evidence/compat/ecosystem/shared_identity",
+        "evidence/compat/ecosystem/shared_refs"
+      ]
+    },
+    {
+      "family": "artifact",
+      "fixture_purpose": "Artifact integrity, lineage, and storage behavior contract coverage.",
+      "fixture_owner": "artifact-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-artifacts",
+      "owner_suite": "artifact_store_and_hardening_coverage_contract",
+      "roots": [
+        "crates/bijux-dag-runtime/tests/fixtures/provenance",
+        "crates/bijux-dag-runtime/tests/fixtures/secrets",
+        "evidence/compat/ecosystem/shared_identity/artifact_identity_fixture.json"
+      ]
+    },
+    {
+      "family": "replay",
+      "fixture_purpose": "Replay mismatch and replay fidelity contract coverage.",
+      "fixture_owner": "app-replay-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-app",
+      "owner_suite": "replay_diff_hardening_contract",
+      "roots": [
+        "evidence/cache/replay"
+      ]
+    },
+    {
+      "family": "diff",
+      "fixture_purpose": "Diff explainability and drift classification contract coverage.",
+      "fixture_owner": "app-diff-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-app",
+      "owner_suite": "replay_diff_hardening_contract",
+      "roots": [
+        "evidence/battle/fixtures/kubernetes/k8s_vs_local_run_diff.json"
+      ]
+    },
+    {
+      "family": "bundle",
+      "fixture_purpose": "Bundle export/import portability and compatibility contract coverage.",
+      "fixture_owner": "app-bundle-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "product-contract",
+      "owner_crate": "bijux-dag-app",
+      "owner_suite": "artifact_import_corruption_contract",
+      "roots": [
+        "evidence/compat/scenarios",
+        "evidence/battle/workflows"
+      ]
+    },
+    {
+      "family": "capability",
+      "fixture_purpose": "Backend capability query and support matrix contract coverage.",
+      "fixture_owner": "runtime-capability-contracts",
+      "fixture_lane": "test",
+      "fixture_taxonomy": "governance-evidence",
+      "owner_crate": "bijux-dev-dag",
+      "owner_suite": "runtime_adapter_scope_reports_contracts",
+      "roots": [
+        "configs/policy/runtime_adapter_surface_catalog.json",
+        "evidence/reports/backend_capability_matrix_generated.json"
+      ]
+    },
+    {
+      "family": "benchmark",
+      "fixture_purpose": "Benchmark baseline, threshold, and scenario governance coverage.",
+      "fixture_owner": "perf-governance",
+      "fixture_lane": "test-all",
+      "fixture_taxonomy": "performance-governance",
+      "owner_crate": "bijux-dev-dag",
+      "owner_suite": "benchmark_governance_contracts",
+      "roots": [
+        "evidence/perf/fixtures",
+        "evidence/perf/baselines"
+      ]
+    },
+    {
+      "family": "evidence",
+      "fixture_purpose": "Release evidence topology and command-output evidence fixtures.",
+      "fixture_owner": "dev-governance",
+      "fixture_lane": "evidence-all",
+      "fixture_taxonomy": "release-governance",
+      "owner_crate": "bijux-dev-dag",
+      "owner_suite": "evidence_governance_contract",
+      "roots": [
+        "evidence/operator/fixtures",
+        "evidence/battle/fixtures",
+        "evidence/inventory"
+      ]
+    }
+  ],
+  "legacy_schema_field_patterns": [
+    "\"spec_alias\"",
+    "\"container_engine\"",
+    "\"output_path\"",
+    "\"resource_declaration\""
+  ]
+}
