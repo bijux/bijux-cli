@@ -1,5 +1,5 @@
 {
-  "asset_count": 142,
+  "asset_count": 150,
   "assets": [
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
@@ -1500,6 +1500,44 @@
       ]
     },
     {
+      "canonical_path": "evidence/cache/replay/cache_hit_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/cache_hit_case.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/cache_hit_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/cache_miss_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/cache_miss_case.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/cache_miss_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
       "canonical_path": "evidence/cache/replay/corruption_case.json",
       "consumers": [
         "e2e-contracts",
@@ -1511,6 +1549,25 @@
       "kind": "cache",
       "owner": "team-runtime",
       "registry_key": "cache:evidence/cache/replay/corruption_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/incompatible_backend_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/incompatible_backend_case.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/incompatible_backend_case.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -1568,6 +1625,63 @@
       "kind": "cache",
       "owner": "team-runtime",
       "registry_key": "cache:evidence/cache/replay/mismatch_fixture_corpus.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/missing_artifact_case.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/missing_artifact_case.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/missing_artifact_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/regression_corpus.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/regression_corpus.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/regression_corpus.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/run_manifest_regression_corpus.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2146,6 +2260,44 @@
       "kind": "perf",
       "owner": "team-performance",
       "registry_key": "perf:evidence/perf/scenarios/cache_metadata_growth.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/cli_validate_latency.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/cli_validate_latency.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/cli_validate_latency.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/cli_validate_memory.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/cli_validate_memory.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/cli_validate_memory.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",

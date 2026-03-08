@@ -4845,6 +4845,74 @@
       "why_exists": "exercise cache corruption and warm/cold semantics"
     },
     {
+      "canonical_location": "evidence/cache/replay/cache_hit_case.json",
+      "canonical_path": "evidence/cache/replay/cache_hit_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/cache_hit_case.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/cache_hit_case.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling"
+    },
+    {
+      "canonical_location": "evidence/cache/replay/cache_miss_case.json",
+      "canonical_path": "evidence/cache/replay/cache_miss_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/cache_miss_case.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/cache_miss_case.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling"
+    },
+    {
       "canonical_location": "evidence/cache/replay/corruption_case.json",
       "canonical_path": "evidence/cache/replay/corruption_case.json",
       "consumer_surfaces": [
@@ -4865,6 +4933,40 @@
       "kind": "cache",
       "owner": "team-runtime",
       "path": "evidence/cache/replay/corruption_case.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling"
+    },
+    {
+      "canonical_location": "evidence/cache/replay/incompatible_backend_case.json",
+      "canonical_path": "evidence/cache/replay/incompatible_backend_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/incompatible_backend_case.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/incompatible_backend_case.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -4979,6 +5081,108 @@
       ],
       "trust_property": "replay-equivalence",
       "why_exists": "provide replay mismatch fixture corpus for semantic grouping regressions"
+    },
+    {
+      "canonical_location": "evidence/cache/replay/missing_artifact_case.json",
+      "canonical_path": "evidence/cache/replay/missing_artifact_case.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/missing_artifact_case.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/missing_artifact_case.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate replay semantic match and mismatch handling"
+    },
+    {
+      "canonical_location": "evidence/cache/replay/regression_corpus.json",
+      "canonical_path": "evidence/cache/replay/regression_corpus.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/regression_corpus.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/regression_corpus.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "provide replay mismatch fixture corpus for semantic grouping regressions"
+    },
+    {
+      "canonical_location": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "canonical_path": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "consumer_surfaces": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/replay/run_manifest_regression_corpus.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ],
+      "trust_properties_protected": [
+        "replay-equivalence"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "run manifest regression corpus for replay and run-history stability contracts"
     },
     {
       "canonical_location": "evidence/cache/replay/unsupported_version_case.json",
@@ -6133,6 +6337,74 @@
       "kind": "perf",
       "owner": "team-performance",
       "path": "evidence/perf/scenarios/cache_metadata_growth.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/cli_validate_latency.json",
+      "canonical_path": "evidence/perf/scenarios/cli_validate_latency.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/cli_validate_latency.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/cli_validate_latency.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/cli_validate_memory.json",
+      "canonical_path": "evidence/perf/scenarios/cli_validate_memory.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/cli_validate_memory.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/cli_validate_memory.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",

@@ -89,7 +89,6 @@
       "release_blocking": true,
       "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
     },
-
     "evidence/perf/scenarios/deep_canonical.json": {
       "scenario_class": "advisory",
       "workload_class": "canonical-deep",
@@ -123,7 +122,6 @@
       "release_blocking": false,
       "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
     },
-
     "evidence/perf/scenarios/cache_heavy_lookup.json": {
       "scenario_class": "experimental",
       "workload_class": "cache-lookup",
@@ -371,6 +369,28 @@
       "workload_class": "inspect-history-latency",
       "budget_class": "advisory",
       "measurement_method": "nextest-benchmark-report",
+      "baseline_owner": "runtime-foundation",
+      "threshold_owner": "dev-control-plane",
+      "threshold_reference": "",
+      "release_blocking": false,
+      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+    },
+    "evidence/perf/scenarios/cli_validate_latency.json": {
+      "scenario_class": "experimental",
+      "workload_class": "cli-validate-latency",
+      "budget_class": "experimental",
+      "measurement_method": "prototype-measurement",
+      "baseline_owner": "runtime-foundation",
+      "threshold_owner": "dev-control-plane",
+      "threshold_reference": "",
+      "release_blocking": false,
+      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+    },
+    "evidence/perf/scenarios/cli_validate_memory.json": {
+      "scenario_class": "experimental",
+      "workload_class": "cli-validate-memory",
+      "budget_class": "experimental",
+      "measurement_method": "prototype-measurement",
       "baseline_owner": "runtime-foundation",
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",

@@ -38,8 +38,7 @@ fn run_history_specs_and_performance_reports_exist() {
 
 #[test]
 fn run_manifest_regression_corpus_and_stress_suite_are_present() {
-    let corpus_path =
-        root().join("crates/bijux-dag-app/tests/fixtures/run_manifest_regression_corpus.json");
+    let corpus_path = root().join("evidence/cache/replay/run_manifest_regression_corpus.json");
     let corpus: Value =
         serde_json::from_str(&fs::read_to_string(corpus_path).expect("read corpus"))
             .expect("parse corpus");
