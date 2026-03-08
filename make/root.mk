@@ -125,6 +125,9 @@ release-verify: ## Run release verification
 module-hygiene-drift: ## Run module hygiene drift gate
 	$(call run_or_fail,Run module hygiene drift gate,cargo test -p bijux-dev-dag --test module_hygiene_governance_contracts -- --nocapture)
 
+docs-truth-drift: ## Run documentation truth-boundary drift gate
+	$(call run_or_fail,Run docs truth drift gate,cargo test -p bijux-dev-dag --test docs_truth_drift_contracts -- --nocapture)
+
 repo-deps: ## Run repository dependency checks
 	$(call run_or_fail,Run dependency policy suite,$(DEV_TOOL) repo deps)
 
@@ -165,5 +168,5 @@ help: ## Show available make targets
 	awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: all checks checks-fast checks-all docs security compat golden tests-all test-release contract-all contracts-all
-.PHONY: release-verify module-hygiene-drift repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
+.PHONY: release-verify module-hygiene-drift docs-truth-drift repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
 .PHONY: memory-smoke artifact-verify ci sanity help help-contract make-target-list
