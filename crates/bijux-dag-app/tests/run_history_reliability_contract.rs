@@ -166,3 +166,37 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
     assert_eq!(metadata["parent_run_id"], "source-run");
     assert_eq!(metadata["source_run_id"], "source-run");
 }
+
+#[test]
+fn run_history_remains_stable_after_workspace_relocation() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let source_root = tmp.path().join("runs-src");
+    write_manifest(&source_root.join("run-1"), "run-1", "success");
+    write_manifest(&source_root.join("run-2"), "run-2", "failed");
+
+    let before = runs_history(&source_root).expect("history before relocation");
+    let relocated_root = tmp.path().join("runs-relocated");
+    fs::rename(&source_root, &relocated_root).expect("relocate runs root");
+
+    let after = runs_history(&relocated_root).expect("history after relocation");
+    assert_eq!(
+        before, after,
+        "run history should be path-relocation stable"
+    );
+}
+
+#[test]
+fn run_history_survives_partial_artifact_gc_without_panic() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let root = tmp.path().join("runs");
+    let run = root.join("run-gc");
+    write_manifest(&run, "run-gc", "success");
+
+    fs::remove_file(run.join("outputs.index.json")).expect("remove outputs index");
+    fs::remove_file(run.join("snapshot.json")).expect("remove snapshot");
+
+    let history = runs_history(&root).expect("history should recover after artifact gc");
+    let rows = history["runs"].as_array().expect("rows");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["run_id"], "run-gc");
+}
