@@ -199,6 +199,97 @@ fn write_text(path: &Path, content: &str) -> Result<(), String> {
     fs::write(path, content).map_err(|err| format!("failed to write {}: {err}", path.display()))
 }
 
+fn read_route_coverage_targets(path: &Path) -> Result<BTreeMap<String, f64>, String> {
+    let raw = fs::read_to_string(path)
+        .map_err(|err| format!("failed to read policy {}: {err}", path.display()))?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|err| format!("invalid policy json: {err}"))?;
+    let map = parsed["line_coverage_targets"]
+        .as_object()
+        .ok_or_else(|| "missing line_coverage_targets object".to_string())?;
+    let mut out = BTreeMap::new();
+    for (k, v) in map {
+        if let Some(target) = v.as_f64() {
+            out.insert(k.clone(), target);
+        }
+    }
+    Ok(out)
+}
+
+fn render_app_route_support_below_target_report(
+    rows: &[(String, FileCoverage)],
+    targets: &BTreeMap<String, f64>,
+) -> String {
+    let mut lines = vec![
+        "# App Route-Support Modules Below Target Coverage Report".to_string(),
+        String::new(),
+        "| file | line_coverage_pct | target_pct | status |".to_string(),
+        "| --- | ---: | ---: | --- |".to_string(),
+    ];
+
+    let by_path: BTreeMap<_, _> = rows
+        .iter()
+        .map(|(path, cov)| (path.clone(), cov.pct()))
+        .collect();
+
+    let mut emitted = 0usize;
+    for (path, target) in targets {
+        if !path.starts_with("crates/bijux-dag-app/src/routes") {
+            continue;
+        }
+        if path == "crates/bijux-dag-app/src/routes" {
+            let route_rows: Vec<f64> = by_path
+                .iter()
+                .filter(|(p, _)| p.starts_with("crates/bijux-dag-app/src/routes/"))
+                .map(|(_, pct)| *pct)
+                .collect();
+            let aggregate = if route_rows.is_empty() {
+                100.0
+            } else {
+                route_rows.iter().sum::<f64>() / route_rows.len() as f64
+            };
+            let status = if aggregate < (*target * 100.0) {
+                "below target"
+            } else {
+                "meets target"
+            };
+            lines.push(format!(
+                "| {} | {:.2} | {:.2} | {} |",
+                path,
+                aggregate,
+                target * 100.0,
+                status
+            ));
+            emitted += 1;
+            continue;
+        }
+
+        let actual = by_path.get(path).copied().unwrap_or(100.0);
+        let status = if actual < (*target * 100.0) {
+            "below target"
+        } else {
+            "meets target"
+        };
+        lines.push(format!(
+            "| {} | {:.2} | {:.2} | {} |",
+            path,
+            actual,
+            target * 100.0,
+            status
+        ));
+        emitted += 1;
+    }
+
+    if emitted == 0 {
+        lines.push("| (none) | 100.00 | 100.00 | meets target |".to_string());
+    }
+
+    lines.push(String::new());
+    lines.push("_Generated from `artifacts/coverage/lcov.info` and `configs/policy/app_routing_coverage_targets.json` by `generate_line_coverage_reports`._".to_string());
+    lines.push(String::new());
+    lines.join("\n")
+}
+
 fn main() -> Result<(), String> {
     let root = repo_root();
     let lcov_path = root.join("artifacts/coverage/lcov.info");
@@ -206,12 +297,16 @@ fn main() -> Result<(), String> {
     let out_under_50 = root.join("docs/reports/foundation/line_coverage_under_50_report.md");
     let out_under_25 = root.join("docs/reports/foundation/line_coverage_under_25_report.md");
     let out_zero = root.join("docs/reports/foundation/line_coverage_zero_direct_report.md");
+    let out_app_route_support = root
+        .join("docs/reports/foundation/app_route_support_modules_below_target_coverage_report.md");
+    let app_route_policy = root.join("configs/policy/app_routing_coverage_targets.json");
 
     if !lcov_path.exists() {
         let msg = "# Coverage report unavailable\n\n`artifacts/coverage/lcov.info` was not found. Run `make coverage` first.\n";
         write_text(&out_under_50, msg)?;
         write_text(&out_under_25, msg)?;
         write_text(&out_zero, msg)?;
+        write_text(&out_app_route_support, msg)?;
         println!("coverage input missing; wrote placeholder reports");
         return Ok(());
     }
@@ -267,6 +362,12 @@ fn main() -> Result<(), String> {
     );
     zero_lines.push(String::new());
     write_text(&out_zero, &zero_lines.join("\n"))?;
+
+    let targets = read_route_coverage_targets(&app_route_policy)?;
+    write_text(
+        &out_app_route_support,
+        &render_app_route_support_below_target_report(&rows, &targets),
+    )?;
 
     let protected_zeros = protected_zero_files(&rows);
     let allowlist = read_allowlist(&allowlist_path)?;

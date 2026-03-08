@@ -52,3 +52,29 @@ fn app_routing_coverage_target_policy_is_present_and_nontrivial() {
         assert!(target >= 0.70, "coverage target must be >= 0.70 for {rel}");
     }
 }
+
+#[test]
+fn app_route_support_below_target_coverage_report_is_present() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("repo root");
+    let report = root
+        .join("docs/reports/foundation/app_route_support_modules_below_target_coverage_report.md");
+    assert!(report.exists(), "missing report: {}", report.display());
+
+    let raw = fs::read_to_string(report).expect("read report");
+    for required in [
+        "crates/bijux-dag-app/src/routes/inspect_routes.rs",
+        "crates/bijux-dag-app/src/routes/plan_routes.rs",
+        "crates/bijux-dag-app/src/routes/diagnostics_routes.rs",
+        "crates/bijux-dag-app/src/routes/output_selection.rs",
+        "crates/bijux-dag-app/src/routes/response.rs",
+        "crates/bijux-dag-app/src/routes/run_lookup.rs",
+    ] {
+        assert!(
+            raw.contains(required),
+            "report missing required route-support target: {required}"
+        );
+    }
+}
