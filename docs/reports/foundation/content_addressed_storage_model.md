@@ -1,22 +1,19 @@
 # Content Addressed Storage Model
 
-This report compares runtime semantics between local filesystem storage and object-model storage.
+Generated from artifact store implementation capability declarations.
 
-## Shared semantics
+## Identity primitives
 
-- content hash is `sha256`
-- artifact identity carries provenance context (run + node + path)
-- integrity verification is mandatory for trusted replay paths
+- `artifact_sha256` identifies content bytes.
+- `artifact_id` identifies logical artifact identity (`<node_id>:<file_name>`).
+- Durable provenance joins `artifact_sha256` with `run_id`, `node_id`, and `node_fingerprint`.
 
-## Local filesystem runtime (implemented)
+## Implementation status
 
-- payload path is materialized under run directory
-- hashes are read from index and can be re-verified against payload bytes
-- GC planning can walk local lineage snapshot directly
+- Filesystem backend: implemented read/write payload persistence.
+- Object backend: modeled-only surface; runtime rejects read/write calls.
 
-## Object-model store (modeled)
+## Safety rules
 
-- keying may be content-addressed but runtime execution integration is not implemented
-- lifecycle semantics are contract-level only
-- release evidence cannot claim object-store runtime execution support
-
+- Artifact identity is content + provenance; identical bytes can legitimately appear under distinct provenance chains.
+- Garbage collection decisions must remain lineage-aware and dry-run explainable.

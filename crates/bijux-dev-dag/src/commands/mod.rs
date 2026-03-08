@@ -602,6 +602,16 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "out": out }),
                 || run_repo_planner_hardening_report(&out),
             ),
+            RepoCommand::ArtifactCapabilityReports {
+                matrix_out,
+                model_out,
+            } => run_command_reported(
+                &context,
+                "repo.artifact-capability-reports",
+                CommandEffect::ReadWrite,
+                json!({ "matrix_out": matrix_out, "model_out": model_out }),
+                || run_repo_artifact_capability_reports(&matrix_out, &model_out),
+            ),
         },
         CommandLine::Verify { command } => match command {
             VerifyCommand::EvidenceFoundation => run_command_reported(
@@ -4254,6 +4264,42 @@ fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String> {
     report.push_str("- fixture corpus includes linear/fan/diamond/resource/retry/replay-oriented shapes\n");
 
     write_report(&resolve_under_root(&root, out), &report)
+}
+
+fn run_repo_artifact_capability_reports(matrix_out: &Path, model_out: &Path) -> Result<(), String> {
+    use bijux_dag_artifacts::store::{
+        ArtifactStoreBackend, FilesystemArtifactStore, ObjectArtifactStore,
+    };
+
+    let root = repo_root()?;
+    let fs_store = FilesystemArtifactStore::new(".");
+    let object_store = ObjectArtifactStore {
+        bucket: "modeled".to_string(),
+        prefix: "artifacts/".to_string(),
+    };
+
+    let fs_caps = fs_store.capabilities();
+    let object_caps = object_store.capabilities();
+
+    let support_label = |implemented: bool| if implemented { "implemented" } else { "modeled" };
+
+    let matrix = format!(
+        "# Artifact Store Capability Matrix\n\nGenerated from `crates/bijux-dag-artifacts/src/io/store.rs` backend capability declarations.\n\n| capability | filesystem store | object store model |\n|---|---|---|\n| write artifact payload | {} | {} |\n| read artifact payload | {} | {} |\n| runtime-backed execution | {} | {} |\n\nNotes:\n- Runtime source-of-truth currently implements filesystem storage semantics.\n- Object-store surface remains declared capability only and must not be presented as implemented runtime behavior.\n",
+        support_label(fs_caps.can_write_bytes),
+        support_label(object_caps.can_write_bytes),
+        support_label(fs_caps.can_read_bytes),
+        support_label(object_caps.can_read_bytes),
+        support_label(matches!(fs_caps.support_level, bijux_dag_artifacts::store::ArtifactStoreSupportLevel::Implemented)),
+        support_label(matches!(object_caps.support_level, bijux_dag_artifacts::store::ArtifactStoreSupportLevel::Implemented)),
+    );
+
+    let model = String::from(
+        "# Content Addressed Storage Model\n\nGenerated from artifact store implementation capability declarations.\n\n## Identity primitives\n\n- `artifact_sha256` identifies content bytes.\n- `artifact_id` identifies logical artifact identity (`<node_id>:<file_name>`).\n- Durable provenance joins `artifact_sha256` with `run_id`, `node_id`, and `node_fingerprint`.\n\n## Implementation status\n\n- Filesystem backend: implemented read/write payload persistence.\n- Object backend: modeled-only surface; runtime rejects read/write calls.\n\n## Safety rules\n\n- Artifact identity is content + provenance; identical bytes can legitimately appear under distinct provenance chains.\n- Garbage collection decisions must remain lineage-aware and dry-run explainable.\n",
+    );
+
+    write_report(&resolve_under_root(&root, matrix_out), &matrix)?;
+    write_report(&resolve_under_root(&root, model_out), &model)?;
+    Ok(())
 }
 
 fn run_evidence_ownership_verify() -> Result<(), String> {

@@ -445,6 +445,19 @@ pub(super) enum RepoCommand {
         )]
         out: PathBuf,
     },
+    /// Generate artifact store capability and content-addressed model reports from implementation
+    ArtifactCapabilityReports {
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/artifact_store_capability_matrix.md"
+        )]
+        matrix_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/content_addressed_storage_model.md"
+        )]
+        model_out: PathBuf,
+    },
 }
 
 include!("cli_verify_command.inc");

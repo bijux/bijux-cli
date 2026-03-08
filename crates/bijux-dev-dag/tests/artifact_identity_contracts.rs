@@ -8,6 +8,7 @@ use serde_json as _;
 use sha2 as _;
 use std::path::Path;
 use tempfile as _;
+use std::fs;
 
 fn repo_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -28,4 +29,25 @@ fn artifact_identity_docs_and_schema_exist() {
     ] {
         assert!(repo_root().join(rel).exists(), "missing {rel}");
     }
+}
+
+#[test]
+fn artifact_capability_report_command_is_wired_and_report_is_implementation_backed() {
+    let root = repo_root();
+    let source = fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs"))
+        .expect("read dev command source");
+    for token in [
+        "RepoCommand::ArtifactCapabilityReports",
+        "repo.artifact-capability-reports",
+        "run_repo_artifact_capability_reports",
+    ] {
+        assert!(source.contains(token), "missing artifact capability command token: {token}");
+    }
+
+    let report = fs::read_to_string(root.join("docs/reports/foundation/artifact_store_capability_matrix.md"))
+        .expect("artifact capability matrix report");
+    assert!(report.contains("filesystem store"));
+    assert!(report.contains("object store model"));
+    assert!(report.contains("implemented"));
+    assert!(report.contains("modeled"));
 }
