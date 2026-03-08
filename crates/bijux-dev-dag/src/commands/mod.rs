@@ -6,7 +6,6 @@ use sha2::Digest;
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
-use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -14,6 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod authoring_evidence;
 mod battle_evidence;
 mod benchmark_harness;
+mod command_runtime;
 mod compare_evidence;
 mod evidence_access;
 mod evidence_control_plane;
@@ -34,6 +34,11 @@ use battle_evidence::{
 use compare_evidence::{
     run_compare_evidence_policy_verify, run_comparison_evidence_report,
     run_comparison_harness_guard,
+};
+use command_runtime::{
+    command_stdout as exec_command_stdout, run_status_and_json as exec_run_status_and_json,
+    run_status_in_dir as exec_run_status_in_dir, run_stdout_and_json as exec_run_stdout_and_json,
+    run_with_root as exec_run_with_root,
 };
 use evidence_access::{
     as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
@@ -3357,51 +3362,23 @@ fn assert_empty_diff(diff: &Value) -> Result<(), String> {
 }
 
 fn run_status(cmd: &str, args: &[&str]) -> Result<(), String> {
-    run_status_in_dir(&repo_root()?, cmd, args)
+    exec_run_status_in_dir(&repo_root()?, cmd, args)
 }
 
 fn run_status_in_dir(dir: &Path, cmd: &str, args: &[&str]) -> Result<(), String> {
-    let status = Command::new(cmd)
-        .args(args)
-        .current_dir(dir)
-        .status()
-        .map_err(|err| format!("failed to run {cmd}: {err}"))?;
-    if !status.success() {
-        return Err(format!("`{cmd}` failed with status {status}"));
-    }
-    Ok(())
+    exec_run_status_in_dir(dir, cmd, args)
 }
 
 fn run_with_root(root: &Path, cmd: &str, args: &[&str]) -> Result<(), String> {
-    run_status_in_dir(root, cmd, args)
+    exec_run_with_root(root, cmd, args)
 }
 
 fn run_status_and_json(root: &Path, args: &[&str]) -> Result<Value, String> {
-    let output = Command::new("cargo")
-        .args(args)
-        .current_dir(root)
-        .output()
-        .map_err(|err| format!("failed to run cargo: {err}"))?;
-    if !output.status.success() {
-        let _ = io::stdout().write_all(&output.stdout);
-        let _ = io::stderr().write_all(&output.stderr);
-        return Err(format!("cargo failed with status {}", output.status));
-    }
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    serde_json::from_str(stdout.trim())
-        .map_err(|err| format!("invalid json: {err}\nstdout:\n{stdout}"))
+    exec_run_status_and_json(root, args)
 }
 
 fn run_stdout_and_json(root: &Path, cmd: &str, args: &[&str]) -> Result<String, String> {
-    let output = Command::new(cmd)
-        .args(args)
-        .current_dir(root)
-        .output()
-        .map_err(|err| format!("failed to run {cmd}: {err}"))?;
-    if !output.status.success() {
-        return Err(format!("{cmd} failed with status {}", output.status));
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    exec_run_stdout_and_json(root, cmd, args)
 }
 
 fn newest_run(runs: &Path) -> Result<PathBuf, String> {
@@ -3832,10 +3809,7 @@ fn resolve_under_root(root: &Path, path: &Path) -> PathBuf {
 }
 
 fn write_report(path: &Path, body: &str) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-    }
-    fs::write(path, body).map_err(|err| err.to_string())
+    crate::report::write::write_text_report(path, body)
 }
 
 fn run_repo_hotspot_reports(
@@ -5250,20 +5224,7 @@ fn run_e2e_matrix() -> Result<(), String> {
 }
 
 fn command_stdout(root: &Path, bin: &str, args: &[&str]) -> Result<String, String> {
-    let output = Command::new(bin)
-        .current_dir(root)
-        .args(args)
-        .output()
-        .map_err(|err| format!("failed to execute `{bin}`: {err}"))?;
-    if output.status.success() {
-        String::from_utf8(output.stdout).map_err(|err| err.to_string())
-    } else {
-        Err(format!(
-            "command `{bin} {}` failed with status {}",
-            args.join(" "),
-            output.status
-        ))
-    }
+    exec_command_stdout(root, bin, args)
 }
 
 #[derive(Debug, Deserialize)]

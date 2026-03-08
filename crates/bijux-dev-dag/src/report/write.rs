@@ -7,6 +7,13 @@ pub fn write_command_report(path: &Path, report: &CommandReport) -> Result<(), S
     fs::write(path, payload).map_err(|err| err.to_string())
 }
 
+pub fn write_text_report(path: &Path, body: &str) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    fs::write(path, body).map_err(|err| err.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -27,5 +34,14 @@ mod tests {
         let loaded = fs::read_to_string(path).expect("read report");
         assert!(loaded.contains("\"command_id\": \"repo.check\""));
         assert!(loaded.contains("\"status\": \"ok\""));
+    }
+
+    #[test]
+    fn write_text_report_persists_text_payload() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("report.md");
+        write_text_report(&path, "# report\nok").expect("write text report");
+        let loaded = fs::read_to_string(path).expect("read text report");
+        assert!(loaded.contains("# report"));
     }
 }
