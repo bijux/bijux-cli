@@ -12,6 +12,7 @@ RUN_ID ?= local
 CARGO_TARGET_DIR ?= $(CURDIR)/artifacts/target
 NEXTEST_CACHE_DIR ?= $(CURDIR)/artifacts/target/nextest
 LLVM_PROFILE_FILE ?= $(CURDIR)/artifacts/coverage/profraw/default_%m_%p.profraw
+CARGO_LLVM_COV_TARGET_DIR ?= $(CARGO_TARGET_DIR)
 PROFRAW_DIR := $(dir $(LLVM_PROFILE_FILE))
 
 cleanup_root_nextest = \
@@ -72,11 +73,11 @@ coverage: ## Run workspace coverage with full test-all semantics via cargo llvm-
 	@mkdir -p artifacts/coverage
 	@mkdir -p "$(PROFRAW_DIR)"
 	@status=0; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/nextest/nextest.toml --user-config-file none --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" --no-clean --cargo-quiet || status=$$?; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_LLVM_COV_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/nextest/nextest.toml --user-config-file none --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" --no-clean --cargo-quiet || status=$$?; \
 	$(cleanup_root_nextest); \
 	test $$status -eq 0
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo run -p bijux-dev-dag --bin generate_line_coverage_reports
-	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo llvm-cov report
+	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_LLVM_COV_TARGET_DIR="$(CARGO_LLVM_COV_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo llvm-cov report
 
 fmt: ## Run cargo fmt --check
 	@printf '%s\n' "run: cargo fmt --all -- --check --config-path configs/rust/rustfmt.toml"
