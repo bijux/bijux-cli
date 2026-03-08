@@ -7,6 +7,10 @@ use tempfile as _;
 use std::process::Command;
 use tempfile::{tempdir, NamedTempFile};
 
+fn repo_root() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
 fn dag_command() -> Command {
     if let Some(path) = option_env!("CARGO_BIN_EXE_bijux") {
         if std::path::Path::new(path).exists() {
@@ -14,8 +18,13 @@ fn dag_command() -> Command {
         }
     }
 
+    let root = repo_root();
     let mut command = Command::new("cargo");
-    command.env("CARGO_TARGET_DIR", "artifacts/target");
+    command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
+    command.env(
+        "LLVM_PROFILE_FILE",
+        root.join("artifacts/coverage/profraw/default_%m_%p.profraw"),
+    );
     command.args([
         "run",
         "--quiet",

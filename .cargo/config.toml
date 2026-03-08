@@ -16,3 +16,6 @@ rustflags = [
 
 [term]
 verbose = false
+
+[env]
+LLVM_PROFILE_FILE = { value = "../artifacts/coverage/profraw/default_%m_%p.profraw", relative = true }

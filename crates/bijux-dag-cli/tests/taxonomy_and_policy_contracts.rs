@@ -12,8 +12,13 @@ fn dag_command() -> Command {
         }
     }
 
+    let root = repo_root();
     let mut command = Command::new("cargo");
-    command.env("CARGO_TARGET_DIR", "artifacts/target");
+    command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
+    command.env(
+        "LLVM_PROFILE_FILE",
+        root.join("artifacts/coverage/profraw/default_%m_%p.profraw"),
+    );
     command.args([
         "run",
         "--quiet",
