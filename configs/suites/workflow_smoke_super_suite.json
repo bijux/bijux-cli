@@ -1,0 +1,16 @@
+{
+  "id": "workflow-smoke-super-suite",
+  "purpose": "workflow-integrity-end-to-end-regression",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-cli --test smoke_pipeline",
+    "cargo test -p bijux-dag-app --test app_smoke_routed_workflows_contract",
+    "cargo test -p bijux-dag-app --test e2e_integration_scenarios",
+    "cargo test -p bijux-dev-dag --test workflow_integrity_completion_contracts"
+  ],
+  "owner": "app-runtime-workflows",
+  "notes": [
+    "Provides one release-oriented smoke bundle for workflow integrity signals.",
+    "Use for regression triage before release candidate tagging."
+  ]
+}

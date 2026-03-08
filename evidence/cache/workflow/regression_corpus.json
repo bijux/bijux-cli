@@ -1,0 +1,87 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "workflow-integrity-completion-contracts",
+  "cases": [
+    {
+      "id": "validate-plan-run",
+      "workflow": ["validate", "plan", "run"],
+      "coverage": ["workflow-e2e", "planner-entry"]
+    },
+    {
+      "id": "validate-plan-run-inspect",
+      "workflow": ["validate", "plan", "run", "inspect"],
+      "coverage": ["workflow-e2e", "operator-inspect"]
+    },
+    {
+      "id": "validate-plan-run-diff",
+      "workflow": ["validate", "plan", "run", "diff"],
+      "coverage": ["workflow-e2e", "semantic-diff"]
+    },
+    {
+      "id": "validate-plan-run-replay",
+      "workflow": ["validate", "plan", "run", "replay"],
+      "coverage": ["workflow-e2e", "replay-correctness"]
+    },
+    {
+      "id": "validate-plan-run-prove",
+      "workflow": ["validate", "plan", "run", "prove"],
+      "coverage": ["workflow-e2e", "proof-surface"]
+    },
+    {
+      "id": "validate-plan-run-export",
+      "workflow": ["validate", "plan", "run", "export"],
+      "coverage": ["workflow-e2e", "bundle-export"]
+    },
+    {
+      "id": "export-import-inspect",
+      "workflow": ["export", "import", "inspect"],
+      "coverage": ["bundle-roundtrip", "offline-inspection"]
+    },
+    {
+      "id": "export-import-replay",
+      "workflow": ["export", "import", "replay"],
+      "coverage": ["bundle-roundtrip", "replay-imported-run"]
+    },
+    {
+      "id": "export-import-diff",
+      "workflow": ["export", "import", "diff"],
+      "coverage": ["bundle-roundtrip", "semantic-diff"]
+    },
+    {
+      "id": "export-import-prove",
+      "workflow": ["export", "import", "prove"],
+      "coverage": ["bundle-roundtrip", "proof-surface"]
+    },
+    {
+      "id": "history-inspect-explain",
+      "workflow": ["history", "inspect", "explain"],
+      "coverage": ["operator-history", "diagnostics"]
+    },
+    {
+      "id": "artifact-hash-inspect-trace",
+      "workflow": ["artifact-hash", "inspect", "trace-artifact"],
+      "coverage": ["artifact-identity", "traceability"]
+    },
+    {
+      "id": "bundle-fsck-verify-only",
+      "workflow": ["bundle-fsck", "verify-only"],
+      "coverage": ["integrity-check", "import-verify-only"]
+    },
+    {
+      "id": "capabilities-plan-run",
+      "workflow": ["capabilities", "plan", "run"],
+      "coverage": ["backend-capability", "planner-gating"]
+    },
+    {
+      "id": "corrupted-workflow-path",
+      "workflow": ["run", "corrupt-manifest", "inspect"],
+      "coverage": ["failure-path", "corruption-detection"]
+    },
+    {
+      "id": "partial-recovery-workflow",
+      "workflow": ["run", "partial-artifact-write", "recover"],
+      "coverage": ["recovery-path", "durable-state"]
+    }
+  ]
+}
