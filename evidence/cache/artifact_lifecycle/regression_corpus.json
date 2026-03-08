@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "artifact-storage-lifecycle-completion-contracts",
+  "cases": [
+    {"id": "create-store-retrieve", "coverage": ["lifecycle-roundtrip", "integrity"]},
+    {"id": "replay-artifact-lifecycle", "coverage": ["replay-lifecycle", "lineage"]},
+    {"id": "imported-run-artifact-lifecycle", "coverage": ["imported-lifecycle", "lineage"]},
+    {"id": "partial-rerun-artifact-lifecycle", "coverage": ["partial-rerun", "lineage"]},
+    {"id": "gc-eligibility-detection", "coverage": ["gc-eligibility", "retention"]},
+    {"id": "retention-enforcement", "coverage": ["retention", "ancestry-chain"]},
+    {"id": "gc-safety-concurrent-runs", "coverage": ["gc-concurrency", "safety"]},
+    {"id": "gc-safety-replay", "coverage": ["gc-replay", "safety"]},
+    {"id": "fragmentation-detection", "coverage": ["fragmentation", "store-health"]},
+    {"id": "store-repair", "coverage": ["store-repair", "index-consistency"]},
+    {"id": "partial-write-recovery", "coverage": ["partial-write-recovery", "store-recovery"]},
+    {"id": "checksum-verification", "coverage": ["checksum", "corruption-detection"]},
+    {"id": "gc-explain-output", "coverage": ["gc-explain", "operator-output"]},
+    {"id": "artifact-lifecycle-stress", "coverage": ["lifecycle-stress", "performance"]}
+  ]
+}

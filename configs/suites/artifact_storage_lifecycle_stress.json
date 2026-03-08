@@ -1,0 +1,16 @@
+{
+  "id": "artifact-storage-lifecycle-stress",
+  "purpose": "artifact-storage-lifecycle-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-artifacts --test artifact_identity_lifecycle_completion_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_storage_resilience_contracts",
+    "cargo test -p bijux-dag-artifacts --test artifact_io_store_hardening_expansion_contracts",
+    "cargo test -p bijux-dev-dag --test artifact_storage_lifecycle_completion_contracts"
+  ],
+  "owner": "artifact-platform",
+  "notes": [
+    "Covers lifecycle correctness across retention, recovery, and corruption conditions.",
+    "Use before release verification when artifact storage code changes."
+  ]
+}
