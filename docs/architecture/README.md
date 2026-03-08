@@ -4,33 +4,31 @@ Audience: maintainers and architects.
 Owner: architecture group.
 Status: stable.
 
-## Architecture entrypoint
+## Directory role
 
-Canonical architecture map and boundary reference starts here.
+- Keep only living boundary maps and system structure narratives.
+- Move immutable decisions and historical migration notes to `docs/adr/`.
+- Keep normative guarantees in `docs/spec/`, not in architecture pages.
 
-## What this section contains
+## Reading order
 
-- Living architecture boundary maps
-- Crate and module responsibility boundaries
-- Runtime architecture and control-plane model narratives
-- Integration boundaries for scheduling, storage, trust, and orchestration
-- Design decisions that affect ongoing implementation direction
+1. `runtime_core_architecture.md`
+2. `runtime-execution-flow.md`
+3. `runtime-concurrency-boundaries.md`
+4. `engine-backend-responsibilities.md`
+5. `controller_backend_artifact_boundary.md`
+6. `execution-mode-responsibilities.md`
+7. `local_only_vs_remote_coordinated_runtime.md`
+8. `local-vs-batch-execution-constraints.md`
+9. `dev-control-plane.md`
+10. `CONTROL_PLANE.md`
+11. `module_ownership_map.md`
+12. `crate-graph.md`
+13. `crate_service_interfaces.md`
+14. `storage-layout-ownership.md`
 
-This section is for structure, boundaries, and operating constraints.
-It must not contain historical governance process notes or release planning.
+## Boundaries with other sections
 
-## Current architecture maps
-
-- [Architecture map index](./README.md)
-- [Runtime execution flow](./runtime-execution-flow.md)
-- [Runtime core architecture](./runtime_core_architecture.md)
-- [Crate ownership map](./module_ownership_map.md)
-- [Control-plane and backend model](./dev-control-plane.md)
-- [Boundary ownership and module contracts](./module_ownership_map.md)
-- [Storage ownership boundaries](./storage-layout-ownership.md)
-- [Local and remote runtime model](./local_only_vs_remote_coordinated_runtime.md)
-
-## Canonical migration source
-
-Operational semantics and guarantees for contracts live in `docs/spec/`.
-Use `docs/spec/` for normative guarantees; use `docs/architecture/` for structure.
+- `docs/spec/`: guarantees and contract semantics.
+- `docs/reference/`: operator-facing reference tables and indexes.
+- `docs/adr/`: durable decision records and archived intermediate choices.

@@ -1,7 +1,7 @@
 # Runtime Module Triage
 
 This document is retained for continuity. The active runtime scope authority is:
-- `docs/architecture/runtime_scope_v2.md`
+- `docs/reports/foundation/archive/runtime_scope_v2.md`
 - `configs/policy/runtime_scope_v2.json`
 - `configs/policy/runtime_module_freeze.json`
 

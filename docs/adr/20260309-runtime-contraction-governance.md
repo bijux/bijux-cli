@@ -25,7 +25,7 @@
 ## Artifacts
 - `configs/policy/runtime_scope_v2.json`
 - `configs/policy/runtime_module_freeze.json`
-- `docs/architecture/runtime_scope_v2.md`
+- `docs/reports/foundation/archive/runtime_scope_v2.md`
 - `docs/reports/foundation/runtime_public_api_map.md`
 - `docs/reports/foundation/runtime_boundary_report.md`
 - `crates/bijux-dev-dag/tests/runtime_scope_v2_guardrails.rs`
