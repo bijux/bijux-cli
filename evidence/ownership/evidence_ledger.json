@@ -5637,6 +5637,102 @@
       "why_exists": "compare bijux behavior against external orchestrators"
     },
     {
+      "canonical_location": "crates/bijux-dag-artifacts/tests/fixtures/artifact_hash_regression_corpus.json",
+      "canonical_path": "crates/bijux-dag-artifacts/tests/fixtures/artifact_hash_regression_corpus.json",
+      "consumer_surfaces": [
+        "artifacts-contracts"
+      ],
+      "consumers": [
+        "artifacts-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "compat",
+      "id": "crates/bijux-dag-artifacts/tests/fixtures/artifact_hash_regression_corpus.json",
+      "implementation_status": "implemented",
+      "kind": "compat",
+      "owner": "team-artifacts",
+      "path": "crates/bijux-dag-artifacts/tests/fixtures/artifact_hash_regression_corpus.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "artifact hash regression corpus anchors artifact hash stability contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/schema_failures/missing_nodes_array.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/schema_failures/missing_nodes_array.json",
+      "consumer_surfaces": [
+        "core-contracts"
+      ],
+      "consumers": [
+        "core-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "compat",
+      "id": "crates/bijux-dag-core/tests/fixtures/schema_failures/missing_nodes_array.json",
+      "implementation_status": "implemented",
+      "kind": "compat",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/schema_failures/missing_nodes_array.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "schema failure fixture ensures missing nodes array is rejected"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/schema_failures/unknown_top_level_key.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/schema_failures/unknown_top_level_key.json",
+      "consumer_surfaces": [
+        "core-contracts"
+      ],
+      "consumers": [
+        "core-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "compat",
+      "id": "crates/bijux-dag-core/tests/fixtures/schema_failures/unknown_top_level_key.json",
+      "implementation_status": "implemented",
+      "kind": "compat",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/schema_failures/unknown_top_level_key.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "schema failure fixture ensures unknown top-level keys are rejected"
+    },
+    {
       "canonical_location": "evidence/compat/export_bundle/unsupported_past/bundle.json",
       "canonical_path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
       "consumer_surfaces": [
@@ -6111,6 +6207,38 @@
       ],
       "trust_property": "observability",
       "why_exists": "exercise operator inspection-only scenario semantics"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/scheduler_regression_corpus.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/performance/scheduler_regression_corpus.json",
+      "consumer_surfaces": [
+        "runtime-tests"
+      ],
+      "consumers": [
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/performance/scheduler_regression_corpus.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-runtime",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/scheduler_regression_corpus.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "scheduler regression corpus supports performance guardrail tests"
     },
     {
       "canonical_location": "evidence/perf/baselines/example_v1.json",
