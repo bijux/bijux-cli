@@ -81,3 +81,33 @@ fn run_integrated_verification(path: &str) -> Result<serde_json::Value, String> 
         "failed_domains": failed
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::run_integrated_verification;
+    use std::fs;
+
+    #[test]
+    fn integrated_verification_collects_failed_domains() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let input = temp.path().join("integrated-verify-input.json");
+        fs::write(
+            &input,
+            r#"{
+              "multi_tenant_passed": true,
+              "ha_scheduler_passed": false,
+              "policy_passed": true,
+              "backend_passed": true,
+              "artifact_passed": false,
+              "compatibility_passed": true
+            }"#,
+        )
+        .expect("write input");
+
+        let report =
+            run_integrated_verification(input.to_str().expect("utf8 path")).expect("verify");
+        assert_eq!(report["passed"], false);
+        assert_eq!(report["failed_domains"][0], "ha-scheduler");
+        assert_eq!(report["failed_domains"][1], "artifact");
+    }
+}

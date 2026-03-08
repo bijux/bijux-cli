@@ -72,3 +72,31 @@ fn run_simulation(path: &str) -> Result<serde_json::Value, String> {
         }
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::run_simulation;
+    use std::fs;
+
+    #[test]
+    fn simulation_marks_unsupported_paths_and_downtime() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let input = temp.path().join("migration-simulate-input.json");
+        fs::write(
+            &input,
+            r#"{
+              "run_count": 7,
+              "artifact_count": 13,
+              "migration_steps": 4,
+              "supported_paths": ["1.0->1.1"],
+              "from_version": "1.0",
+              "to_version": "2.0"
+            }"#,
+        )
+        .expect("write input");
+
+        let report = run_simulation(input.to_str().expect("utf8 path")).expect("simulate");
+        assert_eq!(report["supported"], false);
+        assert_eq!(report["impact"]["requires_downtime"], true);
+    }
+}

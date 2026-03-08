@@ -326,3 +326,22 @@ pub(super) fn run_authoring_coverage_report(out: &Path, unused_out: &Path) -> Re
     fs::write(&unused_path, unused_report).map_err(|err| err.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{has_speculative_keywords, is_human_readable_json};
+
+    #[test]
+    fn readability_requires_multiline_indented_json() {
+        assert!(is_human_readable_json(
+            "{\n  \"name\": \"demo\",\n  \"nodes\": [],\n  \"edges\": []\n}"
+        ));
+        assert!(!is_human_readable_json("{\"name\":\"demo\"}"));
+    }
+
+    #[test]
+    fn speculative_keyword_detection_is_case_insensitive() {
+        assert!(has_speculative_keywords("{\"mode\":\"HA_SCHEDULER\"}"));
+        assert!(!has_speculative_keywords("{\"mode\":\"local\"}"));
+    }
+}

@@ -419,3 +419,26 @@ pub(super) fn run_battle_coverage_report(
     fs::write(&overloaded_path, overloaded_report).map_err(|err| err.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::load_battle_scenario_records;
+    use std::fs;
+
+    #[test]
+    fn scenario_records_use_declared_scenario_field() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let workflow = temp.path().join("evidence/battle/workflows");
+        fs::create_dir_all(&workflow).expect("create workflow dir");
+        fs::write(
+            workflow.join("alpha.json"),
+            "{ \"scenario\": \"battle-alpha\", \"detail\": \"ok\" }",
+        )
+        .expect("write workflow");
+
+        let records = load_battle_scenario_records(temp.path()).expect("load records");
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].0, "battle-alpha");
+        assert_eq!(records[0].1, "evidence/battle/workflows/alpha.json");
+    }
+}

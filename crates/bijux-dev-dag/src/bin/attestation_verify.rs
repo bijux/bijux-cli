@@ -80,3 +80,30 @@ fn verify_file(path: &str) -> Result<serde_json::Value, String> {
         }
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::verify_file;
+    use std::fs;
+
+    #[test]
+    fn verify_file_reports_missing_required_flags() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let input = temp.path().join("attestation-input.json");
+        fs::write(
+            &input,
+            r#"{
+              "run_id": "run-1",
+              "has_binary_provenance": true,
+              "has_plugin_provenance": false,
+              "has_environment_attestation": true,
+              "has_signed_artifacts": false
+            }"#,
+        )
+        .expect("write input");
+
+        let report = verify_file(input.to_str().expect("utf8 path")).expect("verify");
+        assert_eq!(report["passed"], false);
+        assert_eq!(report["run_id"], "run-1");
+    }
+}

@@ -215,3 +215,15 @@ pub(super) fn run_comparison_evidence_report() -> Result<(), String> {
     );
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::repo_root;
+
+    #[test]
+    fn repo_root_points_to_workspace_root() {
+        let root = repo_root().expect("repo root");
+        assert!(root.join("Cargo.toml").exists());
+        assert!(root.join("crates").is_dir());
+    }
+}

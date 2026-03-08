@@ -383,6 +383,21 @@ pub(super) fn run_evidence_summary_report(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::{run_evidence_release_set_verify, run_evidence_suite_policy_verify};
+
+    #[test]
+    fn suite_policy_file_stays_valid() {
+        run_evidence_suite_policy_verify().expect("suite policy must remain valid");
+    }
+
+    #[test]
+    fn release_set_file_stays_valid() {
+        run_evidence_release_set_verify().expect("release set must remain valid");
+    }
+}
+
 pub(super) fn run_release_evidence_report(
     json_out: &Path,
     proves_out: &Path,
