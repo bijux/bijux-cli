@@ -4,6 +4,10 @@
     "crates/bijux-dag-app/src/routes/run_routes.rs": 0.75,
     "crates/bijux-dag-app/src/routes/replay_routes.rs": 0.75,
     "crates/bijux-dag-app/src/routes/inspect_routes.rs": 0.70,
+    "crates/bijux-dag-app/src/routes/plan_routes.rs": 0.70,
+    "crates/bijux-dag-app/src/routes/diagnostics_routes.rs": 0.70,
+    "crates/bijux-dag-app/src/routes/output_selection.rs": 0.70,
+    "crates/bijux-dag-app/src/routes/surface_routes.rs": 0.70,
     "crates/bijux-dag-app/src/routes/validate_routes.rs": 0.75
   },
   "response_schema_targets": {

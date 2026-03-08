@@ -22,7 +22,9 @@ fn repo_root() -> std::path::PathBuf {
 fn app_hygiene_reports_exist() {
     let root = repo_root();
     for rel in [
+        "docs/adr/20260308-app-router-final-end-state.md",
         "docs/spec/GRAPH_INPUT_READING_RESPONSIBILITIES.md",
+        "docs/reports/foundation/app_router_remaining_top_level_responsibilities.md",
         "docs/reports/foundation/app_sub_ten_line_module_inventory.md",
         "docs/reports/foundation/app_no_dead_module_report.md",
         "docs/reports/foundation/app_no_unreferenced_response_module_report.md",
@@ -108,6 +110,54 @@ fn app_lib_file_size_budget_is_enforced() {
         line_count <= line_budget,
         "app lib line budget exceeded: lines={line_count} budget={line_budget}"
     );
+}
+
+#[test]
+fn app_route_file_size_ceilings_are_enforced() {
+    let root = repo_root();
+    let inspect_path = root.join("crates/bijux-dag-app/src/routes/inspect_routes.rs");
+    let plan_path = root.join("crates/bijux-dag-app/src/routes/plan_routes.rs");
+    let inspect_lines = fs::read_to_string(&inspect_path)
+        .expect("read inspect routes")
+        .lines()
+        .count();
+    let plan_lines = fs::read_to_string(&plan_path)
+        .expect("read plan routes")
+        .lines()
+        .count();
+    assert!(
+        inspect_lines <= 220,
+        "inspect_routes.rs line budget exceeded: lines={inspect_lines} budget=220"
+    );
+    assert!(
+        plan_lines <= 160,
+        "plan_routes.rs line budget exceeded: lines={plan_lines} budget=160"
+    );
+}
+
+#[test]
+fn app_router_dispatch_stays_in_route_modules_for_key_families() {
+    let root = repo_root();
+    let lib = fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
+    let required_delegations = [
+        "Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command)",
+        "Commands::Explain { run_dir, node } => {",
+        "routes::inspect_routes::handle_explain_command(&cli, run_dir, node)",
+        "Commands::WhyRerun { run_a, run_b } => {",
+        "routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)",
+        "Commands::TraceArtifact { run_dir, artifact_id } => {",
+        "routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)",
+        "Commands::Capabilities { backend } => {",
+        "routes::surface_routes::handle_capabilities_command(&cli, backend)",
+        "Commands::SemanticPortability { backend } => {",
+        "routes::surface_routes::handle_semantic_portability_command(&cli, backend)",
+    ];
+    for snippet in required_delegations {
+        assert!(
+            lib.contains(snippet),
+            "router dispatch missing required delegation snippet: {snippet}"
+        );
+    }
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
