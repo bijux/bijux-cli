@@ -437,6 +437,14 @@ pub(super) enum RepoCommand {
         )]
         runtime_api_out: PathBuf,
     },
+    /// Generate planner hardening report from canonical graph fixtures
+    PlannerHardeningReport {
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/planner_hardening_report.md"
+        )]
+        out: PathBuf,
+    },
 }
 
 include!("cli_verify_command.inc");

@@ -1,21 +1,20 @@
-# Planner hardening report
+# Planner Hardening Report
 
-## Scope
+Generated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/snapshots`.
 
-Tracks planner-lowering authority, schema alignment, and trust-property binding.
+## Fixture results
 
-## Current guarantees
+- `crates/bijux-dag-core/tests/snapshots/diamond.dag.json` :: nodes=`4` edges=`4` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/fan_in.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/fan_out.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/isolated_groups.dag.json` :: nodes=`3` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/linear.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/replay_oriented.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/resource_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/snapshots/retry_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
 
-- planner authority is `docs/spec/PLANNER_CONTRACT.md`
-- canonical planner types are `ExecutionPlan`, `PlannedNode`, and lowered dependency edges
-- runtime planner bridge delegates lowering to core planner boundary
-- plan dump output is checked against schema-required fields from `configs/schema/execution_plan.schema.json`
-- battle trust policy includes `tp_plan_truth`
+## Guardrails
 
-## Gate linkage
-
-- repo suite guard: `planner-alignment`
-- test suites:
-  - `crates/bijux-dag-core/tests/planner_contract.rs`
-  - `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
-  - `crates/bijux-dev-dag/tests/planner_hardening_contracts.rs`
+- deterministic lowering across repeated runs for each fixture
+- schema-required field presence from `execution_plan.schema.json`
+- fixture corpus includes linear/fan/diamond/resource/retry/replay-oriented shapes

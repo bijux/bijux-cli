@@ -595,6 +595,13 @@ fn run(cli: Cli) -> Result<(), String> {
                     )
                 },
             ),
+            RepoCommand::PlannerHardeningReport { out } => run_command_reported(
+                &context,
+                "repo.planner-hardening-report",
+                CommandEffect::ReadWrite,
+                json!({ "out": out }),
+                || run_repo_planner_hardening_report(&out),
+            ),
         },
         CommandLine::Verify { command } => match command {
             VerifyCommand::EvidenceFoundation => run_command_reported(
@@ -4181,6 +4188,72 @@ fn run_repo_runtime_scope_reports(
         &runtime_api_report,
     )?;
     Ok(())
+}
+
+fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let snapshots_dir = root.join("crates/bijux-dag-core/tests/snapshots");
+    let mut fixtures = Vec::new();
+    collect_all_files(&snapshots_dir, &mut fixtures)?;
+    fixtures.retain(|path| {
+        path.extension().and_then(|ext| ext.to_str()) == Some("json")
+            && path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.ends_with(".dag.json"))
+    });
+    fixtures.sort();
+
+    let schema_path = root.join("configs/schema/execution_plan.schema.json");
+    let required = required_schema_fields(&schema_path)?;
+    let mut rows = Vec::new();
+
+    for fixture in fixtures {
+        let fixture_rel = fixture
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let payload = fs::read_to_string(&fixture).map_err(|err| err.to_string())?;
+        let graph = bijux_dag_core::parse_graph_strict(&payload)
+            .map_err(|err| format!("planner fixture parse failed for {fixture_rel}: {err}"))?;
+        let first = bijux_dag_core::lower_graph_to_execution_plan(
+            &graph,
+            bijux_dag_core::PlanOptions::default(),
+        )
+        .map_err(|err| format!("planner lower failed for {fixture_rel}: {err}"))?;
+        let second = bijux_dag_core::lower_graph_to_execution_plan(
+            &graph,
+            bijux_dag_core::PlanOptions::default(),
+        )
+        .map_err(|err| format!("planner re-lower failed for {fixture_rel}: {err}"))?;
+        let stable_dump = serde_json::to_string_pretty(&first).map_err(|err| err.to_string())?
+            == serde_json::to_string_pretty(&second).map_err(|err| err.to_string())?;
+        let plan_value = serde_json::to_value(&first).map_err(|err| err.to_string())?;
+        let schema_ok = required.iter().all(|field| plan_value.get(field).is_some());
+        rows.push((
+            fixture_rel,
+            first.nodes.len(),
+            first.edges.len(),
+            stable_dump,
+            schema_ok,
+        ));
+    }
+
+    let mut report = String::from(
+        "# Planner Hardening Report\n\nGenerated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/snapshots`.\n\n## Fixture results\n\n",
+    );
+    for (fixture, nodes, edges, stable_dump, schema_ok) in &rows {
+        report.push_str(&format!(
+            "- `{fixture}` :: nodes=`{nodes}` edges=`{edges}` stable_dump=`{stable_dump}` schema_required_fields=`{schema_ok}`\n"
+        ));
+    }
+    report.push_str("\n## Guardrails\n\n");
+    report.push_str("- deterministic lowering across repeated runs for each fixture\n");
+    report.push_str("- schema-required field presence from `execution_plan.schema.json`\n");
+    report.push_str("- fixture corpus includes linear/fan/diamond/resource/retry/replay-oriented shapes\n");
+
+    write_report(&resolve_under_root(&root, out), &report)
 }
 
 fn run_evidence_ownership_verify() -> Result<(), String> {
