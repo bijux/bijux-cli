@@ -1,0 +1,11 @@
+{
+  "id": "backend-adapter-registry-fast",
+  "description": "Fast direct suite for runtime adapter/registry/backend capability and contract surfaces.",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test adapter_registry_capability_contracts",
+    "cargo test -p bijux-dag-runtime --test backend_capability_boundary_contracts",
+    "cargo test -p bijux-dag-runtime --test backend_contract",
+    "cargo test -p bijux-dag-runtime --test execution_backend_contract",
+    "cargo test -p bijux-dev-dag --test backend_capability_docs_generation_contracts"
+  ]
+}
