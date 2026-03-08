@@ -1,0 +1,16 @@
+{
+  "id": "execution-trace-regression",
+  "description": "Execution trace event ordering, completeness, integrity, and replay-inspection verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/runtime_observability_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/determinism_hardening_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/execution_trace_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/execution_trace/regression_corpus.json",
+    "docs/reports/foundation/execution_trace_benchmarks.md",
+    "docs/reports/foundation/execution_trace_regression_fixtures.md",
+    "docs/reports/foundation/execution_trace_coverage_report.md"
+  ]
+}
