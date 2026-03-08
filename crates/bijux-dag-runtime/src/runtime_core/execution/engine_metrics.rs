@@ -69,3 +69,68 @@ pub fn count_cache_hits(status_map: &std::collections::HashMap<String, NodeStatu
         .filter(|status| matches!(status, NodeStatus::Cached))
         .count() as u64
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{build_run_metrics, build_scheduler_metrics, count_cache_hits};
+    use crate::{NodeStatus, RuntimeConfig};
+    use bijux_dag_artifacts::NodeCounts;
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    #[test]
+    fn run_metrics_shape_is_stable_for_finished_run() {
+        let counts = NodeCounts {
+            success: 3,
+            failed: 1,
+            skipped: 0,
+            cached: 2,
+        };
+        let metrics = build_run_metrics(
+            &counts,
+            6,
+            &RuntimeConfig::default(),
+            1_500,
+            1_000,
+            2,
+            4,
+        );
+        assert_eq!(metrics.makespan_ms, 500);
+        assert_eq!(metrics.execution_ms, 500);
+        assert!(metrics.success_ratio > 0.0);
+        assert!(metrics.cache_reuse_ratio > 0.0);
+    }
+
+    #[test]
+    fn scheduler_metrics_counts_events_and_budget_starvation() {
+        let counts = NodeCounts {
+            success: 2,
+            failed: 1,
+            skipped: 1,
+            cached: 1,
+        };
+        let log = vec![
+            json!({"event":"node_attempt_started"}),
+            json!({"event":"cache_hit"}),
+            json!({"event":"cache_miss"}),
+            json!({"event":"node_failed"}),
+        ];
+        let failures = vec![json!({"cause":"budget"}), json!({"cause":"other"})];
+        let metrics =
+            build_scheduler_metrics(&counts, &log, &RuntimeConfig::default(), &failures);
+        assert_eq!(metrics.retry_count, 1);
+        assert_eq!(metrics.cache_hit_count, 1);
+        assert_eq!(metrics.cache_miss_count, 1);
+        assert_eq!(metrics.failure_count, 1);
+        assert_eq!(metrics.starvation_count, 1);
+    }
+
+    #[test]
+    fn cache_hit_counter_tracks_only_cached_nodes() {
+        let mut map = HashMap::new();
+        map.insert("a".to_string(), NodeStatus::Cached);
+        map.insert("b".to_string(), NodeStatus::Success);
+        map.insert("c".to_string(), NodeStatus::Cached);
+        assert_eq!(count_cache_hits(&map), 2);
+    }
+}
