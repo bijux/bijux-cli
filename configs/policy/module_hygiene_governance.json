@@ -3,6 +3,7 @@
   "governance_rules": {
     "new_top_level_modules_require_ownership_classification": true,
     "new_large_modules_require_split_rationale": true,
+    "new_large_files_require_split_plan": true,
     "new_tiny_wrapper_modules_require_justification": true,
     "module_hygiene_drift_is_release_gate": true
   },
