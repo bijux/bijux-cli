@@ -249,3 +249,4 @@
 - [CI workflows](./operations/CI_WORKFLOWS.md)
 
 - [Run lineage vs artifact lineage](./spec/RUN_VS_ARTIFACT_LINEAGE.md)
+- [Artifact identity to provenance mapping](./spec/ARTIFACT_IDENTITY_PROVENANCE_MAPPING.md)
