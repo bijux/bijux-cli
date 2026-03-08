@@ -85,11 +85,11 @@ fn readiness_suite_declares_expected_contracts() {
         .join("\n");
 
     for token in [
-        "system_confidence_381_400_contracts",
+        "system_readiness_dashboard_contracts",
         "repo_health_contracts",
-        "backend_equivalence_281_300_contracts",
-        "cli_stability_341_360_contracts",
-        "schema_compatibility_361_380_contracts",
+        "backend_semantic_equivalence_contracts",
+        "cli_stability_guarantees_contracts",
+        "schema_compatibility_guarantees_contracts",
     ] {
         assert!(commands.contains(token), "missing readiness suite token: {token}");
     }

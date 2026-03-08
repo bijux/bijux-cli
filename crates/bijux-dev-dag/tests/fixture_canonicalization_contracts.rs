@@ -115,7 +115,7 @@ fn fixture_contraction_suite_contains_expected_contracts() {
         .join("\n");
 
     for token in [
-        "fixture_contraction_521_540_contracts",
+        "fixture_canonicalization_contracts",
         "fixture_loader_governance_contracts",
         "fixture_tooling_completion_contracts",
         "fixture_helpers_fast_suite_contracts",

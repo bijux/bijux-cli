@@ -84,8 +84,8 @@ fn repo_tree_simplification_suite_contains_expected_contracts() {
         .join("\n");
 
     for token in [
-        "repo_tree_simplification_541_560_contracts",
-        "repo_tree_governance_181_200_contracts",
+        "repository_tree_simplification_contracts",
+        "repository_tree_governance_contracts",
         "module_hygiene_governance_contracts",
         "repo_health_contracts",
     ] {

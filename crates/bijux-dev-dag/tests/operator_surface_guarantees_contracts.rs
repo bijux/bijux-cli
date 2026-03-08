@@ -76,7 +76,7 @@ fn operator_surface_suite_contains_expected_commands() {
         .join("\n");
 
     for token in [
-        "operator_surface_441_460_contracts",
+        "operator_surface_guarantees_contracts",
         "operator_ux_contract",
         "help_surface_contracts",
         "operator_schema_lockstep_contracts",

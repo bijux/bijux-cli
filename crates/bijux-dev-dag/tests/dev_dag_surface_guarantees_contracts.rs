@@ -90,8 +90,8 @@ fn dev_dag_command_packs_and_verification_suite_are_machine_stable() {
         .collect::<Vec<_>>()
         .join("\n");
     for token in [
-        "dev_dag_contraction_461_480_contracts",
-        "dev_dag_contraction_121_140_contracts",
+        "dev_dag_surface_guarantees_contracts",
+        "dev_dag_surface_contraction_contracts",
         "dev_dag_contraction_coverage_progress_contracts",
         "dev_dag_command_safety_contracts",
     ] {

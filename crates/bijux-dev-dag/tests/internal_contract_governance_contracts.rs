@@ -98,7 +98,7 @@ fn internal_contract_suite_contains_expected_boundary_contracts() {
         .join("\n");
 
     for token in [
-        "internal_contract_discipline_561_580_contracts",
+        "internal_contract_governance_contracts",
         "dependency_boundary_contracts",
         "app_service_boundary_progress_contracts",
         "runtime_scope_reports_contracts",

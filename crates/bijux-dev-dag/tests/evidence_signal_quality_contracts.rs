@@ -99,8 +99,8 @@ fn evidence_sharpening_suite_contains_expected_contracts() {
         .join("\n");
 
     for token in [
-        "evidence_signal_sharpening_481_500_contracts",
-        "evidence_rationalization_141_160_contracts",
+        "evidence_signal_quality_contracts",
+        "evidence_value_rationalization_contracts",
         "evidence_lane_classification_contracts",
         "release_evidence_linkage_contracts",
     ] {

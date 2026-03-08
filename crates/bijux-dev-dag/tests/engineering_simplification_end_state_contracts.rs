@@ -83,16 +83,16 @@ fn verification_suite_includes_contract() {
     let suite_text = suite.to_string();
 
     for expected in [
-        "runtime_scope_contraction_401_420_contracts",
-        "vocabulary_scope_honesty_421_440_contracts",
-        "operator_surface_441_460_contracts",
-        "dev_dag_contraction_461_480_contracts",
-        "evidence_signal_sharpening_481_500_contracts",
-        "benchmark_minimalism_501_520_contracts",
-        "fixture_contraction_521_540_contracts",
-        "repo_tree_simplification_541_560_contracts",
-        "internal_contract_discipline_561_580_contracts",
-        "final_engineering_simplification_581_600_contracts",
+        "runtime_scope_contraction_guarantees_contracts",
+        "vocabulary_scope_honesty_guarantees_contracts",
+        "operator_surface_guarantees_contracts",
+        "dev_dag_surface_guarantees_contracts",
+        "evidence_signal_quality_contracts",
+        "benchmark_minimalism_guarantees_contracts",
+        "fixture_canonicalization_contracts",
+        "repository_tree_simplification_contracts",
+        "internal_contract_governance_contracts",
+        "engineering_simplification_end_state_contracts",
     ] {
         assert!(suite_text.contains(expected), "suite missing: {expected}");
     }

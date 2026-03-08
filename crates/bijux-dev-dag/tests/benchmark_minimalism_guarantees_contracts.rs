@@ -77,8 +77,8 @@ fn benchmark_minimalism_suite_contains_expected_contracts() {
         .join("\n");
 
     for token in [
-        "benchmark_minimalism_501_520_contracts",
-        "benchmark_signal_governance_161_180_contracts",
+        "benchmark_minimalism_guarantees_contracts",
+        "benchmark_signal_governance_baseline_contracts",
         "benchmark_signal_quality_contracts",
         "benchmark_signal_reports_contracts",
     ] {
