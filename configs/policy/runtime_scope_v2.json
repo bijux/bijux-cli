@@ -695,6 +695,12 @@
       "rationale": "core runtime execution and planning kernel surface"
     },
     {
+      "module": "runtime_core/execution/engine_metrics.rs",
+      "classification": "core-runtime",
+      "decision": "keep",
+      "rationale": "core runtime execution and planning kernel surface"
+    },
+    {
       "module": "runtime_core/execution/engine_observe.rs",
       "classification": "core-runtime",
       "decision": "keep",

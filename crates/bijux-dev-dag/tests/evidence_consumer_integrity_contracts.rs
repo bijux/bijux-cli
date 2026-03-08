@@ -52,6 +52,7 @@ fn crate_tests_do_not_own_scenario_json_outside_allowlist() {
         "crates/bijux-dag-runtime/tests/fixtures/",
         "crates/bijux-dag-artifacts/tests/fixtures/",
         "crates/bijux-dag-runtime/tests/bin/",
+        "crates/bijux-dag-app/tests/fixtures/",
         "crates/bijux-dag-app/tests/snapshots/",
     ];
 
