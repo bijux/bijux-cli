@@ -34,7 +34,10 @@ fn vocabulary_421_440_governance_artifacts_exist() {
         "configs/suites/terminology_consistency_verification.json",
         "docs/adr/20260308-vocabulary-and-scope-honesty.md",
     ] {
-        assert!(root.join(rel).exists(), "missing vocabulary artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing vocabulary artifact: {rel}"
+        );
     }
 }
 
@@ -58,7 +61,10 @@ fn vocabulary_registry_has_canonical_and_deprecated_mappings() {
     let deprecated = registry["deprecated_terms"]
         .as_array()
         .expect("deprecated_terms array");
-    assert!(!deprecated.is_empty(), "deprecated term map must not be empty");
+    assert!(
+        !deprecated.is_empty(),
+        "deprecated term map must not be empty"
+    );
     for entry in deprecated {
         let term = entry["term"].as_str().unwrap_or_default();
         let replacement = entry["replacement"].as_str().unwrap_or_default();
@@ -99,10 +105,9 @@ fn status_report_maps_421_440_requirements() {
 #[test]
 fn help_surface_contract_keeps_overreach_terms_forbidden() {
     let root = repo_root();
-    let help_contract = fs::read_to_string(
-        root.join("crates/bijux-dag-app/tests/help_surface_contracts.rs"),
-    )
-    .expect("read help surface contracts");
+    let help_contract =
+        fs::read_to_string(root.join("crates/bijux-dag-app/tests/help_surface_contracts.rs"))
+            .expect("read help surface contracts");
     for forbidden in [
         "control-plane api",
         "federated scheduler",

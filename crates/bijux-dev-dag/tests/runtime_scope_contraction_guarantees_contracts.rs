@@ -54,15 +54,19 @@ fn runtime_scope_401_420_governance_artifacts_exist() {
         "configs/suites/runtime_scope_contraction_verification.json",
         "docs/adr/20260308-runtime-scope-end-state.md",
     ] {
-        assert!(root.join(rel).exists(), "missing runtime scope artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing runtime scope artifact: {rel}"
+        );
     }
 }
 
 #[test]
 fn runtime_lifecycle_policy_covers_all_runtime_modules() {
     let root = repo_root();
-    let payload = fs::read_to_string(root.join("configs/policy/runtime_module_lifecycle_status.json"))
-        .expect("read runtime lifecycle policy");
+    let payload =
+        fs::read_to_string(root.join("configs/policy/runtime_module_lifecycle_status.json"))
+            .expect("read runtime lifecycle policy");
     let policy: Value = serde_json::from_str(&payload).expect("parse runtime lifecycle policy");
 
     let allowed: BTreeSet<String> = policy["allowed_lifecycle_status"]
@@ -89,12 +93,17 @@ fn runtime_lifecycle_policy_covers_all_runtime_modules() {
             let prefix = entry["prefix"].as_str().expect("prefix string");
             if module.starts_with(prefix) {
                 let status = entry["status"].as_str().expect("status string");
-                assert!(allowed.contains(status), "unsupported lifecycle status `{status}`");
+                assert!(
+                    allowed.contains(status),
+                    "unsupported lifecycle status `{status}`"
+                );
                 matched_status = Some(status.to_string());
                 seen_statuses.insert(status.to_string());
                 if status == "experimental" || status == "speculative" {
                     assert!(
-                        quarantine_prefixes.iter().any(|prefix| module.starts_with(prefix)),
+                        quarantine_prefixes
+                            .iter()
+                            .any(|prefix| module.starts_with(prefix)),
                         "experimental/speculative module must stay quarantined: {module}"
                     );
                 }
@@ -107,7 +116,13 @@ fn runtime_lifecycle_policy_covers_all_runtime_modules() {
         );
     }
 
-    for required in ["core", "adapter", "operator-support", "experimental", "speculative"] {
+    for required in [
+        "core",
+        "adapter",
+        "operator-support",
+        "experimental",
+        "speculative",
+    ] {
         assert!(
             seen_statuses.contains(required),
             "lifecycle status not represented by runtime module mapping: {required}"
@@ -146,6 +161,9 @@ fn runtime_scope_401_420_status_report_references_required_outputs() {
         "runtime_scope_contraction_verification.json",
         "20260308-runtime-scope-end-state.md",
     ] {
-        assert!(report.contains(token), "missing runtime scope mapping token: {token}");
+        assert!(
+            report.contains(token),
+            "missing runtime scope mapping token: {token}"
+        );
     }
 }

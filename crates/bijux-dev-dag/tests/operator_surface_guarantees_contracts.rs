@@ -31,7 +31,10 @@ fn operator_surface_441_460_artifacts_exist() {
         "configs/suites/operator_surface_verification.json",
         "docs/adr/20260308-stable-operator-surface.md",
     ] {
-        assert!(root.join(rel).exists(), "missing operator surface artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing operator surface artifact: {rel}"
+        );
     }
 }
 
@@ -96,6 +99,9 @@ fn core_operator_flow_tests_are_present() {
         "crates/bijux-dag-app/tests/route_output_wording_snapshot_contracts.rs",
         "crates/bijux-dag-app/tests/plan_explain_inspect_output_contract.rs",
     ] {
-        assert!(root.join(rel).exists(), "missing app operator flow test: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing app operator flow test: {rel}"
+        );
     }
 }

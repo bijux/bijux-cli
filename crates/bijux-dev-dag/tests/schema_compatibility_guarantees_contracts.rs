@@ -87,6 +87,9 @@ fn schema_compatibility_verification_suite_contains_expected_contract_commands()
         "proof_schema_compatibility_contracts",
         "schema_compatibility_guarantees_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

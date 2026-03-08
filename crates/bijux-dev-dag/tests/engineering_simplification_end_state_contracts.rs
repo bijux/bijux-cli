@@ -44,7 +44,10 @@ fn engineering_simplification_artifacts_exist() {
     ];
 
     for path in required {
-        assert!(root.join(path).exists(), "missing required artifact: {path}");
+        assert!(
+            root.join(path).exists(),
+            "missing required artifact: {path}"
+        );
     }
 }
 
@@ -56,15 +59,7 @@ fn status_report_covers_581_through_600() {
     )
     .expect("status report must be readable");
 
-    for marker in [
-        "581-586",
-        "587-590",
-        "591-596",
-        "597",
-        "598",
-        "599",
-        "600",
-    ] {
+    for marker in ["581-586", "587-590", "591-596", "597", "598", "599", "600"] {
         assert!(
             content.contains(marker),
             "status report missing marker: {marker}"
@@ -76,8 +71,10 @@ fn status_report_covers_581_through_600() {
 fn verification_suite_includes_contract() {
     let root = repo_root();
     let suite: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/suites/engineering_simplification_verification.json"))
-            .expect("suite file must be readable"),
+        &fs::read_to_string(
+            root.join("configs/suites/engineering_simplification_verification.json"),
+        )
+        .expect("suite file must be readable"),
     )
     .expect("suite json must parse");
     let suite_text = suite.to_string();

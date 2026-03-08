@@ -36,7 +36,10 @@ fn internal_contract_561_580_artifacts_exist() {
         "configs/suites/internal_contract_verification.json",
         "docs/adr/20260308-internal-contract-discipline.md",
     ] {
-        assert!(root.join(rel).exists(), "missing internal contract artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing internal contract artifact: {rel}"
+        );
     }
 }
 

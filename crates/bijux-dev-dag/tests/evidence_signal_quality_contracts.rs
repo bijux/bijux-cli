@@ -84,8 +84,10 @@ fn evidence_status_report_maps_481_500_requirements() {
 fn evidence_sharpening_suite_contains_expected_contracts() {
     let root = repo_root();
     let suite: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/suites/evidence_signal_sharpening_verification.json"))
-            .expect("read evidence sharpening suite"),
+        &fs::read_to_string(
+            root.join("configs/suites/evidence_signal_sharpening_verification.json"),
+        )
+        .expect("read evidence sharpening suite"),
     )
     .expect("parse evidence sharpening suite");
 

@@ -20,9 +20,8 @@ fn root() -> &'static Path {
 
 #[test]
 fn benchmark_161_180_status_report_exists_and_covers_required_sections() {
-    let report = root().join(
-        "docs/reports/foundation/benchmark_signal_governance_161_180_status_report.md",
-    );
+    let report =
+        root().join("docs/reports/foundation/benchmark_signal_governance_161_180_status_report.md");
     assert!(report.exists(), "missing report: {}", report.display());
     let raw = fs::read_to_string(report).expect("read report");
     for token in [

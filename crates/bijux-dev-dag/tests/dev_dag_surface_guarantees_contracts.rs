@@ -95,7 +95,10 @@ fn dev_dag_command_packs_and_verification_suite_are_machine_stable() {
         "dev_dag_contraction_coverage_progress_contracts",
         "dev_dag_command_safety_contracts",
     ] {
-        assert!(verification_cmds.contains(token), "missing suite token: {token}");
+        assert!(
+            verification_cmds.contains(token),
+            "missing suite token: {token}"
+        );
     }
 }
 

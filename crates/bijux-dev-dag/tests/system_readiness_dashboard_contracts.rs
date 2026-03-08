@@ -69,8 +69,10 @@ fn completion_report_maps_381_400_outputs() {
 fn readiness_suite_declares_expected_contracts() {
     let root = repo_root();
     let suite: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/suites/system_readiness_dashboards_verification.json"))
-            .expect("read readiness suite"),
+        &fs::read_to_string(
+            root.join("configs/suites/system_readiness_dashboards_verification.json"),
+        )
+        .expect("read readiness suite"),
     )
     .expect("parse readiness suite");
 
@@ -91,6 +93,9 @@ fn readiness_suite_declares_expected_contracts() {
         "cli_stability_guarantees_contracts",
         "schema_compatibility_guarantees_contracts",
     ] {
-        assert!(commands.contains(token), "missing readiness suite token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing readiness suite token: {token}"
+        );
     }
 }
