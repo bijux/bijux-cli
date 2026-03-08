@@ -11,6 +11,59 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+pub fn load_workspace_fixture_text(manifest_dir: &str, relative_path: &str) -> String {
+    let path = workspace_root_from_manifest_dir(manifest_dir).join(relative_path);
+    fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "failed to read workspace fixture {}: {error}",
+            path.display()
+        )
+    })
+}
+
+pub fn load_workspace_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    let payload = load_workspace_fixture_text(manifest_dir, relative_path);
+    serde_json::from_str(&payload)
+        .unwrap_or_else(|error| panic!("failed to parse fixture json {relative_path}: {error}"))
+}
+
+pub fn load_workspace_fixture_typed<T: for<'de> Deserialize<'de>>(
+    manifest_dir: &str,
+    relative_path: &str,
+) -> T {
+    let payload = load_workspace_fixture_text(manifest_dir, relative_path);
+    serde_json::from_str(&payload)
+        .unwrap_or_else(|error| panic!("failed to parse fixture type {relative_path}: {error}"))
+}
+
+pub fn load_graph_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_run_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_artifact_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_bundle_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_replay_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_capability_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
+pub fn load_benchmark_fixture_json(manifest_dir: &str, relative_path: &str) -> Value {
+    load_workspace_fixture_json(manifest_dir, relative_path)
+}
+
 pub fn read_json(path: &Path) -> Value {
     let text = fs::read_to_string(path).expect("read json file");
     serde_json::from_str(&text).expect("parse json file")

@@ -18,3 +18,6 @@ bijux-dag-core = { path = "../bijux-dag-core" }
 bijux-dag-artifacts = { path = "../bijux-dag-artifacts" }
 bijux-dag-runtime = { path = "../bijux-dag-runtime" }
 tempfile = { workspace = true }
+
+[dev-dependencies]
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }
