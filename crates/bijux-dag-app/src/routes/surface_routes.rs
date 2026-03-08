@@ -1,5 +1,6 @@
 use crate::capability_matrix::backend_capability_payload;
 use crate::commands::DagCli;
+use crate::replay::service as replay_service;
 use crate::{emit_json, ExitCode};
 use bijux_dag_core::SPEC_VERSION;
 use serde_json::json;
@@ -124,6 +125,58 @@ pub(crate) fn handle_semantic_portability_command(
         ExitCode::SUCCESS
     } else {
         ExitCode::from(2)
+    })
+}
+
+pub(crate) fn handle_equivalence_proof_command(
+    cli: &DagCli,
+    run_a: &std::path::Path,
+    run_b: &std::path::Path,
+    backend_a: &str,
+    backend_b: &str,
+) -> Result<ExitCode, ExitCode> {
+    let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
+    let backend_supported =
+        backend_capability_payload(backend_a).is_some() && backend_capability_payload(backend_b).is_some();
+    let status = if diff.replay_equivalence.equivalent && backend_supported {
+        "equivalent"
+    } else if backend_supported {
+        "fidelity-preserving"
+    } else {
+        "downgraded"
+    };
+    let payload = json!({
+        "format": "equivalence-proof/v1",
+        "backend_a": backend_a,
+        "backend_b": backend_b,
+        "status": status,
+        "run_equivalent": diff.replay_equivalence.equivalent,
+        "summary": diff.replay_equivalence.reason_report.summary,
+        "reasons": diff.replay_equivalence.reasons
+    });
+    if cli.json {
+        return emit_json(
+            cli,
+            "dag.equivalence-proof",
+            status != "downgraded",
+            payload,
+            if status == "downgraded" {
+                vec![json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"})]
+            } else {
+                Vec::new()
+            },
+            if status == "downgraded" {
+                ExitCode::from(2)
+            } else {
+                ExitCode::SUCCESS
+            },
+        );
+    }
+    println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+    Ok(if status == "downgraded" {
+        ExitCode::from(2)
+    } else {
+        ExitCode::SUCCESS
     })
 }
 

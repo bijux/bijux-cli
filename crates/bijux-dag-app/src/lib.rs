@@ -40,8 +40,6 @@ mod read_graph;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
-#[path = "replay/service.rs"]
-mod replay_service;
 mod routes;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
@@ -77,7 +75,6 @@ use bijux_dag_runtime::{
 };
 #[cfg(test)]
 use bijux_dag_testkit as _;
-use capability_matrix::backend_capability_payload;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
@@ -1168,53 +1165,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_b,
             backend_a,
             backend_b,
-        } => {
-            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
-            let backend_supported = backend_capability_payload(&backend_a).is_some()
-                && backend_capability_payload(&backend_b).is_some();
-            let status = if diff.replay_equivalence.equivalent && backend_supported {
-                "equivalent"
-            } else if backend_supported {
-                "fidelity-preserving"
-            } else {
-                "downgraded"
-            };
-            let payload = json!({
-                "format": "equivalence-proof/v1",
-                "backend_a": backend_a,
-                "backend_b": backend_b,
-                "status": status,
-                "run_equivalent": diff.replay_equivalence.equivalent,
-                "summary": diff.replay_equivalence.reason_report.summary,
-                "reasons": diff.replay_equivalence.reasons
-            });
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.equivalence-proof",
-                    status != "downgraded",
-                    payload,
-                    if status == "downgraded" {
-                        vec![
-                            json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"}),
-                        ]
-                    } else {
-                        Vec::new()
-                    },
-                    if status == "downgraded" {
-                        ExitCode::from(2)
-                    } else {
-                        ExitCode::SUCCESS
-                    },
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(if status == "downgraded" {
-                ExitCode::from(2)
-            } else {
-                ExitCode::SUCCESS
-            })
-        }
+        } => routes::surface_routes::handle_equivalence_proof_command(
+            &cli, run_a, run_b, backend_a, backend_b,
+        ),
         Commands::VersionInspect {
             dag,
             run_dir,
