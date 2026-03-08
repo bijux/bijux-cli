@@ -1,0 +1,27 @@
+{
+  "policy_version": "1",
+  "quarantined_prefixes": [
+    "backend/distributed/",
+    "internal/analysis/",
+    "internal/workflow/",
+    "diagnostics/runtime/"
+  ],
+  "advanced_semantics_modules": [
+    {"module": "backend/distributed/coordination.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/distributed.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/distribution_readiness.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/federated_scheduling.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/geo_federation.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/ha_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "backend/distributed/infrastructure.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "diagnostics/runtime/control_plane_api.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "internal/analysis/adaptive_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "internal/analysis/cost_optimization.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "internal/analysis/dataset_semantics.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "internal/workflow/ai_operator_assist.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "internal/workflow/workflow_product.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
+    {"module": "adapters/registry.rs", "category": "adapter-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true},
+    {"module": "runtime_core/execution/scheduler.rs", "category": "runtime-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true},
+    {"module": "runtime_core/execution/run_state.rs", "category": "kernel-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true}
+  ]
+}
