@@ -29,6 +29,11 @@ fn main() -> Result<(), String> {
     let root = repo_root();
     let json_out = root.join("docs/reports/foundation/graph_identity_decomposition_report.json");
     let md_out = root.join("docs/spec/GRAPH_IDENTITY_FIELD_IMPACT.md");
+    let node_md_out = root.join("docs/spec/NODE_FINGERPRINT_FIELD_IMPACT.md");
+    let field_impact_json_out =
+        root.join("docs/reports/foundation/graph_identity_field_impact_report.json");
+    let canonical_diff_inventory_out =
+        root.join("docs/reports/foundation/canonical_diff_fixture_inventory_report.md");
 
     let payload = serde_json::json!({
         "format": "graph-identity-decomposition/v1",
@@ -66,6 +71,46 @@ fn main() -> Result<(), String> {
         &json_out,
         &serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?,
     )?;
+    write_file(
+        &field_impact_json_out,
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "format": "graph-identity-field-impact/v1",
+            "graph_fields": {
+                "included": payload["included_fields"],
+                "excluded_external_context": payload["excluded_external_context"],
+                "legacy_spec_aliases_normalized": payload["legacy_spec_aliases_normalized"]
+            },
+            "node_fields": {
+                "included": [
+                    "id",
+                    "kind",
+                    "inputs",
+                    "outputs.name",
+                    "outputs.path",
+                    "params",
+                    "container",
+                    "timeout_ms",
+                    "resources",
+                    "retry",
+                    "effects",
+                    "env_allowlist",
+                    "tags",
+                    "group"
+                ],
+                "excluded": [
+                    "adapter runtime metadata",
+                    "run provenance metadata",
+                    "artifact storage metadata"
+                ]
+            },
+            "generated_from": [
+                "crates/bijux-dag-core/src/lib.rs",
+                "crates/bijux-dag-core/tests/graph_identity_property_contracts.rs",
+                "crates/bijux-dag-core/tests/direct_module_entrypoints_contracts.rs"
+            ]
+        }))
+        .map_err(|err| err.to_string())?,
+    )?;
 
     let md = r#"# Graph Identity Field Impact
 
@@ -102,6 +147,60 @@ Machine-readable decomposition:
 - `docs/reports/foundation/graph_identity_decomposition_report.json`
 "#;
     write_file(&md_out, md)?;
+
+    let node_md = r#"# Node Fingerprint Field Impact
+
+This mapping documents node-level fields that contribute to node fingerprinting.
+
+## Included in node fingerprint
+
+- `id`
+- `kind`
+- `inputs` (sorted)
+- `outputs.name`
+- `outputs.path` (path-normalized)
+- `params` (object-key normalized)
+- `container`
+- `timeout_ms`
+- `resources` (normalized defaults)
+- `retry`
+- `effects` (sorted)
+- `env_allowlist` (sorted)
+- `tags` (sorted)
+- `group`
+
+## Excluded from node fingerprint
+
+- adapter runtime metadata
+- run/provenance metadata
+- artifact storage metadata
+"#;
+    write_file(&node_md_out, node_md)?;
+
+    let canonical_diff_root = root.join("crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff");
+    let mut fixtures = Vec::new();
+    if canonical_diff_root.exists() {
+        for entry in fs::read_dir(&canonical_diff_root).map_err(|err| err.to_string())? {
+            let entry = entry.map_err(|err| err.to_string())?;
+            let path = entry.path();
+            if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+                let rel = path
+                    .strip_prefix(&root)
+                    .map_err(|err| err.to_string())?
+                    .to_string_lossy()
+                    .to_string();
+                fixtures.push(rel);
+            }
+        }
+    }
+    fixtures.sort();
+    let mut md = String::from("# Canonical Diff Fixture Inventory\n\n");
+    md.push_str("Generated from `crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff`.\n\n");
+    md.push_str("| fixture | status |\n| --- | --- |\n");
+    for fixture in fixtures {
+        md.push_str(&format!("| `{fixture}` | covered |\n"));
+    }
+    write_file(&canonical_diff_inventory_out, &md)?;
 
     println!("generated graph identity decomposition reports");
     Ok(())
