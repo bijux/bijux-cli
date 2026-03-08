@@ -44,6 +44,12 @@ jobs:
             docs/reports/foundation/unsupported_capability_approximations_report.md \
             docs/reports/foundation/implemented_backend_surfaces_report.md \
             docs/reports/foundation/simulated_backend_surfaces_report.md
+      - name: generate app route and response coverage reports
+        run: |
+          cargo run -p bijux-dev-dag --bin generate_app_route_coverage_reports
+          git diff --exit-code \
+            docs/reports/foundation/app_route_coverage_by_command_family.md \
+            docs/reports/foundation/app_response_schema_coverage_by_command_family.md
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

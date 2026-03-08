@@ -23,8 +23,11 @@ fn app_boundary_and_ux_reports_exist() {
         "docs/reports/foundation/operator_command_ux_audit.md",
         "docs/spec/OUTPUT_CONCISION_CONTRACT.md",
         "docs/reports/foundation/json_consistency_sweep.md",
+        "docs/reports/foundation/app_route_coverage_by_command_family.md",
+        "docs/reports/foundation/app_response_schema_coverage_by_command_family.md",
         "docs/examples/operator_command_examples.md",
         "docs/reports/foundation/app_inspect_explain_latency_baseline.md",
+        "crates/bijux-dag-app/tests/route_entrypoint_no_panic_contract.rs",
     ] {
         assert!(repo_root().join(rel).exists(), "missing {rel}");
     }
