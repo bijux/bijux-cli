@@ -1,0 +1,12 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"const","kind":"const","outputs":[{"name":"out","path":"const/out.txt"}]},
+    {"id":"shell","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"shell/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > shell.out"]},"effects":["filesystem"]},
+    {"id":"container","kind":"container","inputs":["in"],"outputs":[{"name":"out","path":"container/out.txt"}],"effects":["filesystem"],"container":{"image":"alpine:3.20","argv":["/bin/sh","-lc","cat in > container.out"],"engine":"docker"}}
+  ],
+  "edges": [
+    {"from":{"node_id":"const","port":"out"},"to":{"node_id":"shell","port":"in"}},
+    {"from":{"node_id":"shell","port":"out"},"to":{"node_id":"container","port":"in"}}
+  ]
+}

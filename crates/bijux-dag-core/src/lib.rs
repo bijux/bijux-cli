@@ -568,6 +568,11 @@ impl Graph {
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
             node.tags.sort();
+            if let Some(resources) = &node.resources {
+                if resources.cpu == 0 && resources.mem_mb == 0 {
+                    node.resources = None;
+                }
+            }
         }
 
         edges.sort_by(|a, b| {

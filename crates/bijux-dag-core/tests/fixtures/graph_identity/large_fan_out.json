@@ -1,0 +1,18 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out.txt"}]},
+    {"id":"a","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"a/out.txt"}]},
+    {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out.txt"}]},
+    {"id":"c","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"c/out.txt"}]},
+    {"id":"d","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"d/out.txt"}]},
+    {"id":"e","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"e/out.txt"}]}
+  ],
+  "edges": [
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"a","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"b","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"c","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"d","port":"in"}},
+    {"from":{"node_id":"root","port":"out"},"to":{"node_id":"e","port":"in"}}
+  ]
+}

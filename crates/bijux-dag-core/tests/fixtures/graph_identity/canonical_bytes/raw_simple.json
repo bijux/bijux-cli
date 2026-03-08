@@ -1,0 +1,12 @@
+{
+  "meta": {"name": "sample"},
+  "edges": [],
+  "nodes": [
+    {
+      "outputs": [{"path":"n\\out.txt","name":"out"}],
+      "kind": "const",
+      "id": "n"
+    }
+  ],
+  "spec": "v0.1"
+}

@@ -1,0 +1,18 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "nodes": [
+    {"id":"n1","kind":"const","outputs":[{"name":"out","path":"n1/out.txt"}]},
+    {"id":"n2","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n2/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > n2.out"]},"effects":["filesystem"]},
+    {"id":"n3","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n3/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > n3.out"]},"effects":["filesystem"]},
+    {"id":"n4","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n4/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > n4.out"]},"effects":["filesystem"]},
+    {"id":"n5","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n5/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > n5.out"]},"effects":["filesystem"]},
+    {"id":"n6","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n6/out.txt"}],"params":{"argv":["/bin/sh","-c","cat in > n6.out"]},"effects":["filesystem"]}
+  ],
+  "edges": [
+    {"from":{"node_id":"n1","port":"out"},"to":{"node_id":"n2","port":"in"}},
+    {"from":{"node_id":"n2","port":"out"},"to":{"node_id":"n3","port":"in"}},
+    {"from":{"node_id":"n3","port":"out"},"to":{"node_id":"n4","port":"in"}},
+    {"from":{"node_id":"n4","port":"out"},"to":{"node_id":"n5","port":"in"}},
+    {"from":{"node_id":"n5","port":"out"},"to":{"node_id":"n6","port":"in"}}
+  ]
+}

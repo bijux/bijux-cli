@@ -1,0 +1,16 @@
+{
+  "spec": "0.1",
+  "nodes": [
+    {
+      "id": "n",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name":"out","path":"n/out.txt"}],
+      "params": {"argv": ["/bin/sh", "-c", "cat in > out"]},
+      "effects": ["filesystem"],
+      "resources": {"cpu":0,"mem_mb":0},
+      "env_allowlist": ["B","A"]
+    }
+  ],
+  "edges": []
+}
