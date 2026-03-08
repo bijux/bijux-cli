@@ -27,3 +27,52 @@ fn failure_paths_are_classified_explicitly() {
         RuntimeFailureClass::DependencyFailure
     );
 }
+
+#[test]
+fn failure_classification_matrix_covers_policy_cache_artifact_and_adapter() {
+    assert_eq!(
+        classify_failure(false, false, false, true, false, false),
+        RuntimeFailureClass::PolicyViolation
+    );
+    assert_eq!(
+        classify_failure(false, false, false, false, true, false),
+        RuntimeFailureClass::CacheInvalid
+    );
+    assert_eq!(
+        classify_failure(false, false, false, false, false, true),
+        RuntimeFailureClass::ArtifactCorruption
+    );
+    assert_eq!(
+        classify_failure(false, false, false, false, false, false),
+        RuntimeFailureClass::AdapterFailure
+    );
+}
+
+fn operational_group(class: RuntimeFailureClass) -> &'static str {
+    match class {
+        RuntimeFailureClass::Timeout | RuntimeFailureClass::AdapterFailure => "transient",
+        RuntimeFailureClass::PolicyViolation | RuntimeFailureClass::ArtifactCorruption => {
+            "permanent"
+        }
+        RuntimeFailureClass::Cancelled
+        | RuntimeFailureClass::DependencyFailure
+        | RuntimeFailureClass::CacheInvalid => "conditional",
+    }
+}
+
+#[test]
+fn failure_taxonomy_transient_and_permanent_mapping_is_explicit() {
+    assert_eq!(operational_group(RuntimeFailureClass::Timeout), "transient");
+    assert_eq!(
+        operational_group(RuntimeFailureClass::AdapterFailure),
+        "transient"
+    );
+    assert_eq!(
+        operational_group(RuntimeFailureClass::PolicyViolation),
+        "permanent"
+    );
+    assert_eq!(
+        operational_group(RuntimeFailureClass::ArtifactCorruption),
+        "permanent"
+    );
+}

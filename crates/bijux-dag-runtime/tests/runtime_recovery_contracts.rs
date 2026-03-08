@@ -20,3 +20,24 @@ fn recovery_required_for_checkpoint_without_terminal_completion() {
         partial_artifacts_present: false,
     }));
 }
+
+#[test]
+fn recovery_required_for_partial_artifact_or_interrupted_execution() {
+    assert!(recovery_action_required(&RecoveryInput {
+        has_checkpoint: false,
+        terminal_state_seen: false,
+        partial_artifacts_present: true,
+    }));
+
+    assert!(recovery_action_required(&RecoveryInput {
+        has_checkpoint: true,
+        terminal_state_seen: false,
+        partial_artifacts_present: false,
+    }));
+
+    assert!(!recovery_action_required(&RecoveryInput {
+        has_checkpoint: true,
+        terminal_state_seen: true,
+        partial_artifacts_present: false,
+    }));
+}
