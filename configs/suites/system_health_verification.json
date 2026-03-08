@@ -1,0 +1,16 @@
+{
+  "id": "system-health-verification",
+  "description": "System health command, diagnostics integrity, anomaly detection, and drift verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/repo_health_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/dev_dag_reporting_integrity_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/system_health_diagnostics_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/system_health/regression_corpus.json",
+    "docs/reports/foundation/system_health_diagnostics_documentation.md",
+    "docs/reports/foundation/system_health_reporting_dashboard.md",
+    "docs/reports/foundation/health_regression_summary_report.md"
+  ]
+}
