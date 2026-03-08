@@ -4659,23 +4659,20 @@ fn run_evidence_compare_verify() -> Result<(), String> {
     run_compare_evidence_policy_verify()
 }
 
-fn run_evidence_foundation_verify() -> Result<(), String> {
-    let root = repo_root()?;
-    run_evidence_suite_policy_verify()?;
-    run_evidence_schema_verify()?;
+fn run_evidence_registry_verify_foundation_gate() -> Result<(), String> {
     run_evidence_registry_verify()?;
-    run_evidence_ownership_verify()?;
-    run_evidence_drift_verify()?;
-    run_evidence_consumers_verify()?;
-    run_evidence_authoring_verify()?;
-    run_evidence_battle_verify()?;
-    run_evidence_cache_verify()?;
-    run_evidence_replay_verify()?;
-    run_evidence_compat_verify()?;
-    run_evidence_fault_verify()?;
-    run_evidence_perf_verify()?;
-    run_evidence_compare_verify()?;
-    run_evidence_release_set_verify()?;
+    Ok(())
+}
+
+struct EvidenceFoundationStep {
+    id: &'static str,
+    description: &'static str,
+    evidence_scope: &'static [&'static str],
+    run: fn() -> Result<(), String>,
+}
+
+fn run_evidence_foundation_reports_presence_verify() -> Result<(), String> {
+    let root = repo_root()?;
     for rel in [
         "evidence/reports/evidence_audit_2026-03-07.md",
         "evidence/reports/evidence_topology_before_after.md",
@@ -4693,6 +4690,182 @@ fn run_evidence_foundation_verify() -> Result<(), String> {
             ));
         }
     }
+    Ok(())
+}
+
+fn write_evidence_foundation_summary_report(
+    root: &Path,
+    rows: &[String],
+    total_steps: usize,
+) -> Result<PathBuf, String> {
+    let out_rel = Path::new("artifacts/reports/evidence-foundation-verification-summary.md");
+    let out_path = root.join(out_rel);
+    if let Some(parent) = out_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+
+    let mut markdown = String::new();
+    markdown.push_str("# Evidence Foundation Verification Summary\n\n");
+    markdown.push_str("This report describes each verification check executed by `verify evidence-foundation`, including the evidence surfaces validated by each check.\n\n");
+    markdown.push_str("## Result\n\n");
+    markdown.push_str(&format!(
+        "- Status: PASS\n- Checks executed: {}\n\n",
+        total_steps
+    ));
+    markdown.push_str("## Verification Matrix\n\n");
+    markdown.push_str("| Step | What was verified | Evidence surfaces |\n");
+    markdown.push_str("| --- | --- | --- |\n");
+    for row in rows {
+        markdown.push_str(row);
+        markdown.push('\n');
+    }
+
+    fs::write(&out_path, markdown).map_err(|err| err.to_string())?;
+    Ok(out_path)
+}
+
+fn run_evidence_foundation_verify() -> Result<(), String> {
+    let root = repo_root()?;
+    let steps: [EvidenceFoundationStep; 16] = [
+        EvidenceFoundationStep {
+            id: "suite-policy",
+            description: "suite policy contract and verify-command mapping",
+            evidence_scope: &["configs/policy/evidence_suite_policy.json"],
+            run: run_evidence_suite_policy_verify,
+        },
+        EvidenceFoundationStep {
+            id: "schema",
+            description: "schema validity for governed evidence JSON assets",
+            evidence_scope: &["configs/schema/**", "evidence/**.json"],
+            run: run_evidence_schema_verify,
+        },
+        EvidenceFoundationStep {
+            id: "registry",
+            description: "registry normalization, drift, orphan, and missing-file integrity",
+            evidence_scope: &[
+                "evidence/_meta/registries/evidence_registry.json",
+                "evidence/ownership/evidence_ledger.json",
+                "evidence/**",
+            ],
+            run: run_evidence_registry_verify_foundation_gate,
+        },
+        EvidenceFoundationStep {
+            id: "ownership",
+            description: "ledger ownership and consumer coverage contracts",
+            evidence_scope: &["evidence/ownership/evidence_ledger.json"],
+            run: run_evidence_ownership_verify,
+        },
+        EvidenceFoundationStep {
+            id: "drift",
+            description: "legacy-root drift prevention for evidence asset placement",
+            evidence_scope: &[
+                "repository-wide json surfaces",
+                "configs/policy/evidence_path_policy.json",
+            ],
+            run: run_evidence_drift_verify,
+        },
+        EvidenceFoundationStep {
+            id: "consumers",
+            description: "evidence consumer integrity and registry access boundaries",
+            evidence_scope: &[
+                "evidence/_meta/registries/evidence_registry.json",
+                "crates/**/tests",
+            ],
+            run: run_evidence_consumers_verify,
+        },
+        EvidenceFoundationStep {
+            id: "authoring",
+            description: "authoring evidence domain contracts",
+            evidence_scope: &["evidence/authoring/**", "evidence/authoring/metadata.json"],
+            run: run_evidence_authoring_verify,
+        },
+        EvidenceFoundationStep {
+            id: "battle",
+            description: "battle scenario mapping and trust-property governance",
+            evidence_scope: &["evidence/battle/**", "evidence/battle/metadata.json"],
+            run: run_evidence_battle_verify,
+        },
+        EvidenceFoundationStep {
+            id: "cache",
+            description: "cache correctness and corruption evidence contracts",
+            evidence_scope: &["evidence/cache/**", "evidence/cache/metadata.json"],
+            run: run_evidence_cache_verify,
+        },
+        EvidenceFoundationStep {
+            id: "replay",
+            description: "replay-equivalence evidence contracts",
+            evidence_scope: &["evidence/cache/replay/**", "evidence/cache/metadata.json"],
+            run: run_evidence_replay_verify,
+        },
+        EvidenceFoundationStep {
+            id: "compat",
+            description: "compatibility evidence domain contracts",
+            evidence_scope: &["evidence/compat/**", "evidence/compat/metadata.json"],
+            run: run_evidence_compat_verify,
+        },
+        EvidenceFoundationStep {
+            id: "fault",
+            description: "fault evidence domain contracts",
+            evidence_scope: &["evidence/fault/**", "evidence/fault/metadata.json"],
+            run: run_evidence_fault_verify,
+        },
+        EvidenceFoundationStep {
+            id: "perf",
+            description: "performance evidence domain contracts and policy",
+            evidence_scope: &["evidence/perf/**", "evidence/perf/metadata.json"],
+            run: run_evidence_perf_verify,
+        },
+        EvidenceFoundationStep {
+            id: "compare",
+            description: "comparison evidence domain contracts and policy",
+            evidence_scope: &["evidence/compare/**", "evidence/compare/metadata.json"],
+            run: run_evidence_compare_verify,
+        },
+        EvidenceFoundationStep {
+            id: "release-set",
+            description: "release evidence set membership and classification integrity",
+            evidence_scope: &[
+                "evidence/release/release_evidence_set.json",
+                "evidence/_meta/registries/evidence_registry.json",
+            ],
+            run: run_evidence_release_set_verify,
+        },
+        EvidenceFoundationStep {
+            id: "required-reports",
+            description: "required foundation governance reports are present",
+            evidence_scope: &["evidence/reports/*.md"],
+            run: run_evidence_foundation_reports_presence_verify,
+        },
+    ];
+
+    println!("evidence foundation verification summary");
+    let mut rows = Vec::new();
+    for (index, step) in steps.iter().enumerate() {
+        println!(
+            "  [{}/{}] {}: {}",
+            index + 1,
+            steps.len(),
+            step.id,
+            step.description
+        );
+        if let Err(err) = (step.run)() {
+            return Err(format!(
+                "evidence foundation step `{}` failed: {}",
+                step.id, err
+            ));
+        }
+        let surfaces = step.evidence_scope.join(", ");
+        rows.push(format!(
+            "| `{}` | {} | `{}` |",
+            step.id, step.description, surfaces
+        ));
+    }
+
+    let report_path = write_evidence_foundation_summary_report(&root, &rows, steps.len())?;
+    println!(
+        "evidence foundation verification report: {}",
+        report_path.display()
+    );
     Ok(())
 }
 
