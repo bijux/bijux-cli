@@ -1,0 +1,12 @@
+{
+  "id": "failure-recovery-injection-stress",
+  "description": "Stress-oriented failure classification and recovery interruption suite.",
+  "lane": "stress",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test runtime_failure_contracts",
+    "cargo test -p bijux-dag-runtime --test runtime_recovery_contracts",
+    "cargo test -p bijux-dag-app --test fault_resilience_integration",
+    "cargo test -p bijux-dev-dag --test failure_recovery_completion_contracts"
+  ]
+}
