@@ -139,7 +139,8 @@ fn app_route_file_size_ceilings_are_enforced() {
 #[test]
 fn app_router_dispatch_stays_in_route_modules_for_key_families() {
     let root = repo_root();
-    let lib = fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
+    let lib =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
     let required_delegations = [
         "Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command)",
         "Commands::Explain { run_dir, node } => {",

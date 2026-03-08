@@ -17,7 +17,8 @@ fn app_route_support_fast_suite_is_defined() {
     assert!(suite.exists(), "missing app route-support fast suite");
 
     let payload: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite")).expect("parse suite");
+        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
+            .expect("parse suite");
     assert_eq!(payload["id"], "app-route-support-fast");
     let commands = payload["commands"].as_array().expect("commands array");
     for required in [

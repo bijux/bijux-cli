@@ -26,6 +26,9 @@ fn app_service_boundary_contract_and_reports_exist() {
         "docs/reports/foundation/app_modules_below_50_coverage_report.md",
         "docs/reports/foundation/app_hot_path_quality_dashboard.md",
     ] {
-        assert!(repo_root().join(rel).exists(), "missing app boundary artifact: {rel}");
+        assert!(
+            repo_root().join(rel).exists(),
+            "missing app boundary artifact: {rel}"
+        );
     }
 }

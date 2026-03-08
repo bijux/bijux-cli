@@ -18,7 +18,10 @@ fn app_router_post_extraction_reports_and_adr_exist() {
         "docs/reports/foundation/app_router_post_extraction_completion_report.md",
         "docs/adr/20260308-app-routing-post-extraction-end-state.md",
     ] {
-        assert!(root.join(rel).exists(), "missing app router extraction artifact {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing app router extraction artifact {rel}"
+        );
     }
 }
 
@@ -42,8 +45,9 @@ fn app_lib_avoids_remaining_capability_branching_logic() {
 #[test]
 fn route_modules_own_key_dispatch_and_payload_paths() {
     let root = repo_root();
-    let surface = fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/surface_routes.rs"))
-        .expect("read surface routes");
+    let surface =
+        fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/surface_routes.rs"))
+            .expect("read surface routes");
     let runs = fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/runs_routes.rs"))
         .expect("read runs routes");
     let response = fs::read_to_string(root.join("crates/bijux-dag-app/src/routes/response.rs"))

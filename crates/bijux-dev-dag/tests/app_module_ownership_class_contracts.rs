@@ -30,7 +30,10 @@ fn app_module_ownership_policy_covers_all_app_sources() {
 
     for entry in &policy.ownership_classes {
         assert!(
-            matches!(entry.class.as_str(), "route" | "service" | "renderer" | "support"),
+            matches!(
+                entry.class.as_str(),
+                "route" | "service" | "renderer" | "support"
+            ),
             "unsupported ownership class: {}",
             entry.class
         );
@@ -54,7 +57,11 @@ fn app_module_ownership_policy_covers_all_app_sources() {
                 .expect("prefix")
                 .to_string_lossy()
                 .replace('\\', "/");
-            if !policy.ownership_classes.iter().any(|p| rel.starts_with(&p.prefix)) {
+            if !policy
+                .ownership_classes
+                .iter()
+                .any(|p| rel.starts_with(&p.prefix))
+            {
                 uncovered.push(rel);
             }
         }

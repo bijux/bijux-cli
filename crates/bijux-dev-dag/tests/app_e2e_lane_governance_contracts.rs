@@ -34,7 +34,10 @@ fn app_e2e_lane_reports_and_suites_exist() {
         "crates/bijux-dag-app/tests/fixtures/git_for_computation_graphs_workflow.json",
         "crates/bijux-dag-app/tests/app_smoke_routed_workflows_contract.rs",
     ] {
-        assert!(repo_root().join(rel).exists(), "missing app e2e governance artifact: {rel}");
+        assert!(
+            repo_root().join(rel).exists(),
+            "missing app e2e governance artifact: {rel}"
+        );
     }
 }
 
@@ -83,7 +86,10 @@ fn every_slow_e2e_test_has_lane_rationale_entry() {
         .collect();
 
     for name in names {
-        assert!(listed.contains(&name), "missing lane rationale for e2e test: {name}");
+        assert!(
+            listed.contains(&name),
+            "missing lane rationale for e2e test: {name}"
+        );
     }
 }
 
@@ -94,6 +100,9 @@ fn smoke_release_coverage_spans_identity_replay_diff_bundle_and_proof() {
     )
     .expect("read smoke release coverage report");
     for token in ["validate", "replay", "diff", "export", "prove"] {
-        assert!(raw.contains(token), "smoke release coverage missing token: {token}");
+        assert!(
+            raw.contains(token),
+            "smoke release coverage missing token: {token}"
+        );
     }
 }
