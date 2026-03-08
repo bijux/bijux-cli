@@ -1,0 +1,13 @@
+{
+  "id": "environment-identity-hermeticity-regression",
+  "description": "Regression suite for environment identity determinism, allowlist and denylist semantics, hermetic shaping, and replay drift reporting.",
+  "lane": "fast",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test security_model_contracts",
+    "cargo test -p bijux-dag-runtime --test container_execution_contracts",
+    "cargo test -p bijux-dag-app --test e2e_integration_scenarios",
+    "cargo test -p bijux-dag-app --test run_dir_import_export_contract",
+    "cargo test -p bijux-dev-dag --test environment_identity_completion_contracts"
+  ]
+}
