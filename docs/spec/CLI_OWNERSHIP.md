@@ -20,6 +20,6 @@
 - DAG semantics changes must land in `bijux-dag-app` with contract tests.
 - `bijux-dag-cli` may not implement runtime semantics.
 - Command taxonomy updates must update:
-  - `docs/CLI_COMMAND_TAXONOMY.md`
+  - `docs/reference/COMMAND_TAXONOMY.md`
   - `docs/CLI.md`
   - CLI contract tests in `crates/bijux-dag-cli/tests`.

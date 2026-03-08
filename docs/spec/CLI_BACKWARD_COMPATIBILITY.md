@@ -7,7 +7,7 @@ Human-readable plaintext output is intentionally non-contractual.
 
 ## Stable guarantees
 
-- Top-level command names are stable once documented in `docs/CLI_COMMAND_TAXONOMY.md`.
+- Top-level command names are stable once documented in `docs/reference/COMMAND_TAXONOMY.md`.
 - JSON envelope shape (`ok`, `command`, `data`, `diagnostics`) is stable.
 - Documented non-zero exit code classes remain stable.
 

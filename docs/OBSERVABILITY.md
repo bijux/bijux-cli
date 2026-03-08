@@ -1,8 +1,12 @@
-# Observability model
+# Observability and diagnostics
 
-## Structured event contract
+Audience: operators and maintainers.
+Owner: runtime and operations teams.
+Status: stable.
 
-Runtime emits structured events under these stable categories:
+## Contracted event model
+
+Runtime emits structured event categories for stable diagnostics:
 
 - `plan`
 - `schedule`
@@ -16,50 +20,25 @@ Runtime emits structured events under these stable categories:
 - `replay`
 - `verify`
 
-Additional diagnostic contracts:
+Diagnostics kinds include: `validation`, `runtime-failure`, `policy-denial`, and `recovery-anomaly`.
+Correlated identifiers span planner/scheduler/worker/artifact/audit streams.
 
-- diagnostics kinds: validation, runtime-failure, policy-denial, recovery-anomaly
-- stable machine-readable failure causes
-- correlation IDs spanning planner/scheduler/worker/artifact/audit events
-- replay span-link records for retry/replay ancestry
+## Event sinks and outputs
 
-## Event sinks
+Supported sinks:
 
-Runtime event sinks share one contract and currently support:
+- local file
+- stdout
+- remote collector (contract placeholder)
 
-- local file sink
-- stdout sink
-- remote collector sink (stub contract for future transport)
-
-Metrics export formats:
+Export formats:
 
 - JSON file
 - stdout JSON
-- OTLP-compatible transport contract
-- Prometheus text contract
+- OTLP-compatible transport
+- Prometheus text
 
-## Metric families
-
-Product metrics:
-
-- run makespan
-- success ratio
-- cache reuse ratio
-- artifact volume
-- scheduler queue depth
-- scheduler dispatch latency
-
-Debug-only metrics:
-
-- per-node queue delay
-- per-node retries
-- per-node output byte estimates
-- scheduler starvation counters
-- process memory samples around output materialization
-
-## Timeline and visualization exports
-
-Each run may emit:
+Per-run artifacts may include:
 
 - `observability.events.json`
 - `observability.timeline.json`
@@ -68,32 +47,49 @@ Each run may emit:
 - `observability.graph-visualization.json`
 - `observability.lineage-visualization.json`
 
-These artifacts are intended for CLI reports and future UI rendering without format drift.
+## Product metrics and diagnostics
 
-## Explainability commands
+Core metrics:
 
-`bijux-dev-dag` provides:
+- run makespan
+- success ratio
+- cache reuse ratio
+- artifact volume
+- scheduler queue depth
+- scheduler dispatch latency
 
-- `dag explain-run --run-dir <dir>`
-- `dag explain-node --run-dir <dir> --node-id <id>`
-- `dag explain-artifact --run-dir <dir> --artifact-id <id>`
-- `dag explain-schedule --run-dir <dir> --schedule-id <id>`
+Diagnostic metrics:
 
-## Investigation and drift analysis
+- per-node queue delay and retries
+- per-node output byte estimates
+- scheduler starvation counters
+- memory samples during output materialization
+- process memory samples around output materialization
 
-- `dag investigation-bundle --run-dir <dir> --run-id <id>` collects key evidence pointers.
-- `dag drift-report --current-metrics <file> --baseline-metrics <file> --dag-name <name> --baseline-name <name>` reports metric drift.
+## Capacity and reliability model
 
-Fixture examples:
+Use these evidence-oriented metrics for capacity planning:
 
-- `evidence/perf/fixtures/observability/retry_cancel_cache_failure.json`
-- `evidence/perf/fixtures/observability/investigation_bundle_demo.json`
+- queue depth and dispatch lag
+- backend saturation and scheduler pressure
+- storage growth and retention trends
+- cost and resource envelopes for run families
 
-## Redaction and sampling
+Redaction and sampling controls apply to sensitive parameters, environment values, and metadata.
 
-- Redaction policy supports removing sensitive params/env/metadata keys.
-- Sampling policy defines max spans/events for large run traces.
+## Drift and regression evidence
 
-## Demo DAG
+- Drift reporting compares current and baseline metrics for replay-heavy and benchmark workloads.
+- Resource baselines should be run from approved benchmark suites only.
 
-Observability demonstrations are sourced from benchmark observability fixtures and governed evidence scenarios.
+Approximate measurements are acceptable only when explicitly labeled as such; authoritative measurements must reference controlled benchmark or runtime telemetry.
+
+## Evidence locations and references
+
+- Benchmark baseline procedures are tracked under `evidence/perf/` and benchmark execution tooling in `bijux-dev-dag`.
+- Deep investigations should prefer:
+  - `dag investigation-bundle`
+  - `dag drift-report`
+  - explicit evidence artifacts and diff reports
+
+Normative output and evidence contracts are defined in `docs/spec/`.

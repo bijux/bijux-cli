@@ -1,10 +1,18 @@
 # CLI
 
-Bijux provides an umbrella CLI `bijux` with sub-apps. The DAG app is available as `bijux dag`.
+## Audience and ownership
 
-## Commands
+Audience: operators and maintainers.
+Owner: CLI platform team.
+Status: stable.
 
-```
+## Purpose
+
+Single operator entrypoint for running, validating, replaying, diffing, and inspecting DAG workflows.
+
+## CLI surface
+
+```bash
 bijux dag validate <dag>
 bijux dag run <dag> --out <runs/>
 bijux dag replay <run-dir> --out <runs/>
@@ -20,54 +28,31 @@ bijux dag fsck <run-dir> [--strict]
 bijux dag fsck <bundle.json> --json
 bijux dag hash run <run-dir>
 bijux dag hash artifact <file>
-bijux dag capabilities --json
-bijux dag capabilities --backend kubernetes --json
-bijux dag capabilities --backend hpc --json
-bijux dag capabilities --backend remote --json
-bijux dag semantic-portability --backend kubernetes --json
-bijux dag equivalence-proof ./runs/a ./runs/b --backend-a kubernetes --backend-b hpc --json
-bijux dag version-inspect --dag ./graph.dag.json --json
-bijux dag migrate dag ./graph.dag.json --from 0.1 --to 0.1 --dry-run --json
 bijux dag cache <ls|pack|unpack|verify|gc>
 bijux dag adapters <ls|doctor>
 bijux dag export <run-dir> --out bundle.json
-bijux dag export --from-run <run-dir> --out bundle.json
-bijux dag export <run-dir> --out bundle.json --without-artifacts
-bijux dag export <run-dir> --out bundle.json --provenance-only
-bijux dag export <run-dir> --out bundle.json --redact
-bijux dag import <bundle.json>
-bijux dag import <bundle.json> --verify-only
-bijux completions --shell zsh
+bijux dag import <bundle.json> [--verify-only]
+bijux completion --shell zsh
 ```
 
-`dag verify --deep` performs full artifact integrity checks including path normalization,
-index ordering, and schema-parse verification for stored manifest and trace files.
+## Command categories and stability model
 
-Command categories and long-term command support decisions are documented in:
+- Product commands: `validate`, `run`, `replay`, `diff`, `explain`, `status`, `cache`, `verify`, `hash`, `capabilities`, `adapters`, `export`, `import`.
+- Debug commands are available on `dag` and should be treated as diagnostics.
+- Top-level utility: `completions`.
 
-- `docs/CLI_COMMAND_TAXONOMY.md`
-- `docs/spec/CLI_BACKWARD_COMPATIBILITY.md`
-- `docs/spec/CLI_OWNERSHIP.md`
-- `docs/reference/TEST_LANES.md`
+### Compatibility and lifecycle
 
-## JSON Envelope
+- Stable JSON envelope: `ok`, `command`, `data`, `diagnostics`.
+- Stable command names and legacy aliases are governed by compatibility and deprecation contracts.
+- New aliases require explicit migration notes and contract tests.
 
-All commands accept a global `--json` flag. JSON output is normalized as:
+For full contract text, see:
 
-```
-{
-  "ok": true,
-  "command": "dag.validate",
-  "data": { ... },
-  "diagnostics": [ ... ]
-}
-```
-
-`diagnostics` is used for validation/lint warnings or errors. Other commands return an empty array.
-
-## Note
-
-`bijux` is the only supported CLI entrypoint. Use `bijux dag ...` for DAG operations.
+- [CLI backward compatibility contract](./spec/CLI_BACKWARD_COMPATIBILITY.md)
+- [CLI ownership boundaries](./spec/CLI_OWNERSHIP.md)
+- [CLI deprecation and alias policy](./spec/CLI_DEPRECATION_AND_ALIAS_POLICY.md)
+- [CLI command taxonomy](./reference/COMMAND_TAXONOMY.md)
 
 ## Exit code matrix
 
@@ -87,5 +72,8 @@ All commands accept a global `--json` flag. JSON output is normalized as:
 | DAG umbrella | `dag capabilities` | 0 | 0 |
 | Top-level | `completions --shell <shell>` | 0 | 2 |
 
-Failure codes are stable for CLI parser and command validation errors unless a subcommand
-explicitly returns a richer status.
+## Backward-compatibility posture
+
+- Command classes documented in this guide are part of the stable CLI surface unless explicitly marked experimental.
+- Legacy diagnostics aliases should preserve status classes and schema class while migration is in effect.
+- Alias and deprecation behavior follows the canonical contracts above.

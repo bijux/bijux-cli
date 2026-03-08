@@ -1,22 +1,42 @@
-# Testing strategy by crate
+# Testing and test strategy
 
-## Core crate
+Audience: maintainers and contributors.
+Owner: quality and release owners.
+Status: stable.
 
-- Structural parser and validation behavior in `crates/bijux-dag-core/tests`.
-- Compatibility fixtures in `crates/bijux-dag-core/tests/compat/v0.1`.
+## Test philosophy
 
-## Runtime crate
+Testing is organized by outward contract coverage rather than implementation detail.
 
-- Determinism, replay, cache, and failure behavior in `crates/bijux-dag-runtime/tests`.
+## Crate and surface scopes
 
-## App crate
+- `crates/bijux-dag-core/tests/`: parser compatibility, schema contracts, and core invariants.
+- `crates/bijux-dag-runtime/tests/`: execution, replay, cache, and failure behavior.
+- `crates/bijux-dag-app/tests/`: command contracts and output behavior.
+- `crates/bijux-dag-cli/tests/`: parser/help surfaces, exit codes, and JSON envelope behavior.
+- `crates/bijux-dev-dag/tests/`: repository architecture, policy, and release guardrails.
 
-- Command contract and output behavior in `crates/bijux-dag-app/tests`.
+## Test classes
 
-## CLI crate
+- `unit`: crate-local behavior checks.
+- `contract`: schema/CLI/surface invariants and compatibility guarantees.
+- `integration`: multi-module behavior with real artifacts.
+- `conformance`: backend and protocol semantics across fixtures.
+- `benchmark`: performance and equivalence evidence with retained baselines.
 
-- Surface, JSON schema, and exit-code contract checks in `crates/bijux-dag-cli/tests`.
+## Layout policy
 
-## Dev crate
+- Root-level compatibility fixture docs should point to canonical crate layouts:
+  - `crates/bijux-dag-core/tests/compat/v0.1`
+  - `crates/bijux-dev-dag/tests/`
+- Root-level architecture checks should remain in control-plane tooling crates, not duplicated at repo root.
 
-- Repository architecture, policy, suite orchestration, and release guardrails in `crates/bijux-dev-dag/tests`.
+## Governance rules
+
+- Contracts should remain contract-oriented and not include implementation internals.
+- Tests should map to explicit spec surfaces or maintainer references.
+- Additional test directories require explicit owner approval in development governance documentation.
+
+## Operational testing workflow
+
+See `docs/operations/` for command-level operational workflows and `docs/dev/` for contributor workflow guidance.
