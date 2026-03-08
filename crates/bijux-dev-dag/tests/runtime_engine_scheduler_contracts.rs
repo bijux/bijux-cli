@@ -64,4 +64,12 @@ fn scheduler_profile_report_matches_runtime_contract_surface() {
     assert_eq!(value["canonical_unit"], "node");
     assert_eq!(value["model"], "event_driven");
     assert_eq!(value["ready_tie_break"], "lexicographic_node_id");
+    let fixture_sources = value["fixture_sources"]
+        .as_array()
+        .expect("fixture_sources should be an array");
+    assert!(
+        fixture_sources
+            .iter()
+            .any(|item| item.as_str() == Some("crates/bijux-dag-runtime/tests/scheduler_contract.rs"))
+    );
 }

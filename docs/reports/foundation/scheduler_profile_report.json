@@ -1,8 +1,15 @@
 {
-  "format": "scheduler-profile/v0.1",
   "canonical_unit": "node",
+  "fixture_sources": [
+    "crates/bijux-dag-runtime/tests/adaptive_scheduler_contracts.rs",
+    "crates/bijux-dag-runtime/tests/ha_scheduler_contracts.rs",
+    "crates/bijux-dag-runtime/tests/runtime_scheduler_contracts.rs",
+    "crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs",
+    "crates/bijux-dag-runtime/tests/scheduler_contract.rs",
+    "crates/bijux-dag-runtime/tests/scheduler_workload_contracts.rs"
+  ],
+  "format": "scheduler-profile/v0.2",
   "model": "event_driven",
   "priority_model": "static_absent",
-  "ready_tie_break": "lexicographic_node_id",
-  "readiness_rule": "all dependencies resolved before node becomes ready"
+  "ready_tie_break": "lexicographic_node_id"
 }

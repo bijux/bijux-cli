@@ -30,6 +30,10 @@ jobs:
           cargo run -p bijux-dev-dag -- repo release-evidence-report --report artifacts/reports/release-subset-evidence-report.json
       - name: generate evidence summary reports
         run: cargo run -p bijux-dev-dag -- repo evidence-summary-report --report artifacts/reports/evidence-summary.json
+      - name: generate scheduler profile report from runtime fixtures
+        run: |
+          cargo run -p bijux-dev-dag --bin generate_scheduler_profile_report
+          git diff --exit-code docs/reports/foundation/scheduler_profile_report.json
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
