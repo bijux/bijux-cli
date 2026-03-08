@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::{
     build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
     write_json_atomic_durable, Manifest, RunOutputsIndex, VerificationMode,

@@ -1,9 +1,9 @@
+use bijux_dag_core::{parse_graph_strict, Graph, Severity, ValidationDiagnostic};
 use criterion as _;
 use hex as _;
 use serde as _;
-use bijux_dag_core::{parse_graph_strict, Graph, Severity, ValidationDiagnostic};
-use serde_yaml as _;
 use serde_json::json;
+use serde_yaml as _;
 use sha2 as _;
 use std::collections::BTreeSet;
 use tempfile as _;
@@ -68,7 +68,8 @@ fn detects_non_existent_artifact_references() {
 
 #[test]
 fn detects_duplicate_artifact_output_names() {
-    let graph = parse_graph_strict(&fixture("duplicate_outputs_per_node.json")).expect("parse graph");
+    let graph =
+        parse_graph_strict(&fixture("duplicate_outputs_per_node.json")).expect("parse graph");
     let diags = graph.validate_with_warnings();
     assert!(diags.iter().any(|d| d.code == "E1008"));
 }
@@ -105,7 +106,8 @@ fn covers_graph_with_no_executable_nodes_shape() {
 
 #[test]
 fn validates_large_fan_out_graph() {
-    let graph = parse_graph_strict(&fixture("graph_identity/large_fan_out.json")).expect("parse graph");
+    let graph =
+        parse_graph_strict(&fixture("graph_identity/large_fan_out.json")).expect("parse graph");
     let diags = graph.validate_with_warnings();
     assert!(
         !diags.iter().any(|d| d.severity == Severity::Error),
@@ -115,7 +117,8 @@ fn validates_large_fan_out_graph() {
 
 #[test]
 fn validates_large_fan_in_graph() {
-    let graph = parse_graph_strict(&fixture("graph_identity/large_fan_in.json")).expect("parse graph");
+    let graph =
+        parse_graph_strict(&fixture("graph_identity/large_fan_in.json")).expect("parse graph");
     let diags = graph.validate_with_warnings();
     assert!(
         !diags.iter().any(|d| d.severity == Severity::Error),
@@ -142,12 +145,7 @@ fn validation_diagnostic_schema_is_stable() {
         .and_then(|items| items.first())
         .expect("diagnostic entry");
 
-    let keys: BTreeSet<String> = first
-        .as_object()
-        .expect("object")
-        .keys()
-        .cloned()
-        .collect();
+    let keys: BTreeSet<String> = first.as_object().expect("object").keys().cloned().collect();
     let expected: BTreeSet<String> = ["code", "message", "path", "hint", "severity"]
         .iter()
         .map(|s| s.to_string())
@@ -176,8 +174,14 @@ fn validation_fuzz_invariants_hold_for_generated_graphs() {
         let graph = random_dag(nodes, &mut seed);
         let diags = graph.validate_with_warnings();
 
-        let errs = diags.iter().filter(|d| d.severity == Severity::Error).count();
-        assert!(errs == 0, "generated acyclic graph should be valid: {diags:?}");
+        let errs = diags
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .count();
+        assert!(
+            errs == 0,
+            "generated acyclic graph should be valid: {diags:?}"
+        );
     }
 }
 

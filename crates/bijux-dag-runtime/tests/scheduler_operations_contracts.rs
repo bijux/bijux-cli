@@ -15,10 +15,10 @@ use bijux_dag_runtime::{
     apply_backfill_throttling, build_plan, build_scheduler, deduplicate_trigger_events,
     deterministic_tick_order, evaluate_sla_metrics, materialize_next_runs, run_batches,
     scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
-    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, PriorityClass, QueueIdentity,
-    ReadyNode, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
-    ScheduleSubmissionStatus, ScheduledSubmission, Selector, SelectorSet, TriggerSpec,
-    DependencyCounter, ReadyQueue,
+    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter,
+    PriorityClass, QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent,
+    RuntimeConfig, ScheduleDefinition, ScheduleSubmissionStatus, ScheduledSubmission, Selector,
+    SelectorSet, TriggerSpec,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -162,7 +162,10 @@ fn scheduler_performance_regression_guard_for_large_ready_sets() {
     let elapsed = start.elapsed();
 
     assert_eq!(ordered.len(), 20_000);
-    assert!(elapsed.as_millis() < 6_000, "scheduler ordering too slow: {elapsed:?}");
+    assert!(
+        elapsed.as_millis() < 6_000,
+        "scheduler ordering too slow: {elapsed:?}"
+    );
 }
 
 #[test]

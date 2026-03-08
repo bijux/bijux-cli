@@ -165,7 +165,8 @@ mod tests {
     }
 
     fn write_json(path: &Path, value: &Value) {
-        fs::write(path, serde_json::to_vec_pretty(value).expect("encode json")).expect("write json");
+        fs::write(path, serde_json::to_vec_pretty(value).expect("encode json"))
+            .expect("write json");
     }
 
     #[test]

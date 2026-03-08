@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::index::{
     dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactPackManifest,
 };

@@ -14,9 +14,9 @@
 #[cfg(test)]
 use criterion as _;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 #[cfg(test)]
 use serde_yaml as _;
-use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[cfg(test)]

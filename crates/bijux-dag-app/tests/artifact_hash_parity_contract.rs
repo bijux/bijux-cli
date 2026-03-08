@@ -25,9 +25,8 @@ fn hash_artifact_cli_output_matches_internal_sha256() {
     let file = dir.path().join("artifact.bin");
     fs::write(&file, b"artifact-hash-parity").expect("write artifact");
 
-    let expected = bijux_dag_artifacts::hash::sha256_hex(
-        &fs::read(&file).expect("read artifact bytes"),
-    );
+    let expected =
+        bijux_dag_artifacts::hash::sha256_hex(&fs::read(&file).expect("read artifact bytes"));
 
     let cmd = dag_command();
     let matches = cmd
@@ -44,12 +43,7 @@ fn hash_artifact_cli_output_matches_internal_sha256() {
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 
     let file_lossy = file.to_string_lossy().to_string();
-    let args = [
-        "hash",
-        "artifact",
-        "--json",
-        file_lossy.as_str(),
-    ];
+    let args = ["hash", "artifact", "--json", file_lossy.as_str()];
     let output = run_dag_json(&args, &repo_root());
 
     assert_eq!(output["command"], "dag.hash.artifact");

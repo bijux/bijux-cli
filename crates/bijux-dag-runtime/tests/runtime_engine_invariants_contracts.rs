@@ -221,7 +221,10 @@ fn runtime_event_ordering_is_stable_and_required_names_are_present() {
 
     assert!(events.windows(2).all(|w| w[0].unix_ms <= w[1].unix_ms));
     assert!(validate_required_event_names(&events).is_empty());
-    assert!(event_names_emitted_once(&events, &["run_started", "run_finished"]));
+    assert!(event_names_emitted_once(
+        &events,
+        &["run_started", "run_finished"]
+    ));
 }
 
 #[test]

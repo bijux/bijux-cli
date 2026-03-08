@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::index::ArtifactId;
 use bijux_dag_artifacts::lineage::{ArtifactLineageEdge, ArtifactLineageSnapshot};
 use bijux_dag_artifacts::platform::{

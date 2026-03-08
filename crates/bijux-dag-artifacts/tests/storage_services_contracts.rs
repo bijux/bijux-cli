@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::services::{RunArtifactStore, RunArtifactVerifier};
 use bijux_dag_artifacts::{ArtifactError, Manifest, RunDir};
 use hex as _;

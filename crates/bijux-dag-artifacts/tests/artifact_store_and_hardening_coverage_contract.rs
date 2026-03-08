@@ -1,11 +1,12 @@
-use hex as _;
-use serde as _;
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{
     build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
 };
+use hex as _;
+use serde as _;
 use serde_json::json;
 use sha2 as _;
 use std::fs;
@@ -45,7 +46,10 @@ fn hardening_io_paths_are_exercised_for_coverage_gate() {
     fs::create_dir_all(run_dir.join("trace")).expect("create trace dir");
 
     let report = verify_run_dir(run_dir, VerificationMode::Standard).expect("verify run dir");
-    assert!(report.valid, "standard verification should pass with required files");
+    assert!(
+        report.valid,
+        "standard verification should pass with required files"
+    );
 
     let plan = build_cleanup_plan(
         &["runs/run-1".to_string(), "tmp/cache".to_string()],

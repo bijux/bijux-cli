@@ -130,7 +130,9 @@ fn artifact_store_roundtrip_corruption_and_recovery_contracts_hold() {
     );
 
     fs::write(dir.path().join("cas/ab/object.bin"), b"corrupt").expect("corrupt");
-    let corrupted = store.read_bytes("cas/ab/object.bin").expect("read corrupted");
+    let corrupted = store
+        .read_bytes("cas/ab/object.bin")
+        .expect("read corrupted");
     assert_ne!(sha256_hex(&corrupted), sha256_hex(b"payload"));
 
     write_json_atomic_durable(

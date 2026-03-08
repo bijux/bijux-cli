@@ -185,9 +185,7 @@ fn replay_partial_selection_emits_dry_run_plan_with_selectors() {
         &root,
     );
     assert!(dry["data"]["dry_run_plan"].is_object());
-    assert!(
-        dry["data"]["dry_run_plan"]["selectors"]["select"]
-            .as_array()
-            .is_some_and(|v| v.iter().any(|entry| entry == "id:replay_check"))
-    );
+    assert!(dry["data"]["dry_run_plan"]["selectors"]["select"]
+        .as_array()
+        .is_some_and(|v| v.iter().any(|entry| entry == "id:replay_check")));
 }

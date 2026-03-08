@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts::hardening::{
     build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
 };

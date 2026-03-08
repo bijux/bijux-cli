@@ -79,10 +79,9 @@ fn identity_projection(root: &Path, run_id: &str) -> Value {
 
 fn required_fields(schema_rel: &str) -> Vec<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let schema: Value = serde_json::from_str(
-        &fs::read_to_string(root.join(schema_rel)).expect("schema"),
-    )
-    .expect("schema json");
+    let schema: Value =
+        serde_json::from_str(&fs::read_to_string(root.join(schema_rel)).expect("schema"))
+            .expect("schema json");
     schema["required"]
         .as_array()
         .expect("required")
@@ -134,7 +133,14 @@ fn run_identity_projection_changes_when_graph_environment_or_ancestry_changes() 
 fn run_summary_and_detail_output_fields_are_schema_lockstep_stable() {
     let tmp = tempfile::tempdir().expect("tmp");
     let root = tmp.path().join("runs");
-    write_manifest(&root.join("run-detail"), "run-detail", "graph-x", "env-x", None, None);
+    write_manifest(
+        &root.join("run-detail"),
+        "run-detail",
+        "graph-x",
+        "env-x",
+        None,
+        None,
+    );
 
     let summary = inspect_summary(&root.join("run-detail")).expect("inspect summary");
     for field in required_fields("configs/schema/operator/run_inspect.schema.json") {
@@ -229,8 +235,8 @@ fn run_history_query_performance_contract_on_large_fixture_set() {
     }
 
     let start = Instant::now();
-    let payload = runs_history_query(&root, Some("success"), None, Some((100, 150)))
-        .expect("history query");
+    let payload =
+        runs_history_query(&root, Some("success"), None, Some((100, 150))).expect("history query");
     let elapsed = start.elapsed();
 
     assert_eq!(payload["runs"].as_array().expect("rows").len(), 150);

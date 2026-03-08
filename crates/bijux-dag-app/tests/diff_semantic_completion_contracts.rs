@@ -74,7 +74,10 @@ fn diff_specs_and_regression_fixture_corpus_exist() {
         "docs/spec/ARTIFACT_DIFF_SEMANTICS.md",
         "evidence/cache/diff/regression_corpus.json",
     ] {
-        assert!(root.join(rel).exists(), "missing diff completion artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing diff completion artifact: {rel}"
+        );
     }
 }
 

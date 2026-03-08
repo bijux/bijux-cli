@@ -56,11 +56,13 @@ fn scheduler_workload_helpers_are_exercised_for_coverage_gate() {
             exponential: true,
         },
     ));
-    assert!(cache_entry_valid(&bijux_dag_runtime::CacheValidationInput {
-        fingerprint_matches: true,
-        schema_matches: true,
-        proof_present: true,
-    }));
+    assert!(cache_entry_valid(
+        &bijux_dag_runtime::CacheValidationInput {
+            fingerprint_matches: true,
+            schema_matches: true,
+            proof_present: true,
+        }
+    ));
 }
 
 #[test]

@@ -1,8 +1,8 @@
 use criterion as _;
 use hex as _;
 use serde as _;
-use serde_yaml as _;
 use serde_json::{self, Value};
+use serde_yaml as _;
 use sha2 as _;
 use tempfile as _;
 use thiserror as _;
