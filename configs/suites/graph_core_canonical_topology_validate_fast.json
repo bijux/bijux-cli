@@ -1,0 +1,11 @@
+{
+  "id": "graph-core-canonical-topology-validate-fast",
+  "description": "Fast direct coverage suite for graph canonicalization, topology, validation, resolve, and planner entrypoints.",
+  "commands": [
+    "cargo test -p bijux-dag-core --test direct_module_entrypoints_contracts",
+    "cargo test -p bijux-dag-core --test graph_pipeline_planner_expansion_contracts",
+    "cargo test -p bijux-dag-core --test graph_identity_property_contracts",
+    "cargo test -p bijux-dag-core --test planner_contract",
+    "cargo test -p bijux-dag-core --test planner_validation_remaining_contracts"
+  ]
+}
