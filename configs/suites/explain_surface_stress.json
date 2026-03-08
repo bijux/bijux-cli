@@ -1,0 +1,13 @@
+{
+  "id": "explain-surface-stress",
+  "description": "Explainability suite for why-rerun, why-cache-missed, trace-artifact, and wording stability contracts.",
+  "lane": "stress",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-app diagnostics_routes::tests",
+    "cargo test -p bijux-dag-app --test diff_explain_contract",
+    "cargo test -p bijux-dag-app --test replay_semantic_surface_contracts",
+    "cargo test -p bijux-dag-app --test route_output_wording_snapshot_contracts",
+    "cargo test -p bijux-dev-dag --test explain_surface_completion_contracts"
+  ]
+}
