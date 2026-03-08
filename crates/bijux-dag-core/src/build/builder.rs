@@ -1,7 +1,4 @@
-use crate::compile::{compile_graph_contract, DagCompileResult};
-use crate::graph::{GraphContract, GraphExecutionPolicy};
-use crate::meta::{DagId, DagVersionId};
-use crate::resources::GraphDefaults;
+use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
     parse_graph_strict, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue,
     PortRef, Resources, RetryPolicy,
@@ -90,23 +87,7 @@ impl DagBuilder {
 
     pub fn compile(self) -> Result<DagCompileResult, crate::GraphError> {
         let graph = self.build();
-        let contract = GraphContract {
-            dag_id: DagId("builder".to_string()),
-            dag_version_id: DagVersionId("v0".to_string()),
-            graph,
-            namespace: None,
-            owners: Vec::new(),
-            labels: BTreeMap::new(),
-            annotations: BTreeMap::new(),
-            environment_tags: Vec::new(),
-            defaults: GraphDefaults::default(),
-            execution_policy: GraphExecutionPolicy {
-                fail_fast: true,
-                deterministic_dispatch: true,
-            },
-            node_groups: Vec::new(),
-        };
-        compile_graph_contract(&contract)
+        compile_graph(&graph)
     }
 }
 
@@ -266,23 +247,7 @@ pub fn simulate_graph(graph: &Graph) -> Vec<String> {
 }
 
 pub fn dry_run_preview(graph: &Graph) -> DagDryRunPreview {
-    let contract = GraphContract {
-        dag_id: DagId("dry-run".to_string()),
-        dag_version_id: DagVersionId("v0".to_string()),
-        graph: graph.clone(),
-        namespace: None,
-        owners: Vec::new(),
-        labels: BTreeMap::new(),
-        annotations: BTreeMap::new(),
-        environment_tags: Vec::new(),
-        defaults: GraphDefaults::default(),
-        execution_policy: GraphExecutionPolicy {
-            fail_fast: true,
-            deterministic_dispatch: true,
-        },
-        node_groups: Vec::new(),
-    };
-    let compile_result = compile_graph_contract(&contract);
+    let compile_result = compile_graph(graph);
     let diagnostics = compile_result
         .as_ref()
         .map(|r| {

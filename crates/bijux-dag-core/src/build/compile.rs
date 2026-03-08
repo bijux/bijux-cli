@@ -1,16 +1,8 @@
-use crate::graph::GraphContract;
-use crate::meta::SnapshotMetadata;
+use crate::contract::{normalize_graph_with_defaults, GraphContract};
 use crate::node::{derive_interface, NodeTypeRegistry, TypedNode};
-use crate::{
-    parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION,
-};
+use crate::{parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION};
+use crate::resources::GraphDefaults;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DagSnapshot {
-    pub metadata: SnapshotMetadata,
-    pub graph: Graph,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DagCompilePlanHints {
@@ -41,8 +33,15 @@ pub fn negotiate_spec_version(version: &str) -> CompatibilityDecision {
     }
 }
 
-pub fn compile_graph_contract(contract: &GraphContract) -> Result<DagCompileResult, GraphError> {
-    let normalized_graph = contract.normalize_with_defaults().canonicalize();
+pub fn compile_graph(graph: &Graph) -> Result<DagCompileResult, GraphError> {
+    compile_graph_with_defaults(graph, &GraphDefaults::default())
+}
+
+pub fn compile_graph_with_defaults(
+    graph: &Graph,
+    defaults: &GraphDefaults,
+) -> Result<DagCompileResult, GraphError> {
+    let normalized_graph = normalize_graph_with_defaults(graph, defaults).canonicalize();
     let diagnostics = normalized_graph.validate_with_warnings();
     let graph_fingerprint = normalized_graph.graph_fingerprint()?;
     let deterministic_topology_order = normalized_graph.topo_order()?;
@@ -72,23 +71,11 @@ pub fn compile_graph_contract(contract: &GraphContract) -> Result<DagCompileResu
     })
 }
 
+pub fn compile_graph_contract(contract: &GraphContract) -> Result<DagCompileResult, GraphError> {
+    compile_graph_with_defaults(&contract.graph, &contract.defaults)
+}
+
 pub fn compile_graph_strict(input: &str) -> Result<DagCompileResult, GraphError> {
     let graph = parse_graph_strict(input)?;
-    let contract = GraphContract {
-        dag_id: crate::meta::DagId("anonymous".to_string()),
-        dag_version_id: crate::meta::DagVersionId("v0".to_string()),
-        graph,
-        namespace: None,
-        owners: Vec::new(),
-        labels: std::collections::BTreeMap::new(),
-        annotations: std::collections::BTreeMap::new(),
-        environment_tags: Vec::new(),
-        defaults: crate::resources::GraphDefaults::default(),
-        execution_policy: crate::graph::GraphExecutionPolicy {
-            fail_fast: true,
-            deterministic_dispatch: true,
-        },
-        node_groups: Vec::new(),
-    };
-    compile_graph_contract(&contract)
+    compile_graph(&graph)
 }
