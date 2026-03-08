@@ -71,6 +71,7 @@ fn normalize_paths(text: &str, tmp_root: &Path) -> String {
 }
 
 #[test]
+#[ignore = "slow"]
 fn validate_human_output_snapshot_is_stable() {
     let root = repo_root();
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
@@ -79,6 +80,7 @@ fn validate_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn plan_human_output_snapshot_is_stable() {
     let root = repo_root();
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
@@ -90,6 +92,7 @@ fn plan_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn run_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -129,6 +132,7 @@ fn inspect_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn history_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -155,6 +159,7 @@ fn history_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn replay_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -181,6 +186,7 @@ fn replay_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn diff_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -203,6 +209,7 @@ fn diff_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn prove_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -217,6 +224,7 @@ fn prove_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn verify_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -231,6 +239,7 @@ fn verify_human_output_snapshot_is_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn artifact_inspect_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");

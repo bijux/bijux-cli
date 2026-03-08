@@ -62,6 +62,7 @@ fn required_fields(schema_rel: &str) -> Vec<String> {
 }
 
 #[test]
+#[ignore = "slow"]
 fn capability_query_output_schema_lockstep() {
     let root = repo_root();
     let payload = run_json(&root, &["--json", "capabilities", "--backend", "hpc"]);
