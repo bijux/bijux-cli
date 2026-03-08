@@ -1,18 +1,16 @@
 # App Route Coverage By Command Family
 
-| command_family | coverage_signal_count |
-| --- | --- |
-| artifact | 39 |
-| cache | 22 |
-| capabilities | 0 |
-| diff | 9 |
-| explain | 11 |
-| export | 6 |
-| history | 5 |
-| import | 9 |
-| inspect | 13 |
-| plan | 6 |
-| prove | 6 |
-| replay | 10 |
-| run | 39 |
-| validate | 6 |
+| command_family | primary_route_module | coverage_signal_count |
+| --- | --- | --- |
+| validate | `validate_routes.rs` | 9 |
+| plan | `plan_routes.rs` | 8 |
+| run | `run_routes.rs` | 11 |
+| inspect | `inspect_routes.rs` | 12 |
+| history | `runs_routes.rs` | 8 |
+| replay | `replay_routes.rs` | 10 |
+| diff | `diff_routes.rs` | 9 |
+| prove_verify | `prove_verify_routes.rs` | 9 |
+| export_import | `export_import_routes.rs` | 10 |
+| artifact | `inspect_routes.rs` | 9 |
+| capability_query | `surface_routes.rs` | 7 |
+| diagnostics | `diagnostics_routes.rs` | 8 |

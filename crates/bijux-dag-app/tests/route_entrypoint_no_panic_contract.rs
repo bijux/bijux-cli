@@ -37,6 +37,8 @@ fn malformed_route_entrypoints_do_not_panic() {
         &["dag", "import", "/no/such/bundle.json", "--verify-only"],
         &["dag", "cache", "verify", "--cache-dir", "/no/such/cache"],
         &["dag", "explain", "/no/such/run"],
+        &["dag", "artifact-inspect", "/no/such/run", "node1:out"],
+        &["dag", "capabilities", "--backend", "unknown"],
     ];
     for case in cases {
         assert!(

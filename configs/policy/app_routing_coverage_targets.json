@@ -1,0 +1,13 @@
+{
+  "line_coverage_targets": {
+    "crates/bijux-dag-app/src/routes": 0.70,
+    "crates/bijux-dag-app/src/routes/run_routes.rs": 0.75,
+    "crates/bijux-dag-app/src/routes/replay_routes.rs": 0.75,
+    "crates/bijux-dag-app/src/routes/inspect_routes.rs": 0.70,
+    "crates/bijux-dag-app/src/routes/validate_routes.rs": 0.75
+  },
+  "response_schema_targets": {
+    "json_route_envelope_contract_tests": 1.0,
+    "command_family_response_contract_reports": 1.0
+  }
+}

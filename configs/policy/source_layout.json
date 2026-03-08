@@ -11,7 +11,7 @@
     "crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs": 820,
     "crates/bijux-dag-runtime/src/internal/testing/tests_runtime.in.rs": 1250,
     "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs": 1250,
-    "crates/bijux-dag-app/src/lib.rs": 3200,
+    "crates/bijux-dag-app/src/lib.rs": 2800,
     "crates/bijux-dev-dag/src/commands/mod.rs": 10000,
     "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs": 1000,
     "crates/bijux-dag-cli/tests/contract_surface.rs": 800,
