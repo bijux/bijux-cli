@@ -1,0 +1,12 @@
+{
+  "schema_version": "outputs-index/v0.1",
+  "run_id": "run-migration-001",
+  "node_id": "build",
+  "outputs": [
+    {
+      "name": "bundle",
+      "path": "artifacts/bundle.tar",
+      "sha256": "f3b7a13f6f7f8bf951a2f56ca5a6175948e6cf6fcd9a4870f7e5a2ba3b5f5160"
+    }
+  ]
+}

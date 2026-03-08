@@ -1,0 +1,18 @@
+{
+  "schema_version": "run-manifest/v0.1",
+  "run_id": "run-migration-001",
+  "graph_id": "graph-migration-001",
+  "status": "succeeded",
+  "started_at": "2026-01-01T00:00:00Z",
+  "finished_at": "2026-01-01T00:00:05Z",
+  "nodes": [
+    {
+      "node_id": "prepare",
+      "status": "succeeded"
+    },
+    {
+      "node_id": "build",
+      "status": "succeeded"
+    }
+  ]
+}

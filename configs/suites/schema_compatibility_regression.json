@@ -1,0 +1,15 @@
+{
+  "id": "schema-compatibility-regression",
+  "purpose": "schema-evolution-compatibility-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test schema_governance_contracts",
+    "cargo test -p bijux-dev-dag --test proof_schema_compatibility_contracts",
+    "cargo test -p bijux-dev-dag --test schema_evolution_completion_contracts"
+  ],
+  "owner": "schema-governance",
+  "notes": [
+    "Covers backward compatibility, forward rejection, and migration invariants.",
+    "Run before release cuts and schema-affecting changes."
+  ]
+}
