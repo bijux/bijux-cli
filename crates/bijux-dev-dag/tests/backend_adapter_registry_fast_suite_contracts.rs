@@ -14,10 +14,13 @@ use tempfile as _;
 fn backend_adapter_registry_fast_suite_covers_runtime_registry_surfaces() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let suite = root.join("configs/suites/backend_adapter_registry_fast.json");
-    assert!(suite.exists(), "missing backend adapter registry fast suite");
+    assert!(
+        suite.exists(),
+        "missing backend adapter registry fast suite"
+    );
 
-    let payload: Value =
-        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite")).expect("parse suite");
+    let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
+        .expect("parse suite");
     assert_eq!(payload["id"], "backend-adapter-registry-fast");
 
     let commands = payload["commands"].as_array().expect("commands array");

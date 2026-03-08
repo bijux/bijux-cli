@@ -13,10 +13,17 @@ use tempfile as _;
 fn shipped_adapters_have_direct_registry_tests_and_dump_entries() {
     let dump = bijux_dag_runtime::adapter_registry_dump();
     let adapters = dump["adapters"].as_array().expect("adapters");
-    assert!(!adapters.is_empty(), "shipped adapter registry must not be empty");
+    assert!(
+        !adapters.is_empty(),
+        "shipped adapter registry must not be empty"
+    );
     for adapter in adapters {
-        assert!(adapter["adapter_id"].as_str().is_some_and(|v| !v.is_empty()));
-        assert!(adapter["adapter_version"].as_str().is_some_and(|v| !v.is_empty()));
+        assert!(adapter["adapter_id"]
+            .as_str()
+            .is_some_and(|v| !v.is_empty()));
+        assert!(adapter["adapter_version"]
+            .as_str()
+            .is_some_and(|v| !v.is_empty()));
     }
 
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");

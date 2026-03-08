@@ -24,10 +24,9 @@ fn backend_capability_pages_remain_generated_from_command_aligned_sources() {
     assert!(capability_reference.contains("bijux dag capabilities --backend hpc --json"));
     assert!(capability_reference.contains("bijux dag capabilities --backend remote --json"));
 
-    let claims = fs::read_to_string(
-        root.join("docs/reports/foundation/backend_claims_evidence_links.md"),
-    )
-    .expect("claims");
+    let claims =
+        fs::read_to_string(root.join("docs/reports/foundation/backend_claims_evidence_links.md"))
+            .expect("claims");
     assert!(claims.contains("generated_from:"));
     assert!(claims.contains("adapter_conformance_coverage_matrix.json"));
 }

@@ -21,7 +21,10 @@ fn runtime_engine_scheduler_coverage_report_and_evidence_are_present() {
     ];
 
     for rel in required_paths {
-        assert!(root.join(rel).exists(), "missing runtime coverage artifact {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing runtime coverage artifact {rel}"
+        );
     }
 
     let report = fs::read_to_string(

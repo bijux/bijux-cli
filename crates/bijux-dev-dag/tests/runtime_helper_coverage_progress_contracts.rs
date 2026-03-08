@@ -23,12 +23,16 @@ fn runtime_helper_reports_and_benchmark_artifacts_exist() {
         "docs/reports/foundation/runtime_scheduler_helper_boundary_benchmark.md",
         "docs/reports/foundation/runtime_helper_coverage_completion_report.md",
     ] {
-        assert!(root.join(rel).exists(), "missing runtime helper report: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing runtime helper report: {rel}"
+        );
     }
 
-    let completion =
-        fs::read_to_string(root.join("docs/reports/foundation/runtime_helper_coverage_completion_report.md"))
-            .expect("read completion");
+    let completion = fs::read_to_string(
+        root.join("docs/reports/foundation/runtime_helper_coverage_completion_report.md"),
+    )
+    .expect("read completion");
     for required in [
         "501-520",
         "runtime_execution_helper_expansion_contracts.rs",

@@ -30,9 +30,10 @@ fn backend_adapter_registry_reports_and_adr_exist() {
         );
     }
 
-    let completion =
-        fs::read_to_string(root.join("docs/reports/foundation/backend_adapter_registry_completion_report.md"))
-            .expect("read completion");
+    let completion = fs::read_to_string(
+        root.join("docs/reports/foundation/backend_adapter_registry_completion_report.md"),
+    )
+    .expect("read completion");
     for required in [
         "521-540",
         "adapter_registry_capability_contracts.rs",
