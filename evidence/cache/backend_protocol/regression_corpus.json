@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "domain": "backend-protocol-stability",
+  "cases": [
+    {"id": "protocol-handshake", "coverage": ["handshake", "compatibility"], "source": "docs/spec/WORKER_PROTOCOL_CONTRACT.md"},
+    {"id": "protocol-version-negotiation", "coverage": ["version-negotiation", "compatibility"], "source": "docs/spec/WORKER_PROTOCOL_CONTRACT.md"},
+    {"id": "protocol-compatibility", "coverage": ["compatibility", "serialization-schema"], "source": "crates/bijux-dev-dag/tests/remote_worker_protocol_contracts.rs"},
+    {"id": "protocol-error-propagation", "coverage": ["error-propagation", "anomaly-detection"], "source": "crates/bijux-dev-dag/tests/backend_hardening_contracts.rs"},
+    {"id": "protocol-timeout-handling", "coverage": ["timeout-handling", "retry-logic"], "source": "docs/spec/WORKER_PROTOCOL_CONTRACT.md"},
+    {"id": "protocol-retry-logic", "coverage": ["retry-logic", "resilience"], "source": "crates/bijux-dag-runtime/src/runtime_core/governance/sacred_execution.rs"},
+    {"id": "protocol-message-ordering", "coverage": ["message-ordering", "determinism"], "source": "crates/bijux-dag-runtime/tests/distributed_contracts.rs"},
+    {"id": "protocol-corruption-detection", "coverage": ["corruption-detection", "serialization-schema"], "source": "evidence/cache/distributed_execution/regression_corpus.json"},
+    {"id": "protocol-serialization-schema", "coverage": ["serialization-schema", "compatibility"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
+    {"id": "protocol-replay-safety", "coverage": ["replay-safety", "message-ordering"], "source": "docs/spec/REPLAY_CONTRACT.md"},
+    {"id": "protocol-regression-fixtures", "coverage": ["regression-fixtures", "stress"], "source": "evidence/cache/backend_protocol/regression_corpus.json"},
+    {"id": "protocol-stress", "coverage": ["stress", "resilience"], "source": "configs/suites/distributed_execution_stress.json"},
+    {"id": "protocol-latency-benchmarks", "coverage": ["latency-benchmarks", "performance"], "source": "docs/reports/foundation/distributed_execution_benchmarks.md"},
+    {"id": "protocol-resilience-benchmarks", "coverage": ["resilience-benchmarks", "performance"], "source": "docs/reports/foundation/runtime_fault_tolerance_benchmarks.md"},
+    {"id": "protocol-telemetry", "coverage": ["telemetry", "anomaly-detection"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
+    {"id": "protocol-determinism", "coverage": ["determinism", "message-ordering"], "source": "docs/spec/DETERMINISTIC_SCHEDULING_CONTRACT.md"},
+    {"id": "protocol-fuzzing", "coverage": ["fuzzing", "anomaly-detection"], "source": "evidence/cache/determinism/regression_corpus.json"},
+    {"id": "protocol-anomaly-detection", "coverage": ["anomaly-detection", "error-propagation"], "source": "docs/reports/foundation/backend_protocol_anomaly_report.md"}
+  ]
+}
