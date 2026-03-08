@@ -53,7 +53,7 @@ golden: ## Run runtime contract checks
 tests-all: ## Run all control-plane test suites
 	$(call run_or_fail,Run all test suites,$(DEV_TOOL) tests run)
 
-test-all: ## Run full workspace tests plus release-critical evidence checks
+test-release: ## Run full workspace tests plus release-critical evidence checks
 	@$(MAKE) -f make/cargo.mk test-all
 	@$(MAKE) evidence-battle
 	@$(MAKE) evidence-cache
@@ -115,6 +115,6 @@ help: ## Show available make targets
 	printf '%s\n' ""; \
 	awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all checks checks-fast checks-all docs security compat golden tests-all contract-all contracts-all
+.PHONY: all checks checks-fast checks-all docs security compat golden tests-all test-release contract-all contracts-all
 .PHONY: release-verify repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
 .PHONY: memory-smoke artifact-verify ci sanity help help-contract make-target-list

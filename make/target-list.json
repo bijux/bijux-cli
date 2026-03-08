@@ -14,6 +14,7 @@
     "test",
     "test-slow",
     "test-all",
+    "test-release",
     "checks",
     "checks-fast",
     "checks-all",

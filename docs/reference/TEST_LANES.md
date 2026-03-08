@@ -9,7 +9,7 @@
 
 ## Full lane
 
-- `make test-all`
+- `make test-release`
 - Executes release-critical evidence checks: `evidence-battle`, `evidence-cache`, `evidence-replay`, `evidence-compat`, `evidence-fault`, `evidence-perf`, `evidence-consumers`, `evidence-release-set`.
 - Intended for release-significant checks and deeper governance coverage.
 

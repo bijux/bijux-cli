@@ -10,6 +10,6 @@ generated_from: `FAST_FULL_TEST_RULES.md`
 
 ## Pre-Release Loop
 
-1. run `make test-all`
+1. run `make test-release`
 2. verify generated reports in `docs/reports/foundation`
 3. verify release gates pass in `crates/bijux-dev-dag/tests`

@@ -5,7 +5,8 @@ generated_from: `Makefile + crates/*/tests`
 ## Lane Definition
 
 - `make test` is for deterministic, local-only, high-signal checks.
-- `make test-all` includes slow suites, extended evidence, and release gates.
+- `make test-all` includes full Rust suites (including ignored tests).
+- `make test-release` adds release-critical evidence and release gates.
 
 ## Fast Lane Criteria
 
