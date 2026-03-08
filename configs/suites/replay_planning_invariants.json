@@ -1,0 +1,15 @@
+{
+  "suite_id": "replay-planning-invariants",
+  "description": "Replay planning invariants and determinism verification surfaces.",
+  "owner": "dag-runtime",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-app/tests/replay_lineage_planning_contract.rs",
+    "crates/bijux-dag-core/tests/planner_fixture_contracts.rs",
+    "crates/bijux-dag-core/tests/planner_validation_remaining_contracts.rs",
+    "crates/bijux-dag-runtime/tests/replay_determinism_fuzz_contracts.rs",
+    "crates/bijux-dev-dag/tests/replay_hardening_contracts.rs",
+    "crates/bijux-dev-dag/tests/replay_fidelity_contracts.rs",
+    "crates/bijux-dev-dag/tests/replay_mismatch_corpus_contracts.rs"
+  ]
+}
