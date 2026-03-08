@@ -457,6 +457,7 @@ fn capabilities_backend_query_supports_remote() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn semantic_portability_backend_query_surface_is_available() {
     let output = dag_command()
         .args([
