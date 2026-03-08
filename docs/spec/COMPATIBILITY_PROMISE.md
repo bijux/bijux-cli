@@ -8,7 +8,7 @@ Defines compatibility commitments for pre-release and stable tracks.
 - `1.x+` stable: breaking changes require explicit major version increment and compatibility notes.
 
 ## Support window
-Supported compatibility window is documented in `docs/COMPATIBILITY_WINDOW_v0.1.md`.
+Supported compatibility window is documented in `docs/COMPATIBILITY.md`.
 
 ## Related tests
 - `configs/schema/fixtures/compat/positive/*`

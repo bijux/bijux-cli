@@ -8,6 +8,10 @@ Developer workflow notes live here while migration keeps execution-oriented refe
 
 ## Directory role
 
-- Keep practical contribution and local workflow guidance.
+- Keep practical contribution and local tooling guidance.
+- Keep contributor checklists and setup manifests.
 - Avoid user onboarding narratives and canonical operator references.
-- Move overlapping maintainer operations content here only when the topic has a stable day-to-day execution focus.
+
+## Development entrypoint
+
+- [Development environment and tooling](./DEVELOPMENT.md)

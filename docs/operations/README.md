@@ -11,6 +11,16 @@ The content here is intentionally operational and not user onboarding material.
 
 - Keep practical run, diff, replay, cache, and diagnostics workflows.
 - Keep examples aligned with canonical references in `reference/` and contracts in `spec/`.
+- Keep platform and disaster recovery runbooks with explicit links to the architecture context.
+
+## Control-plane and federation runbooks
+
+- [Geo federation disaster recovery playbook](./GEO_FEDERATION_DISASTER_RECOVERY.md)
+- [Control-plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
+- [Control-plane model](./CONTROL_PLANE.md)
+- [Federated scheduling orchestration](./FEDERATED_SCHEDULING_ORCHESTRATION.md)
+- [Geo federated control plane](./GEO_FEDERATED_CONTROL_PLANE.md)
+- [HA scheduler coordination](./HA_SCHEDULER_COORDINATION.md)
 
 # Operations
 
