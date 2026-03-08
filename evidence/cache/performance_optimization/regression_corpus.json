@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "domain": "performance-optimization",
+  "cases": [
+    {"id": "graph-parsing-benchmarks", "coverage": ["graph-parsing", "latency"], "source": "docs/reports/foundation/large_dag_scalability_benchmarks.md"},
+    {"id": "dag-validation-benchmarks", "coverage": ["dag-validation", "latency"], "source": "docs/reports/foundation/large_dag_scalability_benchmarks.md"},
+    {"id": "planner-execution-benchmarks", "coverage": ["planner-execution", "latency"], "source": "docs/reports/foundation/large_dag_scalability_benchmarks.md"},
+    {"id": "scheduler-decision-latency", "coverage": ["scheduler-decision", "latency"], "source": "docs/reports/foundation/runtime_engine_scheduler_hotpath_benchmark.md"},
+    {"id": "runtime-node-overhead", "coverage": ["runtime-node-overhead", "latency"], "source": "docs/reports/foundation/runtime_observability_benchmarks.md"},
+    {"id": "artifact-hashing-performance", "coverage": ["artifact-hashing", "throughput"], "source": "docs/reports/foundation/artifact_inspect_hash_trace_benchmarks.md"},
+    {"id": "artifact-io-throughput", "coverage": ["artifact-io", "throughput"], "source": "docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md"},
+    {"id": "replay-planning-latency", "coverage": ["replay-planning", "latency"], "source": "docs/reports/foundation/replay_proof_generation_benchmarks.md"},
+    {"id": "diff-computation-latency", "coverage": ["diff-computation", "latency"], "source": "docs/reports/foundation/semantic_diff_explain_benchmarks.md"},
+    {"id": "explain-command-latency", "coverage": ["explain-command", "latency"], "source": "docs/reports/foundation/explainability_benchmarks.md"},
+    {"id": "run-history-query-benchmarks", "coverage": ["run-history-query", "latency"], "source": "docs/reports/foundation/run_history_query_benchmarks.md"},
+    {"id": "provenance-traversal-benchmarks", "coverage": ["provenance-traversal", "latency"], "source": "docs/reports/foundation/provenance_query_latency_report.md"},
+    {"id": "artifact-store-rw-benchmarks", "coverage": ["artifact-store-rw", "throughput"], "source": "docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md"},
+    {"id": "memory-allocation-profiling", "coverage": ["memory-allocation", "profiling"], "source": "docs/reports/foundation/workflow_memory_benchmarks.md"},
+    {"id": "cpu-utilization-profiling", "coverage": ["cpu-utilization", "profiling"], "source": "docs/reports/foundation/runtime_engine_scheduler_hotpath_benchmark.md"},
+    {"id": "performance-regression-detection", "coverage": ["regression-detection", "trend-reporting"], "source": "docs/reports/foundation/benchmark_baseline_trend_summary.json"}
+  ]
+}
