@@ -28,9 +28,13 @@ fn run_identity_docs_schemas_and_reports_exist() {
         "docs/spec/RUN_HISTORY_CONTRACT.md",
         "docs/spec/RUN_SUMMARY_SCHEMA_v0.1.md",
         "docs/spec/RUN_MANIFEST_EVOLUTION_MATRIX.md",
+        "docs/spec/RUN_HISTORY_CORRUPTION_RECOVERY.md",
         "docs/reports/foundation/run_identity_fields_report.md",
         "configs/schema/operator/run_history.schema.json",
         "configs/schema/operator/run_id_explain.schema.json",
+        "configs/schema/operator/run_show.schema.json",
+        "configs/schema/operator/run_inspect.schema.json",
+        "configs/schema/operator/run_summary.schema.json",
     ] {
         assert!(
             root.join(rel).exists(),

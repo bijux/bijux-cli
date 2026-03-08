@@ -7,6 +7,11 @@
 - `run_id` explanation and ancestry surfaces are available through:
   - `dag runs id-explain <run_id> --root <runs_dir>`
   - `dag runs history --root <runs_dir>`
+  - `dag runs show <run_id> --root <runs_dir>`
+
+Implementation anchors:
+- `crates/bijux-dag-app/src/inspect/run_views.rs` (`explain_run_id`, `runs_history`, `inspect_summary`)
+- `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs` (run manifest authorship and replay ancestry wiring)
 
 ## Composition
 
@@ -16,6 +21,8 @@
 
 - `run_metadata.parent_run_id`
 - `run_metadata.source_run_id`
+
+These fields must also appear in the JSON identity explanation output.
 
 ## Immutability
 
