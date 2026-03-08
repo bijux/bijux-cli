@@ -1,0 +1,11 @@
+{
+  "id": "operator-surface-verification",
+  "description": "Verification suite for stable operator command surface, concise defaults, and output consistency.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test operator_surface_441_460_contracts",
+    "cargo test -p bijux-dag-app --test operator_ux_contract",
+    "cargo test -p bijux-dag-app --test help_surface_contracts",
+    "cargo test -p bijux-dag-app --test operator_schema_lockstep_contracts",
+    "cargo test -p bijux-dag-app --test route_output_wording_snapshot_contracts"
+  ]
+}
