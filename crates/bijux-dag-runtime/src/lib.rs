@@ -263,13 +263,9 @@ pub use formal_verification::{
     VerificationMaturityLabel, VerifiedCoreScope,
 };
 pub use infrastructure::{
-    negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
-    ArtifactTransportMode, BackendAcceptanceGate,
-    BackendCapabilities as InfrastructureBackendCapabilities, BackendCapabilityRequirement,
-    BackendExecutionCompletion, BackendExecutionRequest, BackendPolicyOverlay, CapabilityDecision,
-    ExecutorBackend, HighAvailabilitySchedulerPlan, HpcExecutorContract,
-    KubernetesExecutorContract, MultiTenantIdentity, ObjectStorageContract, QueuePartition,
-    RegistryPersistenceBackend, RuntimeSecretContract, SchedulerScalingPlan,
+    negotiate_backend_capabilities, BackendCapabilities as InfrastructureBackendCapabilities,
+    BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
+    CapabilityDecision, ExecutorBackend,
 };
 use io::{Fs, StdFs};
 pub use local_executor::LocalExecutor;

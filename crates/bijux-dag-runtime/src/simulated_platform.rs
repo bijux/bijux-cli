@@ -138,6 +138,12 @@ pub use crate::ha_scheduler::{
     SchedulerAuditEvent, SchedulerAuditEventKind, SchedulerClockAssumption, SchedulerEpoch,
     SchedulerFenceToken, SchedulerRecoveryObjectives,
 };
+pub use crate::infrastructure::{
+    ArtifactStoreBackend, ArtifactTransportContract, ArtifactTransportMode, BackendAcceptanceGate,
+    BackendPolicyOverlay, HighAvailabilitySchedulerPlan, HpcExecutorContract,
+    KubernetesExecutorContract, MultiTenantIdentity, ObjectStorageContract, QueuePartition,
+    RegistryPersistenceBackend, RuntimeSecretContract, SchedulerScalingPlan,
+};
 pub use crate::operations_governance::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
     release_policy_allows, AuditReadinessChecklist, ErrorBudgetPolicy, GamedayScenario,
