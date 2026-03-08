@@ -14,6 +14,8 @@
 #[cfg(test)]
 use criterion as _;
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
+use serde_yaml as _;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -556,6 +558,14 @@ impl Graph {
         diags.extend(self.unreachable_warnings());
         diags.extend(self.orphan_warnings());
         diags.extend(self.validate_graph_meta_names());
+        diags.sort_by(|a, b| {
+            severity_rank(&a.severity)
+                .cmp(&severity_rank(&b.severity))
+                .then_with(|| a.code.cmp(&b.code))
+                .then_with(|| a.path.cmp(&b.path))
+                .then_with(|| a.message.cmp(&b.message))
+                .then_with(|| a.hint.cmp(&b.hint))
+        });
 
         diags
     }
@@ -1079,6 +1089,13 @@ fn warn(code: &str, message: String, path: String, hint: Option<String>) -> Vali
         path,
         hint,
         severity: Severity::Warning,
+    }
+}
+
+fn severity_rank(severity: &Severity) -> u8 {
+    match severity {
+        Severity::Error => 0,
+        Severity::Warning => 1,
     }
 }
 

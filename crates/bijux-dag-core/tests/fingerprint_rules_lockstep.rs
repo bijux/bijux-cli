@@ -2,9 +2,11 @@ use criterion as _;
 use hex as _;
 use serde as _;
 use serde_json as _;
+use serde_yaml as _;
 use sha2 as _;
 use tempfile as _;
 use thiserror as _;
+use unicode_normalization as _;
 
 use bijux_dag_core::{parse_graph_strict, SPEC_VERSION};
 use std::fs;

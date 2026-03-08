@@ -1,9 +1,11 @@
 use criterion as _;
 use hex as _;
 use serde as _;
+use serde_yaml as _;
 use sha2 as _;
 use tempfile as _;
 use thiserror as _;
+use unicode_normalization as _;
 
 use bijux_dag_core::{
     graph_lowering_boundary_note, map_planner_error_to_graph_error, planner_alignment_required_doc,

@@ -10,9 +10,11 @@ use bijux_dag_core::{lower_graph_to_execution_plan, Graph, GraphError, PlanOptio
 use criterion as _;
 use hex as _;
 use serde as _;
+use serde_yaml as _;
 use sha2 as _;
 use tempfile as _;
 use thiserror as _;
+use unicode_normalization as _;
 
 fn parse_graph(input: &str) -> Graph {
     serde_json::from_str(input).expect("graph json")
