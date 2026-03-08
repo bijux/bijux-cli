@@ -64,7 +64,7 @@ audit: ## Run cargo dependency audit
 check: ## Run cargo check for the workspace
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) cargo check --workspace --all-targets
 
-coverage: ## Run workspace coverage with cargo llvm-cov + nextest
+coverage: ## Run workspace coverage with full test-all semantics via cargo llvm-cov + nextest
 	@command -v cargo-llvm-cov >/dev/null 2>&1 || { \
 		echo "cargo-llvm-cov is required. Install with: cargo install cargo-llvm-cov"; \
 		exit 1; \
@@ -72,7 +72,7 @@ coverage: ## Run workspace coverage with cargo llvm-cov + nextest
 	@mkdir -p artifacts/coverage
 	@mkdir -p "$(PROFRAW_DIR)"
 	@status=0; \
-	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/nextest/nextest.toml --user-config-file none --run-ignored all --cargo-quiet || status=$$?; \
+	LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TERM_COLOR=$(CARGO_TERM_COLOR) CARGO_TERM_PROGRESS_WHEN=$(CARGO_TERM_PROGRESS_WHEN) CARGO_TERM_PROGRESS_WIDTH=$(CARGO_TERM_PROGRESS_WIDTH) CARGO_TERM_VERBOSE=$(CARGO_TERM_VERBOSE) CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" NEXTEST_CACHE_DIR="$(NEXTEST_CACHE_DIR)" cargo llvm-cov nextest --color always --workspace --all-features --lcov --output-path artifacts/coverage/lcov.info --config-file configs/nextest/nextest.toml --user-config-file none --run-ignored all --retries 0 --profile "$${NEXTEST_PROFILE:-default}" --status-level "$${NEXTEST_STATUS_LEVEL:-all}" --final-status-level "$${NEXTEST_FINAL_STATUS_LEVEL:-all}" --show-progress "$${NEXTEST_SHOW_PROGRESS:-counter}" --cargo-quiet || status=$$?; \
 	$(cleanup_root_nextest); \
 	test $$status -eq 0
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo run -p bijux-dev-dag --bin generate_line_coverage_reports
