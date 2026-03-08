@@ -254,6 +254,26 @@ pub fn doctor_run(run_dir: &Path) -> Value {
             findings.push(format!("missing {rel}"));
         }
     }
+    let manifest = read_json(&run_dir.join("manifest.json")).unwrap_or(Value::Null);
+    let expected_trace_nodes = manifest
+        .get("node_counts")
+        .and_then(Value::as_object)
+        .map(|counts| {
+            counts
+                .values()
+                .filter_map(Value::as_u64)
+                .sum::<u64>() as usize
+        })
+        .unwrap_or(0);
+    let observed_trace_nodes = read_node_traces(run_dir)
+        .map(|traces| traces.len())
+        .unwrap_or(0);
+    if expected_trace_nodes > 0 && observed_trace_nodes == 0 {
+        findings.push(
+            "missing node traces referenced by manifest node_counts (expected non-zero traces)"
+                .to_string(),
+        );
+    }
     json!({
         "status": if findings.is_empty() { "ok" } else { "corrupt" },
         "findings": findings

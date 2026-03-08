@@ -798,6 +798,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             remote_cache_dir,
         } => {
             let snapshot = load_snapshot(run_dir)?;
+            let source_run_id = read_run_id(run_dir).ok();
             let runtime = Runtime::new();
             let cache_mode = match *cache {
                 CacheModeArg::Off => {
@@ -874,6 +875,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 cache_dir: None,
                 remote_cache_dir: remote_cache_dir.clone(),
                 run_id: run_id.clone(),
+                parent_run_id: source_run_id,
                 latest_symlink: None,
                 policy: bijux_dag_runtime::PolicyConfig {
                     deny_network,
