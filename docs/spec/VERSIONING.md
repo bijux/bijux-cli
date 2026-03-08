@@ -1,8 +1,6 @@
-# Versioning
+# Superseded versioning index
 
-Normative versioning policy moved to:
-- `docs/spec/VERSIONING_MODEL.md`
-- `docs/reference/COMPATIBILITY_MATRIX.md`
-- `docs/spec/MIGRATION_POLICY.md`
+This document is now an archived index.
 
-This file remains as a compatibility pointer only.
+Canonical source: [VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md](./VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md)  
+Source appendix: [appendices/versioning/VERSIONING.md](./appendices/versioning/VERSIONING.md)

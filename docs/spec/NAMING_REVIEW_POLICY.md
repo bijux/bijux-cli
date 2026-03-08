@@ -1,22 +1,7 @@
-# Naming review policy
+# Superseded by naming contract
 
-## Review gate
+This document is preserved as an appendix reference only.
 
-All changes introducing new normative names must satisfy:
+- Superseded by: [TERMINOLOGY_AND_NAMING_CONTRACT.md](./TERMINOLOGY_AND_NAMING_CONTRACT.md)
+- Appendix source: [appendices/terminology/NAMING_REVIEW_POLICY.md](./appendices/terminology/NAMING_REVIEW_POLICY.md)
 
-- naming rules in `docs/spec/NAMING_GUIDELINES.md`
-- glossary alignment in `docs/spec/TERMINOLOGY_GLOSSARY.md`
-- audit mapping updates in `docs/architecture/naming_audit.md` when renaming
-
-## Reviewer checklist
-
-- name reflects stable behavior
-- no transitional lifecycle wording in normative surfaces
-- no banned marketing qualifiers in runtime module names
-- tests/fixtures/docs updated with renamed symbols
-
-## Ownership
-
-- Runtime naming owner: runtime maintainers
-- Artifact naming owner: artifact maintainers
-- Governance naming owner: dev control-plane maintainers

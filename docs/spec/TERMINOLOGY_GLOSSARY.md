@@ -1,13 +1,7 @@
-# Terminology glossary
+# Superseded by naming contract
 
-- `attempt`: one execution try for a node.
-- `authoritative data`: source-of-truth run metadata and artifacts.
-- `cache hit proof`: evidence bundle validating cache reuse.
-- `control plane`: repo verification and governance command layer.
-- `dag`: directed acyclic graph of node dependencies.
-- `effective graph`: normalized graph after defaults and canonicalization.
-- `effective plan`: executable plan after lowering and dependency resolution.
-- `extension catalog`: registry of extension points and extension descriptors.
-- `node result`: canonical node execution outcome value.
-- `run directory`: persisted run artifacts and metadata root.
-- `sacred flow`: canonical execution path used by run and replay.
+This document is preserved as an appendix reference only.
+
+- Superseded by: [TERMINOLOGY_AND_NAMING_CONTRACT.md](./TERMINOLOGY_AND_NAMING_CONTRACT.md)
+- Appendix source: [appendices/terminology/TERMINOLOGY_GLOSSARY.md](./appendices/terminology/TERMINOLOGY_GLOSSARY.md)
+

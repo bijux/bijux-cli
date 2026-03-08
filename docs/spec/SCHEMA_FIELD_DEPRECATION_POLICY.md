@@ -1,10 +1,4 @@
-# Schema Field and Command Deprecation Policy
+# Superseded by versioning contract
 
-## Field deprecation
-- Deprecations must include replacement guidance.
-- Deprecated fields remain parseable within the compatibility window.
-- Removal requires version bump and compatibility fixture updates.
-
-## Command deprecation
-- CLI deprecations follow `docs/spec/CLI_DEPRECATION_AND_ALIAS_POLICY.md`.
-- Stable command removal requires explicit release-note migration guidance.
+- Superseded by: [VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md](./VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md)
+- Appendix source: [appendices/versioning/SCHEMA_FIELD_DEPRECATION_POLICY.md](./appendices/versioning/SCHEMA_FIELD_DEPRECATION_POLICY.md)

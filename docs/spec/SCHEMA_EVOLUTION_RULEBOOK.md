@@ -1,10 +1,4 @@
-# Schema Evolution Rulebook
+# Superseded by versioning contract
 
-## Additive changes
-Allowed when new fields are optional and defaults preserve existing semantics.
-
-## Deprecation changes
-Allowed when deprecated fields retain behavior and are documented with migration guidance.
-
-## Breaking changes
-Require graph schema version bump, compatibility fixture updates, and explicit release note entry.
+- Superseded by: [VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md](./VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md)
+- Appendix source: [appendices/versioning/SCHEMA_EVOLUTION_RULEBOOK.md](./appendices/versioning/SCHEMA_EVOLUTION_RULEBOOK.md)

@@ -21,6 +21,6 @@ Track naming debt and the normalized replacement vocabulary used across runtime 
 
 ## Follow-up checks
 
-- runtime module names must satisfy `docs/spec/NAMING_GUIDELINES.md`
+- runtime module names must satisfy `docs/spec/appendices/terminology/NAMING_GUIDELINES.md`
 - docs index labels must match canonical names
 - tests and fixtures must follow renamed canonical surfaces

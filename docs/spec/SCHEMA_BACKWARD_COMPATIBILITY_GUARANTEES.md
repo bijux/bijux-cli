@@ -1,5 +1,4 @@
-# Schema Backward-Compatibility Guarantees
+# Superseded by versioning contract
 
-- Supported versions are listed in `docs/reference/COMPATIBILITY_MATRIX.md`.
-- Stable schemas accept previously supported payloads in the compatibility window.
-- Unsupported past versions fail with explicit diagnostics.
+- Superseded by: [VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md](./VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md)
+- Appendix source: [appendices/versioning/SCHEMA_BACKWARD_COMPATIBILITY_GUARANTEES.md](./appendices/versioning/SCHEMA_BACKWARD_COMPATIBILITY_GUARANTEES.md)

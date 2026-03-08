@@ -1,7 +1,4 @@
-# Version Compatibility Drift Policy
+# Superseded by versioning contract
 
-No silent compatibility drift is allowed.
-Any change to versioned surfaces must update:
-- compatibility fixtures
-- compatibility matrix docs
-- control-plane compatibility checks
+- Superseded by: [VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md](./VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md)
+- Appendix source: [appendices/versioning/VERSION_COMPATIBILITY_DRIFT_POLICY.md](./appendices/versioning/VERSION_COMPATIBILITY_DRIFT_POLICY.md)
