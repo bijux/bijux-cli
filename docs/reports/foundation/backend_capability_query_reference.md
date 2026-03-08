@@ -5,14 +5,15 @@ format: `capabilities/v1`
 
 ## Query Surface
 
+- `bijux dag capabilities --backend local --json`
 - `bijux dag capabilities --backend kubernetes --json`
 - `bijux dag capabilities --backend hpc --json`
 - `bijux dag capabilities --backend remote --json`
 
 ## Response Stability Contract
 
-- `backend` must remain one of: `kubernetes`, `hpc`, `remote`.
-- `status` must remain `simulated` for all three backends in this repository.
+- `backend` must remain one of: `local`, `kubernetes`, `hpc`, `remote`.
+- `status` must remain `implemented` for `local` and `simulated` for `kubernetes`, `hpc`, and `remote`.
 - unknown backend queries must return an unsupported-backend response surface.
 
 ## Evidence Links
