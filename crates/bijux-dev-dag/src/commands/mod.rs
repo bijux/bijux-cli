@@ -15,6 +15,7 @@ mod battle_evidence;
 mod benchmark_harness;
 mod command_runtime;
 mod compare_evidence;
+mod contract_governance;
 mod docs_governance;
 mod evidence_access;
 mod evidence_control_plane;
@@ -43,6 +44,11 @@ use command_runtime::{
 use compare_evidence::{
     run_compare_evidence_policy_verify, run_comparison_evidence_report,
     run_comparison_harness_guard,
+};
+use contract_governance::{
+    run_contract_command_ownership_guard, run_contract_coverage_report,
+    run_contract_schema_owner_guard, run_contract_test_links_guard, run_contract_versioning_guard,
+    run_error_code_docs_tests_guard, run_error_code_registry_report,
 };
 use docs_governance::{
     run_docs_config_reduction_guard, run_docs_contract_reference_guard, run_docs_coverage_report,
