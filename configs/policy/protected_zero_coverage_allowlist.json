@@ -42,9 +42,6 @@
     "crates/bijux-dag-runtime/src/internal/identity/secrets_security.rs",
     "crates/bijux-dag-runtime/src/internal/identity/security_env.rs",
     "crates/bijux-dag-runtime/src/internal/identity/supply_chain_trust.rs",
-    "crates/bijux-dag-runtime/src/internal/identity/tenancy.rs",
-    "crates/bijux-dag-runtime/src/runtime_core/execution/scheduler_workload.rs",
-    "crates/bijux-dag-runtime/src/runtime_core/governance/semantics.rs",
-    "crates/bijux-dag-runtime/src/runtime_core/planning/planner_analysis.rs"
+    "crates/bijux-dag-runtime/src/internal/identity/tenancy.rs"
   ]
 }
