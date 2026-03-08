@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ImportSummary",
+  "type": "object",
+  "required": ["bundle_version", "export_mode", "verify_only", "fidelity", "preservation"],
+  "properties": {
+    "bundle_version": { "type": "string" },
+    "export_mode": { "type": "string" },
+    "verify_only": { "type": "boolean" },
+    "fidelity": { "type": "object" },
+    "preservation": { "type": "object" }
+  },
+  "additionalProperties": true
+}

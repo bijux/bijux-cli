@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CapabilityQuery",
+  "type": "object",
+  "required": ["format", "backend", "status", "capabilities"],
+  "properties": {
+    "format": { "type": "string" },
+    "backend": { "type": "string" },
+    "status": { "type": "string" },
+    "capabilities": { "type": "object" },
+    "notes": { "type": "array" },
+    "version_metadata": { "type": "object" }
+  },
+  "additionalProperties": true
+}
