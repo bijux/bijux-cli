@@ -62,7 +62,5 @@ Backend conformance fixture:
 - `evidence/battle/fixtures/hpc/staged_input_equivalence.dag.json`
 - `evidence/battle/fixtures/hpc/checkpointed_partial_replay.dag.json`
 
-See support status and evidence linkage in `docs/reference/K8S_SUPPORT_MATRIX.md`.
-See HPC scope and evidence linkage in `docs/reference/HPC_SUPPORT_MATRIX.md`.
-See remote scope and evidence linkage in `docs/reference/REMOTE_SUPPORT_MATRIX.md`.
+See support status and evidence linkage in `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`.
 Generated backend capability matrix: `evidence/reports/backend_capability_matrix_generated.json`.

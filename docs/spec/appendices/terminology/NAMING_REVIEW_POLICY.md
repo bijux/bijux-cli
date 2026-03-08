@@ -6,7 +6,7 @@ All changes introducing new normative names must satisfy:
 
 - naming rules in `docs/spec/NAMING_GUIDELINES.md`
 - glossary alignment in `docs/spec/TERMINOLOGY_GLOSSARY.md`
-- audit mapping updates in `docs/architecture/naming_audit.md` when renaming
+- audit mapping updates in `docs/reference/NAMING_AUDIT.md` when renaming
 
 ## Reviewer checklist
 

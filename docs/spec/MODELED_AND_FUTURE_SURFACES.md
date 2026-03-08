@@ -23,5 +23,5 @@ Future-only claims are not allowed in normative implementation contracts unless 
 ## Related surfaces
 
 - `docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md`
-- `docs/reference/SUPPORT_MATRIX.md`
+- `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`
 - `docs/spec/ADOPTION_SURFACES.md`

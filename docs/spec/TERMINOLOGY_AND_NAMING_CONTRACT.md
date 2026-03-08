@@ -22,7 +22,7 @@ This contract is the single source of meaning and naming rules for contract term
 ## Naming conventions
 
 - Use nouns for durable concepts (contract, contract surfaces, contracts families).
-- Avoid abbreviations unless defined in `docs/architecture/naming_audit.md`.
+- Avoid abbreviations unless defined in `docs/reference/NAMING_AUDIT.md`.
 - Keep names stable once documented in a canonical contract.
 - Favor surface-reflective naming for command families and registry fields.
 
@@ -42,12 +42,12 @@ This contract is the single source of meaning and naming rules for contract term
 - term surface and glossary: `docs/spec/appendices/terminology/TERMINOLOGY_GLOSSARY.md`
 - canonical glossary table: `docs/spec/appendices/terminology/GLOSSARY.md`
 - term index: `docs/spec/appendices/terminology/TERMS.md`
-- `docs/architecture/naming_audit.md`
+- `docs/reference/NAMING_AUDIT.md`
 - `docs/adr/20260308-vocabulary-and-scope-honesty.md`
 
 ## Implementation and evidence sources
 
 - Naming and vocabulary checks run with architecture and governance audits in:
   - `crates/bijux-dev-dag/tests`
-  - `docs/architecture/naming_audit.md`
+  - `docs/reference/NAMING_AUDIT.md`
   - `docs/adr/20260308-documentation-truth-policy.md`

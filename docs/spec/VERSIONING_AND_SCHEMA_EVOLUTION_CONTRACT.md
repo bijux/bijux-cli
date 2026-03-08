@@ -34,7 +34,7 @@ This contract is the authoritative source for all versioned contracts in the pro
 
 ## Evidence and implementation links
 
-- Source-of-truth: `configs/schema/` family schemas and `docs/reference/COMPATIBILITY_MATRIX.md`.
+- Source-of-truth: `configs/schema/` family schemas and `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`.
 - Required evidence: `evidence/compat/`, compatibility fixtures, migration suites, and schema changelog.
 - Regression signals: governance suites under `crates/bijux-dev-dag` and evidence reports.
 

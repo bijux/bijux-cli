@@ -49,10 +49,10 @@ Production readiness requires deterministic replay support, passed conformance s
 
 Kubernetes conformance and evidence linkage:
 
-- `docs/reports/foundation/k8s_conformance_gate_report.md`
-- `docs/reference/K8S_SUPPORT_MATRIX.md`
+- `docs/reports/foundation/archive/k8s_conformance_gate_report.md`
+- `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`
 
 HPC conformance and evidence linkage:
 
-- `docs/reports/foundation/hpc_conformance_gate_report.md`
-- `docs/reference/HPC_SUPPORT_MATRIX.md`
+- `docs/reports/foundation/archive/hpc_conformance_gate_report.md`
+- `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`

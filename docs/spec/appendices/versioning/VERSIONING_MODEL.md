@@ -8,7 +8,7 @@
 - export bundle version: bundle `export_bundle_version`
 
 ## Compatibility matrix authority
-See `docs/reference/COMPATIBILITY_MATRIX.md`.
+See `docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md`.
 
 ## Compatibility rules
 - Additive schema fields: allowed if defaults preserve behavior.

@@ -16,3 +16,9 @@ This section is the canonical command and support reference layer for product op
 ## Source mapping
 
 Reference topics must point to canonical contracts in `spec/` when they describe expected behavior.
+
+## Canonical pages
+
+- `SUPPORT_AND_COMPATIBILITY_MATRICES.md` for all support and compatibility matrix material.
+- `GLOSSARY.md` for canonical terminology.
+- `COMPARISON_REFERENCE.md` for comparison evidence rules and scenario mappings.
