@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "domain": "system-completeness",
+  "cases": [
+    {"id":"review-system-invariants","coverage":["system-invariants-coverage","correctness-guarantees"],"expected":"invariants-reviewed"},
+    {"id":"review-determinism","coverage":["determinism-coverage","correctness-guarantees"],"expected":"determinism-reviewed"},
+    {"id":"review-replay-equivalence","coverage":["replay-equivalence-coverage","reliability-guarantees"],"expected":"replay-reviewed"},
+    {"id":"review-diff-semantics","coverage":["diff-semantics-coverage","correctness-guarantees"],"expected":"diff-reviewed"},
+    {"id":"review-artifact-lineage","coverage":["artifact-lineage-coverage","correctness-guarantees"],"expected":"lineage-reviewed"},
+    {"id":"review-runtime-scheduler","coverage":["runtime-scheduler-coverage","reliability-guarantees"],"expected":"runtime-reviewed"},
+    {"id":"review-backend-adapters","coverage":["backend-adapter-coverage","portability-coverage"],"expected":"adapter-reviewed"},
+    {"id":"review-portability-schema","coverage":["portability-coverage","schema-compatibility-coverage"],"expected":"portability-reviewed"},
+    {"id":"review-introspection-observability","coverage":["introspection-coverage","observability-coverage"],"expected":"introspection-reviewed"},
+    {"id":"review-security","coverage":["security-coverage","correctness-guarantees"],"expected":"security-reviewed"},
+    {"id":"review-performance","coverage":["performance-benchmark-coverage","stress-coverage"],"expected":"performance-reviewed"},
+    {"id":"review-fuzz-stress","coverage":["fuzz-coverage","stress-coverage"],"expected":"fuzz-stress-reviewed"},
+    {"id":"review-conceptual-architecture","coverage":["conceptual-integrity","architecture-coherence"],"expected":"architecture-reviewed"},
+    {"id":"review-reliability","coverage":["reliability-guarantees","verification-suite"],"expected":"reliability-reviewed"},
+    {"id":"final-completeness-report","coverage":["final-report","verification-suite"],"expected":"final-report-present"}
+  ]
+}
