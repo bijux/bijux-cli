@@ -1,8 +1,8 @@
-#[cfg(test)]
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
+#[cfg(test)]
+use bijux_dag_testkit as _;
 use clap as _;
 use serde as _;
 use sha2::{Digest, Sha256};

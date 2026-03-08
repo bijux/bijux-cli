@@ -8,9 +8,9 @@ mod report;
 mod suites;
 mod tooling;
 
-use std::process::ExitCode;
 #[cfg(test)]
 use bijux_dag_testkit as _;
+use std::process::ExitCode;
 // Keep the dependency reachable at the binary root for strict target dependency checks.
 use tempfile as _;
 

@@ -1,8 +1,8 @@
-#[cfg(test)]
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime::{backend_registry, execution_mode_report};
+#[cfg(test)]
+use bijux_dag_testkit as _;
 use clap as _;
 use hex as _;
 use serde::Deserialize;
