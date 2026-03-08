@@ -26,6 +26,9 @@ mod tests {
 
         let manifest = read_manifest_json(tmp.path()).expect("read manifest");
         assert_eq!(manifest.get("status").and_then(|v| v.as_str()), Some("ok"));
-        assert_eq!(read_run_identifier(tmp.path()).expect("read run id"), "r-123");
+        assert_eq!(
+            read_run_identifier(tmp.path()).expect("read run id"),
+            "r-123"
+        );
     }
 }

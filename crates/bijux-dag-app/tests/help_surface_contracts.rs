@@ -35,7 +35,10 @@ fn root_help_mentions_shipped_operator_surfaces() {
         "import",
         "capabilities",
     ] {
-        assert!(rendered.contains(token), "missing shipped command token {token}");
+        assert!(
+            rendered.contains(token),
+            "missing shipped command token {token}"
+        );
     }
 }
 

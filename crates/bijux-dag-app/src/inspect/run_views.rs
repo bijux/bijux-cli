@@ -147,7 +147,9 @@ pub fn runs_history_query(
         rows.retain(|row| row.get("status").and_then(Value::as_str) == Some(filter_status));
     }
     if let Some(filter_source) = source_filter {
-        rows.retain(|row| row.get("submission_source").and_then(Value::as_str) == Some(filter_source));
+        rows.retain(|row| {
+            row.get("submission_source").and_then(Value::as_str) == Some(filter_source)
+        });
     }
 
     let (offset, limit) = pagination.unwrap_or((0, rows.len()));
@@ -294,12 +296,7 @@ pub fn doctor_run(run_dir: &Path) -> Value {
     let expected_trace_nodes = manifest
         .get("node_counts")
         .and_then(Value::as_object)
-        .map(|counts| {
-            counts
-                .values()
-                .filter_map(Value::as_u64)
-                .sum::<u64>() as usize
-        })
+        .map(|counts| counts.values().filter_map(Value::as_u64).sum::<u64>() as usize)
         .unwrap_or(0);
     let observed_trace_nodes = read_node_traces(run_dir)
         .map(|traces| traces.len())

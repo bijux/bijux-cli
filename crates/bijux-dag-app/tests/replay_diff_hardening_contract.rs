@@ -49,10 +49,9 @@ fn out(p: &Path) -> String {
 
 fn required_fields(schema_rel: &str) -> Vec<String> {
     let root = repo_root();
-    let schema: Value = serde_json::from_str(
-        &fs::read_to_string(root.join(schema_rel)).expect("read schema"),
-    )
-    .expect("parse schema");
+    let schema: Value =
+        serde_json::from_str(&fs::read_to_string(root.join(schema_rel)).expect("read schema"))
+            .expect("parse schema");
     schema["required"]
         .as_array()
         .expect("required")
@@ -105,9 +104,23 @@ fn write_const_graph(path: &Path, shape: &str) {
     fs::write(path, serde_json::to_vec_pretty(&payload).expect("encode")).expect("write graph");
 }
 
-fn run_and_replay_with_prove(root: &Path, graph: &Path, out_dir: &Path, source: &str, replay: &str) -> Value {
+fn run_and_replay_with_prove(
+    root: &Path,
+    graph: &Path,
+    out_dir: &Path,
+    source: &str,
+    replay: &str,
+) -> Value {
     let _ = run_json(
-        &["run", "--json", &out(graph), "--out", &out(out_dir), "--run-id", source],
+        &[
+            "run",
+            "--json",
+            &out(graph),
+            "--out",
+            &out(out_dir),
+            "--run-id",
+            source,
+        ],
         root,
     );
     let source_run = out_dir.join(format!("run-{source}"));
@@ -136,7 +149,15 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "mismatch-source"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "mismatch-source",
+        ],
         &root,
     );
     let source_run = out_dir.join("run-mismatch-source");
@@ -167,7 +188,10 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
 
     let proof = &proved["data"]["replay_proof"];
     for field in required_fields("configs/schema/operator/replay_proof.schema.json") {
-        assert!(proof.get(&field).is_some(), "replay proof missing required field `{field}`");
+        assert!(
+            proof.get(&field).is_some(),
+            "replay proof missing required field `{field}`"
+        );
     }
     assert_eq!(proof["fidelity_level"], "diverged");
     assert!(proof["cause_groups"].is_object());
@@ -190,7 +214,10 @@ fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
         let proved = run_and_replay_with_prove(&root, &graph, &out_dir, source, replay);
         assert!(proved["data"]["replay_proof"]["fidelity_level"].is_string());
         if shape != "cache" {
-            assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "strict_equivalent");
+            assert_eq!(
+                proved["data"]["replay_proof"]["fidelity_level"],
+                "strict_equivalent"
+            );
         }
     }
 }
@@ -205,7 +232,15 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
     write_const_graph(&graph, "diamond");
 
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "import-src"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "import-src",
+        ],
         &root,
     );
     let source_run = out_dir.join("run-import-src");
@@ -227,7 +262,14 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
 
     let bundle = tmp.path().join("bundle.json");
     let _ = run_json(
-        &["export", "--json", &out(&source_run), "--out", &out(&bundle), "--manifest-only"],
+        &[
+            "export",
+            "--json",
+            &out(&source_run),
+            "--out",
+            &out(&bundle),
+            "--manifest-only",
+        ],
         &root,
     );
     let imported = run_json(&["import", "--json", &out(&bundle)], &root);
@@ -244,20 +286,32 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "drift-src"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "drift-src",
+        ],
         &root,
     );
     let source_run = out_dir.join("run-drift-src");
 
     let outputs_index = source_run.join("outputs/index.json");
-    let mut index: Value = serde_json::from_str(&fs::read_to_string(&outputs_index).expect("index"))
-        .expect("json");
+    let mut index: Value =
+        serde_json::from_str(&fs::read_to_string(&outputs_index).expect("index")).expect("json");
     if let Some(files) = index.get_mut("files").and_then(Value::as_array_mut) {
         if let Some(first) = files.first_mut() {
             first["sha256"] = json!("deadbeef");
         }
     }
-    fs::write(&outputs_index, serde_json::to_vec_pretty(&index).expect("encode")).expect("write");
+    fs::write(
+        &outputs_index,
+        serde_json::to_vec_pretty(&index).expect("encode"),
+    )
+    .expect("write");
 
     let first_node_dir = fs::read_dir(source_run.join("nodes"))
         .expect("read nodes")
@@ -269,7 +323,11 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     let mut trace: Value =
         serde_json::from_str(&fs::read_to_string(&trace_path).expect("trace")).expect("json");
     trace["status"] = json!("failed");
-    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode")).expect("write");
+    fs::write(
+        &trace_path,
+        serde_json::to_vec_pretty(&trace).expect("encode"),
+    )
+    .expect("write");
 
     let mut manifest: Value = serde_json::from_str(
         &fs::read_to_string(source_run.join("manifest.json")).expect("manifest"),
@@ -309,11 +367,27 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     write_const_graph(&graph, "diamond");
 
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "diff-a"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "diff-a",
+        ],
         &root,
     );
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "diff-b"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "diff-b",
+        ],
         &root,
     );
     let run_a = out_dir.join("run-diff-a");
@@ -321,7 +395,10 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
 
     let run_diff = run_json(&["diff", "--json", &out(&run_a), &out(&run_b)], &root);
     for field in required_fields("configs/schema/operator/run_diff.schema.json") {
-        assert!(run_diff["data"].get(&field).is_some(), "run diff missing field `{field}`");
+        assert!(
+            run_diff["data"].get(&field).is_some(),
+            "run diff missing field `{field}`"
+        );
     }
 
     let canonical_diff = run_json(&["canonical-diff", "--json", &out(&graph)], &root);
@@ -334,7 +411,10 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
 
     let trace = run_json(&["trace-artifact", "--json", &out(&run_a), "a:out"], &root);
     for field in required_fields("configs/schema/operator/artifact_trace.schema.json") {
-        assert!(trace["data"].get(&field).is_some(), "artifact trace missing field `{field}`");
+        assert!(
+            trace["data"].get(&field).is_some(),
+            "artifact trace missing field `{field}`"
+        );
     }
 }
 
@@ -348,7 +428,15 @@ fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     write_const_graph(&graph, "minimal");
 
     let _ = run_json(
-        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "fail-source"],
+        &[
+            "run",
+            "--json",
+            &out(&graph),
+            "--out",
+            &out(&out_dir),
+            "--run-id",
+            "fail-source",
+        ],
         &root,
     );
     let run_dir = out_dir.join("run-fail-source");
@@ -363,7 +451,11 @@ fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     let mut trace: Value =
         serde_json::from_str(&fs::read_to_string(&trace_path).expect("trace")).expect("json");
     trace["status"] = json!("failed");
-    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode")).expect("write");
+    fs::write(
+        &trace_path,
+        serde_json::to_vec_pretty(&trace).expect("encode"),
+    )
+    .expect("write");
 
     let explain = run_json(
         &[

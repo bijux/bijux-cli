@@ -52,7 +52,14 @@ pub(crate) fn handle_explain_command(
                 "trace": serde_json::from_str::<serde_json::Value>(&trace).ok(),
                 "fingerprint": snapshot.graph.node_fingerprint(node_info).ok(),
             });
-            return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
+            return emit_json(
+                cli,
+                "dag.explain",
+                true,
+                data,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            );
         } else {
             println!("node: {}", node_id);
             println!("deps: {:?}", deps);
@@ -94,7 +101,14 @@ pub(crate) fn handle_explain_command(
             "node_counts": counts,
             "failed_nodes": failed,
         });
-        return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
+        return emit_json(
+            cli,
+            "dag.explain",
+            true,
+            data,
+            Vec::new(),
+            ExitCode::SUCCESS,
+        );
     } else {
         let m: serde_json::Value = read_manifest_json(run_dir).unwrap_or_default();
         let status = m.get("status").cloned().unwrap_or_default();
@@ -144,7 +158,8 @@ pub(crate) fn handle_node_command(
 pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
     let manifest = read_file(&manifest_path(run_dir))?;
     let nodes_dir = run_dir.join("nodes");
-    let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
+    let manifest_json =
+        serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
     let mut statuses = Vec::new();
     if nodes_dir.exists() {
         for entry in fs::read_dir(nodes_dir).map_err(|_| ExitCode::from(3))? {

@@ -1,7 +1,7 @@
 use crate::commands::DagCli;
 use crate::routes::output_selection::{output_selection, OutputSelection};
-use crate::routes::response::simple_failure_payload;
 use crate::routes::replay_routes;
+use crate::routes::response::simple_failure_payload;
 use crate::{emit_json, verify_bundle_invariants, verify_run, ExitCode};
 use serde_json::json;
 use std::path::Path;

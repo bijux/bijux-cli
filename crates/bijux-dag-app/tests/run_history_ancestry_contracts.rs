@@ -1,5 +1,8 @@
 use base64 as _;
-use bijux_dag_app::{dag_command, dag_run, explain_run_id, inspect_summary, run_timeline, runs_history, runs_history_query};
+use bijux_dag_app::{
+    dag_command, dag_run, explain_run_id, inspect_summary, run_timeline, runs_history,
+    runs_history_query,
+};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -18,7 +21,13 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Barrier};
 
-fn write_run_manifest(path: &Path, run_id: &str, status: &str, created_unix_ms: u64, run_metadata: Value) {
+fn write_run_manifest(
+    path: &Path,
+    run_id: &str,
+    status: &str,
+    created_unix_ms: u64,
+    run_metadata: Value,
+) {
     fs::create_dir_all(path).expect("mkdir");
     fs::write(
         path.join("manifest.json"),
@@ -65,13 +74,10 @@ fn write_required_run_files(run_dir: &Path, failed: bool) {
         .expect("trace"),
     )
     .expect("trace write");
-    fs::write(run_dir.join("observability.timeline.json"), "{}")
-        .expect("timeline");
-    fs::write(run_dir.join("observability.events.json"), "{}")
-        .expect("events");
+    fs::write(run_dir.join("observability.timeline.json"), "{}").expect("timeline");
+    fs::write(run_dir.join("observability.events.json"), "{}").expect("events");
     if failed {
-        fs::write(run_dir.join("observability.root-causes.json"), "{}")
-            .expect("root causes");
+        fs::write(run_dir.join("observability.root-causes.json"), "{}").expect("root causes");
     }
 }
 
@@ -113,8 +119,9 @@ fn history_query_supports_status_filter_and_pagination_contract() {
 fn mixed_local_imported_replayed_and_drifted_history_fixture_is_stable() {
     let tmp = tempfile::tempdir().expect("tmp");
     let root = tmp.path().join("runs");
-    let fixtures: Value = serde_json::from_str(include_str!("fixtures/run_history_mixed_runs.json"))
-        .expect("fixtures");
+    let fixtures: Value =
+        serde_json::from_str(include_str!("fixtures/run_history_mixed_runs.json"))
+            .expect("fixtures");
 
     for row in fixtures.as_array().expect("array") {
         let dir = root.join(row["dir"].as_str().expect("dir"));
@@ -190,9 +197,15 @@ fn ancestry_fields_are_present_for_failed_cancelled_and_partial_replay_runs() {
 
     let history = runs_history(&root).expect("history");
     let rows = history["runs"].as_array().expect("rows");
-    assert!(rows.iter().any(|r| r["run_id"] == "failed" && r["source_run_id"] == "src-run"));
-    assert!(rows.iter().any(|r| r["run_id"] == "cancelled" && r["parent_run_id"] == "failed"));
-    assert!(rows.iter().any(|r| r["run_id"] == "partial" && r["source_run_id"] == "imported-run"));
+    assert!(rows
+        .iter()
+        .any(|r| r["run_id"] == "failed" && r["source_run_id"] == "src-run"));
+    assert!(rows
+        .iter()
+        .any(|r| r["run_id"] == "cancelled" && r["parent_run_id"] == "failed"));
+    assert!(rows
+        .iter()
+        .any(|r| r["run_id"] == "partial" && r["source_run_id"] == "imported-run"));
 }
 
 #[test]
@@ -258,8 +271,9 @@ fn strict_verify_rejects_tampered_timestamps_environment_summary_and_missing_eve
     );
     write_required_run_files(&run, false);
 
-    let mut manifest: Value = serde_json::from_str(&fs::read_to_string(run.join("manifest.json")).expect("manifest"))
-        .expect("json");
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(run.join("manifest.json")).expect("manifest"))
+            .expect("json");
     manifest["started_unix_ms"] = json!(9999);
     manifest["finished_unix_ms"] = json!(1000);
     fs::write(
@@ -358,10 +372,26 @@ fn damaged_run_directories_return_errors_without_panics() {
     fs::create_dir_all(&run).expect("mkdir");
     fs::write(run.join("manifest.json"), "{bad-json").expect("manifest");
     fs::create_dir_all(run.join("nodes").join("node-a")).expect("nodes");
-    fs::write(run.join("nodes").join("node-a").join("trace.json"), "{bad-json").expect("trace");
+    fs::write(
+        run.join("nodes").join("node-a").join("trace.json"),
+        "{bad-json",
+    )
+    .expect("trace");
 
-    assert!(inspect_summary(&run).is_ok(), "inspect summary should not panic on damaged run");
-    assert!(run_timeline(&run).is_ok(), "timeline should not panic on damaged run");
-    assert!(runs_history(&root).is_ok(), "history should not panic on damaged run set");
-    assert!(explain_run_id(&root, "run-damaged").is_ok(), "id explain should not panic");
+    assert!(
+        inspect_summary(&run).is_ok(),
+        "inspect summary should not panic on damaged run"
+    );
+    assert!(
+        run_timeline(&run).is_ok(),
+        "timeline should not panic on damaged run"
+    );
+    assert!(
+        runs_history(&root).is_ok(),
+        "history should not panic on damaged run set"
+    );
+    assert!(
+        explain_run_id(&root, "run-damaged").is_ok(),
+        "id explain should not panic"
+    );
 }

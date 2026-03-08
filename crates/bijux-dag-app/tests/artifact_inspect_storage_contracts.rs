@@ -73,11 +73,7 @@ fn artifact_inspect_rejects_corrupted_outputs_index_hash_rows() {
     fs::create_dir_all(run.join("outputs")).expect("mkdir");
     write_manifest(&run);
 
-    fs::write(
-        run.join("outputs/index.json"),
-        "{not-json",
-    )
-    .expect("write corrupted index");
+    fs::write(run.join("outputs/index.json"), "{not-json").expect("write corrupted index");
 
     let err = inspect_artifact(&run, "extract:data.csv").expect_err("inspect should fail");
     assert_eq!(err, std::process::ExitCode::from(3));

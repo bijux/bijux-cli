@@ -68,8 +68,8 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{
-    lower_graph_to_execution_plan, planner_diagnostics_from_error, Graph,
-    GraphError, PlanOptions, Severity, SPEC_VERSION,
+    lower_graph_to_execution_plan, planner_diagnostics_from_error, Graph, GraphError, PlanOptions,
+    Severity, SPEC_VERSION,
 };
 use bijux_dag_runtime::{
     adapter_registry_dump, build_plan, registered_adapters, CacheMode, MaterializeMode, Runtime,
@@ -739,7 +739,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Node { run_dir, id: node } => {
             routes::inspect_routes::handle_node_command(&cli, run_dir, node)
         }
-        Commands::Status { run_dir } => routes::inspect_routes::handle_status_command(&cli, run_dir),
+        Commands::Status { run_dir } => {
+            routes::inspect_routes::handle_status_command(&cli, run_dir)
+        }
         Commands::Verify {
             run_dir,
             deep,
@@ -2234,7 +2236,10 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
         }
         for rel in ["observability.timeline.json", "observability.events.json"] {
             if !run_dir.join(rel).exists() {
-                errors.push(format!("strict verify missing required run artifact: {}", rel));
+                errors.push(format!(
+                    "strict verify missing required run artifact: {}",
+                    rel
+                ));
             }
         }
         if manifest.status == "failed" && !run_dir.join("observability.root-causes.json").exists() {
@@ -2245,13 +2250,13 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
         }
     }
     if deep || strict {
-        let manifest_json: Value = serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
+        let manifest_json: Value =
+            serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
         if let Some(summary) = manifest_json
             .get("run_metadata")
             .and_then(|m| m.get("environment_summary"))
         {
-            let summary_bytes =
-                serde_json::to_vec(summary).map_err(|_| ExitCode::from(3))?;
+            let summary_bytes = serde_json::to_vec(summary).map_err(|_| ExitCode::from(3))?;
             let expected = sha256_bytes(&summary_bytes);
             let actual = manifest_json
                 .get("run_metadata")

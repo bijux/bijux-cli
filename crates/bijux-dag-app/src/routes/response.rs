@@ -17,8 +17,14 @@ mod tests {
     #[test]
     fn builds_stable_failure_payload() {
         let payload = simple_failure_payload(ExitCode::from(3), "missing run");
-        assert_eq!(payload.get("status").and_then(|v| v.as_str()), Some("invalid"));
+        assert_eq!(
+            payload.get("status").and_then(|v| v.as_str()),
+            Some("invalid")
+        );
         assert_eq!(payload.get("exit_code").and_then(|v| v.as_i64()), Some(3));
-        assert_eq!(payload.get("message").and_then(|v| v.as_str()), Some("missing run"));
+        assert_eq!(
+            payload.get("message").and_then(|v| v.as_str()),
+            Some("missing run")
+        );
     }
 }

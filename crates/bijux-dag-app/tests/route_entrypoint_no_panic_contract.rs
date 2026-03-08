@@ -1,8 +1,8 @@
+use base64 as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
-use base64 as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -30,7 +30,14 @@ fn malformed_route_entrypoints_do_not_panic() {
         &["dag", "plan", "explain", "/no/such/file.json"],
         &["dag", "run", "/no/such/file.json", "--out", "/tmp/nowhere"],
         &["dag", "replay", "/no/such/run", "--out", "/tmp/replay"],
-        &["dag", "runs", "inspect", "missing-run", "--root", "/no/such/root"],
+        &[
+            "dag",
+            "runs",
+            "inspect",
+            "missing-run",
+            "--root",
+            "/no/such/root",
+        ],
         &["dag", "diff", "/no/such/run-a", "/no/such/run-b"],
         &["dag", "prove", "/no/such/run"],
         &["dag", "export", "--out", "/tmp/bundle.json"],

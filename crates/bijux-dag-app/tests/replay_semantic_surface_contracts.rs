@@ -48,8 +48,11 @@ fn write_basic_run(run: &Path, run_id: &str, extras: Value) {
         serde_json::to_vec_pretty(&manifest).expect("manifest"),
     )
     .expect("write manifest");
-    fs::write(run.join("graph.snapshot.json"), "{\"graph_fingerprint\":\"g\"}")
-        .expect("snapshot");
+    fs::write(
+        run.join("graph.snapshot.json"),
+        "{\"graph_fingerprint\":\"g\"}",
+    )
+    .expect("snapshot");
     fs::write(
         run.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({
@@ -66,8 +69,16 @@ fn semantic_diff_equivalence_surface_reports_equivalent_for_cosmetic_plan_change
     let runs = tmp.path().join("runs");
     let run_a = runs.join("run-a");
     let run_b = runs.join("run-b");
-    write_basic_run(&run_a, "a", json!({"created_unix_ms": 11, "started_unix_ms": 12, "finished_unix_ms": 13}));
-    write_basic_run(&run_b, "b", json!({"created_unix_ms": 91, "started_unix_ms": 92, "finished_unix_ms": 93}));
+    write_basic_run(
+        &run_a,
+        "a",
+        json!({"created_unix_ms": 11, "started_unix_ms": 12, "finished_unix_ms": 13}),
+    );
+    write_basic_run(
+        &run_b,
+        "b",
+        json!({"created_unix_ms": 91, "started_unix_ms": 92, "finished_unix_ms": 93}),
+    );
 
     let cmd = dag_command()
         .try_get_matches_from([

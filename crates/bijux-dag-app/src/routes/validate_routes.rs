@@ -45,12 +45,10 @@ pub(crate) fn handle_validate_command(
             .map(|n| n.id.clone())
             .collect::<Vec<_>>();
         data["canonical_order"] = json!(order);
-        data["resolved_params"] = json!(
-            graph
-                .resolve_graph()
-                .map(|g| g.resolved_params)
-                .unwrap_or_default()
-        );
+        data["resolved_params"] = json!(graph
+            .resolve_graph()
+            .map(|g| g.resolved_params)
+            .unwrap_or_default());
     }
     if cli.json {
         let code = if fail {

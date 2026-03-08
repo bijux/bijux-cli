@@ -23,11 +23,19 @@ fn operator_inspect_handles_malformed_run_manifest_without_panicking() {
     let temp = tempfile::tempdir().expect("tempdir");
     let run = temp.path().join("run-bad-manifest");
     fs::create_dir_all(&run).expect("create run dir");
-    fs::write(run.join("manifest.json"), b"{\"run_id\":\"broken\",").expect("write broken manifest");
-    fs::write(run.join("graph.snapshot.json"), b"{\"spec\":\"bijux-dag/v0.1\",\"nodes\":[],\"edges\":[]}").expect("write snapshot");
+    fs::write(run.join("manifest.json"), b"{\"run_id\":\"broken\",")
+        .expect("write broken manifest");
+    fs::write(
+        run.join("graph.snapshot.json"),
+        b"{\"spec\":\"bijux-dag/v0.1\",\"nodes\":[],\"edges\":[]}",
+    )
+    .expect("write snapshot");
 
     let result = std::panic::catch_unwind(AssertUnwindSafe(|| inspect_summary(&run)));
-    assert!(result.is_ok(), "inspect summary panicked on malformed manifest");
+    assert!(
+        result.is_ok(),
+        "inspect summary panicked on malformed manifest"
+    );
 }
 
 #[test]
@@ -39,15 +47,13 @@ fn prove_and_verify_commands_handle_malformed_run_dir_without_panicking() {
     fs::write(run.join("graph.snapshot.json"), b"{not-json").expect("write malformed snapshot");
 
     let prove = dag_command()
-        .try_get_matches_from([
-            "dag",
-            "--json",
-            "prove",
-            run.to_str().expect("run path"),
-        ])
+        .try_get_matches_from(["dag", "--json", "prove", run.to_str().expect("run path")])
         .expect("prove matches");
     let prove_result = std::panic::catch_unwind(AssertUnwindSafe(|| dag_run(&prove)));
-    assert!(prove_result.is_ok(), "prove command panicked on malformed run dir");
+    assert!(
+        prove_result.is_ok(),
+        "prove command panicked on malformed run dir"
+    );
 
     let verify = dag_command()
         .try_get_matches_from([

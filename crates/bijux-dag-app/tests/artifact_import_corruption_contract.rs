@@ -42,7 +42,10 @@ fn import_verify_reports_corrupt_bundle_without_panicking() {
         ])
         .expect("parse import");
     let code = dag_run(&matches);
-    assert!(code.is_err(), "corrupt bundle should not import successfully");
+    assert!(
+        code.is_err(),
+        "corrupt bundle should not import successfully"
+    );
 }
 
 #[test]

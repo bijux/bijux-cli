@@ -131,8 +131,14 @@ fn artifact_identity_explain_covers_provenance_and_lineage_traversal() {
 
     assert_eq!(inspected["node_id"], "extract");
     assert_eq!(inspected["provenance"]["run_id"], "run-1");
-    assert_eq!(inspected["lineage"]["upstream_artifact_ids"][0], "source:input.csv");
-    assert_eq!(inspected["lineage"]["downstream_artifact_ids"][0], "train:model.bin");
+    assert_eq!(
+        inspected["lineage"]["upstream_artifact_ids"][0],
+        "source:input.csv"
+    );
+    assert_eq!(
+        inspected["lineage"]["downstream_artifact_ids"][0],
+        "train:model.bin"
+    );
 
     let explain = &inspected["identity_explain"];
     assert_eq!(explain["artifact_id"], "extract:data.csv");

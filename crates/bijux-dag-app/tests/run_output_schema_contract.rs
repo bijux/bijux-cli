@@ -119,7 +119,10 @@ fn run_history_output_covers_required_schema_fields() {
         .as_array()
         .expect("item required");
     for field in item_required.iter().filter_map(Value::as_str) {
-        assert!(row.get(field).is_some(), "history row must include `{field}`");
+        assert!(
+            row.get(field).is_some(),
+            "history row must include `{field}`"
+        );
     }
 }
 
