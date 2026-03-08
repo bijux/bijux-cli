@@ -1,4 +1,3 @@
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts::hardening::{
     build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
 };
@@ -11,6 +10,7 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{write_outputs_index, OutputsIndex};
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json::{json, Value};

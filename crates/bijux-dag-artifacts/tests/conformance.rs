@@ -1,4 +1,3 @@
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts::index::{
     dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactPackManifest,
 };
@@ -15,6 +14,7 @@ use bijux_dag_artifacts::schema::{
 use bijux_dag_artifacts::{
     write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
 };
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;

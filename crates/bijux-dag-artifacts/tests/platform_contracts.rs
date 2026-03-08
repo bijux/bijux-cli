@@ -1,4 +1,3 @@
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts::index::ArtifactId;
 use bijux_dag_artifacts::lineage::{ArtifactLineageEdge, ArtifactLineageSnapshot};
 use bijux_dag_artifacts::platform::{
@@ -6,6 +5,7 @@ use bijux_dag_artifacts::platform::{
     plan_lineage_safe_gc, run_store_conformance,
 };
 use bijux_dag_artifacts::store::ArtifactStoreBackend;
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json as _;
