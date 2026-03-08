@@ -21,6 +21,7 @@ mod evidence_registry;
 mod model;
 mod perf_evidence;
 mod reporting;
+mod shared_io;
 mod suite_dispatch;
 
 use authoring_evidence::{
@@ -40,6 +41,7 @@ use command_runtime::{
     run_status_in_dir as exec_run_status_in_dir, run_stdout_and_json as exec_run_stdout_and_json,
     run_with_root as exec_run_with_root,
 };
+use shared_io::{read_json_value, write_pretty_json};
 use evidence_access::{
     as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
     render_consumers_to_families_report, resolve_asset_by_id, resolve_assets_by_consumer,
@@ -1499,14 +1501,7 @@ fn run_release_readiness_report() -> Result<(), String> {
         "release_blockers": read_release_blockers(&root)?,
     });
     let path = root.join("artifacts/release/readiness_report.json");
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-    }
-    fs::write(
-        &path,
-        serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    write_pretty_json(&path, &report)?;
     println!(
         "{}",
         serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?
@@ -1515,10 +1510,10 @@ fn run_release_readiness_report() -> Result<(), String> {
 }
 
 fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
-    let config_payload = fs::read_to_string(root.join("configs/suites/foundation_hardening.json"))
-        .map_err(|err| err.to_string())?;
-    let config: FoundationHardeningConfig =
-        serde_json::from_str(&config_payload).map_err(|err| err.to_string())?;
+    let config: FoundationHardeningConfig = serde_json::from_value(read_json_value(
+        &root.join("configs/suites/foundation_hardening.json"),
+    )?)
+    .map_err(|err| err.to_string())?;
     let required_surfaces = [
         "docs/reports/foundation/release_evidence_report.md",
         "docs/reports/foundation/repository_proof_statement.md",
@@ -1555,14 +1550,7 @@ fn run_release_compatibility_matrix() -> Result<(), String> {
         "rows": rows
     });
     let out = root.join("artifacts/release/compatibility_matrix.json");
-    if let Some(parent) = out.parent() {
-        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-    }
-    fs::write(
-        &out,
-        serde_json::to_string_pretty(&matrix).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    write_pretty_json(&out, &matrix)?;
     println!(
         "{}",
         serde_json::to_string_pretty(&matrix).map_err(|err| err.to_string())?
@@ -1654,19 +1642,13 @@ fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
 
     let readiness_path = root.join("artifacts/release/readiness_report.json");
     let readiness = if readiness_path.exists() {
-        serde_json::from_str::<Value>(
-            &fs::read_to_string(&readiness_path).map_err(|err| err.to_string())?,
-        )
-        .map_err(|err| err.to_string())?
+        read_json_value(&readiness_path)?
     } else {
         json!({"status": "missing", "hint": "run `bijux-dev-dag release readiness`"})
     };
     let matrix_path = root.join("artifacts/release/compatibility_matrix.json");
     let matrix = if matrix_path.exists() {
-        serde_json::from_str::<Value>(
-            &fs::read_to_string(&matrix_path).map_err(|err| err.to_string())?,
-        )
-        .map_err(|err| err.to_string())?
+        read_json_value(&matrix_path)?
     } else {
         json!({"status": "missing", "hint": "run `bijux-dev-dag release compatibility-matrix`"})
     };
@@ -1682,14 +1664,7 @@ fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
         }
     });
 
-    if let Some(parent) = output.parent() {
-        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-    }
-    fs::write(
-        &output,
-        serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
+    write_pretty_json(&output, &bundle)?;
     println!(
         "{}",
         serde_json::to_string_pretty(&bundle).map_err(|err| err.to_string())?
@@ -1732,9 +1707,7 @@ fn check_resource_baseline_ready(root: &Path) -> Value {
 }
 
 fn read_release_blockers(root: &Path) -> Result<Value, String> {
-    let payload = fs::read_to_string(root.join("configs/release/release_blockers.json"))
-        .map_err(|err| err.to_string())?;
-    serde_json::from_str(&payload).map_err(|err| err.to_string())
+    read_json_value(&root.join("configs/release/release_blockers.json"))
 }
 
 fn collect_fixture_rows(
