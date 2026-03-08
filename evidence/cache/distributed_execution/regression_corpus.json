@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "distributed-execution-completion-contracts",
+  "cases": [
+    {"id": "worker-registration", "coverage": ["worker-registration", "identity-preservation"]},
+    {"id": "worker-capability-reporting", "coverage": ["capability-reporting", "schema-stability"]},
+    {"id": "task-dispatch", "coverage": ["task-dispatch", "queue-contract"]},
+    {"id": "task-completion-reporting", "coverage": ["task-completion", "event-ordering"]},
+    {"id": "failure-reporting", "coverage": ["failure-reporting", "error-classification"]},
+    {"id": "timeout-detection", "coverage": ["timeout-detection", "retry-trigger"]},
+    {"id": "retry-scheduling", "coverage": ["retry-scheduling", "determinism"]},
+    {"id": "artifact-upload", "coverage": ["artifact-upload", "integrity"]},
+    {"id": "artifact-download", "coverage": ["artifact-download", "integrity"]},
+    {"id": "replay-compatibility", "coverage": ["replay-compatibility", "lineage-preservation"]},
+    {"id": "provenance-preservation", "coverage": ["provenance-preservation", "run-linkage"]},
+    {"id": "network-failure", "coverage": ["network-failure", "degradation-path"]},
+    {"id": "latency-tolerance", "coverage": ["latency-tolerance", "timeout-policy"]},
+    {"id": "distributed-determinism", "coverage": ["distributed-determinism", "result-stability"]}
+  ]
+}

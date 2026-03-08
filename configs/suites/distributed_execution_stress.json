@@ -1,0 +1,16 @@
+{
+  "id": "distributed-execution-stress",
+  "purpose": "distributed-execution-remote-worker-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test distributed_contracts",
+    "cargo test -p bijux-dev-dag --test remote_worker_protocol_contracts",
+    "cargo test -p bijux-dev-dag --test remote_worker_protocol_release_contracts",
+    "cargo test -p bijux-dev-dag --test distributed_execution_completion_contracts"
+  ],
+  "owner": "distributed-runtime",
+  "notes": [
+    "Covers worker protocol behavior, stress surfaces, and distributed diagnostics stability.",
+    "Use before release verification for remote worker contract changes."
+  ]
+}
