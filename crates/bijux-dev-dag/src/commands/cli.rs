@@ -216,7 +216,7 @@ pub(super) enum CommandLine {
     Compat,
 }
 
-include!("cli_control_command.inc");
+include!("cli_control_command.rs");
 
 #[derive(Subcommand)]
 pub(super) enum RepoCommand {
@@ -460,7 +460,7 @@ pub(super) enum RepoCommand {
     },
 }
 
-include!("cli_verify_command.inc");
+include!("cli_verify_command.rs");
 
 #[derive(Subcommand)]
 pub(super) enum ScheduleCommand {
@@ -614,4 +614,4 @@ pub(super) enum ApiCommand {
     PublicSurface,
 }
 
-include!("cli_release_command.inc");
+include!("cli_release_command.rs");

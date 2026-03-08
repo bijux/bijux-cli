@@ -279,7 +279,7 @@ pub(super) const RELEASE_SUITES: &[SuiteDef] = &[
     },
 ];
 
-include!("suite_catalog_repo.inc");
+include!("suite_catalog_repo.rs");
 
 #[cfg(test)]
 mod tests {
