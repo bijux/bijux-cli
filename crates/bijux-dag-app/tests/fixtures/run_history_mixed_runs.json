@@ -1,0 +1,50 @@
+[
+  {
+    "dir": "run-local-success",
+    "run_id": "local-success",
+    "status": "success",
+    "created_unix_ms": 100,
+    "run_metadata": {
+      "submission_source": "manual",
+      "trigger_source": "cli",
+      "parent_run_id": null,
+      "source_run_id": null
+    }
+  },
+  {
+    "dir": "run-imported-success",
+    "run_id": "imported-success",
+    "status": "success",
+    "created_unix_ms": 200,
+    "run_metadata": {
+      "submission_source": "import",
+      "trigger_source": "bundle",
+      "parent_run_id": null,
+      "source_run_id": "remote-run-11"
+    }
+  },
+  {
+    "dir": "run-replayed-failed",
+    "run_id": "replayed-failed",
+    "status": "failed",
+    "created_unix_ms": 300,
+    "run_metadata": {
+      "submission_source": "replay",
+      "trigger_source": "cli",
+      "parent_run_id": "local-success",
+      "source_run_id": "local-success"
+    }
+  },
+  {
+    "dir": "run-drifted-cancelled",
+    "run_id": "drifted-cancelled",
+    "status": "cancelled",
+    "created_unix_ms": 400,
+    "run_metadata": {
+      "submission_source": "replay",
+      "trigger_source": "policy",
+      "parent_run_id": "replayed-failed",
+      "source_run_id": "imported-success"
+    }
+  }
+]
