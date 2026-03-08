@@ -56,13 +56,12 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
     for line in content.lines() {
         if let Some(sf) = line.strip_prefix("SF:") {
             if let Some(file) = current_file.take() {
-                map.insert(
-                    file,
-                    FileCoverage {
-                        covered_lines: covered,
-                        instrumented_lines: total,
-                    },
-                );
+                let entry = map.entry(file).or_insert(FileCoverage {
+                    covered_lines: 0,
+                    instrumented_lines: 0,
+                });
+                entry.covered_lines += covered;
+                entry.instrumented_lines += total;
             }
             current_file = Some(to_repo_relative(root, sf));
             covered = 0;
@@ -85,13 +84,12 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
         }
         if line == "end_of_record" {
             if let Some(file) = current_file.take() {
-                map.insert(
-                    file,
-                    FileCoverage {
-                        covered_lines: covered,
-                        instrumented_lines: total,
-                    },
-                );
+                let entry = map.entry(file).or_insert(FileCoverage {
+                    covered_lines: 0,
+                    instrumented_lines: 0,
+                });
+                entry.covered_lines += covered;
+                entry.instrumented_lines += total;
             }
             covered = 0;
             total = 0;
@@ -99,13 +97,12 @@ fn parse_lcov(root: &Path, lcov_path: &Path) -> Result<BTreeMap<String, FileCove
     }
 
     if let Some(file) = current_file.take() {
-        map.insert(
-            file,
-            FileCoverage {
-                covered_lines: covered,
-                instrumented_lines: total,
-            },
-        );
+        let entry = map.entry(file).or_insert(FileCoverage {
+            covered_lines: 0,
+            instrumented_lines: 0,
+        });
+        entry.covered_lines += covered;
+        entry.instrumented_lines += total;
     }
 
     Ok(map)
