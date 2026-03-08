@@ -7,35 +7,14 @@ use tempfile as _;
 use std::process::Command;
 use tempfile::{tempdir, NamedTempFile};
 
-fn repo_root() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
-
 fn dag_command() -> Command {
-    if let Some(path) = option_env!("CARGO_BIN_EXE_bijux") {
-        if std::path::Path::new(path).exists() {
-            return Command::new(path);
-        }
-    }
-
-    let root = repo_root();
-    let cargo_bin = option_env!("CARGO").unwrap_or("cargo");
-    let mut command = Command::new(cargo_bin);
-    command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
-    command.env(
-        "LLVM_PROFILE_FILE",
-        root.join("artifacts/coverage/profraw/default_%m_%p.profraw"),
+    let path = option_env!("CARGO_BIN_EXE_bijux")
+        .expect("cargo test must provide CARGO_BIN_EXE_bijux for integration tests");
+    assert!(
+        std::path::Path::new(path).exists(),
+        "resolved bijux test binary path does not exist: {path}"
     );
-    command.args([
-        "run",
-        "--quiet",
-        "-p",
-        "bijux-dag-cli",
-        "--bin",
-        "bijux",
-        "--",
-    ]);
-    command
+    Command::new(path)
 }
 
 fn write_temp_dag() -> String {
