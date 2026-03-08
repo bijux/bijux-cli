@@ -115,7 +115,9 @@ fn rust_crate_source_files<'a>(
     entries: impl Iterator<Item = (&'a String, &'a FileCoverage)>,
 ) -> Vec<(String, FileCoverage)> {
     entries
-        .filter(|(path, _)| path.starts_with("crates/") && path.ends_with(".rs") && path.contains("/src/"))
+        .filter(|(path, _)| {
+            path.starts_with("crates/") && path.ends_with(".rs") && path.contains("/src/")
+        })
         .map(|(path, cov)| (path.clone(), cov.clone()))
         .collect()
 }
@@ -148,8 +150,10 @@ fn render_threshold_report(
         lines.push("| (none) | 0 | 0 | 100.00 |".to_string());
     }
     lines.push(String::new());
-    lines
-        .push("_Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._".to_string());
+    lines.push(
+        "_Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._"
+            .to_string(),
+    );
     lines.push(String::new());
     lines.join("\n")
 }
@@ -175,7 +179,9 @@ fn read_allowlist(path: &Path) -> Result<BTreeSet<String>, String> {
         serde_json::from_str(&payload).map_err(|err| format!("invalid allowlist json: {err}"))?;
     let arr = parsed["protected_zero_coverage_allowlist"]
         .as_array()
-        .ok_or_else(|| "allowlist must contain `protected_zero_coverage_allowlist` array".to_string())?;
+        .ok_or_else(|| {
+            "allowlist must contain `protected_zero_coverage_allowlist` array".to_string()
+        })?;
     let mut out = BTreeSet::new();
     for item in arr {
         let s = item
@@ -256,8 +262,10 @@ fn main() -> Result<(), String> {
         zero_lines.push("| (none) | 0 | 0 | 100.00 |".to_string());
     }
     zero_lines.push(String::new());
-    zero_lines
-        .push("_Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._".to_string());
+    zero_lines.push(
+        "_Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._"
+            .to_string(),
+    );
     zero_lines.push(String::new());
     write_text(&out_zero, &zero_lines.join("\n"))?;
 

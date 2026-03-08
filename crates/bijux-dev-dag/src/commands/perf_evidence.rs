@@ -248,13 +248,14 @@ mod tests {
         let root = repo_root().expect("repo root");
         let metadata = load_perf_metadata(&root).expect("perf metadata");
         assert!(metadata.get("contract_reference").is_some());
-        assert!(metadata.get("scenarios").and_then(Value::as_object).is_some());
-        assert!(
-            metadata
-                .get("release_relevant_set")
-                .and_then(Value::as_array)
-                .is_some()
-        );
+        assert!(metadata
+            .get("scenarios")
+            .and_then(Value::as_object)
+            .is_some());
+        assert!(metadata
+            .get("release_relevant_set")
+            .and_then(Value::as_array)
+            .is_some());
     }
 
     #[test]

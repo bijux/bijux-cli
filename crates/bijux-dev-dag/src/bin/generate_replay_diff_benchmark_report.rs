@@ -20,10 +20,9 @@ fn workspace_root() -> PathBuf {
 fn main() {
     let root = workspace_root();
     let registry_path = root.join("evidence/perf/scenario_registry.json");
-    let registry: Value = serde_json::from_str(
-        &fs::read_to_string(&registry_path).expect("read scenario registry"),
-    )
-    .expect("parse registry");
+    let registry: Value =
+        serde_json::from_str(&fs::read_to_string(&registry_path).expect("read scenario registry"))
+            .expect("parse registry");
 
     let mut selected = Vec::new();
     for entry in registry["entries"].as_array().into_iter().flatten() {
@@ -42,6 +41,5 @@ fn main() {
 
     let out = root.join("docs/reports/foundation/replay_diff_benchmark_focus_report.json");
     fs::create_dir_all(out.parent().expect("parent")).expect("mkdir");
-    fs::write(&out, serde_json::to_vec_pretty(&report).expect("encode"))
-        .expect("write");
+    fs::write(&out, serde_json::to_vec_pretty(&report).expect("encode")).expect("write");
 }

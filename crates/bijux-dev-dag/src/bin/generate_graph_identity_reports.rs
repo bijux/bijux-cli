@@ -62,7 +62,10 @@ fn main() -> Result<(), String> {
         "legacy_spec_aliases_normalized": ["0.1", "v0.1"],
         "identity_scope_note": "graph identity is a hash of canonical graph JSON only"
     });
-    write_file(&json_out, &serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?)?;
+    write_file(
+        &json_out,
+        &serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?,
+    )?;
 
     let md = r#"# Graph Identity Field Impact
 

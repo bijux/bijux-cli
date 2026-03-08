@@ -32,16 +32,15 @@ use battle_evidence::{
     run_battle_scenarios_by_trust_report, run_battle_scenarios_report,
     run_battle_trust_by_scenario_report,
 };
-use compare_evidence::{
-    run_compare_evidence_policy_verify, run_comparison_evidence_report,
-    run_comparison_harness_guard,
-};
 use command_runtime::{
     command_stdout as exec_command_stdout, run_status_and_json as exec_run_status_and_json,
     run_status_in_dir as exec_run_status_in_dir, run_stdout_and_json as exec_run_stdout_and_json,
     run_with_root as exec_run_with_root,
 };
-use shared_io::{read_json_value, write_pretty_json};
+use compare_evidence::{
+    run_compare_evidence_policy_verify, run_comparison_evidence_report,
+    run_comparison_harness_guard,
+};
 use evidence_access::{
     as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
     render_consumers_to_families_report, resolve_asset_by_id, resolve_assets_by_consumer,
@@ -61,6 +60,7 @@ use perf_evidence::{
     run_performance_evidence_guard, run_performance_evidence_report,
 };
 use reporting::run_command_reported;
+use shared_io::{read_json_value, write_pretty_json};
 use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
 
 mod cli;
@@ -4208,7 +4208,9 @@ fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String> {
     report.push_str("\n## Guardrails\n\n");
     report.push_str("- deterministic lowering across repeated runs for each fixture\n");
     report.push_str("- schema-required field presence from `execution_plan.schema.json`\n");
-    report.push_str("- fixture corpus includes linear/fan/diamond/resource/retry/replay-oriented shapes\n");
+    report.push_str(
+        "- fixture corpus includes linear/fan/diamond/resource/retry/replay-oriented shapes\n",
+    );
 
     write_report(&resolve_under_root(&root, out), &report)
 }
@@ -4228,7 +4230,13 @@ fn run_repo_artifact_capability_reports(matrix_out: &Path, model_out: &Path) -> 
     let fs_caps = fs_store.capabilities();
     let object_caps = object_store.capabilities();
 
-    let support_label = |implemented: bool| if implemented { "implemented" } else { "modeled" };
+    let support_label = |implemented: bool| {
+        if implemented {
+            "implemented"
+        } else {
+            "modeled"
+        }
+    };
 
     let matrix = format!(
         "# Artifact Store Capability Matrix\n\nGenerated from `crates/bijux-dag-artifacts/src/io/store.rs` backend capability declarations.\n\n| capability | filesystem store | object store model |\n|---|---|---|\n| write artifact payload | {} | {} |\n| read artifact payload | {} | {} |\n| runtime-backed execution | {} | {} |\n\nNotes:\n- Runtime source-of-truth currently implements filesystem storage semantics.\n- Object-store surface remains declared capability only and must not be presented as implemented runtime behavior.\n",

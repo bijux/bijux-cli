@@ -45,10 +45,7 @@ fn main() {
         "run_inspect.schema.json",
         "run_history.schema.json",
     ] {
-        required.insert(
-            name.to_string(),
-            required_fields(&operator.join(name)),
-        );
+        required.insert(name.to_string(), required_fields(&operator.join(name)));
     }
 
     let report = json!({
@@ -59,6 +56,9 @@ fn main() {
 
     let out = root.join("docs/reports/foundation/run_history_api_report.json");
     fs::create_dir_all(out.parent().expect("report parent")).expect("mkdir report parent");
-    fs::write(&out, serde_json::to_vec_pretty(&report).expect("encode report"))
-        .expect("write report");
+    fs::write(
+        &out,
+        serde_json::to_vec_pretty(&report).expect("encode report"),
+    )
+    .expect("write report");
 }
