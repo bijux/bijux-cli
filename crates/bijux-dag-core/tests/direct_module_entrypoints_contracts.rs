@@ -1,6 +1,8 @@
 use bijux_dag_core::canonical::{canonical_json, canonicalize_graph};
+use bijux_dag_core::compile::{compile_graph, compile_graph_with_defaults};
 use bijux_dag_core::edge::{EdgeDependencyKind, TypedEdge};
 use bijux_dag_core::resolve::resolve_graph;
+use bijux_dag_core::resources::GraphDefaults;
 use bijux_dag_core::topology::deterministic_topology_order;
 use bijux_dag_core::validate::{
     validate_graph, validate_schema, validate_semantics, validate_topology,
@@ -144,4 +146,49 @@ fn planner_module_lowers_graph_to_execution_plan() {
         .find(|node| node.id == "source")
         .expect("source node");
     assert!(source.deps.is_empty());
+}
+
+#[test]
+fn compile_module_compiles_graph_without_contract_packaging() {
+    let graph = parse_graph(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"source","kind":"const","params":{"value":"x"},"outputs":[{"name":"value","path":"source.txt"}]}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let compiled = compile_graph(&graph).expect("compile graph");
+    assert_eq!(compiled.normalized_graph.nodes.len(), 1);
+    assert_eq!(compiled.plan_hints.deterministic_topology_order, vec!["source".to_string()]);
+}
+
+#[test]
+fn compile_module_applies_defaults_without_contract_wrapper() {
+    let graph = parse_graph(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"source","kind":"const","params":{"value":"x"},"outputs":[{"name":"value","path":"source.txt"}]}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let defaults = GraphDefaults {
+        retry: Some(bijux_dag_core::RetryPolicy {
+            max_attempts: 3,
+            backoff_ms: 10,
+        }),
+        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 64 }),
+    };
+    let compiled = compile_graph_with_defaults(&graph, &defaults).expect("compile with defaults");
+    let node = compiled
+        .normalized_graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "source")
+        .expect("source node");
+    assert_eq!(node.retry.max_attempts, 3);
+    assert_eq!(node.resources.as_ref().map(|resources| resources.cpu), Some(1));
 }
