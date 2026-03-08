@@ -87,3 +87,43 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::backend_capability_payload;
+
+    #[test]
+    fn capability_query_output_is_stable_for_kubernetes() {
+        let first = backend_capability_payload("kubernetes").expect("kubernetes payload");
+        let second = backend_capability_payload("kubernetes").expect("kubernetes payload");
+        assert_eq!(first, second);
+        assert_eq!(first["format"], "capabilities/v1");
+        assert_eq!(first["backend"], "kubernetes");
+        assert_eq!(first["status"], "simulated");
+    }
+
+    #[test]
+    fn capability_query_output_is_stable_for_hpc() {
+        let first = backend_capability_payload("hpc").expect("hpc payload");
+        let second = backend_capability_payload("hpc").expect("hpc payload");
+        assert_eq!(first, second);
+        assert_eq!(first["format"], "capabilities/v1");
+        assert_eq!(first["backend"], "hpc");
+        assert_eq!(first["status"], "simulated");
+    }
+
+    #[test]
+    fn capability_query_output_is_stable_for_remote() {
+        let first = backend_capability_payload("remote").expect("remote payload");
+        let second = backend_capability_payload("remote").expect("remote payload");
+        assert_eq!(first, second);
+        assert_eq!(first["format"], "capabilities/v1");
+        assert_eq!(first["backend"], "remote");
+        assert_eq!(first["status"], "simulated");
+    }
+
+    #[test]
+    fn unknown_backend_query_is_rejected_by_surface() {
+        assert!(backend_capability_payload("unknown-backend").is_none());
+    }
+}
