@@ -216,31 +216,7 @@ pub(super) enum CommandLine {
     Compat,
 }
 
-#[derive(Subcommand)]
-pub(super) enum ControlCommand {
-    /// Execute suite checks
-    Run {
-        #[arg(long)]
-        domain: Option<String>,
-        #[arg(long)]
-        fail_fast: bool,
-        #[arg(long)]
-        include_slow: bool,
-        #[arg(long)]
-        include_internal: bool,
-        #[arg(long, default_value_t = false)]
-        advisory: bool,
-        #[arg(long, default_value_t = false)]
-        why: bool,
-    },
-    /// Show known suites
-    List,
-    /// Explain a suite
-    Explain {
-        #[arg(long)]
-        suite: String,
-    },
-}
+include!("cli_control_command.inc");
 
 #[derive(Subcommand)]
 pub(super) enum RepoCommand {
@@ -427,6 +403,39 @@ pub(super) enum RepoCommand {
         out: PathBuf,
         #[arg(long, default_value = "configs/schema")]
         schema_root: PathBuf,
+    },
+    /// Generate runtime kernel-boundary and API-scope reports from policy and source
+    RuntimeScopeReports {
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/kernel_owned_modules_report.md"
+        )]
+        kernel_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/runtime_non_kernel_modules_report.md"
+        )]
+        non_kernel_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/runtime_contract_backing_report.md"
+        )]
+        contract_backing_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/runtime_operator_surface_report.md"
+        )]
+        operator_surface_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/core_public_api_shrink_report.md"
+        )]
+        core_api_out: PathBuf,
+        #[arg(
+            long,
+            default_value = "docs/reports/foundation/runtime_public_api_shrink_report.md"
+        )]
+        runtime_api_out: PathBuf,
     },
 }
 

@@ -565,6 +565,36 @@ fn run(cli: Cli) -> Result<(), String> {
                 json!({ "out": out, "schema_root": schema_root }),
                 || run_repo_schema_changelog(&out, &schema_root),
             ),
+            RepoCommand::RuntimeScopeReports {
+                kernel_out,
+                non_kernel_out,
+                contract_backing_out,
+                operator_surface_out,
+                core_api_out,
+                runtime_api_out,
+            } => run_command_reported(
+                &context,
+                "repo.runtime-scope-reports",
+                CommandEffect::ReadWrite,
+                json!({
+                    "kernel_out": kernel_out,
+                    "non_kernel_out": non_kernel_out,
+                    "contract_backing_out": contract_backing_out,
+                    "operator_surface_out": operator_surface_out,
+                    "core_api_out": core_api_out,
+                    "runtime_api_out": runtime_api_out
+                }),
+                || {
+                    run_repo_runtime_scope_reports(
+                        &kernel_out,
+                        &non_kernel_out,
+                        &contract_backing_out,
+                        &operator_surface_out,
+                        &core_api_out,
+                        &runtime_api_out,
+                    )
+                },
+            ),
         },
         CommandLine::Verify { command } => match command {
             VerifyCommand::EvidenceFoundation => run_command_reported(
@@ -3927,6 +3957,229 @@ fn run_repo_schema_changelog(out: &Path, schema_root: &Path) -> Result<(), Strin
     }
 
     write_report(&resolve_under_root(&root, out), &report)?;
+    Ok(())
+}
+
+fn collect_markdown_files_under(root: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut files = Vec::new();
+    collect_all_files(root, &mut files)?;
+    Ok(files
+        .into_iter()
+        .filter(|p| p.extension().and_then(|ext| ext.to_str()) == Some("md"))
+        .collect())
+}
+
+fn markdown_contains_path(rel_path: &str, markdown_files: &[PathBuf], root: &Path) -> bool {
+    markdown_files.iter().any(|doc| {
+        fs::read_to_string(doc)
+            .map(|body| body.contains(rel_path))
+            .unwrap_or(false)
+            && doc.strip_prefix(root).is_ok()
+    })
+}
+
+fn collect_public_item_count(src_dir: &Path) -> Result<usize, String> {
+    let mut files = Vec::new();
+    collect_all_files(src_dir, &mut files)?;
+    let mut count = 0usize;
+    for file in files {
+        if file.extension().and_then(|ext| ext.to_str()) != Some("rs") {
+            continue;
+        }
+        let body = fs::read_to_string(&file).map_err(|err| err.to_string())?;
+        count += body
+            .lines()
+            .filter(|line| {
+                let trimmed = line.trim_start();
+                trimmed.starts_with("pub ") || trimmed.starts_with("pub(")
+            })
+            .count();
+    }
+    Ok(count)
+}
+
+fn run_repo_runtime_scope_reports(
+    kernel_out: &Path,
+    non_kernel_out: &Path,
+    contract_backing_out: &Path,
+    operator_surface_out: &Path,
+    core_api_out: &Path,
+    runtime_api_out: &Path,
+) -> Result<(), String> {
+    let root = repo_root()?;
+    let scope_payload = fs::read_to_string(root.join("configs/policy/runtime_scope_v2.json"))
+        .map_err(|err| err.to_string())?;
+    let scope: Value = serde_json::from_str(&scope_payload).map_err(|err| err.to_string())?;
+    let entries = scope["module_entries"]
+        .as_array()
+        .ok_or_else(|| "runtime_scope_v2.module_entries must be an array".to_string())?;
+
+    let mut kernel_modules = Vec::new();
+    let mut non_kernel_modules = Vec::new();
+    for entry in entries {
+        let module = entry["module"]
+            .as_str()
+            .ok_or_else(|| "runtime scope entry missing module".to_string())?;
+        let decision = entry["decision"].as_str().unwrap_or("keep");
+        let classification = entry["classification"].as_str().unwrap_or("support");
+        let rationale = entry["rationale"].as_str().unwrap_or("");
+        let rel = format!("crates/bijux-dag-runtime/src/{module}");
+        let is_kernel = module.starts_with("runtime_core/")
+            || module.starts_with("artifacts/")
+            || module.starts_with("cache/")
+            || module.starts_with("replay/")
+            || module.starts_with("policy/");
+        if is_kernel && decision == "keep" {
+            kernel_modules.push((
+                module.to_string(),
+                classification.to_string(),
+                rationale.to_string(),
+            ));
+        } else {
+            non_kernel_modules.push((
+                module.to_string(),
+                classification.to_string(),
+                decision.to_string(),
+                rationale.to_string(),
+                rel,
+            ));
+        }
+    }
+    kernel_modules.sort();
+    non_kernel_modules.sort();
+
+    let mut kernel_report = String::from(
+        "# Kernel Owned Runtime Modules\n\nGenerated from `configs/policy/runtime_scope_v2.json`.\n\n",
+    );
+    kernel_report.push_str("## Runtime kernel-owned module set\n\n");
+    for (module, classification, rationale) in &kernel_modules {
+        kernel_report.push_str(&format!("- `{module}` ({classification}): {rationale}\n"));
+    }
+    kernel_report.push_str(&format!("\nTotal: `{}` modules.\n", kernel_modules.len()));
+
+    let mut non_kernel_report = String::from(
+        "# Runtime Non-Kernel Modules\n\nGenerated from `configs/policy/runtime_scope_v2.json`.\n\n",
+    );
+    non_kernel_report.push_str("## Runtime modules outside kernel ownership\n\n");
+    for (module, classification, decision, rationale, _) in &non_kernel_modules {
+        non_kernel_report.push_str(&format!(
+            "- `{module}` ({classification}, decision `{decision}`): {rationale}\n"
+        ));
+    }
+    non_kernel_report.push_str(&format!(
+        "\nTotal: `{}` modules.\n",
+        non_kernel_modules.len()
+    ));
+
+    let runtime_tests = root.join("crates/bijux-dag-runtime/tests");
+    let dev_tests = root.join("crates/bijux-dev-dag/tests");
+    let docs_spec = root.join("docs/spec");
+    let docs_arch = root.join("docs/architecture");
+    let mut test_files = Vec::new();
+    collect_all_files(&runtime_tests, &mut test_files)?;
+    collect_all_files(&dev_tests, &mut test_files)?;
+    let docs_spec_files = collect_markdown_files_under(&docs_spec)?;
+    let docs_arch_files = collect_markdown_files_under(&docs_arch)?;
+
+    let mut contract_backed = Vec::new();
+    let mut documented_only = Vec::new();
+    let mut unclassified = Vec::new();
+    for (_, _, _, _, rel) in &non_kernel_modules {
+        let referenced_by_tests = test_files.iter().any(|file| {
+            fs::read_to_string(file)
+                .map(|body| body.contains(rel))
+                .unwrap_or(false)
+        });
+        let referenced_by_docs = markdown_contains_path(rel, &docs_spec_files, &root)
+            || markdown_contains_path(rel, &docs_arch_files, &root);
+        if referenced_by_tests {
+            contract_backed.push(rel.clone());
+        } else if referenced_by_docs {
+            documented_only.push(rel.clone());
+        } else {
+            unclassified.push(rel.clone());
+        }
+    }
+    contract_backed.sort();
+    documented_only.sort();
+    unclassified.sort();
+
+    let mut contract_backing_report = String::from(
+        "# Runtime Contract Backing Report\n\nGenerated by scanning runtime module paths in policy against runtime/dev tests and architecture/spec docs.\n\n",
+    );
+    contract_backing_report.push_str("## Contract-backed modules\n\n");
+    for rel in &contract_backed {
+        contract_backing_report.push_str(&format!("- `{rel}`\n"));
+    }
+    contract_backing_report.push_str("\n## Documented-only modules\n\n");
+    for rel in &documented_only {
+        contract_backing_report.push_str(&format!("- `{rel}`\n"));
+    }
+    contract_backing_report.push_str("\n## Unclassified modules\n\n");
+    for rel in &unclassified {
+        contract_backing_report.push_str(&format!("- `{rel}`\n"));
+    }
+
+    let mut operator_facing = Vec::new();
+    let mut internal_only = Vec::new();
+    for (_, _, _, _, rel) in &non_kernel_modules {
+        let rel_mod = rel
+            .strip_prefix("crates/bijux-dag-runtime/src/")
+            .unwrap_or(rel.as_str());
+        let is_operator_facing = rel_mod.starts_with("diagnostics/runtime/")
+            || rel_mod.starts_with("replay/")
+            || rel_mod == "artifacts/verifier.rs"
+            || rel_mod == "artifacts/storage/recovery.rs";
+        if is_operator_facing {
+            operator_facing.push(rel.clone());
+        } else {
+            internal_only.push(rel.clone());
+        }
+    }
+    operator_facing.sort();
+    internal_only.sort();
+
+    let mut operator_surface_report = String::from(
+        "# Runtime Operator Surface Report\n\nGenerated from runtime scope policy path classification.\n\n",
+    );
+    operator_surface_report.push_str("## Operator-facing modules\n\n");
+    for rel in &operator_facing {
+        operator_surface_report.push_str(&format!("- `{rel}`\n"));
+    }
+    operator_surface_report.push_str("\n## Internal-only modules\n\n");
+    for rel in &internal_only {
+        operator_surface_report.push_str(&format!("- `{rel}`\n"));
+    }
+
+    let core_src = root.join("crates/bijux-dag-core/src");
+    let runtime_src = root.join("crates/bijux-dag-runtime/src");
+    let core_pub = collect_public_item_count(&core_src)?;
+    let runtime_pub = collect_public_item_count(&runtime_src)?;
+    let core_api_report = format!(
+        "# Core Public API Shrink Report\n\nGenerated from current source scan.\n\n- crate: `bijux-dag-core`\n- public item declarations: `{core_pub}`\n- target direction: keep canonical graph and planning APIs explicit while reducing incidental exposure.\n"
+    );
+    let runtime_api_report = format!(
+        "# Runtime Public API Shrink Report\n\nGenerated from current source scan.\n\n- crate: `bijux-dag-runtime`\n- public item declarations: `{runtime_pub}`\n- target direction: keep deterministic execution kernel APIs explicit while isolating modeled/platform surfaces.\n"
+    );
+
+    write_report(&resolve_under_root(&root, kernel_out), &kernel_report)?;
+    write_report(
+        &resolve_under_root(&root, non_kernel_out),
+        &non_kernel_report,
+    )?;
+    write_report(
+        &resolve_under_root(&root, contract_backing_out),
+        &contract_backing_report,
+    )?;
+    write_report(
+        &resolve_under_root(&root, operator_surface_out),
+        &operator_surface_report,
+    )?;
+    write_report(&resolve_under_root(&root, core_api_out), &core_api_report)?;
+    write_report(
+        &resolve_under_root(&root, runtime_api_out),
+        &runtime_api_report,
+    )?;
     Ok(())
 }
 
