@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
     evaluate_dry_run, invalidate_decision_cache, is_action_allowed_in_environment,
     validate_custom_role, Action, ActionKind, CustomRoleDefinition, DecisionType,

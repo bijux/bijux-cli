@@ -79,7 +79,6 @@ mod ha_scheduler;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
 mod internal;
-pub mod simulated_platform;
 #[path = "runtime_core/governance/invariants.rs"]
 pub mod invariants;
 #[cfg(test)]
@@ -146,6 +145,7 @@ pub mod selectors;
 mod semantic_lineage;
 #[path = "internal/control/services.rs"]
 pub mod services;
+pub mod simulated_platform;
 #[path = "runtime_core/execution/state_machine.rs"]
 pub mod state_machine;
 #[cfg(test)]
@@ -177,27 +177,6 @@ pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
 pub use async_adapter::AsyncAdapter;
-pub use auth_identity::{
-    can_renew_credential, credential_is_expired, credential_scopes_matrix,
-    local_dev_bypass_allowed, migrate_identity_provider_compatible, readiness_for_federation,
-    revoked_principals_set, trust_health_report, ArtifactSigningIdentity, AuthProvider,
-    AuthenticationBoundary, AuthenticationEvent, AuthenticationEventKind, CredentialLifecycle,
-    CredentialProvenanceRecord, CredentialRevocation, CredentialScope, CredentialStorageGuideline,
-    IdentityFederationReadiness, IdentityPrincipal, IdentityPrincipalKind,
-    IdentityProviderCompatibilityRule, LocalDevAuthBypassRule, MutualAuthDesignNote,
-    PluginTrustRegistration, SchedulerBootstrapTrustFlow, TrustDomain, TrustHealthReport,
-    WorkerBootstrapTrustFlow, WorkerCredentialBinding,
-};
-pub use authz_policy::{
-    builtin_role_definitions, decision_cache_key, evaluate_authorization_acceptance,
-    evaluate_dry_run, has_permission, invalidate_decision_cache, is_action_allowed_in_environment,
-    role_catalog_by_name, validate_custom_role, Action, ActionKind, AuthorizationAcceptanceReport,
-    BuiltInRole, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
-    IdentityPermissionProfile, PermissionBoundary, PolicyDecisionCache, PolicyDecisionCacheEntry,
-    PolicyDecisionRecord, PolicyDryRunResult, PolicyEvaluationEngine, PolicyEvaluationRequest,
-    PolicyEvaluationResult, PolicyEvaluationTrace, ResourceKind, ResourceRef, ResourceScope,
-    RoleDefinition, SensitiveControlPermissions, SubjectIdentity, SubjectKind,
-};
 pub use backend_cluster::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
     capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
@@ -249,14 +228,6 @@ use clock::{Clock, SystemClock};
 pub use container_execution::{
     container_env_isolated, map_local_path_to_container, validate_container_contract,
     validate_container_relative_path, ContainerExecutionContract, ContainerMount,
-};
-pub use control_plane::{
-    register_dag_version, resolve_environment_values, select_dag_version, AuthorizationDecision,
-    AuthorizationRequest, AuthorizationSubject, CompatibilityDecision, DagRegistry,
-    DagRegistryEntry, DagRegistryStore, DagVersionRecord, DagVersionSelectionPolicy,
-    DagVersionStatus, EnvironmentConfiguration, EnvironmentMode, PolicyBundle, PolicyDecision,
-    PolicyDomain, PolicyEngine, RunControlOperation, TypedControlPlaneRequest,
-    TypedControlPlaneResponse, ValidationRequest, ValidationResponse, ValidationService,
 };
 pub use coordination::{
     merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,

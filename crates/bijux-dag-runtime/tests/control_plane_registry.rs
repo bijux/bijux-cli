@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     register_dag_version, resolve_environment_values, select_dag_version, CompatibilityDecision,
     DagRegistry, DagVersionRecord, DagVersionSelectionPolicy, DagVersionStatus,
     EnvironmentConfiguration, EnvironmentMode, RunControlOperation, TypedControlPlaneRequest,
