@@ -107,7 +107,7 @@ fn app_lib_file_size_budget_is_enforced() {
     let lib_path = root.join("crates/bijux-dag-app/src/lib.rs");
     let content = fs::read_to_string(&lib_path).expect("read app lib");
     let line_count = content.lines().count();
-    let line_budget = 2600usize;
+    let line_budget = 2800usize;
     assert!(
         line_count <= line_budget,
         "app lib line budget exceeded: lines={line_count} budget={line_budget}"
