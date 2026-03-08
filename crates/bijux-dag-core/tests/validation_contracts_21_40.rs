@@ -88,7 +88,7 @@ fn flags_invalid_root_topology_as_orphan_warning() {
 }
 
 #[test]
-fn rejects_graph_with_no_executable_nodes() {
+fn covers_graph_with_no_executable_nodes_shape() {
     let raw = json!({
       "spec":"bijux-dag/v0.1",
       "meta":{"name":"no-executable","owners":[],"tags":[]},
@@ -99,7 +99,7 @@ fn rejects_graph_with_no_executable_nodes() {
     let graph = parse_graph_strict(&raw).expect("parse graph");
     assert!(
         graph.nodes.is_empty(),
-        "empty node set must be represented and covered by validation contracts"
+        "empty node set must stay representable for explicit validation coverage"
     );
 }
 
