@@ -1,9 +1,4 @@
-# Evidence Trust for Release Notes
+# Superseded by evidence cluster contract
 
-Release-note-safe evidence outputs:
-- `evidence/release/release_evidence.json`
-- `evidence/reports/what_this_release_proves.md`
-- `evidence/reports/what_this_release_does_not_prove.md`
-- `docs/reports/foundation/release_critical_evidence_matrix.md`
-
-These outputs are suitable for release-note claims because they are tied to executable verification surfaces and lane gates.
+- Superseded by: [EVIDENCE_MODEL_AND_PUBLICATION_CONTRACT.md](./EVIDENCE_MODEL_AND_PUBLICATION_CONTRACT.md)
+- Appendix source: [appendices/evidence/EVIDENCE_RELEASE_NOTE_TRUST.md](./appendices/evidence/EVIDENCE_RELEASE_NOTE_TRUST.md)

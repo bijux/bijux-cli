@@ -1,9 +1,4 @@
-# Benchmark Types
+# Superseded by benchmark cluster contract
 
-## Microbenchmarks
-- crate-level, low-level, isolated operations
-- useful for regression localization
-
-## Scenario benchmarks
-- user-facing command and workflow latency
-- used for product-level performance claims and release decisions
+- Superseded by: [BENCHMARK_EVIDENCE_AND_CLAIM_CONTRACT.md](./BENCHMARK_EVIDENCE_AND_CLAIM_CONTRACT.md)
+- Appendix source: [appendices/benchmark/BENCHMARK_TYPES.md](./appendices/benchmark/BENCHMARK_TYPES.md)

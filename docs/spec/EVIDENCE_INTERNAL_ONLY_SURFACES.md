@@ -1,9 +1,4 @@
-# Internal-Only Evidence Surfaces
+# Superseded by evidence cluster contract
 
-The following outputs are internal diagnostics and should not be used as release-note claim sources:
-- `docs/reports/foundation/evidence_ci_exercise_report.md`
-- `docs/reports/foundation/evidence_report_consolidation.md`
-- `docs/reports/foundation/evidence_docs_without_checks_report.md`
-- `docs/reports/foundation/evidence_checks_without_docs_report.md`
-
-These surfaces support governance operations and gap analysis, not public release claims.
+- Superseded by: [EVIDENCE_MODEL_AND_PUBLICATION_CONTRACT.md](./EVIDENCE_MODEL_AND_PUBLICATION_CONTRACT.md)
+- Appendix source: [appendices/evidence/EVIDENCE_INTERNAL_ONLY_SURFACES.md](./appendices/evidence/EVIDENCE_INTERNAL_ONLY_SURFACES.md)

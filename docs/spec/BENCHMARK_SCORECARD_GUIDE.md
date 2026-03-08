@@ -1,7 +1,4 @@
-# Benchmark Scorecard Guide
+# Superseded by benchmark cluster contract
 
-How to read benchmark scorecards:
-- focus on trend direction across comparable scenarios
-- treat single-run spikes as noise unless repeated
-- use regression thresholds from `configs/policy/benchmark_regression_thresholds.json`
-- only publish performance claims when raw benchmark data is linked
+- Superseded by: [BENCHMARK_EVIDENCE_AND_CLAIM_CONTRACT.md](./BENCHMARK_EVIDENCE_AND_CLAIM_CONTRACT.md)
+- Appendix source: [appendices/benchmark/BENCHMARK_SCORECARD_GUIDE.md](./appendices/benchmark/BENCHMARK_SCORECARD_GUIDE.md)
