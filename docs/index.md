@@ -247,3 +247,5 @@
 - [Performance and capacity engineering](./PERFORMANCE_CAPACITY_ENGINEERING.md)
 - [Environment scale profiles](./ENVIRONMENT_SCALE_PROFILES.md)
 - [CI workflows](./operations/CI_WORKFLOWS.md)
+
+- [Run lineage vs artifact lineage](./spec/RUN_VS_ARTIFACT_LINEAGE.md)

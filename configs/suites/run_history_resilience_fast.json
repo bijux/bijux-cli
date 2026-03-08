@@ -1,0 +1,10 @@
+{
+  "id": "run-history-resilience-fast",
+  "description": "Fast resilience checks for run history, ancestry, and damaged run directory handling.",
+  "commands": [
+    "cargo test -p bijux-dag-app --test run_history_contract",
+    "cargo test -p bijux-dag-app --test run_history_hardening_contract",
+    "cargo test -p bijux-dag-app --test run_history_reliability_contract",
+    "cargo test -p bijux-dag-app --test run_history_ancestry_contracts"
+  ]
+}
