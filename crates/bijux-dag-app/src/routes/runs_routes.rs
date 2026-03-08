@@ -299,3 +299,149 @@ pub(crate) fn handle_runs_command(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::handle_runs_command;
+    use crate::commands::{Commands, DagCli, RunsCommands};
+    use crate::ExitCode;
+    use serde_json::json;
+    use std::fs;
+    use std::path::Path;
+
+    fn quiet_json_cli() -> DagCli {
+        DagCli {
+            json: true,
+            quiet: true,
+            command: Commands::Version,
+        }
+    }
+
+    fn write_run(root: &Path, run_id: &str, imported: bool) {
+        let run = root.join(run_id);
+        fs::create_dir_all(run.join("nodes/n1")).expect("mkdir nodes");
+        let mut manifest = json!({
+            "run_id": run_id,
+            "status": "success",
+            "run_dir_format": "run-dir/v0.1",
+            "graph_fingerprint": "g1",
+            "created_unix_ms": 1,
+            "started_unix_ms": 1,
+            "finished_unix_ms": 2,
+            "node_counts": {"success": 1, "failed": 0, "skipped": 0, "cached": 0},
+            "run_metadata": {"submission_source": "manual", "trigger_source": "manual"}
+        });
+        if imported {
+            manifest["run_metadata"]["submission_source"] = json!("imported");
+        }
+        fs::write(
+            run.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest).expect("manifest"),
+        )
+        .expect("write manifest");
+        fs::write(
+            run.join("snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph": {
+                    "nodes": [{"id":"n1"}],
+                    "edges": []
+                }
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        fs::write(run.join("outputs.index.json"), b"[]").expect("write outputs index");
+        fs::write(
+            run.join("nodes/n1/trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "status":"success","started_unix_ms":1,"finished_unix_ms":2,"attempt":1
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+    }
+
+    #[test]
+    fn runs_routes_support_listing_and_summary_flows() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-a", false);
+        let cli = quiet_json_cli();
+        let list = handle_runs_command(
+            &cli,
+            &RunsCommands::List {
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("list");
+        assert_eq!(list, ExitCode::SUCCESS);
+        let summary = handle_runs_command(
+            &cli,
+            &RunsCommands::Summary {
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("summary");
+        assert_eq!(summary, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runs_routes_support_timeline_and_tree_flows() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-tree", false);
+        let cli = quiet_json_cli();
+        let tree = handle_runs_command(
+            &cli,
+            &RunsCommands::Tree {
+                run_id: "run-tree".to_string(),
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("tree");
+        assert_eq!(tree, ExitCode::SUCCESS);
+        let timeline = handle_runs_command(
+            &cli,
+            &RunsCommands::Timeline {
+                run_id: "run-tree".to_string(),
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("timeline");
+        assert_eq!(timeline, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runs_routes_support_imported_bundle_like_flows() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-imported", true);
+        let cli = quiet_json_cli();
+        let inspect = handle_runs_command(
+            &cli,
+            &RunsCommands::Inspect {
+                run_id: "run-imported".to_string(),
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("inspect");
+        assert_eq!(inspect, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runs_routes_reject_corrupted_run_dir_without_panic() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let run = tmp.path().join("run-bad");
+        fs::create_dir_all(&run).expect("mkdir");
+        fs::write(run.join("manifest.json"), b"{bad-json").expect("manifest");
+        let cli = quiet_json_cli();
+        let result = std::panic::catch_unwind(|| {
+            handle_runs_command(
+                &cli,
+                &RunsCommands::Timeline {
+                    run_id: "run-bad".to_string(),
+                    root: tmp.path().to_path_buf(),
+                },
+            )
+        });
+        assert!(result.is_ok(), "timeline flow should not panic");
+        assert!(result.expect("result").is_err());
+    }
+}

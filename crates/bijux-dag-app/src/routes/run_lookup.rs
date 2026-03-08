@@ -31,4 +31,18 @@ mod tests {
             "r-123"
         );
     }
+
+    #[test]
+    fn malformed_manifest_is_rejected_without_panic() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("manifest.json"), b"{bad-json").expect("write manifest");
+        assert!(read_manifest_json(tmp.path()).is_err());
+    }
+
+    #[test]
+    fn missing_run_id_is_rejected() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("manifest.json"), r#"{"status":"ok"}"#).expect("write manifest");
+        assert!(read_run_identifier(tmp.path()).is_err());
+    }
 }

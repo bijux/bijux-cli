@@ -27,4 +27,26 @@ mod tests {
             Some("missing run")
         );
     }
+
+    #[test]
+    fn maps_known_exit_codes_to_stable_numbers() {
+        assert_eq!(
+            simple_failure_payload(ExitCode::SUCCESS, "ok")
+                .get("exit_code")
+                .and_then(|v| v.as_i64()),
+            Some(0)
+        );
+        assert_eq!(
+            simple_failure_payload(ExitCode::from(2), "bad")
+                .get("exit_code")
+                .and_then(|v| v.as_i64()),
+            Some(2)
+        );
+        assert_eq!(
+            simple_failure_payload(ExitCode::from(9), "unknown")
+                .get("exit_code")
+                .and_then(|v| v.as_i64()),
+            Some(1)
+        );
+    }
 }

@@ -146,6 +146,25 @@ mod tests {
         (dir, dag)
     }
 
+    fn write_invalid_graph_fixture() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph-invalid.json");
+        fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"bad-plan","owners":[],"tags":[]},
+              "nodes":[
+                {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"same/out"}],"params":{"value":"1"}},
+                {"id":"b","kind":"const","inputs":[],"outputs":[{"name":"out","path":"same/out"}],"params":{"value":"2"}}
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("write invalid graph");
+        (dir, dag)
+    }
+
     #[test]
     fn plan_explain_success_path_returns_success() {
         let (_tmp, dag) = write_graph_fixture();
@@ -223,5 +242,23 @@ b: included because it depends on a";
         let cli = quiet_json_cli();
         let code = handle_plan_command(&cli, &PlanCommands::Explain { dag }).expect("plan explain");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn plan_diagnostics_error_flow_is_stable_for_invalid_graph() {
+        let (_tmp, dag) = write_invalid_graph_fixture();
+        let cli = quiet_json_cli();
+        let code = handle_plan_command(&cli, &PlanCommands::Diagnostics { dag }).unwrap_err();
+        assert_eq!(code, ExitCode::from(3));
+    }
+
+    #[test]
+    fn plan_explain_dump_flow_is_stable_for_valid_graph() {
+        let (_tmp, dag) = write_graph_fixture();
+        let raw = fs::read_to_string(dag).expect("read graph");
+        let graph = crate::parse_graph(&raw).expect("graph");
+        let plan = crate::lower_graph_to_execution_plan(&graph, crate::PlanOptions::default())
+            .expect("plan");
+        assert!(!plan.ordering.is_empty(), "plan ordering should not be empty");
     }
 }

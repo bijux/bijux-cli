@@ -1,0 +1,8 @@
+run_id: "run-1"
+status: "success"
+origin: "manual"
+integrity_state: null
+retry_count: 0
+cache_hits: 0
+artifact_count: 1
+timing_ms: null
