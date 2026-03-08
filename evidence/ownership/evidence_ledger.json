@@ -155,6 +155,40 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/conflicting_retry_timeout_policy.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/conflicting_retry_timeout_policy.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/conflicting_retry_timeout_policy.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/conflicting_retry_timeout_policy.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/cycle.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/cycle.json",
       "consumer_surfaces": [
@@ -243,6 +277,40 @@
       "kind": "authoring",
       "owner": "team-core",
       "path": "crates/bijux-dag-core/tests/fixtures/dup_id.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/duplicate_outputs_per_node.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/duplicate_outputs_per_node.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/duplicate_outputs_per_node.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/duplicate_outputs_per_node.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -359,6 +427,74 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/illegal_output_path_traversal.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/illegal_output_path_traversal.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/illegal_output_path_traversal.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/illegal_output_path_traversal.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_ref.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_ref.json",
       "consumer_surfaces": [
@@ -379,6 +515,40 @@
       "kind": "authoring",
       "owner": "team-core",
       "path": "crates/bijux-dag-core/tests/fixtures/invalid_ref.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_resource_declaration.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_resource_declaration.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/invalid_resource_declaration.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/invalid_resource_declaration.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -685,6 +855,40 @@
       "kind": "authoring",
       "owner": "team-core",
       "path": "crates/bijux-dag-core/tests/fixtures/unreachable.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/unsupported_node_settings.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/unsupported_node_settings.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/unsupported_node_settings.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/unsupported_node_settings.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
