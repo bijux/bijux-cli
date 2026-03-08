@@ -136,7 +136,8 @@ pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
 }
 
 pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
-    let snapshot = read_json(&run_dir.join("snapshot.json"))?;
+    let snapshot = read_json(&run_dir.join("snapshot.json"))
+        .or_else(|_| read_json(&run_dir.join("run.snapshot.json")))?;
     let nodes = snapshot
         .get("graph")
         .and_then(|g| g.get("nodes"))
