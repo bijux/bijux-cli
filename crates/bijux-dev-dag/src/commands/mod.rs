@@ -15,16 +15,17 @@ mod battle_evidence;
 mod benchmark_harness;
 mod command_runtime;
 mod compare_evidence;
+mod docs_governance;
 mod evidence_access;
 mod evidence_control_plane;
 mod evidence_registry;
 mod file_catalog;
 mod model;
+mod ops;
 mod perf_evidence;
 mod reporting;
 mod shared_io;
 mod suite_dispatch;
-mod ops;
 
 use authoring_evidence::{
     run_authoring_coverage_report, run_show_effective_all_authoring, run_validate_all_authoring,
@@ -43,6 +44,11 @@ use compare_evidence::{
     run_compare_evidence_policy_verify, run_comparison_evidence_report,
     run_comparison_harness_guard,
 };
+use docs_governance::{
+    run_docs_config_reduction_guard, run_docs_contract_reference_guard, run_docs_coverage_report,
+    run_docs_governance_guard, run_docs_index_generate, run_docs_link_check,
+    run_docs_schema_reference_guard, run_naming_governance_guard,
+};
 use evidence_access::{
     as_json as evidence_assets_as_json, load_registry_assets, render_assets_to_consumers_report,
     render_consumers_to_families_report, resolve_asset_by_id, resolve_assets_by_consumer,
@@ -60,6 +66,7 @@ use file_catalog::{
     collect_all_files, collect_files_with_extension, newest_run, two_latest_runs, wildcard_match,
 };
 use model::{CommandContext, CommandEffect, SuiteDef};
+use ops::*;
 use perf_evidence::{
     run_perf_evidence_policy_verify, run_perf_evidence_summary, run_perf_release_set,
     run_performance_evidence_guard, run_performance_evidence_report,
@@ -67,7 +74,6 @@ use perf_evidence::{
 use reporting::run_command_reported;
 use shared_io::{read_json_value, write_pretty_json};
 use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
-use ops::*;
 
 mod cli;
 
