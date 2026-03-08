@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/operator/run_verify_report.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "status": "example",
+    "mode": "example",
+    "artifacts_checked": "example",
+    "errors": "example",
+    "invariant_violations": "example"
+  }
+}

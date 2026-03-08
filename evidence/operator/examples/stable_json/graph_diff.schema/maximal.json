@@ -1,0 +1,9 @@
+{
+  "schema": "configs/schema/operator/graph_diff.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "canonical": "example",
+    "changed_paths": "example",
+    "raw": "example"
+  }
+}

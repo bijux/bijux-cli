@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/prove_output.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "schema_version": "example",
+    "proof_id": "example",
+    "complete": "example",
+    "determinism": "example"
+  }
+}

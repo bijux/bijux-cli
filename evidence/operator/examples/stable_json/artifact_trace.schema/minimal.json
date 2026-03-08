@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/artifact_trace.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "artifact_id": "example",
+    "path": "example",
+    "provenance": "example",
+    "lineage": "example"
+  }
+}

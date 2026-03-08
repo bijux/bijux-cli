@@ -1,0 +1,11 @@
+{
+  "schema": "configs/schema/operator/run_summary.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "reports": "example",
+    "runs": "example",
+    "total_artifacts": "example",
+    "total_cache_hits": "example",
+    "total_retries": "example"
+  }
+}

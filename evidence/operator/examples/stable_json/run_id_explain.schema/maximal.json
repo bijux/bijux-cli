@@ -1,0 +1,18 @@
+{
+  "schema": "configs/schema/operator/run_id_explain.schema.json",
+  "example_type": "maximal",
+  "data": {
+    "created_unix_ms": "example",
+    "exists": "example",
+    "finished_unix_ms": "example",
+    "immutability_contract": "example",
+    "manifest_exists": "example",
+    "parent_run_id": "example",
+    "run_dir": "example",
+    "run_id": "example",
+    "source_run_id": "example",
+    "started_unix_ms": "example",
+    "submission_source": "example",
+    "trigger_source": "example"
+  }
+}

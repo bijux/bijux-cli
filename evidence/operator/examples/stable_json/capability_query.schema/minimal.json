@@ -1,0 +1,10 @@
+{
+  "schema": "configs/schema/operator/capability_query.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "format": "example",
+    "backend": "example",
+    "status": "example",
+    "capabilities": "example"
+  }
+}

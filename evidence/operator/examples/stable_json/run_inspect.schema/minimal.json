@@ -1,0 +1,12 @@
+{
+  "schema": "configs/schema/operator/run_inspect.schema.json",
+  "example_type": "minimal",
+  "data": {
+    "run_id": "example",
+    "status": "example",
+    "retry_count": "example",
+    "cache_hits": "example",
+    "artifact_count": "example",
+    "integrity_state": "example"
+  }
+}
