@@ -1,0 +1,10 @@
+{
+  "id": "repo-tree-simplification-verification",
+  "description": "Verification suite for repo-tree inventory, module hygiene governance, and simplification outputs.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test repo_tree_simplification_541_560_contracts",
+    "cargo test -p bijux-dev-dag --test repo_tree_governance_181_200_contracts",
+    "cargo test -p bijux-dev-dag --test module_hygiene_governance_contracts",
+    "cargo test -p bijux-dev-dag --test repo_health_contracts"
+  ]
+}
