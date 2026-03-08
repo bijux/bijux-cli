@@ -1,0 +1,81 @@
+{
+  "policy_version": "1",
+  "governance_rules": {
+    "each_benchmark_declares_supported_claim": true,
+    "each_benchmark_declares_gate_class": true,
+    "each_benchmark_declares_noise_class": true,
+    "benchmark_docs_must_reference_generated_outputs_only": true
+  },
+  "claim_families": [
+    "graph_identity",
+    "run_history",
+    "artifact_trace",
+    "replay_diff_proof",
+    "runtime_scheduler"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "graph-identity-canonicalization",
+      "supported_claim": "graph_identity",
+      "gate_class": "gating",
+      "noise_class": "low",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_graph_identity.json",
+      "source_report": "docs/reports/foundation/graph_identity_canonicalization_benchmarks.md"
+    },
+    {
+      "scenario_id": "run-history-query",
+      "supported_claim": "run_history",
+      "gate_class": "gating",
+      "noise_class": "low",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_run_history.json",
+      "source_report": "docs/reports/foundation/run_history_query_benchmarks.md"
+    },
+    {
+      "scenario_id": "artifact-inspect-hash-trace",
+      "supported_claim": "artifact_trace",
+      "gate_class": "gating",
+      "noise_class": "medium",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_artifact_trace.json",
+      "source_report": "docs/reports/foundation/artifact_inspect_hash_trace_benchmarks.md"
+    },
+    {
+      "scenario_id": "replay-proof-generation",
+      "supported_claim": "replay_diff_proof",
+      "gate_class": "advisory",
+      "noise_class": "medium",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_replay_mismatch_grouping.json",
+      "source_report": "docs/reports/foundation/replay_proof_generation_benchmarks.md"
+    },
+    {
+      "scenario_id": "semantic-diff-equivalence",
+      "supported_claim": "replay_diff_proof",
+      "gate_class": "gating",
+      "noise_class": "medium",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_semantic_diff_equivalence.json",
+      "source_report": "docs/reports/foundation/semantic_diff_explain_benchmarks.md"
+    },
+    {
+      "scenario_id": "runtime-scheduler-helper-boundary",
+      "supported_claim": "runtime_scheduler",
+      "gate_class": "advisory",
+      "noise_class": "high",
+      "threshold_assertion": "docs/reports/foundation/benchmark_threshold_assertions_runtime_helpers.json",
+      "source_report": "docs/reports/foundation/runtime_scheduler_helper_boundary_benchmark.md"
+    }
+  ],
+  "roadmap_pillars": {
+    "identity_and_determinism": [
+      "graph_identity"
+    ],
+    "operator_read_paths": [
+      "run_history",
+      "artifact_trace"
+    ],
+    "replay_and_diff_integrity": [
+      "replay_diff_proof"
+    ],
+    "runtime_scaling_safety": [
+      "runtime_scheduler"
+    ]
+  }
+}

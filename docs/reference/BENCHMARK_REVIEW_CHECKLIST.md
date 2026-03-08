@@ -1,7 +1,9 @@
 # Benchmark Review Checklist
 
-1. Scenario defines one primary signal.
-2. Raw data path is committed and linked.
-3. Regression threshold policy mapping exists.
-4. Flake/noise risk is documented.
-5. Scorecard interpretation notes are present.
+1. Scenario declares one supported claim and one primary signal.
+2. Scenario declares gate class (`gating` or `advisory`).
+3. Scenario declares noise class (`low`, `medium`, or `high`).
+4. Raw data path is committed and linked.
+5. Regression threshold policy mapping exists.
+6. Flake/noise risk is documented.
+7. Scorecard interpretation notes are present.

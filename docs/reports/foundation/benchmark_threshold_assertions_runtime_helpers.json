@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "family": "runtime_scheduler",
+  "scenario_id": "runtime-scheduler-helper-boundary",
+  "assertions": {
+    "max_regression_ratio": 0.15,
+    "max_runtime_ms": 400
+  }
+}
