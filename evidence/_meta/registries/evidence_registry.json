@@ -1,5 +1,5 @@
 {
-  "asset_count": 128,
+  "asset_count": 141,
   "assets": [
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
@@ -1831,6 +1831,44 @@
       ]
     },
     {
+      "canonical_path": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "registry_key": "compat:evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ]
+    },
+    {
       "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
       "consumers": [
         "crate-contracts",
@@ -2021,6 +2059,25 @@
       ]
     },
     {
+      "canonical_path": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
       "canonical_path": "evidence/perf/scenarios/cache_heavy_canonical.json",
       "consumers": [
         "benchmark-suite",
@@ -2116,6 +2173,82 @@
       ]
     },
     {
+      "canonical_path": "evidence/perf/scenarios/determinism_score.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/determinism_score.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/determinism_score.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/diff_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/diff_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/diff_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/explainability_quality.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/explainability_quality.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/explainability_quality.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/failure_injection_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
       "canonical_path": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
       "consumers": [
         "benchmark-suite",
@@ -2127,6 +2260,44 @@
       "kind": "perf",
       "owner": "team-performance",
       "registry_key": "perf:evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/inspect_history_latency.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/inspect_history_latency.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/inspect_history_latency.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/large_artifact_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/large_artifact_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/large_artifact_canonical.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2306,6 +2477,44 @@
       ]
     },
     {
+      "canonical_path": "evidence/perf/scenarios/portability_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/portability_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/portability_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/portability_success_rate.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/portability_success_rate.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/portability_success_rate.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
       "canonical_path": "evidence/perf/scenarios/replay_canonical.json",
       "consumers": [
         "benchmark-suite",
@@ -2317,6 +2526,25 @@
       "kind": "perf",
       "owner": "team-performance",
       "registry_key": "perf:evidence/perf/scenarios/replay_canonical.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/replay_fidelity_score.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/replay_fidelity_score.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/replay_fidelity_score.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2355,6 +2583,25 @@
       "kind": "perf",
       "owner": "team-performance",
       "registry_key": "perf:evidence/perf/scenarios/resource_budgets.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ]
+    },
+    {
+      "canonical_path": "evidence/perf/scenarios/tenk_nodes_canonical.json",
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/perf/scenarios/tenk_nodes_canonical.json",
+      "kind": "perf",
+      "owner": "team-performance",
+      "registry_key": "perf:evidence/perf/scenarios/tenk_nodes_canonical.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",

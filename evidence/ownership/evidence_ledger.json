@@ -5263,6 +5263,74 @@
       "why_exists": "verify supported export bundle format remains importable"
     },
     {
+      "canonical_location": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "canonical_path": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "compat",
+      "id": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "implementation_status": "implemented",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "path": "evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "trust_property": "compatibility",
+      "why_exists": "maximal supported export bundle example for compatibility fixtures"
+    },
+    {
+      "canonical_location": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "canonical_path": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "compat",
+      "id": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "implementation_status": "implemented",
+      "kind": "compat",
+      "owner": "team-runtime",
+      "path": "evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "compatibility"
+      ],
+      "trust_properties_protected": [
+        "compatibility"
+      ],
+      "trust_property": "compatibility",
+      "why_exists": "minimal supported export bundle example for compatibility fixtures"
+    },
+    {
       "canonical_location": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
       "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
       "consumer_surfaces": [
@@ -5705,6 +5773,40 @@
       "why_exists": "resource profiling trend baseline for longitudinal checks"
     },
     {
+      "canonical_location": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "canonical_path": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/artifact_lineage_completeness.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
       "canonical_location": "evidence/perf/scenarios/cache_heavy_canonical.json",
       "canonical_path": "evidence/perf/scenarios/cache_heavy_canonical.json",
       "consumer_surfaces": [
@@ -5875,6 +5977,142 @@
       "why_exists": "measure parse plan execute replay envelopes"
     },
     {
+      "canonical_location": "evidence/perf/scenarios/determinism_score.json",
+      "canonical_path": "evidence/perf/scenarios/determinism_score.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/determinism_score.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/determinism_score.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/diff_canonical.json",
+      "canonical_path": "evidence/perf/scenarios/diff_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/diff_canonical.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/diff_canonical.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/explainability_quality.json",
+      "canonical_path": "evidence/perf/scenarios/explainability_quality.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/explainability_quality.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/explainability_quality.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "canonical_path": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/failure_injection_canonical.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
       "canonical_location": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
       "canonical_path": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
       "consumer_surfaces": [
@@ -5895,6 +6133,74 @@
       "kind": "perf",
       "owner": "team-performance",
       "path": "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/inspect_history_latency.json",
+      "canonical_path": "evidence/perf/scenarios/inspect_history_latency.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/inspect_history_latency.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/inspect_history_latency.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/large_artifact_canonical.json",
+      "canonical_path": "evidence/perf/scenarios/large_artifact_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/large_artifact_canonical.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/large_artifact_canonical.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6215,6 +6521,74 @@
       "why_exists": "measure parse plan execute replay envelopes"
     },
     {
+      "canonical_location": "evidence/perf/scenarios/portability_canonical.json",
+      "canonical_path": "evidence/perf/scenarios/portability_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/portability_canonical.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/portability_canonical.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/portability_success_rate.json",
+      "canonical_path": "evidence/perf/scenarios/portability_success_rate.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/portability_success_rate.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/portability_success_rate.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
       "canonical_location": "evidence/perf/scenarios/replay_canonical.json",
       "canonical_path": "evidence/perf/scenarios/replay_canonical.json",
       "consumer_surfaces": [
@@ -6235,6 +6609,40 @@
       "kind": "perf",
       "owner": "team-performance",
       "path": "evidence/perf/scenarios/replay_canonical.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/replay_fidelity_score.json",
+      "canonical_path": "evidence/perf/scenarios/replay_fidelity_score.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/replay_fidelity_score.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/replay_fidelity_score.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6303,6 +6711,40 @@
       "kind": "perf",
       "owner": "team-performance",
       "path": "evidence/perf/scenarios/resource_budgets.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "resource-accounting"
+      ],
+      "trust_properties_protected": [
+        "resource-accounting"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "measure parse plan execute replay envelopes"
+    },
+    {
+      "canonical_location": "evidence/perf/scenarios/tenk_nodes_canonical.json",
+      "canonical_path": "evidence/perf/scenarios/tenk_nodes_canonical.json",
+      "consumer_surfaces": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "consumers": [
+        "benchmark-suite",
+        "performance-evidence"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "perf",
+      "id": "evidence/perf/scenarios/tenk_nodes_canonical.json",
+      "implementation_status": "implemented",
+      "kind": "perf",
+      "owner": "team-performance",
+      "path": "evidence/perf/scenarios/tenk_nodes_canonical.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
