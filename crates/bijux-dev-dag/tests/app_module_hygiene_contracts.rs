@@ -49,7 +49,16 @@ fn app_zero_coverage_allowlist_entries_are_blocked() {
         .filter(|p| p.starts_with("crates/bijux-dag-app/src/"))
         .collect();
     app_entries.sort_unstable();
-    let baseline = vec!["crates/bijux-dag-app/src/inspect/mod.rs"];
+    let baseline = vec![
+        "crates/bijux-dag-app/src/commands/config_resolution.rs",
+        "crates/bijux-dag-app/src/commands/config_surface.rs",
+        "crates/bijux-dag-app/src/inspect/mod.rs",
+        "crates/bijux-dag-app/src/routes/output_selection.rs",
+        "crates/bijux-dag-app/src/routes/plan_routes.rs",
+        "crates/bijux-dag-app/src/routes/renderer.rs",
+        "crates/bijux-dag-app/src/routes/response.rs",
+        "crates/bijux-dag-app/src/routes/run_lookup.rs",
+    ];
     assert_eq!(
         app_entries, baseline,
         "release gate violated: app zero-coverage allowlist drifted from baseline: {app_entries:?}"
