@@ -13,11 +13,6 @@ Stable surfaces are represented by retained categories and code-backed paths wit
 - `runtime-relevant`
 - `adapter-relevant`
 
-Reference detail reports:
-
-- `docs/reports/foundation/runtime_stable_surfaces.md`
-- `docs/reports/foundation/runtime_operator_surface_report.md`
-
 ## Experimental surfaces
 
 Experimental surfaces are represented by governed speculative entries:
@@ -32,9 +27,7 @@ Constraints:
 
 Reference detail reports:
 
-- `docs/reports/foundation/runtime_experimental_surfaces.md`
-- `docs/reports/foundation/speculative_surface_budget.md`
-- `docs/reports/foundation/advanced_semantics_no_user_path_report.md`
+Speculative surface definitions are governed through policy and traceable through the listed contracts.
 
 ## Governance gates
 

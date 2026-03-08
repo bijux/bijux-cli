@@ -22,6 +22,7 @@ generated_from: route/service tests, contracts, and coverage reports
 
 ## Linked reports
 
-- `docs/reports/foundation/app_route_to_service_mapping.md`
-- `docs/reports/foundation/app_modules_zero_direct_tests_report.md`
-- `docs/reports/foundation/app_modules_below_50_coverage_report.md`
+- Historical linked reports were consolidated for operational review:
+  - `docs/reports/foundation/archive/app_route_to_service_mapping.md`
+  - `docs/reports/foundation/archive/app_modules_zero_direct_tests_report.md`
+  - `docs/reports/foundation/archive/app_modules_below_50_coverage_report.md`

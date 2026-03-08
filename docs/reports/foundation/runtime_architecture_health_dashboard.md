@@ -12,7 +12,10 @@ Generated dashboard for runtime architecture quality signals.
 
 ## Backing reports
 
-- `docs/reports/foundation/runtime_module_coverage_report.md`
-- `docs/reports/foundation/runtime_module_complexity_report.md`
-- `docs/reports/foundation/runtime_architecture_telemetry_report.md`
 - `docs/reports/foundation/runtime_boundary_report.md`
+
+Operationally this dashboard summarizes:
+
+- module coverage and complexity snapshots
+- boundary and dependency drift posture
+- architecture telemetry trend summaries

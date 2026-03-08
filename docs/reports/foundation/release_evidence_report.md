@@ -19,8 +19,8 @@ Release readiness depends on the required evidence surfaces above. Raw test tota
 
 ## Evidence links
 
-- `docs/reports/foundation/replay_hardening_report.md`
-- `docs/reports/foundation/cache_hardening_report.md`
-- `docs/reports/foundation/run_dir_import_export_hardening_report.md`
-- `docs/reports/foundation/config_policy_determinism_report.md`
+- `docs/reports/foundation/archive/replay_hardening_report.md`
+- `docs/reports/foundation/archive/cache_hardening_report.md`
+- `docs/reports/foundation/archive/run_dir_import_export_hardening_report.md`
+- `docs/reports/foundation/archive/config_policy_determinism_report.md`
 - `configs/policy/battle_trust_properties.json`

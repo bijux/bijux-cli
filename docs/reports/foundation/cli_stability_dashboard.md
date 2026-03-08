@@ -11,11 +11,12 @@ Generated: 2026-03-08
 
 ## Report signals
 
-- `docs/reports/foundation/cli_command_inventory_report.md`
-- `docs/reports/foundation/cli_command_usage_heatmap.md`
-- `docs/reports/foundation/cli_error_taxonomy_report.md`
-- `docs/reports/foundation/cli_surface_compatibility_report.md`
-- `docs/reports/foundation/cli_json_compatibility_report.md`
+- Historical report snapshots:
+  - `docs/reports/foundation/archive/cli_command_inventory_report.md`
+  - `docs/reports/foundation/archive/cli_command_usage_heatmap.md`
+  - `docs/reports/foundation/archive/cli_error_taxonomy_report.md`
+  - `docs/reports/foundation/archive/cli_surface_compatibility_report.md`
+  - `docs/reports/foundation/archive/cli_json_compatibility_report.md`
 
 ## Current status
 

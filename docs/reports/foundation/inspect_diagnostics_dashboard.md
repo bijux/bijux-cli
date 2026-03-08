@@ -12,10 +12,11 @@ Generated: 2026-03-08
 
 ## Report signals
 
-- `docs/reports/foundation/inspect_diagnostics_report.md`
-- `docs/reports/foundation/inspect_stability_report.md`
-- `docs/reports/foundation/artifact_lineage_visualization_report.md`
-- `docs/reports/foundation/app_inspect_explain_latency_baseline.md`
+- Historical diagnostic evidence snapshots:
+  - `docs/reports/foundation/archive/inspect_diagnostics_report.md`
+  - `docs/reports/foundation/archive/inspect_stability_report.md`
+  - `docs/reports/foundation/archive/artifact_lineage_visualization_report.md`
+  - `docs/reports/foundation/archive/app_inspect_explain_latency_baseline.md`
 
 ## Current status
 

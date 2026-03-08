@@ -19,5 +19,5 @@
 - full lane (`make test-all`): blocks on release-critical evidence command set
 
 ## Ownership Links
-- command-to-doc map: `docs/reports/foundation/evidence_command_owner_map.md`
+- command-to-doc map: `docs/reports/foundation/archive/evidence_command_owner_map.md`
 - family governance policy: `configs/policy/evidence_family_governance.json`

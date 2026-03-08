@@ -37,8 +37,6 @@ Overall readiness: **not ready to lift freeze**.
 
 ## Cleanup backlog pointer
 
-See `docs/reports/foundation/cleanup_backlog.md`.
-
 ## Feature freeze decision
 
 Feature development remains frozen per `docs/spec/FEATURE_DEVELOPMENT_FREEZE_POLICY.md`.
