@@ -47,6 +47,8 @@ Command categories and long-term command support decisions are documented in:
 
 - `docs/CLI_COMMAND_TAXONOMY.md`
 - `docs/spec/CLI_BACKWARD_COMPATIBILITY.md`
+- `docs/spec/CLI_OWNERSHIP.md`
+- `docs/reference/TEST_LANES.md`
 
 ## JSON Envelope
 

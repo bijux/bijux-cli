@@ -19,6 +19,8 @@
 - [Graph identity contract](./spec/GRAPH_IDENTITY_CONTRACT.md)
 - [Node identity contract](./spec/NODE_IDENTITY_CONTRACT.md)
 - [CLI contract matrix](./CLI.md)
+- [CLI ownership boundaries](./spec/CLI_OWNERSHIP.md)
+- [Test lanes](./reference/TEST_LANES.md)
 - [Development environment](./DEVELOPMENT.md)
 - [Architecture overview](./ARCHITECTURE.md)
 - [Runtime execution flow](./architecture/runtime-execution-flow.md)
@@ -206,6 +208,8 @@
 - [Upgrade and compatibility governance](./UPGRADE_COMPATIBILITY_GOVERNANCE.md)
 - [Compatibility window v0.1](./COMPATIBILITY_WINDOW_v0.1.md)
 - [CLI deprecation and alias policy](./spec/CLI_DEPRECATION_AND_ALIAS_POLICY.md)
+- [CLI surface compatibility report](./reports/foundation/cli_surface_compatibility_report.md)
+- [JSON stability release report](./reports/foundation/json_stability_release_report.md)
 
 ## Crate contracts and ownership
 

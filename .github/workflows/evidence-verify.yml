@@ -50,6 +50,8 @@ jobs:
           git diff --exit-code \
             docs/reports/foundation/app_route_coverage_by_command_family.md \
             docs/reports/foundation/app_response_schema_coverage_by_command_family.md
+      - name: verify shell completion surfaces
+        run: cargo test -p bijux-dag-cli --test contract_surface completions_generation_supports_all_supported_shells -- --exact
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
