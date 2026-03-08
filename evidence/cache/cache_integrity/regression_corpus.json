@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "domain": "cache-integrity",
+  "cases": [
+    {"id": "cache-key-determinism", "coverage": ["key-determinism", "lookup-consistency"], "source": "docs/spec/CACHE_CONTRACT.md"},
+    {"id": "cache-lookup-consistency", "coverage": ["lookup-consistency", "integrity-verification"], "source": "docs/spec/CACHE_EVOLUTION_MODEL.md"},
+    {"id": "cache-invalidation-correctness", "coverage": ["invalidation", "integrity-verification"], "source": "docs/spec/CACHE_CONTRACT.md"},
+    {"id": "cache-invalidation-graph-change", "coverage": ["graph-change-invalidation", "invalidation"], "source": "docs/spec/CACHE_CONTRACT.md"},
+    {"id": "cache-invalidation-environment-drift", "coverage": ["environment-drift-invalidation", "invalidation"], "source": "docs/spec/ENVIRONMENT_IDENTITY_CONTRACT.md"},
+    {"id": "cache-invalidation-artifact-change", "coverage": ["artifact-change-invalidation", "invalidation"], "source": "docs/spec/ARTIFACT_IDENTITY_CONTRACT.md"},
+    {"id": "cache-invalidation-replay-ancestry", "coverage": ["replay-ancestry-invalidation", "invalidation"], "source": "docs/spec/REPLAY_CONTRACT.md"},
+    {"id": "cache-integrity-verify", "coverage": ["integrity-verification", "corruption-detection"], "source": "evidence/cache/metadata.json"},
+    {"id": "cache-corruption-detection", "coverage": ["corruption-detection", "integrity-verification"], "source": "evidence/cache/corrupt/hash_mismatch.json"},
+    {"id": "cache-concurrency-safety", "coverage": ["concurrency", "eviction-safety"], "source": "docs/spec/CONCURRENCY_MODEL.md"},
+    {"id": "cache-eviction-safety", "coverage": ["eviction-safety", "retention"], "source": "docs/spec/CACHE_PRUNE_POLICY.md"},
+    {"id": "cache-retention-rules", "coverage": ["retention", "lifecycle"], "source": "docs/spec/ARTIFACT_RETENTION_POLICY.md"},
+    {"id": "cache-lifecycle", "coverage": ["lifecycle", "integrity-verification"], "source": "evidence/cache/README.md"},
+    {"id": "cache-regression-fixtures", "coverage": ["regression-fixtures", "stress"], "source": "evidence/cache/cache_integrity/regression_corpus.json"},
+    {"id": "cache-stress", "coverage": ["stress", "performance"], "source": "evidence/cache/scenarios/warm_cold.json"},
+    {"id": "cache-performance", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/performance_evidence_report.md"},
+    {"id": "cache-telemetry", "coverage": ["telemetry", "integrity-verification"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
+    {"id": "cache-explainability-integration", "coverage": ["explainability-integration", "cache-hit-miss"], "source": "docs/spec/EXPLAIN_SURFACES_CONTRACT.md"}
+  ]
+}

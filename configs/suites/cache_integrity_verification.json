@@ -1,0 +1,17 @@
+{
+  "id": "cache-integrity-verification",
+  "description": "Cache key determinism, invalidation, integrity, concurrency, retention, telemetry, and explainability verification",
+  "owners": ["dev-dag"],
+  "includes": [
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/cache_hardening_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs"},
+    {"type": "test", "path": "crates/bijux-dev-dag/tests/cache_system_integrity_completion_contracts.rs"}
+  ],
+  "artifacts": [
+    "evidence/cache/cache_integrity/regression_corpus.json",
+    "docs/reports/foundation/cache_integrity_benchmarks.md",
+    "docs/reports/foundation/cache_integrity_telemetry_report.md",
+    "docs/reports/foundation/cache_explainability_integration_report.md",
+    "docs/reports/foundation/cache_integrity_coverage_report.md"
+  ]
+}
