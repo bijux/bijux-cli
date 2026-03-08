@@ -21,4 +21,9 @@ Required output fields:
 - `provenance.attempt`
 - `lineage.upstream_artifact_ids`
 - `lineage.downstream_artifact_ids`
-
+- `identity_explain.artifact_id`
+- `identity_explain.composed_from.run_id`
+- `identity_explain.composed_from.node_id`
+- `identity_explain.composed_from.node_fingerprint`
+- `identity_explain.composed_from.artifact_sha256`
+- `identity_explain.composed_from.path`

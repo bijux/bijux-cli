@@ -2874,7 +2874,7 @@ fn read_outputs_indexes(run_dir: &Path) -> Result<HashMap<String, OutputsIndex>,
     Ok(map)
 }
 
-pub(crate) fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
+pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
     let (node_id, file_name) = artifact_id
         .split_once(':')
         .ok_or_else(|| ExitCode::from(2))?;
@@ -2908,6 +2908,7 @@ pub(crate) fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Valu
             "downstream_artifact_ids": []
         })
     };
+    let run_id = manifest.run_id.clone();
     Ok(json!({
         "artifact_id": artifact_id,
         "artifact_sha256": output.sha256,
@@ -2917,8 +2918,20 @@ pub(crate) fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Valu
         "size_bytes": metadata.len(),
         "provenance": {
             "graph_fingerprint": manifest.graph_fingerprint,
-            "run_id": manifest.run_id,
+            "run_id": run_id,
             "attempt": 0
+        },
+        "identity_explain": {
+            "artifact_id": artifact_id,
+            "composed_from": {
+                "run_id": manifest.run_id,
+                "node_id": output.node_id,
+                "node_fingerprint": output.node_fingerprint,
+                "artifact_sha256": output.sha256,
+                "path": output.path
+            },
+            "hash_algorithm": "sha256",
+            "identity_scope": "artifact content + provenance"
         },
         "lineage": lineage
     }))
