@@ -177,7 +177,8 @@ This mapping documents node-level fields that contribute to node fingerprinting.
 "#;
     write_file(&node_md_out, node_md)?;
 
-    let canonical_diff_root = root.join("crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff");
+    let canonical_diff_root =
+        root.join("crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff");
     let mut fixtures = Vec::new();
     if canonical_diff_root.exists() {
         for entry in fs::read_dir(&canonical_diff_root).map_err(|err| err.to_string())? {
@@ -195,7 +196,9 @@ This mapping documents node-level fields that contribute to node fingerprinting.
     }
     fixtures.sort();
     let mut md = String::from("# Canonical Diff Fixture Inventory\n\n");
-    md.push_str("Generated from `crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff`.\n\n");
+    md.push_str(
+        "Generated from `crates/bijux-dag-core/tests/fixtures/graph_identity/canonical_diff`.\n\n",
+    );
     md.push_str("| fixture | status |\n| --- | --- |\n");
     for fixture in fixtures {
         md.push_str(&format!("| `{fixture}` | covered |\n"));

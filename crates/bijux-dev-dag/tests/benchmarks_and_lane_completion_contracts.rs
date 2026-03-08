@@ -43,9 +43,12 @@ fn benchmark_focus_and_lane_reports_exist() {
 
 #[test]
 fn ci_budget_targets_include_all_required_entrypoints() {
-    let raw = fs::read_to_string(repo_root().join("docs/reports/foundation/ci_runtime_budget_targets.json"))
-        .expect("read ci runtime budget targets");
-    let value: serde_json::Value = serde_json::from_str(&raw).expect("parse ci runtime budget targets");
+    let raw = fs::read_to_string(
+        repo_root().join("docs/reports/foundation/ci_runtime_budget_targets.json"),
+    )
+    .expect("read ci runtime budget targets");
+    let value: serde_json::Value =
+        serde_json::from_str(&raw).expect("parse ci runtime budget targets");
     let budgets = value["budgets"].as_object().expect("budgets object");
     for key in [
         "make_test_max_minutes",

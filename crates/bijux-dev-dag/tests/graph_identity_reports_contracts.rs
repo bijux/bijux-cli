@@ -29,7 +29,10 @@ fn graph_identity_docs_and_reports_exist() {
         "docs/reports/foundation/graph_identity_field_impact_report.json",
         "docs/reports/foundation/canonical_diff_fixture_inventory_report.md",
     ] {
-        assert!(root.join(rel).exists(), "missing graph identity artifact: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing graph identity artifact: {rel}"
+        );
     }
 }
 

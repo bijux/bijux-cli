@@ -23,7 +23,10 @@ fn advanced_semantics_scope_docs_and_adr_are_present() {
         "docs/spec/ADVANCED_SEMANTICS_QUARANTINED_SURFACES.md",
         "docs/adr/20260308-advanced-semantics-runtime-boundary.md",
     ] {
-        assert!(root.join(rel).exists(), "missing advanced semantics end-state doc: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing advanced semantics end-state doc: {rel}"
+        );
     }
 }
 
