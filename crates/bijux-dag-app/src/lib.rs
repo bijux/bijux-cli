@@ -661,10 +661,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::TraceArtifact {
-            run_dir,
-            artifact_id,
-        } => routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id),
+        Commands::TraceArtifact { run_dir, artifact_id } => {
+            routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
+        }
         Commands::Run {
             dag,
             out,
