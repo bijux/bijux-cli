@@ -6,7 +6,7 @@ use bijux_dag_core::validate::{
     validate_graph, validate_schema, validate_semantics, validate_topology,
     validation_rule_registry, ValidationDomain,
 };
-use bijux_dag_core::{Graph, GraphError, Severity};
+use bijux_dag_core::{lower_graph_to_execution_plan, Graph, GraphError, PlanOptions, Severity};
 use criterion as _;
 use hex as _;
 use serde as _;
@@ -120,4 +120,26 @@ fn resolve_module_resolves_valid_graph() {
     );
     let resolved = resolve_graph(&graph).expect("resolve graph");
     assert_eq!(resolved.graph.nodes.len(), 1);
+}
+
+#[test]
+fn planner_module_lowers_graph_to_execution_plan() {
+    let graph = parse_graph(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"source","kind":"const","params":{"value":"x"},"outputs":[{"name":"value","path":"source.txt"}]}
+          ],
+          "edges":[]
+        }"#,
+    );
+    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan");
+    assert_eq!(plan.nodes.len(), 1);
+    assert_eq!(plan.ordering, vec!["source".to_string()]);
+    let source = plan
+        .nodes
+        .iter()
+        .find(|node| node.id == "source")
+        .expect("source node");
+    assert!(source.deps.is_empty());
 }
