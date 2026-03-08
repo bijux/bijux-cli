@@ -48,7 +48,10 @@ fn introspection_architecture_corpus_and_suite_are_machine_readable() {
     .expect("parse introspection architecture corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 13, "expected broad introspection architecture corpus");
+    assert!(
+        cases.len() >= 13,
+        "expected broad introspection architecture corpus"
+    );
 
     for coverage in [
         "command-correctness",
@@ -82,14 +85,25 @@ fn introspection_architecture_corpus_and_suite_are_machine_readable() {
         "configs/suites/system_introspection_architecture_verification.json",
     ))
     .expect("parse introspection architecture suite");
-    assert_eq!(suite["id"], "system-introspection-architecture-verification");
+    assert_eq!(
+        suite["id"],
+        "system-introspection-architecture-verification"
+    );
 }
 
 #[test]
 fn introspection_architecture_surfaces_anchor_existing_command_and_completion_contracts() {
     let cli = read("crates/bijux-dev-dag/src/commands/cli.rs");
-    for token in ["StorageHealth", "BackendRegistryReport", "DriftDashboard", "DagCommand"] {
-        assert!(cli.contains(token), "missing introspection CLI token: {token}");
+    for token in [
+        "StorageHealth",
+        "BackendRegistryReport",
+        "DriftDashboard",
+        "DagCommand",
+    ] {
+        assert!(
+            cli.contains(token),
+            "missing introspection CLI token: {token}"
+        );
     }
 
     let commands = read("crates/bijux-dev-dag/src/commands/mod.rs");
@@ -101,13 +115,17 @@ fn introspection_architecture_surfaces_anchor_existing_command_and_completion_co
         "run_cache_coverage_report",
         "run_drift_dashboard",
     ] {
-        assert!(commands.contains(token), "missing introspection command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing introspection command token: {token}"
+        );
     }
 
-    let prior_completion = read("crates/bijux-dev-dag/tests/system_introspection_completion_contracts.rs");
+    let prior_completion =
+        read("crates/bijux-dev-dag/tests/system_introspection_completion_contracts.rs");
     assert!(
-        prior_completion.contains("system_introspection_surfaces_anchor_existing_command_implementations"),
+        prior_completion
+            .contains("system_introspection_surfaces_anchor_existing_command_implementations"),
         "missing prior introspection completion anchor"
     );
 }
-

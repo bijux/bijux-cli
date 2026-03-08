@@ -47,7 +47,10 @@ fn conceptual_integrity_corpus_and_suite_are_machine_readable() {
     .expect("parse conceptual integrity corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 13, "expected broad conceptual integrity corpus");
+    assert!(
+        cases.len() >= 13,
+        "expected broad conceptual integrity corpus"
+    );
 
     for coverage in [
         "conceptual-architecture-overview",
@@ -117,10 +120,11 @@ fn conceptual_integrity_surfaces_anchor_existing_architecture_and_conformance_do
         );
     }
 
-    let prior_completion = read("crates/bijux-dev-dag/tests/repository_structure_completion_contracts.rs");
+    let prior_completion =
+        read("crates/bijux-dev-dag/tests/repository_structure_completion_contracts.rs");
     assert!(
-        prior_completion.contains("repository_structure_surfaces_anchor_existing_reports_and_hygiene_guards"),
+        prior_completion
+            .contains("repository_structure_surfaces_anchor_existing_reports_and_hygiene_guards"),
         "missing repository structure conceptual anchor"
     );
 }
-

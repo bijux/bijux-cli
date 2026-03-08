@@ -84,9 +84,10 @@ fn determinism_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/determinism_hardening_regression.json"))
-            .expect("parse determinism suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/determinism_hardening_regression.json",
+    ))
+    .expect("parse determinism suite");
     assert_eq!(suite["id"], "determinism-hardening-regression");
 }
 

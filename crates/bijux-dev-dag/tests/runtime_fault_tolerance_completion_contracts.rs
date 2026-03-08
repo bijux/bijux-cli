@@ -33,7 +33,10 @@ fn runtime_fault_tolerance_contract_and_reports_exist() {
         "docs/reports/foundation/runtime_fault_tolerance_coverage_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty runtime fault tolerance artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty runtime fault tolerance artifact: {rel}"
+        );
     }
 }
 
@@ -46,7 +49,10 @@ fn runtime_fault_tolerance_corpus_and_suite_are_machine_readable() {
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 18, "expected broad runtime fault tolerance corpus");
+    assert!(
+        cases.len() >= 18,
+        "expected broad runtime fault tolerance corpus"
+    );
 
     for coverage in [
         "crash-recovery",
@@ -87,7 +93,8 @@ fn runtime_fault_tolerance_corpus_and_suite_are_machine_readable() {
 
 #[test]
 fn runtime_fault_tolerance_surfaces_anchor_existing_recovery_tests() {
-    let failure_recovery = read("crates/bijux-dev-dag/tests/failure_recovery_completion_contracts.rs");
+    let failure_recovery =
+        read("crates/bijux-dev-dag/tests/failure_recovery_completion_contracts.rs");
     for token in [
         "recovery_required_for_checkpoint_without_terminal_completion",
         "recovery_required_for_partial_artifact_or_interrupted_execution",
@@ -101,15 +108,17 @@ fn runtime_fault_tolerance_surfaces_anchor_existing_recovery_tests() {
 
     let runtime_recovery = read("crates/bijux-dag-runtime/tests/runtime_recovery_contracts.rs");
     assert!(
-        runtime_recovery.contains("recovery_required_for_partial_artifact_or_interrupted_execution"),
+        runtime_recovery
+            .contains("recovery_required_for_partial_artifact_or_interrupted_execution"),
         "missing runtime recovery contract anchor"
     );
 
     let runtime_invariants =
         read("crates/bijux-dag-runtime/tests/runtime_engine_invariants_contracts.rs");
     assert!(
-        runtime_invariants
-            .contains("runtime_crash_recovery_simulation_requires_recovery_on_checkpointed_interruptions"),
+        runtime_invariants.contains(
+            "runtime_crash_recovery_simulation_requires_recovery_on_checkpointed_interruptions"
+        ),
         "missing runtime crash simulation anchor"
     );
 }

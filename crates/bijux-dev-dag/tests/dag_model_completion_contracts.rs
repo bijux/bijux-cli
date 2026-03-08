@@ -39,8 +39,9 @@ fn dag_model_contract_and_reports_exist() {
 
 #[test]
 fn dag_model_corpus_and_suite_are_machine_readable() {
-    let corpus: Value = serde_json::from_str(&read("evidence/cache/dag_model/regression_corpus.json"))
-        .expect("parse dag model corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/dag_model/regression_corpus.json"))
+            .expect("parse dag model corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
     assert!(cases.len() >= 12, "expected broad dag model corpus");
@@ -73,9 +74,8 @@ fn dag_model_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/dag_model_verification.json"))
-            .expect("parse dag model suite");
+    let suite: Value = serde_json::from_str(&read("configs/suites/dag_model_verification.json"))
+        .expect("parse dag model suite");
     assert_eq!(suite["id"], "dag-model-verification");
 }
 
@@ -100,13 +100,16 @@ fn dag_model_surfaces_anchor_existing_dag_commands_and_tests() {
         "run_dag_explain_validation",
         "run_dag_schema_export",
     ] {
-        assert!(commands.contains(token), "missing DAG command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing DAG command token: {token}"
+        );
     }
 
-    let large_dag = read("crates/bijux-dev-dag/tests/large_dag_scalability_completion_contracts.rs");
+    let large_dag =
+        read("crates/bijux-dev-dag/tests/large_dag_scalability_completion_contracts.rs");
     assert!(
         large_dag.contains("validation_stress_thousands_of_nodes"),
         "missing DAG validation scalability anchor"
     );
 }
-

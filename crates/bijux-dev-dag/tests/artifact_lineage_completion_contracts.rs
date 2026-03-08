@@ -33,7 +33,10 @@ fn artifact_lineage_contract_and_reports_exist() {
         "docs/reports/foundation/artifact_lineage_visualization_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty artifact lineage artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty artifact lineage artifact: {rel}"
+        );
     }
 }
 
@@ -75,10 +78,9 @@ fn artifact_lineage_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read(
-        "configs/suites/artifact_lineage_verification.json",
-    ))
-    .expect("parse artifact lineage suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/artifact_lineage_verification.json"))
+            .expect("parse artifact lineage suite");
     assert_eq!(suite["id"], "artifact-lineage-verification");
 }
 
@@ -109,16 +111,17 @@ fn artifact_lineage_surfaces_anchor_existing_runtime_app_and_artifact_tests() {
         );
     }
 
-    let lifecycle = read("crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs");
+    let lifecycle =
+        read("crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs");
     assert!(
         lifecycle.contains("artifact_lineage_from_imported_bundle_and_replay_run_remains_distinct"),
         "missing lifecycle lineage continuity anchor"
     );
 
-    let provenance = read("crates/bijux-dev-dag/tests/provenance_traceability_completion_contracts.rs");
+    let provenance =
+        read("crates/bijux-dev-dag/tests/provenance_traceability_completion_contracts.rs");
     assert!(
         provenance.contains("provenance_linkage_and_trace_tests_cover_required_contracts"),
         "missing provenance lineage anchor"
     );
 }
-

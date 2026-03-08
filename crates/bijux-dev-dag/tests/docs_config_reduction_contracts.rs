@@ -1,3 +1,4 @@
+use bijux_dag_testkit as _;
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

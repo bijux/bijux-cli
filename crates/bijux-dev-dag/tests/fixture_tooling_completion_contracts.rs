@@ -33,7 +33,10 @@ fn fixture_tooling_contract_and_reports_exist() {
         "docs/reports/foundation/fixture_lifecycle_governance_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty fixture tooling artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty fixture tooling artifact: {rel}"
+        );
     }
 }
 
@@ -72,8 +75,9 @@ fn fixture_tooling_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/fixture_tooling_governance.json"))
-        .expect("parse fixture tooling suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/fixture_tooling_governance.json"))
+            .expect("parse fixture tooling suite");
     assert_eq!(suite["id"], "fixture-tooling-governance");
 }
 
@@ -94,7 +98,8 @@ fn fixture_tooling_surfaces_are_anchored_in_repo() {
         );
     }
 
-    let governance_bin = read("crates/bijux-dev-dag/src/bin/generate_fixture_governance_reports.rs");
+    let governance_bin =
+        read("crates/bijux-dev-dag/src/bin/generate_fixture_governance_reports.rs");
     assert!(
         governance_bin.contains("fixture_governance_missing_owner_report.md"),
         "missing fixture governance report generation anchor"

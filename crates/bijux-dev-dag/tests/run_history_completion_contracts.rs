@@ -29,7 +29,10 @@ fn run_history_specs_and_performance_reports_exist() {
         "docs/reports/foundation/run_history_query_benchmarks.md",
         "docs/reports/foundation/run_history_query_latency_report.md",
     ] {
-        assert!(root().join(rel).exists(), "missing run history surface: {rel}");
+        assert!(
+            root().join(rel).exists(),
+            "missing run history surface: {rel}"
+        );
     }
 }
 
@@ -60,6 +63,9 @@ fn run_manifest_regression_corpus_and_stress_suite_are_present() {
         "run_history_stress_suite_many_runs_is_deterministic",
         "run_history_query_performance_contract_on_large_fixture_set",
     ] {
-        assert!(commands.contains(token), "missing stress suite command: {token}");
+        assert!(
+            commands.contains(token),
+            "missing stress suite command: {token}"
+        );
     }
 }

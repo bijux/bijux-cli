@@ -33,7 +33,10 @@ fn artifact_durability_contract_and_reports_exist() {
         "docs/reports/foundation/artifact_durability_coverage_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty artifact durability artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty artifact durability artifact: {rel}"
+        );
     }
 }
 
@@ -46,7 +49,10 @@ fn artifact_durability_corpus_and_suite_are_machine_readable() {
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 18, "expected broad artifact durability corpus");
+    assert!(
+        cases.len() >= 18,
+        "expected broad artifact durability corpus"
+    );
 
     for coverage in [
         "write-atomicity",
@@ -78,15 +84,17 @@ fn artifact_durability_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/artifact_durability_verification.json"))
-            .expect("parse artifact durability suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/artifact_durability_verification.json",
+    ))
+    .expect("parse artifact durability suite");
     assert_eq!(suite["id"], "artifact-durability-verification");
 }
 
 #[test]
 fn artifact_durability_surfaces_anchor_existing_storage_contracts() {
-    let lifecycle = read("crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs");
+    let lifecycle =
+        read("crates/bijux-dev-dag/tests/artifact_storage_lifecycle_completion_contracts.rs");
     for token in [
         "artifact_store_roundtrip_corruption_and_recovery_contracts_hold",
         "gc_explain_and_cleanup_plan_are_dry_run_safe_and_retention_aligned",

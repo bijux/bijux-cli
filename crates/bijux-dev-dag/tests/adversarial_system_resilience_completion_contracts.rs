@@ -38,9 +38,10 @@ fn adversarial_system_contract_and_reports_exist() {
 
 #[test]
 fn adversarial_system_corpus_and_suite_are_machine_readable() {
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/adversarial_system/regression_corpus.json"))
-            .expect("parse adversarial corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/adversarial_system/regression_corpus.json",
+    ))
+    .expect("parse adversarial corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
     assert!(cases.len() >= 15, "expected broad adversarial corpus");
@@ -111,4 +112,3 @@ fn adversarial_system_surfaces_anchor_existing_runtime_and_app_tests() {
         "missing adversarial battle coverage anchor"
     );
 }
-

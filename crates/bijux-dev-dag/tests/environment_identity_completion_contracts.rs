@@ -70,7 +70,8 @@ fn environment_identity_behavior_contracts_are_wired_to_runtime_and_replay_surfa
 
     let import_export = read("crates/bijux-dag-app/tests/run_dir_import_export_contract.rs");
     assert!(
-        import_export.contains("import_supports_offline_inspection_path_portability_and_line_endings"),
+        import_export
+            .contains("import_supports_offline_inspection_path_portability_and_line_endings"),
         "missing imported-run environment portability contract"
     );
 }
@@ -89,8 +90,9 @@ fn regression_corpus_suite_and_benchmark_reports_exist_and_are_parseable() {
         );
     }
 
-    let corpus: Value = serde_json::from_str(&read("evidence/cache/environment/regression_corpus.json"))
-        .expect("parse environment regression corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/environment/regression_corpus.json"))
+            .expect("parse environment regression corpus");
     assert_eq!(corpus["version"], "v1");
     assert!(
         corpus["cases"].as_array().expect("cases").len() >= 6,
@@ -115,6 +117,9 @@ fn regression_corpus_suite_and_benchmark_reports_exist_and_are_parseable() {
         "run_dir_import_export_contract",
         "environment_identity_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

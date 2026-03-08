@@ -33,18 +33,25 @@ fn internal_invariants_contract_and_reports_exist() {
         "docs/reports/foundation/internal_invariants_performance_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty internal invariants artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty internal invariants artifact: {rel}"
+        );
     }
 }
 
 #[test]
 fn internal_invariants_corpus_and_suite_are_machine_readable() {
-    let corpus: Value = serde_json::from_str(&read("evidence/cache/invariants/regression_corpus.json"))
-        .expect("parse internal invariants corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/invariants/regression_corpus.json"))
+            .expect("parse internal invariants corpus");
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 18, "expected broad internal invariants corpus");
+    assert!(
+        cases.len() >= 18,
+        "expected broad internal invariants corpus"
+    );
 
     for coverage in [
         "graph-state",
@@ -76,8 +83,10 @@ fn internal_invariants_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/internal_invariants_verification.json"))
-        .expect("parse internal invariants suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/internal_invariants_verification.json",
+    ))
+    .expect("parse internal invariants suite");
     assert_eq!(suite["id"], "internal-invariants-verification");
 }
 
@@ -98,7 +107,8 @@ fn internal_invariants_surfaces_anchor_existing_runtime_invariant_tests() {
         );
     }
 
-    let runtime_invariant_tests = read("crates/bijux-dag-runtime/src/internal/testing/invariants_tests.rs");
+    let runtime_invariant_tests =
+        read("crates/bijux-dag-runtime/src/internal/testing/invariants_tests.rs");
     for token in [
         "run_summary_invariant_matches_trace_totals",
         "run_summary_invariant_detects_mismatch",

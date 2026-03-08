@@ -33,7 +33,10 @@ fn performance_optimization_contract_and_reports_exist() {
         "docs/reports/foundation/performance_regression_summary_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty optimization artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty optimization artifact: {rel}"
+        );
     }
 }
 
@@ -77,9 +80,10 @@ fn performance_optimization_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/performance_optimization_regression.json"))
-            .expect("parse performance optimization suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/performance_optimization_regression.json",
+    ))
+    .expect("parse performance optimization suite");
     assert_eq!(suite["id"], "performance-optimization-regression");
 }
 

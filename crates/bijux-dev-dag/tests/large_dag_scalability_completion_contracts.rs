@@ -84,9 +84,10 @@ fn scalability_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/large_dag_scalability_regression.json"))
-            .expect("parse scalability suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/large_dag_scalability_regression.json",
+    ))
+    .expect("parse scalability suite");
     assert_eq!(suite["id"], "large-dag-scalability-regression");
 }
 

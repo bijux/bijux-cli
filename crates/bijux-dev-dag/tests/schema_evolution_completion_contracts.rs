@@ -35,7 +35,10 @@ fn schema_evolution_policy_and_registry_surfaces_exist() {
         "docs/reports/foundation/schema_migration_benchmarks.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty schema evolution surface: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty schema evolution surface: {rel}"
+        );
     }
 }
 
@@ -77,7 +80,10 @@ fn diff_and_explain_supported_and_future_versions_are_distinct() {
     ))
     .expect("parse future diff fixture");
     assert_eq!(diff_supported["schema_version"], "run-diff/v0.1");
-    assert_ne!(diff_supported["schema_version"], diff_future["schema_version"]);
+    assert_ne!(
+        diff_supported["schema_version"],
+        diff_future["schema_version"]
+    );
 
     let explain_supported: Value = serde_json::from_str(&read(
         "evidence/compat/explain_schema/v0_1_supported/minimal.explain.json",
@@ -99,10 +105,9 @@ fn diff_and_explain_supported_and_future_versions_are_distinct() {
 
 #[test]
 fn schema_regression_suite_declares_required_contract_commands() {
-    let suite: Value = serde_json::from_str(&read(
-        "configs/suites/schema_compatibility_regression.json",
-    ))
-    .expect("parse schema suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/schema_compatibility_regression.json"))
+            .expect("parse schema suite");
     assert_eq!(suite["id"], "schema-compatibility-regression");
     let commands = suite["commands"]
         .as_array()
@@ -116,6 +121,9 @@ fn schema_regression_suite_declares_required_contract_commands() {
         "proof_schema_compatibility_contracts",
         "schema_evolution_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing schema suite token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing schema suite token: {token}"
+        );
     }
 }

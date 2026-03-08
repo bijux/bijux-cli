@@ -41,7 +41,8 @@ fn provenance_specs_and_schema_surfaces_exist() {
 
 #[test]
 fn provenance_linkage_and_trace_tests_cover_required_contracts() {
-    let artifact_identity = read("crates/bijux-dag-app/tests/artifact_identity_explain_contract.rs");
+    let artifact_identity =
+        read("crates/bijux-dag-app/tests/artifact_identity_explain_contract.rs");
     for token in [
         "artifact_identity_explain_covers_provenance_and_lineage_traversal",
         "provenance_traversal_is_deterministic_across_repeated_inspection",
@@ -63,7 +64,8 @@ fn provenance_linkage_and_trace_tests_cover_required_contracts() {
     let artifact_lineage =
         read("crates/bijux-dag-artifacts/tests/artifact_identity_and_lineage_contracts.rs");
     assert!(
-        artifact_lineage.contains("lineage_traversal_is_stable_for_upstream_and_downstream_queries"),
+        artifact_lineage
+            .contains("lineage_traversal_is_stable_for_upstream_and_downstream_queries"),
         "missing artifact lineage traversal contract"
     );
 }
@@ -108,6 +110,9 @@ fn provenance_regression_corpus_suite_and_latency_report_are_present() {
         "semantic_lineage_contracts",
         "provenance_traceability_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

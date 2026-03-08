@@ -35,7 +35,10 @@ fn system_introspection_contract_and_reports_exist() {
         "docs/reports/foundation/system_introspection_anomaly_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty introspection artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty introspection artifact: {rel}"
+        );
     }
 }
 
@@ -130,4 +133,3 @@ fn system_introspection_surfaces_anchor_existing_command_implementations() {
         "missing diagnostics snapshot introspection anchor"
     );
 }
-

@@ -34,7 +34,10 @@ fn run_directory_specs_and_reports_exist() {
         "docs/reports/foundation/run_directory_filesystem_recovery_benchmarks.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty run-directory surface: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty run-directory surface: {rel}"
+        );
     }
 }
 

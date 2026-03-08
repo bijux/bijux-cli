@@ -32,15 +32,19 @@ fn execution_trace_contract_and_reports_exist() {
         "docs/reports/foundation/execution_trace_coverage_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty execution trace artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty execution trace artifact: {rel}"
+        );
     }
 }
 
 #[test]
 fn execution_trace_corpus_and_suite_are_machine_readable() {
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/execution_trace/regression_corpus.json"))
-            .expect("parse execution trace corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/execution_trace/regression_corpus.json",
+    ))
+    .expect("parse execution trace corpus");
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
@@ -77,8 +81,9 @@ fn execution_trace_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/execution_trace_regression.json"))
-        .expect("parse execution trace suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/execution_trace_regression.json"))
+            .expect("parse execution trace suite");
     assert_eq!(suite["id"], "execution-trace-regression");
 }
 
@@ -91,7 +96,10 @@ fn execution_trace_surfaces_anchor_runtime_and_app_contracts() {
         "INV-TRACE-ATTEMPT-001",
         "trace_time_order_ok",
     ] {
-        assert!(app.contains(token), "missing trace invariant anchor token: {token}");
+        assert!(
+            app.contains(token),
+            "missing trace invariant anchor token: {token}"
+        );
     }
 
     let diagnostics = read("crates/bijux-dag-app/src/routes/diagnostics_routes.rs");

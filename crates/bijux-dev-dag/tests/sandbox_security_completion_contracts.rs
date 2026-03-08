@@ -54,9 +54,10 @@ fn sandbox_security_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/sandbox_security/regression_corpus.json"))
-            .expect("parse sandbox corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/sandbox_security/regression_corpus.json",
+    ))
+    .expect("parse sandbox corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
     assert!(cases.len() >= 13, "expected sandbox corpus breadth");
@@ -88,8 +89,9 @@ fn sandbox_security_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/sandbox_security_hardening.json"))
-        .expect("parse sandbox suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/sandbox_security_hardening.json"))
+            .expect("parse sandbox suite");
     assert_eq!(suite["id"], "sandbox-security-hardening");
 }
 
@@ -115,7 +117,9 @@ fn runtime_and_dev_tests_anchor_sandbox_security_contracts() {
     let env_completion =
         read("crates/bijux-dev-dag/tests/environment_identity_completion_contracts.rs");
     assert!(
-        env_completion.contains("environment_identity_behavior_contracts_are_wired_to_runtime_and_replay_surfaces"),
+        env_completion.contains(
+            "environment_identity_behavior_contracts_are_wired_to_runtime_and_replay_surfaces"
+        ),
         "missing environment security completion token"
     );
 }

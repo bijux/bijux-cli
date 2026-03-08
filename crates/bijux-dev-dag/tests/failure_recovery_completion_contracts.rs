@@ -88,8 +88,9 @@ fn failure_regression_corpus_stress_suite_and_benchmark_report_are_present() {
         );
     }
 
-    let corpus: Value = serde_json::from_str(&read("evidence/cache/failure/regression_corpus.json"))
-        .expect("parse failure regression corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/failure/regression_corpus.json"))
+            .expect("parse failure regression corpus");
     assert_eq!(corpus["version"], "v1");
     assert!(
         corpus["cases"].as_array().expect("cases").len() >= 6,
@@ -114,6 +115,9 @@ fn failure_regression_corpus_stress_suite_and_benchmark_report_are_present() {
         "fault_resilience_integration",
         "failure_recovery_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

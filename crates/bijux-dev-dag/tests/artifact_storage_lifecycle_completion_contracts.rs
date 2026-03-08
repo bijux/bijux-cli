@@ -59,7 +59,10 @@ fn artifact_storage_corpus_and_suite_are_machine_readable() {
     .expect("parse artifact lifecycle corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 14, "expected artifact lifecycle corpus breadth");
+    assert!(
+        cases.len() >= 14,
+        "expected artifact lifecycle corpus breadth"
+    );
     for coverage in [
         "lifecycle-roundtrip",
         "replay-lifecycle",
@@ -118,9 +121,8 @@ fn artifact_crate_tests_anchor_lifecycle_contracts() {
         "missing artifact storage resilience gc token"
     );
 
-    let hardening = read(
-        "crates/bijux-dag-artifacts/tests/artifact_io_store_hardening_expansion_contracts.rs",
-    );
+    let hardening =
+        read("crates/bijux-dag-artifacts/tests/artifact_io_store_hardening_expansion_contracts.rs");
     for token in [
         "gc_explain_covers_retained_roots_and_collectable_leaves",
         "retention_explain_for_imported_bundle_prefixes_is_stable",

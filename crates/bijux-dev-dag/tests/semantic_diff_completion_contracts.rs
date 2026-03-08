@@ -33,16 +33,18 @@ fn semantic_diff_contract_and_reports_exist() {
         "docs/reports/foundation/semantic_diff_visualization_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty semantic diff artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty semantic diff artifact: {rel}"
+        );
     }
 }
 
 #[test]
 fn semantic_diff_corpus_and_suite_are_machine_readable() {
-    let corpus: Value = serde_json::from_str(&read(
-        "evidence/cache/semantic_diff/regression_corpus.json",
-    ))
-    .expect("parse semantic diff corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/semantic_diff/regression_corpus.json"))
+            .expect("parse semantic diff corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
     assert!(cases.len() >= 13, "expected broad semantic diff corpus");
@@ -112,4 +114,3 @@ fn semantic_diff_surfaces_anchor_existing_app_runtime_and_contract_tests() {
         "missing dev diff contract anchor"
     );
 }
-

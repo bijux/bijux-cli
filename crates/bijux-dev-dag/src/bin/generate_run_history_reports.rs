@@ -1,3 +1,5 @@
+#[cfg(test)]
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;

@@ -50,7 +50,10 @@ fn repository_structure_corpus_and_suite_are_machine_readable() {
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 14, "expected broad repository structure corpus");
+    assert!(
+        cases.len() >= 14,
+        "expected broad repository structure corpus"
+    );
 
     for coverage in [
         "largest-modules-report",
@@ -133,4 +136,3 @@ fn repository_structure_surfaces_anchor_existing_reports_and_hygiene_guards() {
         "missing dependency cycle contract anchor"
     );
 }
-

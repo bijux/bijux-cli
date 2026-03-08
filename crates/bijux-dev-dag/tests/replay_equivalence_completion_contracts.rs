@@ -33,7 +33,10 @@ fn replay_equivalence_contract_and_reports_exist() {
         "docs/reports/foundation/replay_equivalence_diagnostics_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty replay equivalence artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty replay equivalence artifact: {rel}"
+        );
     }
 }
 
@@ -45,7 +48,10 @@ fn replay_equivalence_corpus_and_suite_are_machine_readable() {
     .expect("parse replay equivalence corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 12, "expected broad replay equivalence corpus");
+    assert!(
+        cases.len() >= 12,
+        "expected broad replay equivalence corpus"
+    );
 
     for coverage in [
         "equivalence-detection",
@@ -76,10 +82,9 @@ fn replay_equivalence_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read(
-        "configs/suites/replay_equivalence_verification.json",
-    ))
-    .expect("parse replay equivalence suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/replay_equivalence_verification.json"))
+            .expect("parse replay equivalence suite");
     assert_eq!(suite["id"], "replay-equivalence-verification");
 }
 
@@ -99,7 +104,8 @@ fn replay_equivalence_surfaces_anchor_existing_app_runtime_and_contract_tests() 
 
     let app_replay_diff = read("crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs");
     assert!(
-        app_replay_diff.contains("replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity"),
+        app_replay_diff
+            .contains("replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity"),
         "missing replay drift fidelity anchor"
     );
 
@@ -115,4 +121,3 @@ fn replay_equivalence_surfaces_anchor_existing_app_runtime_and_contract_tests() 
         "missing replay hardening contract anchor"
     );
 }
-

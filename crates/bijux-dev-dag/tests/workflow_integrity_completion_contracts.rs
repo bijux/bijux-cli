@@ -83,7 +83,10 @@ fn workflow_regression_corpus_and_super_suite_are_machine_readable() {
             .expect("parse workflow corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 16, "expected broad workflow regression corpus");
+    assert!(
+        cases.len() >= 16,
+        "expected broad workflow regression corpus"
+    );
 
     for coverage in [
         "workflow-e2e",
@@ -104,8 +107,9 @@ fn workflow_regression_corpus_and_super_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/workflow_smoke_super_suite.json"))
-        .expect("parse workflow super suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/workflow_smoke_super_suite.json"))
+            .expect("parse workflow super suite");
     assert_eq!(suite["id"], "workflow-smoke-super-suite");
     let commands = suite["commands"]
         .as_array()

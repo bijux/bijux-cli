@@ -48,7 +48,10 @@ fn system_reliability_corpus_and_suite_are_machine_readable() {
     .expect("parse system reliability corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 13, "expected broad system reliability corpus");
+    assert!(
+        cases.len() >= 13,
+        "expected broad system reliability corpus"
+    );
 
     for coverage in [
         "runtime-reliability-targets",
@@ -80,16 +83,16 @@ fn system_reliability_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read(
-        "configs/suites/system_reliability_verification.json",
-    ))
-    .expect("parse system reliability suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/system_reliability_verification.json"))
+            .expect("parse system reliability suite");
     assert_eq!(suite["id"], "system-reliability-verification");
 }
 
 #[test]
 fn system_reliability_surfaces_anchor_existing_reliability_completion_contracts() {
-    let runtime = read("crates/bijux-dev-dag/tests/runtime_fault_tolerance_completion_contracts.rs");
+    let runtime =
+        read("crates/bijux-dev-dag/tests/runtime_fault_tolerance_completion_contracts.rs");
     assert!(
         runtime.contains("runtime_fault_tolerance_corpus_and_suite_are_machine_readable"),
         "missing runtime reliability anchor"
@@ -107,10 +110,10 @@ fn system_reliability_surfaces_anchor_existing_reliability_completion_contracts(
         "missing replay reliability anchor"
     );
 
-    let adversarial = read("crates/bijux-dev-dag/tests/adversarial_system_resilience_completion_contracts.rs");
+    let adversarial =
+        read("crates/bijux-dev-dag/tests/adversarial_system_resilience_completion_contracts.rs");
     assert!(
         adversarial.contains("scheduler-starvation"),
         "missing scheduler resilience anchor"
     );
 }
-

@@ -31,7 +31,10 @@ fn system_completeness_contract_and_reports_exist() {
         "docs/reports/foundation/system_completeness_coverage_matrix.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty completeness artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty completeness artifact: {rel}"
+        );
     }
 }
 
@@ -43,7 +46,10 @@ fn system_completeness_corpus_and_suite_are_machine_readable() {
     .expect("parse system completeness corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 15, "expected broad system completeness corpus");
+    assert!(
+        cases.len() >= 15,
+        "expected broad system completeness corpus"
+    );
 
     for coverage in [
         "system-invariants-coverage",
@@ -78,9 +84,10 @@ fn system_completeness_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/system_completeness_verification.json"))
-            .expect("parse system completeness suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/system_completeness_verification.json",
+    ))
+    .expect("parse system completeness suite");
     assert_eq!(suite["id"], "system-completeness-verification");
 }
 
@@ -104,4 +111,3 @@ fn system_completeness_surfaces_anchor_all_major_completion_contract_domains() {
         );
     }
 }
-

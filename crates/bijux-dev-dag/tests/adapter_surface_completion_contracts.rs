@@ -37,8 +37,10 @@ fn adapter_interface_and_runtime_specs_exist() {
 #[test]
 fn adapter_regression_corpus_is_machine_readable_and_complete() {
     let payload: Value = serde_json::from_str(
-        &fs::read_to_string(root().join("evidence/compat/backend_equivalence/adapter_regression_corpus.json"))
-            .expect("read corpus"),
+        &fs::read_to_string(
+            root().join("evidence/compat/backend_equivalence/adapter_regression_corpus.json"),
+        )
+        .expect("read corpus"),
     )
     .expect("parse corpus");
     assert_eq!(payload["version"], "v1");

@@ -75,8 +75,9 @@ fn system_health_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/system_health_verification.json"))
-        .expect("parse system health suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/system_health_verification.json"))
+            .expect("parse system health suite");
     assert_eq!(suite["id"], "system-health-verification");
 }
 
@@ -89,7 +90,11 @@ fn health_surfaces_anchor_existing_command_and_drift_diagnostics() {
     );
 
     let commands = read("crates/bijux-dev-dag/src/commands/mod.rs");
-    for token in ["run_storage_health", "run_drift_dashboard", "run_evidence_drift_verify"] {
+    for token in [
+        "run_storage_health",
+        "run_drift_dashboard",
+        "run_evidence_drift_verify",
+    ] {
         assert!(
             commands.contains(token),
             "missing health diagnostics command token: {token}"

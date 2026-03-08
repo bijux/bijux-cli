@@ -22,7 +22,10 @@ fn kubernetes_fixture_corpus_exists_and_is_parseable() {
     for rel in fixtures {
         let raw = bijux_dag_testkit::load_graph_fixture_json(env!("CARGO_MANIFEST_DIR"), rel);
         let parsed: Result<bijux_dag_core::Graph, _> = serde_json::from_value(raw);
-        assert!(parsed.is_ok(), "kubernetes fixture must parse as graph: {rel}");
+        assert!(
+            parsed.is_ok(),
+            "kubernetes fixture must parse as graph: {rel}"
+        );
     }
 }
 

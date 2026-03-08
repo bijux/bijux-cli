@@ -48,7 +48,10 @@ fn system_maintainability_corpus_and_suite_are_machine_readable() {
     .expect("parse system maintainability corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 13, "expected broad system maintainability corpus");
+    assert!(
+        cases.len() >= 13,
+        "expected broad system maintainability corpus"
+    );
 
     for coverage in [
         "maintainability-guidelines",
@@ -91,15 +94,20 @@ fn system_maintainability_corpus_and_suite_are_machine_readable() {
 
 #[test]
 fn system_maintainability_surfaces_anchor_existing_boundary_and_hygiene_controls() {
-    let repo_structure = read("crates/bijux-dev-dag/tests/repository_structure_completion_contracts.rs");
+    let repo_structure =
+        read("crates/bijux-dev-dag/tests/repository_structure_completion_contracts.rs");
     assert!(
-        repo_structure.contains("repository_structure_surfaces_anchor_existing_reports_and_hygiene_guards"),
+        repo_structure
+            .contains("repository_structure_surfaces_anchor_existing_reports_and_hygiene_guards"),
         "missing repository structure maintainability anchor"
     );
 
-    let conceptual = read("crates/bijux-dev-dag/tests/system_conceptual_integrity_completion_contracts.rs");
+    let conceptual =
+        read("crates/bijux-dev-dag/tests/system_conceptual_integrity_completion_contracts.rs");
     assert!(
-        conceptual.contains("conceptual_integrity_surfaces_anchor_existing_architecture_and_conformance_docs"),
+        conceptual.contains(
+            "conceptual_integrity_surfaces_anchor_existing_architecture_and_conformance_docs"
+        ),
         "missing conceptual integrity maintainability anchor"
     );
 
@@ -128,4 +136,3 @@ fn system_maintainability_surfaces_anchor_existing_boundary_and_hygiene_controls
         );
     }
 }
-

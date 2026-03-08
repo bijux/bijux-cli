@@ -87,19 +87,16 @@ fn telemetry_regression_corpus_and_stress_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read("configs/suites/runtime_observability_stress.json"))
-        .expect("parse observability suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/runtime_observability_stress.json"))
+            .expect("parse observability suite");
     assert_eq!(suite["id"], "runtime-observability-stress");
 }
 
 #[test]
 fn runtime_and_app_tests_anchor_diagnostics_and_telemetry_surfaces() {
     let app_faults = read("crates/bijux-dag-app/tests/fault_resilience_integration.rs");
-    for token in [
-        "verify",
-        "run_matches",
-        "create_corrupted_run_dir",
-    ] {
+    for token in ["verify", "run_matches", "create_corrupted_run_dir"] {
         assert!(
             app_faults.contains(token),
             "missing app diagnostics anchor token: {token}"
@@ -119,10 +116,7 @@ fn runtime_and_app_tests_anchor_diagnostics_and_telemetry_surfaces() {
 
     let runtime_resilience =
         read("crates/bijux-dag-runtime/tests/runtime_execution_resilience_contracts.rs");
-    for token in [
-        "verify_post_run_state_consistency",
-        "classify_failure",
-    ] {
+    for token in ["verify_post_run_state_consistency", "classify_failure"] {
         assert!(
             runtime_resilience.contains(token),
             "missing runtime telemetry/failure anchor token: {token}"

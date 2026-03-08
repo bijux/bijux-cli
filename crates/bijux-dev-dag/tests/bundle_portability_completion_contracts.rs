@@ -121,6 +121,9 @@ fn bundle_benchmark_and_regression_artifacts_are_present() {
         "replay_proof_contract",
         "bundle_portability_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

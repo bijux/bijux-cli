@@ -42,9 +42,10 @@ fn system_invariants_contract_and_reports_exist() {
 
 #[test]
 fn system_invariants_corpus_and_suite_are_machine_readable() {
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/system_invariants/regression_corpus.json"))
-            .expect("parse system invariants corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/system_invariants/regression_corpus.json",
+    ))
+    .expect("parse system invariants corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
     assert!(cases.len() >= 12, "expected broad system invariants corpus");
@@ -95,7 +96,10 @@ fn system_invariants_surfaces_anchor_existing_invariant_runtime_and_app_flows() 
         "INV-TRACE-TIME-001",
         "INV-REPLAY-EQUIV-001",
     ] {
-        assert!(formal.contains(token), "missing formal invariant token: {token}");
+        assert!(
+            formal.contains(token),
+            "missing formal invariant token: {token}"
+        );
     }
 
     let cli = read("crates/bijux-dev-dag/src/commands/cli.rs");
@@ -105,7 +109,11 @@ fn system_invariants_surfaces_anchor_existing_invariant_runtime_and_app_flows() 
     );
 
     let commands = read("crates/bijux-dev-dag/src/commands/mod.rs");
-    for token in ["invariants-report", "run_invariants_report", "run_evidence_replay_verify"] {
+    for token in [
+        "invariants-report",
+        "run_invariants_report",
+        "run_evidence_replay_verify",
+    ] {
         assert!(
             commands.contains(token),
             "missing invariant command anchor token: {token}"
@@ -124,4 +132,3 @@ fn system_invariants_surfaces_anchor_existing_invariant_runtime_and_app_flows() 
         "missing import/export invariant anchor"
     );
 }
-

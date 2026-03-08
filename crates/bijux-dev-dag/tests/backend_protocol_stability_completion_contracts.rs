@@ -33,7 +33,10 @@ fn backend_protocol_contract_and_reports_exist() {
         "docs/reports/foundation/backend_protocol_coverage_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty backend protocol artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty backend protocol artifact: {rel}"
+        );
     }
 }
 
@@ -78,10 +81,9 @@ fn backend_protocol_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value = serde_json::from_str(&read(
-        "configs/suites/backend_protocol_verification.json",
-    ))
-    .expect("parse backend protocol suite");
+    let suite: Value =
+        serde_json::from_str(&read("configs/suites/backend_protocol_verification.json"))
+            .expect("parse backend protocol suite");
     assert_eq!(suite["id"], "backend-protocol-verification");
 }
 

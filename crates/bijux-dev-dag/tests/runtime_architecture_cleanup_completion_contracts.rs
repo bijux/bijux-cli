@@ -62,7 +62,10 @@ fn runtime_architecture_corpus_and_suite_are_machine_readable() {
     .expect("parse runtime architecture corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 9, "expected runtime architecture corpus breadth");
+    assert!(
+        cases.len() >= 9,
+        "expected runtime architecture corpus breadth"
+    );
     for coverage in [
         "module-boundary",
         "ownership",
@@ -101,8 +104,7 @@ fn runtime_dev_tests_anchor_architecture_cleanup_contracts() {
         "missing runtime scope guardrail anchor"
     );
 
-    let ownership =
-        read("crates/bijux-dev-dag/tests/runtime_broad_surface_ownership_contracts.rs");
+    let ownership = read("crates/bijux-dev-dag/tests/runtime_broad_surface_ownership_contracts.rs");
     assert!(
         ownership.contains("missing runtime module"),
         "missing runtime ownership anchor"

@@ -111,14 +111,16 @@ fn runtime_and_dev_tests_anchor_distributed_execution_contracts() {
 
     let worker_protocol = read("crates/bijux-dev-dag/tests/remote_worker_protocol_contracts.rs");
     assert!(
-        worker_protocol.contains("distributed_runtime_contract_tests_cover_worker_protocol_semantics"),
+        worker_protocol
+            .contains("distributed_runtime_contract_tests_cover_worker_protocol_semantics"),
         "missing remote worker protocol anchor token"
     );
 
     let worker_release =
         read("crates/bijux-dev-dag/tests/remote_worker_protocol_release_contracts.rs");
     assert!(
-        worker_release.contains("execution support policy must keep remote distributed in simulated status"),
+        worker_release
+            .contains("execution support policy must keep remote distributed in simulated status"),
         "missing remote worker release anchor token"
     );
 }

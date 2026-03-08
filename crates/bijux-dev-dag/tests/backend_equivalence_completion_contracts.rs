@@ -35,7 +35,10 @@ fn backend_equivalence_specs_and_support_documents_exist() {
         "docs/reference/REMOTE_SUPPORT_MATRIX.md",
     ] {
         let text = read(rel);
-        assert!(!text.trim().is_empty(), "empty backend equivalence surface: {rel}");
+        assert!(
+            !text.trim().is_empty(),
+            "empty backend equivalence surface: {rel}"
+        );
     }
 }
 
@@ -103,7 +106,10 @@ fn backend_equivalence_corpus_and_stress_suite_are_machine_readable() {
     .expect("parse generated backend equivalence corpus");
     assert_eq!(corpus["version"], "v1");
     let cases = corpus["cases"].as_array().expect("cases");
-    assert!(cases.len() >= 8, "expected broad backend equivalence corpus");
+    assert!(
+        cases.len() >= 8,
+        "expected broad backend equivalence corpus"
+    );
     for coverage in [
         "equivalence-proof-output",
         "semantic-portability-reporting",

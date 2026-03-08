@@ -41,9 +41,10 @@ fn advanced_explainability_contract_and_reports_exist() {
 
 #[test]
 fn advanced_explainability_corpus_and_suite_are_machine_readable() {
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/explainability/regression_corpus.json"))
-            .expect("parse advanced explainability corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/explainability/regression_corpus.json",
+    ))
+    .expect("parse advanced explainability corpus");
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
@@ -79,15 +80,17 @@ fn advanced_explainability_corpus_and_suite_are_machine_readable() {
         );
     }
 
-    let suite: Value =
-        serde_json::from_str(&read("configs/suites/advanced_explainability_regression.json"))
-            .expect("parse advanced explainability suite");
+    let suite: Value = serde_json::from_str(&read(
+        "configs/suites/advanced_explainability_regression.json",
+    ))
+    .expect("parse advanced explainability suite");
     assert_eq!(suite["id"], "advanced-explainability-regression");
 }
 
 #[test]
 fn advanced_explainability_is_anchored_to_existing_explain_surfaces() {
-    let explain_surface = read("crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs");
+    let explain_surface =
+        read("crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs");
     for token in [
         "why_rerun_reports_graph_drift_group",
         "why_rerun_reports_environment_drift_group",

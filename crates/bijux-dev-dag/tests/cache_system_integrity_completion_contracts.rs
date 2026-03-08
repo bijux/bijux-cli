@@ -33,15 +33,19 @@ fn cache_integrity_contract_and_reports_exist() {
         "docs/reports/foundation/cache_integrity_coverage_report.md",
     ] {
         let body = read(rel);
-        assert!(!body.trim().is_empty(), "empty cache integrity artifact: {rel}");
+        assert!(
+            !body.trim().is_empty(),
+            "empty cache integrity artifact: {rel}"
+        );
     }
 }
 
 #[test]
 fn cache_integrity_corpus_and_suite_are_machine_readable() {
-    let corpus: Value =
-        serde_json::from_str(&read("evidence/cache/cache_integrity/regression_corpus.json"))
-            .expect("parse cache integrity corpus");
+    let corpus: Value = serde_json::from_str(&read(
+        "evidence/cache/cache_integrity/regression_corpus.json",
+    ))
+    .expect("parse cache integrity corpus");
     assert_eq!(corpus["version"], "v1");
 
     let cases = corpus["cases"].as_array().expect("cases");
@@ -105,9 +109,11 @@ fn cache_integrity_surfaces_anchor_existing_cache_contracts() {
         );
     }
 
-    let explain_surface = read("crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs");
+    let explain_surface =
+        read("crates/bijux-dev-dag/tests/explain_surface_completion_contracts.rs");
     assert!(
-        explain_surface.contains("explain_why_cache_missed_reports_corrupt_entry_verification_failure"),
+        explain_surface
+            .contains("explain_why_cache_missed_reports_corrupt_entry_verification_failure"),
         "missing cache explain integration anchor"
     );
 }

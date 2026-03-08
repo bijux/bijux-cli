@@ -91,8 +91,9 @@ fn explain_regression_corpus_suite_and_benchmark_reports_exist() {
         );
     }
 
-    let corpus: Value = serde_json::from_str(&read("evidence/cache/explain/regression_corpus.json"))
-        .expect("parse explain regression corpus");
+    let corpus: Value =
+        serde_json::from_str(&read("evidence/cache/explain/regression_corpus.json"))
+            .expect("parse explain regression corpus");
     assert_eq!(corpus["version"], "v1");
     assert!(
         corpus["cases"].as_array().expect("cases").len() >= 6,
@@ -115,6 +116,9 @@ fn explain_regression_corpus_suite_and_benchmark_reports_exist() {
         "route_output_wording_snapshot_contracts",
         "explain_surface_completion_contracts",
     ] {
-        assert!(commands.contains(token), "missing suite command token: {token}");
+        assert!(
+            commands.contains(token),
+            "missing suite command token: {token}"
+        );
     }
 }

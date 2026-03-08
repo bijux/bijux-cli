@@ -1,3 +1,5 @@
+#[cfg(test)]
+use bijux_dag_testkit as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
@@ -33,7 +35,14 @@ fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 fn extract_helper_name(line: &str) -> Option<String> {
     let trimmed = line.trim_start();
-    let starts = ["fn load_", "fn read_", "fn fixture_path", "fn fixture_dir", "fn fixtures_root", "fn parse_fixture"];
+    let starts = [
+        "fn load_",
+        "fn read_",
+        "fn fixture_path",
+        "fn fixture_dir",
+        "fn fixtures_root",
+        "fn parse_fixture",
+    ];
     if !starts.iter().any(|p| trimmed.starts_with(p)) {
         return None;
     }
