@@ -14,7 +14,7 @@ jobs:
         with:
           toolchain: 1.81
       - name: generate hotspot reports
-        run: ./scripts/repo_health/generate_hotspot_reports.sh
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo hotspot-reports
       - name: verify generated hotspot reports are committed
         run: git diff --exit-code docs/reports/foundation/file_size_hotspot_report.md docs/reports/foundation/long_function_hotspot_report.md docs/reports/foundation/public_api_hotspot_report.md docs/reports/foundation/dependency_cycle_report.md
       - name: run repo health contract tests

@@ -14,7 +14,7 @@ jobs:
         with:
           toolchain: 1.81
       - name: generate schema changelog
-        run: ./scripts/generate_schema_changelog.sh
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo schema-changelog
       - name: verify changelog is committed
         run: git diff --exit-code docs/reports/foundation/schema_changelog.md
       - name: schema governance contract tests
