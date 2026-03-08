@@ -1,27 +1,32 @@
 {
-  "policy_version": "1",
+  "policy_version": "2",
   "quarantined_prefixes": [
     "backend/distributed/",
     "internal/analysis/",
     "internal/workflow/",
     "diagnostics/runtime/"
   ],
+  "speculative_surface_budget": {
+    "max_speculative_modules": 16,
+    "current_speculative_modules": 13,
+    "enforcement": "fail-on-growth-without-reclassification"
+  },
   "advanced_semantics_modules": [
-    {"module": "backend/distributed/coordination.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/distributed.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/distribution_readiness.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/federated_scheduling.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/geo_federation.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/ha_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "backend/distributed/infrastructure.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "diagnostics/runtime/control_plane_api.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "internal/analysis/adaptive_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "internal/analysis/cost_optimization.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "internal/analysis/dataset_semantics.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "internal/workflow/ai_operator_assist.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "internal/workflow/workflow_product.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false},
-    {"module": "adapters/registry.rs", "category": "adapter-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true},
-    {"module": "runtime_core/execution/scheduler.rs", "category": "runtime-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true},
-    {"module": "runtime_core/execution/run_state.rs", "category": "kernel-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true}
+    {"module": "backend/distributed/coordination.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/distributed.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/distribution_readiness.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/federated_scheduling.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/geo_federation.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/ha_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "backend/distributed/infrastructure.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-distributed-runtime", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "diagnostics/runtime/control_plane_api.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-control-plane-api", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "internal/analysis/adaptive_scheduler.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-runtime-intelligence", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "internal/analysis/cost_optimization.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-runtime-intelligence", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "internal/analysis/dataset_semantics.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-runtime-intelligence", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "internal/workflow/ai_operator_assist.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-operator-assist", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "internal/workflow/workflow_product.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-operator-assist", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
+    {"module": "adapters/registry.rs", "category": "adapter-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
+    {"module": "runtime_core/execution/scheduler.rs", "category": "runtime-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
+    {"module": "runtime_core/execution/run_state.rs", "category": "kernel-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"}
   ]
 }
