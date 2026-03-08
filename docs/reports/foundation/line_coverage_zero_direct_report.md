@@ -25,7 +25,7 @@ Files in crate `src/` trees with 0% line coverage.
 | crates/bijux-dag-runtime/src/backend/distributed/geo_federation.rs | 0 | 40 | 0.00 |
 | crates/bijux-dag-runtime/src/backend/distributed/ha_scheduler.rs | 0 | 7 | 0.00 |
 | crates/bijux-dag-runtime/src/backend/distributed/infrastructure.rs | 0 | 45 | 0.00 |
-| crates/bijux-dag-runtime/src/backend/runtime/batch_execution.rs | 0 | 73 | 0.00 |
+| crates/bijux-dag-runtime/src/backend/runtime/batch_execution.rs | 0 | 1 | 0.00 |
 | crates/bijux-dag-runtime/src/backend/runtime/container_execution.rs | 0 | 16 | 0.00 |
 | crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs | 0 | 185 | 0.00 |
 | crates/bijux-dag-runtime/src/cache/mod.rs | 0 | 5 | 0.00 |
@@ -47,5 +47,6 @@ Files in crate `src/` trees with 0% line coverage.
 | crates/bijux-dag-runtime/src/runtime_core/execution/scheduler_workload.rs | 0 | 160 | 0.00 |
 | crates/bijux-dag-runtime/src/runtime_core/governance/semantics.rs | 0 | 18 | 0.00 |
 | crates/bijux-dag-runtime/src/runtime_core/planning/planner_analysis.rs | 0 | 257 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_line_coverage_reports.rs | 0 | 234 | 0.00 |
 
 _Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._
