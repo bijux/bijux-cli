@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "lane": "release-critical",
+  "commands": [
+    "verify evidence-battle",
+    "verify evidence-cache",
+    "verify evidence-replay",
+    "verify evidence-compat",
+    "verify evidence-fault",
+    "verify evidence-perf",
+    "verify evidence-consumers",
+    "verify evidence-release-set"
+  ],
+  "primary_outputs": [
+    "docs/reports/foundation/release_evidence_dashboard.json",
+    "evidence/release/release_evidence.json",
+    "docs/reports/foundation/release_critical_evidence_matrix.md"
+  ]
+}

@@ -1,20 +1,17 @@
-# Release-Critical Evidence Commands Only Report
+# Release-Critical Evidence Commands
 
-Generated from evidence command classification and CI exercise mapping.
+Commands in this list are release-blocking and must run in green paths.
 
-## Release-critical commands
+- `verify evidence-battle`
+- `verify evidence-cache`
+- `verify evidence-replay`
+- `verify evidence-compat`
+- `verify evidence-fault`
+- `verify evidence-perf`
+- `verify evidence-consumers`
+- `verify evidence-release-set`
 
-- `verify-release-evidence`
-- `verify-release-conformance`
-- `verify-proof-integrity`
-
-## Execution requirements
-
-- must run in `make test-all` or `make evidence-all`
-
-## Supporting evidence
-
+Sources:
+- `configs/policy/evidence_rationalization_policy.json`
 - `configs/policy/evidence_command_classification.json`
-- `docs/reports/foundation/release_critical_evidence_matrix.md`
-- `docs/reports/foundation/evidence_ci_exercise_report.md`
-- `docs/reports/foundation/release_evidence_dashboard.md`
+- `make/root.mk`
