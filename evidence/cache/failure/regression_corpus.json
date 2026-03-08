@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "timeout-classification",
+      "scenario": "timeout failures classify deterministically as timeout",
+      "source_test": "failure_paths_are_classified_explicitly"
+    },
+    {
+      "id": "cancellation-classification",
+      "scenario": "cancellation failures classify deterministically as cancelled",
+      "source_test": "failure_paths_are_classified_explicitly"
+    },
+    {
+      "id": "artifact-corruption-classification",
+      "scenario": "artifact corruption maps to artifact corruption class",
+      "source_test": "failure_classification_matrix_covers_policy_cache_artifact_and_adapter"
+    },
+    {
+      "id": "policy-cache-adapter-classification",
+      "scenario": "policy violation, cache invalidation, and adapter failures remain distinct classes",
+      "source_test": "failure_classification_matrix_covers_policy_cache_artifact_and_adapter"
+    },
+    {
+      "id": "checkpoint-recovery-required",
+      "scenario": "checkpoint without terminal state requires recovery action",
+      "source_test": "recovery_required_for_checkpoint_without_terminal_completion"
+    },
+    {
+      "id": "partial-artifact-recovery-required",
+      "scenario": "partial artifact writes trigger recovery requirement",
+      "source_test": "recovery_required_for_partial_artifact_or_interrupted_execution"
+    }
+  ]
+}
