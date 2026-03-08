@@ -1,6 +1,17 @@
 # Architecture Decision Records
 
-ADRs capture architectural decisions and their rationale.
+Audience: maintainers.  
+Owner: platform documentation guild.  
+Status: historical.
 
-## Naming
+ADRs capture durable decisions that changed architecture direction.
+
+## Directory role
+
+- Keep ADRs as historical artifacts with rationale and outcomes.
+- Remove user guidance and operational narratives from ADRs.
+- Do not duplicate root-level governance pages or reference material.
+
+## Naming rule
+
 Use `YYYYMMDD-title.md`.

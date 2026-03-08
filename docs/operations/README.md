@@ -1,3 +1,17 @@
+# Operations documentation
+
+Audience: maintainers and operators.  
+Owner: operations documentation maintainer.  
+Status: stable.
+
+This section is the maintainer operations workspace for practical runbook-level workflows.
+The content here is intentionally operational and not user onboarding material.
+
+## Directory role
+
+- Keep practical run, diff, replay, cache, and diagnostics workflows.
+- Keep examples aligned with canonical references in `reference/` and contracts in `spec/`.
+
 # Operations
 
 ## Running

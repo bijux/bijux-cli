@@ -19,6 +19,8 @@ Only the following top-level sections are allowed in the final tree:
 - `docs/architecture/`
 - `docs/adr/`
 - `docs/operations/`
+- `docs/dev/`
+- `docs/testing/`
 - `docs/reports/`
 - `docs/generated/`
 
@@ -54,6 +56,14 @@ One path should cover onboarding, installation, and common operations.
 
 ### `docs/operations/`
 Maintainer-facing implementation operations and practical execution workflows.
+
+### `docs/dev/`
+Developer workflows, contribution practices, and local tooling guidance.
+
+### `docs/testing/`
+Maintainer and contributor test execution workflows.
+
+Decision: `dev`, `operations`, and `testing` remain separate for now to preserve clear audience focus.
 
 ### `docs/README.md` and `docs/index.md`
 Root entrypoint docs.

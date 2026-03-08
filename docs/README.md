@@ -1,22 +1,35 @@
 # Documentation
 
-This directory contains all project documentation.
+This directory is the top-level documentation area for the project.
 
-## Structure
-- `docs/spec/` — Formal specs (DAG, artifacts, validation, schemas)
-- `docs/architecture/` — Architectural notes and diagrams
-- `docs/adr/` — Architecture Decision Records (one per decision)
-- `docs/operations/` — How to run, replay, diff, caching, failure semantics
-- `docs/ADAPTERS.md` — Adapter API and examples
-- `docs/POLICY.md` — Policy gates and effects enforcement
-- `docs/reports/foundation/` — Large report artifacts (archived low-value items consolidated)
-- `docs/index.md` — Single navigation index for repository documentation
-- `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/OWNERSHIP.md` — Governance and ownership
-- `docs/CACHE_SEMANTICS.md` and `docs/REPLAY_GUARANTEES.md` — Runtime behavior contracts
+## Source of truth
 
-## Conventions
-- Specs are versioned files (e.g., `*_v0.1.md`).
-- ADRs are named `YYYYMMDD-title.md`.
-- Build artifacts are written under `artifacts/` (local cache and generated targets).
-- `artifacts/` is not committed; generated files belong under `artifacts/` and are ignored by default via `artifacts/.gitignore`.
-- Build environment, tools, and cache policy is documented in `DEVELOPMENT.md`.
+Global documentation policy is defined in [docs-information-architecture.md](../docs-information-architecture.md).
+All structural cleanup, consolidation, and retention decisions for docs are guided by this document.
+
+## Primary entrypoints
+
+- [`index.md`](./index.md) — discovery path and curated navigation
+- [`README.md`](./README.md) — this file
+
+## Allowed top-level documentation sections
+
+- `architecture/` — live system maps and boundary documentation
+- `adr/` — durable historical decisions
+- `operations/` — maintainer operation workflows
+- `reference/` — operator and maintainer reference material
+- `testing/` — maintainer and contributor testing workflows
+- `dev/` — contributor and local development workflows
+- `reports/` — curated human-readable summaries
+- `spec/` — canonical contracts
+- `user/` — beginner and operator guides
+- `generated/` — committed generated outputs that are intentionally retained
+
+No other top-level folders in `docs/` should be added without updating the master architecture file.
+
+## Section conventions
+
+- Root-level docs are entrypoints only. They should explain where to start, not detailed implementation behavior.
+- Every documentation file must belong to one audience, one owner, and one status: `stable`, `generated`, `historical`, or `internal`.
+- Generated output must be separated from hand-authored guidance.
+- Reference and spec content must avoid duplication of source-of-truth contracts.
