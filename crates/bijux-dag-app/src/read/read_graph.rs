@@ -31,19 +31,20 @@ pub fn parse_graph_with_compat(input: &str) -> Result<Graph, GraphError> {
 #[cfg(test)]
 mod tests {
     use super::{parse_graph, parse_graph_with_compat};
+    use bijux_dag_core::SPEC_VERSION;
 
     #[test]
     fn parses_graph_in_strict_mode() {
         let input = r#"{"spec":"v1","nodes":[],"edges":[]}"#;
         let graph = parse_graph(input).expect("parse graph");
-        assert_eq!(graph.spec, "v1");
+        assert_eq!(graph.spec, SPEC_VERSION);
     }
 
     #[test]
     fn accepts_legacy_spec_in_compat_mode() {
         let input = r#"{"spec":"0.1","nodes":[],"edges":[]}"#;
         let graph = parse_graph_with_compat(input).expect("parse graph with compat");
-        assert_eq!(graph.spec, "v1");
+        assert_eq!(graph.spec, SPEC_VERSION);
     }
 
     #[test]

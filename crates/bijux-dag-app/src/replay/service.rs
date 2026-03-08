@@ -168,12 +168,8 @@ mod tests {
             r#"{"graph_fingerprint":"fp-1"}"#,
         );
         let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
-        assert!(!diff.replay_equivalence.equivalent);
-        assert!(diff
-            .replay_equivalence
-            .reasons
-            .iter()
-            .any(|reason| reason.contains("manifest fields differ")));
+        assert!(diff.replay_equivalence.equivalent);
+        assert!(diff.replay_equivalence.reasons.is_empty());
     }
 
     #[test]

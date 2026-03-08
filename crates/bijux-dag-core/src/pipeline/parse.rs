@@ -5,7 +5,7 @@ use crate::{Graph, SPEC_VERSION};
 
 pub fn parse_graph_strict(input: &str) -> Result<Graph, GraphError> {
     let mut graph: Graph = serde_json::from_str(input)?;
-    if graph.spec == "0.1" || graph.spec == "v0.1" {
+    if graph.spec == "0.1" || graph.spec == "v0.1" || graph.spec == "v1" {
         graph.spec = SPEC_VERSION.to_string();
     }
     if graph.spec != SPEC_VERSION {

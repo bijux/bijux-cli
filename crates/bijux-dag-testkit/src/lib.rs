@@ -83,18 +83,15 @@ pub fn graph_chain() -> Graph {
 }
 
 pub fn graph_diamond() -> Graph {
+    let mut d = shell_node("d");
+    d.inputs = vec!["in_left".to_string(), "in_right".to_string()];
     graph_from_nodes(
-        vec![
-            const_node("a"),
-            shell_node("b"),
-            shell_node("c"),
-            shell_node("d"),
-        ],
+        vec![const_node("a"), shell_node("b"), shell_node("c"), d],
         vec![
             ("a", "out", "b", "in"),
             ("a", "out", "c", "in"),
-            ("b", "out", "d", "in"),
-            ("c", "out", "d", "in"),
+            ("b", "out", "d", "in_left"),
+            ("c", "out", "d", "in_right"),
         ],
     )
 }

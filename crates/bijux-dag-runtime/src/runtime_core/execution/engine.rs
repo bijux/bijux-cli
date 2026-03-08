@@ -49,11 +49,14 @@ pub fn execute(
     run_dir.write_graph_snapshot(&serde_json::to_string_pretty(&graph_json)?)?;
 
     let run_id = options.run_id.clone().unwrap_or_else(|| {
-        run_dir
+        let dir_name = run_dir
             .final_path()
             .file_name()
-            .unwrap()
-            .to_string_lossy()
+            .map(|v| v.to_string_lossy().to_string())
+            .unwrap_or_default();
+        dir_name
+            .strip_prefix("run-")
+            .unwrap_or(dir_name.as_str())
             .to_string()
     });
 
