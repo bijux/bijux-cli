@@ -628,19 +628,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             explain,
         } => routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff"),
         Commands::WhyRerun { run_a, run_b } => {
-            let payload = routes::diagnostics_routes::why_rerun_payload(run_a, run_b)?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.why-rerun",
-                    true,
-                    payload,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(ExitCode::SUCCESS)
+            routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)
         }
         Commands::WhyCacheMissed {
             key,
@@ -674,23 +662,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::TraceArtifact {
-            run_dir,
-            artifact_id,
-        } => {
-            let payload = routes::diagnostics_routes::trace_artifact_payload(run_dir, artifact_id)?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.trace-artifact",
-                    true,
-                    payload,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(ExitCode::SUCCESS)
+        Commands::TraceArtifact { run_dir, artifact_id } => {
+            routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
         }
         Commands::Run {
             dag,
