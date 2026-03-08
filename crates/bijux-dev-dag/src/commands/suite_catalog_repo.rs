@@ -91,7 +91,7 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "executable-guard",
-        description: "checked-in executable files are restricted to scripts",
+        description: "checked-in executable source and docs files are forbidden",
         domain: "governance",
         slow: false,
         internal: false,
@@ -669,4 +669,3 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
         run: || run_repo_hygiene_suite_guard(),
     },
 ];
-

@@ -64,10 +64,10 @@ docs: ## Run documentation checks
 	$(call run_or_fail,Run documentation checks,$(DEV_TOOL) docs run)
 
 docs-governance-lint: ## Lint docs metadata, titles, and orphan status
-	$(call run_or_fail,Run docs governance lint,python3 scripts/docs_governance.py lint)
+	$(call run_or_fail,Run docs governance lint,$(DEV_TOOL) docs run --domain governance --fail-fast)
 
 docs-inventory-generate: ## Generate docs inventory and consolidation candidate reports
-	$(call run_or_fail,Generate docs inventory reports,python3 scripts/docs_governance.py generate)
+	$(call run_or_fail,Generate docs inventory reports,$(DEV_TOOL) docs-index)
 
 security: ## Run security checks
 	$(call run_or_fail,Run security checks,$(DEV_TOOL) checks run --domain supply-chain)

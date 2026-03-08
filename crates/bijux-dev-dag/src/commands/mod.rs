@@ -3219,13 +3219,13 @@ fn run_executable_guard() -> Result<(), String> {
                 .permissions()
                 .mode();
             let executable = mode & 0o111 != 0;
-            if executable && !rel.starts_with("scripts/") {
+            if executable {
                 violations.push(rel);
             }
         }
         if !violations.is_empty() {
             return Err(format!(
-                "executable files outside scripts/ are not allowed: {}",
+                "executable source/docs/config files are not allowed: {}",
                 violations.join(", ")
             ));
         }

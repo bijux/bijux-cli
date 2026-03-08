@@ -1,7 +1,21 @@
 use crate::commands::repo_root;
+use serde::Deserialize;
 use serde_json::Value;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+
+#[derive(Debug, Deserialize, Default)]
+struct DocsLintPolicy {
+    #[serde(default)]
+    exclude_prefixes: Vec<String>,
+    #[serde(default)]
+    metadata_required_prefixes: Vec<String>,
+    #[serde(default)]
+    metadata_required_exact: Vec<String>,
+    #[serde(default)]
+    standalone_allowlist: Vec<String>,
+}
 
 pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
@@ -161,7 +175,7 @@ pub(super) fn run_naming_governance_guard() -> Result<(), String> {
         "docs/spec/TERMINOLOGY_GLOSSARY.md",
         "docs/spec/NAMING_PHILOSOPHY.md",
         "docs/spec/NAMING_REVIEW_POLICY.md",
-        "docs/architecture/naming_audit.md",
+        "docs/reference/NAMING_AUDIT.md",
         "configs/policy/naming_rules.json",
     ];
     for rel in required_docs {
@@ -234,10 +248,10 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
         "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
         "docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md",
         "docs/reports/foundation/docs_root_inventory_report.md",
-        "docs/reports/foundation/config_inventory_report.md",
-        "docs/reports/foundation/evidence_claim_links.md",
-        "docs/reports/foundation/renovation_burndown_report.md",
-        "docs/architecture/ADR_RENOVATION_ALIGNMENT.md",
+        "docs/reports/foundation/foundation_final_report.md",
+        "docs/reports/foundation/repository_proof_statement.md",
+        "docs/reports/foundation/archive/renovation_burndown_report.md",
+        "docs/adr/20260309-documentation-governance-alignment.md",
     ] {
         if !root.join(required).exists() {
             return Err(format!(
@@ -393,7 +407,9 @@ pub(super) fn run_docs_index_generate() -> Result<(), String> {
         docs_root.join("reference").join("DOCS_INDEX.md"),
         lines.join("\n"),
     )
-    .map_err(|err| err.to_string())
+    .map_err(|err| err.to_string())?;
+
+    run_docs_inventory_generate()
 }
 
 pub(super) fn run_docs_coverage_report() -> Result<(), String> {
@@ -420,7 +436,7 @@ pub(super) fn run_docs_coverage_report() -> Result<(), String> {
         }
     }
 
-    let command_taxonomy = root.join("docs/CLI_COMMAND_TAXONOMY.md");
+    let command_taxonomy = root.join("docs/reference/COMMAND_TAXONOMY.md");
     if !command_taxonomy.exists() {
         missing.push("missing CLI command taxonomy doc".to_string());
     }
@@ -438,6 +454,229 @@ pub(super) fn run_docs_coverage_report() -> Result<(), String> {
     }
 }
 
+pub(super) fn run_docs_governance_lint() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs_root = root.join("docs");
+    let policy = load_docs_lint_policy(&root)?;
+    let markdown_files = collect_markdown_files_filtered(&root, &docs_root, &policy)?;
+    let inbound = collect_inbound_counts(&root, &markdown_files, &policy)?;
+
+    let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
+    let standalone_allowlist: BTreeSet<String> = policy.standalone_allowlist.iter().cloned().collect();
+
+    let mut metadata_errors = Vec::new();
+    let mut bad_status = Vec::new();
+    let mut title_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut topic_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut orphan_docs = Vec::new();
+
+    for rel_path in &markdown_files {
+        let path = root.join(rel_path);
+        let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        let lines = content.lines().collect::<Vec<_>>();
+        let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
+
+        let metadata_required = required_exact.contains(rel_path)
+            || policy
+                .metadata_required_prefixes
+                .iter()
+                .any(|prefix| rel_path.starts_with(prefix));
+        if metadata_required {
+            let has_audience = head.iter().any(|line| line.starts_with("audience:"));
+            let has_owner = head.iter().any(|line| line.starts_with("owner:"));
+            let status_line = head.iter().find(|line| line.starts_with("status:")).cloned();
+            if !has_audience {
+                metadata_errors.push(format!("{rel_path}: missing `audience`"));
+            }
+            if !has_owner {
+                metadata_errors.push(format!("{rel_path}: missing `owner`"));
+            }
+            match status_line {
+                None => metadata_errors.push(format!("{rel_path}: missing `status`")),
+                Some(line) => {
+                    let value = line.trim_start_matches("status:").trim().to_ascii_lowercase();
+                    if !matches!(value.as_str(), "stable" | "generated" | "historical" | "internal")
+                    {
+                        bad_status.push(format!("{rel_path}: invalid `status` value `{value}`"));
+                    }
+                }
+            }
+        }
+
+        if let Some(title) = lines.iter().find_map(|line| line.strip_prefix("# ").map(str::trim)) {
+            if !title.is_empty() {
+                title_map
+                    .entry(title.to_string())
+                    .or_default()
+                    .push(rel_path.clone());
+                let topic = normalize_topic(title);
+                if !topic.is_empty() {
+                    topic_map.entry(topic).or_default().push(rel_path.clone());
+                }
+            }
+        }
+
+        let file_name = Path::new(rel_path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
+        let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
+        let in_allowlist = standalone_allowlist.contains(rel_path);
+        let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
+        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+            orphan_docs.push(rel_path.clone());
+        }
+    }
+
+    let duplicate_titles = title_map
+        .into_iter()
+        .filter(|(_, paths)| paths.len() > 1)
+        .map(|(title, paths)| format!("duplicate title `{title}`: {}", paths.join(", ")))
+        .collect::<Vec<_>>();
+    let duplicate_topics = topic_map
+        .into_iter()
+        .filter(|(_, paths)| paths.len() > 1)
+        .map(|(topic, paths)| format!("duplicate topic `{topic}`: {}", paths.join(", ")))
+        .collect::<Vec<_>>();
+
+    let mut violations = Vec::new();
+    violations.extend(metadata_errors);
+    violations.extend(bad_status);
+    violations.extend(duplicate_titles);
+    violations.extend(duplicate_topics);
+    violations.extend(orphan_docs.into_iter().map(|path| format!("orphan doc: {path}")));
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
+    let root = repo_root()?;
+    let docs_root = root.join("docs");
+    let policy = load_docs_lint_policy(&root)?;
+    let markdown_files = collect_markdown_files_filtered(&root, &docs_root, &policy)?;
+    let inbound = collect_inbound_counts(&root, &markdown_files, &policy)?;
+
+    let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
+    let standalone_allowlist: BTreeSet<String> = policy.standalone_allowlist.iter().cloned().collect();
+    let mut section_counts: BTreeMap<String, usize> = BTreeMap::new();
+    let mut status_counts: BTreeMap<String, usize> = BTreeMap::new();
+    let mut metadata_gaps = Vec::new();
+    let mut orphan_candidates = Vec::new();
+
+    for rel_path in &markdown_files {
+        let parts = rel_path.split('/').collect::<Vec<_>>();
+        let section = if parts.len() > 1 {
+            parts[1].to_string()
+        } else {
+            "root".to_string()
+        };
+        *section_counts.entry(section).or_insert(0) += 1;
+
+        let content = fs::read_to_string(root.join(rel_path)).map_err(|err| err.to_string())?;
+        let lines = content.lines().collect::<Vec<_>>();
+        let head = lines
+            .iter()
+            .take(60)
+            .map(|line| line.to_ascii_lowercase())
+            .collect::<Vec<_>>();
+        let status = head
+            .iter()
+            .find(|line| line.starts_with("status:"))
+            .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
+            .filter(|status| matches!(status.as_str(), "stable" | "generated" | "historical" | "internal"))
+            .unwrap_or_else(|| "missing_or_invalid".to_string());
+        *status_counts.entry(status).or_insert(0) += 1;
+
+        let metadata_required = required_exact.contains(rel_path)
+            || policy
+                .metadata_required_prefixes
+                .iter()
+                .any(|prefix| rel_path.starts_with(prefix));
+        if metadata_required {
+            if !head.iter().any(|line| line.starts_with("audience:")) {
+                metadata_gaps.push(format!("{rel_path}: missing `audience`"));
+            }
+            if !head.iter().any(|line| line.starts_with("owner:")) {
+                metadata_gaps.push(format!("{rel_path}: missing `owner`"));
+            }
+            if !head.iter().any(|line| line.starts_with("status:")) {
+                metadata_gaps.push(format!("{rel_path}: missing `status`"));
+            }
+        }
+
+        let file_name = Path::new(rel_path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
+        let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
+        let in_allowlist = standalone_allowlist.contains(rel_path);
+        let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
+        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+            orphan_candidates.push(rel_path.clone());
+        }
+    }
+
+    let inventory_path = root.join("docs/generated/DOCS_INVENTORY.md");
+    let mut inventory_lines = vec![
+        "# Documentation inventory".to_string(),
+        "".to_string(),
+        "Generated by `bijux-dev-dag docs-index`.".to_string(),
+        "".to_string(),
+        "## Counts by section".to_string(),
+        "".to_string(),
+    ];
+    for (section, count) in section_counts {
+        inventory_lines.push(format!("- `{section}`: {count}"));
+    }
+    inventory_lines.push(String::new());
+    inventory_lines.push("## Counts by status".to_string());
+    inventory_lines.push(String::new());
+    for (status, count) in status_counts {
+        inventory_lines.push(format!("- `{status}`: {count}"));
+    }
+    inventory_lines.push(String::new());
+    inventory_lines.push("## Metadata gaps".to_string());
+    inventory_lines.push(String::new());
+    if metadata_gaps.is_empty() {
+        inventory_lines.push("- none".to_string());
+    } else {
+        for gap in metadata_gaps.into_iter().take(200) {
+            inventory_lines.push(format!("- {gap}"));
+        }
+    }
+    fs::write(inventory_path, format!("{}\n", inventory_lines.join("\n")))
+        .map_err(|err| err.to_string())?;
+
+    let consolidation_path = root.join("docs/generated/DOCS_CONSOLIDATION_CANDIDATES.md");
+    let mut candidate_lines = vec![
+        "# Documentation consolidation candidates".to_string(),
+        "".to_string(),
+        "Generated by `bijux-dev-dag docs-index`.".to_string(),
+        "".to_string(),
+        "These files currently have no inbound links from non-archived docs and are candidates for merge, move, or deletion.".to_string(),
+        "".to_string(),
+    ];
+    if orphan_candidates.is_empty() {
+        candidate_lines.push("- none".to_string());
+    } else {
+        orphan_candidates.sort();
+        for rel_path in orphan_candidates.into_iter().take(300) {
+            candidate_lines.push(format!("- `{rel_path}`"));
+        }
+    }
+    fs::write(consolidation_path, format!("{}\n", candidate_lines.join("\n")))
+        .map_err(|err| err.to_string())?;
+
+    Ok(())
+}
+
 fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
     if !dir.exists() {
         return Ok(());
@@ -451,6 +690,104 @@ fn collect_markdown_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Stri
         }
     }
     Ok(())
+}
+
+fn collect_markdown_files_filtered(
+    root: &Path,
+    docs_root: &Path,
+    policy: &DocsLintPolicy,
+) -> Result<Vec<String>, String> {
+    let mut paths = Vec::new();
+    collect_markdown_files(docs_root, &mut paths)?;
+    let mut rel_paths = paths
+        .into_iter()
+        .map(|path| path.strip_prefix(root).map_err(|err| err.to_string()))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|path| path.to_string_lossy().replace('\\', "/"))
+        .filter(|path| !is_excluded(path, policy))
+        .collect::<Vec<_>>();
+    rel_paths.sort();
+    Ok(rel_paths)
+}
+
+fn is_excluded(rel_path: &str, policy: &DocsLintPolicy) -> bool {
+    policy
+        .exclude_prefixes
+        .iter()
+        .any(|prefix| rel_path.starts_with(prefix))
+}
+
+fn load_docs_lint_policy(root: &Path) -> Result<DocsLintPolicy, String> {
+    let path = root.join("configs/policy/docs_lint_policy.json");
+    let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    serde_json::from_str::<DocsLintPolicy>(&content).map_err(|err| err.to_string())
+}
+
+fn collect_inbound_counts(
+    root: &Path,
+    markdown_files: &[String],
+    policy: &DocsLintPolicy,
+) -> Result<BTreeMap<String, usize>, String> {
+    let tracked: BTreeSet<String> = markdown_files.iter().cloned().collect();
+    let mut inbound: BTreeMap<String, usize> = BTreeMap::new();
+    for rel_path in markdown_files {
+        let content = fs::read_to_string(root.join(rel_path)).map_err(|err| err.to_string())?;
+        let source_path = root.join(rel_path);
+        let mut cursor = 0usize;
+        while let Some(start) = content[cursor..].find("](") {
+            let open = cursor + start + 2;
+            if let Some(close_rel) = content[open..].find(')') {
+                let close = open + close_rel;
+                let link = content[open..close].trim();
+                cursor = close + 1;
+                if link.starts_with("http://")
+                    || link.starts_with("https://")
+                    || link.starts_with("mailto:")
+                    || link.starts_with('#')
+                {
+                    continue;
+                }
+                let link_no_anchor = link.split('#').next().unwrap_or(link).trim();
+                if link_no_anchor.is_empty() {
+                    continue;
+                }
+                let resolved = source_path
+                    .parent()
+                    .unwrap_or(Path::new("."))
+                    .join(link_no_anchor);
+                if !resolved.exists()
+                    || resolved.extension().and_then(|ext| ext.to_str()) != Some("md")
+                {
+                    continue;
+                }
+                let rel_target = resolved
+                    .strip_prefix(root)
+                    .map_err(|err| err.to_string())?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                if is_excluded(&rel_target, policy) || !tracked.contains(&rel_target) {
+                    continue;
+                }
+                *inbound.entry(rel_target).or_insert(0) += 1;
+            } else {
+                break;
+            }
+        }
+    }
+    Ok(inbound)
+}
+
+fn normalize_topic(title: &str) -> String {
+    let mut out = String::with_capacity(title.len());
+    for ch in title.chars() {
+        if ch.is_ascii_alphanumeric() {
+            out.push(ch.to_ascii_lowercase());
+        } else {
+            out.push(' ');
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn collect_source_files_with_extension(

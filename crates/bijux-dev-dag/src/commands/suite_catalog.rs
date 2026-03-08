@@ -220,6 +220,15 @@ pub(super) const DOC_SUITES: &[SuiteDef] = &[
         effect: CommandEffect::Validation,
         run: || run_docs_guarantee_guard(),
     },
+    SuiteDef {
+        id: "governance-lint",
+        description: "docs metadata completeness and topic/orphan lint",
+        domain: "governance",
+        slow: false,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || super::docs_governance::run_docs_governance_lint(),
+    },
 ];
 
 pub(super) const RELEASE_SUITES: &[SuiteDef] = &[
