@@ -210,6 +210,9 @@
 - [CLI deprecation and alias policy](./spec/CLI_DEPRECATION_AND_ALIAS_POLICY.md)
 - [CLI surface compatibility report](./reports/foundation/cli_surface_compatibility_report.md)
 - [JSON stability release report](./reports/foundation/json_stability_release_report.md)
+- [Line coverage under 50% report](./reports/foundation/line_coverage_under_50_report.md)
+- [Line coverage under 25% report](./reports/foundation/line_coverage_under_25_report.md)
+- [Zero direct line coverage report](./reports/foundation/line_coverage_zero_direct_report.md)
 
 ## Crate contracts and ownership
 

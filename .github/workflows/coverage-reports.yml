@@ -1,0 +1,34 @@
+name: Coverage Reports
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  coverage-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81
+      - name: install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
+      - name: generate coverage and threshold reports
+        run: make coverage
+      - name: verify coverage reports are tracked
+        run: |
+          git diff --exit-code \
+            docs/reports/foundation/line_coverage_under_50_report.md \
+            docs/reports/foundation/line_coverage_under_25_report.md \
+            docs/reports/foundation/line_coverage_zero_direct_report.md
+      - name: upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            artifacts/coverage
+            docs/reports/foundation/line_coverage_under_50_report.md
+            docs/reports/foundation/line_coverage_under_25_report.md
+            docs/reports/foundation/line_coverage_zero_direct_report.md
