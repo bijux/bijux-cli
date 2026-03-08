@@ -66,7 +66,10 @@ fn docs_page_inventory_and_gap_reports_exist() {
         "docs/reports/foundation/documentation_truth_drift_gate_report.md",
         "docs/adr/20260308-documentation-truth-policy.md",
     ] {
-        assert!(root().join(rel).exists(), "missing docs-truth artifact: {rel}");
+        assert!(
+            root().join(rel).exists(),
+            "missing docs-truth artifact: {rel}"
+        );
     }
 }
 
@@ -77,17 +80,31 @@ fn docs_pages_have_owners_links_and_surface_class() {
         let path = page["page"].as_str().expect("docs page path");
         let owner = page["owner"].as_str().expect("owner");
         let class = page["surface_class"].as_str().expect("surface class");
-        let linked_code = page["linked_code_paths"].as_array().expect("linked code paths");
+        let linked_code = page["linked_code_paths"]
+            .as_array()
+            .expect("linked code paths");
         let linked_tests = page["linked_tests"].as_array().expect("linked tests");
 
-        assert!(root().join(path).exists(), "missing governed docs page: {path}");
-        assert!(!owner.trim().is_empty(), "docs owner must not be empty: {path}");
+        assert!(
+            root().join(path).exists(),
+            "missing governed docs page: {path}"
+        );
+        assert!(
+            !owner.trim().is_empty(),
+            "docs owner must not be empty: {path}"
+        );
         assert!(
             ["stable", "speculative"].contains(&class),
             "invalid docs surface class for {path}: {class}"
         );
-        assert!(!linked_code.is_empty(), "linked_code_paths cannot be empty: {path}");
-        assert!(!linked_tests.is_empty(), "linked_tests cannot be empty: {path}");
+        assert!(
+            !linked_code.is_empty(),
+            "linked_code_paths cannot be empty: {path}"
+        );
+        assert!(
+            !linked_tests.is_empty(),
+            "linked_tests cannot be empty: {path}"
+        );
     }
 }
 
@@ -109,8 +126,10 @@ fn mission_positioning_support_backend_evidence_benchmark_surfaces_stay_aligned(
     let support = fs::read_to_string(root().join("docs/reference/SUPPORT_MATRIX.md"))
         .expect("read support matrix");
     let backend_matrix: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root().join("evidence/reports/backend_capability_matrix_generated.json"))
-            .expect("read generated backend capability matrix"),
+        &fs::read_to_string(
+            root().join("evidence/reports/backend_capability_matrix_generated.json"),
+        )
+        .expect("read generated backend capability matrix"),
     )
     .expect("parse backend capability matrix");
     let simulated_backends: BTreeSet<String> = backend_matrix["backends"]
