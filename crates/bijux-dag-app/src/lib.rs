@@ -920,6 +920,26 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             if !cli.quiet {
                 println!("run dir: {}", run_path.display());
+                if let Some(proof) = &response.replay_proof {
+                    println!(
+                        "replay_proof_fidelity: {}",
+                        proof.get("fidelity_level")
+                            .and_then(Value::as_str)
+                            .unwrap_or("unknown")
+                    );
+                    if let Some(reasons) = proof.get("reasons").and_then(Value::as_array) {
+                        if !reasons.is_empty() {
+                            println!(
+                                "replay_proof_reasons: {}",
+                                reasons
+                                    .iter()
+                                    .filter_map(Value::as_str)
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            );
+                        }
+                    }
+                }
             }
             Ok(ExitCode::SUCCESS)
         }

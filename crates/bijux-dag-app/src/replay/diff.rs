@@ -59,6 +59,7 @@ pub fn build_run_diff(
     ignore.insert("created_unix_ms");
     ignore.insert("started_unix_ms");
     ignore.insert("finished_unix_ms");
+    ignore.insert("run_metadata");
     if let (Some(a), Some(b)) = (manifest_a.as_object(), manifest_b.as_object()) {
         let mut keys = BTreeSet::new();
         for k in a.keys() {
