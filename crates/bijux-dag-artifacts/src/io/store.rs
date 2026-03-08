@@ -75,3 +75,33 @@ impl ArtifactStoreBackend for ObjectArtifactStore {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
+    };
+
+    #[test]
+    fn filesystem_artifact_store_roundtrips_bytes() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let store = FilesystemArtifactStore::new(dir.path());
+        store.write_bytes("cas/aa/payload", b"hello").expect("write");
+        let loaded = store.read_bytes("cas/aa/payload").expect("read");
+        assert_eq!(loaded, b"hello");
+    }
+
+    #[test]
+    fn object_artifact_store_reports_modeled_only_capabilities() {
+        let store = ObjectArtifactStore {
+            bucket: "bucket".to_string(),
+            prefix: "prefix".to_string(),
+        };
+        let caps = store.capabilities();
+        assert_eq!(caps.support_level, ArtifactStoreSupportLevel::ModeledOnly);
+        assert!(!caps.can_write_bytes);
+        assert!(!caps.can_read_bytes);
+        assert!(store.write_bytes("x", b"y").is_err());
+        assert!(store.read_bytes("x").is_err());
+    }
+}
