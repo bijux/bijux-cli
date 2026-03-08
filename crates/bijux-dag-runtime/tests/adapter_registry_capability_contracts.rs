@@ -12,12 +12,12 @@ use thiserror as _;
 
 use bijux_dag_runtime::adapter_api::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_runtime::adapter_conformance::validate_descriptor;
+use bijux_dag_runtime::simulated_platform::{validate_worker_identity, WorkerIdentity};
 use bijux_dag_runtime::{
     adapter_registry_dump, capture_hpc_scheduler_version, hpc_resource_fingerprint,
     k8s_capability_declaration, registered_adapters, HpcResourceFingerprintInput, NodeResult,
     RuntimeError,
 };
-use bijux_dag_runtime::simulated_platform::{validate_worker_identity, WorkerIdentity};
 
 #[test]
 fn runtime_registry_query_output_is_stable() {

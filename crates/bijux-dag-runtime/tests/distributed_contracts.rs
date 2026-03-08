@@ -18,9 +18,8 @@ use bijux_dag_runtime::simulated_platform::{
     worker_alive, worker_pool_satisfies_capability_request, DistributedExecutionRequest,
     DistributedReadinessChecklist, HeartbeatClass, HeartbeatSemantics, LivenessPolicy,
     MockRemoteBackend, RemoteArtifactCommitContract, RemoteArtifactUploadContract,
-    RemoteStatusEvent, StatusReportingClass, TaskLeaseSemantics, WorkLease,
-    WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPoolCapabilityRequest,
-    WorkerVersionCompatibilityRule,
+    RemoteStatusEvent, StatusReportingClass, TaskLeaseSemantics, WorkLease, WorkerCapabilities,
+    WorkerHeartbeat, WorkerIdentity, WorkerPoolCapabilityRequest, WorkerVersionCompatibilityRule,
 };
 use bijux_dag_runtime::{RemoteExecutionRequest, RemoteExecutorSubmitter};
 use std::collections::{BTreeMap, BTreeSet};
