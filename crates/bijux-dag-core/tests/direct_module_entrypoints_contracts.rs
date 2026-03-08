@@ -114,6 +114,36 @@ fn validate_module_splits_domains_and_keeps_registry_stable() {
 }
 
 #[test]
+fn validate_module_emits_severity_from_registered_rule_metadata() {
+    let graph = parse_graph(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"dup","kind":"const","params":{"value":"x"},"outputs":[{"name":"value","path":"a.txt"}]},
+            {"id":"dup","kind":"const","params":{"value":"y"},"outputs":[{"name":"value","path":"b.txt"}]},
+            {"id":"isolated","kind":"const","params":{"value":"z"},"outputs":[{"name":"value","path":"c.txt"}]}
+          ],
+          "edges":[]
+        }"#,
+    );
+
+    let registry = validation_rule_registry();
+    let diagnostics = validate_graph(&graph);
+
+    for diagnostic in diagnostics {
+        let rule = registry
+            .iter()
+            .find(|rule| rule.id == diagnostic.code)
+            .expect("diagnostic must be backed by registered rule");
+        assert_eq!(
+            diagnostic.severity, rule.severity,
+            "diagnostic severity drifted from registered rule {}",
+            rule.id
+        );
+    }
+}
+
+#[test]
 fn resolve_module_resolves_valid_graph() {
     let graph = parse_graph(
         r#"{
@@ -161,7 +191,10 @@ fn compile_module_compiles_graph_without_contract_packaging() {
     );
     let compiled = compile_graph(&graph).expect("compile graph");
     assert_eq!(compiled.normalized_graph.nodes.len(), 1);
-    assert_eq!(compiled.plan_hints.deterministic_topology_order, vec!["source".to_string()]);
+    assert_eq!(
+        compiled.plan_hints.deterministic_topology_order,
+        vec!["source".to_string()]
+    );
 }
 
 #[test]
@@ -190,5 +223,8 @@ fn compile_module_applies_defaults_without_contract_wrapper() {
         .find(|node| node.id == "source")
         .expect("source node");
     assert_eq!(node.retry.max_attempts, 3);
-    assert_eq!(node.resources.as_ref().map(|resources| resources.cpu), Some(1));
+    assert_eq!(
+        node.resources.as_ref().map(|resources| resources.cpu),
+        Some(1)
+    );
 }
