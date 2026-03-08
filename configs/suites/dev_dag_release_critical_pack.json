@@ -2,7 +2,7 @@
   "id": "dev-dag-release-critical-pack",
   "description": "Compact release-critical dev-dag command pack.",
   "commands": [
-    "cargo test -p bijux-dev-dag --test dev_dag_contraction_461_480_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_surface_guarantees_contracts",
     "cargo test -p bijux-dev-dag --test dev_dag_command_safety_contracts",
     "cargo test -p bijux-dev-dag --test evidence_lane_classification_contracts",
     "cargo test -p bijux-dev-dag --test release_evidence_linkage_contracts"

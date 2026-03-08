@@ -5,6 +5,6 @@
     "cargo test -p bijux-dev-dag --test schema_governance_contracts",
     "cargo test -p bijux-dev-dag --test schema_evolution_completion_contracts",
     "cargo test -p bijux-dev-dag --test proof_schema_compatibility_contracts",
-    "cargo test -p bijux-dev-dag --test schema_compatibility_361_380_contracts"
+    "cargo test -p bijux-dev-dag --test schema_compatibility_guarantees_contracts"
   ]
 }

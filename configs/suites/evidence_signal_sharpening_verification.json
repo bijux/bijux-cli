@@ -2,8 +2,8 @@
   "id": "evidence-signal-sharpening-verification",
   "description": "Verification suite for evidence metadata discipline, signal rationalization, and release/advisory separation.",
   "commands": [
-    "cargo test -p bijux-dev-dag --test evidence_signal_sharpening_481_500_contracts",
-    "cargo test -p bijux-dev-dag --test evidence_rationalization_141_160_contracts",
+    "cargo test -p bijux-dev-dag --test evidence_signal_quality_contracts",
+    "cargo test -p bijux-dev-dag --test evidence_value_rationalization_contracts",
     "cargo test -p bijux-dev-dag --test evidence_lane_classification_contracts",
     "cargo test -p bijux-dev-dag --test release_evidence_linkage_contracts"
   ]

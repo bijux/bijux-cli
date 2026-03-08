@@ -2,8 +2,8 @@
   "id": "benchmark-minimalism-verification",
   "description": "Verification suite for compact benchmark packs, threshold/noise governance, and benchmark signal minimalism outputs.",
   "commands": [
-    "cargo test -p bijux-dev-dag --test benchmark_minimalism_501_520_contracts",
-    "cargo test -p bijux-dev-dag --test benchmark_signal_governance_161_180_contracts",
+    "cargo test -p bijux-dev-dag --test benchmark_minimalism_guarantees_contracts",
+    "cargo test -p bijux-dev-dag --test benchmark_signal_governance_baseline_contracts",
     "cargo test -p bijux-dev-dag --test benchmark_signal_quality_contracts",
     "cargo test -p bijux-dev-dag --test benchmark_signal_reports_contracts"
   ]
