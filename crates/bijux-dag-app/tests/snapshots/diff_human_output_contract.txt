@@ -1,0 +1,5 @@
+no differences
+explain: graph fingerprint change implies cache invalidation
+explain: node fingerprint changes indicate recomputation scope
+replay_equivalent: true
+replay_reason: runs are semantically equivalent under replay contract

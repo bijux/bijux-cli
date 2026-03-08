@@ -1,0 +1,4 @@
+proof id: "proof-run-fixed"
+status: "complete"
+complete: true
+determinism: "verified"
