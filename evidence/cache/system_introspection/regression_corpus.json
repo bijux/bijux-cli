@@ -1,0 +1,101 @@
+{
+  "version": "v1",
+  "domain": "system-introspection",
+  "cases": [
+    {
+      "id": "introspection-trace-inspection",
+      "coverage": ["execution-trace-inspection", "json-output"],
+      "expected": "stable-trace-summary"
+    },
+    {
+      "id": "introspection-artifact-store-health",
+      "coverage": ["artifact-store-health-inspection", "anomaly-detection"],
+      "expected": "health-anomalies-classified"
+    },
+    {
+      "id": "introspection-run-history-integrity",
+      "coverage": ["run-history-integrity-inspection", "json-output"],
+      "expected": "integrity-verdict"
+    },
+    {
+      "id": "introspection-scheduler-state",
+      "coverage": ["scheduler-state-inspection", "deterministic-ordering"],
+      "expected": "stable-scheduler-timeline"
+    },
+    {
+      "id": "introspection-backend-capabilities",
+      "coverage": ["backend-capabilities-inspection", "schema-validation"],
+      "expected": "capability-matrix"
+    },
+    {
+      "id": "introspection-replay-compatibility",
+      "coverage": ["replay-compatibility-inspection", "drift-detection"],
+      "expected": "replay-verification-result"
+    },
+    {
+      "id": "introspection-cache-state",
+      "coverage": ["cache-state-inspection", "json-output"],
+      "expected": "cache-coverage-summary"
+    },
+    {
+      "id": "introspection-provenance-graph",
+      "coverage": ["provenance-graph-inspection", "snapshot-stability"],
+      "expected": "provenance-links-visible"
+    },
+    {
+      "id": "introspection-artifact-lineage-graph",
+      "coverage": ["artifact-lineage-graph-inspection", "snapshot-stability"],
+      "expected": "lineage-links-visible"
+    },
+    {
+      "id": "introspection-runtime-diagnostics",
+      "coverage": ["runtime-diagnostics-inspection", "anomaly-detection"],
+      "expected": "diagnostic-summary"
+    },
+    {
+      "id": "introspection-output-ordering",
+      "coverage": ["deterministic-ordering", "text-output"],
+      "expected": "stable-ordering"
+    },
+    {
+      "id": "introspection-json-schema",
+      "coverage": ["schema-validation", "json-output"],
+      "expected": "schema-valid"
+    },
+    {
+      "id": "introspection-text-snapshots",
+      "coverage": ["snapshot-stability", "text-output"],
+      "expected": "snapshot-stable"
+    },
+    {
+      "id": "introspection-regression-fixtures",
+      "coverage": ["regression-fixtures", "verification-suite"],
+      "expected": "fixture-corpus-covered"
+    },
+    {
+      "id": "introspection-performance",
+      "coverage": ["performance-benchmarks", "telemetry"],
+      "expected": "benchmark-report-present"
+    },
+    {
+      "id": "introspection-telemetry",
+      "coverage": ["telemetry", "runtime-diagnostics-inspection"],
+      "expected": "telemetry-signals-present"
+    },
+    {
+      "id": "introspection-anomaly-detection",
+      "coverage": ["anomaly-detection", "drift-detection"],
+      "expected": "anomaly-surface-present"
+    },
+    {
+      "id": "introspection-stress",
+      "coverage": ["stress", "verification-suite"],
+      "expected": "stress-suite-declared"
+    },
+    {
+      "id": "introspection-verification-suite",
+      "coverage": ["verification-suite", "regression-fixtures"],
+      "expected": "suite-id-stable"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "system-introspection-verification",
+  "version": "v1",
+  "description": "Verification suite for operator-facing system introspection surfaces.",
+  "checks": [
+    "execution-trace-inspection",
+    "artifact-store-health-inspection",
+    "run-history-integrity-inspection",
+    "scheduler-state-inspection",
+    "backend-capabilities-inspection",
+    "replay-compatibility-inspection",
+    "cache-state-inspection",
+    "provenance-graph-inspection",
+    "artifact-lineage-graph-inspection",
+    "runtime-diagnostics-inspection",
+    "deterministic-ordering",
+    "schema-validation",
+    "snapshot-stability",
+    "regression-fixtures",
+    "performance-benchmarks",
+    "telemetry",
+    "anomaly-detection",
+    "stress"
+  ]
+}
