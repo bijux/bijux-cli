@@ -1,0 +1,114 @@
+{
+  "version": "2026-03-08",
+  "governance_rule": "Every stable JSON output must declare schema authority, minimal and maximal examples, and lockstep contract coverage.",
+  "stable_command_families": [
+    {
+      "family": "inspect",
+      "commands": ["dag.run-show", "dag.run-inspect", "dag.run-id-explain"],
+      "schemas": [
+        "configs/schema/operator/run_show.schema.json",
+        "configs/schema/operator/run_inspect.schema.json",
+        "configs/schema/operator/run_id_explain.schema.json"
+      ],
+      "lockstep_markers": [
+        "run_show_json_schema_examples_lockstep",
+        "run_inspect_json_schema_examples_lockstep",
+        "run_id_explain_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "history",
+      "commands": ["dag.run-history", "dag.run-list", "dag.run-summary", "dag.run-timeline", "dag.run-tree", "dag.runs-analytics"],
+      "schemas": [
+        "configs/schema/operator/run_history.schema.json",
+        "configs/schema/operator/run_list.schema.json",
+        "configs/schema/operator/run_summary.schema.json",
+        "configs/schema/operator/run_timeline.schema.json",
+        "configs/schema/operator/run_tree.schema.json",
+        "configs/schema/operator/runs_analytics.schema.json"
+      ],
+      "lockstep_markers": [
+        "run_history_json_schema_examples_lockstep",
+        "run_list_json_schema_examples_lockstep",
+        "run_summary_json_schema_examples_lockstep",
+        "run_timeline_json_schema_examples_lockstep",
+        "run_tree_json_schema_examples_lockstep",
+        "runs_analytics_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "artifact",
+      "commands": ["dag.artifact-inspect", "dag.artifact-trace"],
+      "schemas": [
+        "configs/schema/operator/artifact_inspect.schema.json",
+        "configs/schema/operator/artifact_trace.schema.json"
+      ],
+      "lockstep_markers": [
+        "artifact_inspect_json_schema_examples_lockstep",
+        "artifact_trace_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "diff",
+      "commands": ["dag.run-diff", "dag.graph-diff"],
+      "schemas": [
+        "configs/schema/operator/run_diff.schema.json",
+        "configs/schema/operator/graph_diff.schema.json"
+      ],
+      "lockstep_markers": [
+        "run_diff_json_schema_examples_lockstep",
+        "graph_diff_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "replay",
+      "commands": ["dag.replay-diff", "dag.replay-proof", "dag.run-explain-failure", "dag.run-doctor"],
+      "schemas": [
+        "configs/schema/operator/replay_diff.schema.json",
+        "configs/schema/operator/replay_proof.schema.json",
+        "configs/schema/operator/run_explain_failure.schema.json",
+        "configs/schema/operator/run_doctor.schema.json"
+      ],
+      "lockstep_markers": [
+        "replay_diff_json_schema_examples_lockstep",
+        "replay_proof_json_schema_examples_lockstep",
+        "run_explain_failure_json_schema_examples_lockstep",
+        "run_doctor_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "prove_verify",
+      "commands": ["dag.prove", "dag.verify", "dag.run-verify-report"],
+      "schemas": [
+        "configs/schema/operator/prove_output.schema.json",
+        "configs/schema/operator/verify_output.schema.json",
+        "configs/schema/operator/run_verify_report.schema.json"
+      ],
+      "lockstep_markers": [
+        "prove_output_json_schema_examples_lockstep",
+        "verify_output_json_schema_examples_lockstep",
+        "run_verify_report_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "capability",
+      "commands": ["dag.capability-query"],
+      "schemas": [
+        "configs/schema/operator/capability_query.schema.json"
+      ],
+      "lockstep_markers": [
+        "capability_query_json_schema_examples_lockstep"
+      ]
+    },
+    {
+      "family": "benchmark",
+      "commands": ["dag.benchmark-report"],
+      "schemas": [
+        "configs/schema/benchmarks/benchmark_report.schema.json"
+      ],
+      "lockstep_markers": [
+        "benchmark_report_json_schema_examples_lockstep"
+      ]
+    }
+  ]
+}
