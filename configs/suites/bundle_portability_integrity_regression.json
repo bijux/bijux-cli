@@ -1,0 +1,13 @@
+{
+  "id": "bundle-portability-integrity-regression",
+  "description": "Regression suite for bundle roundtrip, import integrity, schema compatibility, and portability fidelity contracts.",
+  "lane": "fast",
+  "owner": "runtime-foundation",
+  "commands": [
+    "cargo test -p bijux-dag-app --test run_dir_import_export_contract",
+    "cargo test -p bijux-dag-app --test replay_lineage_planning_contract",
+    "cargo test -p bijux-dag-app --test replay_proof_contract",
+    "cargo test -p bijux-dev-dag --test bundle_format_contracts",
+    "cargo test -p bijux-dev-dag --test bundle_portability_completion_contracts"
+  ]
+}
