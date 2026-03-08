@@ -11,6 +11,7 @@ use bijux_dag_artifacts::store::{
 use bijux_dag_artifacts::{
     hash::sha256_hex, write_outputs_index, OutputsIndex, RunOutputFile, RunOutputsIndex,
 };
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
