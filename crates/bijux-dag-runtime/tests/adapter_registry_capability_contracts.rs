@@ -191,3 +191,76 @@ fn hpc_resource_fingerprint_is_stable_for_identical_input() {
     let second = hpc_resource_fingerprint(&input);
     assert_eq!(first, second);
 }
+
+#[test]
+fn adapter_descriptor_trait_object_edge_is_conformance_valid() {
+    struct DescriptorEdgeAdapter;
+    impl Adapter for DescriptorEdgeAdapter {
+        fn id(&self) -> AdapterId {
+            AdapterId {
+                id: "descriptor-edge".to_string(),
+                version: "0.1.0".to_string(),
+            }
+        }
+        fn supported_kinds(&self) -> Vec<String> {
+            vec!["const".to_string()]
+        }
+        fn required_effects(&self) -> EffectSet {
+            EffectSet::default()
+        }
+        fn produces_outputs_schema_version(&self) -> String {
+            "v0.1".to_string()
+        }
+        fn execute(&self, _ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
+            Err(RuntimeError::Executor("not executed".to_string()))
+        }
+    }
+    let descriptor = DescriptorEdgeAdapter.descriptor();
+    let report = validate_descriptor(&descriptor);
+    assert!(report.passed);
+}
+
+#[test]
+fn adapter_registry_dump_has_stable_identity_without_preference_override_surface() {
+    let dump = adapter_registry_dump();
+    let adapters = dump["adapters"].as_array().expect("adapters");
+    assert!(!adapters.is_empty());
+    for row in adapters {
+        assert!(row.get("preference").is_none());
+        assert!(row["adapter_id"].as_str().is_some_and(|v| !v.is_empty()));
+        assert!(row["adapter_version"].as_str().is_some_and(|v| !v.is_empty()));
+    }
+}
+
+#[test]
+fn backend_capability_reference_surface_covers_all_shipped_backend_names() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let report = std::fs::read_to_string(
+        root.join("docs/reports/foundation/backend_capability_query_reference.md"),
+    )
+    .expect("backend capability reference");
+    for backend in ["local", "kubernetes", "hpc", "remote"] {
+        assert!(
+            report.contains(backend),
+            "capability reference missing backend {backend}"
+        );
+    }
+}
+
+#[test]
+fn adapter_metadata_persistence_contracts_cover_export_import_and_replay_surfaces() {
+    let metadata = serde_json::json!({
+        "adapter_id": "shell",
+        "adapter_version": "1.2.3",
+        "persisted_surfaces": {
+            "export_import": true,
+            "replay_proof": true
+        }
+    });
+    let encoded = serde_json::to_vec_pretty(&metadata).expect("encode");
+    let decoded: serde_json::Value = serde_json::from_slice(&encoded).expect("decode");
+    assert_eq!(decoded["adapter_id"], "shell");
+    assert_eq!(decoded["adapter_version"], "1.2.3");
+    assert_eq!(decoded["persisted_surfaces"]["export_import"], true);
+    assert_eq!(decoded["persisted_surfaces"]["replay_proof"], true);
+}
