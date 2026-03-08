@@ -68,7 +68,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
 use bijux_dag_core::{
-    lower_graph_to_execution_plan, parse_graph_strict, planner_diagnostics_from_error, Graph,
+    lower_graph_to_execution_plan, planner_diagnostics_from_error, Graph,
     GraphError, PlanOptions, Severity, SPEC_VERSION,
 };
 use bijux_dag_runtime::{
@@ -1415,7 +1415,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
 }
 
 pub(crate) fn read_file(path: &Path) -> Result<String, ExitCode> {
-    fs::read_to_string(path).map_err(|_| ExitCode::from(3))
+    fs_input::read_utf8_file(path).map_err(|_| ExitCode::from(3))
 }
 
 pub(crate) fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
@@ -1449,20 +1449,10 @@ pub(crate) fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> Str
 }
 
 pub(crate) fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
-    match parse_graph_strict(input) {
+    match read_graph::parse_graph_with_compat(input) {
         Ok(g) => Ok(g),
-        Err(GraphError::InvalidSpec(_)) => {
-            let mut value = serde_json::from_str::<Value>(input).map_err(|_| ExitCode::from(2))?;
-            if let Some(spec) = value.get("spec").and_then(Value::as_str) {
-                if spec == "0.1" || spec == "v0.1" {
-                    value["spec"] = Value::String(SPEC_VERSION.to_string());
-                    let rewritten = serde_json::to_string(&value).map_err(|_| ExitCode::from(2))?;
-                    return parse_graph_strict(&rewritten).map_err(|_| ExitCode::from(1));
-                }
-            }
-            Err(ExitCode::from(1))
-        }
         Err(GraphError::Json(_)) => Err(ExitCode::from(2)),
+        Err(GraphError::InvalidSpec(_)) => Err(ExitCode::from(1)),
         Err(_) => Err(ExitCode::from(3)),
     }
 }
