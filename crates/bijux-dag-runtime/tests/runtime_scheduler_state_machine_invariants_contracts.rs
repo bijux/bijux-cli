@@ -14,10 +14,10 @@ use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::invariants::trace_time_order_ok;
 use bijux_dag_runtime::{
     build_plan, build_scheduler, deterministic_schedule_order, recovery_action_required,
-    scheduler_contract_profile, validate_node_transition, validate_run_transition, DependencyCounter,
-    NodeState, NodeTransition, ReadyNode, ReadyQueue, RecoveryInput, RunState, RunTransition,
-    RuntimeConfig, SchedulerPolicy, Selector, SelectorSet, TransitionCause,
-    verify_post_run_state_consistency,
+    scheduler_contract_profile, validate_node_transition, validate_run_transition,
+    verify_post_run_state_consistency, DependencyCounter, NodeState, NodeTransition, ReadyNode,
+    ReadyQueue, RecoveryInput, RunState, RunTransition, RuntimeConfig, SchedulerPolicy, Selector,
+    SelectorSet, TransitionCause,
 };
 use std::collections::BTreeMap;
 use std::time::Instant;
@@ -41,7 +41,10 @@ fn scheduler_profile_contract_values_match_reported_surface() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(
+        format!("{:?}", profile.ready_tie_break),
+        "LexicographicNodeId"
+    );
 }
 
 #[test]
@@ -104,15 +107,12 @@ fn trace_timestamps_remain_monotonic_under_high_event_volume() {
 
 #[test]
 fn terminal_run_requires_terminal_node_presence() {
-    let report =
-        verify_post_run_state_consistency(RunState::Succeeded, &[NodeState::Running], 0);
+    let report = verify_post_run_state_consistency(RunState::Succeeded, &[NodeState::Running], 0);
     assert!(!report.valid);
-    assert!(
-        report
-            .violations
-            .iter()
-            .any(|line| line.contains("non-terminal node"))
-    );
+    assert!(report
+        .violations
+        .iter()
+        .any(|line| line.contains("non-terminal node")));
 }
 
 #[test]

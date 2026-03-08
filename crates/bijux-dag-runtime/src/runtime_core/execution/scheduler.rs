@@ -522,9 +522,11 @@ impl Scheduler for DeterministicScheduler {
         if let Some(decision) = preflight_decision(options, started, cancellation_requested) {
             return decision;
         }
-        let cpu_budget = options.scheduler_policy.cpu_budget.or(options.cpu_budget).unwrap_or(
-            options.jobs.max(1) as u32,
-        );
+        let cpu_budget = options
+            .scheduler_policy
+            .cpu_budget
+            .or(options.cpu_budget)
+            .unwrap_or(options.jobs.max(1) as u32);
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
@@ -577,9 +579,11 @@ impl Scheduler for ThroughputScheduler {
         if let Some(decision) = preflight_decision(options, started, cancellation_requested) {
             return decision;
         }
-        let cpu_budget = options.scheduler_policy.cpu_budget.or(options.cpu_budget).unwrap_or(
-            options.jobs.max(1) as u32,
-        );
+        let cpu_budget = options
+            .scheduler_policy
+            .cpu_budget
+            .or(options.cpu_budget)
+            .unwrap_or(options.jobs.max(1) as u32);
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();

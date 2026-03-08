@@ -108,7 +108,9 @@ mod tests {
         }
 
         fn execute(&self, _ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
-            Err(RuntimeError::Executor("not executed in this contract".to_string()))
+            Err(RuntimeError::Executor(
+                "not executed in this contract".to_string(),
+            ))
         }
     }
 

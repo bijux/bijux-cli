@@ -79,14 +79,17 @@ impl ArtifactStoreBackend for ObjectArtifactStore {
 #[cfg(test)]
 mod tests {
     use super::{
-        ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
+        ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore,
+        ObjectArtifactStore,
     };
 
     #[test]
     fn filesystem_artifact_store_roundtrips_bytes() {
         let dir = tempfile::tempdir().expect("tempdir");
         let store = FilesystemArtifactStore::new(dir.path());
-        store.write_bytes("cas/aa/payload", b"hello").expect("write");
+        store
+            .write_bytes("cas/aa/payload", b"hello")
+            .expect("write");
         let loaded = store.read_bytes("cas/aa/payload").expect("read");
         assert_eq!(loaded, b"hello");
     }

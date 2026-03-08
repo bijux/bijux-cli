@@ -68,8 +68,8 @@ fn newest_run_dir(base: &std::path::Path) -> PathBuf {
 
 #[test]
 fn dag_help_stays_aligned_with_taxonomy_doc() {
-    let taxonomy =
-        std::fs::read_to_string(repo_root().join("docs/CLI_COMMAND_TAXONOMY.md")).expect("read taxonomy");
+    let taxonomy = std::fs::read_to_string(repo_root().join("docs/CLI_COMMAND_TAXONOMY.md"))
+        .expect("read taxonomy");
     let help = dag_command()
         .args(["dag", "--help"])
         .output()
@@ -152,17 +152,30 @@ fn alias_and_deprecation_surfaces_remain_callable() {
         .expect("run id");
 
     let verify_alias = dag_command()
-        .args(["dag", "fsck", run_dir.to_str().unwrap(), "--strict", "--json"])
+        .args([
+            "dag",
+            "fsck",
+            run_dir.to_str().unwrap(),
+            "--strict",
+            "--json",
+        ])
         .output()
         .expect("fsck alias");
-    assert!(verify_alias.status.success(), "fsck alias must stay supported");
+    assert!(
+        verify_alias.status.success(),
+        "fsck alias must stay supported"
+    );
 
     let legacy_status = dag_command()
         .args(["dag", "status", run_dir.to_str().unwrap(), "--json"])
         .output()
         .expect("legacy status");
-    assert!(legacy_status.status.success(), "status alias must remain callable");
-    let legacy_payload: Value = serde_json::from_slice(&legacy_status.stdout).expect("status payload");
+    assert!(
+        legacy_status.status.success(),
+        "status alias must remain callable"
+    );
+    let legacy_payload: Value =
+        serde_json::from_slice(&legacy_status.stdout).expect("status payload");
     assert_eq!(legacy_payload["command"], "dag.status");
 
     let canonical_show = dag_command()

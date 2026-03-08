@@ -37,7 +37,10 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
 
     let retry_plan =
         lower_graph_to_execution_plan(&retry_heavy, PlanOptions::default()).expect("retry lowers");
-    assert!(retry_plan.nodes.iter().any(|node| node.retry.max_attempts > 0));
+    assert!(retry_plan
+        .nodes
+        .iter()
+        .any(|node| node.retry.max_attempts > 0));
 
     let replay_plan = lower_graph_to_execution_plan(&replay_oriented, PlanOptions::default())
         .expect("replay oriented lowers");

@@ -1,9 +1,3 @@
-use criterion as _;
-use hex as _;
-use serde as _;
-use sha2 as _;
-use tempfile as _;
-use thiserror as _;
 use bijux_dag_core::canonical::{canonical_json, canonicalize_graph};
 use bijux_dag_core::edge::{EdgeDependencyKind, TypedEdge};
 use bijux_dag_core::resolve::resolve_graph;
@@ -13,6 +7,12 @@ use bijux_dag_core::validate::{
     validation_rule_registry, ValidationDomain,
 };
 use bijux_dag_core::{Graph, GraphError, Severity};
+use criterion as _;
+use hex as _;
+use serde as _;
+use sha2 as _;
+use tempfile as _;
+use thiserror as _;
 
 fn parse_graph(input: &str) -> Graph {
     serde_json::from_str(input).expect("graph json")
@@ -81,22 +81,19 @@ fn validate_module_splits_domains_and_keeps_registry_stable() {
     );
 
     let registry = validation_rule_registry();
-    assert!(!registry.is_empty(), "validation registry must be non-empty");
     assert!(
-        registry
-            .iter()
-            .any(|rule| matches!(rule.domain, ValidationDomain::Schema))
+        !registry.is_empty(),
+        "validation registry must be non-empty"
     );
-    assert!(
-        registry
-            .iter()
-            .any(|rule| matches!(rule.domain, ValidationDomain::Semantic))
-    );
-    assert!(
-        registry
-            .iter()
-            .any(|rule| matches!(rule.domain, ValidationDomain::Topology))
-    );
+    assert!(registry
+        .iter()
+        .any(|rule| matches!(rule.domain, ValidationDomain::Schema)));
+    assert!(registry
+        .iter()
+        .any(|rule| matches!(rule.domain, ValidationDomain::Semantic)));
+    assert!(registry
+        .iter()
+        .any(|rule| matches!(rule.domain, ValidationDomain::Topology)));
 
     let all = validate_graph(&graph);
     let errors: Vec<_> = all
@@ -107,11 +104,9 @@ fn validate_module_splits_domains_and_keeps_registry_stable() {
     assert!(validate_schema(&graph).is_empty());
     assert!(validate_semantics(&graph).is_empty());
     let topology = validate_topology(&graph);
-    assert!(
-        topology
-            .iter()
-            .all(|diag| !matches!(diag.severity, Severity::Error))
-    );
+    assert!(topology
+        .iter()
+        .all(|diag| !matches!(diag.severity, Severity::Error)));
 }
 
 #[test]

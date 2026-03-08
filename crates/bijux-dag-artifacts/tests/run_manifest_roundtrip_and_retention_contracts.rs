@@ -1,8 +1,4 @@
-use bijux_dag_artifacts::{
-    build_cleanup_plan,
-    retention::RetentionPolicy,
-    Manifest,
-};
+use bijux_dag_artifacts::{build_cleanup_plan, retention::RetentionPolicy, Manifest};
 use hex as _;
 use serde as _;
 use serde_json::Value;
@@ -41,24 +37,36 @@ fn run_manifest_minimal_and_maximal_roundtrip_remain_conformant() {
 fn run_manifest_version_migration_fixtures_classify_supported_and_unsupported_versions() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let supported: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/compat/run_schema/v0_1_supported/minimal.manifest.json"))
-            .expect("supported fixture"),
+        &fs::read_to_string(
+            root.join("evidence/compat/run_schema/v0_1_supported/minimal.manifest.json"),
+        )
+        .expect("supported fixture"),
     )
     .expect("supported parse");
     let unsupported_past: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/compat/run_schema/unsupported_past/minimal.manifest.json"))
-            .expect("unsupported past fixture"),
+        &fs::read_to_string(
+            root.join("evidence/compat/run_schema/unsupported_past/minimal.manifest.json"),
+        )
+        .expect("unsupported past fixture"),
     )
     .expect("unsupported parse");
     let unsupported_future: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("evidence/compat/run_schema/unsupported_future/minimal.manifest.json"))
-            .expect("unsupported future fixture"),
+        &fs::read_to_string(
+            root.join("evidence/compat/run_schema/unsupported_future/minimal.manifest.json"),
+        )
+        .expect("unsupported future fixture"),
     )
     .expect("unsupported parse");
 
     assert_eq!(supported["manifest_version"], "run-manifest/v0.1");
-    assert_ne!(supported["manifest_version"], unsupported_past["manifest_version"]);
-    assert_ne!(supported["manifest_version"], unsupported_future["manifest_version"]);
+    assert_ne!(
+        supported["manifest_version"],
+        unsupported_past["manifest_version"]
+    );
+    assert_ne!(
+        supported["manifest_version"],
+        unsupported_future["manifest_version"]
+    );
 }
 
 #[test]

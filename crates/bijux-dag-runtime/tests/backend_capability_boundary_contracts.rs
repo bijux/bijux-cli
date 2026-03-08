@@ -11,18 +11,15 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    hpc_environment_fingerprint, hpc_resource_fingerprint, reject_unsupported_hpc_scheduler_features,
-    reject_unsupported_k8s_fields, replay_allowed_across_backends, CrossBackendReplayRule,
-    HpcResourceFingerprintInput,
+    hpc_environment_fingerprint, hpc_resource_fingerprint,
+    reject_unsupported_hpc_scheduler_features, reject_unsupported_k8s_fields,
+    replay_allowed_across_backends, CrossBackendReplayRule, HpcResourceFingerprintInput,
 };
 use std::collections::BTreeMap;
 
 #[test]
 fn unsupported_features_are_rejected_instead_of_downgraded() {
-    let k8s = reject_unsupported_k8s_fields(&[
-        "hostNetwork".to_string(),
-        "safe-field".to_string(),
-    ]);
+    let k8s = reject_unsupported_k8s_fields(&["hostNetwork".to_string(), "safe-field".to_string()]);
     assert!(k8s.is_err());
 
     let hpc = reject_unsupported_hpc_scheduler_features(&[

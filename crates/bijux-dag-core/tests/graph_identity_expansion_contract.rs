@@ -1,4 +1,3 @@
-use criterion as _;
 use bijux_dag_core::{
     canonical::canonical_json,
     edge::{EdgeDependencyKind, TypedEdge},
@@ -7,6 +6,7 @@ use bijux_dag_core::{
     validate::{validate_schema, validate_semantics, validate_topology, validation_rule_registry},
     Edge,
 };
+use criterion as _;
 use hex as _;
 use serde as _;
 use serde_json as _;

@@ -56,7 +56,9 @@ fn validation_marks_unreachable_node_groups() {
         }"#,
     );
     let diags = graph.validate_with_warnings();
-    assert!(diags.iter().any(|d| d.code == "W2001" && d.path == "/nodes/isolated"));
+    assert!(diags
+        .iter()
+        .any(|d| d.code == "W2001" && d.path == "/nodes/isolated"));
 }
 
 #[test]
@@ -181,7 +183,10 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
         },
     )
     .expect("pruned plan");
-    assert_eq!(pruned.ordering, vec!["sink".to_string(), "source".to_string()]);
+    assert_eq!(
+        pruned.ordering,
+        vec!["sink".to_string(), "source".to_string()]
+    );
 
     let mut supported = BTreeSet::new();
     supported.insert("const".to_string());
@@ -204,8 +209,8 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
 
 #[test]
 fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_graph() {
-    let replay_fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/snapshots/replay_oriented.dag.json");
+    let replay_fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots/replay_oriented.dag.json");
     let payload = fs::read_to_string(replay_fixture).expect("fixture");
     let graph = parse_graph_strict(&payload).expect("parse fixture");
 
@@ -224,6 +229,9 @@ fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_
     let required = schema["required"].as_array().expect("required");
     let plan_json = serde_json::to_value(first).expect("value");
     for field in required.iter().filter_map(Value::as_str) {
-        assert!(plan_json.get(field).is_some(), "missing required field: {field}");
+        assert!(
+            plan_json.get(field).is_some(),
+            "missing required field: {field}"
+        );
     }
 }

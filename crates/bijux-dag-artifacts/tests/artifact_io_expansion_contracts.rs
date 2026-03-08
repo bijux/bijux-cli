@@ -49,7 +49,10 @@ fn fs_materialization_rejects_traversal_and_non_normalized_paths() {
     assert!(!is_normalized_relative_path("../escape.txt"));
     assert!(!is_normalized_relative_path("nested\\win.txt"));
     assert!(is_normalized_relative_path("nested/ok.txt"));
-    assert_eq!(node_output_relpath("extract", "a.txt"), "nodes/extract/outputs/a.txt");
+    assert_eq!(
+        node_output_relpath("extract", "a.txt"),
+        "nodes/extract/outputs/a.txt"
+    );
 }
 
 #[test]
@@ -78,8 +81,9 @@ fn nested_tree_export_style_index_and_empty_payload_identity_are_stable() {
         ],
     )
     .expect("index");
-    let parsed: OutputsIndex = serde_json::from_str(&fs::read_to_string(dir.path().join("index.json")).expect("read"))
-        .expect("parse");
+    let parsed: OutputsIndex =
+        serde_json::from_str(&fs::read_to_string(dir.path().join("index.json")).expect("read"))
+            .expect("parse");
     assert_eq!(parsed.files[0].path, "nested/deeper/data.bin");
     assert_eq!(parsed.files[1].sha256, sha256_hex(b""));
 }
@@ -135,12 +139,14 @@ fn retention_and_gc_explain_decisions_cover_retained_and_collectable_sets() {
         .any(|id| id.0 == "tmp:drop.log"));
 
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-io-1");
-    assert!(explain.entries.iter().any(|entry| {
-        entry.artifact_id.0 == "root:keep.bin" && entry.action == "preserve"
-    }));
-    assert!(explain.entries.iter().any(|entry| {
-        entry.artifact_id.0 == "tmp:drop.log" && entry.action == "collect"
-    }));
+    assert!(explain
+        .entries
+        .iter()
+        .any(|entry| { entry.artifact_id.0 == "root:keep.bin" && entry.action == "preserve" }));
+    assert!(explain
+        .entries
+        .iter()
+        .any(|entry| { entry.artifact_id.0 == "tmp:drop.log" && entry.action == "collect" }));
 
     let retention = RetentionPolicy::default();
     assert_eq!(retention.run_artifacts_ttl_days, 30);

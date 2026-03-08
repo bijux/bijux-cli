@@ -14,8 +14,8 @@ use bijux_dag_runtime::adapter_api::{Adapter, AdapterId, EffectSet, NodeCtx};
 use bijux_dag_runtime::adapter_conformance::validate_descriptor;
 use bijux_dag_runtime::{
     adapter_registry_dump, capture_hpc_scheduler_version, hpc_resource_fingerprint,
-    k8s_capability_declaration, registered_adapters, HpcResourceFingerprintInput, NodeResult,
-    RuntimeError, WorkerIdentity, validate_worker_identity,
+    k8s_capability_declaration, registered_adapters, validate_worker_identity,
+    HpcResourceFingerprintInput, NodeResult, RuntimeError, WorkerIdentity,
 };
 
 #[test]
@@ -34,7 +34,10 @@ fn adapter_registry_rejects_duplicate_identities_by_reported_list() {
     let mut ids = std::collections::BTreeSet::new();
     for adapter in adapters {
         let identity = format!("{}@{}", adapter.adapter_id, adapter.adapter_version);
-        assert!(ids.insert(identity.clone()), "duplicate adapter identity: {identity}");
+        assert!(
+            ids.insert(identity.clone()),
+            "duplicate adapter identity: {identity}"
+        );
     }
 }
 
@@ -64,24 +67,18 @@ fn incomplete_capability_declaration_is_rejected_by_conformance() {
     let descriptor = BrokenAdapter.descriptor();
     let report = validate_descriptor(&descriptor);
     assert!(!report.passed);
-    assert!(
-        report
-            .violations
-            .iter()
-            .any(|v: &String| v.contains("missing adapter version"))
-    );
-    assert!(
-        report
-            .violations
-            .iter()
-            .any(|v: &String| v.contains("missing supported kinds"))
-    );
-    assert!(
-        report
-            .violations
-            .iter()
-            .any(|v: &String| v.contains("missing outputs schema version"))
-    );
+    assert!(report
+        .violations
+        .iter()
+        .any(|v: &String| v.contains("missing adapter version")));
+    assert!(report
+        .violations
+        .iter()
+        .any(|v: &String| v.contains("missing supported kinds")));
+    assert!(report
+        .violations
+        .iter()
+        .any(|v: &String| v.contains("missing outputs schema version")));
 }
 
 #[test]

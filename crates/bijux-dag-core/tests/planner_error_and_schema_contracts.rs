@@ -55,7 +55,10 @@ fn planner_explain_schema_file_exists() {
     let payload = std::fs::read_to_string(schema_path).expect("planner explain schema");
     let schema: serde_json::Value = serde_json::from_str(&payload).expect("schema parse");
 
-    assert_eq!(schema["$schema"], "https://json-schema.org/draft/2020-12/schema");
+    assert_eq!(
+        schema["$schema"],
+        "https://json-schema.org/draft/2020-12/schema"
+    );
     assert_eq!(schema["type"], "object");
     assert!(schema["required"]
         .as_array()

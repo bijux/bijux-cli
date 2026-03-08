@@ -74,7 +74,8 @@ fn run_id_from_run_dir(run_dir: &std::path::Path) -> String {
 }
 
 fn first_artifact_id(run_dir: &std::path::Path) -> String {
-    let index = std::fs::read_to_string(run_dir.join("outputs/index.json")).expect("read outputs index");
+    let index =
+        std::fs::read_to_string(run_dir.join("outputs/index.json")).expect("read outputs index");
     let payload: serde_json::Value = serde_json::from_str(&index).expect("parse outputs index");
     let node_id = payload["files"][0]["node_id"].as_str().expect("node_id");
     let path = payload["files"][0]["path"].as_str().expect("path");

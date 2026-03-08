@@ -1,9 +1,9 @@
-use bijux_dag_artifacts::{
-    build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
-};
 use bijux_dag_artifacts::index::ArtifactId;
 use bijux_dag_artifacts::platform::explain_lineage_safe_gc;
 use bijux_dag_artifacts::retention::RetentionPolicy;
+use bijux_dag_artifacts::{
+    build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
+};
 use hex as _;
 use serde as _;
 use serde_json::json;
@@ -38,10 +38,8 @@ fn atomic_durable_write_replaces_previous_json_payload() {
     let dir = tempfile::tempdir().expect("tmp");
     let target = dir.path().join("manifest.json");
 
-    write_json_atomic_durable(&target, &json!({"version":1,"status":"old"}))
-        .expect("first write");
-    write_json_atomic_durable(&target, &json!({"version":2,"status":"new"}))
-        .expect("second write");
+    write_json_atomic_durable(&target, &json!({"version":1,"status":"old"})).expect("first write");
+    write_json_atomic_durable(&target, &json!({"version":2,"status":"new"})).expect("second write");
 
     let current: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(&target).expect("read")).expect("json");
@@ -58,12 +56,10 @@ fn gc_explain_and_cleanup_plan_are_dry_run_safe_and_retention_aligned() {
     ];
     let explain = explain_lineage_safe_gc(&referenced, &all, "lineage-1");
     assert_eq!(explain.lineage_snapshot_id, "lineage-1");
-    assert!(
-        explain
-            .entries
-            .iter()
-            .any(|e| e.artifact_id.0 == "train:model.bin" && e.action == "collect")
-    );
+    assert!(explain
+        .entries
+        .iter()
+        .any(|e| e.artifact_id.0 == "train:model.bin" && e.action == "collect"));
 
     let policy = RetentionPolicy::default();
     let retain_prefixes = policy.retain_prefixes();

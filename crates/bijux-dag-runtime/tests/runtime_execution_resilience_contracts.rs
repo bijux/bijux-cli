@@ -12,9 +12,9 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    build_plan, classify_failure, run_manifest_valid, DependencyCounter, FailurePropagationMode,
-    ManifestVerificationInput, NodeState, ReadyQueue, Runtime, RuntimeConfig, RuntimeError,
-    SchedulerEventKind, SchedulerState, RunState, verify_post_run_state_consistency,
+    build_plan, classify_failure, run_manifest_valid, verify_post_run_state_consistency,
+    DependencyCounter, FailurePropagationMode, ManifestVerificationInput, NodeState, ReadyQueue,
+    RunState, Runtime, RuntimeConfig, RuntimeError, SchedulerEventKind, SchedulerState,
 };
 
 fn graph_text() -> &'static str {
@@ -92,12 +92,10 @@ fn terminal_run_rejects_non_terminal_nodes() {
         0,
     );
     assert!(!report.valid);
-    assert!(
-        report
-            .violations
-            .iter()
-            .any(|line| line.contains("non-terminal node"))
-    );
+    assert!(report
+        .violations
+        .iter()
+        .any(|line| line.contains("non-terminal node")));
 }
 
 #[test]
