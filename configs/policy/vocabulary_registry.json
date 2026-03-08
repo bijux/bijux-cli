@@ -1,0 +1,62 @@
+{
+  "format": "vocabulary-registry/v1",
+  "canonical_terms": [
+    "local deterministic execution",
+    "adapter execution",
+    "operator diagnostics",
+    "repository governance",
+    "simulated distributed semantics",
+    "experimental runtime surface",
+    "speculative runtime surface"
+  ],
+  "deprecated_terms": [
+    {
+      "term": "distributed controller",
+      "replacement": "simulated distributed semantics",
+      "scope": "product surfaces",
+      "status": "deprecated"
+    },
+    {
+      "term": "control-plane api",
+      "replacement": "repository governance surface",
+      "scope": "operator help",
+      "status": "deprecated"
+    },
+    {
+      "term": "federated scheduler",
+      "replacement": "speculative scheduling model",
+      "scope": "product surfaces",
+      "status": "deprecated"
+    },
+    {
+      "term": "geo federation",
+      "replacement": "speculative geo model",
+      "scope": "product surfaces",
+      "status": "deprecated"
+    },
+    {
+      "term": "tenant control plane",
+      "replacement": "tenancy policy model",
+      "scope": "product surfaces",
+      "status": "deprecated"
+    },
+    {
+      "term": "ha scheduler",
+      "replacement": "speculative availability scheduler model",
+      "scope": "product surfaces",
+      "status": "deprecated"
+    }
+  ],
+  "aliases": [
+    {
+      "legacy": "control-plane",
+      "canonical": "repository governance",
+      "intent": "documentation migration"
+    },
+    {
+      "legacy": "distributed runtime",
+      "canonical": "simulated distributed semantics",
+      "intent": "scope honesty"
+    }
+  ]
+}
