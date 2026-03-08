@@ -40,6 +40,8 @@ fn app_routing_coverage_target_policy_is_present_and_nontrivial() {
         "crates/bijux-dag-app/src/routes/plan_routes.rs",
         "crates/bijux-dag-app/src/routes/diagnostics_routes.rs",
         "crates/bijux-dag-app/src/routes/output_selection.rs",
+        "crates/bijux-dag-app/src/routes/response.rs",
+        "crates/bijux-dag-app/src/routes/run_lookup.rs",
         "crates/bijux-dag-app/src/routes/surface_routes.rs",
     ] {
         let target = min_routes

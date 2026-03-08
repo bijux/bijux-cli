@@ -1,0 +1,9 @@
+{
+  "id": "app-route-support-fast",
+  "description": "Fast direct coverage checks for route support modules output selection, response, and run lookup.",
+  "commands": [
+    "cargo test -p bijux-dag-app --lib routes::output_selection::tests",
+    "cargo test -p bijux-dag-app --lib routes::response::tests",
+    "cargo test -p bijux-dag-app --lib routes::run_lookup::tests"
+  ]
+}
