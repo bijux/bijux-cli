@@ -1,0 +1,26 @@
+{
+  "id": "adversarial-system-resilience-verification",
+  "version": "v1",
+  "checks": [
+    "adversarial-dag-generator",
+    "scheduler-stress",
+    "scheduler-starvation",
+    "artifact-store-stress",
+    "replay-mismatch",
+    "backend-communication",
+    "bundle-import",
+    "run-history-corruption",
+    "provenance-traversal",
+    "diff-adversarial",
+    "explain-adversarial",
+    "cache-poisoning",
+    "environment-drift",
+    "concurrency",
+    "filesystem-behavior",
+    "determinism-drift",
+    "runtime-crash",
+    "data-corruption",
+    "fuzzing",
+    "verification-suite"
+  ]
+}
