@@ -14,10 +14,12 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
+unicode-normalization = "0.1"
 
 [dev-dependencies]
 tempfile = { workspace = true }
 criterion = "0.5"
+serde_yaml = "0.9"
 
 [[bench]]
 name = "micro_parse_validate"

@@ -19,6 +19,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[cfg(test)]
 use tempfile as _;
+use unicode_normalization::UnicodeNormalization;
 
 #[path = "build/builder.rs"]
 pub mod builder;
@@ -571,13 +572,42 @@ impl Graph {
         let mut nodes = self.nodes.clone();
         let mut edges = self.edges.clone();
 
+        for node in &mut nodes {
+            node.id = normalize_identity_text(&node.id);
+            node.inputs = node
+                .inputs
+                .iter()
+                .map(|input| normalize_identity_text(input))
+                .collect();
+            for out in &mut node.outputs {
+                out.name = normalize_identity_text(&out.name);
+                out.path = normalize_rel_path(&out.path);
+            }
+            node.env_allowlist = node
+                .env_allowlist
+                .iter()
+                .map(|entry| normalize_identity_text(entry))
+                .collect();
+            node.tags = node
+                .tags
+                .iter()
+                .map(|entry| normalize_identity_text(entry))
+                .collect();
+            if let Some(group) = &node.group {
+                node.group = Some(normalize_identity_text(group));
+            }
+        }
+        for edge in &mut edges {
+            edge.from.node_id = normalize_identity_text(&edge.from.node_id);
+            edge.from.port = normalize_identity_text(&edge.from.port);
+            edge.to.node_id = normalize_identity_text(&edge.to.node_id);
+            edge.to.port = normalize_identity_text(&edge.to.port);
+        }
+
         nodes.sort_by(|a, b| a.id.cmp(&b.id));
         for node in &mut nodes {
             sort_param_value(&mut node.params);
             node.inputs.sort();
-            for out in &mut node.outputs {
-                out.path = normalize_rel_path(&out.path);
-            }
             node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
@@ -704,15 +734,27 @@ impl Graph {
         resolved_params: &Value,
     ) -> Result<String, GraphError> {
         let mut node = node.clone();
+        node.id = normalize_identity_text(&node.id);
+        node.inputs = node
+            .inputs
+            .iter()
+            .map(|input| normalize_identity_text(input))
+            .collect();
         let mut params = resolved_params.clone();
         sort_value_maps(&mut params);
         node.params = ParamValue::Literal(params);
         node.inputs.sort();
         for out in &mut node.outputs {
+            out.name = normalize_identity_text(&out.name);
             out.path = normalize_rel_path(&out.path);
         }
         node.outputs.sort_by(|a, b| a.name.cmp(&b.name));
         node.effects.sort_by_key(effect_order);
+        node.env_allowlist = node
+            .env_allowlist
+            .iter()
+            .map(|entry| normalize_identity_text(entry))
+            .collect();
         node.env_allowlist.sort();
         node.group = None;
         let json = serde_json::to_string_pretty(&node)?;
@@ -1067,7 +1109,11 @@ fn is_valid_output_path(path: &str) -> bool {
 }
 
 fn normalize_rel_path(path: &str) -> String {
-    path.replace('\\', "/")
+    normalize_identity_text(&path.replace('\\', "/"))
+}
+
+fn normalize_identity_text(value: &str) -> String {
+    value.nfc().collect()
 }
 
 #[cfg(test)]
