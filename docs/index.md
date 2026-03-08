@@ -156,6 +156,7 @@
 - [Drift dashboard](./tracking/DRIFT_DASHBOARD.md)
 - [Repository trust evidence index](./reference/REPO_TRUST_EVIDENCE_INDEX.md)
 - [Planner hardening report](./reports/foundation/planner_hardening_report.md)
+- [Archived low-value foundation reports](./reports/foundation/ARCHIVED_LOW_VALUE_FOUNDATION_REPORTS_100.md)
 - [Controller backend artifact boundary](./architecture/controller_backend_artifact_boundary.md)
 - [Local-only vs remote-coordinated runtime](./architecture/local_only_vs_remote_coordinated_runtime.md)
 - [Invariant coverage tracking](./tracking/INVARIANT_COVERAGE.md)
@@ -183,7 +184,7 @@
 - [Audit report contract](./spec/AUDIT_REPORT_CONTRACT.md)
 - [Proof bundle schema v0.1](./spec/PROOF_BUNDLE_SCHEMA_v0.1.json)
 - [Proof report format](./reference/PROOF_REPORT_FORMAT.md)
-- [Signed vs unsigned proof trust boundary](./reports/foundation/signed_vs_unsigned_proof_trust_boundary.md)
+- [Signed vs unsigned proof trust boundary](./reports/foundation/ARCHIVED_LOW_VALUE_FOUNDATION_REPORTS_100.md) *(archived)*
 - [Kubernetes support matrix](./reference/K8S_SUPPORT_MATRIX.md)
 - [HPC support matrix](./reference/HPC_SUPPORT_MATRIX.md)
 - [HPC and DNA boundary](./reference/HPC_AND_DNA_BOUNDARY.md)
