@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "domain": "artifact-lineage",
+  "cases": [
+    {"id":"lineage-reconstruction","coverage":["reconstruction-correctness","consistency-checks"],"expected":"reconstruction-correct"},
+    {"id":"lineage-partial-runs","coverage":["partial-run-completeness","persistence-guarantees"],"expected":"partial-lineage-complete"},
+    {"id":"lineage-replay","coverage":["replay-lineage-correctness","provenance-guarantees"],"expected":"replay-lineage-stable"},
+    {"id":"lineage-import","coverage":["import-lineage-correctness","provenance-guarantees"],"expected":"import-lineage-stable"},
+    {"id":"lineage-gc-safety","coverage":["gc-lineage-correctness","parent-child-semantics"],"expected":"gc-safe-plan"},
+    {"id":"lineage-serialization","coverage":["serialization-stability","persistence-guarantees"],"expected":"serialization-stable"},
+    {"id":"lineage-traversal","coverage":["traversal-guarantees","consistency-checks"],"expected":"traversal-deterministic"},
+    {"id":"lineage-benchmarks","coverage":["traversal-benchmarks","telemetry"],"expected":"benchmark-surface-present"},
+    {"id":"lineage-corruption","coverage":["corruption-detection","anomaly-detection"],"expected":"corruption-classified"},
+    {"id":"lineage-fuzz","coverage":["fuzz-suite","anomaly-detection"],"expected":"fuzz-surface-present"},
+    {"id":"lineage-explainability","coverage":["explainability","visualization-data"],"expected":"lineage-explainable"},
+    {"id":"lineage-verification-suite","coverage":["verification-suite","regression-fixtures"],"expected":"suite-id-stable"}
+  ]
+}
