@@ -1,0 +1,16 @@
+{
+  "id": "runtime-architecture-health",
+  "purpose": "runtime-architecture-cleanup-and-health-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test runtime_scope_v2_guardrails",
+    "cargo test -p bijux-dev-dag --test runtime_broad_surface_ownership_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_scope_reports_contracts",
+    "cargo test -p bijux-dev-dag --test runtime_architecture_cleanup_completion_contracts"
+  ],
+  "owner": "runtime-architecture",
+  "notes": [
+    "Covers runtime module boundaries, ownership enforcement, and dependency hygiene.",
+    "Use in release verification when runtime structure or boundaries change."
+  ]
+}
