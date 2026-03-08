@@ -39,11 +39,11 @@ nextest_summary = \
 	passed=$$2; \
 	failed=$$3; \
 	skipped=$$4; \
-	leaky=$$(grep -c ' LEAK ' "$$report_file" || true); \
 	max_list_items=50; \
 	failed_tests=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$$report_file" | awk '/ FAIL / { test_name = $$0; sub(/^.* FAIL \[[^]]*\] \([^)]*\) /, "", test_name); seen[test_name] = 1 } END { for (test_name in seen) print test_name }' | LC_ALL=C sort); \
 	skipped_tests=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$$report_file" | awk '/ SKIP / { test_name = $$0; sub(/^.* SKIP \[[^]]*\] \([^)]*\) /, "", test_name); seen[test_name] = 1 } END { for (test_name in seen) print test_name }' | LC_ALL=C sort); \
-	leaky_tests=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$$report_file" | awk '/ LEAK / { test_name = $$0; sub(/^.* LEAK \[[^]]*\] \([^)]*\) /, "", test_name); seen[test_name] = 1 } END { for (test_name in seen) print test_name }' | LC_ALL=C sort); \
+	leaky_tests=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$$report_file" | awk '/ LEAK( |Y )/ { test_name = $$0; sub(/^.* LEAK( |Y )\[[^]]*\] \([^)]*\) /, "", test_name); seen[test_name] = 1 } END { for (test_name in seen) print test_name }' | LC_ALL=C sort); \
+	leaky=$$(printf '%s\n' "$$leaky_tests" | sed '/^$$/d' | wc -l | tr -d ' '); \
 	print_test_group() { \
 		label="$$1"; color="$$2"; tests="$$3"; \
 		[ -n "$$tests" ] || return 0; \
