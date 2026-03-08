@@ -18,6 +18,7 @@ mod compare_evidence;
 mod evidence_access;
 mod evidence_control_plane;
 mod evidence_registry;
+mod file_catalog;
 mod model;
 mod perf_evidence;
 mod reporting;
@@ -53,6 +54,9 @@ use evidence_control_plane::{
 use evidence_registry::{
     run_evidence_ledger_normalize, run_evidence_registry_diff, run_evidence_registry_missing,
     run_evidence_registry_orphans, run_evidence_registry_rebuild, run_evidence_registry_verify,
+};
+use file_catalog::{
+    collect_all_files, collect_files_with_extension, newest_run, two_latest_runs, wildcard_match,
 };
 use model::{CommandContext, CommandEffect, SuiteDef};
 use perf_evidence::{
@@ -3354,58 +3358,6 @@ fn run_stdout_and_json(root: &Path, cmd: &str, args: &[&str]) -> Result<String, 
     exec_run_stdout_and_json(root, cmd, args)
 }
 
-fn newest_run(runs: &Path) -> Result<PathBuf, String> {
-    let mut candidates: Vec<_> = fs::read_dir(runs)
-        .map_err(|err| err.to_string())?
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .filter(|path| path.is_dir())
-        .collect();
-
-    candidates.sort_by(|a, b| {
-        let ma = fs::metadata(a)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        let mb = fs::metadata(b)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        mb.cmp(&ma)
-    });
-    candidates
-        .into_iter()
-        .next()
-        .ok_or_else(|| format!("no runs found in {}", runs.display()))
-}
-
-fn two_latest_runs(runs: &Path) -> Result<(PathBuf, PathBuf), String> {
-    let mut candidates: Vec<_> = fs::read_dir(runs)
-        .map_err(|err| err.to_string())?
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .filter(|path| {
-            path.is_dir()
-                && path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|n| n.starts_with("run-"))
-        })
-        .collect();
-
-    if candidates.len() < 2 {
-        return Err(format!("expected at least 2 runs in {}", runs.display()));
-    }
-
-    candidates.sort_by(|a, b| {
-        let ma = fs::metadata(a)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        let mb = fs::metadata(b)
-            .and_then(|m| m.modified())
-            .unwrap_or(UNIX_EPOCH);
-        mb.cmp(&ma)
-    });
-
-    Ok((candidates[0].clone(), candidates[1].clone()))
-}
-
 pub(crate) fn repo_root() -> Result<PathBuf, String> {
     let mut dir = env::current_dir().map_err(|err| err.to_string())?;
     loop {
@@ -3417,55 +3369,6 @@ pub(crate) fn repo_root() -> Result<PathBuf, String> {
         }
     }
     Err("could not locate repo root".to_string())
-}
-
-fn wildcard_match(pattern: &str, text: &str) -> bool {
-    if pattern == "*" {
-        return true;
-    }
-    let parts: Vec<&str> = pattern.split('*').collect();
-    if parts.len() == 1 {
-        return pattern == text;
-    }
-    let mut index = 0usize;
-    for (i, part) in parts.iter().enumerate() {
-        if part.is_empty() {
-            continue;
-        }
-        if i == 0 && !pattern.starts_with('*') {
-            if !text[index..].starts_with(part) {
-                return false;
-            }
-            index += part.len();
-            continue;
-        }
-        if i == parts.len() - 1 && !pattern.ends_with('*') {
-            return text.ends_with(part);
-        }
-        if let Some(found) = text[index..].find(part) {
-            index += found + part.len();
-        } else {
-            return false;
-        }
-    }
-    true
-}
-
-fn collect_all_files(root: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
-    for entry in fs::read_dir(root).map_err(|err| err.to_string())? {
-        let path = entry.map_err(|err| err.to_string())?.path();
-        if path.is_dir() {
-            if path.file_name().and_then(|v| v.to_str()) == Some(".git") {
-                continue;
-            }
-            collect_all_files(&path, out)?;
-            continue;
-        }
-        if path.is_file() {
-            out.push(path);
-        }
-    }
-    Ok(())
 }
 
 fn run_evidence_taxonomy_report() -> Result<(), String> {
@@ -8856,25 +8759,4 @@ fn deep_merge_json(target: &mut Value, overlay: &Value) {
             *target = overlay.clone();
         }
     }
-}
-
-fn collect_files_with_extension(
-    dir: &Path,
-    ext: &str,
-    out: &mut Vec<PathBuf>,
-) -> Result<(), String> {
-    if !dir.exists() {
-        return Ok(());
-    }
-    for entry in fs::read_dir(dir).map_err(|err| err.to_string())? {
-        let path = entry.map_err(|err| err.to_string())?.path();
-        if path.is_dir() {
-            collect_files_with_extension(&path, ext, out)?;
-            continue;
-        }
-        if path.extension().and_then(|x| x.to_str()) == Some(ext) {
-            out.push(path);
-        }
-    }
-    Ok(())
 }
