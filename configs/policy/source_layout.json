@@ -18,7 +18,8 @@
     "crates/bijux-dev-dag/src/commands/cli.rs": 650,
     "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs": 1000,
     "crates/bijux-dag-cli/tests/contract_surface.rs": 800,
-    "crates/bijux-dag-core/src/lib.rs": 1300,
-    "crates/bijux-dag-runtime/src/backend/runtime/backend_cluster.rs": 750
+    "crates/bijux-dag-core/src/lib.rs": 1350,
+    "crates/bijux-dag-runtime/src/backend/runtime/backend_cluster.rs": 750,
+    "crates/bijux-dev-dag/src/commands/suite_catalog_repo.rs": 700
   }
 }

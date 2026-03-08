@@ -57,9 +57,13 @@ fn foundation_hardening_registry_references_known_suite_ids() {
     let suite_source =
         fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog.rs"))
             .expect("read suite catalog source");
-    let suite_repo_fragment =
+    let suite_repo_fragment = fs::read_to_string(
+        root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.rs"),
+    )
+    .or_else(|_| {
         fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.inc"))
-            .expect("read suite catalog repo fragment");
+    })
+    .expect("read suite catalog repo fragment");
     for id in ids {
         let id = id.as_str().expect("suite id should be string");
         assert!(

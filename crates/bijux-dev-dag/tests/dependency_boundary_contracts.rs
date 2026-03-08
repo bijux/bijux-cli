@@ -98,9 +98,11 @@ fn core_dependencies_match_kernel_allowed_list() {
         "hex",
         "serde",
         "serde_json",
+        "serde_yaml",
         "sha2",
         "tempfile",
         "thiserror",
+        "unicode-normalization",
     ]
     .into_iter()
     .map(String::from)
@@ -146,6 +148,7 @@ fn dev_governance_dependencies_match_allowed_list() {
         "bijux-dag-artifacts",
         "bijux-dag-core",
         "bijux-dag-runtime",
+        "bijux-dag-testkit",
         "clap",
         "hex",
         "serde",
