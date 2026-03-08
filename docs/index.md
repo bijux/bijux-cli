@@ -57,6 +57,23 @@
 
 ## Behavior domains
 
+### Runtime kernel references
+
+- [Runtime semantics contract](./spec/RUNTIME_SEMANTICS_CONTRACT.md)
+- [Execution semantics contract](./spec/EXECUTION_SEMANTICS_CONTRACT.md)
+- [Scheduler state-space contract](./spec/SCHEDULER_STATESPACE_CONTRACT.md)
+- [Runtime public API boundary](./spec/RUNTIME_PUBLIC_API_BOUNDARY.md)
+- [Current implemented capabilities](./spec/CURRENT_IMPLEMENTED_CAPABILITIES.md)
+- [Kernel boundary contract](./spec/KERNEL_BOUNDARY_CONTRACT.md)
+
+### Modeled and control-plane references
+
+- [Modeled and future surfaces](./spec/MODELED_AND_FUTURE_SURFACES.md)
+- [Control plane model](./CONTROL_PLANE.md)
+- [Control plane migration boundary](./CONTROL_PLANE_MIGRATION.md)
+- [Geo federated control plane contracts](./GEO_FEDERATED_CONTROL_PLANE.md)
+- [Federated scheduling orchestration contracts](./FEDERATED_SCHEDULING_ORCHESTRATION.md)
+
 - [Effects model](./EFFECTS.md)
 - [Policy gates](./POLICY.md)
 - [RBAC and authorization policy contracts](./RBAC_AUTHZ_POLICY.md)

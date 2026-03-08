@@ -62,6 +62,18 @@ Canonical capability list:
 - `docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md`
 
 Status matrix (implemented vs modeled/experimental/simulated):
+
+| Surface | Mode | Notes |
+| --- | --- | --- |
+| Local process execution | implemented | Deterministic runtime path in this repo |
+| Replay/diff/inspect workflows | implemented | Operator and evidence suites enforce behavior |
+| Evidence release verification | implemented | Blocking/advisory split with drift checks |
+| Container execution contract | simulated | Contract and fixtures; not production runtime support claim |
+| Kubernetes execution | simulated | No production execution backend implementation in this repo |
+| Batch/HPC execution | modeled/simulated | Modeled semantics and fixtures only |
+| Remote distributed execution | modeled/simulated | Not a production execution mode in this repo |
+
+Full matrix:
 - `docs/reference/ROOT_CAPABILITY_MATRIX.md`
 
 ## Quickstart
