@@ -265,3 +265,35 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
     let status = if errors.is_empty() { "ok" } else { "error" };
     Ok(json!({ "status": status, "errors": errors }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_selector, parse_selectors};
+    use std::process::ExitCode;
+
+    #[test]
+    fn selector_parser_accepts_supported_prefixes() {
+        let by_id = parse_selector("id:train").expect("id selector");
+        let by_tag = parse_selector("tag:gpu").expect("tag selector");
+        let by_kind = parse_selector("kind:shell").expect("kind selector");
+        let set = parse_selectors(
+            &["id:a".to_string(), "tag:b".to_string()],
+            &["kind:const".to_string()],
+        )
+        .expect("selector set");
+
+        assert_eq!(format!("{by_id:?}"), "IdPrefix(\"train\")");
+        assert_eq!(format!("{by_tag:?}"), "Tag(\"gpu\")");
+        assert_eq!(format!("{by_kind:?}"), "Kind(\"shell\")");
+        assert_eq!(set.include.len(), 2);
+        assert_eq!(set.exclude.len(), 1);
+    }
+
+    #[test]
+    fn selector_parser_rejects_invalid_syntax() {
+        for raw in ["", "id", "tag", "kind", "name:node", "id=", "node:a"] {
+            let err = parse_selector(raw).expect_err("invalid selector must fail");
+            assert_eq!(err, ExitCode::from(2), "selector should reject: {raw}");
+        }
+    }
+}
