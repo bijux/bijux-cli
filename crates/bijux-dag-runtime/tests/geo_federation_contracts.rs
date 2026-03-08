@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
     geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
     GeoReadyAcceptanceGate, RegionId, WriteRoutingRule,

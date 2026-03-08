@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     anomaly_detected, answer_failure_question, build_investigation_bundle, build_postmortem_seed,
     guardrail_allows, next_maturity_level, recommend_safe_actions, redact_for_ai_export,
     root_cause_domain_hints, suggestion_quality, AiAssistMaturityLevel, FailureSummary,

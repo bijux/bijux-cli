@@ -10,10 +10,11 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::invariant_catalog_default;
+use bijux_dag_runtime::simulated_platform::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    invariant_catalog_default, release_policy_allows, PlatformHealthDashboard,
-    ReleaseGovernancePolicy, ServiceLevelIndicators, ServiceLevelObjective,
+    release_policy_allows, PlatformHealthDashboard, ReleaseGovernancePolicy,
+    ServiceLevelIndicators, ServiceLevelObjective,
 };
 
 fn load_objective() -> ServiceLevelObjective {

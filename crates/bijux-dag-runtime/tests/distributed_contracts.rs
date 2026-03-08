@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     artifact_upload_can_commit, cancellation_delivered_in_time, check_worker_version_compatibility,
     classify_heartbeat, classify_status_reporting, is_duplicate_dispatch, normalize_status_events,
     recover_lost_lease, reject_worker_version_mismatch, should_reassign,
@@ -18,10 +18,11 @@ use bijux_dag_runtime::{
     worker_alive, worker_pool_satisfies_capability_request, DistributedExecutionRequest,
     DistributedReadinessChecklist, HeartbeatClass, HeartbeatSemantics, LivenessPolicy,
     MockRemoteBackend, RemoteArtifactCommitContract, RemoteArtifactUploadContract,
-    RemoteExecutionRequest, RemoteExecutorSubmitter, RemoteStatusEvent, StatusReportingClass,
-    TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity,
-    WorkerPoolCapabilityRequest, WorkerVersionCompatibilityRule,
+    RemoteStatusEvent, StatusReportingClass, TaskLeaseSemantics, WorkLease,
+    WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPoolCapabilityRequest,
+    WorkerVersionCompatibilityRule,
 };
+use bijux_dag_runtime::{RemoteExecutionRequest, RemoteExecutorSubmitter};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[test]

@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
     product_positioning_note, rollout_is_progressive, wait_state_resumable,
     workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,

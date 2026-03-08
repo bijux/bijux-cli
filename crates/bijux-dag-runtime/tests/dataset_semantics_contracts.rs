@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     build_dataset_provenance_report, dataset_catalog_query, dataset_consumption_satisfied,
     dataset_diff, dataset_mapping_index, dataset_ready_for_schedule,
     default_dataset_example_workflow, DatasetArtifactMapping, DatasetCatalogEntry,

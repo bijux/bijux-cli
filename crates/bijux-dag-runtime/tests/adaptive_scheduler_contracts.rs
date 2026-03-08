@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     adaptive_cache_policy, adaptive_fallback_needed, adaptive_maturity_ready,
     adaptive_queue_throttle, choose_prefetch_hints, compare_static_and_adaptive,
     decide_adaptive_parallelism, detect_adaptive_drift, render_adaptive_explanation,

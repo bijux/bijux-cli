@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     build_provenance_drift_report, can_promote_artifact, evaluate_attestation_compatibility,
     regulated_workflow_reference_example, replay_trust_warnings, require_provenance_completeness,
     ArtifactTrustLabel, AttestationCompatibility, AttestationFormatRule, BinaryComponent,

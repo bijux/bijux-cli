@@ -10,11 +10,11 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     artifact_upload_can_commit, classify_heartbeat, is_duplicate_dispatch, normalize_status_events,
     reject_worker_version_mismatch, worker_pool_satisfies_capability_request, HeartbeatClass,
     HeartbeatSemantics, RemoteArtifactCommitContract, RemoteArtifactUploadContract,
-    RemoteStatusEvent, WorkerCapabilities, WorkerPoolCapabilityRequest,
+    RemoteStatusEvent, WorkerCapabilities, WorkerHeartbeat, WorkerPoolCapabilityRequest,
     WorkerVersionCompatibilityRule,
 };
 use std::collections::BTreeSet;
@@ -26,7 +26,7 @@ fn conformance_heartbeat_classification_is_stable() {
         timeout_ms: 5_000,
         delayed_threshold_ms: 2_500,
     };
-    let hb = bijux_dag_runtime::WorkerHeartbeat {
+    let hb = WorkerHeartbeat {
         worker_id: "worker-x".to_string(),
         unix_ms: 10_000,
         inflight_nodes: vec!["n1".to_string()],

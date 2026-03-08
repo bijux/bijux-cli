@@ -11,11 +11,11 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    build_diagnostics, build_investigation_bundle, build_topology_overlay, detect_metric_drift,
-    observability_contract_status, redact_event_details, render_timeline_text, root_cause_graph,
-    sample_events, EventCategory, EventRecord, RedactionPolicy, SamplingPolicy, TimelineEntry,
-    TimelineExport,
+    build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,
+    redact_event_details, render_timeline_text, root_cause_graph, sample_events, EventCategory,
+    EventRecord, RedactionPolicy, SamplingPolicy, TimelineEntry, TimelineExport,
 };
+use bijux_dag_runtime::simulated_platform::build_investigation_bundle;
 use serde_json::json;
 use std::collections::BTreeMap;
 

@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     authorize, check_api_compatibility, filter_resources, paginate, ApiCompatibilityRule,
     ApiVersion, AuthContext, AuthenticationPrincipal, AuthorizationRule, DagResource, ListFilter,
     Pagination, VersionedResource,

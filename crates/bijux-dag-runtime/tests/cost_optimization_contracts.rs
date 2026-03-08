@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     budget_policy_action, cache_reuse_score, choose_cost_profile, cost_optimization_allowed,
     detect_cost_anomaly, run_budget_allows, scorecard_ready, CostPerformanceProfile,
     CostSafetyPolicy, PlatformCostMaturityScorecard, RunBudget, TenantBudgetPolicy,

@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     deduplicate_across_replicas, evaluate_ha_conformance, failover_recovery_passes,
     fence_allows_mutation, idempotent_run_creation, ordering_during_failover, DurableRunQueueEntry,
     ScheduleDedupRecord, SchedulerEpoch, SchedulerFenceToken, SchedulerRecoveryObjectives,

@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
+use bijux_dag_runtime::simulated_platform::{
     check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
     resolve_tenant_overlay, scope_lineage_query, tenant_provisioning_bootstrap,
     validate_tenant_isolation, TenantConfigOverlay, TenantId, TenantLineageScope,
