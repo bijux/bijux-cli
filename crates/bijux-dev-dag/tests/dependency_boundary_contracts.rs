@@ -101,9 +101,9 @@ fn core_dependencies_match_kernel_allowed_list() {
         "tempfile",
         "thiserror",
     ]
-        .into_iter()
-        .map(String::from)
-        .collect();
+    .into_iter()
+    .map(String::from)
+    .collect();
     let deps = direct_dependency_names("bijux-dag-core");
     for dep in &deps {
         assert!(
