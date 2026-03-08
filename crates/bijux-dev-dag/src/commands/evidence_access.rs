@@ -453,4 +453,35 @@ mod tests {
             "unexpected error: {err}"
         );
     }
+
+    #[test]
+    fn typed_resolvers_select_expected_assets() {
+        let assets = vec![
+            EvidenceAsset {
+                id: "a1".to_string(),
+                kind: "authoring".to_string(),
+                canonical_path: "evidence/authoring/examples/a1.json".to_string(),
+                consumers: vec!["release-suite".to_string()],
+                trust_properties: vec!["deterministic".to_string()],
+            },
+            EvidenceAsset {
+                id: "c1".to_string(),
+                kind: "cache".to_string(),
+                canonical_path: "evidence/cache/scenarios/c1.json".to_string(),
+                consumers: vec!["runtime-verify".to_string()],
+                trust_properties: vec!["deterministic".to_string(), "traceable".to_string()],
+            },
+        ];
+
+        let by_family = resolve_assets_by_family(&assets, "cache");
+        assert_eq!(by_family.len(), 1);
+        assert_eq!(by_family[0].id, "c1");
+
+        let by_trust = resolve_assets_by_trust_property(&assets, "deterministic");
+        assert_eq!(by_trust.len(), 2);
+
+        let by_consumer = resolve_assets_by_consumer(&assets, "runtime-verify");
+        assert_eq!(by_consumer.len(), 1);
+        assert_eq!(by_consumer[0].id, "c1");
+    }
 }

@@ -66,19 +66,67 @@ fn is_registry_asset_path(path: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::is_registry_asset_path;
+    use super::{build_evidence_registry, is_registry_asset_path};
+    use std::fs;
 
     #[test]
     fn registry_asset_path_classifier_accepts_governed_roots_only() {
         assert!(is_registry_asset_path(
             "evidence/authoring/examples/example.dag.json"
         ));
-        assert!(is_registry_asset_path("evidence/perf/scenarios/latency.json"));
+        assert!(is_registry_asset_path(
+            "evidence/perf/scenarios/latency.json"
+        ));
         assert!(!is_registry_asset_path(
             "evidence/ownership/evidence_ledger.json"
         ));
         assert!(!is_registry_asset_path("evidence/perf/scenarios/readme.md"));
-        assert!(!is_registry_asset_path("docs/reports/foundation/anything.json"));
+        assert!(!is_registry_asset_path(
+            "docs/reports/foundation/anything.json"
+        ));
+    }
+
+    #[test]
+    fn generated_registry_assets_are_sorted_by_registry_key() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let ledger_path = temp.path().join("evidence/ownership");
+        fs::create_dir_all(&ledger_path).expect("create ledger dir");
+        fs::write(
+            ledger_path.join("evidence_ledger.json"),
+            serde_json::to_string_pretty(&serde_json::json!({
+                "entries": [
+                    {
+                        "id": "z-id",
+                        "kind": "cache",
+                        "owner": "team-a",
+                        "status": "active",
+                        "path": "evidence/cache/scenarios/z.json",
+                        "canonical_path": "evidence/cache/scenarios/z.json",
+                        "consumers": ["cache-suite"],
+                        "trust_properties": ["deterministic"],
+                        "release_blocking": true
+                    },
+                    {
+                        "id": "a-id",
+                        "kind": "authoring",
+                        "owner": "team-b",
+                        "status": "active",
+                        "path": "evidence/authoring/examples/a.json",
+                        "canonical_path": "evidence/authoring/examples/a.json",
+                        "consumers": ["authoring-suite"],
+                        "trust_properties": ["traceable"],
+                        "release_blocking": false
+                    }
+                ]
+            }))
+            .expect("json"),
+        )
+        .expect("write ledger");
+
+        let registry = build_evidence_registry(temp.path()).expect("build registry");
+        let assets = registry["assets"].as_array().expect("assets array");
+        assert_eq!(assets[0]["registry_key"], "authoring:a-id");
+        assert_eq!(assets[1]["registry_key"], "cache:z-id");
     }
 }
 

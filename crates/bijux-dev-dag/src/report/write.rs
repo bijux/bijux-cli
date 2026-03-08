@@ -44,4 +44,23 @@ mod tests {
         let loaded = fs::read_to_string(path).expect("read text report");
         assert!(loaded.contains("# report"));
     }
+
+    #[test]
+    fn write_command_report_is_idempotent_for_same_payload() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("report.json");
+        let report = CommandReport {
+            command_id: "repo.check".to_string(),
+            status: "ok".to_string(),
+            effect: "validation".to_string(),
+            started_unix_ms: 1,
+            finished_unix_ms: 2,
+            details: serde_json::json!({"stable": true}),
+        };
+        write_command_report(&path, &report).expect("first write");
+        let first = fs::read(&path).expect("first read");
+        write_command_report(&path, &report).expect("second write");
+        let second = fs::read(&path).expect("second read");
+        assert_eq!(first, second, "report writing must be deterministic");
+    }
 }
