@@ -31,4 +31,4 @@ Status: stable.
 - [Reports policy and dashboards](./reports/README.md)
 - [Archived root docs](./reports/root-doc-archive/README.md)
 - [Generated docs artifacts](./generated/README.md)
-- [Documentation information architecture](../docs-information-architecture.md)
+- [Documentation information architecture](./README.md#documentation-information-architecture)
