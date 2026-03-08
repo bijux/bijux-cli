@@ -31,7 +31,9 @@ pub fn reject_duplicate_adapter_identity(descriptors: &[AdapterDescriptor]) -> R
 
 #[cfg(test)]
 mod tests {
-    use super::{reject_duplicate_adapter_identity, select_deterministic_adapter, AdapterCandidate};
+    use super::{
+        reject_duplicate_adapter_identity, select_deterministic_adapter, AdapterCandidate,
+    };
     use crate::adapter::{AdapterDescriptor, AdapterOrigin, EffectSet};
 
     fn descriptor(id: &str, version: &str) -> AdapterDescriptor {

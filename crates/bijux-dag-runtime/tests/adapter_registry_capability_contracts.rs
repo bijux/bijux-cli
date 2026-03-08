@@ -35,7 +35,9 @@ fn adapter_metadata_is_present_in_registry_output_surface() {
     assert!(!adapters.is_empty(), "adapter registry must not be empty");
     for adapter in adapters {
         assert!(
-            adapter["adapter_id"].as_str().is_some_and(|v| !v.is_empty()),
+            adapter["adapter_id"]
+                .as_str()
+                .is_some_and(|v| !v.is_empty()),
             "adapter_id must be present"
         );
         assert!(
@@ -228,7 +230,9 @@ fn adapter_registry_dump_has_stable_identity_without_preference_override_surface
     for row in adapters {
         assert!(row.get("preference").is_none());
         assert!(row["adapter_id"].as_str().is_some_and(|v| !v.is_empty()));
-        assert!(row["adapter_version"].as_str().is_some_and(|v| !v.is_empty()));
+        assert!(row["adapter_version"]
+            .as_str()
+            .is_some_and(|v| !v.is_empty()));
     }
 }
 

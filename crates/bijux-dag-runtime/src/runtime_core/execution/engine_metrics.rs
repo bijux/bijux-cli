@@ -86,15 +86,7 @@ mod tests {
             skipped: 0,
             cached: 2,
         };
-        let metrics = build_run_metrics(
-            &counts,
-            6,
-            &RuntimeConfig::default(),
-            1_500,
-            1_000,
-            2,
-            4,
-        );
+        let metrics = build_run_metrics(&counts, 6, &RuntimeConfig::default(), 1_500, 1_000, 2, 4);
         assert_eq!(metrics.makespan_ms, 500);
         assert_eq!(metrics.execution_ms, 500);
         assert!(metrics.success_ratio > 0.0);
@@ -116,8 +108,7 @@ mod tests {
             json!({"event":"node_failed"}),
         ];
         let failures = vec![json!({"cause":"budget"}), json!({"cause":"other"})];
-        let metrics =
-            build_scheduler_metrics(&counts, &log, &RuntimeConfig::default(), &failures);
+        let metrics = build_scheduler_metrics(&counts, &log, &RuntimeConfig::default(), &failures);
         assert_eq!(metrics.retry_count, 1);
         assert_eq!(metrics.cache_hit_count, 1);
         assert_eq!(metrics.cache_miss_count, 1);

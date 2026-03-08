@@ -1,4 +1,8 @@
 use bijux_dag_artifacts as _;
+use bijux_dag_runtime::state_machine::{
+    failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
+    NodeLifecycleState, RunLifecycleState,
+};
 use bijux_dag_runtime::{
     apply_backfill_throttling, build_backfill_plan, build_plan, build_planner_analysis,
     build_scheduler, classify_failure, compute_partial_run_closure, deduplicate_trigger_events,
@@ -9,10 +13,6 @@ use bijux_dag_runtime::{
     PriorityClass, QueueIsolationPolicy, ReadyNode, RetryPolicySemantics, RunBatchPolicy,
     RuntimeConfig, ScheduleDefinition, ScheduleRegistry, ScheduleSubmissionStatus,
     ScheduledSubmission, SchedulerFairness, SchedulerPolicy, SelectorSet, TriggerSpec,
-};
-use bijux_dag_runtime::state_machine::{
-    failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
-    NodeLifecycleState, RunLifecycleState,
 };
 use bijux_dag_testkit as _;
 use ctrlc as _;
@@ -134,7 +134,13 @@ fn scheduler_workload_bounded_queueing_decisions_remain_stable() {
             require_same_dag: true,
         },
     );
-    assert_eq!(grouped, vec![vec!["a".to_string(), "b".to_string()], vec!["c".to_string()]]);
+    assert_eq!(
+        grouped,
+        vec![
+            vec!["a".to_string(), "b".to_string()],
+            vec!["c".to_string()]
+        ]
+    );
 }
 
 #[test]
@@ -210,7 +216,9 @@ fn planner_analysis_diagnostics_and_fingerprints_are_deterministic() {
     assert!(diff.changed_annotations.is_empty());
 
     let explain = explain_plan(&first);
-    assert!(explain.phases.contains(&PlannerPhase::ScheduleReadyTransform));
+    assert!(explain
+        .phases
+        .contains(&PlannerPhase::ScheduleReadyTransform));
     let fp = fingerprint_plan(&first.plan, &first.annotations).expect("fp");
     assert_eq!(fp, first.plan_fingerprint);
 }
@@ -264,7 +272,10 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(
+        format!("{:?}", profile.ready_tie_break),
+        "LexicographicNodeId"
+    );
     assert!(failure_allows_downstream_readiness(
         FailurePropagationMode::ContinueIndependent
     ));
