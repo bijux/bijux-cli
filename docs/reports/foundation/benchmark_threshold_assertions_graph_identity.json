@@ -1,0 +1,9 @@
+{
+  "surface": "graph_identity_canonicalization",
+  "assertions": {
+    "graph_hash_p95_ms_max": 150,
+    "canonical_bytes_p95_ms_max": 180,
+    "canonical_diff_p95_ms_max": 220
+  },
+  "source": "artifacts/benchmarks/graph_identity.json"
+}

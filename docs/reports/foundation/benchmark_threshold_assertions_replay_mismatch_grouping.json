@@ -1,0 +1,8 @@
+{
+  "surface": "replay_mismatch_grouping",
+  "assertions": {
+    "grouping_p95_ms_max": 170,
+    "proof_build_p95_ms_max": 220
+  },
+  "source": "artifacts/benchmarks/replay_proof_generation.json"
+}

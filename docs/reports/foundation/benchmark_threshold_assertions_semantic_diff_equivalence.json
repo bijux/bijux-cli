@@ -1,0 +1,8 @@
+{
+  "surface": "semantic_diff_equivalence",
+  "assertions": {
+    "semantic_diff_p95_ms_max": 180,
+    "equivalence_proof_p95_ms_max": 220
+  },
+  "source": "artifacts/benchmarks/semantic_diff_explain.json"
+}
