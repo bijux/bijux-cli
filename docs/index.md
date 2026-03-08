@@ -16,6 +16,8 @@
 - [Crate boundary contract](./spec/CRATE_BOUNDARY_CONTRACT.md)
 - [Evidence model](./spec/EVIDENCE_MODEL.md)
 - [Glossary](./spec/GLOSSARY.md)
+- [Graph identity contract](./spec/GRAPH_IDENTITY_CONTRACT.md)
+- [Node identity contract](./spec/NODE_IDENTITY_CONTRACT.md)
 - [CLI contract matrix](./CLI.md)
 - [Development environment](./DEVELOPMENT.md)
 - [Architecture overview](./ARCHITECTURE.md)

@@ -6,6 +6,13 @@
 - `graph_id` is derived as SHA256 over canonical graph JSON bytes.
 - Canonicalization normalizes ordering and relative path separators.
 
+## Implementation linkage
+
+- `GraphId` type: `crates/bijux-dag-core/src/lib.rs`.
+- Canonicalization entrypoints: `crates/bijux-dag-core/src/graph/canonical.rs`.
+- Fingerprint entrypoints: `crates/bijux-dag-core/src/analysis/fingerprint.rs`.
+- Topology ordering semantics: `crates/bijux-dag-core/src/graph/topology.rs`.
+
 ## Identity-affecting fields
 
 - `spec`
