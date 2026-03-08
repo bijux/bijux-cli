@@ -419,4 +419,58 @@ mod tests {
         assert!(!diff.replay_equivalence.equivalent);
         assert!(diff.manifest.contains_key("resources"));
     }
+
+    #[test]
+    fn replay_diff_reports_grouped_mismatches_for_multiple_dimensions() {
+        let manifest_a = json!({"spec":"v","jobs":1});
+        let manifest_b = json!({"spec":"v","jobs":2});
+        let mut nodes_a = HashMap::new();
+        let mut nodes_b = HashMap::new();
+        nodes_a.insert("n1".to_string(), json!({"status":"success","fingerprint":"fp1"}));
+        nodes_b.insert("n1".to_string(), json!({"status":"failed","fingerprint":"fp1"}));
+        let mut outputs_a = HashMap::new();
+        let mut outputs_b = HashMap::new();
+        outputs_a.insert("n1".to_string(), index(vec![("n1/out", "aaa")]));
+        outputs_b.insert("n1".to_string(), index(vec![("n1/out", "bbb")]));
+
+        let diff = build_run_diff(
+            manifest_a,
+            manifest_b,
+            "g1".to_string(),
+            "g2".to_string(),
+            &nodes_a,
+            &nodes_b,
+            &outputs_a,
+            &outputs_b,
+        );
+        assert!(!diff.replay_equivalence.equivalent);
+        assert_eq!(diff.replay_equivalence.cause_groups.get("manifest_drift"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("graph_semantics"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("node_outcomes"), Some(&1));
+        assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1));
+    }
+
+    #[test]
+    fn replay_diff_equivalence_report_fields_are_present_for_equivalent_runs() {
+        let manifest = json!({"spec":"v","jobs":1});
+        let diff = build_run_diff(
+            manifest.clone(),
+            manifest,
+            "same".to_string(),
+            "same".to_string(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(diff.replay_equivalence.equivalent);
+        assert_eq!(
+            diff.replay_equivalence.reason_report.summary,
+            "runs are semantically equivalent under replay contract"
+        );
+        assert_eq!(
+            diff.replay_equivalence.reason_report.compared_dimensions,
+            vec!["manifest", "graph_fingerprint", "nodes", "outputs"]
+        );
+    }
 }

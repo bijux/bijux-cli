@@ -198,4 +198,65 @@ mod tests {
         let diff = run_diff_from_dirs(&old, &current).expect("build run diff");
         assert!(diff.replay_equivalence.equivalent);
     }
+
+    #[test]
+    fn replay_service_reports_failure_grouping_for_node_outcome_drift() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run_a = tmp.path().join("run-a");
+        let run_b = tmp.path().join("run-b");
+        fs::create_dir_all(run_a.join("nodes/n1")).expect("create nodes a");
+        fs::create_dir_all(run_b.join("nodes/n1")).expect("create nodes b");
+        write(&run_a.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(&run_b.join("manifest.json"), r#"{"status":"completed"}"#);
+        write(
+            &run_a.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(
+            &run_b.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-1"}"#,
+        );
+        write(&run_a.join("nodes/n1/trace.json"), r#"{"status":"success"}"#);
+        write(&run_b.join("nodes/n1/trace.json"), r#"{"status":"failed"}"#);
+
+        let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
+        assert!(!diff.replay_equivalence.equivalent);
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("node_outcomes").copied(),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn replay_service_reports_downgrade_fidelity_when_graph_fingerprint_differs() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let imported = tmp.path().join("run-imported");
+        let replay = tmp.path().join("run-replay");
+        fs::create_dir_all(&imported).expect("create imported");
+        fs::create_dir_all(&replay).expect("create replay");
+        write(
+            &imported.join("manifest.json"),
+            r#"{"status":"completed","run_metadata":{"submission_source":"import"}}"#,
+        );
+        write(
+            &replay.join("manifest.json"),
+            r#"{"status":"completed","run_metadata":{"submission_source":"manual"}}"#,
+        );
+        write(
+            &imported.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-import"}"#,
+        );
+        write(
+            &replay.join("graph.snapshot.json"),
+            r#"{"graph_fingerprint":"fp-local"}"#,
+        );
+        let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
+        assert!(!diff.replay_equivalence.equivalent);
+        assert!(
+            diff.replay_equivalence
+                .reasons
+                .iter()
+                .any(|reason| reason.contains("graph fingerprint differs"))
+        );
+    }
 }
