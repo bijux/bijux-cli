@@ -26,19 +26,23 @@ fn repo_root() -> std::path::PathBuf {
 }
 
 #[test]
-fn lib_routes_export_import_and_capability_commands_through_route_modules() {
+fn lib_routes_command_families_through_route_modules() {
     let root = repo_root();
     let app_lib =
         fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
     for token in [
+        "routes::validate_routes::handle_validate_command",
+        "routes::plan_routes::handle_plan_command",
+        "routes::run_routes::handle_run_command",
+        "routes::inspect_routes::handle_explain_command",
+        "routes::replay_routes::handle_replay_command",
+        "routes::diff_routes::handle_diff_command",
+        "routes::prove_verify_routes::handle_prove_command",
+        "routes::prove_verify_routes::handle_verify_command",
         "routes::export_import_routes::handle_export_command",
         "routes::export_import_routes::handle_import_command",
         "routes::artifact_routes::handle_artifact_inspect_command",
-        "routes::validate_routes::handle_validate_command",
-        "routes::run_routes::handle_run_command",
-        "routes::inspect_routes::handle_explain_command",
         "routes::inspect_routes::handle_status_command",
-        "routes::prove_verify_routes::handle_verify_command",
         "routes::prove_verify_routes::handle_fsck_command",
         "routes::surface_routes::handle_capabilities_command",
         "routes::surface_routes::handle_semantic_portability_command",
@@ -57,6 +61,9 @@ fn extracted_route_modules_exist_for_command_families() {
         "crates/bijux-dag-app/src/routes/export_import_routes.rs",
         "crates/bijux-dag-app/src/routes/artifact_routes.rs",
         "crates/bijux-dag-app/src/routes/inspect_routes.rs",
+        "crates/bijux-dag-app/src/routes/replay_routes.rs",
+        "crates/bijux-dag-app/src/routes/diff_routes.rs",
+        "crates/bijux-dag-app/src/routes/plan_routes.rs",
         "crates/bijux-dag-app/src/routes/prove_verify_routes.rs",
         "crates/bijux-dag-app/src/routes/run_routes.rs",
         "crates/bijux-dag-app/src/routes/surface_routes.rs",

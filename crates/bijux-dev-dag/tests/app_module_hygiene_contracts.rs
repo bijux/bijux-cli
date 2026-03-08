@@ -71,7 +71,6 @@ fn app_disallows_one_line_wrapper_modules() {
     let mut files = Vec::new();
     collect_rust_files(&root.join("crates/bijux-dag-app/src"), &mut files);
     let mut offenders = Vec::new();
-    let allowed_wrappers = ["crates/bijux-dag-app/src/commands/cli_model.rs"];
     for file in files {
         let rel = file
             .strip_prefix(&root)
@@ -79,9 +78,6 @@ fn app_disallows_one_line_wrapper_modules() {
             .to_string_lossy()
             .to_string();
         if rel.ends_with("mod.rs") {
-            continue;
-        }
-        if allowed_wrappers.contains(&rel.as_str()) {
             continue;
         }
         let content = fs::read_to_string(&file).expect("read rust source");
@@ -98,6 +94,19 @@ fn app_disallows_one_line_wrapper_modules() {
     assert!(
         offenders.is_empty(),
         "one-line wrapper modules are disallowed in app crate: {offenders:?}"
+    );
+}
+
+#[test]
+fn app_lib_file_size_budget_is_enforced() {
+    let root = repo_root();
+    let lib_path = root.join("crates/bijux-dag-app/src/lib.rs");
+    let content = fs::read_to_string(&lib_path).expect("read app lib");
+    let line_count = content.lines().count();
+    let line_budget = 2600usize;
+    assert!(
+        line_count <= line_budget,
+        "app lib line budget exceeded: lines={line_count} budget={line_budget}"
     );
 }
 
