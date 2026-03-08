@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "strict-equivalent-replay",
+      "expect": "equivalent",
+      "fidelity_level": "strict_equivalent",
+      "coverage": ["determinism", "proof"]
+    },
+    {
+      "id": "partial-selection-replay",
+      "expect": "equivalent",
+      "fidelity_level": "strict_equivalent",
+      "coverage": ["partial_graph", "planning"]
+    },
+    {
+      "id": "imported-run-replay",
+      "expect": "equivalent",
+      "fidelity_level": "strict_equivalent",
+      "coverage": ["imported_run", "ancestry_chain"]
+    },
+    {
+      "id": "artifact-corruption-replay",
+      "expect": "verification_error",
+      "fidelity_level": "diverged",
+      "coverage": ["corrupted_artifact", "mismatch_grouping"]
+    },
+    {
+      "id": "missing-artifact-replay",
+      "expect": "verification_error",
+      "fidelity_level": "diverged",
+      "coverage": ["missing_artifact"]
+    },
+    {
+      "id": "incompatible-backend-replay",
+      "expect": "incompatible_backend_error",
+      "fidelity_level": "diverged",
+      "coverage": ["backend_compatibility"]
+    }
+  ]
+}

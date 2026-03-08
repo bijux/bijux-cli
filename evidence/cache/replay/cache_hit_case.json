@@ -1,0 +1,8 @@
+{
+  "case": "cache_hit",
+  "run_a": "run-cache-source",
+  "run_b": "run-cache-replay",
+  "expect": "equivalent",
+  "cache_result": "hit",
+  "reason": "all node fingerprints and outputs matched cache entries"
+}
