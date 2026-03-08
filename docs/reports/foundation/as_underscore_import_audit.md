@@ -2,7 +2,7 @@
 
 ## Summary
 
-- Total `use ... as _;` imports: 2114
+- Total `use ... as _;` imports: 2738
 - Non-test/non-bench imports: 36
 - Noise removals in this pass: 0 (all current uses are classified as dependency-touch or target-root exceptions)
 
@@ -10,13 +10,13 @@
 
 | Crate | Count |
 | --- | ---: |
-| bijux-dag-app | 466 |
-| bijux-dag-artifacts | 28 |
-| bijux-dag-cli | 16 |
-| bijux-dag-core | 120 |
-| bijux-dag-runtime | 869 |
+| bijux-dag-app | 657 |
+| bijux-dag-artifacts | 49 |
+| bijux-dag-cli | 19 |
+| bijux-dag-core | 165 |
+| bijux-dag-runtime | 913 |
 | bijux-dag-testkit | 5 |
-| bijux-dev-dag | 610 |
+| bijux-dev-dag | 930 |
 
 ## Classification
 
