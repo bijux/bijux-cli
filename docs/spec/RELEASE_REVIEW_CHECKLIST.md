@@ -16,6 +16,7 @@ Checklist for release approvers.
 10. Mission and README drift review complete against `docs/spec/MISSION_STATEMENT.md`.
 11. Crate-boundary regression review complete (responsibility gates and forbidden-edge report checked).
 12. Evidence pruning review complete (stale note-only and duplicate evidence reports removed).
+13. Performance claims are backed by raw benchmark data and scorecard references.
 
 ## Related tests
 - `bijux-dev-dag release post-release-verify`
