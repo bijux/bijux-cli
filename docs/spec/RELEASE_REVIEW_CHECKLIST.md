@@ -14,6 +14,7 @@ Checklist for release approvers.
 8. Reproducibility check report attached.
 9. Post-release verification suite passed.
 10. Mission and README drift review complete against `docs/spec/MISSION_STATEMENT.md`.
+11. Crate-boundary regression review complete (responsibility gates and forbidden-edge report checked).
 
 ## Related tests
 - `bijux-dev-dag release post-release-verify`
