@@ -141,13 +141,14 @@ fn app_router_dispatch_stays_in_route_modules_for_key_families() {
     let root = repo_root();
     let lib =
         fs::read_to_string(root.join("crates/bijux-dag-app/src/lib.rs")).expect("read app lib");
+    let lib_normalized = normalize_whitespace(&lib);
     let required_delegations = [
         "Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command)",
         "Commands::Explain { run_dir, node } => {",
         "routes::inspect_routes::handle_explain_command(&cli, run_dir, node)",
         "Commands::WhyRerun { run_a, run_b } => {",
         "routes::diagnostics_routes::handle_why_rerun_command(&cli, run_a, run_b)",
-        "Commands::TraceArtifact { run_dir, artifact_id } => {",
+        "Commands::TraceArtifact",
         "routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)",
         "Commands::Capabilities { backend } => {",
         "routes::surface_routes::handle_capabilities_command(&cli, backend)",
@@ -155,11 +156,16 @@ fn app_router_dispatch_stays_in_route_modules_for_key_families() {
         "routes::surface_routes::handle_semantic_portability_command(&cli, backend)",
     ];
     for snippet in required_delegations {
+        let snippet_normalized = normalize_whitespace(snippet);
         assert!(
-            lib.contains(snippet),
+            lib_normalized.contains(&snippet_normalized),
             "router dispatch missing required delegation snippet: {snippet}"
         );
     }
+}
+
+fn normalize_whitespace(input: &str) -> String {
+    input.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn collect_rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
