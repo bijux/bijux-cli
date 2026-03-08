@@ -66,8 +66,10 @@ fn app_and_dev_crates_do_not_depend_on_runtime_core_internals() {
 }
 
 #[test]
-fn hotspot_script_is_present_and_executable() {
+fn root_scripts_directory_is_absent() {
     let root = repo_root();
-    let script = root.join("scripts/repo_health/generate_hotspot_reports.sh");
-    assert!(script.exists());
+    assert!(
+        !root.join("scripts").exists(),
+        "root scripts directory should not exist; use bijux-dev-dag repo commands instead"
+    );
 }
