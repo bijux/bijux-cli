@@ -484,6 +484,32 @@ impl DependencyCounter {
 
 pub struct DeterministicScheduler;
 
+fn preflight_decision(
+    options: &RuntimeConfig,
+    started: Instant,
+    cancellation_requested: bool,
+) -> Option<ScheduleDecision> {
+    if cancellation_requested {
+        return Some(ScheduleDecision {
+            batch: Vec::new(),
+            blocked_by_budget: Vec::new(),
+            timed_out: false,
+            cancelled: true,
+        });
+    }
+    if let Some(limit_ms) = options.run_timeout_ms {
+        if started.elapsed() > Duration::from_millis(limit_ms) {
+            return Some(ScheduleDecision {
+                batch: Vec::new(),
+                blocked_by_budget: Vec::new(),
+                timed_out: true,
+                cancelled: false,
+            });
+        }
+    }
+    None
+}
+
 impl Scheduler for DeterministicScheduler {
     fn next_batch(
         &mut self,
@@ -493,29 +519,12 @@ impl Scheduler for DeterministicScheduler {
         started: Instant,
         cancellation_requested: bool,
     ) -> ScheduleDecision {
-        if cancellation_requested {
-            return ScheduleDecision {
-                batch: Vec::new(),
-                blocked_by_budget: Vec::new(),
-                timed_out: false,
-                cancelled: true,
-            };
+        if let Some(decision) = preflight_decision(options, started, cancellation_requested) {
+            return decision;
         }
-        if let Some(limit_ms) = options.run_timeout_ms {
-            if started.elapsed() > Duration::from_millis(limit_ms) {
-                return ScheduleDecision {
-                    batch: Vec::new(),
-                    blocked_by_budget: Vec::new(),
-                    timed_out: true,
-                    cancelled: false,
-                };
-            }
-        }
-        let cpu_budget = options
-            .scheduler_policy
-            .cpu_budget
-            .or(options.cpu_budget)
-            .unwrap_or(options.jobs.max(1) as u32);
+        let cpu_budget = options.scheduler_policy.cpu_budget.or(options.cpu_budget).unwrap_or(
+            options.jobs.max(1) as u32,
+        );
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
@@ -565,29 +574,12 @@ impl Scheduler for ThroughputScheduler {
         started: Instant,
         cancellation_requested: bool,
     ) -> ScheduleDecision {
-        if cancellation_requested {
-            return ScheduleDecision {
-                batch: Vec::new(),
-                blocked_by_budget: Vec::new(),
-                timed_out: false,
-                cancelled: true,
-            };
+        if let Some(decision) = preflight_decision(options, started, cancellation_requested) {
+            return decision;
         }
-        if let Some(limit_ms) = options.run_timeout_ms {
-            if started.elapsed() > Duration::from_millis(limit_ms) {
-                return ScheduleDecision {
-                    batch: Vec::new(),
-                    blocked_by_budget: Vec::new(),
-                    timed_out: true,
-                    cancelled: false,
-                };
-            }
-        }
-        let cpu_budget = options
-            .scheduler_policy
-            .cpu_budget
-            .or(options.cpu_budget)
-            .unwrap_or(options.jobs.max(1) as u32);
+        let cpu_budget = options.scheduler_policy.cpu_budget.or(options.cpu_budget).unwrap_or(
+            options.jobs.max(1) as u32,
+        );
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();

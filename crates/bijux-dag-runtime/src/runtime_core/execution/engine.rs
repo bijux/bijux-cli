@@ -5,13 +5,15 @@ use crate::{
     set_node_fingerprint, summarize_failure_root_causes, write_timeline_export, CacheProof,
     EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
     NodeMetrics, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId,
-    RunMetrics, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
-    SchedulerMetrics, TimelineEntry, TimelineExport,
+    RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook, TimelineEntry,
+    TimelineExport,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
 #[path = "engine_finalize.rs"]
 mod engine_finalize;
+#[path = "engine_metrics.rs"]
+mod engine_metrics;
 #[path = "engine_observe.rs"]
 mod engine_observe;
 #[path = "engine_record.rs"]
@@ -1073,58 +1075,22 @@ pub fn execute(
             details,
         });
     }
-    let cache_hits = status_map
-        .values()
-        .filter(|s| matches!(s, NodeStatus::Cached))
-        .count() as f64;
-    let total_nodes = graph.nodes.len().max(1) as f64;
-    let run_metrics = RunMetrics {
-        makespan_ms: finished_unix_ms.saturating_sub(started_unix_ms),
-        success_ratio: manifest.node_counts.success as f64 / total_nodes,
-        parallelism_utilization: (manifest.node_counts.success + manifest.node_counts.cached)
-            as f64
-            / (options.jobs.max(1) as f64 * total_nodes).max(1.0),
-        cache_reuse_ratio: cache_hits / total_nodes,
-        artifact_volume_bytes: manifest.outputs.len() as u64,
-        planning_ms: 0,
-        scheduling_wait_ms: 0,
-        execution_ms: finished_unix_ms.saturating_sub(started_unix_ms),
-        trace_write_ms: 0,
-        manifest_finalize_ms: 0,
-        replay_compare_ms: 0,
-    };
-    let scheduler_metrics = SchedulerMetrics {
-        queue_depth: 0,
-        ready_count: 0,
-        running_count: 0,
-        completed_count: (manifest.node_counts.success
-            + manifest.node_counts.failed
-            + manifest.node_counts.skipped
-            + manifest.node_counts.cached) as usize,
-        retry_count: run_log_index
-            .iter()
-            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("node_attempt_started"))
-            .count() as u64,
-        cache_hit_count: run_log_index
-            .iter()
-            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("cache_hit"))
-            .count() as u64,
-        cache_miss_count: run_log_index
-            .iter()
-            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("cache_miss"))
-            .count() as u64,
-        failure_count: run_log_index
-            .iter()
-            .filter(|row| row.get("event").and_then(|v| v.as_str()) == Some("node_failed"))
-            .count() as u64,
-        starvation_count: failure_propagation_records
-            .iter()
-            .filter(|v| v.get("cause").and_then(|x| x.as_str()) == Some("budget"))
-            .count() as u64,
-        dispatch_latency_ms: 0,
-        concurrency_pressure: (options.jobs.max(1) as f64)
-            / (options.scheduler_policy.max_parallelism.max(1) as f64),
-    };
+    let cache_hits = engine_metrics::count_cache_hits(&status_map);
+    let run_metrics = engine_metrics::build_run_metrics(
+        &manifest.node_counts,
+        graph.nodes.len(),
+        &options,
+        finished_unix_ms,
+        started_unix_ms,
+        cache_hits,
+        manifest.outputs.len(),
+    );
+    let scheduler_metrics = engine_metrics::build_scheduler_metrics(
+        &manifest.node_counts,
+        &run_log_index,
+        &options,
+        &failure_propagation_records,
+    );
     for row in node_metric_rows {
         metrics_registry.record_node(row);
     }
