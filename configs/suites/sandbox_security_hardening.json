@@ -1,0 +1,16 @@
+{
+  "id": "sandbox-security-hardening",
+  "purpose": "sandbox-security-and-isolation-governance",
+  "lane": "test",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test security_model_contracts",
+    "cargo test -p bijux-dag-runtime --test container_execution_contracts",
+    "cargo test -p bijux-dev-dag --test environment_identity_completion_contracts",
+    "cargo test -p bijux-dev-dag --test sandbox_security_completion_contracts"
+  ],
+  "owner": "runtime-security",
+  "notes": [
+    "Covers isolation boundaries, adversarial cases, and sandbox policy behavior.",
+    "Run for release verification when security-sensitive code changes."
+  ]
+}
