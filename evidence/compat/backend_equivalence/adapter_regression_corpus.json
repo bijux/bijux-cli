@@ -1,0 +1,41 @@
+{
+  "version": "v1",
+  "owner": "runtime-foundation",
+  "cases": [
+    {
+      "id": "registry-duplicate-identity-rejected",
+      "expect": "error",
+      "coverage": ["registry", "duplicate_registration"]
+    },
+    {
+      "id": "invalid-adapter-descriptor-rejected",
+      "expect": "error",
+      "coverage": ["invalid_configuration", "conformance"]
+    },
+    {
+      "id": "metadata-persistence-export-import-replay",
+      "expect": "ok",
+      "coverage": ["metadata_persistence", "runtime_contract"]
+    },
+    {
+      "id": "kubernetes-capability-query",
+      "expect": "ok",
+      "coverage": ["capability_query", "kubernetes"]
+    },
+    {
+      "id": "hpc-capability-query",
+      "expect": "ok",
+      "coverage": ["capability_query", "hpc"]
+    },
+    {
+      "id": "remote-worker-protocol-conformance",
+      "expect": "ok",
+      "coverage": ["remote_worker_protocol", "compatibility"]
+    },
+    {
+      "id": "adapter-determinism-under-concurrency",
+      "expect": "ok",
+      "coverage": ["determinism", "concurrency", "stress"]
+    }
+  ]
+}
