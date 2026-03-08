@@ -1,0 +1,16 @@
+{
+  "suite": "dev-dag-helpers-fast",
+  "description": "Fast helper contracts for repo/tooling/report modules and helper governance.",
+  "lane": "fast",
+  "tests": [
+    "crates/bijux-dev-dag/tests/dev_dag_direct_test_presence_contracts.rs",
+    "crates/bijux-dev-dag/tests/dev_dag_command_coverage_progress_contracts.rs",
+    "crates/bijux-dev-dag/tests/dev_dag_helpers_fast_suite_contracts.rs",
+    "crates/bijux-dev-dag/tests/dev_dag_helper_small_module_test_gate_contracts.rs",
+    "crates/bijux-dev-dag/tests/dev_dag_reporting_integrity_contracts.rs"
+  ],
+  "owners": [
+    "dev-dag",
+    "foundation"
+  ]
+}
