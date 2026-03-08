@@ -83,6 +83,7 @@ use commands::{
     AdaptersCommands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
     HashCommands, MaterializeModeArg, MigrateCommands, PolicyCommands,
 };
+use crate::cli_model::command_name as dag_command_name;
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
     ShowEffectivePolicyRequest,
@@ -103,7 +104,9 @@ use tar::{Archive, Builder};
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command().name("dag").subcommand_required(false)
+    DagCli::command()
+        .name(dag_command_name())
+        .subcommand_required(false)
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
