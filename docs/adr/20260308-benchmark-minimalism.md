@@ -25,4 +25,4 @@ Benchmark surfaces have grown across many scenario families, risking overlap and
 
 - `docs/spec/BENCHMARK_MINIMALISM_POLICY.md`
 - `configs/suites/benchmark_minimalism_verification.json`
-- `crates/bijux-dev-dag/tests/benchmark_minimalism_501_520_contracts.rs`
+- `crates/bijux-dev-dag/tests/benchmark_minimalism_guarantees_contracts.rs`

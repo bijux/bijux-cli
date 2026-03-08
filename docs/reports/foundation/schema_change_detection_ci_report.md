@@ -12,4 +12,4 @@ Schema change detection is enforced through deterministic contract checks in CI.
 ## Enforced by
 
 - `crates/bijux-dev-dag/tests/schema_governance_contracts.rs`
-- `crates/bijux-dev-dag/tests/schema_compatibility_361_380_contracts.rs`
+- `crates/bijux-dev-dag/tests/schema_compatibility_guarantees_contracts.rs`

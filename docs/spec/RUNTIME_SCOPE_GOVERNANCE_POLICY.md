@@ -20,5 +20,5 @@ Every runtime module must declare one lifecycle class:
 ## Enforcement
 
 - `configs/policy/runtime_module_lifecycle_status.json`
-- `crates/bijux-dev-dag/tests/runtime_scope_contraction_401_420_contracts.rs`
+- `crates/bijux-dev-dag/tests/runtime_scope_contraction_guarantees_contracts.rs`
 - `configs/suites/runtime_scope_contraction_verification.json`

@@ -10,4 +10,4 @@ Primary governance anchors:
 
 - `configs/suites/dev_dag_release_critical_pack.json`
 - `configs/suites/dev_dag_maintenance_pack.json`
-- `crates/bijux-dev-dag/tests/dev_dag_contraction_461_480_contracts.rs`
+- `crates/bijux-dev-dag/tests/dev_dag_surface_guarantees_contracts.rs`

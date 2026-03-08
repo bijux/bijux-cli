@@ -7,4 +7,4 @@ Drift signals:
 - terminology consistency contract failures
 
 Primary checks:
-- `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_421_440_contracts.rs`
+- `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_guarantees_contracts.rs`

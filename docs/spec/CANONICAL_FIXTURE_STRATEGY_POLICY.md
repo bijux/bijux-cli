@@ -15,4 +15,4 @@ Reduce fixture sprawl by preferring canonical reusable fixtures and explicit gov
 
 - `configs/policy/fixture_family_governance.json`
 - `configs/suites/fixture_contraction_verification.json`
-- `crates/bijux-dev-dag/tests/fixture_contraction_521_540_contracts.rs`
+- `crates/bijux-dev-dag/tests/fixture_canonicalization_contracts.rs`

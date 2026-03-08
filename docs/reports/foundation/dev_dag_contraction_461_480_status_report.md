@@ -11,7 +11,7 @@
 
 - release-critical pack: `dev_dag_release_critical_command_pack_report.md`
 - maintenance pack: `dev_dag_maintenance_command_pack_report.md`
-- behavior enforcement: `crates/bijux-dev-dag/tests/dev_dag_contraction_461_480_contracts.rs`
+- behavior enforcement: `crates/bijux-dev-dag/tests/dev_dag_surface_guarantees_contracts.rs`
 
 ## 475-480 shrink trend, suite, dashboard, and ADR
 

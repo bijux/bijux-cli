@@ -25,4 +25,4 @@ Runtime surfaces expanded beyond deterministic execution needs, creating ambigui
 
 - `configs/policy/runtime_module_lifecycle_status.json`
 - `configs/suites/runtime_scope_contraction_verification.json`
-- `crates/bijux-dev-dag/tests/runtime_scope_contraction_401_420_contracts.rs`
+- `crates/bijux-dev-dag/tests/runtime_scope_contraction_guarantees_contracts.rs`

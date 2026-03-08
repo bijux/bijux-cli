@@ -25,4 +25,4 @@ Operator command surfaces accumulated overlapping outputs and multiple ways to a
 ## Enforcement
 
 - `configs/suites/operator_surface_verification.json`
-- `crates/bijux-dev-dag/tests/operator_surface_441_460_contracts.rs`
+- `crates/bijux-dev-dag/tests/operator_surface_guarantees_contracts.rs`

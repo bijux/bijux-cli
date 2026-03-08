@@ -13,5 +13,5 @@ User-facing names must not imply stronger shipped capability than current eviden
 
 ## Governance
 
-- terminology consistency contracts: `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_421_440_contracts.rs`
+- terminology consistency contracts: `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_guarantees_contracts.rs`
 - terminology suite: `configs/suites/terminology_consistency_verification.json`

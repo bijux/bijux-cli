@@ -24,4 +24,4 @@ Accepted
 ## Enforcement
 
 - `configs/suites/dev_dag_contraction_verification.json`
-- `crates/bijux-dev-dag/tests/dev_dag_contraction_461_480_contracts.rs`
+- `crates/bijux-dev-dag/tests/dev_dag_surface_guarantees_contracts.rs`

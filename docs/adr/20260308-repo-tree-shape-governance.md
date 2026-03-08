@@ -25,4 +25,4 @@ Repository structure drift and oversized modules increase maintenance cost and o
 
 - `configs/policy/module_hygiene_governance.json`
 - `configs/suites/repo_tree_simplification_verification.json`
-- `crates/bijux-dev-dag/tests/repo_tree_simplification_541_560_contracts.rs`
+- `crates/bijux-dev-dag/tests/repository_tree_simplification_contracts.rs`

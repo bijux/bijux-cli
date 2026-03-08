@@ -25,4 +25,4 @@ Evidence surfaces expanded in breadth and overlap, reducing decision clarity and
 
 - `configs/policy/evidence_family_governance.json`
 - `configs/suites/evidence_signal_sharpening_verification.json`
-- `crates/bijux-dev-dag/tests/evidence_signal_sharpening_481_500_contracts.rs`
+- `crates/bijux-dev-dag/tests/evidence_signal_quality_contracts.rs`

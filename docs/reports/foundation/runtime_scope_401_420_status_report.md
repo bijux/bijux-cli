@@ -13,8 +13,8 @@
 
 - Quarantined namespace prefixes governed in lifecycle policy.
 - Stable surface and default UX non-leakage enforcement:
-  - `crates/bijux-dev-dag/tests/runtime_scope_contraction_401_420_contracts.rs`
-  - `crates/bijux-dev-dag/tests/runtime_scope_contraction_101_120_contracts.rs`
+  - `crates/bijux-dev-dag/tests/runtime_scope_contraction_guarantees_contracts.rs`
+  - `crates/bijux-dev-dag/tests/runtime_scope_lifecycle_contracts.rs`
   - `crates/bijux-dev-dag/tests/runtime_overreach_contracts.rs`
 
 ## 414-416 generated surface reports

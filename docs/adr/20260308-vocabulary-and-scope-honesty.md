@@ -26,4 +26,4 @@ Repository and runtime surfaces include modeled and speculative modules whose na
 - `configs/policy/vocabulary_registry.json`
 - `docs/spec/VOCABULARY_SCOPE_HONESTY_POLICY.md`
 - `configs/suites/terminology_consistency_verification.json`
-- `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_421_440_contracts.rs`
+- `crates/bijux-dev-dag/tests/vocabulary_scope_honesty_guarantees_contracts.rs`

@@ -29,4 +29,4 @@ We guarantee the following:
 - `crates/bijux-dev-dag/tests/schema_governance_contracts.rs`
 - `crates/bijux-dev-dag/tests/schema_evolution_completion_contracts.rs`
 - `crates/bijux-dev-dag/tests/proof_schema_compatibility_contracts.rs`
-- `crates/bijux-dev-dag/tests/schema_compatibility_361_380_contracts.rs`
+- `crates/bijux-dev-dag/tests/schema_compatibility_guarantees_contracts.rs`

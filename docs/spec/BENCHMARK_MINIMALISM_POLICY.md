@@ -15,4 +15,4 @@ Keep benchmark surfaces small, claim-focused, and cost-effective.
 
 - `configs/policy/benchmark_signal_governance.json`
 - `configs/suites/benchmark_minimalism_verification.json`
-- `crates/bijux-dev-dag/tests/benchmark_minimalism_501_520_contracts.rs`
+- `crates/bijux-dev-dag/tests/benchmark_minimalism_guarantees_contracts.rs`

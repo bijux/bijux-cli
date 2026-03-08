@@ -23,5 +23,5 @@ System quality signals exist across many reports, but operators and maintainers 
 
 ## Enforcement
 
-- `crates/bijux-dev-dag/tests/system_confidence_381_400_contracts.rs`
+- `crates/bijux-dev-dag/tests/system_readiness_dashboard_contracts.rs`
 - `configs/suites/system_readiness_dashboards_verification.json`
