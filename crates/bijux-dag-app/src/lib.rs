@@ -61,7 +61,7 @@ pub use config_surface::{
 pub use run_views::{
     doctor_run, explain_failure, explain_run_id, format_inspect_human, format_show_human,
     inspect_summary, list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare,
-    runs_failures, runs_flakes, runs_history, runs_summary, runs_trend,
+    runs_failures, runs_flakes, runs_history, runs_history_query, runs_summary, runs_trend,
 };
 
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -2785,6 +2785,18 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
     let manifest_data = fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?;
     let manifest: bijux_dag_artifacts::Manifest =
         serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
+    if manifest.created_unix_ms > manifest.started_unix_ms
+        || manifest.started_unix_ms > manifest.finished_unix_ms
+    {
+        errors.push("manifest timestamps are not monotonic".to_string());
+    }
+    if let Some(dir_name) = run_dir.file_name().and_then(|v| v.to_str()) {
+        if let Some(expected) = dir_name.strip_prefix("run-") {
+            if manifest.run_id != expected {
+                errors.push("manifest run_id does not match finalized run directory".to_string());
+            }
+        }
+    }
     let snapshot = load_snapshot(run_dir)?;
     let computed = snapshot.graph.graph_fingerprint().unwrap_or_default();
     if computed != snapshot.graph_fingerprint {
@@ -2950,6 +2962,36 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
         }
         if manifest.manifest_version != "run-manifest/v0.1" {
             errors.push("strict verify unsupported manifest_version".to_string());
+        }
+        for rel in ["observability.timeline.json", "observability.events.json"] {
+            if !run_dir.join(rel).exists() {
+                errors.push(format!("strict verify missing required run artifact: {}", rel));
+            }
+        }
+        if manifest.status == "failed" && !run_dir.join("observability.root-causes.json").exists() {
+            errors.push(
+                "strict verify missing required run artifact: observability.root-causes.json"
+                    .to_string(),
+            );
+        }
+    }
+    if deep || strict {
+        let manifest_json: Value = serde_json::from_str(&manifest_data).map_err(|_| ExitCode::from(3))?;
+        if let Some(summary) = manifest_json
+            .get("run_metadata")
+            .and_then(|m| m.get("environment_summary"))
+        {
+            let summary_bytes =
+                serde_json::to_vec(summary).map_err(|_| ExitCode::from(3))?;
+            let expected = sha256_bytes(&summary_bytes);
+            let actual = manifest_json
+                .get("run_metadata")
+                .and_then(|m| m.get("environment_summary_sha256"))
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            if actual != expected {
+                errors.push("environment summary checksum mismatch".to_string());
+            }
         }
     }
 

@@ -113,6 +113,15 @@ pub fn explain_run_id(root: &Path, run_id: &str) -> Result<Value, std::io::Error
 }
 
 pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
+    runs_history_query(root, None, None, None)
+}
+
+pub fn runs_history_query(
+    root: &Path,
+    status_filter: Option<&str>,
+    source_filter: Option<&str>,
+    pagination: Option<(usize, usize)>,
+) -> Result<Value, std::io::Error> {
     let run_ids = list_runs(root)?;
     let mut rows = Vec::new();
     for run_id in run_ids {
@@ -122,7 +131,7 @@ pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
             .get("run_metadata")
             .cloned()
             .unwrap_or_else(|| json!({}));
-        rows.push(json!({
+        let row = json!({
             "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
             "status": manifest.get("status").cloned().unwrap_or(Value::Null),
             "created_unix_ms": manifest.get("created_unix_ms").cloned().unwrap_or(Value::Null),
@@ -130,9 +139,35 @@ pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
             "source_run_id": metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
             "submission_source": metadata.get("submission_source").cloned().unwrap_or(Value::Null),
             "trigger_source": metadata.get("trigger_source").cloned().unwrap_or(Value::Null)
+        });
+        rows.push(row);
+    }
+
+    if let Some(filter_status) = status_filter {
+        rows.retain(|row| row.get("status").and_then(Value::as_str) == Some(filter_status));
+    }
+    if let Some(filter_source) = source_filter {
+        rows.retain(|row| row.get("submission_source").and_then(Value::as_str) == Some(filter_source));
+    }
+
+    let (offset, limit) = pagination.unwrap_or((0, rows.len()));
+    let bounded_limit = limit.max(1);
+    let total = rows.len();
+    let start = offset.min(total);
+    let end = (start + bounded_limit).min(total);
+    let window = rows[start..end].to_vec();
+
+    if pagination.is_some() {
+        return Ok(json!({
+            "runs": window,
+            "page": {
+                "offset": start,
+                "limit": bounded_limit,
+                "total": total
+            }
         }));
     }
-    Ok(json!({ "runs": rows }))
+    Ok(json!({ "runs": window }))
 }
 
 pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
