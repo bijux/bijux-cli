@@ -79,6 +79,7 @@ mod ha_scheduler;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
 mod internal;
+pub mod simulated_platform;
 #[path = "runtime_core/governance/invariants.rs"]
 pub mod invariants;
 #[cfg(test)]
@@ -175,27 +176,6 @@ use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
-pub use adaptive_scheduler::{
-    adaptive_cache_policy, adaptive_fallback_needed, adaptive_maturity_ready,
-    adaptive_queue_throttle, choose_prefetch_hints, compare_static_and_adaptive,
-    decide_adaptive_parallelism, detect_adaptive_drift, render_adaptive_explanation,
-    AdaptiveBackfillPacingDecision, AdaptiveBoundsPolicy, AdaptiveCachePolicyDecision,
-    AdaptiveComparisonReport, AdaptiveConcurrencyDecision, AdaptiveControlLoopGuard,
-    AdaptiveDriftReport, AdaptiveExplanation, AdaptiveFallbackPolicy, AdaptiveMaturityGate,
-    AdaptiveQualityMetrics, AdaptiveQueueThrottleDecision, ArtifactPrefetchHint,
-    BackendSuitabilitySignal, LearnedDurationProfile, LearningWindowPolicy,
-    SlaDispatchTuningDecision,
-};
-pub use ai_operator_assist::{
-    anomaly_detected, answer_failure_question, build_investigation_bundle, build_postmortem_seed,
-    guardrail_allows, next_maturity_level, recommend_safe_actions, redact_for_ai_export,
-    root_cause_domain_hints, suggestion_quality, AiAssistMaturityLevel, ArtifactAnomalySummary,
-    DiagnosticsAnswer, EvidenceCitation, FailureSummary, IncidentSimilarityResult,
-    InvestigationBundle, ObservabilityAnomalySignal, OperatorReviewDecision, PlannerReviewSummary,
-    PostmortemSeed, PrivacyRedactionPolicy, RecommendationSimulationResult, ReplayRecommendation,
-    RootCauseDomainHint, SafeActionGuardrail, SafeOperatorAction, ScheduleAnomalySummary,
-    SuggestedAction, WhatChangedSummary,
-};
 pub use async_adapter::AsyncAdapter;
 pub use auth_identity::{
     can_renew_credential, credential_is_expired, credential_scopes_matrix,
@@ -278,64 +258,10 @@ pub use control_plane::{
     PolicyDomain, PolicyEngine, RunControlOperation, TypedControlPlaneRequest,
     TypedControlPlaneResponse, ValidationRequest, ValidationResponse, ValidationService,
 };
-pub use control_plane_api::{
-    authorize, check_api_compatibility, filter_resources, paginate, ApiCompatibilityRule,
-    ApiVersion, ArtifactApiOperation, ArtifactResource, AuditEventResource, AuthContext,
-    AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, ControlPlaneMvpDefinition,
-    DagResource, DagVersionResource, EnvironmentScopedConfiguration, EventSubscription, ListFilter,
-    NodeAttemptResource, Page, Pagination, PolicyResource, QueueResource, RegistryOperation,
-    RunControlApiOperation, RunResource, ScheduleApiOperation, ScheduleResource,
-    ServiceArchitectureNote, TypedApiRequest, TypedApiResponse, VersionedResource,
-};
 pub use coordination::{
     merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
     RuntimeCoordinationSnapshot, RuntimeCoordinationState, ThreadSafetyAuditRecord,
     TraceWriteRecord,
-};
-pub use cost_optimization::{
-    budget_policy_action, cache_reuse_score, choose_cost_profile, cost_optimization_allowed,
-    detect_cost_anomaly, run_budget_allows, scorecard_ready, ArtifactEgressEstimate,
-    BackendPricingModel, CacheReuseCostScore, CostAnomaly, CostAttributionRecord,
-    CostAwareRoutingPolicy, CostBackfillThrottle, CostForecast, CostObservabilityReport,
-    CostPerformanceProfile, CostPlacementExplanation, CostSafetyPolicy, CostSimulationScenario,
-    ExecutionCostModel, PlanCostEstimate, PlatformCostMaturityScorecard, RunBudget,
-    TenantBudgetPolicy,
-};
-pub use dataset_semantics::{
-    build_dataset_provenance_report, dataset_catalog_query, dataset_consumption_satisfied,
-    dataset_diff, dataset_mapping_index, dataset_ready_for_schedule,
-    default_dataset_example_workflow, DatasetArtifactMapping, DatasetBinding, DatasetCatalogEntry,
-    DatasetCatalogQuery, DatasetCompleteness, DatasetConsumptionContract, DatasetConsumptionMode,
-    DatasetDiffReport, DatasetFreshnessPolicy, DatasetId, DatasetImmutability,
-    DatasetLineageRecord, DatasetPartitionModel, DatasetPartitionStrategy, DatasetProvenanceReport,
-    DatasetPublicationWorkflow, DatasetQualityState, DatasetReadinessGate, DatasetRetentionPolicy,
-    DatasetSchemaContract, DatasetVersionId,
-};
-pub use distributed::{
-    artifact_upload_can_commit, cancellation_delivered_in_time, check_worker_version_compatibility,
-    classify_heartbeat, classify_status_reporting, is_duplicate_dispatch, normalize_status_events,
-    recover_lost_lease, reject_worker_version_mismatch, should_reassign,
-    validate_task_lease_semantics, validate_worker_identity, verify_remote_artifact_integrity,
-    worker_alive, worker_pool_satisfies_capability_request, DeliveryGuarantee,
-    DistributedExecutionRequest, DistributedExecutionResult, DistributedFailureClass,
-    DistributedReadinessChecklist, DistributedSecurityModel, HeartbeatClass, HeartbeatSemantics,
-    LivenessPolicy, MockRemoteBackend, PlacementHint, ReassignmentRule,
-    RemoteArtifactCommitContract, RemoteArtifactUploadContract, RemoteCancellationContract,
-    RemoteLogStreamContract, RemoteStatusEvent, RetryLineageRecord, StatusReportingClass,
-    TaskLeaseSemantics, WorkLease, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
-    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerSandboxNegotiation,
-    WorkerVersionCompatibilityRule,
-};
-pub use distribution_readiness::{
-    adoption_score, conformance_passes, integration_governance_ready, packaging_ready,
-    release_note_summary, upgrade_bundle_valid, CapabilityDiscoveryReport,
-    ClusterDeploymentReference, DeploymentConformanceResult, DeploymentProfileBundle,
-    DistributionSignatureRecord, EcosystemCatalog, InstallationDiagnostics,
-    IntegrationGovernanceRule, IntegrationSupportPolicy, OnboardingGuideCatalog, PackagingMode,
-    PackagingStrategy, PlatformAdoptionScorecard, ProductTierPolicy,
-    ReferenceEnvironmentVerification, ReleaseNoteRecord, ReleaseTransparencyReport,
-    SampleDeploymentCatalog, StabilityClass, StabilityMap, UpgradeBundle,
-    VersionedCompatibilityMatrix,
 };
 pub use execution_backend::{
     backend_registry, bind_backend_or_error, execute_with_backend, BackendBindingRequest,
@@ -355,17 +281,6 @@ pub use extension_catalog::{
     PluginBoundaryKind, PluginConformanceSuiteResult, PluginIsolationPolicy, PluginLifecycleState,
     PluginLoadingMode, PluginMetadata, PluginTrustPolicy,
 };
-pub use federated_scheduling::{
-    cross_domain_replay_safe, default_federation_maturity_matrix, delegation_allowed,
-    domain_healthy, federation_conformance_passes, select_delegation_failure_action,
-    trust_tier_allows_domain, CrossClusterRoutingPolicy, CrossDomainReplaySafety,
-    DelegationFailureAction, DelegationFailurePolicy, DomainCapabilityAdvertisement,
-    DomainHealthSnapshot, DomainRoutingExplanation, FederatedBackfillPlan,
-    FederatedConformanceGate, FederatedScheduleSuppression, FederatedSimulationScenario,
-    FederationConcurrencyControl, FederationDomainIdentity, FederationMaturityMatrix,
-    InterSchedulerFlowControl, PeeringObservabilityContract, RunDelegationRecord,
-    SchedulerDomainId, SchedulerPeeringRule, TrustTierRoutingRule,
-};
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
@@ -375,26 +290,6 @@ pub use formal_verification::{
     LineageInvariantProof, ModelTestSuite, PolicyInvariantProof, PropertyTestSuite,
     ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
     VerificationMaturityLabel, VerifiedCoreScope,
-};
-pub use geo_federation::{
-    build_consistency_catalog, classify_resource_consistency, default_split_brain_mitigation,
-    geo_ready, region_write_allowed, ConsistencyBoundaryNote, ConsistencyClass,
-    CrossRegionFailoverRule, DisasterRecoveryPlaybook, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, InterRegionReplicationPolicy, RegionAffinityPolicy,
-    RegionAwareDagActivation, RegionBackendRegistry, RegionId, RegionLineageRecord,
-    RegionMigrationWorkflow, RegionObservabilityPartition, RegionPolicyOverlay,
-    RegionQueuePartition, RegionScheduleRule, RegionalReplicaOwnership, SplitBrainMitigationPlan,
-    WriteRoutingRule,
-};
-pub use ha_scheduler::{
-    clock_within_assumption, conformance_no_duplicate_runs, deduplicate_across_replicas,
-    evaluate_ha_conformance, failover_recovery_passes, fence_allows_mutation,
-    idempotent_run_creation, is_stale_leader, next_epoch, ordering_during_failover,
-    DurableInFlightDispatch, DurableRunQueueEntry, DurableSchedulerStateStore,
-    DurableSchedulerTick, HaConformanceReport, HaMilestoneDefinition, HaSimulationScenario,
-    LeaderElectionState, QueueOwnershipTransfer, QueueShardLease, ScheduleDedupRecord,
-    SchedulerAuditEvent, SchedulerAuditEventKind, SchedulerClockAssumption, SchedulerEpoch,
-    SchedulerFenceToken, SchedulerRecoveryObjectives,
 };
 pub use infrastructure::{
     negotiate_backend_capabilities, ArtifactStoreBackend, ArtifactTransportContract,
@@ -422,15 +317,6 @@ pub use observability_deep::{
     ExplainArtifactReport, ExplainNodeReport, ExplainRunReport, ExplainScheduleReport,
     FailureCauseCode, MetricsExportFormat, ObservabilityContractStatus, RedactionPolicy,
     ReplaySpanLink, SamplingPolicy, TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
-};
-pub use operations_governance::{
-    evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    release_policy_allows, AuditReadinessChecklist, ErrorBudgetPolicy, GamedayScenario,
-    IncidentClassification, IncidentSeverity, IntegratedVerificationLane, LifecycleGovernanceRule,
-    OperatorTrainingCatalog, PlatformAcceptanceBoard, PlatformHealthDashboard,
-    PlatformInvariantCatalog, PlatformOperatingModel, PostmortemTemplate, ProductBoundary,
-    ReleaseGovernancePolicy, RoadmapGovernance, RunbookEntry, ServiceLevelIndicators,
-    ServiceLevelObjective, SloEvaluation, SupportabilityModel, SustainabilityOwnership,
 };
 pub use path_authorization::{authorize_input_path, authorize_output_path};
 pub use performance_capacity::{
@@ -531,17 +417,6 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
-pub use supply_chain_trust::{
-    build_provenance_drift_report, can_promote_artifact, default_supply_chain_maturity_matrix,
-    evaluate_attestation_compatibility, regulated_workflow_reference_example,
-    replay_trust_warnings, require_provenance_completeness, verify_attestation_or_fail,
-    ArtifactTrustLabel, AttestationCompatibility, AttestationFormatRule,
-    AttestationVerificationResult, BinaryComponent, BinaryProvenanceRecord,
-    ComplianceEvidenceBundle, EnvironmentAttestation, PluginProvenanceRecord, PluginTrustTier,
-    PromotionPolicy, ProvenanceCompletenessPolicy, ProvenanceDriftReport,
-    RegulatedWorkflowReference, ReplayTrustWarning, RunProvenanceAttestation,
-    SignedArtifactManifest, SupplyChainMaturityMatrix,
-};
 pub use task_contract::{
     build_task_contract, default_forced_cleanup, validate_task_contracts,
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
@@ -559,16 +434,6 @@ pub use task_types::{
     TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry, TypeCoercionRule,
     VersionedTypeRule,
 };
-pub use tenancy::{
-    check_scheduler_admission, compose_tenant_run_id, enforce_tenant_plugin_allowlist,
-    resolve_tenant_overlay, scope_lineage_query, tenant_index_key, tenant_provisioning_bootstrap,
-    validate_tenant_isolation, TenantConcurrencyQuota, TenantConfigOverlay,
-    TenantEnvironmentOverlay, TenantId, TenantIsolationConformanceReport, TenantLifecycleState,
-    TenantLineageScope, TenantObservabilityView, TenantOwnershipMetadata, TenantPluginAllowlist,
-    TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
-    TenantRegistryPartition, TenantResourceBudget, TenantRetentionPolicy, TenantSchedulerAdmission,
-    TenantScopedDagName, TenantSecretScope,
-};
 pub use upgrade_compatibility::{
     build_compatibility_dashboard, classify_compatibility, evaluate_release_gate,
     simulate_migration_impact, validate_upgrade_path, CompatibilityAcceptanceSuite,
@@ -577,17 +442,6 @@ pub use upgrade_compatibility::{
     DurableStateMigrationContract, FeatureFlagRecord, FeatureLifecycleState, LongTermSupportPolicy,
     ManifestMigrationPlan, MigrationImpactEstimate, PluginVersionWindow, ReleaseGateOutcome,
     SchedulerStateCompatibilityCheck, UpgradePathPolicy, UpgradeRolloutPlan,
-};
-pub use workflow_product::{
-    approval_gate_ready, critical_workflow_ready, evolution_plan_valid, portfolio_observability,
-    product_positioning_note, rollout_is_progressive, wait_state_resumable,
-    workflow_blueprint_valid, workflow_quality_gate_passed, workflow_template_catalog,
-    world_class_score, ApprovalGateNode, CriticalWorkflowDesignation, EvolutionPlan,
-    HumanWaitState, MultiDagTransaction, PolicyComposedBlueprint, PortfolioObservabilitySummary,
-    ProductPositioningNote, RolloutWorkflow, SubworkflowInvocation, WorkflowContractInheritance,
-    WorkflowEvent, WorkflowFamilyImpactAnalysis, WorkflowPortfolio, WorkflowProductMetadata,
-    WorkflowQualityGate, WorkflowScenarioTest, WorkflowTemplate, WorkflowTemplateKind,
-    WorkflowVerificationPlan, WorldClassPlatformScorecard,
 };
 
 #[derive(Debug, thiserror::Error)]

@@ -59,13 +59,13 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
             }))
         }
         "remote" | "distributed" => {
-            let lease = bijux_dag_runtime::TaskLeaseSemantics {
+            let lease = bijux_dag_runtime::simulated_platform::TaskLeaseSemantics {
                 lease_duration_ms: 30_000,
                 renew_before_expiry_ms: 5_000,
                 max_renewals: 10,
                 recovery_grace_ms: 10_000,
             };
-            let heartbeat = bijux_dag_runtime::HeartbeatSemantics {
+            let heartbeat = bijux_dag_runtime::simulated_platform::HeartbeatSemantics {
                 interval_ms: 1_000,
                 timeout_ms: 5_000,
                 delayed_threshold_ms: 2_500,
