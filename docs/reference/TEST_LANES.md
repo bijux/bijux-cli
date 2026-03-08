@@ -5,11 +5,12 @@
 - `make test`
 - Executes `cargo run -p bijux-dev-dag -- tests run`
 - Intended for local iteration and pull request feedback.
+- Advisory evidence checks are non-blocking by default.
 
 ## Full lane
 
 - `make test-all`
-- Executes `evidence-battle` and `evidence-consumers`.
+- Executes release-critical evidence checks: `evidence-battle`, `evidence-cache`, `evidence-replay`, `evidence-compat`, `evidence-fault`, `evidence-perf`, `evidence-consumers`, `evidence-release-set`.
 - Intended for release-significant checks and deeper governance coverage.
 
 ## App tests currently skipped in fast lane

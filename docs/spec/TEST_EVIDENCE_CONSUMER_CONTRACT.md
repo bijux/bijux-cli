@@ -3,6 +3,7 @@
 ## Rule
 
 Test code is a consumer of governed evidence assets. Test code does not define canonical scenario truth.
+Canonical terms are defined in `docs/spec/EVIDENCE_GLOSSARY.md`.
 Evidence consumers must resolve assets through typed access helpers, not direct filesystem reads of the registry.
 Evidence consumption is read-only; tests must not mutate files under `evidence/`.
 

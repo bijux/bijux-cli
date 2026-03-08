@@ -2,6 +2,7 @@
 
 ## Purpose
 Comparisons are for evidence-driven analysis of:
+Canonical terms are defined in `docs/spec/EVIDENCE_GLOSSARY.md`.
 - correctness behavior
 - operator ergonomics
 - performance shape

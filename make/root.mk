@@ -53,7 +53,16 @@ golden: ## Run runtime contract checks
 tests-all: ## Run all control-plane test suites
 	$(call run_or_fail,Run all test suites,$(DEV_TOOL) tests run)
 
-test-all: evidence-battle evidence-consumers
+test-all: ## Run full workspace tests plus release-critical evidence checks
+	@$(MAKE) -f make/cargo.mk test-all
+	@$(MAKE) evidence-battle
+	@$(MAKE) evidence-cache
+	@$(MAKE) evidence-replay
+	@$(MAKE) evidence-compat
+	@$(MAKE) evidence-fault
+	@$(MAKE) evidence-perf
+	@$(MAKE) evidence-consumers
+	@$(MAKE) evidence-release-set
 
 contract-all: ## Run all contract suites with evidence foundation verification
 	$(call run_or_fail,Run all contract suites,$(DEV_TOOL) contracts run)

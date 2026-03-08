@@ -2,6 +2,7 @@
 
 ## Purpose
 Define publication rules for benchmark evidence used in docs, release notes, and comparisons.
+Canonical terms are defined in `docs/spec/EVIDENCE_GLOSSARY.md`.
 
 ## Evidence publication rules
 - Performance claims in docs must point to committed benchmark artifacts.

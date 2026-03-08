@@ -25,7 +25,7 @@ This directory defines the repository make surface with one root include and cle
 ## Test target behavior
 - `make test`: fast suite only; skips Rust tests tagged `#[ignore = "slow"]`.
 - `make test-slow`: runs only tests tagged `#[ignore = "slow"]`.
-- `make test-all`: runs full suite including ignored tests, then verifies battle and evidence consumer integrity through evidence wrappers.
+- `make test-all`: runs full suite including ignored tests, then enforces release-critical evidence verification wrappers (`battle`, `cache`, `replay`, `compat`, `fault`, `perf`, `consumers`, `release-set`).
 - `make coverage`: runs full suite including ignored tests.
 - `make evidence-all`: runs the single evidence validation entrypoint (`bijux-dev-dag verify evidence-foundation`).
 - `make evidence-verify`: runs the full evidence verification suite entrypoint.
