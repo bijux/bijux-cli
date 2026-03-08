@@ -1,5 +1,5 @@
 {
-  "asset_count": 141,
+  "asset_count": 142,
   "assets": [
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
@@ -1549,6 +1549,25 @@
       "kind": "cache",
       "owner": "team-runtime",
       "registry_key": "cache:evidence/cache/replay/mismatch_case.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "replay-equivalence"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/replay/mismatch_fixture_corpus.json",
+      "consumers": [
+        "e2e-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/replay/mismatch_fixture_corpus.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/replay/mismatch_fixture_corpus.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
