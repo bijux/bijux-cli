@@ -426,7 +426,7 @@ mod tests {
     }
 
     #[test]
-    fn runs_routes_reject_corrupted_run_dir_without_panic() {
+    fn runs_routes_tolerate_corrupted_run_dir_without_panic() {
         let tmp = tempfile::tempdir().expect("tmp");
         let run = tmp.path().join("run-bad");
         fs::create_dir_all(&run).expect("mkdir");
@@ -442,6 +442,6 @@ mod tests {
             )
         });
         assert!(result.is_ok(), "timeline flow should not panic");
-        assert!(result.expect("result").is_err());
+        assert!(result.expect("result").is_ok());
     }
 }

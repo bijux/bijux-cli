@@ -49,9 +49,14 @@ fn lib_routes_config_resolution_through_service_layer() {
 #[test]
 fn lib_routes_run_diff_through_replay_service() {
     let lib = read("src/lib.rs");
+    let diff_routes = read("src/routes/diff_routes.rs");
     assert!(
-        lib.contains("replay_service::run_diff_from_dirs("),
-        "lib should route run diff through replay service"
+        lib.contains("routes::diff_routes::handle_diff_command("),
+        "lib should route run diff through diff routes module"
+    );
+    assert!(
+        diff_routes.contains("replay_service::run_diff_from_dirs("),
+        "diff routes should route run diff through replay service"
     );
     assert!(
         !lib.contains("diff::build_run_diff("),

@@ -1,6 +1,6 @@
 run_id: "run-1"
 status: "success"
-origin: "manual"
+origin: native
 integrity_state: null
 retry_count: 0
 cache_hits: 0

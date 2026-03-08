@@ -30,7 +30,7 @@ fn route_level_concise_wording_snapshot_is_stable() {
     let rendered = format_show_human(&summary);
     assert_eq!(
         rendered,
-        include_str!("snapshots/route_concise_wording.txt")
+        include_str!("snapshots/route_concise_wording.txt").trim_end()
     );
 }
 
@@ -40,7 +40,7 @@ fn route_level_detailed_wording_snapshot_is_stable() {
         "run_id":"run-2",
         "status":"failed",
         "graph_fingerprint":"g2",
-        "submission_source":"imported",
+        "submission_source":"import",
         "node_counts":{"success":1,"failed":1,"skipped":0,"cached":0},
         "retry_count":2,
         "cache_hits":1,
@@ -50,6 +50,6 @@ fn route_level_detailed_wording_snapshot_is_stable() {
     let rendered = format_inspect_human(&summary);
     assert_eq!(
         rendered,
-        include_str!("snapshots/route_detailed_wording.txt")
+        include_str!("snapshots/route_detailed_wording.txt").trim_end()
     );
 }

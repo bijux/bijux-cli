@@ -67,7 +67,7 @@ fn route_modules_own_key_dispatch_and_payload_paths() {
         "surface routes must own equivalence proof routing behavior"
     );
     assert!(
-        runs.contains("RunCommands::Tree") && runs.contains("RunCommands::Timeline"),
+        runs.contains("RunsCommands::Tree") && runs.contains("RunsCommands::Timeline"),
         "runs routes must own tree/timeline command dispatch"
     );
     assert!(
