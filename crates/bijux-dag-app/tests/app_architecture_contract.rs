@@ -21,6 +21,14 @@ fn read(path: &str) -> String {
     fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).expect("read source file")
 }
 
+fn repo_root() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("repo root")
+        .to_path_buf()
+}
+
 #[test]
 fn lib_routes_config_resolution_through_service_layer() {
     let lib = read("src/lib.rs");
@@ -48,6 +56,21 @@ fn lib_routes_run_diff_through_replay_service() {
     assert!(
         !lib.contains("diff::build_run_diff("),
         "lib should not assemble run diff directly"
+    );
+}
+
+#[test]
+fn operator_ux_checklist_doc_is_linked_to_app_boundary_docs() {
+    let root = repo_root();
+    let checklist = fs::read_to_string(root.join("docs/spec/OPERATOR_UX_CHECKLIST.md"))
+        .expect("read operator ux checklist");
+    assert!(
+        checklist.contains("docs/reports/foundation/app_service_boundary_report.md"),
+        "operator ux checklist must link app service boundary report"
+    );
+    assert!(
+        checklist.contains("docs/spec/OPERATOR_UX_CONTRACT.md"),
+        "operator ux checklist must link operator ux contract"
     );
 }
 
