@@ -1,7 +1,5 @@
-use crate::{
-    check_engine, env_cache_dir, load_snapshot, parse_graph, read_file, Graph, LintDiagnostic,
-    Severity, SPEC_VERSION,
-};
+use crate::run_data::{env_cache_dir, load_snapshot};
+use crate::{check_engine, parse_graph, read_file, Graph, LintDiagnostic, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{registered_adapters, Selector, SelectorSet};
 use serde_json::json;
 use std::fs;

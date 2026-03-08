@@ -1,7 +1,8 @@
 use crate::commands::DagCli;
 use crate::routes::path_resolution::{manifest_path, node_outputs_index_path, node_trace_path};
 use crate::routes::run_lookup::read_manifest_json;
-use crate::{emit_json, load_snapshot, read_file, read_node_traces, ExitCode};
+use crate::run_data::{load_snapshot, read_node_traces};
+use crate::{emit_json, read_file, ExitCode};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;

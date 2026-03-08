@@ -1,9 +1,10 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
 use crate::graph_helpers::parse_selectors;
 use crate::replay_cmd::ReplayCommandResponse;
+use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
-    build_run_proof_bundle, emit_json, load_snapshot, map_materialize_mode, read_run_id,
-    selector_cli_string, CacheMode, ExitCode, Runtime, RuntimeConfig, Value,
+    build_run_proof_bundle, emit_json, read_run_id, selector_cli_string, CacheMode, ExitCode,
+    Runtime, RuntimeConfig, Value,
 };
 use serde_json::json;
 use std::path::Path;

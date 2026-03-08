@@ -1,6 +1,7 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
 use crate::routes::preconditions::require_file;
-use crate::{emit_json, map_materialize_mode, parse_graph, parse_selectors, read_file, ExitCode};
+use crate::run_data::map_materialize_mode;
+use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
 use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use serde_json::json;
 use std::path::{Path, PathBuf};
