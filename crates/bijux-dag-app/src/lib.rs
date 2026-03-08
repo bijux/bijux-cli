@@ -1659,7 +1659,7 @@ fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), ExitCode> {
     let dec = GzDecoder::new(file);
     let mut archive = Archive::new(dec);
     let tmp = tempfile::tempdir().map_err(|_| ExitCode::from(3))?;
-    archive.unpack(tmp.path()).map_err(|_| ExitCode::from(3))?;
+    unpack_cache_archive_bounded(&mut archive, tmp.path())?;
     let meta_path = tmp.path().join("meta.json");
     if !meta_path.exists() {
         return Err(ExitCode::from(3));
@@ -1698,6 +1698,36 @@ fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), ExitCode> {
         let _ = fs::remove_dir_all(&dst);
     }
     copy_dir_all(tmp.path(), &dst).map_err(|_| ExitCode::from(3))?;
+    Ok(())
+}
+
+const MAX_CACHE_ARCHIVE_TOTAL_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_CACHE_ARCHIVE_ENTRIES: usize = 10_000;
+
+fn unpack_cache_archive_bounded<R: std::io::Read>(
+    archive: &mut Archive<R>,
+    dst: &Path,
+) -> Result<(), ExitCode> {
+    let mut total_bytes: u64 = 0;
+    let mut entry_count: usize = 0;
+    let entries = archive.entries().map_err(|_| ExitCode::from(3))?;
+    for entry in entries {
+        let mut entry = entry.map_err(|_| ExitCode::from(3))?;
+        entry_count += 1;
+        if entry_count > MAX_CACHE_ARCHIVE_ENTRIES {
+            return Err(ExitCode::from(3));
+        }
+        let header = entry.header();
+        let kind = header.entry_type();
+        if !(kind.is_file() || kind.is_dir()) {
+            return Err(ExitCode::from(3));
+        }
+        total_bytes = total_bytes.saturating_add(header.size().map_err(|_| ExitCode::from(3))?);
+        if total_bytes > MAX_CACHE_ARCHIVE_TOTAL_BYTES {
+            return Err(ExitCode::from(3));
+        }
+        entry.unpack_in(dst).map_err(|_| ExitCode::from(3))?;
+    }
     Ok(())
 }
 
@@ -2521,5 +2551,90 @@ mod invariant_bundle_tests {
         assert!(violations
             .iter()
             .any(|v| v.contains("INV-TRACE-ATTEMPT-001")));
+    }
+}
+
+#[cfg(test)]
+mod cache_archive_hardening_tests {
+    use super::{unpack_cache_archive_bounded, ExitCode};
+    use tar::{Builder, Header};
+
+    fn unpack_status(bytes: Vec<u8>) -> Result<(), ExitCode> {
+        let dec = flate2::read::GzDecoder::new(std::io::Cursor::new(bytes));
+        let mut archive = tar::Archive::new(dec);
+        let dst = tempfile::tempdir().expect("tempdir");
+        unpack_cache_archive_bounded(&mut archive, dst.path())
+    }
+
+    #[test]
+    fn cache_unpack_rejects_oversized_archive_entries() {
+        let mut tar_bytes = Vec::new();
+        {
+            let enc = flate2::write::GzEncoder::new(&mut tar_bytes, flate2::Compression::default());
+            let mut builder = Builder::new(enc);
+            let mut header = Header::new_gnu();
+            let payload = vec![0u8; (9 * 1024 * 1024) as usize];
+            header.set_size(payload.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, "meta.json", payload.as_slice())
+                .expect("append");
+            let enc = builder.into_inner().expect("encoder");
+            enc.finish().expect("finish");
+        }
+        assert!(unpack_status(tar_bytes).is_err());
+    }
+
+    #[test]
+    fn cache_unpack_rejects_symlink_entries() {
+        let mut tar_bytes = Vec::new();
+        {
+            let enc = flate2::write::GzEncoder::new(&mut tar_bytes, flate2::Compression::default());
+            let mut builder = Builder::new(enc);
+            let mut header = Header::new_gnu();
+            header.set_entry_type(tar::EntryType::Symlink);
+            header.set_size(0);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_link(&mut header, "bad-link", "/tmp/escape")
+                .expect("append symlink");
+            let enc = builder.into_inner().expect("encoder");
+            enc.finish().expect("finish");
+        }
+        assert!(unpack_status(tar_bytes).is_err());
+    }
+
+    #[test]
+    fn cache_unpack_accepts_regular_files_and_directories() {
+        let mut tar_bytes = Vec::new();
+        {
+            let enc = flate2::write::GzEncoder::new(&mut tar_bytes, flate2::Compression::default());
+            let mut builder = Builder::new(enc);
+
+            let mut dir_header = Header::new_gnu();
+            dir_header.set_entry_type(tar::EntryType::Directory);
+            dir_header.set_size(0);
+            dir_header.set_mode(0o755);
+            dir_header.set_cksum();
+            builder
+                .append_data(&mut dir_header, "node", std::io::empty())
+                .expect("dir");
+
+            let mut file_header = Header::new_gnu();
+            let body = br#"{"node_fingerprint":"k"}"#;
+            file_header.set_size(body.len() as u64);
+            file_header.set_mode(0o644);
+            file_header.set_cksum();
+            builder
+                .append_data(&mut file_header, "meta.json", &body[..])
+                .expect("file");
+
+            let enc = builder.into_inner().expect("encoder");
+            enc.finish().expect("finish");
+        }
+        let status = unpack_status(tar_bytes);
+        assert!(status.is_ok());
     }
 }
