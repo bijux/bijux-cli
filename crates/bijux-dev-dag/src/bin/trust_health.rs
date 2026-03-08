@@ -26,27 +26,24 @@ fn main() -> ExitCode {
 }
 
 fn infer_active_identity_count() -> usize {
-    env::var("BIJUX_ACTIVE_IDENTITIES")
-        .ok()
-        .and_then(|v| v.parse::<usize>().ok())
-        .unwrap_or(3)
+    parse_active_identity_count(env::var("BIJUX_ACTIVE_IDENTITIES").ok())
+}
+
+fn parse_active_identity_count(raw: Option<String>) -> usize {
+    raw.and_then(|v| v.parse::<usize>().ok()).unwrap_or(3)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::infer_active_identity_count;
+    use super::parse_active_identity_count;
 
     #[test]
     fn defaults_when_variable_not_set() {
-        // SAFETY: test process controls this key and does not iterate env while mutating.
-        unsafe { std::env::remove_var("BIJUX_ACTIVE_IDENTITIES") };
-        assert_eq!(infer_active_identity_count(), 3);
+        assert_eq!(parse_active_identity_count(None), 3);
     }
 
     #[test]
     fn parses_identity_count_from_environment() {
-        // SAFETY: test process controls this key and does not iterate env while mutating.
-        unsafe { std::env::set_var("BIJUX_ACTIVE_IDENTITIES", "9") };
-        assert_eq!(infer_active_identity_count(), 9);
+        assert_eq!(parse_active_identity_count(Some("9".to_string())), 9);
     }
 }

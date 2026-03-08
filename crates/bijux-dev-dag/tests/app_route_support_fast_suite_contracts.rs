@@ -1,7 +1,14 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use clap as _;
+use hex as _;
+use serde as _;
+use serde_json as _;
+use sha2 as _;
 use std::fs;
 use std::path::Path;
+use tempfile as _;
 
 fn repo_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
