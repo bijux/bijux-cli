@@ -1,6 +1,6 @@
 use base64 as _;
-use bijux_dag_artifacts as _;
 use bijux_dag_app::{format_inspect_human, format_show_human};
+use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;

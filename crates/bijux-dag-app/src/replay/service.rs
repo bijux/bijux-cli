@@ -216,13 +216,19 @@ mod tests {
             &run_b.join("graph.snapshot.json"),
             r#"{"graph_fingerprint":"fp-1"}"#,
         );
-        write(&run_a.join("nodes/n1/trace.json"), r#"{"status":"success"}"#);
+        write(
+            &run_a.join("nodes/n1/trace.json"),
+            r#"{"status":"success"}"#,
+        );
         write(&run_b.join("nodes/n1/trace.json"), r#"{"status":"failed"}"#);
 
         let diff = run_diff_from_dirs(&run_a, &run_b).expect("build run diff");
         assert!(!diff.replay_equivalence.equivalent);
         assert_eq!(
-            diff.replay_equivalence.cause_groups.get("node_outcomes").copied(),
+            diff.replay_equivalence
+                .cause_groups
+                .get("node_outcomes")
+                .copied(),
             Some(1)
         );
     }
@@ -252,11 +258,10 @@ mod tests {
         );
         let diff = run_diff_from_dirs(&imported, &replay).expect("build run diff");
         assert!(!diff.replay_equivalence.equivalent);
-        assert!(
-            diff.replay_equivalence
-                .reasons
-                .iter()
-                .any(|reason| reason.contains("graph fingerprint differs"))
-        );
+        assert!(diff
+            .replay_equivalence
+            .reasons
+            .iter()
+            .any(|reason| reason.contains("graph fingerprint differs")));
     }
 }
