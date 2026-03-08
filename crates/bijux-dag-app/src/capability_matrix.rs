@@ -2,6 +2,20 @@ use serde_json::json;
 
 pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value> {
     match name {
+        "local" => Some(json!({
+            "format": "capabilities/v1",
+            "backend": "local",
+            "status": "implemented",
+            "capabilities": {
+                "runtime_execution": true,
+                "replay_support": true,
+                "stream_capture": true
+            },
+            "notes": [
+                "local execution is implemented in this repository",
+                "local capability contract is evidence-backed"
+            ]
+        })),
         "k8s" | "kubernetes" => {
             let version = bijux_dag_runtime::K8sBackendVersionMetadata {
                 k8s_version: "simulated-v1.30".to_string(),
@@ -100,6 +114,16 @@ mod tests {
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "kubernetes");
         assert_eq!(first["status"], "simulated");
+    }
+
+    #[test]
+    fn capability_query_output_is_stable_for_local() {
+        let first = backend_capability_payload("local").expect("local payload");
+        let second = backend_capability_payload("local").expect("local payload");
+        assert_eq!(first, second);
+        assert_eq!(first["format"], "capabilities/v1");
+        assert_eq!(first["backend"], "local");
+        assert_eq!(first["status"], "implemented");
     }
 
     #[test]

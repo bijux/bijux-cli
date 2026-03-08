@@ -29,6 +29,25 @@ fn runtime_registry_query_output_is_stable() {
 }
 
 #[test]
+fn adapter_metadata_is_present_in_registry_output_surface() {
+    let dump = adapter_registry_dump();
+    let adapters = dump["adapters"].as_array().expect("adapters");
+    assert!(!adapters.is_empty(), "adapter registry must not be empty");
+    for adapter in adapters {
+        assert!(
+            adapter["adapter_id"].as_str().is_some_and(|v| !v.is_empty()),
+            "adapter_id must be present"
+        );
+        assert!(
+            adapter["adapter_version"]
+                .as_str()
+                .is_some_and(|v| !v.is_empty()),
+            "adapter_version must be present"
+        );
+    }
+}
+
+#[test]
 fn adapter_registry_rejects_duplicate_identities_by_reported_list() {
     let adapters = registered_adapters();
     let mut ids = std::collections::BTreeSet::new();
