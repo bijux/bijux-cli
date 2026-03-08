@@ -426,8 +426,14 @@ mod tests {
         let manifest_b = json!({"spec":"v","jobs":2});
         let mut nodes_a = HashMap::new();
         let mut nodes_b = HashMap::new();
-        nodes_a.insert("n1".to_string(), json!({"status":"success","fingerprint":"fp1"}));
-        nodes_b.insert("n1".to_string(), json!({"status":"failed","fingerprint":"fp1"}));
+        nodes_a.insert(
+            "n1".to_string(),
+            json!({"status":"success","fingerprint":"fp1"}),
+        );
+        nodes_b.insert(
+            "n1".to_string(),
+            json!({"status":"failed","fingerprint":"fp1"}),
+        );
         let mut outputs_a = HashMap::new();
         let mut outputs_b = HashMap::new();
         outputs_a.insert("n1".to_string(), index(vec![("n1/out", "aaa")]));
@@ -444,10 +450,22 @@ mod tests {
             &outputs_b,
         );
         assert!(!diff.replay_equivalence.equivalent);
-        assert_eq!(diff.replay_equivalence.cause_groups.get("manifest_drift"), Some(&1));
-        assert_eq!(diff.replay_equivalence.cause_groups.get("graph_semantics"), Some(&1));
-        assert_eq!(diff.replay_equivalence.cause_groups.get("node_outcomes"), Some(&1));
-        assert_eq!(diff.replay_equivalence.cause_groups.get("artifact_payload"), Some(&1));
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("manifest_drift"),
+            Some(&1)
+        );
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("graph_semantics"),
+            Some(&1)
+        );
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("node_outcomes"),
+            Some(&1)
+        );
+        assert_eq!(
+            diff.replay_equivalence.cause_groups.get("artifact_payload"),
+            Some(&1)
+        );
     }
 
     #[test]

@@ -180,7 +180,10 @@ mod tests {
         let effective = resolve_effective_config(cli, explicit, env_cfg, defaults);
         assert_eq!(effective.jobs, 4);
         assert_eq!(effective.cache_mode, CacheModeSurface::Read);
-        assert_eq!(effective.materialize_inputs, MaterializeInputsSurface::Direct);
+        assert_eq!(
+            effective.materialize_inputs,
+            MaterializeInputsSurface::Direct
+        );
     }
 
     #[test]

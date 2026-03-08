@@ -42,7 +42,8 @@ mod tests {
     #[test]
     fn missing_run_id_is_rejected() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        std::fs::write(tmp.path().join("manifest.json"), r#"{"status":"ok"}"#).expect("write manifest");
+        std::fs::write(tmp.path().join("manifest.json"), r#"{"status":"ok"}"#)
+            .expect("write manifest");
         assert!(read_run_identifier(tmp.path()).is_err());
     }
 }

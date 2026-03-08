@@ -15,7 +15,10 @@ fn route_level_concise_wording_snapshot_is_stable() {
         "failed_nodes":[]
     });
     let rendered = format_show_human(&summary);
-    assert_eq!(rendered, include_str!("snapshots/route_concise_wording.txt"));
+    assert_eq!(
+        rendered,
+        include_str!("snapshots/route_concise_wording.txt")
+    );
 }
 
 #[test]
@@ -32,5 +35,8 @@ fn route_level_detailed_wording_snapshot_is_stable() {
         "failed_nodes":["stage-b"]
     });
     let rendered = format_inspect_human(&summary);
-    assert_eq!(rendered, include_str!("snapshots/route_detailed_wording.txt"));
+    assert_eq!(
+        rendered,
+        include_str!("snapshots/route_detailed_wording.txt")
+    );
 }

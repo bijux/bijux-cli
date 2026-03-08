@@ -177,8 +177,8 @@ mod tests {
     fn plan_diagnostics_success_path_returns_success() {
         let (_tmp, dag) = write_graph_fixture();
         let cli = quiet_json_cli();
-        let code =
-            handle_plan_command(&cli, &PlanCommands::Diagnostics { dag }).expect("plan diagnostics");
+        let code = handle_plan_command(&cli, &PlanCommands::Diagnostics { dag })
+            .expect("plan diagnostics");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -193,7 +193,10 @@ mod tests {
                 },
             )
         });
-        assert!(result.is_ok(), "plan route should not panic on malformed input");
+        assert!(
+            result.is_ok(),
+            "plan route should not panic on malformed input"
+        );
         assert!(result.expect("result").is_err());
     }
 
@@ -208,7 +211,10 @@ mod tests {
                 },
             )
         });
-        assert!(result.is_ok(), "plan diagnostics should not panic on malformed input");
+        assert!(
+            result.is_ok(),
+            "plan diagnostics should not panic on malformed input"
+        );
         assert!(result.expect("result").is_err());
     }
 
@@ -259,6 +265,9 @@ b: included because it depends on a";
         let graph = crate::parse_graph(&raw).expect("graph");
         let plan = crate::lower_graph_to_execution_plan(&graph, crate::PlanOptions::default())
             .expect("plan");
-        assert!(!plan.ordering.is_empty(), "plan ordering should not be empty");
+        assert!(
+            !plan.ordering.is_empty(),
+            "plan ordering should not be empty"
+        );
     }
 }

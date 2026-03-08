@@ -6,7 +6,12 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
-fn concise_explain_human(status: &Value, graph_fp: &Value, counts: &Value, failed: &[String]) -> String {
+fn concise_explain_human(
+    status: &Value,
+    graph_fp: &Value,
+    counts: &Value,
+    failed: &[String],
+) -> String {
     format!(
         "status: {status}\ngraph_fingerprint: {graph_fp}\nnode_counts: {counts}\nfailed_nodes: {failed:?}"
     )
@@ -194,7 +199,9 @@ pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<Exit
 
 #[cfg(test)]
 mod tests {
-    use super::{concise_explain_human, handle_explain_command, handle_node_command, handle_status_command};
+    use super::{
+        concise_explain_human, handle_explain_command, handle_node_command, handle_status_command,
+    };
     use crate::commands::{Commands, DagCli};
     use crate::ExitCode;
     use serde_json::json;
@@ -259,8 +266,16 @@ mod tests {
             .expect("snapshot"),
         )
         .expect("write snapshot");
-        fs::write(run.join("nodes/extract/trace.json"), b"{\"status\":\"success\"}").expect("trace");
-        fs::write(run.join("nodes/extract/outputs/index.json"), b"{\"files\":[]}").expect("index");
+        fs::write(
+            run.join("nodes/extract/trace.json"),
+            b"{\"status\":\"success\"}",
+        )
+        .expect("trace");
+        fs::write(
+            run.join("nodes/extract/outputs/index.json"),
+            b"{\"files\":[]}",
+        )
+        .expect("index");
         dir
     }
 
@@ -325,7 +340,8 @@ mod tests {
         let node = std::panic::catch_unwind(|| {
             handle_node_command(&cli, Path::new("/missing/run"), "extract")
         });
-        let status = std::panic::catch_unwind(|| handle_status_command(&cli, Path::new("/missing/run")));
+        let status =
+            std::panic::catch_unwind(|| handle_status_command(&cli, Path::new("/missing/run")));
         assert!(explain.is_ok());
         assert!(node.is_ok());
         assert!(status.is_ok());

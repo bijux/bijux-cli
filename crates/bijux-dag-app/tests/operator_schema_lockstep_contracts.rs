@@ -103,7 +103,10 @@ fn verify_output_schema_lockstep() {
     );
     let data = verify["data"].as_object().expect("verify data");
     for field in required_fields("configs/schema/operator/verify_output.schema.json") {
-        assert!(data.contains_key(&field), "verify missing required field: {field}");
+        assert!(
+            data.contains_key(&field),
+            "verify missing required field: {field}"
+        );
     }
 }
 
@@ -136,7 +139,10 @@ fn prove_output_schema_lockstep() {
     );
     let data = prove["data"].as_object().expect("prove data");
     for field in required_fields("configs/schema/operator/prove_output.schema.json") {
-        assert!(data.contains_key(&field), "prove missing required field: {field}");
+        assert!(
+            data.contains_key(&field),
+            "prove missing required field: {field}"
+        );
     }
 }
 
@@ -173,7 +179,10 @@ fn export_summary_schema_lockstep() {
     );
     let data = export["data"].as_object().expect("export data");
     for field in required_fields("configs/schema/operator/export_summary.schema.json") {
-        assert!(data.contains_key(&field), "export missing required field: {field}");
+        assert!(
+            data.contains_key(&field),
+            "export missing required field: {field}"
+        );
     }
 }
 
@@ -198,6 +207,9 @@ fn import_summary_schema_lockstep() {
     );
     let data = import["data"].as_object().expect("import data");
     for field in required_fields("configs/schema/operator/import_summary.schema.json") {
-        assert!(data.contains_key(&field), "import missing required field: {field}");
+        assert!(
+            data.contains_key(&field),
+            "import missing required field: {field}"
+        );
     }
 }

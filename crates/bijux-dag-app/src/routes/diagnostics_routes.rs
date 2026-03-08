@@ -1,7 +1,7 @@
 use crate::commands::DagCli;
-use crate::routes::renderer::print_pretty_json;
-use crate::replay_service;
 use crate::emit_json;
+use crate::replay_service;
+use crate::routes::renderer::print_pretty_json;
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -91,7 +91,8 @@ mod tests {
     #[test]
     fn why_rerun_route_rejects_missing_run_dir_without_panic() {
         let cli = quiet_json_cli();
-        let result = handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"));
+        let result =
+            handle_why_rerun_command(&cli, Path::new("/missing/a"), Path::new("/missing/b"));
         assert!(result.is_err());
     }
 

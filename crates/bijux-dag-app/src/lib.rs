@@ -62,6 +62,7 @@ pub use run_views::{
     runs_failures, runs_flakes, runs_history, runs_history_query, runs_summary, runs_trend,
 };
 
+use crate::cli_model::command_name as dag_command_name;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_artifacts::{OutputsIndex, RunOutputsIndex};
@@ -80,7 +81,6 @@ use commands::{
     AdaptersCommands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
     HashCommands, MaterializeModeArg, MigrateCommands, PolicyCommands,
 };
-use crate::cli_model::command_name as dag_command_name;
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
     ShowEffectivePolicyRequest,
@@ -659,9 +659,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::TraceArtifact { run_dir, artifact_id } => {
-            routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id)
-        }
+        Commands::TraceArtifact {
+            run_dir,
+            artifact_id,
+        } => routes::diagnostics_routes::handle_trace_artifact_command(&cli, run_dir, artifact_id),
         Commands::Run {
             dag,
             out,

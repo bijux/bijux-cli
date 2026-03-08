@@ -136,8 +136,8 @@ pub(crate) fn handle_equivalence_proof_command(
     backend_b: &str,
 ) -> Result<ExitCode, ExitCode> {
     let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
-    let backend_supported =
-        backend_capability_payload(backend_a).is_some() && backend_capability_payload(backend_b).is_some();
+    let backend_supported = backend_capability_payload(backend_a).is_some()
+        && backend_capability_payload(backend_b).is_some();
     let status = if diff.replay_equivalence.equivalent && backend_supported {
         "equivalent"
     } else if backend_supported {
@@ -161,7 +161,9 @@ pub(crate) fn handle_equivalence_proof_command(
             status != "downgraded",
             payload,
             if status == "downgraded" {
-                vec![json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"})]
+                vec![
+                    json!({"message":"equivalence proof downgraded due to unsupported backend or semantic divergence"}),
+                ]
             } else {
                 Vec::new()
             },
@@ -233,7 +235,8 @@ mod tests {
     #[test]
     fn semantic_portability_local_backend_is_supported() {
         let cli = quiet_json_cli();
-        let code = handle_semantic_portability_command(&cli, "kubernetes").expect("semantic portability");
+        let code =
+            handle_semantic_portability_command(&cli, "kubernetes").expect("semantic portability");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 }
