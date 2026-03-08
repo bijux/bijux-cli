@@ -65,6 +65,26 @@ fn newest_run_dir(base: &std::path::Path) -> PathBuf {
     entries.last().expect("at least one run directory").path()
 }
 
+fn run_id_from_run_dir(run_dir: &std::path::Path) -> String {
+    run_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .expect("run id")
+        .to_string()
+}
+
+fn first_artifact_id(run_dir: &std::path::Path) -> String {
+    let index = std::fs::read_to_string(run_dir.join("outputs/index.json")).expect("read outputs index");
+    let payload: serde_json::Value = serde_json::from_str(&index).expect("parse outputs index");
+    let node_id = payload["files"][0]["node_id"].as_str().expect("node_id");
+    let path = payload["files"][0]["path"].as_str().expect("path");
+    let output_name = std::path::Path::new(path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .expect("output name");
+    format!("{node_id}:{output_name}")
+}
+
 #[test]
 fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
     let dag = write_temp_dag();
@@ -114,6 +134,21 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
     assert!(replay.status.success(), "replay failed");
 
     let replay_run_dir = newest_run_dir(replay_out.path());
+    let first_run_id = run_id_from_run_dir(&first_run_dir);
+
+    let inspect = dag_command()
+        .args([
+            "dag",
+            "runs",
+            "inspect",
+            "--root",
+            run_out.path().to_str().expect("run root path"),
+            first_run_id.as_str(),
+            "--json",
+        ])
+        .output()
+        .expect("inspect output");
+    assert!(inspect.status.success(), "inspect failed");
 
     let diff = dag_command()
         .args([
@@ -125,4 +160,176 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
         .output()
         .expect("diff output");
     assert!(diff.status.success(), "diff failed");
+}
+
+#[test]
+fn cli_smoke_artifact_inspect_and_verify() {
+    let dag = write_temp_dag();
+    let run_out = tempfile::tempdir().expect("run output dir");
+
+    let run = dag_command()
+        .args([
+            "dag",
+            "run",
+            dag.to_str().expect("dag path"),
+            "--out",
+            run_out.path().to_str().expect("run out path"),
+        ])
+        .output()
+        .expect("run output");
+    assert!(run.status.success(), "run failed");
+
+    let run_dir = newest_run_dir(run_out.path());
+    let artifact_id = first_artifact_id(&run_dir);
+
+    let inspect = dag_command()
+        .args([
+            "dag",
+            "artifact-inspect",
+            run_dir.to_str().expect("run dir path"),
+            artifact_id.as_str(),
+            "--json",
+        ])
+        .output()
+        .expect("artifact inspect output");
+    assert!(inspect.status.success(), "artifact-inspect failed");
+
+    let verify = dag_command()
+        .args([
+            "dag",
+            "verify",
+            run_dir.to_str().expect("run dir path"),
+            "--deep",
+            "--json",
+        ])
+        .output()
+        .expect("verify output");
+    assert!(verify.status.success(), "verify failed");
+}
+
+#[test]
+fn cli_smoke_export_import_and_fsck_verify_only() {
+    let dag = write_temp_dag();
+    let run_out = tempfile::tempdir().expect("run output dir");
+    let bundle_file = run_out.path().join("run.bundle.json");
+
+    let run = dag_command()
+        .args([
+            "dag",
+            "run",
+            dag.to_str().expect("dag path"),
+            "--out",
+            run_out.path().to_str().expect("run out path"),
+        ])
+        .output()
+        .expect("run output");
+    assert!(run.status.success(), "run failed");
+
+    let run_dir = newest_run_dir(run_out.path());
+
+    let export = dag_command()
+        .args([
+            "dag",
+            "export",
+            run_dir.to_str().expect("run dir path"),
+            "--out",
+            bundle_file.to_str().expect("bundle path"),
+            "--json",
+        ])
+        .output()
+        .expect("export output");
+    assert!(export.status.success(), "export failed");
+
+    let import = dag_command()
+        .args([
+            "dag",
+            "import",
+            bundle_file.to_str().expect("bundle path"),
+            "--verify-only",
+            "--json",
+        ])
+        .output()
+        .expect("import verify-only output");
+    assert!(import.status.success(), "import verify-only failed");
+
+    let fsck = dag_command()
+        .args([
+            "dag",
+            "fsck",
+            bundle_file.to_str().expect("bundle path"),
+            "--json",
+        ])
+        .output()
+        .expect("fsck output");
+    assert!(fsck.status.success(), "bundle fsck failed");
+}
+
+#[test]
+fn cli_smoke_runs_history_list_show_timeline_and_tree() {
+    let dag = write_temp_dag();
+    let run_out = tempfile::tempdir().expect("run output dir");
+
+    let run = dag_command()
+        .args([
+            "dag",
+            "run",
+            dag.to_str().expect("dag path"),
+            "--out",
+            run_out.path().to_str().expect("run out path"),
+        ])
+        .output()
+        .expect("run output");
+    assert!(run.status.success(), "run failed");
+
+    let run_dir = newest_run_dir(run_out.path());
+    let run_id = run_id_from_run_dir(&run_dir);
+
+    for args in [
+        vec![
+            "dag",
+            "runs",
+            "list",
+            "--root",
+            run_out.path().to_str().expect("run out path"),
+            "--json",
+        ],
+        vec![
+            "dag",
+            "runs",
+            "show",
+            "--root",
+            run_out.path().to_str().expect("run out path"),
+            run_id.as_str(),
+            "--json",
+        ],
+        vec![
+            "dag",
+            "runs",
+            "history",
+            "--root",
+            run_out.path().to_str().expect("run out path"),
+            "--json",
+        ],
+        vec![
+            "dag",
+            "runs",
+            "timeline",
+            "--root",
+            run_out.path().to_str().expect("run out path"),
+            run_id.as_str(),
+            "--json",
+        ],
+        vec![
+            "dag",
+            "runs",
+            "tree",
+            "--root",
+            run_out.path().to_str().expect("run out path"),
+            run_id.as_str(),
+            "--json",
+        ],
+    ] {
+        let output = dag_command().args(args).output().expect("runs flow output");
+        assert!(output.status.success(), "runs flow failed");
+    }
 }
