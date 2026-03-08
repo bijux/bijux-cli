@@ -18,12 +18,12 @@ use tempfile as _;
 
 #[path = "build/builder.rs"]
 pub mod builder;
-#[path = "build/contract.rs"]
-pub mod contract;
 #[path = "graph/canonical.rs"]
 pub mod canonical;
 #[path = "build/compile.rs"]
 pub mod compile;
+#[path = "build/contract.rs"]
+pub mod contract;
 #[path = "graph/edge.rs"]
 pub mod edge;
 #[path = "analysis/effects.rs"]
@@ -59,11 +59,11 @@ pub use builder::{
     dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
     DagUnitHarness, NodeBuilder,
 };
-pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 pub use compile::{
     compile_graph, compile_graph_contract, compile_graph_strict, compile_graph_with_defaults,
     negotiate_spec_version, CompatibilityDecision, DagCompilePlanHints, DagCompileResult,
 };
+pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 pub use error::GraphError;
 pub use model::{
     ContainerSpec, Edge, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta,

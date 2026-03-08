@@ -1,10 +1,10 @@
-use criterion as _;
-use hex as _;
-use serde as _;
 use bijux_dag_core::{
     Edge, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RefSpec, RetryPolicy,
     SPEC_VERSION,
 };
+use criterion as _;
+use hex as _;
+use serde as _;
 use serde_json::Value;
 use serde_yaml as _;
 use sha2 as _;
@@ -74,7 +74,10 @@ fn fingerprint_stable_under_reorder() {
     let graph = base_graph();
     let mut reordered = base_graph();
     reordered.nodes.reverse();
-    assert_eq!(graph.graph_fingerprint().unwrap(), reordered.graph_fingerprint().unwrap());
+    assert_eq!(
+        graph.graph_fingerprint().unwrap(),
+        reordered.graph_fingerprint().unwrap()
+    );
 }
 
 #[test]

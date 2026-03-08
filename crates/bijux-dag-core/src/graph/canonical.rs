@@ -12,7 +12,11 @@ impl Graph {
 
         for node in &mut nodes {
             node.id = normalize_identity_text(&node.id);
-            node.inputs = node.inputs.iter().map(|input| normalize_identity_text(input)).collect();
+            node.inputs = node
+                .inputs
+                .iter()
+                .map(|input| normalize_identity_text(input))
+                .collect();
             for output in &mut node.outputs {
                 output.name = normalize_identity_text(&output.name);
                 output.path = normalize_rel_path(&output.path);
@@ -43,7 +47,8 @@ impl Graph {
         for node in &mut nodes {
             sort_param_value(&mut node.params);
             node.inputs.sort();
-            node.outputs.sort_by(|left, right| left.name.cmp(&right.name));
+            node.outputs
+                .sort_by(|left, right| left.name.cmp(&right.name));
             node.effects.sort_by_key(effect_order);
             node.env_allowlist.sort();
             node.tags.sort();
@@ -55,12 +60,18 @@ impl Graph {
         }
 
         edges.sort_by(|left, right| {
-            (&left.from.node_id, &left.from.port, &left.to.node_id, &left.to.port).cmp(&(
-                &right.from.node_id,
-                &right.from.port,
-                &right.to.node_id,
-                &right.to.port,
-            ))
+            (
+                &left.from.node_id,
+                &left.from.port,
+                &left.to.node_id,
+                &left.to.port,
+            )
+                .cmp(&(
+                    &right.from.node_id,
+                    &right.from.port,
+                    &right.to.node_id,
+                    &right.to.port,
+                ))
         });
 
         let mut inputs = self.inputs.clone();

@@ -1,7 +1,9 @@
 use crate::contract::{normalize_graph_with_defaults, GraphContract};
 use crate::node::{derive_interface, NodeTypeRegistry, TypedNode};
-use crate::{parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION};
 use crate::resources::GraphDefaults;
+use crate::{
+    parse_graph_strict, Graph, GraphError, ValidationDiagnostic, CANONICALIZATION_CONTRACT_VERSION,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

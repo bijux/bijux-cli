@@ -1,8 +1,6 @@
 //! Graph fingerprint entrypoints.
 
-use crate::canonical::{
-    normalize_identity_text, normalize_rel_path, sort_value_maps,
-};
+use crate::canonical::{normalize_identity_text, normalize_rel_path, sort_value_maps};
 use crate::resolve::resolve_param_value;
 use crate::{Graph, GraphError, GraphFingerprintExplain, GraphId, Node, ParamValue};
 use sha2::{Digest, Sha256};
@@ -39,7 +37,11 @@ impl Graph {
     ) -> Result<String, GraphError> {
         let mut node = node.clone();
         node.id = normalize_identity_text(&node.id);
-        node.inputs = node.inputs.iter().map(|input| normalize_identity_text(input)).collect();
+        node.inputs = node
+            .inputs
+            .iter()
+            .map(|input| normalize_identity_text(input))
+            .collect();
         let mut params = resolved_params.clone();
         sort_value_maps(&mut params);
         node.params = ParamValue::Literal(params);
@@ -48,7 +50,8 @@ impl Graph {
             output.name = normalize_identity_text(&output.name);
             output.path = normalize_rel_path(&output.path);
         }
-        node.outputs.sort_by(|left, right| left.name.cmp(&right.name));
+        node.outputs
+            .sort_by(|left, right| left.name.cmp(&right.name));
         node.effects.sort_by_key(|effect| match effect {
             crate::Effect::Filesystem => 0,
             crate::Effect::Network => 1,
