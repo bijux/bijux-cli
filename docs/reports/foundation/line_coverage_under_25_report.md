@@ -4,19 +4,18 @@ Files in crate `src/` trees below 25% line coverage.
 
 | file | covered_lines | instrumented_lines | line_coverage_pct |
 | --- | ---: | ---: | ---: |
-| crates/bijux-dag-app/src/graph/helpers.rs | 27 | 216 | 12.50 |
+| crates/bijux-dag-app/src/graph/helpers.rs | 51 | 216 | 23.61 |
 | crates/bijux-dag-app/src/inspect/mod.rs | 0 | 6 | 0.00 |
-| crates/bijux-dag-app/src/read/fs_input.rs | 0 | 3 | 0.00 |
-| crates/bijux-dag-app/src/read/read_graph.rs | 0 | 3 | 0.00 |
-| crates/bijux-dag-artifacts/src/io/fs.rs | 0 | 3 | 0.00 |
-| crates/bijux-dag-artifacts/src/lifecycle/retention.rs | 0 | 18 | 0.00 |
+| crates/bijux-dag-app/src/routes/inspect_routes.rs | 31 | 151 | 20.53 |
 | crates/bijux-dag-core/src/analysis/fingerprint.rs | 0 | 6 | 0.00 |
-| crates/bijux-dag-core/src/graph/canonical.rs | 0 | 6 | 0.00 |
-| crates/bijux-dag-core/src/graph/edge.rs | 0 | 7 | 0.00 |
-| crates/bijux-dag-core/src/graph/topology.rs | 0 | 3 | 0.00 |
-| crates/bijux-dag-core/src/pipeline/resolve.rs | 0 | 3 | 0.00 |
-| crates/bijux-dag-core/src/pipeline/validate.rs | 0 | 150 | 0.00 |
 | crates/bijux-dev-dag/src/bin/attestation_verify.rs | 0 | 49 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_app_route_coverage_reports.rs | 0 | 61 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_graph_identity_reports.rs | 0 | 66 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_line_coverage_reports.rs | 0 | 237 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_replay_diff_benchmark_report.rs | 0 | 27 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_run_history_reports.rs | 0 | 44 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_runtime_adapter_scope_reports.rs | 0 | 143 | 0.00 |
+| crates/bijux-dev-dag/src/bin/generate_scheduler_profile_report.rs | 0 | 70 | 0.00 |
 | crates/bijux-dev-dag/src/bin/integrated_verify.rs | 0 | 44 | 0.00 |
 | crates/bijux-dev-dag/src/bin/migration_simulate.rs | 0 | 36 | 0.00 |
 | crates/bijux-dev-dag/src/bin/trust_health.rs | 0 | 17 | 0.00 |
@@ -27,16 +26,8 @@ Files in crate `src/` trees below 25% line coverage.
 | crates/bijux-dev-dag/src/commands/evidence_access.rs | 82 | 342 | 23.98 |
 | crates/bijux-dev-dag/src/commands/evidence_control_plane.rs | 0 | 471 | 0.00 |
 | crates/bijux-dev-dag/src/commands/evidence_registry.rs | 0 | 277 | 0.00 |
-| crates/bijux-dev-dag/src/commands/mod.rs | 14 | 7256 | 0.19 |
+| crates/bijux-dev-dag/src/commands/mod.rs | 14 | 7506 | 0.19 |
 | crates/bijux-dev-dag/src/commands/model.rs | 0 | 5 | 0.00 |
-| crates/bijux-dev-dag/src/commands/perf_evidence.rs | 0 | 195 | 0.00 |
-| crates/bijux-dev-dag/src/commands/suite_catalog.rs | 0 | 68 | 0.00 |
 | crates/bijux-dev-dag/src/main.rs | 0 | 3 | 0.00 |
-| crates/bijux-dev-dag/src/repo/layout.rs | 0 | 13 | 0.00 |
-| crates/bijux-dev-dag/src/repo/root.rs | 0 | 9 | 0.00 |
-| crates/bijux-dev-dag/src/report/write.rs | 0 | 4 | 0.00 |
-| crates/bijux-dev-dag/src/tooling/cargo.rs | 0 | 9 | 0.00 |
-| crates/bijux-dev-dag/src/tooling/git.rs | 0 | 10 | 0.00 |
-| crates/bijux-dev-dag/src/tooling/mod.rs | 0 | 9 | 0.00 |
 
 _Generated from `artifacts/coverage/lcov.info` by `generate_line_coverage_reports`._
