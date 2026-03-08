@@ -1,1 +1,8 @@
 //! Cache command orchestration helpers.
+
+mod service;
+
+pub(crate) use service::{
+    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, pack_cache_entry,
+    unpack_cache_archive_bounded, unpack_cache_entry, verify_cache_dirs,
+};
