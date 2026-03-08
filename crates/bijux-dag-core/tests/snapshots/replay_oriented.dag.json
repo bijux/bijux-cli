@@ -1,0 +1,37 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "replay-oriented",
+    "owners": [],
+    "tags": ["replay", "identity"]
+  },
+  "inputs": {
+    "random_seed": 42,
+    "baseline_run_id": "run-baseline"
+  },
+  "nondeterminism_allowed": false,
+  "nodes": [
+    {
+      "id": "source",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "source/out"}],
+      "params": {"value": "baseline"}
+    },
+    {
+      "id": "replay_check",
+      "kind": "shell",
+      "effects": ["filesystem"],
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "replay_check/out"}],
+      "params": {"cmd": "cat ${in}"},
+      "retry": {"max_attempts": 1, "backoff_ms": 10}
+    }
+  ],
+  "edges": [
+    {
+      "from": {"node_id": "source", "port": "out"},
+      "to": {"node_id": "replay_check", "port": "in"}
+    }
+  ]
+}

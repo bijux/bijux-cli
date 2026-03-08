@@ -27,6 +27,7 @@ fn canonical_shape_fixtures_parse_strictly() {
         "isolated_groups.dag.json",
         "retry_heavy.dag.json",
         "resource_heavy.dag.json",
+        "replay_oriented.dag.json",
     ];
     for fixture in fixtures {
         let text = fs::read_to_string(snapshot_path(fixture)).unwrap();
