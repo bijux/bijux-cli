@@ -81,8 +81,8 @@ use capability_matrix::backend_capability_payload;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     AdaptersCommands, CacheCommands, CacheModeArg, Commands, ConfigCommands, DagCli,
-    GraphFormatArg, HashCommands, MaterializeModeArg, MigrateCommands, PlanCommands,
-    PolicyCommands, RunsCommands,
+    GraphFormatArg, HashCommands, MaterializeModeArg, MigrateCommands, PolicyCommands,
+    RunsCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -144,7 +144,7 @@ struct JsonError {
     exit_code: u8,
 }
 
-fn emit_json(
+pub(crate) fn emit_json(
     cli: &DagCli,
     command: &str,
     ok: bool,
@@ -661,101 +661,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Plan { command } => match command {
-            PlanCommands::Explain { dag } => {
-                let input = read_file(dag)?;
-                let graph = parse_graph(&input)?;
-                let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default())
-                    .map_err(|_| ExitCode::from(3))?;
-                let mut lines = Vec::new();
-                for node in &plan.nodes {
-                    if node.deps.is_empty() {
-                        lines.push(format!(
-                            "{}: included as graph root (no dependencies)",
-                            node.id
-                        ));
-                    } else {
-                        lines.push(format!(
-                            "{}: included because it depends on {}",
-                            node.id,
-                            node.deps.join(", ")
-                        ));
-                    }
-                }
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.plan.explain",
-                        true,
-                        json!({
-                            "graph_fingerprint": plan.graph_fingerprint,
-                            "planner_fingerprint": plan.planner_fingerprint,
-                            "ordering": plan.ordering,
-                            "nodes": plan.nodes.iter().map(|node| {
-                                json!({
-                                    "node_id": node.id,
-                                    "reason": if node.deps.is_empty() {
-                                        "graph root (no dependencies)"
-                                    } else {
-                                        "dependency closure"
-                                    },
-                                    "dependencies": node.deps,
-                                })
-                            }).collect::<Vec<_>>()
-                        }),
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                }
-                for line in lines {
-                    println!("{line}");
-                }
-                Ok(ExitCode::SUCCESS)
-            }
-            PlanCommands::Diagnostics { dag } => {
-                let input = read_file(dag)?;
-                let graph = parse_graph(&input)?;
-                match lower_graph_to_execution_plan(&graph, PlanOptions::default()) {
-                    Ok(plan) => {
-                        let payload = serde_json::to_value(&plan.diagnostics)
-                            .map_err(|_| ExitCode::from(3))?;
-                        if cli.json {
-                            return emit_json(
-                                &cli,
-                                "dag.plan.diagnostics",
-                                true,
-                                json!({"diagnostics": payload}),
-                                Vec::new(),
-                                ExitCode::SUCCESS,
-                            );
-                        }
-                        if plan.diagnostics.is_empty() {
-                            println!("planner diagnostics: none");
-                        } else {
-                            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-                        }
-                        Ok(ExitCode::SUCCESS)
-                    }
-                    Err(error) => {
-                        let diagnostics = planner_diagnostics_from_error(&error);
-                        let payload =
-                            serde_json::to_value(&diagnostics).map_err(|_| ExitCode::from(3))?;
-                        if cli.json {
-                            return emit_json(
-                                &cli,
-                                "dag.plan.diagnostics",
-                                false,
-                                json!({"diagnostics": payload}),
-                                Vec::new(),
-                                ExitCode::from(3),
-                            );
-                        }
-                        println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-                        Err(ExitCode::from(3))
-                    }
-                }
-            }
-        },
+        Commands::Plan { command } => routes::plan_routes::handle_plan_command(&cli, command),
         Commands::Graph { dag, format } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -796,248 +702,30 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             exclude,
             materialize_inputs,
             remote_cache_dir,
-        } => {
-            let snapshot = load_snapshot(run_dir)?;
-            let source_run_id = read_run_id(run_dir).ok();
-            let runtime = Runtime::new();
-            let cache_mode = match *cache {
-                CacheModeArg::Off => {
-                    if *reuse_cache {
-                        CacheMode::Read
-                    } else {
-                        CacheMode::Off
-                    }
-                }
-                CacheModeArg::Read => CacheMode::Read,
-                CacheModeArg::Readwrite => CacheMode::ReadWrite,
-            };
-            let mut deny_network = *deny_network;
-            let mut deny_clock = *deny_clock;
-            let deny_env = *deny_env;
-            let clean_env_flag = *clean_env;
-            let mut clean_env = clean_env_flag;
-            if !clean_env_flag {
-                clean_env = true;
-            }
-            if *hermetic {
-                deny_network = true;
-                deny_clock = true;
-                clean_env = true;
-            }
-            let selectors = parse_selectors(select, exclude)?;
-            if *dry_run {
-                let dry_select = selectors
-                    .include
-                    .iter()
-                    .map(selector_cli_string)
-                    .collect::<Vec<_>>();
-                let dry_exclude = selectors
-                    .exclude
-                    .iter()
-                    .map(selector_cli_string)
-                    .collect::<Vec<_>>();
-                let plan = json!({
-                    "source_run_dir": run_dir,
-                    "target_out_dir": out,
-                    "selectors": {
-                        "select": dry_select,
-                        "exclude": dry_exclude
-                    },
-                    "cache_mode": format!("{cache_mode:?}"),
-                    "jobs": jobs,
-                    "prove_requested": prove
-                });
-                let response = replay_cmd::ReplayCommandResponse {
-                    run_dir: None,
-                    dry_run_plan: Some(plan.clone()),
-                    replay_proof: None,
-                };
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.replay",
-                        true,
-                        serde_json::to_value(&response).map_err(|_| ExitCode::from(3))?,
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                }
-                println!("{}", serde_json::to_string_pretty(&plan).unwrap());
-                return Ok(ExitCode::SUCCESS);
-            }
-            let options = RuntimeConfig {
-                jobs: *jobs,
-                cpu_budget: *cpu_budget,
-                run_timeout_ms: None,
-                node_timeout_ms: None,
-                materialize_inputs: map_materialize_mode(*materialize_inputs),
-                cache_mode,
-                cache_dir: None,
-                remote_cache_dir: remote_cache_dir.clone(),
-                run_id: run_id.clone(),
-                parent_run_id: source_run_id,
-                latest_symlink: None,
-                policy: bijux_dag_runtime::PolicyConfig {
-                    deny_network,
-                    deny_env,
-                    deny_clock,
-                    clean_env,
-                },
-                selectors,
-                ..RuntimeConfig::default()
-            };
-            let run_path = runtime
-                .run(&snapshot.graph, out, options)
-                .map_err(|_| ExitCode::from(3))?;
-            let replay_proof = if *prove {
-                let diff = replay_service::run_diff_from_dirs(run_dir, &run_path)?;
-                Some(json!({
-                    "fidelity_level": if diff.replay_equivalence.equivalent { "strict_equivalent" } else { "diverged" },
-                    "equivalent": diff.replay_equivalence.equivalent,
-                    "reasons": diff.replay_equivalence.reasons,
-                    "reason_report": diff.replay_equivalence.reason_report,
-                    "cause_groups": diff.replay_equivalence.cause_groups,
-                    "source_run_id": read_run_id(run_dir)?,
-                    "replay_run_id": read_run_id(&run_path)?
-                }))
-            } else {
-                None
-            };
-            let response = replay_cmd::ReplayCommandResponse {
-                run_dir: Some(run_path.clone()),
-                dry_run_plan: None,
-                replay_proof,
-            };
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.replay",
-                    true,
-                    serde_json::to_value(&response).map_err(|_| ExitCode::from(3))?,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            if !cli.quiet {
-                println!("run dir: {}", run_path.display());
-                if let Some(proof) = &response.replay_proof {
-                    println!(
-                        "replay_proof_fidelity: {}",
-                        proof.get("fidelity_level")
-                            .and_then(Value::as_str)
-                            .unwrap_or("unknown")
-                    );
-                    if let Some(reasons) = proof.get("reasons").and_then(Value::as_array) {
-                        if !reasons.is_empty() {
-                            println!(
-                                "replay_proof_reasons: {}",
-                                reasons
-                                    .iter()
-                                    .filter_map(Value::as_str)
-                                    .collect::<Vec<_>>()
-                                    .join(", ")
-                            );
-                        }
-                    }
-                }
-            }
-            Ok(ExitCode::SUCCESS)
-        }
-        Commands::Prove { run_dir } => {
-            let proof = build_run_proof_bundle(run_dir)?;
-            let complete = proof
-                .get("complete")
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.prove",
-                    complete,
-                    proof,
-                    Vec::new(),
-                    if complete {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
-                );
-            }
-            println!("proof id: {}", proof["proof_id"]);
-            println!("status: {}", proof["status"]);
-            println!("complete: {}", complete);
-            println!("determinism: {}", proof["determinism"]);
-            if let Some(reasons) = proof["incomplete_reasons"].as_array() {
-                if !reasons.is_empty() {
-                    println!("incomplete_reasons: {}", proof["incomplete_reasons"]);
-                }
-            }
-            if complete {
-                Ok(ExitCode::SUCCESS)
-            } else {
-                Err(ExitCode::from(3))
-            }
-        }
+        } => routes::replay_routes::handle_replay_command(
+            &cli,
+            run_dir,
+            out,
+            *dry_run,
+            *prove,
+            *reuse_cache,
+            *cache,
+            *jobs,
+            run_id.clone(),
+            *cpu_budget,
+            *deny_network,
+            *deny_env,
+            *deny_clock,
+            *clean_env,
+            *hermetic,
+            select,
+            exclude,
+            *materialize_inputs,
+            remote_cache_dir.clone(),
+        ),
+        Commands::Prove { run_dir } => routes::replay_routes::handle_prove_command(&cli, run_dir),
         Commands::ProofSummary { run_dir } => {
-            let proof = build_run_proof_bundle(run_dir)?;
-            let complete = proof
-                .get("complete")
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            let status = proof
-                .get("status")
-                .and_then(Value::as_str)
-                .unwrap_or("incomplete");
-            let determinism = proof
-                .get("determinism")
-                .and_then(Value::as_str)
-                .unwrap_or("insufficient-evidence");
-            let integrity = proof
-                .get("integrity")
-                .and_then(Value::as_str)
-                .unwrap_or("insufficient-evidence");
-            let replay_level = proof
-                .get("replay_evidence")
-                .and_then(|v| v.get("level"))
-                .and_then(Value::as_str)
-                .unwrap_or("partial");
-            let incomplete_reasons = proof
-                .get("incomplete_reasons")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
-            let summary = json!({
-                "proof_id": proof.get("proof_id").cloned().unwrap_or(Value::Null),
-                "run_id": proof.get("run_id").cloned().unwrap_or(Value::Null),
-                "status": status,
-                "complete": complete,
-                "determinism": determinism,
-                "integrity": integrity,
-                "replay_level": replay_level,
-                "incomplete_reasons": incomplete_reasons
-            });
-
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.proof-summary",
-                    complete,
-                    summary,
-                    Vec::new(),
-                    if complete {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(3)
-                    },
-                );
-            }
-
-            println!("proof summary: {}", summary);
-            if complete {
-                Ok(ExitCode::SUCCESS)
-            } else {
-                Err(ExitCode::from(3))
-            }
+            routes::replay_routes::handle_proof_summary_command(&cli, run_dir)
         }
         Commands::Runs { command } => match command {
             RunsCommands::List { root } => {
@@ -1332,44 +1020,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_b,
             mode: _mode,
             explain,
-        } => {
-            let explain = *explain;
-            let diff = replay_service::run_diff_from_dirs(run_a, run_b)?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.diff",
-                    true,
-                    serde_json::to_value(&diff).unwrap(),
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            } else {
-                print_human_diff(&serde_json::to_value(&diff).unwrap());
-                if explain {
-                    println!("explain: graph fingerprint change implies cache invalidation");
-                    println!("explain: node fingerprint changes indicate recomputation scope");
-                    println!("replay_equivalent: {}", diff.replay_equivalence.equivalent);
-                    if !diff.replay_equivalence.reasons.is_empty() {
-                        println!(
-                            "replay_difference_reasons: {:?}",
-                            diff.replay_equivalence.reasons
-                        );
-                    }
-                    println!(
-                        "replay_reason: {}",
-                        diff.replay_equivalence.reason_report.summary
-                    );
-                    if !diff.replay_equivalence.cause_groups.is_empty() {
-                        println!(
-                            "replay_cause_groups: {}",
-                            serde_json::to_string(&diff.replay_equivalence.cause_groups).unwrap()
-                        );
-                    }
-                }
-            }
-            Ok(ExitCode::SUCCESS)
-        }
+        } => routes::diff_routes::handle_diff_command(&cli, run_a, run_b, *explain, "dag.diff"),
         Commands::WhyRerun { run_a, run_b } => {
             let payload = routes::diagnostics_routes::why_rerun_payload(run_a, run_b)?;
             if cli.json {
@@ -2780,11 +2431,11 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
     }
 }
 
-fn read_file(path: &Path) -> Result<String, ExitCode> {
+pub(crate) fn read_file(path: &Path) -> Result<String, ExitCode> {
     fs::read_to_string(path).map_err(|_| ExitCode::from(3))
 }
 
-fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
+pub(crate) fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
     let raw = read_file(&run_dir.join("manifest.json"))?;
     let value: Value = serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))?;
     value
@@ -2806,7 +2457,7 @@ fn hash_run_dir(run_dir: &Path) -> Result<String, ExitCode> {
     Ok(hex::encode(hasher.finalize()))
 }
 
-fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
+pub(crate) fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
     match selector {
         bijux_dag_runtime::Selector::IdPrefix(v) => format!("id:{v}"),
         bijux_dag_runtime::Selector::Tag(v) => format!("tag:{v}"),
@@ -2814,7 +2465,7 @@ fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
     }
 }
 
-fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
+pub(crate) fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
     match parse_graph_strict(input) {
         Ok(g) => Ok(g),
         Err(GraphError::InvalidSpec(_)) => {
@@ -2843,7 +2494,7 @@ struct GraphSnapshot {
     graph_fingerprint: String,
 }
 
-fn load_snapshot(run_dir: &Path) -> Result<GraphSnapshot, ExitCode> {
+pub(crate) fn load_snapshot(run_dir: &Path) -> Result<GraphSnapshot, ExitCode> {
     let snap = read_file(&run_dir.join("graph.snapshot.json"))?;
     serde_json::from_str(&snap).map_err(|_| ExitCode::from(3))
 }
@@ -2957,7 +2608,7 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
     }))
 }
 
-fn print_human_diff(diff: &serde_json::Value) {
+pub(crate) fn print_human_diff(diff: &serde_json::Value) {
     let manifest = diff["manifest"].as_object().map(|o| o.len()).unwrap_or(0);
     let graph_fp = diff["graph_fingerprint"].is_null();
     let nodes = diff["nodes"].as_object().map(|o| o.len()).unwrap_or(0);
@@ -3614,7 +3265,7 @@ fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<serde_json::Va
     }))
 }
 
-fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
+pub(crate) fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
     match arg {
         MaterializeModeArg::Copy => MaterializeMode::Copy,
         MaterializeModeArg::Hardlink => MaterializeMode::Hardlink,
@@ -3788,7 +3439,7 @@ fn verify_bundle_invariants(bundle: &serde_json::Value) -> Vec<String> {
     violations
 }
 
-fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
+pub(crate) fn build_run_proof_bundle(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
     let report = verify_run(run_dir, true, true)?;
     let status = report
         .get("status")
