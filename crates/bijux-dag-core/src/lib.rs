@@ -431,6 +431,7 @@ impl Graph {
         }
 
         let mut edge_pairs = BTreeSet::new();
+        let mut target_bindings = BTreeSet::new();
         for edge in &self.edges {
             let from_node = node_map.get(edge.from.node_id.as_str());
             let to_node = node_map.get(edge.to.node_id.as_str());
@@ -488,6 +489,19 @@ impl Graph {
                     "output collision".to_string(),
                     "/edges".to_string(),
                     Some("Avoid duplicate edge targets".to_string()),
+                ));
+            }
+
+            let target_key = format!("{}:{}", edge.to.node_id, edge.to.port);
+            if !target_bindings.insert(target_key) {
+                diags.push(error(
+                    "E1008",
+                    format!(
+                        "ambiguous dependency binding for input {}.{}",
+                        edge.to.node_id, edge.to.port
+                    ),
+                    format!("/edges/to/{}/{}", edge.to.node_id, edge.to.port),
+                    Some("Bind each input port from exactly one source output".to_string()),
                 ));
             }
         }
