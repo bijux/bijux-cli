@@ -1,0 +1,10 @@
+{
+  "id": "dev-dag-maintenance-pack",
+  "description": "Compact maintenance dev-dag command pack.",
+  "commands": [
+    "cargo test -p bijux-dev-dag --test dev_dag_reporting_integrity_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_direct_test_presence_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_command_coverage_progress_contracts",
+    "cargo test -p bijux-dev-dag --test dev_dag_command_zero_coverage_gate_contracts"
+  ]
+}
