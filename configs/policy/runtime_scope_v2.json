@@ -15,9 +15,16 @@
     "runtime_core"
   ],
   "allowed_top_level_files": [
-    "lib.rs"
+    "lib.rs",
+    "simulated_platform.rs"
   ],
   "module_entries": [
+    {
+      "module": "simulated_platform.rs",
+      "classification": "support",
+      "decision": "keep",
+      "rationale": "explicit quarantine facade for modeled platform surfaces that are not part of the stable runtime root"
+    },
     {
       "module": "adapters/adapter.rs",
       "classification": "backend",

@@ -3,9 +3,10 @@
 ## Runtime Contraction Outcome (61-80)
 - Runtime ownership is constrained to engine, scheduler, state machine, backend binding, cache, policy, replay, diagnostics.
 - Speculative, productization, and distributed-future modules are explicitly marked `move` and blocked from scope creep by policy guardrails.
+- Modeled platform and product surfaces are no longer advertised from the crate root; they are exposed only through `bijux_dag_runtime::simulated_platform`.
 - Execution plan home is fixed to `runtime_core/planning/execution_plan.rs`.
 - Planning bridge home is fixed to `runtime_core/planning/planner.rs`.
-- Top-level runtime module freeze allows only approved root directories and `lib.rs`.
+- Top-level runtime module freeze allows only approved root directories, `lib.rs`, and the explicit quarantine facade `simulated_platform.rs`.
 
 ## Classification Summary
 - `backend`: 26 modules
@@ -15,7 +16,7 @@
 - `replay`: 4 modules
 - `security`: 7 modules
 - `speculative`: 13 modules
-- `support`: 28 modules
+- `support`: 29 modules
 - `wrong-crate`: 1 modules
 
 ## Named Decisions (44-58)
@@ -66,6 +67,7 @@
 ## Full Module Inventory (41-43)
 | Module | Classification | Decision | Notes |
 | --- | --- | --- | --- |
+| `simulated_platform.rs` | `support` | `keep` | explicit quarantine facade for modeled platform surfaces that are not part of the stable runtime root |
 | `adapters/adapter.rs` | `backend` | `keep` | adapter integration surface required for node execution |
 | `adapters/api.rs` | `backend` | `keep` | adapter integration surface required for node execution |
 | `adapters/async_adapter.rs` | `backend` | `keep` | adapter integration surface required for node execution |

@@ -11,4 +11,8 @@ This crate owns execution-time behavior for DAG runs, including planning, schedu
 - CLI command parsing and presentation routing.
 - Governance release report orchestration.
 
+## Public surface shape
+- Stable runtime execution APIs are exported from the crate root.
+- Modeled platform, distributed-future, and product-story APIs are quarantined under `bijux_dag_runtime::simulated_platform`.
+
 See [CONTRACT.md](./CONTRACT.md).

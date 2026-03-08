@@ -2,6 +2,8 @@
 
 This directory contains runtime behavior contract suites grouped by trust surface.
 
+Modeled platform and product-facing runtime APIs live under `bijux_dag_runtime::simulated_platform`.
+
 - semantic: deterministic runtime behavior
 - adversarial: hostile or malformed conditions
 - failure: explicit failure-path semantics

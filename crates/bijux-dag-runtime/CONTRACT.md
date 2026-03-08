@@ -25,6 +25,7 @@ Responsibility: Execution engine, scheduler behavior, policy enforcement, replay
 - `selectors`: selector parsing and filtering.
 - `cache`: cache read/write orchestration.
 - `builtins`: built-in adapter implementations.
+- `simulated_platform`: explicit quarantine facade for modeled platform/distributed/product surfaces that are retained for evidence and contract coverage but are not part of the stable runtime root.
 
 ## Effect boundary
 Runtime must isolate subprocess creation behind explicit boundary helpers and avoid hidden ambient reads.
