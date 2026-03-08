@@ -9,6 +9,7 @@
     "node_fingerprint",
     "path",
     "size_bytes",
+    "payload_missing",
     "provenance",
     "lineage",
     "identity_explain"
@@ -19,7 +20,8 @@
     "node_id": { "type": "string" },
     "node_fingerprint": { "type": "string" },
     "path": { "type": "string" },
-    "size_bytes": { "type": "integer", "minimum": 0 },
+    "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
+    "payload_missing": { "type": "boolean" },
     "provenance": {
       "type": "object",
       "required": ["graph_fingerprint", "run_id", "attempt"],

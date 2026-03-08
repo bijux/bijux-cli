@@ -2273,7 +2273,10 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         .find(|entry| entry.node_id == node_id && entry.path.ends_with(&format!("/{file_name}")))
         .ok_or_else(|| ExitCode::from(3))?;
     let artifact_path = run_dir.join(&output.path);
-    let metadata = fs::metadata(&artifact_path).map_err(|_| ExitCode::from(3))?;
+    let (size_bytes, payload_missing) = match fs::metadata(&artifact_path) {
+        Ok(metadata) => (Some(metadata.len()), false),
+        Err(_) => (None, true),
+    };
     let lineage_path = run_dir.join("lineage.snapshot.json");
     let lineage = if lineage_path.exists() {
         let data = read_file(&lineage_path)?;
@@ -2298,7 +2301,8 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         "node_id": output.node_id,
         "node_fingerprint": output.node_fingerprint,
         "path": output.path,
-        "size_bytes": metadata.len(),
+        "size_bytes": size_bytes,
+        "payload_missing": payload_missing,
         "provenance": {
             "graph_fingerprint": manifest.graph_fingerprint,
             "run_id": run_id,
