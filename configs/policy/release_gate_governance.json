@@ -1,0 +1,81 @@
+{
+  "policy_version": "1",
+  "governance_rules": {
+    "new_gate_requires_owner_purpose_failure_action_docs": true,
+    "docs_and_workflows_must_remain_aligned": true
+  },
+  "gates": [
+    {
+      "gate_id": "fmt",
+      "make_target": "fmt",
+      "owner": "dag-control-plane",
+      "purpose": "formatting consistency",
+      "severity": "release-blocking",
+      "failure_action": "run formatter and re-verify",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "gate_id": "lint",
+      "make_target": "lint",
+      "owner": "dag-control-plane",
+      "purpose": "lint and static quality enforcement",
+      "severity": "release-blocking",
+      "failure_action": "fix lint violations and re-verify",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "gate_id": "audit",
+      "make_target": "audit",
+      "owner": "dag-control-plane",
+      "purpose": "dependency and supply-chain checks",
+      "severity": "release-blocking",
+      "failure_action": "resolve vulnerable or disallowed dependency",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "gate_id": "test",
+      "make_target": "test",
+      "owner": "dag-control-plane",
+      "purpose": "fast test lane signal",
+      "severity": "release-blocking",
+      "failure_action": "fix failing fast-lane tests",
+      "docs_page": "docs/reference/TEST_LANES.md"
+    },
+    {
+      "gate_id": "test-all",
+      "make_target": "test-all",
+      "owner": "dag-control-plane",
+      "purpose": "full test lane signal",
+      "severity": "release-blocking",
+      "failure_action": "fix failing full-lane tests",
+      "docs_page": "docs/reference/TEST_LANES.md"
+    },
+    {
+      "gate_id": "coverage",
+      "make_target": "coverage",
+      "owner": "dag-control-plane",
+      "purpose": "line and contract coverage verification",
+      "severity": "release-blocking",
+      "failure_action": "add direct tests or adjust governed allowlists",
+      "docs_page": "docs/spec/RELEASE_POLICY.md"
+    },
+    {
+      "gate_id": "evidence-all",
+      "make_target": "evidence-all",
+      "owner": "dag-control-plane",
+      "purpose": "evidence governance and release-evidence checks",
+      "severity": "release-supporting",
+      "failure_action": "fix evidence policy/report drift",
+      "docs_page": "docs/reference/EVIDENCE_GOVERNANCE.md"
+    }
+  ],
+  "runtime_budget_targets_minutes": {
+    "fmt": 2,
+    "lint": 5,
+    "audit": 8,
+    "test": 20,
+    "test-all": 60,
+    "coverage": 45,
+    "evidence-all": 30
+  }
+}
