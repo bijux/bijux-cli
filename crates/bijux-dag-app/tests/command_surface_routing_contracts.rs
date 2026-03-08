@@ -33,6 +33,12 @@ fn lib_routes_export_import_and_capability_commands_through_route_modules() {
     for token in [
         "routes::export_import_routes::handle_export_command",
         "routes::export_import_routes::handle_import_command",
+        "routes::validate_routes::handle_validate_command",
+        "routes::run_routes::handle_run_command",
+        "routes::inspect_routes::handle_explain_command",
+        "routes::inspect_routes::handle_status_command",
+        "routes::prove_verify_routes::handle_verify_command",
+        "routes::prove_verify_routes::handle_fsck_command",
         "routes::surface_routes::handle_capabilities_command",
         "routes::surface_routes::handle_semantic_portability_command",
     ] {
@@ -45,7 +51,11 @@ fn extracted_route_modules_exist_for_command_families() {
     let root = repo_root();
     for rel in [
         "crates/bijux-dag-app/src/routes/export_import_routes.rs",
+        "crates/bijux-dag-app/src/routes/inspect_routes.rs",
+        "crates/bijux-dag-app/src/routes/prove_verify_routes.rs",
+        "crates/bijux-dag-app/src/routes/run_routes.rs",
         "crates/bijux-dag-app/src/routes/surface_routes.rs",
+        "crates/bijux-dag-app/src/routes/validate_routes.rs",
     ] {
         assert!(root.join(rel).exists(), "missing extracted route module: {rel}");
     }
