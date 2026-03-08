@@ -1,0 +1,61 @@
+{
+  "version": "v1",
+  "domain": "fixture-tooling",
+  "cases": [
+    {
+      "id": "graph-fixture-generation-utility",
+      "coverage": ["graph-generation", "fixture-determinism"],
+      "source": "crates/bijux-dag-testkit/src/lib.rs"
+    },
+    {
+      "id": "run-fixture-generation-utility",
+      "coverage": ["run-generation", "fixture-portability"],
+      "source": "crates/bijux-dag-testkit/src/lib.rs"
+    },
+    {
+      "id": "artifact-fixture-generation-utility",
+      "coverage": ["artifact-generation", "fixture-validation"],
+      "source": "crates/bijux-dag-testkit/src/lib.rs"
+    },
+    {
+      "id": "replay-fixture-generation-utility",
+      "coverage": ["replay-generation", "fixture-validation"],
+      "source": "crates/bijux-dag-testkit/src/lib.rs"
+    },
+    {
+      "id": "diff-fixture-governance-coverage",
+      "coverage": ["diff-generation", "fixture-governance"],
+      "source": "docs/reports/foundation/diff_fixture_inventory_report.md"
+    },
+    {
+      "id": "bundle-fixture-generation-utility",
+      "coverage": ["bundle-generation", "fixture-portability"],
+      "source": "crates/bijux-dag-testkit/src/lib.rs"
+    },
+    {
+      "id": "fixture-validation-cli-surface",
+      "coverage": ["fixture-validation-cli", "schema-validation"],
+      "source": "crates/bijux-dev-dag/src/commands/cli.rs"
+    },
+    {
+      "id": "fuzz-corpus-generation-surface",
+      "coverage": ["fuzz-corpus-generation", "fixture-governance"],
+      "source": "evidence/cache/determinism/regression_corpus.json"
+    },
+    {
+      "id": "benchmark-scenario-generation-surface",
+      "coverage": ["benchmark-scenario-generation", "fixture-governance"],
+      "source": "docs/spec/BENCHMARK_SCENARIO_CONTRACT.md"
+    },
+    {
+      "id": "fixture-duplication-detection",
+      "coverage": ["duplication-detection", "fixture-cleanup"],
+      "source": "docs/reports/foundation/duplicate_fixtures_semantic_hash_report.md"
+    },
+    {
+      "id": "fixture-cleanup-governance",
+      "coverage": ["cleanup-automation", "lifecycle-governance"],
+      "source": "docs/reports/foundation/repo_tree_cleanup_candidates_report.md"
+    }
+  ]
+}

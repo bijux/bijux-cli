@@ -1,0 +1,28 @@
+{
+  "id": "fixture-tooling-governance",
+  "description": "Fixture generation, validation, governance, and lifecycle contracts",
+  "owners": [
+    "dev-dag"
+  ],
+  "includes": [
+    {
+      "type": "test",
+      "path": "crates/bijux-dag-testkit/tests/fixture_loader_contracts.rs"
+    },
+    {
+      "type": "test",
+      "path": "crates/bijux-dev-dag/tests/fixture_loader_governance_contracts.rs"
+    },
+    {
+      "type": "test",
+      "path": "crates/bijux-dev-dag/tests/fixture_tooling_completion_contracts.rs"
+    }
+  ],
+  "artifacts": [
+    "evidence/cache/fixture_tooling/regression_corpus.json",
+    "docs/reports/foundation/fixture_tooling_coverage_report.md",
+    "docs/reports/foundation/fixture_duplication_detection_report.md",
+    "docs/reports/foundation/fixture_cleanup_automation_report.md",
+    "docs/reports/foundation/fixture_lifecycle_governance_report.md"
+  ]
+}
