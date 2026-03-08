@@ -32,5 +32,5 @@ Tradeoff:
 
 ## Follow-up
 
-- Keep `tools/generate_human_output_governance_reports.sh` in governance workflows.
+- Keep `cargo run -p bijux-dev-dag --bin generate_human_output_governance_reports` in governance workflows.
 - Treat non-zero human-output snapshot gaps as release blockers.

@@ -38,5 +38,5 @@ Tradeoff:
 
 ## Follow-up
 
-- Keep `tools/generate_json_output_governance_reports.sh` in release workflows.
+- Keep `cargo run -p bijux-dev-dag --bin generate_json_output_governance_reports` in release workflows.
 - Treat non-zero gap report counts as blocking until resolved.
