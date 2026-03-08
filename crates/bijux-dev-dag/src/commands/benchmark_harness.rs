@@ -85,3 +85,51 @@ pub(super) fn verify_scenario_registry(root: &Path) -> Result<(), String> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{load_scenario_registry, verify_scenario_registry};
+    use std::fs;
+
+    #[test]
+    fn scenario_registry_loader_and_verifier_accepts_complete_fixture_set() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::create_dir_all(dir.path().join("evidence/perf/scenarios")).expect("mkdir scenarios");
+        let required_ids = [
+            "tiny-canonical",
+            "wide-canonical",
+            "deep-canonical",
+            "tenk-nodes-canonical",
+            "large-artifact-canonical",
+            "cache-heavy-canonical",
+            "failure-injection-canonical",
+            "replay-canonical",
+            "diff-canonical",
+            "portability-canonical",
+            "determinism-score",
+            "replay-fidelity-score",
+            "explainability-quality",
+            "artifact-lineage-completeness",
+            "portability-success-rate",
+            "inspect-history-latency",
+        ];
+
+        let mut entries = Vec::new();
+        for id in required_ids {
+            let rel = format!("evidence/perf/scenarios/{id}.json");
+            fs::write(dir.path().join(&rel), "{}").expect("write scenario");
+            entries.push(serde_json::json!({ "id": id, "path": rel }));
+        }
+        let registry = serde_json::json!({ "entries": entries });
+        fs::create_dir_all(dir.path().join("evidence/perf")).expect("mkdir perf");
+        fs::write(
+            dir.path().join("evidence/perf/scenario_registry.json"),
+            serde_json::to_string_pretty(&registry).expect("serialize"),
+        )
+        .expect("write registry");
+
+        let loaded = load_scenario_registry(dir.path()).expect("load registry");
+        assert_eq!(loaded.entries.len(), 16);
+        verify_scenario_registry(dir.path()).expect("verify registry");
+    }
+}

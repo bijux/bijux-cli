@@ -64,6 +64,24 @@ fn is_registry_asset_path(path: &str) -> bool {
     path.ends_with(".json") || path.ends_with(".dag.json")
 }
 
+#[cfg(test)]
+mod tests {
+    use super::is_registry_asset_path;
+
+    #[test]
+    fn registry_asset_path_classifier_accepts_governed_roots_only() {
+        assert!(is_registry_asset_path(
+            "evidence/authoring/examples/example.dag.json"
+        ));
+        assert!(is_registry_asset_path("evidence/perf/scenarios/latency.json"));
+        assert!(!is_registry_asset_path(
+            "evidence/ownership/evidence_ledger.json"
+        ));
+        assert!(!is_registry_asset_path("evidence/perf/scenarios/readme.md"));
+        assert!(!is_registry_asset_path("docs/reports/foundation/anything.json"));
+    }
+}
+
 fn build_evidence_registry(root: &Path) -> Result<Value, String> {
     let ledger: Value = serde_json::from_str(
         &fs::read_to_string(root.join("evidence/ownership/evidence_ledger.json"))

@@ -339,6 +339,41 @@ pub fn render_consumers_to_families_report(assets: &[EvidenceAsset]) -> String {
     lines.join("\n")
 }
 
+#[cfg(test)]
+mod access_tests {
+    use super::{
+        classify_consumer_kind, render_assets_to_consumers_report,
+        render_consumers_to_families_report, EvidenceAsset,
+    };
+
+    #[test]
+    fn consumer_kind_classifier_is_stable() {
+        assert_eq!(classify_consumer_kind("release-suite"), "suite");
+        assert_eq!(classify_consumer_kind("cache-contracts"), "contract");
+        assert_eq!(classify_consumer_kind("runtime-verify"), "runtime");
+        assert_eq!(classify_consumer_kind("benchmark-latency"), "performance");
+        assert_eq!(classify_consumer_kind("custom-consumer"), "other");
+    }
+
+    #[test]
+    fn evidence_access_reports_render_expected_tables() {
+        let assets = vec![EvidenceAsset {
+            id: "cache-hit".to_string(),
+            kind: "cache".to_string(),
+            canonical_path: "evidence/cache/scenarios/cache-hit.json".to_string(),
+            consumers: vec!["release-suite".to_string(), "runtime-verify".to_string()],
+            trust_properties: vec!["deterministic".to_string()],
+        }];
+
+        let a2c = render_assets_to_consumers_report(&assets);
+        assert!(a2c.contains("| `cache-hit` | `cache` | `release-suite, runtime-verify` |"));
+
+        let c2f = render_consumers_to_families_report(&assets);
+        assert!(c2f.contains("| `release-suite` | `suite` | `cache` |"));
+        assert!(c2f.contains("| `runtime-verify` | `runtime` | `cache` |"));
+    }
+}
+
 pub fn as_json(assets: &[&EvidenceAsset]) -> Value {
     json!(assets
         .iter()
