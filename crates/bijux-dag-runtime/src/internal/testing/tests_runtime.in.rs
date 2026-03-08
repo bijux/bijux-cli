@@ -4,6 +4,12 @@ mod tests {
     use crate::test_support::{docker_available, param_object, sample_graph};
     use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
     use std::fs;
+    use std::sync::{Mutex, OnceLock};
+
+    fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().expect("lock")
+    }
 
     #[test]
     fn run_produces_artifacts() {
@@ -890,6 +896,7 @@ mod tests {
 
     #[test]
     fn shell_env_is_clean_except_allowlist() {
+        let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("BIJUX_TEST_FOO", "allowed");
         std::env::set_var("BIJUX_TEST_BAR", "blocked");
@@ -936,7 +943,20 @@ mod tests {
     }
 
     #[test]
+    fn shaped_environment_supports_container_allowlist_contract() {
+        let _env_lock = process_env_lock();
+        std::env::set_var("BIJUX_TEST_FOO", "allowed");
+        std::env::set_var("BIJUX_TEST_BAR", "blocked");
+        let shaped = shaped_environment(true, &["BIJUX_TEST_FOO".to_string()], &[]);
+        assert_eq!(shaped.get("BIJUX_TEST_FOO"), Some(&"allowed".to_string()));
+        assert!(!shaped.contains_key("BIJUX_TEST_BAR"));
+        std::env::remove_var("BIJUX_TEST_FOO");
+        std::env::remove_var("BIJUX_TEST_BAR");
+    }
+
+    #[test]
     fn external_adapter_executes() {
+        let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
         let adapter_dir = dir.path().join("adapters");
         fs::create_dir_all(&adapter_dir).unwrap();
@@ -992,6 +1012,279 @@ mod tests {
             .join("out");
         assert!(out.exists());
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+    }
+
+    #[test]
+    fn external_adapter_uses_shaped_environment_allowlist() {
+        let _env_lock = process_env_lock();
+        let dir = tempfile::tempdir().unwrap();
+        let adapter_dir = dir.path().join("adapters");
+        fs::create_dir_all(&adapter_dir).unwrap();
+        let adapter_path = adapter_dir.join("env-adapter");
+        fs::write(
+            &adapter_path,
+            r#"#!/bin/sh
+if [ "$1" = "info" ]; then
+  echo '{"id":"fake","version":"0.1","required_effects":{"filesystem":true,"env":true,"network":false,"clock":false},"supported_kinds":["fake"],"produces_outputs_schema_version":"v0.1"}'
+  exit 0
+fi
+if [ "$1" = "execute" ]; then
+  outdir=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --outdir) outdir="$2"; shift 2;;
+      --workdir|--node-spec) shift 2;;
+      *) shift;;
+    esac
+  done
+  mkdir -p "$outdir"
+  env | grep '^BIJUX_TEST_FOO=' > "$outdir/out"
+  exit 0
+fi
+exit 1
+"#,
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&adapter_path).unwrap().permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&adapter_path, perms).unwrap();
+        }
+        std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+        std::env::set_var("BIJUX_TEST_FOO", "allowed");
+        std::env::set_var("BIJUX_TEST_BAR", "blocked");
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::External("fake".to_string()),
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem, Effect::Env],
+                env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let out = fs::read_to_string(
+            final_path
+                .join("nodes")
+                .join("n1")
+                .join("outputs")
+                .join("out"),
+        )
+        .unwrap();
+        assert!(out.contains("BIJUX_TEST_FOO=allowed"));
+        assert!(!out.contains("BIJUX_TEST_BAR=blocked"));
+        std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+        std::env::remove_var("BIJUX_TEST_FOO");
+        std::env::remove_var("BIJUX_TEST_BAR");
+    }
+
+    #[test]
+    fn external_adapter_rejects_oversized_node_spec_payload() {
+        let _env_lock = process_env_lock();
+        let dir = tempfile::tempdir().unwrap();
+        let adapter_dir = dir.path().join("adapters");
+        fs::create_dir_all(&adapter_dir).unwrap();
+        let adapter_path = adapter_dir.join("fake-adapter");
+        fs::write(
+            &adapter_path,
+            include_str!("../../../tests/bin/fake_adapter.sh"),
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&adapter_path).unwrap().permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&adapter_path, perms).unwrap();
+        }
+        std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+        let big = "x".repeat(300_000);
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::External("fake".to_string()),
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: param_object(vec![("payload", Value::String(big))]),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("node spec payload exceeds"));
+        std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+    }
+
+    #[test]
+    fn output_validation_rejects_symlinked_intermediate_components() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let dir = tempfile::tempdir().unwrap();
+            let outdir = dir.path().join("outputs");
+            fs::create_dir_all(outdir.join("safe")).unwrap();
+            symlink(outdir.join("safe"), outdir.join("link")).unwrap();
+            fs::write(outdir.join("safe").join("result.txt"), b"ok").unwrap();
+            let outputs = vec![FileOutput {
+                name: "out".to_string(),
+                path: "link/result.txt".to_string(),
+            }];
+            let failure = validate_outputs_dir(&outdir, &outputs).expect("must fail");
+            assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
+            assert!(failure.message.contains("traverses symlink"));
+        }
+    }
+
+    #[test]
+    fn output_validation_skips_symlink_loops_during_undeclared_scan() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let dir = tempfile::tempdir().unwrap();
+            let outdir = dir.path().join("outputs");
+            fs::create_dir_all(outdir.join("real")).unwrap();
+            fs::write(outdir.join("real").join("declared.txt"), b"ok").unwrap();
+            symlink(outdir.clone(), outdir.join("real").join("loop")).unwrap();
+            let outputs = vec![FileOutput {
+                name: "declared".to_string(),
+                path: "real/declared.txt".to_string(),
+            }];
+            assert!(validate_outputs_dir(&outdir, &outputs).is_none());
+        }
+    }
+
+    #[test]
+    fn local_shell_execution_enforces_node_timeout() {
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "n1".to_string(),
+                kind: NodeKind::Shell,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: param_object(vec![(
+                    "argv",
+                    Value::Array(vec![
+                        Value::from("/bin/sh"),
+                        Value::from("-c"),
+                        Value::from("sleep 1; echo ok > ../outputs/out"),
+                    ]),
+                )]),
+                container: None,
+                timeout_ms: Some(50),
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("timed out"));
+    }
+
+    #[test]
+    fn container_execution_enforces_node_timeout_when_engine_is_available() {
+        if !docker_available() {
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: serde_json::Map::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![Node {
+                id: "c".to_string(),
+                kind: NodeKind::Container,
+                inputs: vec![],
+                outputs: vec![FileOutput {
+                    name: "out".to_string(),
+                    path: "out".to_string(),
+                }],
+                params: ParamValue::default(),
+                container: Some(ContainerSpec {
+                    engine: "docker".to_string(),
+                    image: "alpine:3.20".to_string(),
+                    argv: vec![
+                        "/bin/sh".to_string(),
+                        "-c".to_string(),
+                        "sleep 2; echo ok > /bijux/node/outputs/out".to_string(),
+                    ],
+                    workdir: Some("/bijux/node/work".to_string()),
+                    env_allowlist: vec![],
+                }),
+                timeout_ms: Some(100),
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+            }],
+            edges: vec![],
+        };
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&graph, dir.path(), RuntimeConfig::default())
+            .unwrap();
+        let trace = fs::read_to_string(final_path.join("nodes").join("c").join("trace.json"))
+            .unwrap();
+        assert!(trace.contains("timed out"));
     }
 
     #[test]
@@ -1058,6 +1351,7 @@ mod tests {
 
     #[test]
     fn external_adapter_path_must_be_file() {
+        let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
         let adapter_dir = dir.path().join("adapters");
         fs::create_dir_all(&adapter_dir).unwrap();

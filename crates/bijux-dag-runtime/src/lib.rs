@@ -526,6 +526,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
+use std::process::Output;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
@@ -771,16 +772,10 @@ impl Adapter for ShellAdapter {
         let mut cmd = subprocess::command(&args[0]);
         cmd.args(&args[1..]);
         cmd.current_dir(&work_dir);
-        if exec.policy.clean_env {
-            cmd.env_clear();
-        }
-        for key in &node.env_allowlist {
-            if let Ok(val) = std::env::var(key) {
-                cmd.env(key, val);
-            }
-        }
+        apply_shaped_env(&mut cmd, exec.policy.clean_env, &node.env_allowlist, &[]);
 
-        let output = cmd.output()?;
+        let output =
+            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
@@ -912,10 +907,8 @@ impl Adapter for ContainerAdapter {
             .unwrap_or_else(|| "/bijux/node/work".to_string());
         cmd.args(["--workdir", &workdir]);
 
-        for key in &spec.env_allowlist {
-            if let Ok(val) = std::env::var(key) {
-                cmd.arg("-e").arg(format!("{}={}", key, val));
-            }
+        for (key, val) in shaped_environment(exec.policy.clean_env, &spec.env_allowlist, &[]) {
+            cmd.arg("-e").arg(format!("{}={}", key, val));
         }
 
         cmd.arg(&spec.image);
@@ -923,7 +916,8 @@ impl Adapter for ContainerAdapter {
             cmd.arg(part);
         }
 
-        let output = cmd.output()?;
+        let output =
+            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, &Value::Null))?;
         let exit_code = output.status.code();
 
         exec.fs.write(&stdout_path, &output.stdout)?;
@@ -1770,6 +1764,14 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
             });
         }
         let path = dir.join(&out.path);
+        if has_symlink_component(dir, Path::new(&out.path)) {
+            return Some(FailureInfo {
+                kind: "Execution".to_string(),
+                code: "OUTPUT_PATH_INVALID".to_string(),
+                message: format!("output path traverses symlink: {}", out.path),
+                details: None,
+            });
+        }
         if !path.exists() {
             return Some(FailureInfo {
                 kind: "Execution".to_string(),
@@ -1803,6 +1805,20 @@ pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option
     None
 }
 
+fn has_symlink_component(root: &Path, relative: &Path) -> bool {
+    let mut current = root.to_path_buf();
+    for component in relative.components() {
+        current.push(component.as_os_str());
+        if std::fs::symlink_metadata(&current)
+            .map(|meta| meta.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            return true;
+        }
+    }
+    false
+}
+
 fn collect_relative_files(
     root: &Path,
     current: &Path,
@@ -1814,6 +1830,12 @@ fn collect_relative_files(
     };
     for entry in entries.flatten() {
         let path = entry.path();
+        if std::fs::symlink_metadata(&path)
+            .map(|meta| meta.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            continue;
+        }
         if path.is_dir() {
             collect_relative_files(root, &path, out);
             continue;
@@ -1824,6 +1846,64 @@ fn collect_relative_files(
             }
         }
     }
+}
+
+fn apply_shaped_env(
+    cmd: &mut std::process::Command,
+    clean_env: bool,
+    allowlist: &[String],
+    denylist: &[String],
+) {
+    cmd.env_clear();
+    for (key, value) in shaped_environment(clean_env, allowlist, denylist) {
+        cmd.env(key, value);
+    }
+}
+
+pub(crate) fn shaped_environment(
+    clean_env: bool,
+    allowlist: &[String],
+    denylist: &[String],
+) -> BTreeMap<String, String> {
+    let ambient: BTreeMap<String, String> = std::env::vars().collect();
+    let mut explicit = BTreeMap::new();
+    if clean_env && !allowlist.is_empty() {
+        for (key, value) in &ambient {
+            if is_allowed_env_key(key, allowlist) {
+                explicit.insert(key.clone(), value.clone());
+            }
+        }
+    }
+    shape_environment(&ambient, clean_env, allowlist, denylist, &explicit)
+}
+
+pub(crate) fn command_output_with_timeout(
+    cmd: &mut std::process::Command,
+    timeout_ms: Option<u64>,
+) -> Result<Output, RuntimeError> {
+    let Some(limit_ms) = timeout_ms else {
+        return cmd.output().map_err(RuntimeError::Io);
+    };
+    let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
+    let start = std::time::Instant::now();
+    loop {
+        if let Some(_status) = child.try_wait().map_err(RuntimeError::Io)? {
+            return child.wait_with_output().map_err(RuntimeError::Io);
+        }
+        if start.elapsed().as_millis() > limit_ms as u128 {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(RuntimeError::Executor(format!(
+                "execution timed out after {limit_ms}ms"
+            )));
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
+    node.timeout_ms
+        .or_else(|| params.get("timeout_ms").and_then(|v| v.as_u64()))
 }
 
 fn container_trace(

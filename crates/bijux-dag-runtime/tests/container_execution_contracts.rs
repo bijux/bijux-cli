@@ -68,6 +68,40 @@ fn container_contract_classifies_missing_image_and_missing_outputs() {
 }
 
 #[test]
+fn container_contract_accepts_image_starting_with_dash_as_literal_image_name() {
+    let contract = ContainerExecutionContract {
+        image: "-image".to_string(),
+        command: vec!["/bin/run".to_string()],
+        env: BTreeMap::new(),
+        mounts: vec![ContainerMount {
+            local_path: "/work/run/input".to_string(),
+            container_path: "/mnt/input".to_string(),
+            readonly: true,
+        }],
+        declared_outputs: vec!["out/result.json".to_string()],
+        timeout_ms: None,
+    };
+    assert!(validate_container_contract(&contract).is_ok());
+}
+
+#[test]
+fn container_contract_accepts_image_with_option_like_segments_as_image_literal() {
+    let contract = ContainerExecutionContract {
+        image: "registry.local/repo/--debug:latest".to_string(),
+        command: vec!["/bin/run".to_string()],
+        env: BTreeMap::new(),
+        mounts: vec![ContainerMount {
+            local_path: "/work/run/input".to_string(),
+            container_path: "/mnt/input".to_string(),
+            readonly: true,
+        }],
+        declared_outputs: vec!["out/result.json".to_string()],
+        timeout_ms: None,
+    };
+    assert!(validate_container_contract(&contract).is_ok());
+}
+
+#[test]
 fn container_path_mapping_and_normalization_are_stable() {
     let mapped = map_local_path_to_container(
         Path::new("/work/run"),

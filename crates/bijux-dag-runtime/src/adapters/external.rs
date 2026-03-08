@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
 
+const MAX_NODE_SPEC_BYTES: usize = 256 * 1024;
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalAdapterInfo {
@@ -92,6 +94,12 @@ impl Adapter for ExternalAdapter {
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
         let node_spec = serde_json::to_string(node)?;
+        if node_spec.len() > MAX_NODE_SPEC_BYTES {
+            return Err(RuntimeError::Executor(format!(
+                "node spec payload exceeds {} bytes",
+                MAX_NODE_SPEC_BYTES
+            )));
+        }
         let mut cmd = Command::new(&self.path);
         cmd.args([
             "execute",
@@ -103,15 +111,17 @@ impl Adapter for ExternalAdapter {
             &outputs_dir.display().to_string(),
         ]);
         cmd.current_dir(&work_dir);
-        if exec.policy.clean_env {
-            cmd.env_clear();
+        cmd.env_clear();
+        for (key, value) in
+            crate::shaped_environment(exec.policy.clean_env, &node.env_allowlist, &[])
+        {
+            cmd.env(key, value);
         }
-        for key in &node.env_allowlist {
-            if let Ok(val) = std::env::var(key) {
-                cmd.env(key, val);
-            }
-        }
-        let output = cmd.output()?;
+        let output = crate::command_output_with_timeout(
+            &mut cmd,
+            node.timeout_ms
+                .or_else(|| ctx.params.get("timeout_ms").and_then(|v| v.as_u64())),
+        )?;
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
