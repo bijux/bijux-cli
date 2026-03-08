@@ -1,3 +1,4 @@
+pub(crate) mod artifact_routes;
 pub(crate) mod diagnostics_routes;
 pub(crate) mod diff_routes;
 pub(crate) mod export_import_routes;
@@ -9,6 +10,7 @@ pub(crate) mod preconditions;
 pub(crate) mod prove_verify_routes;
 pub(crate) mod replay_routes;
 pub(crate) mod response;
+pub(crate) mod renderer;
 pub(crate) mod run_routes;
 pub(crate) mod run_lookup;
 pub(crate) mod runs_routes;

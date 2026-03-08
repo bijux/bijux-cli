@@ -33,6 +33,7 @@ fn lib_routes_export_import_and_capability_commands_through_route_modules() {
     for token in [
         "routes::export_import_routes::handle_export_command",
         "routes::export_import_routes::handle_import_command",
+        "routes::artifact_routes::handle_artifact_inspect_command",
         "routes::validate_routes::handle_validate_command",
         "routes::run_routes::handle_run_command",
         "routes::inspect_routes::handle_explain_command",
@@ -51,6 +52,7 @@ fn extracted_route_modules_exist_for_command_families() {
     let root = repo_root();
     for rel in [
         "crates/bijux-dag-app/src/routes/export_import_routes.rs",
+        "crates/bijux-dag-app/src/routes/artifact_routes.rs",
         "crates/bijux-dag-app/src/routes/inspect_routes.rs",
         "crates/bijux-dag-app/src/routes/prove_verify_routes.rs",
         "crates/bijux-dag-app/src/routes/run_routes.rs",

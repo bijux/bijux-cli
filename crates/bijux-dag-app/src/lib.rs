@@ -462,21 +462,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ArtifactInspect {
             run_dir,
             artifact_id,
-        } => {
-            let details = inspect_artifact(run_dir, artifact_id)?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.artifact-inspect",
-                    true,
-                    details,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&details).unwrap());
-            Ok(ExitCode::SUCCESS)
-        }
+        } => routes::artifact_routes::handle_artifact_inspect_command(&cli, run_dir, artifact_id),
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
