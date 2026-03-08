@@ -8,10 +8,13 @@ use std::path::Path;
 fn core_artifact_fast_suite_covers_direct_coverage_contract_targets() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let suite = root.join("configs/suites/core_artifact_direct_coverage_fast.json");
-    assert!(suite.exists(), "missing core/artifact direct coverage fast suite");
+    assert!(
+        suite.exists(),
+        "missing core/artifact direct coverage fast suite"
+    );
 
-    let payload: Value =
-        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite")).expect("parse suite");
+    let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
+        .expect("parse suite");
 
     assert_eq!(payload["id"], "core-artifact-direct-coverage-fast");
     let commands = payload["commands"].as_array().expect("commands array");

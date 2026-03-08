@@ -10,13 +10,18 @@ fn repo_root() -> std::path::PathBuf {
 #[test]
 fn core_artifact_coverage_reports_exist_and_stay_scoped() {
     let root = repo_root();
-    let completion = root.join("docs/reports/foundation/core_artifact_direct_coverage_completion_report.md");
-    let uncovered = root.join("docs/reports/foundation/core_artifact_still_uncovered_product_paths_report.md");
+    let completion =
+        root.join("docs/reports/foundation/core_artifact_direct_coverage_completion_report.md");
+    let uncovered =
+        root.join("docs/reports/foundation/core_artifact_still_uncovered_product_paths_report.md");
     let suite = root.join("configs/suites/core_artifact_direct_coverage_fast.json");
 
     assert!(completion.exists(), "missing completion report for 281-300");
     assert!(uncovered.exists(), "missing uncovered product paths report");
-    assert!(suite.exists(), "missing core/artifact direct coverage fast suite");
+    assert!(
+        suite.exists(),
+        "missing core/artifact direct coverage fast suite"
+    );
 
     let completion_body = fs::read_to_string(completion).expect("read completion report");
     for required in [

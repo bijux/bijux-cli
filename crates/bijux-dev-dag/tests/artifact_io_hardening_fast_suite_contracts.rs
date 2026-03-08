@@ -16,8 +16,8 @@ fn artifact_io_hardening_fast_suite_covers_direct_contract_targets() {
     let suite = root.join("configs/suites/artifact_io_hardening_fast.json");
     assert!(suite.exists(), "missing artifact io hardening fast suite");
 
-    let payload: Value =
-        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite")).expect("parse suite");
+    let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
+        .expect("parse suite");
     assert_eq!(payload["id"], "artifact-io-hardening-fast");
 
     let commands = payload["commands"].as_array().expect("commands array");

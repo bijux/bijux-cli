@@ -23,7 +23,10 @@ fn artifact_io_hardening_reports_and_adr_exist() {
         "docs/reports/foundation/artifact_io_hardening_completion_report.md",
         "docs/adr/20260308-artifact-crate-scope-runtime-app-boundaries.md",
     ] {
-        assert!(root.join(rel).exists(), "missing artifact io hardening output: {rel}");
+        assert!(
+            root.join(rel).exists(),
+            "missing artifact io hardening output: {rel}"
+        );
     }
 
     let completion = fs::read_to_string(

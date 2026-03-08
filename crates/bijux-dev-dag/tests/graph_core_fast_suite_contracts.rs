@@ -16,8 +16,8 @@ fn graph_core_fast_suite_covers_canonical_topology_validate_scope() {
     let suite = root.join("configs/suites/graph_core_canonical_topology_validate_fast.json");
     assert!(suite.exists(), "missing graph core fast suite");
 
-    let payload: Value =
-        serde_json::from_str(&fs::read_to_string(&suite).expect("read suite")).expect("parse suite");
+    let payload: Value = serde_json::from_str(&fs::read_to_string(&suite).expect("read suite"))
+        .expect("parse suite");
     assert_eq!(payload["id"], "graph-core-canonical-topology-validate-fast");
 
     let commands = payload["commands"].as_array().expect("commands array");

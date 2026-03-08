@@ -22,8 +22,14 @@ fn graph_core_reports_exist_and_track_scope_completion() {
     let completion =
         root.join("docs/reports/foundation/graph_core_direct_coverage_completion_report.md");
 
-    assert!(low_coverage.exists(), "missing graph core low coverage report");
-    assert!(inventory.exists(), "missing graph core fixture inventory report");
+    assert!(
+        low_coverage.exists(),
+        "missing graph core low coverage report"
+    );
+    assert!(
+        inventory.exists(),
+        "missing graph core fixture inventory report"
+    );
     assert!(completion.exists(), "missing graph core completion report");
 
     let completion_body = fs::read_to_string(completion).expect("read completion report");
