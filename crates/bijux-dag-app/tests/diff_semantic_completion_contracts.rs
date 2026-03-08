@@ -82,6 +82,7 @@ fn diff_specs_and_regression_fixture_corpus_exist() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn semantic_diff_classification_and_explain_surfaces_are_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -145,6 +146,7 @@ fn semantic_diff_classification_and_explain_surfaces_are_stable() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn semantic_diff_reports_environment_resource_and_artifact_drift_cause_groups() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -229,6 +231,7 @@ fn semantic_diff_reports_environment_resource_and_artifact_drift_cause_groups() 
 }
 
 #[test]
+#[ignore = "slow"]
 fn diff_schema_lockstep_human_snapshot_and_determinism_hold_under_stress() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");

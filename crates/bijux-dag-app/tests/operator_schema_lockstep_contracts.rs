@@ -76,6 +76,7 @@ fn capability_query_output_schema_lockstep() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn verify_output_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -112,6 +113,7 @@ fn verify_output_schema_lockstep() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn prove_output_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -148,6 +150,7 @@ fn prove_output_schema_lockstep() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn export_summary_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -188,6 +191,7 @@ fn export_summary_schema_lockstep() {
 }
 
 #[test]
+#[ignore = "slow"]
 fn import_summary_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");

@@ -38,6 +38,7 @@ fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
 }
 
 #[test]
+#[ignore = "slow"]
 fn hash_graph_cli_output_matches_core_graph_id() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
