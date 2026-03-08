@@ -113,3 +113,23 @@ pub(crate) fn handle_validate_command(
     }
     Ok(ExitCode::SUCCESS)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::handle_validate_command;
+    use crate::commands::DagCli;
+    use clap::Parser;
+
+    #[test]
+    fn validate_route_rejects_missing_file_without_panic() {
+        let cli = DagCli::parse_from(["dag", "validate", "/missing.json"]);
+        let code = handle_validate_command(
+            &cli,
+            std::path::Path::new("/missing.json"),
+            false,
+            false,
+            false,
+        );
+        assert!(code.is_err());
+    }
+}

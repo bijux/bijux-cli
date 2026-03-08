@@ -1,4 +1,5 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
+use crate::routes::preconditions::require_file;
 use crate::{emit_json, map_materialize_mode, parse_graph, parse_selectors, read_file, ExitCode};
 use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use serde_json::json;
@@ -30,22 +31,17 @@ pub(crate) fn handle_run_command(
     cli: &DagCli,
     req: RunRouteRequest<'_>,
 ) -> Result<ExitCode, ExitCode> {
+    require_file(req.dag)?;
     let input = read_file(req.dag)?;
     let graph = parse_graph(&input)?;
     let runtime = Runtime::new();
-    let mut deny_network = req.deny_network;
-    let mut deny_clock = req.deny_clock;
+    let (deny_network, deny_clock, clean_env) = effective_policy_flags(
+        req.deny_network,
+        req.deny_clock,
+        req.clean_env,
+        req.hermetic,
+    );
     let deny_env = req.deny_env;
-    let clean_env_flag = req.clean_env;
-    let mut clean_env = clean_env_flag;
-    if !clean_env_flag {
-        clean_env = true;
-    }
-    if req.hermetic {
-        deny_network = true;
-        deny_clock = true;
-        clean_env = true;
-    }
     let selectors = parse_selectors(req.select, req.exclude)?;
     let options = RuntimeConfig {
         jobs: req.jobs,
@@ -89,4 +85,39 @@ pub(crate) fn handle_run_command(
         println!("run dir: {}", run_path.display());
     }
     Ok(ExitCode::SUCCESS)
+}
+
+fn effective_policy_flags(
+    deny_network: bool,
+    deny_clock: bool,
+    clean_env: bool,
+    hermetic: bool,
+) -> (bool, bool, bool) {
+    if hermetic {
+        return (true, true, true);
+    }
+    let _ = clean_env;
+    let normalized_clean_env = true;
+    (deny_network, deny_clock, normalized_clean_env)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::effective_policy_flags;
+
+    #[test]
+    fn hermetic_forces_isolation_flags() {
+        assert_eq!(
+            effective_policy_flags(false, false, false, true),
+            (true, true, true)
+        );
+    }
+
+    #[test]
+    fn non_hermetic_preserves_network_clock_and_normalizes_clean_env() {
+        assert_eq!(
+            effective_policy_flags(true, false, false, false),
+            (true, false, true)
+        );
+    }
 }

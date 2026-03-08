@@ -1,4 +1,6 @@
 use crate::commands::DagCli;
+use crate::routes::path_resolution::{manifest_path, node_outputs_index_path, node_trace_path};
+use crate::routes::run_lookup::read_manifest_json;
 use crate::{emit_json, load_snapshot, read_file, read_node_traces, ExitCode};
 use serde_json::{json, Value};
 use std::fs;
@@ -9,11 +11,10 @@ pub(crate) fn handle_explain_command(
     run_dir: &Path,
     node: &Option<String>,
 ) -> Result<ExitCode, ExitCode> {
-    let manifest_path = run_dir.join("manifest.json");
-    let manifest = read_file(&manifest_path)?;
+    let manifest = read_file(&manifest_path(run_dir))?;
     if let Some(node_id) = node.as_ref() {
         let snapshot = load_snapshot(run_dir)?;
-        let trace = read_file(&run_dir.join("nodes").join(node_id).join("trace.json"))?;
+        let trace = read_file(&node_trace_path(run_dir, node_id))?;
         let node_info = snapshot
             .graph
             .nodes
@@ -27,14 +28,7 @@ pub(crate) fn handle_explain_command(
             .filter(|e| e.to.node_id == *node_id)
             .map(|e| e.from.node_id.clone())
             .collect::<Vec<_>>();
-        let outputs_index = read_file(
-            &run_dir
-                .join("nodes")
-                .join(node_id)
-                .join("outputs")
-                .join("index.json"),
-        )
-        .ok();
+        let outputs_index = read_file(&node_outputs_index_path(run_dir, node_id)).ok();
         let resolved_params = read_file(
             &run_dir
                 .join("nodes")
@@ -79,7 +73,7 @@ pub(crate) fn handle_explain_command(
             println!("trace:\n{}", trace);
         }
     } else if cli.json {
-        let m: serde_json::Value = serde_json::from_str(&manifest).unwrap_or_default();
+        let m: serde_json::Value = read_manifest_json(run_dir).unwrap_or_default();
         let status = m.get("status").cloned().unwrap_or_default();
         let graph_fp = m.get("graph_fingerprint").cloned().unwrap_or_default();
         let counts = m.get("node_counts").cloned().unwrap_or_default();
@@ -102,7 +96,7 @@ pub(crate) fn handle_explain_command(
         });
         return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
     } else {
-        let m: serde_json::Value = serde_json::from_str(&manifest).unwrap_or_default();
+        let m: serde_json::Value = read_manifest_json(run_dir).unwrap_or_default();
         let status = m.get("status").cloned().unwrap_or_default();
         let graph_fp = m.get("graph_fingerprint").cloned().unwrap_or_default();
         let counts = m.get("node_counts").cloned().unwrap_or_default();
@@ -130,14 +124,8 @@ pub(crate) fn handle_node_command(
     run_dir: &Path,
     node: &str,
 ) -> Result<ExitCode, ExitCode> {
-    let trace = read_file(&run_dir.join("nodes").join(node).join("trace.json"))?;
-    let index = read_file(
-        &run_dir
-            .join("nodes")
-            .join(node)
-            .join("outputs")
-            .join("index.json"),
-    )?;
+    let trace = read_file(&node_trace_path(run_dir, node))?;
+    let index = read_file(&node_outputs_index_path(run_dir, node))?;
     if cli.json {
         return emit_json(
             cli,
@@ -154,7 +142,7 @@ pub(crate) fn handle_node_command(
 }
 
 pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
-    let manifest = read_file(&run_dir.join("manifest.json"))?;
+    let manifest = read_file(&manifest_path(run_dir))?;
     let nodes_dir = run_dir.join("nodes");
     let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
     let mut statuses = Vec::new();

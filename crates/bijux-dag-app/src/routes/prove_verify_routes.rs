@@ -1,4 +1,6 @@
 use crate::commands::DagCli;
+use crate::routes::output_selection::{output_selection, OutputSelection};
+use crate::routes::response::simple_failure_payload;
 use crate::routes::replay_routes;
 use crate::{emit_json, verify_bundle_invariants, verify_run, ExitCode};
 use serde_json::json;
@@ -41,8 +43,13 @@ pub(crate) fn handle_verify_command(
             },
         );
     }
-    println!("status: {}", report["status"]);
+    if output_selection(cli) == OutputSelection::Human {
+        println!("status: {}", report["status"]);
+    }
     if !ok {
+        if output_selection(cli) == OutputSelection::Quiet {
+            let _ = simple_failure_payload(ExitCode::from(3), "run verification failed");
+        }
         return Err(ExitCode::from(3));
     }
     Ok(ExitCode::SUCCESS)
@@ -90,8 +97,13 @@ pub(crate) fn handle_fsck_command(
             },
         );
     }
-    println!("status: {}", report["status"]);
+    if output_selection(cli) == OutputSelection::Human {
+        println!("status: {}", report["status"]);
+    }
     if !ok {
+        if output_selection(cli) == OutputSelection::Quiet {
+            let _ = simple_failure_payload(ExitCode::from(3), "fsck verification failed");
+        }
         return Err(ExitCode::from(3));
     }
     Ok(ExitCode::SUCCESS)
