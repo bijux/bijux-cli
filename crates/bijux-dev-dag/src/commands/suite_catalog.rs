@@ -280,3 +280,42 @@ pub(super) const RELEASE_SUITES: &[SuiteDef] = &[
 ];
 
 include!("suite_catalog_repo.inc");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn suite_ids(suites: &[SuiteDef]) -> Vec<&'static str> {
+        suites.iter().map(|suite| suite.id).collect()
+    }
+
+    #[test]
+    fn check_suites_include_style_quality_and_policy() {
+        let ids = suite_ids(CHECK_SUITES);
+        assert!(ids.contains(&"fmt"));
+        assert!(ids.contains(&"lint"));
+        assert!(ids.contains(&"dep-guard"));
+    }
+
+    #[test]
+    fn test_suites_include_runtime_and_governance() {
+        let ids = suite_ids(TEST_SUITES);
+        assert!(ids.contains(&"unit"));
+        assert!(ids.contains(&"arch"));
+        assert!(ids.contains(&"evidence-consumer-integrity"));
+    }
+
+    #[test]
+    fn contract_suites_include_adapter_and_backend_conformance() {
+        let ids = suite_ids(CONTRACT_SUITES);
+        assert!(ids.contains(&"adapter-conformance"));
+        assert!(ids.contains(&"backend-conformance"));
+    }
+
+    #[test]
+    fn release_suites_include_evidence_bundle_and_readiness() {
+        let ids = suite_ids(RELEASE_SUITES);
+        assert!(ids.contains(&"readiness"));
+        assert!(ids.contains(&"evidence-bundle"));
+    }
+}

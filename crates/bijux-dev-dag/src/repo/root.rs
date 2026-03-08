@@ -11,3 +11,15 @@ pub fn workspace_root() -> Result<PathBuf, String> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn workspace_root_finds_repo_root() {
+        let root = workspace_root().expect("workspace root");
+        assert!(root.join("Cargo.toml").exists());
+        assert!(root.join("crates").is_dir());
+    }
+}

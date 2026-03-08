@@ -20,3 +20,16 @@ impl CommandRunner for ProcessCommandRunner {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn process_command_runner_executes_successful_command() {
+        let runner = ProcessCommandRunner;
+        runner
+            .run("cargo", &["--version"])
+            .expect("cargo --version should succeed");
+    }
+}

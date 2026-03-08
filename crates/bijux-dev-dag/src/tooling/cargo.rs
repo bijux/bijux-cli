@@ -11,3 +11,13 @@ pub fn cargo_status(args: &[&str]) -> Result<(), String> {
         Err(format!("cargo command failed: cargo {}", args.join(" ")))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cargo_status_accepts_version_probe() {
+        cargo_status(&["--version"]).expect("cargo --version should succeed");
+    }
+}

@@ -10,3 +10,14 @@ pub fn git_status_porcelain() -> Result<String, String> {
     }
     String::from_utf8(output.stdout).map_err(|err| err.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn git_status_porcelain_returns_utf8_output() {
+        let output = git_status_porcelain().expect("git status");
+        assert!(!output.contains('\0'));
+    }
+}

@@ -231,3 +231,37 @@ pub(super) fn run_performance_evidence_guard() -> Result<(), String> {
 pub(super) fn run_performance_evidence_report() -> Result<(), String> {
     run_perf_evidence_summary()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn repo_root_points_to_workspace_with_evidence_dir() {
+        let root = repo_root().expect("repo root");
+        assert!(root.join("evidence").is_dir());
+        assert!(root.join("Cargo.toml").exists());
+    }
+
+    #[test]
+    fn perf_metadata_has_required_top_level_fields() {
+        let root = repo_root().expect("repo root");
+        let metadata = load_perf_metadata(&root).expect("perf metadata");
+        assert!(metadata.get("contract_reference").is_some());
+        assert!(metadata.get("scenarios").and_then(Value::as_object).is_some());
+        assert!(
+            metadata
+                .get("release_relevant_set")
+                .and_then(Value::as_array)
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn perf_scenario_file_collector_finds_json_assets() {
+        let root = repo_root().expect("repo root");
+        let scenarios = collect_perf_scenario_files(&root).expect("scenario files");
+        assert!(!scenarios.is_empty(), "expected perf scenario fixtures");
+        assert!(scenarios.iter().all(|path| path.ends_with(".json")));
+    }
+}
