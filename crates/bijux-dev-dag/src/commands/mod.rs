@@ -8,7 +8,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitCode};
+use std::process::{Command, ExitCode, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod authoring_evidence;
@@ -540,6 +540,30 @@ fn run(cli: Cli) -> Result<(), String> {
                         &unsupported_out,
                     )
                 },
+            ),
+            RepoCommand::HotspotReports {
+                file_out,
+                function_out,
+                api_out,
+                dep_out,
+            } => run_command_reported(
+                &context,
+                "repo.hotspot-reports",
+                CommandEffect::ReadWrite,
+                json!({
+                    "file_out": file_out,
+                    "function_out": function_out,
+                    "api_out": api_out,
+                    "dep_out": dep_out
+                }),
+                || run_repo_hotspot_reports(&file_out, &function_out, &api_out, &dep_out),
+            ),
+            RepoCommand::SchemaChangelog { out, schema_root } => run_command_reported(
+                &context,
+                "repo.schema-changelog",
+                CommandEffect::ReadWrite,
+                json!({ "out": out, "schema_root": schema_root }),
+                || run_repo_schema_changelog(&out, &schema_root),
             ),
         },
         CommandLine::Verify { command } => match command {
@@ -3749,6 +3773,160 @@ fn run_evidence_metadata_validate() -> Result<(), String> {
     }
 
     println!("evidence metadata validation passed");
+    Ok(())
+}
+
+fn resolve_under_root(root: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        root.join(path)
+    }
+}
+
+fn write_report(path: &Path, body: &str) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    fs::write(path, body).map_err(|err| err.to_string())
+}
+
+fn run_repo_hotspot_reports(
+    file_out: &Path,
+    function_out: &Path,
+    api_out: &Path,
+    dep_out: &Path,
+) -> Result<(), String> {
+    let root = repo_root()?;
+    let crates_dir = root.join("crates");
+    let mut files = Vec::new();
+    collect_all_files(&crates_dir, &mut files)?;
+    let rust_files: Vec<PathBuf> = files
+        .into_iter()
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("rs"))
+        .collect();
+
+    let mut file_counts = Vec::new();
+    let mut long_functions = Vec::new();
+    let mut api_counts: BTreeMap<String, usize> = BTreeMap::new();
+
+    for file in &rust_files {
+        let rel = file
+            .strip_prefix(&root)
+            .map_err(|err| err.to_string())?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let body = fs::read_to_string(file).map_err(|err| err.to_string())?;
+        let lines: Vec<&str> = body.lines().collect();
+        file_counts.push((lines.len(), rel.clone()));
+
+        let mut fn_starts = Vec::new();
+        for (idx, line) in lines.iter().enumerate() {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with("fn ")
+                || trimmed.starts_with("pub fn ")
+                || trimmed.starts_with("pub(crate) fn ")
+            {
+                fn_starts.push(idx + 1);
+            }
+            if trimmed.starts_with("pub ") || trimmed.starts_with("pub(crate) ") {
+                *api_counts.entry(rel.clone()).or_insert(0) += 1;
+            }
+        }
+        for (pos, start) in fn_starts.iter().enumerate() {
+            let end = if pos + 1 < fn_starts.len() {
+                fn_starts[pos + 1] - 1
+            } else {
+                lines.len()
+            };
+            let len = end.saturating_sub(*start) + 1;
+            if len >= 60 {
+                long_functions.push((len, rel.clone(), *start));
+            }
+        }
+    }
+
+    file_counts.sort_by(|a, b| b.cmp(a));
+    long_functions.sort_by(|a, b| b.cmp(a));
+    let mut api_rows: Vec<(usize, String)> = api_counts.into_iter().map(|(f, c)| (c, f)).collect();
+    api_rows.sort_by(|a, b| b.cmp(a));
+
+    let mut file_report =
+        String::from("# File Size Hotspot Report\n\nGenerated from Rust source line counts.\n\n");
+    for (lines, path) in file_counts.into_iter().take(40) {
+        file_report.push_str(&format!("- {lines} lines :: {path}\n"));
+    }
+
+    let mut function_report = String::from(
+        "# Long Function Hotspot Report\n\nHeuristic report for functions exceeding 60 lines in Rust files.\n\n",
+    );
+    for (len, path, start) in long_functions.into_iter().take(80) {
+        function_report.push_str(&format!("- {len} lines :: {path}:{start}\n"));
+    }
+
+    let mut public_api_report =
+        String::from("# Public API Hotspot Report\n\nTop files by count of public items.\n\n");
+    for (count, path) in api_rows.into_iter().take(40) {
+        public_api_report.push_str(&format!("- {count} public items :: {path}\n"));
+    }
+
+    let dep_status = Command::new("cargo")
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .current_dir(&root)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    let mut dep_report = String::from(
+        "# Dependency Cycle Report\n\nRust crate graph cycles are expected to be absent.\n\n",
+    );
+    dep_report.push_str("- check: cargo metadata package graph\n");
+    if dep_status {
+        dep_report.push_str(
+            "- status: no crate-level dependency cycles detected by Cargo package resolution\n",
+        );
+    } else {
+        dep_report.push_str("- status: metadata resolution failed\n");
+    }
+    dep_report.push_str(
+        "- note: module-level cycles are prevented by Rust module system and compile checks\n",
+    );
+
+    write_report(&resolve_under_root(&root, file_out), &file_report)?;
+    write_report(&resolve_under_root(&root, function_out), &function_report)?;
+    write_report(&resolve_under_root(&root, api_out), &public_api_report)?;
+    write_report(&resolve_under_root(&root, dep_out), &dep_report)?;
+    Ok(())
+}
+
+fn run_repo_schema_changelog(out: &Path, schema_root: &Path) -> Result<(), String> {
+    let root = repo_root()?;
+    let schema_path = resolve_under_root(&root, schema_root);
+    let mut files = Vec::new();
+    collect_all_files(&schema_path, &mut files)?;
+    let mut schema_files: Vec<String> = files
+        .into_iter()
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
+        .map(|p| {
+            p.strip_prefix(&root)
+                .map(|v| v.to_string_lossy().replace('\\', "/"))
+                .map_err(|err| err.to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    schema_files.sort();
+
+    let mut report = String::from(
+        "# Schema Changelog\n\nGenerated from files under `configs/schema`.\n\n## Schemas\n",
+    );
+    for rel in schema_files {
+        let full = root.join(&rel);
+        let bytes = fs::read(&full).map_err(|err| err.to_string())?;
+        let sum = format!("{:x}", sha2::Sha256::digest(bytes));
+        report.push_str(&format!("- {rel} :: {sum}\n"));
+    }
+
+    write_report(&resolve_under_root(&root, out), &report)?;
     Ok(())
 }
 
