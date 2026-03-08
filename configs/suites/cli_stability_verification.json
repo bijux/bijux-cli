@@ -1,0 +1,15 @@
+{
+  "suite_id": "cli-stability-verification",
+  "description": "CLI command compatibility, output stability, smoke coverage, and error taxonomy verification.",
+  "owner": "dag-cli",
+  "lane": "full",
+  "tests": [
+    "crates/bijux-dag-cli/tests/contract_surface.rs",
+    "crates/bijux-dag-cli/tests/taxonomy_and_policy_contracts.rs",
+    "crates/bijux-dag-cli/tests/smoke_pipeline.rs",
+    "crates/bijux-dag-cli/tests/cli_surface_completion_contracts.rs",
+    "crates/bijux-dag-app/tests/error_exit_contract.rs",
+    "crates/bijux-dag-app/tests/error_output_contract.rs",
+    "crates/bijux-dag-app/tests/error_snapshot_contract.rs"
+  ]
+}
