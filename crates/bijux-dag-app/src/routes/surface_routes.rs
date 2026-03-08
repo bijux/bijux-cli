@@ -169,4 +169,18 @@ mod tests {
         let code = handle_semantic_portability_command(&cli, "hpc").unwrap();
         assert_eq!(code, ExitCode::SUCCESS);
     }
+
+    #[test]
+    fn capabilities_without_backend_is_supported() {
+        let cli = quiet_json_cli();
+        let code = handle_capabilities_command(&cli, &None).expect("capabilities");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn semantic_portability_local_backend_is_supported() {
+        let cli = quiet_json_cli();
+        let code = handle_semantic_portability_command(&cli, "kubernetes").expect("semantic portability");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
 }

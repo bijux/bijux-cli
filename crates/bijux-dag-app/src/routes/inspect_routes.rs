@@ -6,6 +6,12 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
+fn concise_explain_human(status: &Value, graph_fp: &Value, counts: &Value, failed: &[String]) -> String {
+    format!(
+        "status: {status}\ngraph_fingerprint: {graph_fp}\nnode_counts: {counts}\nfailed_nodes: {failed:?}"
+    )
+}
+
 pub(crate) fn handle_explain_command(
     cli: &DagCli,
     run_dir: &Path,
@@ -125,10 +131,10 @@ pub(crate) fn handle_explain_command(
                 }
             })
             .collect();
-        println!("status: {}", status);
-        println!("graph_fingerprint: {}", graph_fp);
-        println!("node_counts: {}", counts);
-        println!("failed_nodes: {:?}", failed);
+        println!(
+            "{}",
+            concise_explain_human(&status, &graph_fp, &counts, &failed)
+        );
     }
     Ok(ExitCode::SUCCESS)
 }
@@ -184,4 +190,159 @@ pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<Exit
     println!("manifest:\n{}", manifest);
     println!("traces: {}", statuses.len());
     Ok(ExitCode::SUCCESS)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{concise_explain_human, handle_explain_command, handle_node_command, handle_status_command};
+    use crate::commands::{Commands, DagCli};
+    use crate::ExitCode;
+    use serde_json::json;
+    use std::fs;
+    use std::path::Path;
+
+    fn quiet_json_cli() -> DagCli {
+        DagCli {
+            json: true,
+            quiet: true,
+            command: Commands::Version,
+        }
+    }
+
+    fn quiet_human_cli() -> DagCli {
+        DagCli {
+            json: false,
+            quiet: true,
+            command: Commands::Version,
+        }
+    }
+
+    fn write_run_fixture(imported: bool, malformed_manifest: bool) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tmp");
+        let run = dir.path();
+        fs::create_dir_all(run.join("nodes/extract/outputs")).expect("mkdir nodes");
+        if malformed_manifest {
+            fs::write(run.join("manifest.json"), b"{not-json").expect("write malformed manifest");
+        } else {
+            let mut manifest = json!({
+                "manifest_version":"run-manifest/v0.1",
+                "run_id":"run-1",
+                "created_unix_ms":1,
+                "started_unix_ms":1,
+                "finished_unix_ms":2,
+                "graph_snapshot":"graph.snapshot.json",
+                "status":"success",
+                "spec":"bijux-dag/v0.1",
+                "graph_fingerprint":"g1",
+                "tool_version":"0.1.0",
+                "jobs":1,
+                "adapters":[],
+                "outputs":[],
+                "node_counts":{"success":1,"failed":0,"skipped":0,"cached":0},
+                "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true}
+            });
+            if imported {
+                manifest["import_source"] = json!("bundle");
+            }
+            fs::write(
+                run.join("manifest.json"),
+                serde_json::to_vec_pretty(&manifest).expect("manifest"),
+            )
+            .expect("write manifest");
+        }
+        fs::write(
+            run.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph":{"spec":"bijux-dag/v0.1","meta":{"name":"x","owners":[],"tags":[]},"nodes":[{"id":"extract","kind":"const","inputs":[],"outputs":[{"name":"out","path":"extract/out"}],"params":{"value":"x"}}],"edges":[]},
+                "graph_fingerprint":"g1"
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        fs::write(run.join("nodes/extract/trace.json"), b"{\"status\":\"success\"}").expect("trace");
+        fs::write(run.join("nodes/extract/outputs/index.json"), b"{\"files\":[]}").expect("index");
+        dir
+    }
+
+    #[test]
+    fn inspect_status_success_json_path() {
+        let run = write_run_fixture(false, false);
+        let cli = quiet_json_cli();
+        let code = handle_status_command(&cli, run.path()).expect("status");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn inspect_explain_success_json_path() {
+        let run = write_run_fixture(false, false);
+        let cli = quiet_json_cli();
+        let code = handle_explain_command(&cli, run.path(), &None).expect("explain");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn inspect_routes_handle_imported_run_paths() {
+        let run = write_run_fixture(true, false);
+        let cli = quiet_json_cli();
+        let code = handle_explain_command(&cli, run.path(), &None).expect("imported explain");
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn inspect_routes_handle_damaged_bundle_like_manifest_without_panic() {
+        let run = write_run_fixture(false, true);
+        let cli = quiet_json_cli();
+        let result = std::panic::catch_unwind(|| handle_explain_command(&cli, run.path(), &None));
+        assert!(result.is_ok(), "inspect explain should not panic");
+        assert!(result.expect("result").is_ok());
+    }
+
+    #[test]
+    fn inspect_node_malformed_run_dir_returns_error() {
+        let cli = quiet_json_cli();
+        let code = handle_node_command(&cli, Path::new("/missing/run"), "extract").unwrap_err();
+        assert_eq!(code, ExitCode::from(3));
+    }
+
+    #[test]
+    fn inspect_human_paths_do_not_panic() {
+        let run = write_run_fixture(false, false);
+        let cli = quiet_human_cli();
+        let explain = std::panic::catch_unwind(|| handle_explain_command(&cli, run.path(), &None));
+        assert!(explain.is_ok());
+        assert!(explain.expect("result").is_ok());
+        let status = std::panic::catch_unwind(|| handle_status_command(&cli, run.path()));
+        assert!(status.is_ok());
+        assert!(status.expect("result").is_ok());
+    }
+
+    #[test]
+    fn inspect_route_entrypoints_do_not_panic_on_missing_run_dir() {
+        let cli = quiet_json_cli();
+        let explain = std::panic::catch_unwind(|| {
+            handle_explain_command(&cli, Path::new("/missing/run"), &None)
+        });
+        let node = std::panic::catch_unwind(|| {
+            handle_node_command(&cli, Path::new("/missing/run"), "extract")
+        });
+        let status = std::panic::catch_unwind(|| handle_status_command(&cli, Path::new("/missing/run")));
+        assert!(explain.is_ok());
+        assert!(node.is_ok());
+        assert!(status.is_ok());
+    }
+
+    #[test]
+    fn inspect_concise_human_snapshot_is_stable() {
+        let rendered = concise_explain_human(
+            &json!("success"),
+            &json!("g1"),
+            &json!({"success":1,"failed":0,"skipped":0,"cached":0}),
+            &["n1".to_string()],
+        );
+        let expected = "status: \"success\"\n\
+graph_fingerprint: \"g1\"\n\
+node_counts: {\"cached\":0,\"failed\":0,\"skipped\":0,\"success\":1}\n\
+failed_nodes: [\"n1\"]";
+        assert_eq!(rendered, expected);
+    }
 }

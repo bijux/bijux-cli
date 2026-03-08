@@ -95,11 +95,11 @@ fn lib_uses_diagnostics_route_module_for_operator_diagnostics() {
         "lib should declare routes module for command-family handlers"
     );
     assert!(
-        lib.contains("routes::diagnostics_routes::why_rerun_payload("),
-        "lib should delegate why-rerun payload assembly"
+        lib.contains("routes::diagnostics_routes::handle_why_rerun_command("),
+        "lib should delegate why-rerun handling to diagnostics routes"
     );
     assert!(
-        lib.contains("routes::diagnostics_routes::trace_artifact_payload("),
-        "lib should delegate trace-artifact payload assembly"
+        lib.contains("routes::diagnostics_routes::handle_trace_artifact_command("),
+        "lib should delegate trace-artifact handling to diagnostics routes"
     );
 }
