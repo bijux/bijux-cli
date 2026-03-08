@@ -1,6 +1,6 @@
 use crate::capability_matrix::backend_capability_payload;
 use crate::commands::DagCli;
-use crate::replay::service as replay_service;
+use crate::replay_service;
 use crate::{emit_json, ExitCode};
 use bijux_dag_core::SPEC_VERSION;
 use serde_json::json;

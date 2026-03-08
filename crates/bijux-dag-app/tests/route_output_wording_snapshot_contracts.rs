@@ -1,5 +1,18 @@
+use base64 as _;
+use bijux_dag_artifacts as _;
 use bijux_dag_app::{format_inspect_human, format_show_human};
+use bijux_dag_core as _;
+use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
+use clap as _;
+use flate2 as _;
+use hex as _;
+use serde as _;
 use serde_json::json;
+use sha2 as _;
+use tar as _;
+use tempfile as _;
+use thiserror as _;
 
 #[test]
 fn route_level_concise_wording_snapshot_is_stable() {

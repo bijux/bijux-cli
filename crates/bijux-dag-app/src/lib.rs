@@ -40,6 +40,8 @@ mod read_graph;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
+#[path = "replay/service.rs"]
+mod replay_service;
 mod routes;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
