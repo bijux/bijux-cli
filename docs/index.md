@@ -213,6 +213,8 @@
 - [Line coverage under 50% report](./reports/foundation/line_coverage_under_50_report.md)
 - [Line coverage under 25% report](./reports/foundation/line_coverage_under_25_report.md)
 - [Zero direct line coverage report](./reports/foundation/line_coverage_zero_direct_report.md)
+- [Graph identity field impact](./spec/GRAPH_IDENTITY_FIELD_IMPACT.md)
+- [Graph identity decomposition report](./reports/foundation/graph_identity_decomposition_report.json)
 
 ## Crate contracts and ownership
 
