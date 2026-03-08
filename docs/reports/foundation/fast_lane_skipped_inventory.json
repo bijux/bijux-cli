@@ -1,0 +1,8 @@
+{
+  "generated_from": "cargo test --workspace",
+  "lane": "fast",
+  "skipped_inventory": [
+    "crates/bijux-dev-dag/tests/benchmark_governance_contracts.rs",
+    "crates/bijux-dag-runtime/tests/performance_capacity_contracts.rs"
+  ]
+}

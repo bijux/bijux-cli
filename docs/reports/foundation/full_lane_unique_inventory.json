@@ -1,0 +1,8 @@
+{
+  "generated_from": "cargo test --workspace --all-targets",
+  "lane": "full",
+  "unique_inventory": [
+    "crates/bijux-dev-dag/tests/release_evidence_linkage_contracts.rs",
+    "crates/bijux-dev-dag/tests/benchmark_governance_contracts.rs"
+  ]
+}

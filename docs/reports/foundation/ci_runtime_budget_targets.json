@@ -1,0 +1,7 @@
+{
+  "generated_from": "ci baseline telemetry",
+  "budgets": {
+    "fast_lane_max_minutes": 15,
+    "full_lane_max_minutes": 60
+  }
+}
