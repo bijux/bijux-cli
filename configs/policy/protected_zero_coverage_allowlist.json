@@ -3,9 +3,7 @@
   "description": "Baseline protected-crate source files currently at 0% line coverage from artifacts/coverage/lcov.info.",
   "protected_zero_coverage_allowlist": [
     "crates/bijux-dag-app/src/inspect/mod.rs",
-    "crates/bijux-dag-app/src/read/fs_input.rs",
-    "crates/bijux-dag-app/src/read/read_graph.rs",
-    "crates/bijux-dag-artifacts/src/io/fs.rs",
+        "crates/bijux-dag-artifacts/src/io/fs.rs",
     "crates/bijux-dag-artifacts/src/lifecycle/retention.rs",
     "crates/bijux-dag-core/src/analysis/fingerprint.rs",
     "crates/bijux-dag-core/src/graph/canonical.rs",
