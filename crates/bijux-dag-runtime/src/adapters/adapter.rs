@@ -76,3 +76,64 @@ pub trait Adapter: Send + Sync {
     }
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError>;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct NoopAdapter;
+
+    impl Adapter for NoopAdapter {
+        fn id(&self) -> AdapterId {
+            AdapterId {
+                id: "noop".to_string(),
+                version: "0.1".to_string(),
+            }
+        }
+
+        fn supported_kinds(&self) -> Vec<String> {
+            vec!["const".to_string()]
+        }
+
+        fn required_effects(&self) -> EffectSet {
+            EffectSet::default()
+        }
+
+        fn produces_outputs_schema_version(&self) -> String {
+            "v0.1".to_string()
+        }
+
+        fn origin(&self) -> AdapterOrigin {
+            AdapterOrigin::External
+        }
+
+        fn execute(&self, _ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
+            Err(RuntimeError::Executor("not executed in this contract".to_string()))
+        }
+    }
+
+    #[test]
+    fn effect_set_maps_all_effects() {
+        let set = EffectSet::from_effects(&[
+            Effect::Filesystem,
+            Effect::Env,
+            Effect::Network,
+            Effect::Clock,
+        ]);
+        assert!(set.filesystem);
+        assert!(set.env);
+        assert!(set.network);
+        assert!(set.clock);
+    }
+
+    #[test]
+    fn descriptor_contains_identity_origin_and_schema() {
+        let adapter = NoopAdapter;
+        let descriptor = adapter.descriptor();
+        assert_eq!(descriptor.id, "noop");
+        assert_eq!(descriptor.version, "0.1");
+        assert_eq!(descriptor.supported_kinds, vec!["const".to_string()]);
+        assert_eq!(descriptor.produces_outputs_schema_version, "v0.1");
+        assert_eq!(descriptor.origin, AdapterOrigin::External);
+    }
+}

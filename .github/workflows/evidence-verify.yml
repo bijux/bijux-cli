@@ -34,6 +34,16 @@ jobs:
         run: |
           cargo run -p bijux-dev-dag --bin generate_scheduler_profile_report
           git diff --exit-code docs/reports/foundation/scheduler_profile_report.json
+      - name: generate runtime adapter and backend scope reports
+        run: |
+          cargo run -p bijux-dev-dag --bin generate_runtime_adapter_scope_reports
+          git diff --exit-code \
+            docs/reports/foundation/runtime_adapter_surface_inventory.md \
+            docs/reports/foundation/backend_capability_matrix.md \
+            docs/reports/foundation/backend_support_matrix.md \
+            docs/reports/foundation/unsupported_capability_approximations_report.md \
+            docs/reports/foundation/implemented_backend_surfaces_report.md \
+            docs/reports/foundation/simulated_backend_surfaces_report.md
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
