@@ -13,3 +13,5 @@
 - `docs/spec/PERFORMANCE_CONTRACT.md`
 - `docs/spec/BENCHMARK_RESULT_FORMAT.md`
 - `docs/spec/BENCHMARK_RAW_DATA_RETENTION.md`
+- `configs/policy/benchmark_signal_governance.json`
+- `docs/reports/foundation/benchmark_trend_by_claim_family_report.md`

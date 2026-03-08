@@ -1,0 +1,84 @@
+{
+  "policy_version": "1",
+  "governance_rules": {
+    "docs_for_speculative_surfaces_must_be_explicit": true,
+    "docs_for_shipped_surfaces_must_link_concrete_evidence": true,
+    "documentation_truth_drift_is_release_gate": true
+  },
+  "canonical_sources": {
+    "mission": "docs/spec/MISSION_STATEMENT.md",
+    "positioning": "docs/reference/POSITIONING_NOTE.md",
+    "support_matrix": "docs/reference/SUPPORT_MATRIX.md",
+    "backend_capabilities": "evidence/reports/backend_capability_matrix_generated.json",
+    "evidence_inventory": "configs/policy/evidence_rationalization_policy.json",
+    "benchmark_registry": "configs/policy/benchmark_signal_governance.json"
+  },
+  "docs_pages": [
+    {
+      "page": "docs/spec/MISSION_STATEMENT.md",
+      "owner": "dag-control-plane",
+      "linked_code_paths": [
+        "crates/bijux-dag-app/src/lib.rs"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/docs_truth_drift_contracts.rs"
+      ],
+      "surface_class": "stable"
+    },
+    {
+      "page": "docs/reference/SUPPORT_MATRIX.md",
+      "owner": "runtime-foundation",
+      "linked_code_paths": [
+        "crates/bijux-dev-dag/src/commands/runtime_adapter_scope_reports.rs"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/runtime_adapter_scope_reports_contracts.rs"
+      ],
+      "surface_class": "stable"
+    },
+    {
+      "page": "docs/reference/ROOT_CAPABILITY_MATRIX.md",
+      "owner": "runtime-foundation",
+      "linked_code_paths": [
+        "crates/bijux-dev-dag/src/commands/runtime_adapter_scope_reports.rs"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/runtime_adapter_scope_reports_contracts.rs"
+      ],
+      "surface_class": "stable"
+    },
+    {
+      "page": "docs/reference/EVIDENCE_GOVERNANCE.md",
+      "owner": "dag-control-plane",
+      "linked_code_paths": [
+        "crates/bijux-dev-dag/src/commands/evidence_control_plane.rs"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/evidence_rationalization_contracts.rs"
+      ],
+      "surface_class": "stable"
+    },
+    {
+      "page": "docs/reference/RUN_BENCHMARKS.md",
+      "owner": "runtime-foundation",
+      "linked_code_paths": [
+        "crates/bijux-dev-dag/src/commands/benchmark_harness.rs"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/benchmark_signal_quality_contracts.rs"
+      ],
+      "surface_class": "stable"
+    },
+    {
+      "page": "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
+      "owner": "dag-control-plane",
+      "linked_code_paths": [
+        "crates/bijux-dag-runtime/src/internal"
+      ],
+      "linked_tests": [
+        "crates/bijux-dev-dag/tests/runtime_broad_surface_ownership_contracts.rs"
+      ],
+      "surface_class": "speculative"
+    }
+  ]
+}

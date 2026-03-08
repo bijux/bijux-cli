@@ -5,3 +5,4 @@ Canonical references:
 - Relationship model: `docs/spec/EVIDENCE_TERMS_AND_GOVERNANCE.md`
 - Command ownership mapping: `docs/reports/foundation/evidence_command_owner_map.md`
 - Command classification and lane behavior: `configs/policy/evidence_command_classification.json`
+- Severity and audience governance: `configs/policy/evidence_rationalization_policy.json`
