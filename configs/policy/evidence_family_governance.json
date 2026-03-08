@@ -1,0 +1,89 @@
+{
+  "policy_version": "1",
+  "families": [
+    {
+      "name": "authoring",
+      "purpose": "authoring-quality",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/authoring"],
+      "ownership_docs": [
+        "docs/spec/TEST_EVIDENCE_CONSUMER_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "battle",
+      "purpose": "runtime-correctness",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/battle"],
+      "ownership_docs": [
+        "docs/spec/BATTLE_WORKFLOW_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "cache",
+      "purpose": "replay-and-cache-integrity",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/cache"],
+      "ownership_docs": [
+        "docs/spec/DETERMINISM_EVIDENCE_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "compat",
+      "purpose": "schema-and-bundle-compatibility",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/compat"],
+      "ownership_docs": [
+        "docs/spec/BUNDLE_SCHEMA_REFERENCE.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "fault",
+      "purpose": "fault-observability",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/fault"],
+      "ownership_docs": [
+        "docs/spec/TEST_TRUST_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "operator",
+      "purpose": "operator-inspection",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/operator"],
+      "ownership_docs": [
+        "docs/spec/TEST_TRUST_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "perf",
+      "purpose": "performance-signal",
+      "release_class": "blocking",
+      "canonical_roots": ["evidence/perf"],
+      "ownership_docs": [
+        "docs/spec/EVIDENCE_PUBLICATION_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    },
+    {
+      "name": "compare",
+      "purpose": "external-comparison-context",
+      "release_class": "advisory",
+      "canonical_roots": ["evidence/compare"],
+      "ownership_docs": [
+        "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
+        "docs/reports/foundation/evidence_command_owner_map.md"
+      ]
+    }
+  ],
+  "family_addition_rule": {
+    "requires_purpose_classification": true,
+    "requires_ownership_docs": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "version": "1",
+  "release_critical_families": [
+    "battle",
+    "cache",
+    "compat",
+    "fault",
+    "operator",
+    "perf"
+  ],
+  "advisory_families": [
+    "compare"
+  ],
+  "governance_commands": {
+    "blocking": [
+      "verify evidence-consumers",
+      "verify evidence-release-set"
+    ],
+    "advisory": [
+      "verify evidence-compare"
+    ]
+  },
+  "sources": [
+    "configs/policy/evidence_command_classification.json",
+    "configs/policy/evidence_family_governance.json",
+    "evidence/release/release_evidence_set.json"
+  ]
+}
