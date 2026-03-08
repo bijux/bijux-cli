@@ -1,0 +1,7 @@
+run_id: "run-fixed"
+status: "success"
+origin: native
+integrity_state: "healthy"
+retry_count: 0
+cache_hits: 0
+artifact_count: 0

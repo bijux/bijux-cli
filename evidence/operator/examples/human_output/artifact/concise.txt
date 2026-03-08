@@ -1,0 +1,32 @@
+{
+  "artifact_id": "produce_outputs:primary.json",
+  "artifact_sha256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+  "identity_explain": {
+    "artifact_id": "produce_outputs:primary.json",
+    "composed_from": {
+      "artifact_sha256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
+      "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
+      "node_id": "produce_outputs",
+      "path": "nodes/produce_outputs/outputs/primary.json",
+      "run_id": "art-fixed"
+    },
+    "hash_algorithm": "sha256",
+    "identity_scope": "artifact content + provenance"
+  },
+  "lineage": {
+    "downstream_artifact_ids": [],
+    "upstream_artifact_ids": [
+      "seed:*"
+    ]
+  },
+  "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
+  "node_id": "produce_outputs",
+  "path": "nodes/produce_outputs/outputs/primary.json",
+  "payload_missing": false,
+  "provenance": {
+    "attempt": 0,
+    "graph_fingerprint": "37c9bfd1d1da9c320a075dc545d71f28d3dd0c714fd459017b9e7c915f5d3cb9",
+    "run_id": "art-fixed"
+  },
+  "size_bytes": 19
+}
