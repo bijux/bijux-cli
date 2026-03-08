@@ -67,6 +67,10 @@ pub(crate) enum Commands {
     ShowEffectivePlan {
         dag: PathBuf,
     },
+    Plan {
+        #[command(subcommand)]
+        command: PlanCommands,
+    },
     Run {
         dag: PathBuf,
         #[arg(long)]
@@ -302,6 +306,16 @@ pub(crate) enum HashCommands {
     },
     Artifact {
         file: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PlanCommands {
+    Explain {
+        dag: PathBuf,
+    },
+    Diagnostics {
+        dag: PathBuf,
     },
 }
 
