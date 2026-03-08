@@ -1,7 +1,7 @@
-use bijux_dag_testkit as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
 use clap as _;
 use hex as _;
 use serde as _;
@@ -57,13 +57,14 @@ fn foundation_hardening_registry_references_known_suite_ids() {
     let suite_source =
         fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog.rs"))
             .expect("read suite catalog source");
-    let suite_repo_fragment = fs::read_to_string(
-        root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.rs"),
-    )
-    .or_else(|_| {
-        fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.inc"))
-    })
-    .expect("read suite catalog repo fragment");
+    let suite_repo_fragment =
+        fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.rs"))
+            .or_else(|_| {
+                fs::read_to_string(
+                    root.join("crates/bijux-dev-dag/src/commands/suite_catalog_repo.inc"),
+                )
+            })
+            .expect("read suite catalog repo fragment");
     for id in ids {
         let id = id.as_str().expect("suite id should be string");
         assert!(
