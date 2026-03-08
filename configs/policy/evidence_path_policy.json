@@ -39,6 +39,7 @@
   "helper_allowlist": [
     "tests/integration_fixtures/*.sh",
     "crates/bijux-dag-runtime/tests/fixtures/.gitkeep",
-    "crates/bijux-dag-app/tests/fixtures/run_history_mixed_runs.json"
+    "crates/bijux-dag-app/tests/fixtures/run_history_mixed_runs.json",
+    "crates/bijux-dag-app/tests/fixtures/git_for_computation_graphs_workflow.json"
   ]
 }
