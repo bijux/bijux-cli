@@ -55,3 +55,47 @@ fn lib_routes_config_resolution_through_config_helpers_only() {
         "lib must not call low-level config merge directly"
     );
 }
+
+#[test]
+fn lib_dispatches_command_families_through_route_modules() {
+    let lib = read("src/lib.rs");
+    for required in [
+        "routes::inspect_routes::handle_explain_command",
+        "routes::replay_routes::handle_replay_command",
+        "routes::diff_routes::handle_diff_command",
+        "routes::export_import_routes::handle_export_command",
+        "routes::export_import_routes::handle_import_command",
+        "routes::surface_routes::handle_capabilities_command",
+        "routes::surface_routes::handle_semantic_portability_command",
+    ] {
+        assert!(
+            lib.contains(required),
+            "lib command dispatch missing required route delegation: {required}"
+        );
+    }
+}
+
+#[test]
+fn route_modules_stay_within_service_boundaries() {
+    let inspect_routes = read("src/routes/inspect_routes.rs");
+    let replay_routes = read("src/routes/replay_routes.rs");
+    let diff_routes = read("src/routes/diff_routes.rs");
+    let export_import_routes = read("src/routes/export_import_routes.rs");
+
+    assert!(
+        !inspect_routes.contains("replay_service::"),
+        "inspect routes must not call replay service directly"
+    );
+    assert!(
+        replay_routes.contains("replay_service::"),
+        "replay routes must route replay behavior through replay service helpers"
+    );
+    assert!(
+        diff_routes.contains("replay_service::run_diff_from_dirs("),
+        "diff routes must route through replay diff service"
+    );
+    assert!(
+        !export_import_routes.contains("replay_service::"),
+        "export/import routes must not call replay service directly"
+    );
+}
