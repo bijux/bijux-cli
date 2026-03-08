@@ -1,0 +1,10 @@
+{
+  "id": "runtime-engine-scheduler-fast",
+  "description": "Fast runtime engine and scheduler suite for execution helper boundaries and deterministic scheduling invariants.",
+  "commands": [
+    "cargo test -p bijux-dag-runtime --test runtime_execution_module_entrypoints_contracts",
+    "cargo test -p bijux-dag-runtime --test runtime_execution_resilience_contracts",
+    "cargo test -p bijux-dag-runtime --test runtime_scheduler_state_machine_invariants_contracts",
+    "cargo test -p bijux-dag-runtime --test scheduler_workload_contracts"
+  ]
+}
