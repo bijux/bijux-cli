@@ -4,8 +4,8 @@ use bijux_dag_core::resolve::resolve_graph;
 use bijux_dag_core::topology::deterministic_topology_order;
 use bijux_dag_core::validate::{validate_graph, validate_topology};
 use bijux_dag_core::{
-    lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph, Graph, GraphError,
-    PlanOptions, Severity,
+    lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph, Graph,
+    GraphError, PlanOptions, Severity,
 };
 use criterion as _;
 use hex as _;
@@ -251,7 +251,9 @@ fn planner_selective_replay_keeps_dependency_closure() {
     );
 
     let options = PlanOptions {
-        selected_nodes: ["mid".to_string(), "sink".to_string()].into_iter().collect(),
+        selected_nodes: ["mid".to_string(), "sink".to_string()]
+            .into_iter()
+            .collect(),
         ..PlanOptions::default()
     };
     let plan = lower_graph_to_execution_plan(&graph, options).expect("plan");
@@ -271,7 +273,11 @@ fn canonical_bytes_are_stable_under_ordering_variants() {
 
     let ids: Vec<_> = variants
         .iter()
-        .map(|payload| parse_graph(payload).graph_fingerprint().expect("fingerprint"))
+        .map(|payload| {
+            parse_graph(payload)
+                .graph_fingerprint()
+                .expect("fingerprint")
+        })
         .collect();
     assert_eq!(ids[0], ids[1]);
 }
@@ -285,7 +291,10 @@ fn graph_identity_is_stable_across_default_normalization_variants() {
         r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"n","kind":"const","inputs":[],"outputs":[{"name":"out","path":"n/out"}]}],"edges":[]}"#,
     );
 
-    assert_eq!(a.graph_fingerprint().expect("a"), b.graph_fingerprint().expect("b"));
+    assert_eq!(
+        a.graph_fingerprint().expect("a"),
+        b.graph_fingerprint().expect("b")
+    );
 }
 
 #[test]
@@ -293,7 +302,10 @@ fn graph_identity_is_stable_across_legacy_alias_normalization_paths() {
     let a = parse_graph(r#"{"spec":"0.1","nodes":[],"edges":[]}"#);
     let b = parse_graph(r#"{"spec":"v0.1","nodes":[],"edges":[]}"#);
 
-    assert_eq!(a.graph_fingerprint().expect("a"), b.graph_fingerprint().expect("b"));
+    assert_eq!(
+        a.graph_fingerprint().expect("a"),
+        b.graph_fingerprint().expect("b")
+    );
 }
 
 #[test]
@@ -305,7 +317,10 @@ fn graph_identity_changes_on_semantic_drift() {
         r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"n","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"n/out"}],"params":{"argv":["/bin/sh","-c","printf changed > out"]},"effects":["filesystem"]}],"edges":[]}"#,
     );
 
-    assert_ne!(a.graph_fingerprint().expect("a"), b.graph_fingerprint().expect("b"));
+    assert_ne!(
+        a.graph_fingerprint().expect("a"),
+        b.graph_fingerprint().expect("b")
+    );
 }
 
 #[test]

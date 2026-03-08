@@ -81,8 +81,7 @@ fn run_artifact_verifier_trait_reports_missing_manifest() {
         .expect_err("missing manifest should fail");
     assert!(err.to_string().contains("manifest missing"));
 
-    std::fs::write(dir.path().join("manifest.json"), "{}")
-        .expect("write manifest marker");
+    std::fs::write(dir.path().join("manifest.json"), "{}").expect("write manifest marker");
     verifier
         .verify_run_dir(dir.path())
         .expect("manifest presence should pass");

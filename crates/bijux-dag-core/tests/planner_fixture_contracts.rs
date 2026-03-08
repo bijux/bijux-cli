@@ -52,7 +52,9 @@ fn planner_fixtures_cover_capability_resource_retry_and_replay_oriented_graphs()
     let imported_plan =
         lower_graph_to_execution_plan(&imported_bundle_replay, PlanOptions::default())
             .expect("imported bundle replay lowers");
-    assert!(imported_plan.ordering.contains(&"hydrate_import".to_string()));
+    assert!(imported_plan
+        .ordering
+        .contains(&"hydrate_import".to_string()));
     assert!(imported_plan.ordering.contains(&"replay_check".to_string()));
 
     let selective_plan = lower_graph_to_execution_plan(

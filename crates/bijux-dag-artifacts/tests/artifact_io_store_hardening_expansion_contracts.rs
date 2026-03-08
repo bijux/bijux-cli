@@ -164,8 +164,7 @@ fn inspect_missing_payload_and_damaged_metadata_are_detected() {
     let dir = tempfile::tempdir().expect("tmp");
     fs::write(
         dir.path().join("manifest.json"),
-        serde_json::to_vec_pretty(&json!({"manifest_version": "run-manifest/v0.1"}))
-            .expect("json"),
+        serde_json::to_vec_pretty(&json!({"manifest_version": "run-manifest/v0.1"})).expect("json"),
     )
     .expect("write");
 
