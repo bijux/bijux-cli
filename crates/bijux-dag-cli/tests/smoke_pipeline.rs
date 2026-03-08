@@ -11,6 +11,12 @@ fn repo_root() -> PathBuf {
 }
 
 fn dag_command() -> Command {
+    if let Ok(path) = std::env::var("CARGO_BIN_EXE_bijux") {
+        if std::path::Path::new(&path).exists() {
+            return Command::new(path);
+        }
+    }
+
     if let Some(path) = option_env!("CARGO_BIN_EXE_bijux") {
         if std::path::Path::new(path).exists() {
             return Command::new(path);
@@ -18,7 +24,11 @@ fn dag_command() -> Command {
     }
 
     let root = repo_root();
-    let mut command = Command::new("cargo");
+    let cargo_bin = std::env::var("CARGO")
+        .ok()
+        .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
+        .unwrap_or_else(|| "cargo".to_string());
+    let mut command = Command::new(cargo_bin);
     command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
     command.env(
         "LLVM_PROFILE_FILE",

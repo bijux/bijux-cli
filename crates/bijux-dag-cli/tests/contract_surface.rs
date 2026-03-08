@@ -19,7 +19,8 @@ fn dag_command() -> Command {
     }
 
     let root = repo_root();
-    let mut command = Command::new("cargo");
+    let cargo_bin = option_env!("CARGO").unwrap_or("cargo");
+    let mut command = Command::new(cargo_bin);
     command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
     command.env(
         "LLVM_PROFILE_FILE",
