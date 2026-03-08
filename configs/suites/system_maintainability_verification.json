@@ -1,0 +1,26 @@
+{
+  "id": "system-maintainability-verification",
+  "version": "v1",
+  "checks": [
+    "maintainability-guidelines",
+    "module-ownership-rules",
+    "module-boundary-policies",
+    "architectural-layering-guidelines",
+    "dependency-hygiene-policies",
+    "architectural-boundaries",
+    "dependency-cycle-detection",
+    "module-complexity-monitoring",
+    "regression-fixtures",
+    "telemetry-reporting",
+    "anomaly-detection",
+    "documentation",
+    "review-checklist",
+    "conformance-tests",
+    "architecture-visualization-tooling",
+    "dashboard",
+    "maintainability-benchmarks",
+    "architecture-review",
+    "verification-tools",
+    "verification-suite"
+  ]
+}
