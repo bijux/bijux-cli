@@ -126,4 +126,26 @@ mod tests {
     fn unknown_backend_query_is_rejected_by_surface() {
         assert!(backend_capability_payload("unknown-backend").is_none());
     }
+
+    #[test]
+    fn capability_payload_excludes_modeled_only_runtime_surface_tokens() {
+        let rendered = serde_json::to_string(&backend_capability_payload("remote").unwrap())
+            .expect("payload json")
+            .to_lowercase();
+        for forbidden in [
+            "federated_scheduling",
+            "geo_federation",
+            "ha_scheduler",
+            "control_plane_api",
+            "workflow_product",
+            "ai_operator_assist",
+            "dataset_semantics",
+            "cost_optimization",
+        ] {
+            assert!(
+                !rendered.contains(forbidden),
+                "capability payload should exclude modeled-only token: {forbidden}"
+            );
+        }
+    }
 }

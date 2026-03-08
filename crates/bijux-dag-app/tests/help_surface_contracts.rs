@@ -15,6 +15,7 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_app::dag_command;
+use std::path::Path;
 
 #[test]
 fn root_help_mentions_shipped_operator_surfaces() {
@@ -53,6 +54,43 @@ fn root_help_does_not_claim_modeled_platform_features() {
         assert!(
             !rendered.contains(forbidden),
             "help should not claim modeled-only surface: {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn help_does_not_list_modeled_only_runtime_modules() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("repo root");
+    let modeled = std::fs::read_to_string(
+        root.join("docs/reports/foundation/runtime_modeled_only_surfaces.md"),
+    )
+    .expect("read modeled surfaces report")
+    .to_lowercase();
+    let mut help = Vec::new();
+    dag_command().write_long_help(&mut help).expect("help");
+    let rendered = String::from_utf8(help).expect("utf8").to_lowercase();
+    for line in modeled.lines() {
+        if !line.trim_start().starts_with("- `") {
+            continue;
+        }
+        let token = line
+            .trim()
+            .trim_start_matches("- `")
+            .trim_end_matches('`')
+            .rsplit('/')
+            .next()
+            .unwrap_or("")
+            .trim_end_matches(".rs")
+            .replace('_', " ");
+        if token.is_empty() {
+            continue;
+        }
+        assert!(
+            !rendered.contains(&token),
+            "help should not present modeled-only surface token: {token}"
         );
     }
 }
