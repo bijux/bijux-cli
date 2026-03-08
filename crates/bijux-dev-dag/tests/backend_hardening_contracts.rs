@@ -26,6 +26,8 @@ fn backend_contract_and_hardening_report_exist() {
     for required in [
         "docs/spec/BACKEND_CONTRACT.md",
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
+        "docs/reference/CONTAINER_REMOTE_EXECUTION_BOUNDARY.md",
+        "docs/reference/BATCH_BACKEND_SIMULATION_BOUNDARY.md",
         "docs/reports/foundation/backend_hardening_report.md",
         "crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs",
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
