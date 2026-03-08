@@ -1,0 +1,22 @@
+{
+  "id": "dag-model-verification",
+  "version": "v1",
+  "checks": [
+    "node-semantics",
+    "dependency-semantics",
+    "artifact-dependency-semantics",
+    "node-io-contract-semantics",
+    "execution-ordering-guarantees",
+    "validation-completeness",
+    "semantic-validation",
+    "normalization-determinism",
+    "schema-compliance",
+    "semantic-drift-detection",
+    "validation-performance-benchmarks",
+    "semantic-consistency",
+    "fuzz-suite",
+    "anomaly-detection",
+    "verification-tools",
+    "verification-suite"
+  ]
+}

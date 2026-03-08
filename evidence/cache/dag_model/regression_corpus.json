@@ -1,0 +1,66 @@
+{
+  "version": "v1",
+  "domain": "dag-model",
+  "cases": [
+    {
+      "id": "dag-model-node-semantics",
+      "coverage": ["node-semantics", "model-compliance"],
+      "expected": "node-semantics-validated"
+    },
+    {
+      "id": "dag-model-dependency-semantics",
+      "coverage": ["dependency-semantics", "model-compliance"],
+      "expected": "dependency-semantics-validated"
+    },
+    {
+      "id": "dag-model-artifact-dependencies",
+      "coverage": ["artifact-dependency-semantics", "semantic-consistency"],
+      "expected": "artifact-dependencies-consistent"
+    },
+    {
+      "id": "dag-model-io-contracts",
+      "coverage": ["node-io-contract-semantics", "model-compliance"],
+      "expected": "io-contracts-validated"
+    },
+    {
+      "id": "dag-model-ordering",
+      "coverage": ["execution-ordering-guarantees", "normalization-determinism"],
+      "expected": "ordering-deterministic"
+    },
+    {
+      "id": "dag-model-validation-completeness",
+      "coverage": ["validation-completeness", "semantic-validation"],
+      "expected": "validation-complete"
+    },
+    {
+      "id": "dag-model-normalization",
+      "coverage": ["normalization-determinism", "semantic-consistency"],
+      "expected": "normalization-stable"
+    },
+    {
+      "id": "dag-model-schema-compliance",
+      "coverage": ["schema-compliance", "validation-completeness"],
+      "expected": "schema-compliant"
+    },
+    {
+      "id": "dag-model-semantic-drift",
+      "coverage": ["semantic-drift-detection", "anomaly-detection"],
+      "expected": "drift-detection-surface-present"
+    },
+    {
+      "id": "dag-model-fuzz",
+      "coverage": ["fuzz-suite", "semantic-validation"],
+      "expected": "fuzz-surface-present"
+    },
+    {
+      "id": "dag-model-benchmarks",
+      "coverage": ["validation-performance-benchmarks", "telemetry"],
+      "expected": "benchmark-surfaces-present"
+    },
+    {
+      "id": "dag-model-verification-suite",
+      "coverage": ["verification-tools", "verification-suite"],
+      "expected": "suite-id-stable"
+    }
+  ]
+}
