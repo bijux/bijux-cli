@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "generated_at": "2026-03-08T00:00:00Z",
+  "owner_suite": "run-directory-filesystem-completion-contracts",
+  "cases": [
+    {"id": "deterministic-layout", "coverage": ["layout-determinism", "path-determinism"]},
+    {"id": "metadata-ordering", "coverage": ["metadata-ordering", "json-stability"]},
+    {"id": "concurrent-creation", "coverage": ["creation-concurrency", "race-resistance"]},
+    {"id": "crash-recovery", "coverage": ["crash-recovery", "partial-repair"]},
+    {"id": "missing-metadata-recovery", "coverage": ["missing-metadata", "repair-guidance"]},
+    {"id": "corrupt-event-log-detection", "coverage": ["event-log-corruption", "consistency-check"]},
+    {"id": "corrupt-node-metadata-detection", "coverage": ["node-metadata-corruption", "consistency-check"]},
+    {"id": "cleanup-behavior", "coverage": ["cleanup", "retained-state"]},
+    {"id": "migration-compatibility", "coverage": ["migration", "run-dir-compat"]},
+    {"id": "cross-system-portability", "coverage": ["portability", "path-normalization"]},
+    {"id": "permission-failures", "coverage": ["filesystem-permissions", "error-classification"]},
+    {"id": "atomic-write-guarantees", "coverage": ["atomic-write", "durability"]},
+    {"id": "filesystem-corruption-stress", "coverage": ["corruption-stress", "recovery-benchmark"]}
+  ]
+}
