@@ -16,11 +16,6 @@ use bijux_dag_runtime::{
     synthetic_large_dag_profiles, BenchmarkResult, PerformanceGate,
 };
 
-fn load_benchmark(path: &str) -> BenchmarkResult {
-    let raw = std::fs::read_to_string(path).expect("benchmark fixture");
-    serde_json::from_str(&raw).expect("valid benchmark json")
-}
-
 #[test]
 fn generates_large_dag_profiles() {
     let profiles = synthetic_large_dag_profiles();
@@ -46,8 +41,14 @@ fn forecasts_storage_growth_and_cost() {
 
 #[test]
 fn flags_performance_regression_against_family_gate() {
-    let baseline = load_benchmark("tests/fixtures/performance/benchmark_baseline.json");
-    let candidate = load_benchmark("tests/fixtures/performance/benchmark_candidate.json");
+    let baseline: BenchmarkResult = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json",
+    );
+    let candidate: BenchmarkResult = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+    );
     let gate = PerformanceGate {
         family: "planner".to_string(),
         max_latency_regression_pct: 10,

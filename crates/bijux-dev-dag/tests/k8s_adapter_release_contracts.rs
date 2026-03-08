@@ -1,6 +1,7 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
+use bijux_dag_testkit as _;
 use clap as _;
 use hex as _;
 use serde as _;
@@ -9,19 +10,9 @@ use sha2 as _;
 use tempfile as _;
 
 use std::fs;
-use std::path::{Path, PathBuf};
-
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .expect("repo root")
-}
 
 #[test]
 fn kubernetes_fixture_corpus_exists_and_is_parseable() {
-    let root = repo_root();
     let fixtures = [
         "evidence/battle/fixtures/kubernetes/tiny_equivalence.dag.json",
         "evidence/battle/fixtures/kubernetes/medium_fanout.dag.json",
@@ -29,20 +20,18 @@ fn kubernetes_fixture_corpus_exists_and_is_parseable() {
     ];
 
     for rel in fixtures {
-        let path = root.join(rel);
-        assert!(path.exists(), "missing kubernetes fixture: {rel}");
-        let raw = fs::read_to_string(&path).expect("read kubernetes fixture");
-        let parsed: Result<bijux_dag_core::Graph, _> = serde_json::from_str(&raw);
-        assert!(
-            parsed.is_ok(),
-            "kubernetes fixture must parse as graph: {rel}"
-        );
+        let raw = bijux_dag_testkit::load_graph_fixture_json(env!("CARGO_MANIFEST_DIR"), rel);
+        let parsed: Result<bijux_dag_core::Graph, _> = serde_json::from_value(raw);
+        assert!(parsed.is_ok(), "kubernetes fixture must parse as graph: {rel}");
     }
 }
 
 #[test]
 fn kubernetes_conformance_reports_and_support_matrix_are_present() {
-    let root = repo_root();
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repo root");
     for rel in [
         "docs/reports/foundation/k8s_conformance_gate_report.md",
         "docs/reports/foundation/k8s_replay_env_drift_report.md",
@@ -60,7 +49,10 @@ fn kubernetes_conformance_reports_and_support_matrix_are_present() {
 
 #[test]
 fn deployment_and_support_docs_do_not_overclaim_kubernetes_execution() {
-    let root = repo_root();
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repo root");
     let support = fs::read_to_string(root.join("docs/reference/EXECUTION_SUPPORT_POLICY.md"))
         .expect("read support policy");
     assert!(

@@ -1,8 +1,8 @@
 use bijux_dag_artifacts::{Manifest, RunMetadata, RunSummary};
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
-use std::fs;
 use std::sync::Arc;
 use std::thread;
 use tempfile as _;
@@ -10,14 +10,14 @@ use thiserror as _;
 
 #[test]
 fn minimal_and_maximal_run_manifest_fixtures_parse() {
-    let minimal: Manifest = serde_json::from_str(
-        &fs::read_to_string("tests/fixtures/run_manifest_minimal.json").expect("read minimal"),
-    )
-    .expect("parse minimal");
-    let maximal: Manifest = serde_json::from_str(
-        &fs::read_to_string("tests/fixtures/run_manifest_maximal.json").expect("read maximal"),
-    )
-    .expect("parse maximal");
+    let minimal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_minimal.json",
+    );
+    let maximal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_maximal.json",
+    );
 
     assert_eq!(minimal.manifest_version, "run-manifest/v0.1");
     assert_eq!(maximal.manifest_version, "run-manifest/v0.1");

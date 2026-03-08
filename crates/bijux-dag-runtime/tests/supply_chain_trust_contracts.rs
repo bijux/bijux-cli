@@ -19,22 +19,16 @@ use bijux_dag_runtime::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-fn load_attestation_fixture() -> RunProvenanceAttestation {
-    let raw = std::fs::read_to_string("tests/fixtures/provenance/run_attestation.json")
-        .expect("attestation fixture");
-    serde_json::from_str(&raw).expect("valid attestation json")
-}
-
-fn load_signed_fixture() -> Vec<SignedArtifactManifest> {
-    let raw = std::fs::read_to_string("tests/fixtures/provenance/signed_artifacts.json")
-        .expect("signed fixture");
-    serde_json::from_str(&raw).expect("valid signed artifact json")
-}
-
 #[test]
 fn completeness_policy_requires_expected_material() {
-    let attestation = load_attestation_fixture();
-    let signed = load_signed_fixture();
+    let attestation: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
+    );
+    let signed: Vec<SignedArtifactManifest> = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json",
+    );
     let policy = ProvenanceCompletenessPolicy {
         require_binary_provenance: true,
         require_plugin_provenance: true,
@@ -116,8 +110,14 @@ fn drift_report_captures_binary_and_plugin_changes() {
 
 #[test]
 fn replay_warnings_surface_trust_input_changes() {
-    let baseline = load_attestation_fixture();
-    let mut candidate = load_attestation_fixture();
+    let baseline: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
+    );
+    let mut candidate: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
+    );
     candidate.policy_bundle_version = "policy-v1.4.3".to_string();
     candidate.environment.trust_domain = "prod-eu".to_string();
 

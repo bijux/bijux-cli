@@ -20,16 +20,12 @@ fn workspace_root() -> PathBuf {
     bijux_dag_testkit::workspace_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
-fn fixture_dir() -> PathBuf {
+fn runtime_fixture_directory() -> PathBuf {
     workspace_root().join("evidence/battle/workflows/runtime")
 }
 
-fn load_fixture(name: &str) -> Value {
-    bijux_dag_testkit::read_json(&fixture_dir().join(name))
-}
-
 fn fixture_files() -> Vec<PathBuf> {
-    let mut files: Vec<PathBuf> = fs::read_dir(fixture_dir())
+    let mut files: Vec<PathBuf> = fs::read_dir(runtime_fixture_directory())
         .expect("battle workflow fixture directory should exist")
         .filter_map(Result::ok)
         .map(|entry| entry.path())
@@ -119,7 +115,10 @@ fn battle_workflow_harness_covers_required_scenarios() {
     ];
 
     for scenario in required {
-        let doc = load_fixture(scenario);
+        let doc = bijux_dag_testkit::load_bundle_fixture_json(
+            env!("CARGO_MANIFEST_DIR"),
+            &format!("evidence/battle/workflows/runtime/{scenario}"),
+        );
         assert_shape(&doc);
     }
 }

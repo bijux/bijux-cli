@@ -1,4 +1,5 @@
 use bijux_dag_artifacts::{build_cleanup_plan, retention::RetentionPolicy, Manifest};
+use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json::Value;
@@ -6,20 +7,13 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use std::fs;
-use std::path::PathBuf;
-
-fn fixture_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("fixtures")
-        .join(name)
-}
-
 #[test]
 fn run_manifest_minimal_and_maximal_roundtrip_remain_conformant() {
     for fixture in ["run_manifest_minimal.json", "run_manifest_maximal.json"] {
-        let payload = fs::read_to_string(fixture_path(fixture)).expect("read fixture");
+        let payload = bijux_dag_testkit::load_workspace_fixture_text(
+            env!("CARGO_MANIFEST_DIR"),
+            &format!("crates/bijux-dag-artifacts/tests/fixtures/{fixture}"),
+        );
         let parsed: Manifest = serde_json::from_str(&payload).expect("parse fixture manifest");
         let roundtrip = serde_json::to_string_pretty(&parsed).expect("serialize");
         let reparsed: Manifest = serde_json::from_str(&roundtrip).expect("reparse");
@@ -35,28 +29,18 @@ fn run_manifest_minimal_and_maximal_roundtrip_remain_conformant() {
 
 #[test]
 fn run_manifest_version_migration_fixtures_classify_supported_and_unsupported_versions() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let supported: Value = serde_json::from_str(
-        &fs::read_to_string(
-            root.join("evidence/compat/run_schema/v0_1_supported/minimal.manifest.json"),
-        )
-        .expect("supported fixture"),
-    )
-    .expect("supported parse");
-    let unsupported_past: Value = serde_json::from_str(
-        &fs::read_to_string(
-            root.join("evidence/compat/run_schema/unsupported_past/minimal.manifest.json"),
-        )
-        .expect("unsupported past fixture"),
-    )
-    .expect("unsupported parse");
-    let unsupported_future: Value = serde_json::from_str(
-        &fs::read_to_string(
-            root.join("evidence/compat/run_schema/unsupported_future/minimal.manifest.json"),
-        )
-        .expect("unsupported future fixture"),
-    )
-    .expect("unsupported parse");
+    let supported: Value = bijux_dag_testkit::load_workspace_fixture_json(
+        env!("CARGO_MANIFEST_DIR"),
+        "evidence/compat/run_schema/v0_1_supported/minimal.manifest.json",
+    );
+    let unsupported_past: Value = bijux_dag_testkit::load_workspace_fixture_json(
+        env!("CARGO_MANIFEST_DIR"),
+        "evidence/compat/run_schema/unsupported_past/minimal.manifest.json",
+    );
+    let unsupported_future: Value = bijux_dag_testkit::load_workspace_fixture_json(
+        env!("CARGO_MANIFEST_DIR"),
+        "evidence/compat/run_schema/unsupported_future/minimal.manifest.json",
+    );
 
     assert_eq!(supported["manifest_version"], "run-manifest/v0.1");
     assert_ne!(

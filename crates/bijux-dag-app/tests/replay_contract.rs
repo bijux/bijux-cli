@@ -32,13 +32,10 @@ fn replay_fixture_family_exists() {
 
 #[test]
 fn replay_battle_scenario_declares_mandatory_proof() {
-    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let payload = std::fs::read_to_string(
-        repo.join("evidence/battle/workflows/replay/replay_semantic_comparison.json"),
-    )
-    .expect("read replay battle scenario");
-    let value: serde_json::Value =
-        serde_json::from_str(&payload).expect("parse replay battle scenario");
+    let value = bijux_dag_testkit::load_replay_fixture_json(
+        env!("CARGO_MANIFEST_DIR"),
+        "evidence/battle/workflows/replay/replay_semantic_comparison.json",
+    );
     let assertions = value["assertions"].as_array().expect("assertions array");
     assert!(assertions.iter().any(|v| v == "replay_mandatory_proof"));
 }
