@@ -26,6 +26,8 @@ fn artifact_io_fast_suite_covers_store_fs_and_inspect_corruption_contracts() {
     for required in [
         "io_store_fs_contracts",
         "artifact_io_expansion_contracts",
+        "artifact_storage_resilience_contracts",
+        "storage_services_contracts",
         "artifact_inspect_storage_contracts",
     ] {
         assert!(
