@@ -101,3 +101,13 @@ No hand-authored documentation.
 - Move stale generated output to non-doc artifact locations.
 - Keep the most recent relevant report per domain in `docs/reports/` when it directly supports operator action.
 - Reject new top-level docs additions that cannot be mapped to this architecture in one of the allowed sections above.
+
+## Change control freeze
+
+- The information architecture is frozen after this migration.
+- Any new document must include:
+  - audience
+  - owner
+  - status (`stable`, `generated`, `historical`, or `internal`)
+  - explicit link from an index or a declared `Standalone: yes` marker
+- New top-level folders under `docs/` require an explicit architecture update in this file within the same change.

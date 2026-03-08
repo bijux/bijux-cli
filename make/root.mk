@@ -63,6 +63,12 @@ checks-all: ## Run full control-plane checks
 docs: ## Run documentation checks
 	$(call run_or_fail,Run documentation checks,$(DEV_TOOL) docs run)
 
+docs-governance-lint: ## Lint docs metadata, titles, and orphan status
+	$(call run_or_fail,Run docs governance lint,python3 scripts/docs_governance.py lint)
+
+docs-inventory-generate: ## Generate docs inventory and consolidation candidate reports
+	$(call run_or_fail,Generate docs inventory reports,python3 scripts/docs_governance.py generate)
+
 security: ## Run security checks
 	$(call run_or_fail,Run security checks,$(DEV_TOOL) checks run --domain supply-chain)
 
@@ -167,6 +173,6 @@ help: ## Show available make targets
 	printf '%s\n' ""; \
 	awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all checks checks-fast checks-all docs security compat golden tests-all test-release contract-all contracts-all
+.PHONY: all checks checks-fast checks-all docs docs-governance-lint docs-inventory-generate security compat golden tests-all test-release contract-all contracts-all
 .PHONY: release-verify module-hygiene-drift docs-truth-drift repo-deps public-surface artifacts-clean surface-explain doctor benchmark-baseline
 .PHONY: memory-smoke artifact-verify ci sanity help help-contract make-target-list

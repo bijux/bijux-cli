@@ -1,5 +1,9 @@
 # Documentation
 
+Audience: all documentation consumers.  
+Owner: documentation maintainers.  
+Status: stable.
+
 This directory is the top-level documentation area for the project.
 
 ## Source of truth
@@ -33,3 +37,10 @@ No other top-level folders in `docs/` should be added without updating the maste
 - Every documentation file must belong to one audience, one owner, and one status: `stable`, `generated`, `historical`, or `internal`.
 - Generated output must be separated from hand-authored guidance.
 - Reference and spec content must avoid duplication of source-of-truth contracts.
+
+## Governance automation
+
+- `make docs-governance-lint` checks metadata, duplicate titles/topics, and orphan-document signals.
+- `make docs-inventory-generate` regenerates:
+  - `docs/generated/DOCS_INVENTORY.md`
+  - `docs/generated/DOCS_CONSOLIDATION_CANDIDATES.md`
