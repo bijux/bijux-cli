@@ -1,0 +1,26 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {},
+  "nodes": [
+    {
+      "id": "bad_resources",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "node/out"
+        }
+      ],
+      "resources": {
+        "cpu": 2,
+        "mem_mb": 1024,
+        "gpu": 1
+      },
+      "params": {
+        "value": "x"
+      }
+    }
+  ],
+  "edges": []
+}

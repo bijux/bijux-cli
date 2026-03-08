@@ -1,0 +1,27 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "inputs": {},
+  "nodes": [
+    {
+      "id": "bad_container",
+      "kind": "container",
+      "effects": ["filesystem"],
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "out",
+          "path": "container/out"
+        }
+      ],
+      "container": {
+        "image": "alpine:3.20",
+        "argv": [],
+        "engine": "kubelet"
+      },
+      "params": {
+        "value": "noop"
+      }
+    }
+  ],
+  "edges": []
+}

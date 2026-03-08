@@ -137,3 +137,45 @@ fn fixture_forward_ref() {
     let diags = graph.validate_with_warnings();
     assert!(has_code(&diags, "E1022"));
 }
+
+#[test]
+fn fixture_invalid_env_reference() {
+    let input = fixture("invalid_env_reference.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1010"));
+}
+
+#[test]
+fn fixture_invalid_resource_declaration_rejects_unknown_resource_keys() {
+    let input = fixture("invalid_resource_declaration.json");
+    let error = parse_graph_strict(&input).expect_err("unknown resources key must be rejected");
+    let message = error.to_string();
+    assert!(
+        message.contains("resources") || message.contains("gpu"),
+        "error should describe invalid resource declaration, got: {message}"
+    );
+}
+
+#[test]
+fn fixture_duplicate_outputs_per_node() {
+    let input = fixture("duplicate_outputs_per_node.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1008"));
+}
+
+#[test]
+fn fixture_illegal_output_path_traversal() {
+    let input = fixture("illegal_output_path_traversal.json");
+    let error = parse_graph_strict(&input).expect_err("path traversal must be rejected");
+    assert_eq!(error.to_string(), "validation failed");
+}
+
+#[test]
+fn fixture_unsupported_node_settings() {
+    let input = fixture("unsupported_node_settings.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1024"));
+}
