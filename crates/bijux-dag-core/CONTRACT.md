@@ -6,13 +6,15 @@ Responsibility: DAG schema, parsing, canonicalization, validation, and determini
 `bijux-dag-core` owns DAG model, parse, validation, resolve, canonicalization, topology, and fingerprint semantics.
 
 ## Internal boundaries
-- `src/lib.rs` is the only root Rust file.
-- `build/*`: builder and compile surfaces.
-- `graph/*`: graph model and topology components.
-- `pipeline/*`: parse, resolve, and validate pipeline surfaces.
-- `analysis/*`: effects, fingerprint, and semantic analysis.
-- `planner/*`: lowering and planning surfaces.
-- `contracts/*`: error and compatibility contract types.
+- `src/lib.rs` is a thin export surface and should not contain core algorithms.
+- `graph/model.rs` owns graph domain types.
+- `graph/canonical.rs` owns canonicalization and normalization.
+- `graph/topology.rs` owns deterministic ordering.
+- `pipeline/*` owns parse, resolve, and validate entrypoints.
+- `analysis/*` owns fingerprinting and semantic analysis.
+- `planner/*` owns lowering and planning surfaces.
+- `build/*` owns authoring helpers and compile-oriented wrappers around the kernel.
+- `contracts/*` owns error and compatibility contract types.
 
 ## Purity boundary
 Core is pure logic and data transformation.
@@ -30,3 +32,8 @@ Allowed utility dependencies:
 
 ## Validation model
 Validation diagnostics must carry stable IDs and severities and remain documented in `docs/spec/VALIDATION_RULES.md`.
+
+## Architectural guardrails
+- Domain types should stay independent from compile-orchestration conveniences.
+- New algorithms belong in focused modules, not in `src/lib.rs`.
+- Integration-oriented wrappers must not become the primary place where core semantics live.
