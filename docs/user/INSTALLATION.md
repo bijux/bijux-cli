@@ -1,5 +1,9 @@
 # Installation
 
+Audience: new users and operators.  
+Owner: user documentation maintainers.  
+Status: stable.
+
 ## Supported installation methods
 - Build from source:
   - `cargo build -p bijux-dag-cli --release`

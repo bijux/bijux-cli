@@ -1,4 +1,8 @@
-# Ecosystem adoption guide
+# Ecosystem adoption reference
+
+Audience: maintainers and platform operators.  
+Owner: platform documentation guild.  
+Status: stable.
 
 ## Onboarding surfaces
 

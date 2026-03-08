@@ -1,25 +1,34 @@
 # Bijux DAG documentation map
 
-## Root entrypoints
+Audience: all documentation consumers.  
+Owner: documentation maintainers.  
+Status: stable.
 
-- [Docs entrypoint overview](./README.md)
-- [Documentation information architecture](../docs-information-architecture.md)
-- [CLI contract guide](./CLI.md)
-- [Compatibility model](./COMPATIBILITY.md)
-- [Security and policy](./SECURITY.md)
-- [Observability](./OBSERVABILITY.md)
-- [Ownership and governance](./OWNERSHIP.md)
-- [Replay guarantees](./REPLAY_GUARANTEES.md)
-- [Testing strategy](./TESTING.md)
+## Start paths
 
-## Section entrypoints
+1. New users:
+   - [First hour guide](./user/FIRST_HOUR_WITH_BIJUX_DAG.md)
+   - [Installation](./user/INSTALLATION.md)
+   - [Authoring guide](./user/AUTHORING_GUIDE.md)
+   - [Operator workflows](./user/OPERATOR_WORKFLOWS.md)
+2. Operators and maintainers:
+   - [Reference entrypoint](./reference/README.md)
+   - [Support and compatibility matrices](./reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md)
+   - [Glossary](./reference/GLOSSARY.md)
+3. Architecture and contracts:
+   - [Architecture entrypoint](./architecture/README.md)
+   - [Spec entrypoint](./spec/README.md)
+   - [ADR entrypoint](./adr/README.md)
 
-- [Architecture and boundaries](./architecture/README.md)
-- [Contract specs](./spec/README.md)
-- [Reference material](./reference/README.md)
-- [Operator workflows](./operations/README.md)
-- [Maintainer workflows](./dev/README.md)
-- [Testing workflows](./testing/README.md)
-- [User onboarding and operation guides](./user/README.md)
-- [Root documentation cleanup log](./tracking/ROOT_DOCUMENT_AUDIT_21_40.md)
+## Maintainer sections
+
+- [Operations guides](./operations/README.md)
+- [Development guides](./dev/README.md)
+- [Testing guides](./testing/README.md)
+
+## Historical and generated surfaces
+
+- [Reports policy and dashboards](./reports/README.md)
 - [Archived root docs](./reports/root-doc-archive/README.md)
+- [Generated docs artifacts](./generated/README.md)
+- [Documentation information architecture](../docs-information-architecture.md)

@@ -22,3 +22,4 @@ Reference topics must point to canonical contracts in `spec/` when they describe
 - `SUPPORT_AND_COMPATIBILITY_MATRICES.md` for all support and compatibility matrix material.
 - `GLOSSARY.md` for canonical terminology.
 - `COMPARISON_REFERENCE.md` for comparison evidence rules and scenario mappings.
+- `ECOSYSTEM_ADOPTION_REFERENCE.md` for ecosystem adoption positioning and constraints.

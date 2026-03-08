@@ -1,5 +1,9 @@
 # First Hour with bijux-dag
 
+Audience: new users and operators.  
+Owner: user documentation maintainers.  
+Status: stable.
+
 ## 1. Check binary and capability surface
 ```sh
 cargo run -p bijux-dag-cli -- dag version --json
@@ -18,3 +22,10 @@ cargo run -p bijux-dag-cli -- dag runs inspect first-hour --root runs --json
 cargo run -p bijux-dag-cli -- dag runs timeline first-hour --root runs --json
 cargo run -p bijux-dag-cli -- dag runs verify first-hour --root runs --deep --json
 ```
+
+## Read next
+
+1. `docs/user/AUTHORING_GUIDE.md`
+2. `docs/user/OPERATOR_WORKFLOWS.md`
+3. `docs/user/CI_INTEGRATION.md`
+4. `docs/user/TRUST_BOUNDARIES.md`

@@ -1,5 +1,9 @@
 # DAG Authoring Guide
 
+Audience: DAG authors and operators.  
+Owner: user documentation maintainers.  
+Status: stable.
+
 ## Start with minimal JSON authoring
 Use `evidence/authoring/patterns/minimal.json` as the baseline shape.
 

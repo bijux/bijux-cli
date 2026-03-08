@@ -49,9 +49,9 @@ must not depend on ambient repository files.
 
 ## Command taxonomy ownership
 Normative operator command taxonomy lives in:
-- `docs/user/OPERATOR_COMMAND_INDEX.md`
+- `docs/user/OPERATOR_WORKFLOWS.md`
 - `docs/reference/COMMAND_TAXONOMY.md`
 
 ## Inspection contract ownership
 - `docs/spec/OPERATOR_INSPECTION_CONTRACT.md`
-- `docs/user/OPERATOR_INSPECTION_GUIDE.md`
+- `docs/user/OPERATOR_WORKFLOWS.md`
