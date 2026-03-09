@@ -1,0 +1,6 @@
+{
+  "code": 2,
+  "command": "cli config export",
+  "message": "Unsupported format: text",
+  "status": "error"
+}

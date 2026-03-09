@@ -1,0 +1,3 @@
+file: <EXTERNAL_PATH>
+format: auto
+status: exported
