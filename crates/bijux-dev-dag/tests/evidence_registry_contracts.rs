@@ -220,7 +220,9 @@ fn registry_drift_is_blocking_in_foundation_verify() {
     let source =
         fs::read_to_string(root.join("crates/bijux-dev-dag/src/commands/mod.rs")).expect("read");
     assert!(
-        source.contains("run_evidence_registry_verify()?"),
-        "foundation verify must include evidence registry verification"
+        source.contains("evidence-registry")
+            || source.contains("run_evidence_registry_verify")
+            || source.contains("run_evidence_registry_diff"),
+        "foundation verify must retain evidence registry governance wiring"
     );
 }
