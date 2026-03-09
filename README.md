@@ -2,23 +2,18 @@
 
 <a id="top"></a>
 
-**Bijux CLI is a framework for building long-lived, complex command-line tools in Python.**
+**Bijux CLI is a command framework for Python with Rust-backed parity work in progress.**
 
-It is designed for CLIs that **grow**, accumulate features, gain plugins, and must remain **predictable, testable, and understandable** years after their first release.
+It is designed for CLIs that grow over time and need stable command behavior.
 
-Bijux is not a wrapper around argument parsing.
-It is an **execution framework** for serious tools.
-
-Bijux is built for engineers who care about:
+Bijux focuses on:
 
 * deterministic global flags (no ambiguity, no surprises),
 * first-class plugins with explicit lifecycles,
 * a real dependency-injection kernel,
 * structured output for automation,
 * a unified synchronous **and asynchronous** execution model,
-* and an interactive REPL for exploration and debugging.
-
-If you have ever watched a CLI become fragile as it scaled, Bijux exists to prevent that.
+* and an interactive REPL.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bijux-cli.svg)](https://pypi.org/project/bijux-cli/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/bijux-cli/)
@@ -67,17 +62,13 @@ If you have ever watched a CLI become fragile as it scaled, Bijux exists to prev
 
 ## Why Bijux CLI?
 
-Click and Typer are excellent for **small or simple tools**.
-
-Bijux is for **complex CLIs** where:
+Bijux is for CLIs where:
 
 * global flags must behave consistently in CI and automation,
 * commands may be synchronous or asynchronous,
 * features and plugins are added incrementally,
 * internal state must be observable and testable,
 * and regressions must be caught early.
-
-Bijux deliberately trades a small amount of upfront structure for **long-term clarity and stability**.
 
 ---
 
@@ -188,7 +179,7 @@ Upgrade with `pipx upgrade bijux-cli` or `pip install --upgrade bijux-cli`.
 ## Platform Support
 
 * **Supported**: Linux, macOS
-r* **Not supported**: Windows
+* **Not supported**: Windows
 
 Bijux relies on POSIX filesystem and process semantics.
 
