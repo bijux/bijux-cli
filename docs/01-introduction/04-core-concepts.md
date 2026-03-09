@@ -1,8 +1,6 @@
 # Core Concepts
 
-Provide a practical conceptual map for operating and understanding bijux-dag.
-
-This document establishes the primary objects and relationships used throughout user guides, CLI reference, and specification docs.
+Use this page as the system mental model: graph defines intent, run records one execution, artifact records one output unit, replay re-validates behavior, and diff classifies change.
 
 ## Explanation
 The system can be understood as a five-part control loop:
@@ -68,6 +66,14 @@ Mental model for operators:
 - If behavior changed, use diff to locate scope.
 - If confidence is needed, use replay to validate stability.
 - If outputs must move, use artifact/bundle portability workflows with explicit boundaries.
+
+Common confusion: graph identity vs run identity vs artifact identity
+- graph identity answers: "which definition state?"
+- run identity answers: "which execution instance?"
+- artifact identity answers: "which canonical output object?"
+- same graph identity can appear across many runs.
+- same run can contain many artifacts.
+- equal artifact identity across runs indicates canonical output equivalence for that artifact unit.
 
 ## Examples
 ```text

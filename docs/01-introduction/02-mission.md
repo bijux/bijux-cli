@@ -1,8 +1,6 @@
 # Mission
 
-State the enduring mission of bijux-dag and the operational outcomes it targets.
-
-The mission constrains product decisions, prioritization, and documentation scope.
+The mission of bijux-dag is narrow by design: make DAG execution behavior provable through deterministic evidence, not inferred through best-effort logs.
 
 ## Explanation
 Mission statement:
@@ -13,6 +11,11 @@ Operationally, the mission means:
 - run outcomes should be auditable through identity and provenance
 - replay and diff should be routine operational tools
 - documentation should prioritize truthful guarantees over broad claims
+
+Design constraints this mission imposes:
+- if a feature weakens replay/diff trustworthiness, it must be redesigned or rejected.
+- if a feature expands scope but weakens guarantees, scope expansion is rejected.
+- if behavior cannot be bounded in docs/spec/tests, it is not release-grade.
 
 Long-term design goals:
 - make run-to-artifact lineage reliable enough for incident diagnosis and release decisions.

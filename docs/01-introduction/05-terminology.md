@@ -1,11 +1,9 @@
 # Terminology
 
-Define canonical terms used across all documentation and remove ambiguity.
-
-This glossary is the primary vocabulary source for user, architecture, specification, and operations documents.
+Canonical glossary for terms that appear repeatedly across user, architecture, and specification docs.
 
 ## Explanation
-Use these definitions exactly in docs and reviews. If a term is not listed here, define it before using it as contract language.
+Use these definitions exactly. If a term is not listed here, define it before using it as contract language.
 
 Graph
 - Canonical DAG definition object: nodes + dependency edges + semantic configuration.
@@ -42,12 +40,6 @@ Diff
 Inspect
 - Read-only introspection of run state, node outcomes, and artifacts.
 
-Determinism
-- Stability of classified behavior under equivalent defined inputs and supported environment constraints.
-
-Portability
-- Ability to transfer workflow context and outputs across environments with explicit equivalence boundaries.
-
 Canonical distinction set:
 - Artifact vs output:
   - output = generic produced bytes/data
@@ -74,6 +66,9 @@ Preferred vs discouraged synonyms:
 - prefer `run`; discourage `execution record` as primary term.
 - prefer `artifact`; discourage `output file` when identity and lineage are relevant.
 - prefer `replay classification`; discourage `rerun looked fine` as evidence statement.
+
+Non-goal for this page:
+- this glossary does not define algorithms, schemas, or policy logic; it defines shared vocabulary only.
 
 ## Examples
 ```text

@@ -1,11 +1,9 @@
 # What Is Bijux Dag
 
-Explain what bijux-dag is, what problem it solves, and why its deterministic model matters.
-
-This is the first technical entrypoint for new readers. It defines the system identity and its problem space before command details or architecture internals.
+Pipeline systems often fail the same way: teams can see that outputs changed, but cannot prove why they changed. Bijux-dag exists to make that question answerable through deterministic execution evidence, replay, and diff.
 
 ## Explanation
-Bijux-dag is a deterministic workflow runtime and contract-driven control surface for DAG computation. It is designed for teams that need to explain run behavior precisely, compare outcomes reliably, and move workflows across environments without losing attribution.
+Bijux-dag is a deterministic workflow runtime and contract-driven control surface for DAG computation. It is built for teams that need to explain run behavior precisely, compare outcomes reliably, and move workflows across environments without losing attribution.
 
 The practical shorthand "Git for computation graphs" means:
 - graph definitions are explicit, inspectable, and comparable
@@ -31,10 +29,10 @@ Bijux-dag addresses this with deterministic pipeline control:
 - replay and diff as core workflow primitives
 - inspect surfaces for debugging and verification
 
-How this compares to common orchestration ecosystems:
-- Airflow-class tools optimize broad scheduling and ecosystem integration; bijux-dag optimizes deterministic replay and contract-grade comparability.
-- Dagster-class tools optimize software-defined data workflows and asset modeling; bijux-dag keeps the primary center of gravity on graph/run/artifact identity and strict diffability.
-- Nextflow-class tools optimize domain-specific execution ecosystems (for example, scientific pipelines); bijux-dag targets a general deterministic DAG control model with explicit runtime contracts.
+How this differs from orchestration-first tools:
+- orchestration-first tools optimize breadth of scheduling and integrations; bijux-dag optimizes depth of deterministic evidence and comparability.
+- orchestration-first tools often treat replay/diff as auxiliary workflows; bijux-dag treats them as primary control loops.
+- orchestration-first tools prioritize broad platform behavior; bijux-dag narrows scope to make runtime guarantees sharper and testable.
 
 The difference is emphasis, not value judgment. Bijux-dag chooses narrower scope to make guarantees sharper.
 

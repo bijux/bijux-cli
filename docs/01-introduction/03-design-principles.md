@@ -1,8 +1,6 @@
 # Design Principles
 
-Define the durable principles used to evaluate product and documentation decisions.
-
-These principles apply across runtime behavior, interfaces, and docs.
+These principles are decision filters. If a proposed change does not improve at least one principle without violating another, it should not ship.
 
 ## Explanation
 1. Determinism first
@@ -76,6 +74,9 @@ These principles apply across runtime behavior, interfaces, and docs.
 - Why: production systems fail in operations, not in whiteboard narratives.
 - Tradeoff: technically elegant but untestable designs are rejected.
 - Example in practice: CI and test lanes prioritize deterministic contract validation.
+
+Principle validity rule:
+- a principle that does not force at least one concrete design tradeoff is not a real principle and should be removed.
 
 ## Examples
 ```text
