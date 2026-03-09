@@ -17,3 +17,4 @@ This inventory documents behavior from source and tests for tasks 31-40.
 - [Shell completion behavior](shell-completion-behavior.md)
 - [REPL commands and shortcuts](repl-commands-and-shortcuts.md)
 - [Plugin command and lifecycle behavior](plugin-command-and-lifecycle-behavior.md)
+- [Golden outputs and behavior captures](golden-and-behavior-captures.md)
