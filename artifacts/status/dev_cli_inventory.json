@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-09T22:38:23.386196+00:00",
+  "generated_at": "2026-03-09T23:06:38.170060+00:00",
   "generator": "scripts/status/generate_dev_cli_inventory.py",
   "maintainer_script_replacements": [
     {
@@ -803,7 +803,15 @@
     },
     {
       "classification": "move-to-dev-cli",
+      "path": "scripts/parity/check_command_parity_gates.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
       "path": "scripts/parity/generate_binary_bridge_parity.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/parity/generate_command_parity_matrix.py"
     },
     {
       "classification": "move-to-dev-cli",
@@ -812,6 +820,10 @@
     {
       "classification": "move-to-dev-cli",
       "path": "scripts/status/check_runtime_unity.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/enforce_release_truth_gates.py"
     },
     {
       "classification": "move-to-dev-cli",
@@ -824,6 +836,30 @@
     {
       "classification": "move-to-dev-cli",
       "path": "scripts/status/generate_dev_cli_inventory.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_docs_audit.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_flaky_test_labels.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_plugin_state_report.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_state_parity_reports.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_test_quality_audit.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_truth_milestone_status.py"
     },
     {
       "classification": "wrap-with-dev-cli",

@@ -6,7 +6,7 @@
     "explicit plugin schema command"
   ],
   "frozen_law": "plugin v1 contract is frozen before expanding command cleverness",
-  "generated_at": "2026-03-09T22:53:41.129346+00:00",
+  "generated_at": "2026-03-09T23:06:39.096872+00:00",
   "generator": "scripts/status/generate_plugin_state_report.py",
   "overlap_parity_tests": [
     "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
