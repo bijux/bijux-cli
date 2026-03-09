@@ -1,98 +1,70 @@
 # Run Directory
 
-Describe run directory architecture and its role in execution evidence lifecycle.
+Run directory is the authoritative on-disk evidence envelope for one run identity.
 
-Run directory design supports inspect, replay, and diff workflows across time.
+## Why this surface exists
 
-## Explanation
-Run directory responsibilities:
-- capture run-level metadata
-- preserve node execution outcomes
-- provide structured evidence for diagnostics and comparison
+Replay, inspect, and diff need stable, attributable evidence after execution completes. Run directory provides that evidence boundary.
 
-Run directory layout guidance (conceptual):
-- run metadata record (identity, status, timing envelope).
-- node outcome records (per-node terminal outcomes and diagnostics).
-- artifact reference index (produced artifact links).
-- replay/diff helper records where applicable.
+## Semantics, not just layout
 
-Design principles:
-- one run identity maps to one coherent run evidence scope
-- file/layout organization should support fast operational lookup
-- run evidence remains attributable and auditable
+A run directory records three classes of data:
 
-Run directory in workflow:
-- created during run initialization
-- updated throughout execution
-- consumed by inspect/replay/diff surfaces after completion
+- authoritative run facts,
+- supporting diagnostics,
+- derived convenience artifacts.
 
-## Examples
-```text
-Run start -> directory materialization -> incremental evidence writes -> terminal state snapshot
-```
+If these classes are mixed or overwritten, post-run trust degrades.
 
-```text
-Conceptual layout:
-runs/RUN_.../
-  run-metadata.json
-  node-results.json
-  artifacts-index.json
-```
-
-## Guarantees
-- Run directory is documented as a first-class architecture surface.
-- Evidence lifecycle is explicit from initialization to post-run analysis.
-
-## Limitations
-- This page does not define exact on-disk schema.
-- Retention policy and cleanup strategy are environment-specific.
-
-## Related
-- `docs/05-system-architecture/03-execution-engine.md`
-- `docs/03-user-guide/04-run-history.md`
-- `docs/03-user-guide/07-inspect-and-debug.md`
-- `docs/06-specification/02-run-model.md`
-
-## Run-directory semantics in practice
-
-Run directory is the authoritative evidence envelope for one run identity. It is not just a file tree; it is the persisted execution narrative used by inspect, replay, and diff.
-
-## Realistic run-directory tree example
+## Example layout with meaning
 
 ```text
 runs/RUN_20260309_220/
   run-metadata.json
   node-outcomes/
     extract.json
-    transform_orders.json
-    publish.json
+    transform.json
   artifacts-index.json
+  diagnostics/
+    transform.stderr.log
   replay/
     replay-summary.json
-  diagnostics/
-    stderr-transform_orders.log
 ```
 
-What each record means:
+Field semantics:
 
 - `run-metadata.json`: run identity, graph identity, terminal status, timing envelope.
-- `node-outcomes/*.json`: per-node normalized outcomes and reason codes.
-- `artifacts-index.json`: artifact IDs, hashes, producer-node linkage.
-- `replay/replay-summary.json`: replay classification evidence when replay exists.
-- `diagnostics/*`: backend diagnostics referenced by inspect workflows.
+- `node-outcomes/*`: normalized per-node terminal outcomes and reason classes.
+- `artifacts-index.json`: artifact IDs, producer-node links, identity references.
+- `diagnostics/*`: backend/runtime diagnostic payloads for debug follow-up.
+- `replay/*`: replay evidence linked to this run context.
 
-## Authoritative versus derived data
+## Authoritative versus derived files
 
-Authoritative run records:
+Authoritative:
 
 - run metadata,
-- node terminal outcomes,
-- artifact identity/linkage references.
+- node outcomes,
+- artifact linkage/identity references.
 
-Derived views:
+Derived:
 
-- summarized dashboards,
-- trend indexes,
-- cached comparison artifacts.
+- cached summaries,
+- trend rollups,
+- regenerated comparison views.
 
-If authoritative and derived views diverge, trust authoritative run-directory records and regenerate derived views.
+Rule: if authoritative and derived disagree, authoritative wins and derived must be rebuilt.
+
+## What replay, inspect, and diff require
+
+- inspect requires authoritative run metadata and node outcomes,
+- replay requires baseline run identity context and required evidence references,
+- diff requires scope-appropriate identity and outcome records.
+
+Missing these required records forces `incomplete`/unknown classifications, not silent assumptions.
+
+## Next reading
+
+- Execution write path: [Execution Engine](../05-system-architecture/03-execution-engine.md)
+- Formal run contract: [Run Model Specification](../06-specification/02-run-model.md)
+- Debug interpretation path: [Inspect And Debug](../03-user-guide/07-inspect-and-debug.md)
