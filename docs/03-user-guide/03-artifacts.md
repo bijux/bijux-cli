@@ -56,6 +56,13 @@ artifact hash: sha256:2f67...
 ```
 
 ```text
+Realistic downstream use example:
+- node transform produces artifact out/features.parquet
+- node train depends on transform and consumes out/features.parquet
+- artifact lineage ties trained-model outputs back to transform run and graph identity
+```
+
+```text
 Artifact storage structure example:
 artifacts/
   ART_20260309_001/
@@ -92,3 +99,13 @@ Artifact review checklist:
 - `docs/05-system-architecture/06-artifact-store.md`
 - `docs/06-specification/03-artifact-model.md`
 - `docs/06-specification/06-artifact-identity.md`
+
+## Realistic downstream-use example
+
+A practical lineage chain:
+
+- Node `extract_orders` emits artifact `orders_raw.parquet` with identity hash `sha256:...a1`.
+- Node `normalize_orders` consumes `orders_raw.parquet` and emits `orders_normalized.parquet` with hash `sha256:...b7`.
+- Node `daily_revenue_report` consumes `orders_normalized.parquet` and emits `revenue_daily.csv` with hash `sha256:...f2`.
+
+If `orders_raw.parquet` changes, downstream artifact identities are expected to change unless normalization and reporting are provably insensitive to the changed fields. This is why downstream lineage links are part of debugging, not just storage metadata.
