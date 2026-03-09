@@ -32,7 +32,7 @@ fn inspect_snapshots_match_json_yaml_and_text() {
 
 #[test]
 fn dev_diagnostics_text_snapshots_match() {
-    let cases: [(&[&str], &str); 6] = [
+    let cases: [(&[&str], &str); 8] = [
         (&["dev", "cli", "routes", "--format", "text"], include_str!("snapshots/dev_cli_routes_text.txt")),
         (&["dev", "cli", "registry", "--format", "text"], include_str!("snapshots/dev_cli_registry_text.txt")),
         (&["dev", "cli", "env", "--format", "text"], include_str!("snapshots/dev_cli_env_text.txt")),
@@ -45,10 +45,43 @@ fn dev_diagnostics_text_snapshots_match() {
             &["dev", "cli", "runtime-identity", "--format", "text"],
             include_str!("snapshots/dev_cli_runtime_identity_text.txt"),
         ),
+        (
+            &["dev", "cli", "state-audit", "--format", "text"],
+            include_str!("snapshots/dev_cli_state_audit_text.txt"),
+        ),
+        (
+            &["dev", "cli", "state-doctor", "--format", "text"],
+            include_str!("snapshots/dev_cli_state_doctor_text.txt"),
+        ),
     ];
 
     for (args, expected) in cases {
         let actual = run_stdout(args);
+        assert_eq!(actual, expected, "snapshot mismatch for args: {args:?}");
+    }
+}
+
+#[test]
+fn state_diagnostics_no_color_snapshots_match() {
+    let cases: [(&[&str], &str); 2] = [
+        (
+            &["dev", "cli", "state-audit", "--format", "text"],
+            include_str!("snapshots/dev_cli_state_audit_no_color.txt"),
+        ),
+        (
+            &["dev", "cli", "state-doctor", "--format", "text"],
+            include_str!("snapshots/dev_cli_state_doctor_no_color.txt"),
+        ),
+    ];
+
+    for (args, expected) in cases {
+        let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+            .args(args)
+            .env("NO_COLOR", "1")
+            .output()
+            .expect("binary should execute");
+        assert!(output.status.success(), "command failed for args: {args:?}");
+        let actual = String::from_utf8(output.stdout).expect("utf-8 output");
         assert_eq!(actual, expected, "snapshot mismatch for args: {args:?}");
     }
 }

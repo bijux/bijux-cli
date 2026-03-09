@@ -122,6 +122,8 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "contracts"], "contracts"),
         (vec!["dev", "cli", "runtime-identity"], "entrypoints"),
         (vec!["dev", "cli", "docs-prune-plan"], "target_cap"),
+        (vec!["dev", "cli", "state-audit"], "paths"),
+        (vec!["dev", "cli", "state-doctor"], "doctor"),
     ];
     for (args, required_key) in cases {
         let stdout = run(&args);

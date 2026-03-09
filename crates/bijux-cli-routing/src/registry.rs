@@ -91,6 +91,8 @@ impl Default for RouteRegistry {
             "dev cli contracts".to_string(),
             "dev cli runtime-identity".to_string(),
             "dev cli docs-prune-plan".to_string(),
+            "dev cli state-audit".to_string(),
+            "dev cli state-doctor".to_string(),
         ]);
 
         let aliases = BTreeMap::from([
@@ -129,6 +131,8 @@ impl Default for RouteRegistry {
             ("dev contracts".to_string(), "dev cli contracts".to_string()),
             ("dev runtime-identity".to_string(), "dev cli runtime-identity".to_string()),
             ("dev docs-prune-plan".to_string(), "dev cli docs-prune-plan".to_string()),
+            ("dev state-audit".to_string(), "dev cli state-audit".to_string()),
+            ("dev state-doctor".to_string(), "dev cli state-doctor".to_string()),
         ]);
 
         let reserved = BTreeSet::from([

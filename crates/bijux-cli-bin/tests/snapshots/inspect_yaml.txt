@@ -183,6 +183,22 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
+  - state-audit
+  canonical:
+  - dev
+  - cli
+  - state-audit
+  source: compatibility-alias
+- alias:
+  - dev
+  - state-doctor
+  canonical:
+  - dev
+  - cli
+  - state-doctor
+  source: compatibility-alias
+- alias:
+  - dev
   - status
   canonical:
   - dev
@@ -414,6 +430,14 @@ builtins:
   - dev
   - cli
   - snapshots-audit
+- segments:
+  - dev
+  - cli
+  - state-audit
+- segments:
+  - dev
+  - cli
+  - state-doctor
 - segments:
   - dev
   - cli
@@ -701,6 +725,18 @@ route_sources:
   - dev
   - cli
   - snapshots-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - state-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - state-doctor
   source: built-in
 - owner: bijux-cli
   segments:

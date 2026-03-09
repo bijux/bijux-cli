@@ -2,7 +2,10 @@
 //! Inspect and developer diagnostics parity coverage.
 
 use std::collections::BTreeSet;
+use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
 use libc as _;
@@ -15,8 +18,27 @@ fn run(args: &[&str]) -> std::process::Output {
         .expect("binary should execute")
 }
 
+fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    cmd.args(args);
+    for (k, v) in envs {
+        cmd.env(k, v);
+    }
+    cmd.output().expect("binary should execute")
+}
+
 fn parse_json(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).expect("json output")
+}
+
+fn make_temp_dir(name: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!("bijux-diagnostics-bin-{name}-{nanos}"));
+    fs::create_dir_all(&path).expect("mkdir");
+    path
 }
 
 #[test]
@@ -139,4 +161,50 @@ fn dev_diagnostics_payloads_expose_metadata_contracts() {
     assert!(contracts["contracts"].is_array());
     assert!(contracts["schema_version"].is_string());
     assert!(contracts["runtime_version"].is_string());
+
+    let state_audit =
+        parse_json(&run(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"]).stdout);
+    assert!(state_audit["paths"]["config"]["path"].is_string());
+    assert!(state_audit["paths"]["history"]["path"].is_string());
+    assert!(state_audit["paths"]["plugins_registry"]["path"].is_string());
+    assert!(state_audit["paths"]["memory"]["path"].is_string());
+
+    let state_doctor =
+        parse_json(&run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]).stdout);
+    assert!(state_doctor["doctor"]["status"].is_string());
+    assert!(state_doctor["doctor"]["issues"].is_array());
+}
+
+#[test]
+fn state_doctor_reports_config_duplicate_keys() {
+    let temp = make_temp_dir("state-doctor-duplicates");
+    let config = temp.join("dupes.env");
+    fs::write(&config, "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=2\n").expect("write config");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_CONFIG", config.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| item["message"] == "duplicate config keys found"));
+}
+
+#[test]
+fn state_doctor_reports_history_malformed_storage() {
+    let temp = make_temp_dir("state-doctor-history-malformed");
+    let history = temp.join("malformed.history");
+    fs::write(&history, "{\"oops\":true}").expect("write malformed history");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", history.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| item["area"] == "history"));
 }

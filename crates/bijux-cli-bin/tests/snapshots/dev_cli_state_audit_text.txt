@@ -1,0 +1,41 @@
+{
+  "paths": {
+    "config": {
+      "exists": true,
+      "is_dir": false,
+      "is_file": true,
+      "path": "/Users/bijan/.bijux/.env",
+      "readable": true,
+      "size_bytes": 20,
+      "writable": true
+    },
+    "history": {
+      "exists": true,
+      "is_dir": false,
+      "is_file": true,
+      "path": "/Users/bijan/.bijux/.history",
+      "readable": true,
+      "size_bytes": 464031,
+      "writable": true
+    },
+    "memory": {
+      "exists": true,
+      "is_dir": false,
+      "is_file": true,
+      "path": "/Users/bijan/.bijux/.memory.json",
+      "readable": true,
+      "size_bytes": 23,
+      "writable": true
+    },
+    "plugins_registry": {
+      "exists": false,
+      "is_dir": false,
+      "is_file": false,
+      "path": "/Users/bijan/.bijux/.plugins/registry.json",
+      "readable": false,
+      "size_bytes": 0,
+      "writable": true
+    }
+  },
+  "runtime": "dev-cli"
+}

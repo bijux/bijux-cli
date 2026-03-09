@@ -12,7 +12,8 @@ use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
     canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config, pip_install_strategy,
-    post_install_hint, CompatibilityConfig, PackageChannel, PathOverrides, CANONICAL_EXECUTABLE,
+    post_install_hint, CompatibilityConfig, CompatibilityPaths, PackageChannel, PathOverrides,
+    CANONICAL_EXECUTABLE,
     ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
@@ -330,6 +331,85 @@ fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Value>> {
         anyhow::bail!("Malformed memory state: expected JSON object");
     };
     Ok(object.clone())
+}
+
+fn state_path_status(path: &Path) -> Value {
+    let exists = path.exists();
+    let metadata = fs::metadata(path).ok();
+    let is_file = metadata.as_ref().is_some_and(|m| m.is_file());
+    let is_dir = metadata.as_ref().is_some_and(|m| m.is_dir());
+    let size_bytes = metadata.as_ref().map_or(0_u64, |m| m.len());
+    let readable = fs::read(path).is_ok();
+    let writable = if exists {
+        fs::OpenOptions::new().append(true).open(path).is_ok()
+    } else {
+        path.parent().is_some_and(|parent| fs::create_dir_all(parent).is_ok())
+    };
+    json!({
+        "path": path,
+        "exists": exists,
+        "is_file": is_file,
+        "is_dir": is_dir,
+        "size_bytes": size_bytes,
+        "readable": readable,
+        "writable": writable,
+    })
+}
+
+fn state_diagnostics(paths: &CompatibilityPaths, plugin_registry_path: &Path) -> Value {
+    let mut issues = Vec::<Value>::new();
+
+    let repository = FileConfigRepository;
+    if let Err(err) = repository.load(&paths.config_file) {
+        issues.push(json!({
+            "area": "config",
+            "severity": "error",
+            "message": err.to_string(),
+            "path": paths.config_file,
+        }));
+    }
+    if let Ok(text) = fs::read_to_string(&paths.config_file) {
+        let mut seen = std::collections::BTreeMap::<String, usize>::new();
+        for line in text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#')) {
+            if let Some((left, _)) = line.split_once('=') {
+                *seen.entry(left.trim().to_string()).or_insert(0) += 1;
+            }
+        }
+        let duplicates: Vec<String> =
+            seen.into_iter().filter_map(|(key, count)| (count > 1).then_some(key)).collect();
+        if !duplicates.is_empty() {
+            issues.push(json!({
+                "area": "config",
+                "severity": "error",
+                "message": "duplicate config keys found",
+                "keys": duplicates,
+                "path": paths.config_file,
+            }));
+        }
+    }
+
+    if let Err(err) = read_history_entries(&paths.history_file, 20) {
+        issues.push(json!({
+            "area": "history",
+            "severity": "error",
+            "message": err.to_string(),
+            "path": paths.history_file,
+        }));
+    }
+
+    if let Err(err) = plugin_doctor(plugin_registry_path) {
+        issues.push(json!({
+            "area": "plugins",
+            "severity": "error",
+            "message": err.to_string(),
+            "path": plugin_registry_path,
+        }));
+    }
+
+    json!({
+        "status": if issues.is_empty() { "healthy" } else { "degraded" },
+        "issues": issues,
+    })
 }
 
 fn render_command_help(path: &[&str]) -> Result<String> {
@@ -895,6 +975,25 @@ fn route_response(
                 ],
             })
         }
+        [a, b, c] if a == "dev" && b == "cli" && c == "state-audit" => {
+            let memory_path = memory_file_path_from_home(home.as_deref());
+            json!({
+                "paths": {
+                    "config": state_path_status(&paths.config_file),
+                    "history": state_path_status(&paths.history_file),
+                    "plugins_registry": state_path_status(&plugin_registry_path),
+                    "memory": state_path_status(&memory_path),
+                },
+                "runtime": "dev-cli",
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor" => {
+            let diagnosis = state_diagnostics(&paths, &plugin_registry_path);
+            json!({
+                "runtime": "dev-cli",
+                "doctor": diagnosis,
+            })
+        }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
             json!({
                 "contracts": [
@@ -1042,7 +1141,9 @@ fn is_known_route(path: &[String]) -> bool {
                     || c == "doctor"
                     || c == "contracts"
                     || c == "runtime-identity"
-                    || c == "docs-prune-plan") =>
+                    || c == "docs-prune-plan"
+                    || c == "state-audit"
+                    || c == "state-doctor") =>
         {
             true
         }

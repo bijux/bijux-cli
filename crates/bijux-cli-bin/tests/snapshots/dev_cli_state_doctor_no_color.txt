@@ -1,0 +1,7 @@
+{
+  "doctor": {
+    "issues": [],
+    "status": "healthy"
+  },
+  "runtime": "dev-cli"
+}
