@@ -16,7 +16,7 @@
     {"id": "trace-failure-completeness", "coverage": ["failure-completeness", "trace-completeness"], "source": "crates/bijux-dag-app/tests/operator_ux_contract.rs"},
     {"id": "trace-cancel-completeness", "coverage": ["cancel-completeness", "trace-completeness"], "source": "crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json"},
     {"id": "trace-persistence-restart", "coverage": ["restart-persistence", "trace-persistence"], "source": "docs/spec/RUN_DIR_CONTRACT.md"},
-    {"id": "trace-serialization-schema", "coverage": ["serialization-schema", "trace-schema"], "source": "docs/spec/NODE_TRACE_SCHEMA_v0.1.md"},
+    {"id": "trace-serialization-schema", "coverage": ["serialization-schema", "trace-schema"], "source": "docs/spec/NODE_TRACE_SCHEMA_V0.1.md"},
     {"id": "trace-corruption-detection", "coverage": ["corruption-detection", "trace-integrity"], "source": "crates/bijux-dag-app/src/lib.rs"},
     {"id": "trace-replay-inspection", "coverage": ["replay-inspection", "trace-integrity"], "source": "crates/bijux-dag-app/src/routes/diagnostics_routes.rs"},
     {"id": "trace-performance-benchmarks", "coverage": ["trace-performance", "benchmarking"], "source": "docs/reports/foundation/artifact_inspect_hash_trace_benchmarks.md"},

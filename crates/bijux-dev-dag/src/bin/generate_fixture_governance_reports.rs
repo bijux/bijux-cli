@@ -190,7 +190,7 @@ fn main() -> Result<(), String> {
         }
     }
     write_file(
-        &out_dir.join("unreferenced_fixtures_report.md"),
+        &out_dir.join("UNREFERENCED_FIXTURES_REPORT.md"),
         &unreferenced,
     )?;
 
@@ -273,7 +273,7 @@ fn main() -> Result<(), String> {
         "fixture_governance_missing_owner_report.md",
         "fixtures_with_no_owning_suite_report.md",
         "fixtures_with_no_owning_crate_report.md",
-        "unreferenced_fixtures_report.md",
+        "UNREFERENCED_FIXTURES_REPORT.md",
         "duplicate_fixtures_semantic_hash_report.md",
         "stale_fixture_schema_field_report.md",
     ] {

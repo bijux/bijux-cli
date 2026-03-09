@@ -14,7 +14,7 @@
   "large_module_policy": {
     "threshold_lines": 500,
     "split_rationale_required": true,
-    "report": "docs/reports/foundation/module_inventory_over_500_lines.md"
+    "report": "docs/reports/foundation/MODULE_INVENTORY_OVER_500_LINES.md"
   },
   "very_large_module_policy": {
     "threshold_lines": 1000,
@@ -24,7 +24,7 @@
   "tiny_wrapper_policy": {
     "threshold_lines": 10,
     "justification_required": true,
-    "report": "docs/reports/foundation/module_inventory_under_10_lines_review.md"
+    "report": "docs/reports/foundation/MODULE_INVENTORY_UNDER_10_LINES_REVIEW.md"
   },
   "dashboard": {
     "path": "docs/reports/foundation/repo_tree_health_dashboard.md",

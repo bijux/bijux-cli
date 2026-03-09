@@ -9,8 +9,8 @@
   ],
   "artifacts": [
     "evidence/cache/system_health/regression_corpus.json",
-    "docs/reports/foundation/system_health_diagnostics_documentation.md",
+    "docs/reports/foundation/SYSTEM_HEALTH_DIAGNOSTICS_DOCUMENTATION.md",
     "docs/reports/foundation/system_health_reporting_dashboard.md",
-    "docs/reports/foundation/health_regression_summary_report.md"
+    "docs/reports/foundation/HEALTH_REGRESSION_SUMMARY_REPORT.md"
   ]
 }

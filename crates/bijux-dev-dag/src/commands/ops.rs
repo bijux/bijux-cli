@@ -2497,7 +2497,7 @@ pub(super) fn run_test_trust_cleanup_guard() -> Result<(), String> {
         return Err("missing test trust ledger spec".to_string());
     }
 
-    let report = root.join("docs/reports/foundation/test_trust_cleanup_report.md");
+    let report = root.join("docs/reports/foundation/TEST_TRUST_CLEANUP_REPORT.md");
     if !report.exists() {
         return Err("missing test trust cleanup report".to_string());
     }
@@ -2533,7 +2533,7 @@ pub(super) fn run_planner_alignment_guard() -> Result<(), String> {
         bijux_dag_core::planner_alignment_required_test(),
         "crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs",
         "crates/bijux-dev-dag/tests/planner_hardening_contracts.rs",
-        "docs/reports/foundation/planner_hardening_report.md",
+        "docs/reports/foundation/PLANNER_HARDENING_REPORT.md",
         "docs/spec/BATTLE_TRUST_PROPERTIES.md",
         "configs/policy/battle_trust_properties.json",
         "crates/bijux-dag-runtime/src/runtime_core/planning/planner.rs",
@@ -2607,7 +2607,7 @@ pub(super) fn run_scheduler_invariants_guard() -> Result<(), String> {
     let required = [
         "docs/spec/SCHEDULER_CONTRACT.md",
         "docs/spec/SCHEDULER_STATE_TRANSITIONS.md",
-        "docs/reports/foundation/scheduler_hardening_report.md",
+        "docs/reports/foundation/SCHEDULER_HARDENING_REPORT.md",
         "crates/bijux-dag-runtime/tests/scheduler_contract.rs",
         "crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs",
         "crates/bijux-dev-dag/tests/scheduler_hardening_contracts.rs",
@@ -2644,7 +2644,7 @@ pub(super) fn run_state_machine_contract_guard() -> Result<(), String> {
     let required = [
         "docs/spec/STATE_MACHINE_CONTRACT.md",
         "docs/spec/STATE_MACHINE_VISUALIZATION.md",
-        "docs/reports/foundation/state_machine_hardening_report.md",
+        "docs/reports/foundation/STATE_MACHINE_HARDENING_REPORT.md",
         "crates/bijux-dag-runtime/tests/state_machine_transitions.rs",
         "crates/bijux-dag-runtime/tests/state_machine_contracts.rs",
         "crates/bijux-dag-runtime/tests/runtime_state_machine_contracts.rs",
@@ -2736,7 +2736,7 @@ pub(super) fn run_concurrency_model_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/CONCURRENCY_MODEL.md",
-        "docs/architecture/runtime-concurrency-boundaries.md",
+        "docs/architecture/RUNTIME-CONCURRENCY-BOUNDARIES.md",
         "docs/tracking/CONCURRENCY_FLAKE_LEDGER.md",
         "crates/bijux-dag-runtime/tests/concurrency_contracts.rs",
     ];
@@ -2814,9 +2814,9 @@ pub(super) fn run_backend_contract_guard() -> Result<(), String> {
     let required = [
         "docs/spec/BACKEND_CONTRACT.md",
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
-        "docs/spec/ATTEMPT_TRACE_SCHEMA_v0.1.md",
-        "docs/reports/foundation/backend_hardening_report.md",
-        "docs/architecture/engine-backend-responsibilities.md",
+        "docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md",
+        "docs/reports/foundation/BACKEND_HARDENING_REPORT.md",
+        "docs/architecture/ENGINE-BACKEND-RESPONSIBILITIES.md",
         "crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs",
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
         "crates/bijux-dev-dag/tests/backend_hardening_contracts.rs",
@@ -2887,7 +2887,7 @@ pub(super) fn run_storage_boundary_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/STORAGE_CONTRACT.md",
-        "docs/architecture/storage-layout-ownership.md",
+        "docs/architecture/STORAGE-LAYOUT-OWNERSHIP.md",
         "crates/bijux-dag-runtime/src/store.rs",
         "crates/bijux-dag-runtime/tests/storage_contracts.rs",
     ];
@@ -3025,7 +3025,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         "docs/spec/RUN_DIR_CONTRACT.md",
         "docs/spec/RUN_DIR_OWNERSHIP.md",
         "docs/spec/IMPORT_EXPORT_CONTRACT.md",
-        "docs/reports/foundation/run_dir_import_export_hardening_report.md",
+        "docs/reports/foundation/RUN_DIR_IMPORT_EXPORT_HARDENING_REPORT.md",
         "docs/spec/ARTIFACT_OWNERSHIP_TABLE.md",
         "docs/spec/ARTIFACT_LIFECYCLE.md",
         "configs/schema/operator/run_verify_report.schema.json",
@@ -3225,7 +3225,7 @@ pub(super) fn run_container_remote_boundary_guard() -> Result<(), String> {
     let required = [
         "docs/spec/CONTAINER_EXECUTION_CONTRACT.md",
         "docs/spec/REMOTE_EXECUTION_MODEL.md",
-        "docs/architecture/execution-mode-responsibilities.md",
+        "docs/architecture/EXECUTION-MODE-RESPONSIBILITIES.md",
         "crates/bijux-dag-runtime/tests/container_execution_contracts.rs",
         "crates/bijux-dag-runtime/tests/remote_execution_contracts.rs",
     ];
@@ -3264,7 +3264,7 @@ pub(super) fn run_batch_execution_boundary_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/BATCH_EXECUTION_MODEL.md",
-        "docs/architecture/local-vs-batch-execution-constraints.md",
+        "docs/architecture/LOCAL-VS-BATCH-EXECUTION-CONSTRAINTS.md",
         "crates/bijux-dag-runtime/tests/batch_execution_contracts.rs",
         "crates/bijux-dag-runtime/tests/batch_backend_simulation_contracts.rs",
     ];
@@ -3483,7 +3483,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
     let required = [
         "docs/spec/CACHE_CONTRACT.md",
         "docs/spec/CACHE_EVOLUTION_MODEL.md",
-        "docs/reports/foundation/cache_hardening_report.md",
+        "docs/reports/foundation/CACHE_HARDENING_REPORT.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
         "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
         "evidence/cache/metadata.json",
@@ -3597,7 +3597,7 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/REPLAY_CONTRACT.md",
-        "docs/reports/foundation/replay_hardening_report.md",
+        "docs/reports/foundation/REPLAY_HARDENING_REPORT.md",
         "configs/schema/operator/replay_diff.schema.json",
         "evidence/cache/replay/match_case.json",
         "evidence/cache/replay/mismatch_case.json",
@@ -3745,8 +3745,8 @@ pub(super) fn run_distributed_coordination_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/DISTRIBUTED_COORDINATION_MODEL.md",
-        "docs/architecture/controller_backend_artifact_boundary.md",
-        "docs/architecture/local_only_vs_remote_coordinated_runtime.md",
+        "docs/architecture/CONTROLLER_BACKEND_ARTIFACT_BOUNDARY.md",
+        "docs/architecture/LOCAL_ONLY_VS_REMOTE_COORDINATED_RUNTIME.md",
         "crates/bijux-dag-runtime/tests/distributed_event_reconciliation_contracts.rs",
     ];
     let mut missing = Vec::new();
@@ -4106,7 +4106,7 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
 pub(super) fn run_runtime_module_triage_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
-        "docs/architecture/runtime_module_triage.md",
+        "docs/architecture/RUNTIME_MODULE_TRIAGE.md",
         "docs/spec/RUNTIME_PUBLIC_API_BOUNDARY.md",
         "configs/policy/runtime_module_freeze.json",
         "crates/bijux-dag-runtime/src/runtime.rs",
@@ -4179,8 +4179,8 @@ pub(super) fn run_sacred_execution_flow_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/SACRED_EXECUTION_FLOW.md",
-        "docs/architecture/runtime-execution-flow.md",
-        "docs/reports/foundation/sacred_execution_hardening_report.md",
+        "docs/architecture/RUNTIME-EXECUTION-FLOW.md",
+        "docs/reports/foundation/SACRED_EXECUTION_HARDENING_REPORT.md",
         "crates/bijux-dag-runtime/src/runtime_core/governance/sacred_execution.rs",
         "crates/bijux-dag-runtime/src/runtime_core/execution/context.rs",
         "crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs",
@@ -4238,7 +4238,7 @@ pub(super) fn run_crate_boundary_foundation_guard() -> Result<(), String> {
         "docs/spec/CRATE_RESPONSIBILITY_STATEMENTS.md",
         "docs/spec/CRATE_BOUNDARY_CONTRACT.md",
         "docs/architecture/crate_boundary_adr.md",
-        "docs/architecture/crate_service_interfaces.md",
+        "docs/architecture/CRATE_SERVICE_INTERFACES.md",
         "configs/policy/forbidden_dependencies.json",
         "crates/bijux-dag-app/tests/crate_boundary_contract.rs",
         "crates/bijux-dag-runtime/src/services.rs",
@@ -4539,7 +4539,7 @@ pub(super) fn run_config_policy_determinism_guard() -> Result<(), String> {
     for required in [
         "docs/spec/CONFIG_PRECEDENCE_CONTRACT.md",
         "docs/spec/POLICY_EVALUATION_TRACE.md",
-        "docs/reports/foundation/config_policy_determinism_report.md",
+        "docs/reports/foundation/CONFIG_POLICY_DETERMINISM_REPORT.md",
         "crates/bijux-dag-app/tests/config_precedence_contract.rs",
         "crates/bijux-dag-app/tests/config_validation_contract.rs",
         "crates/bijux-dag-app/tests/config_effective_command_contract.rs",
@@ -4698,7 +4698,7 @@ pub(super) fn run_foundation_review_report() -> Result<(), String> {
         "runtime_module_count": runtime_modules.len(),
         "docs_root_markdown_count": docs_root_markdown_count,
         "repo_suite_count": crate::suites::repo::IDS.len(),
-        "has_foundation_final_report": root.join("docs/reports/foundation/foundation_final_report.md").exists(),
+        "has_foundation_final_report": root.join("docs/reports/foundation/FOUNDATION_FINAL_REPORT.md").exists(),
     });
     println!(
         "{}",
@@ -4716,13 +4716,13 @@ pub(super) fn run_foundation_review_guard() -> Result<(), String> {
         "docs/reports/foundation/repository_architecture_report.md",
         "docs/reports/foundation/runtime_module_ownership_report.md",
         "docs/reports/foundation/artifact_contract_report.md",
-        "docs/reports/foundation/performance_evidence_report.md",
-        "docs/reports/foundation/test_trust_coverage_report.md",
-        "docs/reports/foundation/release_evidence_report.md",
-        "docs/reports/foundation/repository_proof_statement.md",
+        "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md",
+        "docs/reports/foundation/TEST_TRUST_COVERAGE_REPORT.md",
+        "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
+        "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
         "docs/reports/foundation/cleanup_backlog.md",
         "docs/reports/foundation/subsystem_strength_assessment.md",
-        "docs/reports/foundation/foundation_final_report.md",
+        "docs/reports/foundation/FOUNDATION_FINAL_REPORT.md",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing foundation review artifact: {rel}"));

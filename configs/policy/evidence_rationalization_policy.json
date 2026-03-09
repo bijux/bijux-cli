@@ -159,17 +159,17 @@
     "release_decision_summary": {
       "owner_output": "docs/reports/foundation/release_evidence_dashboard.json",
       "duplicates_retired": [
-        "docs/reports/foundation/release_evidence_report.md"
+        "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md"
       ]
     },
     "benchmark_signal_summary": {
-      "owner_output": "docs/reports/foundation/performance_evidence_report.md",
+      "owner_output": "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md",
       "duplicates_retired": [
         "docs/reports/foundation/top_10_slowest_evidence_commands.md"
       ]
     },
     "ownership_topology_summary": {
-      "owner_output": "docs/reports/foundation/evidence_command_owner_map.md",
+      "owner_output": "docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md",
       "duplicates_retired": [
         "evidence/reports/current_evidence_topology.md"
       ]

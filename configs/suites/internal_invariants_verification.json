@@ -11,7 +11,7 @@
     "evidence/cache/invariants/regression_corpus.json",
     "docs/reports/foundation/internal_invariants_telemetry_report.md",
     "docs/reports/foundation/internal_invariants_debugging_report.md",
-    "docs/reports/foundation/internal_invariants_coverage_report.md",
+    "docs/reports/foundation/INTERNAL_INVARIANTS_COVERAGE_REPORT.md",
     "docs/reports/foundation/internal_invariants_performance_report.md"
   ]
 }

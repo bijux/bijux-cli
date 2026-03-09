@@ -1533,12 +1533,12 @@ fn check_release_evidence_ready(root: &Path) -> Result<Value, String> {
     )?)
     .map_err(|err| err.to_string())?;
     let required_surfaces = [
-        "docs/reports/foundation/release_evidence_report.md",
-        "docs/reports/foundation/repository_proof_statement.md",
-        "docs/reports/foundation/replay_hardening_report.md",
-        "docs/reports/foundation/cache_hardening_report.md",
-        "docs/reports/foundation/run_dir_import_export_hardening_report.md",
-        "docs/reports/foundation/config_policy_determinism_report.md",
+        "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
+        "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
+        "docs/reports/foundation/REPLAY_HARDENING_REPORT.md",
+        "docs/reports/foundation/CACHE_HARDENING_REPORT.md",
+        "docs/reports/foundation/RUN_DIR_IMPORT_EXPORT_HARDENING_REPORT.md",
+        "docs/reports/foundation/CONFIG_POLICY_DETERMINISM_REPORT.md",
     ];
     let missing: Vec<String> = required_surfaces
         .iter()

@@ -10,7 +10,7 @@
   "metadata_required_prefixes": [],
   "metadata_required_exact": [
     "docs/README.md",
-    "docs/index.md",
+    "docs/INDEX.md",
     "docs/spec/README.md",
     "docs/reference/README.md",
     "docs/architecture/README.md",

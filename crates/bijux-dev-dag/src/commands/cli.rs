@@ -378,17 +378,17 @@ pub(super) enum RepoCommand {
     HotspotReports {
         #[arg(
             long,
-            default_value = "docs/reports/foundation/file_size_hotspot_report.md"
+            default_value = "docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md"
         )]
         file_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/long_function_hotspot_report.md"
+            default_value = "docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md"
         )]
         function_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/public_api_hotspot_report.md"
+            default_value = "docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md"
         )]
         api_out: PathBuf,
         #[arg(
@@ -399,7 +399,7 @@ pub(super) enum RepoCommand {
     },
     /// Generate schema changelog from files under configs/schema
     SchemaChangelog {
-        #[arg(long, default_value = "docs/reports/foundation/schema_changelog.md")]
+        #[arg(long, default_value = "docs/reports/foundation/SCHEMA_CHANGELOG.md")]
         out: PathBuf,
         #[arg(long, default_value = "configs/schema")]
         schema_root: PathBuf,
@@ -408,32 +408,32 @@ pub(super) enum RepoCommand {
     RuntimeScopeReports {
         #[arg(
             long,
-            default_value = "docs/reports/foundation/kernel_owned_modules_report.md"
+            default_value = "docs/reports/foundation/KERNEL_OWNED_MODULES_REPORT.md"
         )]
         kernel_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/runtime_non_kernel_modules_report.md"
+            default_value = "docs/reports/foundation/RUNTIME_NON_KERNEL_MODULES_REPORT.md"
         )]
         non_kernel_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/runtime_contract_backing_report.md"
+            default_value = "docs/reports/foundation/RUNTIME_CONTRACT_BACKING_REPORT.md"
         )]
         contract_backing_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/runtime_operator_surface_report.md"
+            default_value = "docs/reports/foundation/RUNTIME_OPERATOR_SURFACE_REPORT.md"
         )]
         operator_surface_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/core_public_api_shrink_report.md"
+            default_value = "docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md"
         )]
         core_api_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/runtime_public_api_shrink_report.md"
+            default_value = "docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md"
         )]
         runtime_api_out: PathBuf,
     },
@@ -441,7 +441,7 @@ pub(super) enum RepoCommand {
     PlannerHardeningReport {
         #[arg(
             long,
-            default_value = "docs/reports/foundation/planner_hardening_report.md"
+            default_value = "docs/reports/foundation/PLANNER_HARDENING_REPORT.md"
         )]
         out: PathBuf,
     },
@@ -454,7 +454,7 @@ pub(super) enum RepoCommand {
         matrix_out: PathBuf,
         #[arg(
             long,
-            default_value = "docs/reports/foundation/content_addressed_storage_model.md"
+            default_value = "docs/reports/foundation/CONTENT_ADDRESSED_STORAGE_MODEL.md"
         )]
         model_out: PathBuf,
     },

@@ -17,7 +17,7 @@
     {"id": "cache-lifecycle", "coverage": ["lifecycle", "integrity-verification"], "source": "evidence/cache/README.md"},
     {"id": "cache-regression-fixtures", "coverage": ["regression-fixtures", "stress"], "source": "evidence/cache/cache_integrity/regression_corpus.json"},
     {"id": "cache-stress", "coverage": ["stress", "performance"], "source": "evidence/cache/scenarios/warm_cold.json"},
-    {"id": "cache-performance", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/performance_evidence_report.md"},
+    {"id": "cache-performance", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md"},
     {"id": "cache-telemetry", "coverage": ["telemetry", "integrity-verification"], "source": "docs/spec/RUNTIME_TELEMETRY_SCHEMA.md"},
     {"id": "cache-explainability-integration", "coverage": ["explainability-integration", "cache-hit-miss"], "source": "docs/spec/EXPLAIN_SURFACES_CONTRACT.md"}
   ]

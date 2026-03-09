@@ -9,16 +9,16 @@
     {"id": "artifact-checksum-verification", "coverage": ["checksum-verification", "corruption-detection"], "source": "docs/spec/ARTIFACT_STORAGE_LIFECYCLE_CONTRACT.md"},
     {"id": "artifact-corruption-recovery", "coverage": ["corruption-recovery", "durability-verification"], "source": "crates/bijux-dag-artifacts/tests/artifact_identity_lifecycle_completion_contracts.rs"},
     {"id": "artifact-store-rebuild", "coverage": ["store-rebuild", "durability-verification"], "source": "crates/bijux-dag-artifacts/src/integrity/proof.rs"},
-    {"id": "artifact-store-compaction", "coverage": ["store-compaction", "fragmentation"], "source": "docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md"},
+    {"id": "artifact-store-compaction", "coverage": ["store-compaction", "fragmentation"], "source": "docs/reports/foundation/ARTIFACT_STORAGE_LIFECYCLE_BENCHMARKS.md"},
     {"id": "artifact-store-fragmentation", "coverage": ["fragmentation", "store-health"], "source": "evidence/cache/artifact_lifecycle/regression_corpus.json"},
     {"id": "artifact-retention-durability", "coverage": ["retention-durability", "lifecycle-recovery"], "source": "docs/spec/ARTIFACT_RETENTION_POLICY.md"},
     {"id": "artifact-lifecycle-recovery", "coverage": ["lifecycle-recovery", "durability-verification"], "source": "crates/bijux-dag-artifacts/tests/artifact_io_store_hardening_expansion_contracts.rs"},
     {"id": "artifact-gc-consistency", "coverage": ["gc-consistency", "retention-durability"], "source": "crates/bijux-dag-artifacts/tests/artifact_io_expansion_contracts.rs"},
     {"id": "artifact-gc-race", "coverage": ["gc-race-safety", "concurrent-write-protection"], "source": "docs/spec/CONCURRENCY_MODEL.md"},
     {"id": "artifact-durability-regression-fixtures", "coverage": ["regression-fixtures", "durability-stress"], "source": "evidence/cache/artifact_durability/regression_corpus.json"},
-    {"id": "artifact-durability-benchmarks", "coverage": ["durability-benchmarks", "performance"], "source": "docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md"},
+    {"id": "artifact-durability-benchmarks", "coverage": ["durability-benchmarks", "performance"], "source": "docs/reports/foundation/ARTIFACT_STORAGE_LIFECYCLE_BENCHMARKS.md"},
     {"id": "artifact-durability-telemetry", "coverage": ["durability-telemetry", "anomaly-detection"], "source": "docs/reports/foundation/artifact_storage_lifecycle_telemetry_report.md"},
     {"id": "artifact-durability-anomaly-detection", "coverage": ["anomaly-detection", "corruption-detection"], "source": "docs/reports/foundation/artifact_durability_anomaly_report.md"},
-    {"id": "artifact-store-rebuild-performance", "coverage": ["store-rebuild-performance", "performance"], "source": "docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md"}
+    {"id": "artifact-store-rebuild-performance", "coverage": ["store-rebuild-performance", "performance"], "source": "docs/reports/foundation/ARTIFACT_STORAGE_LIFECYCLE_BENCHMARKS.md"}
   ]
 }

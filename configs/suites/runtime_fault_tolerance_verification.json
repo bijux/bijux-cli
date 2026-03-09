@@ -12,6 +12,6 @@
     "docs/reports/foundation/runtime_fault_tolerance_benchmarks.md",
     "docs/reports/foundation/runtime_recovery_latency_report.md",
     "docs/reports/foundation/runtime_fault_tolerance_telemetry_report.md",
-    "docs/reports/foundation/runtime_fault_tolerance_coverage_report.md"
+    "docs/reports/foundation/RUNTIME_FAULT_TOLERANCE_COVERAGE_REPORT.md"
   ]
 }

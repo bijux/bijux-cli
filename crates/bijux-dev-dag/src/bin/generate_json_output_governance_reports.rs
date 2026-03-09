@@ -132,7 +132,7 @@ fn main() -> Result<(), String> {
         }
     }
     write_file(
-        &out_dir.join("json_command_schema_inventory_report.md"),
+        &out_dir.join("JSON_COMMAND_SCHEMA_INVENTORY_REPORT.md"),
         &inv_a,
     )?;
 
@@ -163,7 +163,7 @@ fn main() -> Result<(), String> {
         }
     }
     write_file(
-        &out_dir.join("schema_command_test_inventory_report.md"),
+        &out_dir.join("SCHEMA_COMMAND_TEST_INVENTORY_REPORT.md"),
         &inv_b,
     )?;
 

@@ -28,15 +28,15 @@ fn run() -> Result<(), String> {
         responsibilities_report(&root)?,
     )?;
     write_report(
-        &root.join("docs/reports/foundation/app_route_business_logic_residue_report.md"),
+        &root.join("docs/reports/foundation/APP_ROUTE_BUSINESS_LOGIC_RESIDUE_REPORT.md"),
         business_logic_residue_report(&routes_dir)?,
     )?;
     write_report(
-        &root.join("docs/reports/foundation/app_route_complexity_score_report.md"),
+        &root.join("docs/reports/foundation/APP_ROUTE_COMPLEXITY_SCORE_REPORT.md"),
         complexity_report(&routes_dir)?,
     )?;
     write_report(
-        &root.join("docs/reports/foundation/app_module_dependency_graph_report.md"),
+        &root.join("docs/reports/foundation/APP_MODULE_DEPENDENCY_GRAPH_REPORT.md"),
         dependency_graph_report(&app_src, &routes_dir)?,
     )?;
     Ok(())

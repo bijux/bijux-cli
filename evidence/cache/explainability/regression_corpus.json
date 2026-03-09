@@ -15,7 +15,7 @@
     {"id": "explain-json-schema-validation", "coverage": ["json-schema", "output-consistency"], "source": "configs/schema/operator/run_explain_failure.schema.json"},
     {"id": "explain-text-snapshots", "coverage": ["text-snapshot", "output-consistency"], "source": "crates/bijux-dag-app/tests/snapshots/route_detailed_wording.txt"},
     {"id": "explain-large-dag-stress", "coverage": ["large-dag-stress", "ordering-determinism"], "source": "configs/suites/explain_surface_stress.json"},
-    {"id": "explain-performance-benchmarks", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/explainability_benchmarks.md"},
+    {"id": "explain-performance-benchmarks", "coverage": ["performance", "benchmarking"], "source": "docs/reports/foundation/EXPLAINABILITY_BENCHMARKS.md"},
     {"id": "explain-regression-fixtures", "coverage": ["regression-fixtures", "explain-completeness"], "source": "evidence/cache/explain/regression_corpus.json"},
     {"id": "explain-completeness-verification", "coverage": ["explain-completeness", "anomaly-detection"], "source": "docs/reports/foundation/explainability_completeness_report.md"},
     {"id": "explain-anomaly-detection", "coverage": ["anomaly-detection", "output-consistency"], "source": "docs/reports/foundation/explainability_anomaly_detection_report.md"}

@@ -247,11 +247,11 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
         "docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md",
         "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
         "docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md",
-        "docs/reports/foundation/docs_root_inventory_report.md",
-        "docs/reports/foundation/foundation_final_report.md",
-        "docs/reports/foundation/repository_proof_statement.md",
-        "docs/reports/foundation/archive/renovation_burndown_report.md",
-        "docs/adr/20260309-documentation-governance-alignment.md",
+        "docs/reports/foundation/DOCS_ROOT_INVENTORY_REPORT.md",
+        "docs/reports/foundation/FOUNDATION_FINAL_REPORT.md",
+        "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
+        "docs/reports/foundation/archive/RENOVATION_BURNDOWN_REPORT.md",
+        "docs/adr/20260309-DOCUMENTATION-GOVERNANCE-ALIGNMENT.md",
     ] {
         if !root.join(required).exists() {
             return Err(format!(

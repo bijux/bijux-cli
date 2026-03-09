@@ -294,11 +294,11 @@ fn main() -> Result<(), String> {
     let root = repo_root();
     let lcov_path = root.join("artifacts/coverage/lcov.info");
     let allowlist_path = root.join("configs/policy/protected_zero_coverage_allowlist.json");
-    let out_under_50 = root.join("docs/reports/foundation/line_coverage_under_50_report.md");
-    let out_under_25 = root.join("docs/reports/foundation/line_coverage_under_25_report.md");
-    let out_zero = root.join("docs/reports/foundation/line_coverage_zero_direct_report.md");
+    let out_under_50 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md");
+    let out_under_25 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md");
+    let out_zero = root.join("docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md");
     let out_app_route_support = root
-        .join("docs/reports/foundation/app_route_support_modules_below_target_coverage_report.md");
+        .join("docs/reports/foundation/APP_ROUTE_SUPPORT_MODULES_BELOW_TARGET_COVERAGE_REPORT.md");
     let app_route_policy = root.join("configs/policy/app_routing_coverage_targets.json");
 
     if !lcov_path.exists() {

@@ -11,6 +11,6 @@
     "evidence/cache/execution_trace/regression_corpus.json",
     "docs/reports/foundation/execution_trace_benchmarks.md",
     "docs/reports/foundation/execution_trace_regression_fixtures.md",
-    "docs/reports/foundation/execution_trace_coverage_report.md"
+    "docs/reports/foundation/EXECUTION_TRACE_COVERAGE_REPORT.md"
   ]
 }

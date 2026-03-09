@@ -11,6 +11,6 @@
     "evidence/cache/explainability/regression_corpus.json",
     "docs/reports/foundation/explainability_completeness_report.md",
     "docs/reports/foundation/explainability_anomaly_detection_report.md",
-    "docs/reports/foundation/advanced_explainability_coverage_report.md"
+    "docs/reports/foundation/ADVANCED_EXPLAINABILITY_COVERAGE_REPORT.md"
   ]
 }

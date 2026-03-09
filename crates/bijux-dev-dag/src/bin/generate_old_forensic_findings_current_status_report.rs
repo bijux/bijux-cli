@@ -13,7 +13,7 @@ use std::path::Path;
 use tempfile as _;
 
 fn main() {
-    let out = Path::new("docs/reports/foundation/old_forensic_findings_current_status_report.md");
+    let out = Path::new("docs/reports/foundation/OLD_FORENSIC_FINDINGS_CURRENT_STATUS_REPORT.md");
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent).expect("create report directory");
     }
