@@ -12,3 +12,6 @@ bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
