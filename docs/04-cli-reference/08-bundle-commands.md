@@ -1,29 +1,30 @@
 # Bundle Commands
 
 ## Purpose
-Document bundle export/import commands used for portability workflows.
+Document bundle export/import command usage for portability workflows.
 
 ## Context
-Bundle commands support moving workflow context between environments.
+Bundle commands package and transfer workflow context across environments.
 
 ## Explanation
-Bundle command intents:
-- `bundle export` to package run/graph context
-- `bundle import` to load packaged context in target environment
+Bundle operations:
+- `bundle export`
+- `bundle import`
 
-Options and flags pattern:
-- export uses source selectors (`--run-id`, optional scope flags)
-- import uses bundle path (`--bundle <path>`)
+Common flags:
+- export: source selectors (`--run-id`, output path)
+- import: bundle selector (`--bundle <path>`)
+- `--output <format>` where supported
 
 Error handling guidance:
-- unreadable bundle path: input failure
-- invalid bundle format: validation failure
-- unsupported portability scenario: compatibility failure
+- unreadable path: input error
+- invalid bundle: validation error
+- unsupported environment mapping: compatibility error
 
 ## Examples
 ```bash
-bijux-dag bundle export --run-id RUN_20260309_220 --out ./exports/run220.bundle
-bijux-dag bundle import --bundle ./exports/run220.bundle
+bijux-dag bundle export --run-id RUN_20260309_220 --out ./exports/run220.bundle --output json
+bijux-dag bundle import --bundle ./exports/run220.bundle --output json
 ```
 
 ```json
@@ -34,12 +35,12 @@ bijux-dag bundle import --bundle ./exports/run220.bundle
 ```
 
 ## Guarantees
-- Export/import flow is documented with concrete commands.
-- Compatibility and failure interpretation is explicit.
+- Export/import flow is documented as concrete portability path.
+- Failure interpretation categories are explicit.
 
 ## Limitations
-- This page does not define binary bundle schema internals.
-- Portability remains constrained by backend support policy.
+- Bundle schema internals are specified outside CLI reference.
+- Portability guarantees depend on backend support boundaries.
 
 ## Related
 - `docs/04-cli-reference/07-replay-commands.md`

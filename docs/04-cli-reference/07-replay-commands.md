@@ -4,25 +4,26 @@
 Document replay command usage for validation and drift detection workflows.
 
 ## Context
-Replay commands are used with run history and diff commands to verify behavioral stability.
+Replay commands are typically used with run history, inspect, and diff commands.
 
 ## Explanation
-Replay command intents:
-- rerun/validate prior run context
-- compare expected and observed behavior over time
+Replay operations:
+- replay a run context
+- evaluate replay status for equivalence/mismatch
 
-Options and flags pattern:
+Common flags:
 - `--run-id <id>` baseline selector
-- optional DAG/path selectors when surface supports explicit override
+- optional DAG selector where supported
+- `--output <format>` where supported
 
-Output usage:
-- inspect replay status first
-- route mismatch findings into diff flow
+Error handling guidance:
+- unknown run ID: lookup error
+- unsupported replay context: compatibility/runtime error
 
 ## Examples
 ```bash
-bijux-dag replay --run-id RUN_20260309_220
-bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json
+bijux-dag replay --run-id RUN_20260309_220 --output json
+bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json --output json
 ```
 
 ```json
@@ -33,12 +34,12 @@ bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json
 ```
 
 ## Guarantees
-- Replay command workflow is documented with explicit follow-up behavior.
-- Integration with diff/inspect is clear.
+- Replay workflow is documented as explicit validation path.
+- Integration with inspect and diff is clear.
 
 ## Limitations
-- Replay equivalence remains bounded by environment and backend support.
-- Algorithmic replay internals are specified elsewhere.
+- Replay equivalence remains bounded by environment/backend constraints.
+- Replay algorithm internals are not defined here.
 
 ## Related
 - `docs/04-cli-reference/06-diff-commands.md`

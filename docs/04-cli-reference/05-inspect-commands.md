@@ -4,27 +4,26 @@
 Document inspect command usage for run and artifact diagnostics.
 
 ## Context
-Inspect commands are the first diagnostic surface after execution anomalies.
+Inspect commands are the first diagnostic step in troubleshooting workflows.
 
 ## Explanation
-Inspect command intents:
-- run-level diagnostics
-- artifact-level diagnostics
-- operator-readable and machine-readable inspection outputs
+Common inspect operations:
+- inspect run diagnostics
+- inspect artifact diagnostics
 
-Error handling conventions:
-- not found: missing `run_id` or `artifact_id`
-- invalid argument: malformed flags/values
-- execution error: command runs but inspection retrieval fails
+Common flags:
+- `--run-id <id>` run selector
+- `--artifact-id <id>` artifact selector
+- `--output <format>` where supported
 
-Exit code conventions (reference level):
-- `0` success
-- non-zero failure
+Exit and error conventions:
+- `0`: inspection completed
+- non-zero: input, lookup, or runtime retrieval failure
 
 ## Examples
 ```bash
-bijux-dag inspect run --run-id RUN_20260309_220
-bijux-dag inspect artifact --artifact-id ART_20260309_902
+bijux-dag inspect run --run-id RUN_20260309_220 --output json
+bijux-dag inspect artifact --artifact-id ART_20260309_902 --output json
 ```
 
 ```json
@@ -36,15 +35,15 @@ bijux-dag inspect artifact --artifact-id ART_20260309_902
 ```
 
 ## Guarantees
-- Inspect usage paths for run and artifact are documented.
-- Exit code and failure interpretation are explicitly addressed.
+- Inspect usage for run and artifact surfaces is documented and consistent.
+- Failure interpretation and exit-code conventions are explicit.
 
 ## Limitations
-- Exact numeric non-zero code mapping can evolve by implementation.
-- Deep backend internals are outside this reference page.
+- Exact non-zero code catalog is implementation-defined.
+- Deep backend internals are not covered.
 
 ## Related
 - `docs/04-cli-reference/03-run-commands.md`
 - `docs/04-cli-reference/04-artifact-commands.md`
-- `docs/03-user-guide/07-inspect-and-debug.md`
 - `docs/04-cli-reference/06-diff-commands.md`
+- `docs/03-user-guide/07-inspect-and-debug.md`

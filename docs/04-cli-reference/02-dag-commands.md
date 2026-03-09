@@ -1,29 +1,28 @@
 # Dag Commands
 
 ## Purpose
-Document DAG command usage for graph validation, inspection, and lifecycle operations.
+Document DAG command usage for graph validation, inspection, and definition-level operations.
 
 ## Context
-DAG commands operate on graph definitions rather than specific runs.
+DAG commands act on graph definitions, not on specific historical runs.
 
 ## Explanation
-Typical DAG command intents:
+Common DAG operations:
 - validate graph shape and constraints
 - inspect graph metadata and topology
-- compare graph definitions via diff workflow integration
 
-Usage guidance:
-- validate before running
-- keep DAG path explicit and version-controlled
+Common flags:
+- `--dag <path>` graph file selector
+- `--output <format>` machine-readable output where supported
 
-Common options pattern:
-- `--dag <path>` to select graph file
-- output-format flags when machine parsing is required
+Error handling guidance:
+- missing DAG path: input error
+- invalid graph structure: validation error
 
 ## Examples
 ```bash
 bijux-dag dag validate --dag ./pipelines/main.dag.json
-bijux-dag dag inspect --dag ./pipelines/main.dag.json
+bijux-dag dag inspect --dag ./pipelines/main.dag.json --output json
 ```
 
 ```json
@@ -34,12 +33,12 @@ bijux-dag dag inspect --dag ./pipelines/main.dag.json
 ```
 
 ## Guarantees
-- DAG command family is documented as definition-level surface.
-- Validation-first workflow is explicit.
+- DAG command behavior is documented as definition-first.
+- Validation-first usage is explicit.
 
 ## Limitations
-- Exact validation rule internals are specified in specification docs.
-- Subcommand availability can vary by release surface.
+- Full validation rule taxonomy belongs to specification docs.
+- Option names can evolve across releases.
 
 ## Related
 - `docs/04-cli-reference/01-cli-overview.md`

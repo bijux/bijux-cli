@@ -1,30 +1,30 @@
 # Run Commands
 
 ## Purpose
-Document execution and run-history command usage.
+Document run command usage for execution and run-history workflows.
 
 ## Context
-Run commands are the primary operational surface for executing workflows and reviewing run outcomes.
+Run commands are the primary operator surface for starting workflows and reviewing results.
 
 ## Explanation
-Core run command intents:
-- execute DAGs
-- inspect run status summaries
-- query recent run history
+Common run operations:
+- execute a DAG
+- view run history
 
-Usage guidance:
-- capture `run_id` immediately after execution
-- use run history to locate baseline and failing runs
-
-Typical option pattern:
+Common flags:
 - `--dag <path>` for run creation
-- `--run-id <id>` for run-specific follow-up
-- `--limit <n>` for history queries
+- `--run-id <id>` for targeted run follow-up
+- `--limit <n>` for history windowing
+- `--output <format>` where supported
+
+Error handling guidance:
+- invalid DAG: validation error
+- unknown run ID: lookup error
 
 ## Examples
 ```bash
 bijux-dag run --dag ./pipelines/main.dag.json
-bijux-dag run history --limit 20
+bijux-dag run history --limit 20 --output json
 ```
 
 ```json
@@ -35,15 +35,15 @@ bijux-dag run history --limit 20
 ```
 
 ## Guarantees
-- Run command family use is documented as execution-first workflow.
-- History usage is integrated as standard operation.
+- Run command usage is documented as execution-plus-history flow.
+- Command examples align with user-guide run workflows.
 
 ## Limitations
-- This document does not specify storage backend implementation details.
-- Exact run schema fields are defined in specification docs.
+- Storage engine internals are outside CLI reference scope.
+- Detailed run schema contract is defined in specification docs.
 
 ## Related
 - `docs/04-cli-reference/01-cli-overview.md`
-- `docs/03-user-guide/04-run-history.md`
 - `docs/04-cli-reference/05-inspect-commands.md`
 - `docs/04-cli-reference/07-replay-commands.md`
+- `docs/03-user-guide/04-run-history.md`

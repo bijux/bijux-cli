@@ -4,28 +4,28 @@
 Document command usage for graph, run, and artifact diff operations.
 
 ## Context
-Diff commands classify behavioral and structural changes.
+Diff commands are used to classify change and isolate causes of divergence.
 
 ## Explanation
-Diff command intents:
-- `diff graph` for definition changes
-- `diff run` for execution outcome changes
-- `diff artifact` for output changes
+Diff operations:
+- `diff graph`
+- `diff run`
+- `diff artifact`
 
-Options and flags pattern:
+Common flags:
 - `--left <id-or-path>`
 - `--right <id-or-path>`
-- output-format flags for machine parsing
+- `--output <format>` where supported
 
 Error handling guidance:
-- incomparable entities should be treated as input error
-- missing IDs/paths produce lookup errors
+- incomparable entities: input/compatibility error
+- missing IDs or paths: lookup/input error
 
 ## Examples
 ```bash
-bijux-dag diff graph --left ./pipelines/a.dag.json --right ./pipelines/b.dag.json
-bijux-dag diff run --left RUN_20260309_220 --right RUN_20260309_221
-bijux-dag diff artifact --left ART_001 --right ART_002
+bijux-dag diff graph --left ./pipelines/a.dag.json --right ./pipelines/b.dag.json --output json
+bijux-dag diff run --left RUN_20260309_220 --right RUN_20260309_221 --output json
+bijux-dag diff artifact --left ART_001 --right ART_002 --output json
 ```
 
 ```json
@@ -36,12 +36,12 @@ bijux-dag diff artifact --left ART_001 --right ART_002
 ```
 
 ## Guarantees
-- Diff command family usage is explicit across all three scopes.
-- Shared option pattern is documented consistently.
+- Diff usage is documented across all three supported scopes.
+- Option patterns are consistent with other command-family docs.
 
 ## Limitations
-- Full classification taxonomy details belong to specification docs.
-- This page does not define underlying comparison algorithms.
+- Detailed classification semantics are owned by specification docs.
+- This page does not define comparison engine internals.
 
 ## Related
 - `docs/04-cli-reference/05-inspect-commands.md`
