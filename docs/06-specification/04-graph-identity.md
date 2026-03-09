@@ -75,3 +75,28 @@ Result: graph identity drift detected
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/07-replay-semantics.md`
 - `docs/05-system-architecture/08-identity-model.md`
+
+## Sharpened identity algorithm contract
+
+Algorithm contract obligations:
+
+1. canonicalize semantic DAG structure,
+2. serialize canonical form deterministically,
+3. hash with declared policy version,
+4. emit identity token carrying policy provenance.
+
+Any failure in steps 1-3 MUST prevent identity emission.
+
+## Identity-preserving and identity-changing edits
+
+Identity-preserving edits:
+
+- whitespace/comment changes,
+- declaration order changes with unchanged semantic topology,
+- non-semantic annotation updates.
+
+Identity-changing edits:
+
+- node command/semantic configuration changes,
+- dependency edge additions/removals,
+- semantic metadata changes marked identity-relevant.
