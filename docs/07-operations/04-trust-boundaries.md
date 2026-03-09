@@ -24,6 +24,12 @@ Operational implications:
 - unknown states must remain explicit; never coerce unknown to equivalent.
 - privileged operations require explicit and auditable controls.
 
+Trust-boundary recommendations:
+- validate all external DAG or bundle inputs before runtime admission.
+- keep boundary-crossing events observable in logs and evidence records.
+- require operator approval for privileged cross-zone operations.
+- treat unknown trust states as blocking until resolved.
+
 ## Examples
 ```text
 Boundary crossing example:
@@ -39,6 +45,7 @@ node result -> run record -> artifact lineage -> replay/diff comparison
 - Trust zones and crossing rules are explicit and auditable.
 - Lineage-aware evidence boundaries are preserved in operational model.
 - Verification workflows are required when moving evidence across zones.
+- Includes concrete boundary-operation recommendations.
 
 ## Limitations
 - Trust boundaries cannot compensate for compromised host kernels or hypervisors.

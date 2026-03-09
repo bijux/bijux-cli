@@ -24,6 +24,12 @@ Operational controls:
 - use explicit secret injection boundaries and avoid secret persistence in artifacts.
 - preserve immutable run evidence for audit and incident analysis.
 
+Security recommendations:
+- enable command allow-lists for high-trust environments where feasible.
+- treat imported bundles as untrusted until integrity and provenance checks pass.
+- redact secret-like tokens in logs before evidence retention.
+- enforce credential rotation on every confirmed execution-scope compromise.
+
 Incident response expectations:
 - classify severity by integrity/availability/confidentiality impact.
 - preserve failing run context for forensic analysis.
@@ -49,6 +55,7 @@ Security incident triage fields:
 - Security responsibilities and risk classes are explicit.
 - Integrity of run/artifact evidence is treated as an operational requirement.
 - Secret-handling boundaries are part of normal operating procedure.
+- Includes practical control recommendations for day-to-day operations.
 
 ## Limitations
 - This model does not claim complete protection from host-level compromise.
