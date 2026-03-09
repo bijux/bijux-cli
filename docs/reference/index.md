@@ -21,6 +21,7 @@ It does not teach workflows or concepts.
 - [Glossary](glossary.md)
 - [REPL](repl.md)
 - [REPL command reference](repl-command-reference.md)
+- [Python bindings](python-bindings.md)
 - [Current Python behavior inventory](current-python/index.md)
 - [Pre-1.0 change policy](pre-1.0.md)
 
