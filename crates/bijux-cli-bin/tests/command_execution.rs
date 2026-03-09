@@ -16,41 +16,63 @@ fn run(args: &[&str]) -> String {
     String::from_utf8(output.stdout).expect("stdout should be UTF-8")
 }
 
+fn run_raw(args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
+}
+
 #[test]
 fn executes_root_commands() {
-    for args in [
-        vec!["status"],
-        vec!["version"],
-        vec!["doctor"],
-        vec!["audit"],
-        vec!["docs"],
-        vec!["sleep", "0"],
-        vec!["config"],
-        vec!["history"],
-        vec!["memory"],
-        vec!["memory", "list"],
-        vec!["plugins", "list"],
-        vec!["repl"],
-        vec!["completion"],
-        vec!["inspect"],
-    ] {
+    let cases: Vec<(Vec<&str>, &str)> = vec![
+        (vec!["status"], "status"),
+        (vec!["version"], "version"),
+        (vec!["doctor"], "status"),
+        (vec!["audit"], "checks"),
+        (vec!["docs"], "topics"),
+        (vec!["sleep", "0"], "slept_seconds"),
+        (vec!["history"], "entries"),
+        (vec!["memory"], "count"),
+        (vec!["memory", "list"], "keys"),
+        (vec!["plugins", "list"], "plugins"),
+        (vec!["repl"], "mode"),
+        (vec!["completion"], "shells"),
+        (vec!["inspect"], "route_sources"),
+    ];
+    for (args, required_key) in cases {
         let stdout = run(&args);
-        assert!(stdout.contains('{'), "expected structured payload for {args:?}");
+        let payload: serde_json::Value =
+            serde_json::from_str(&stdout).expect("root command must emit valid json");
+        if args == vec!["config"] {
+            assert!(payload.is_object(), "config root should return object payload");
+            continue;
+        }
+        assert!(
+            payload.get(required_key).is_some(),
+            "expected key `{required_key}` for args {args:?}"
+        );
     }
 }
 
 #[test]
 fn executes_cli_namespace_commands() {
-    for args in [
-        vec!["cli", "status"],
-        vec!["cli", "paths"],
-        vec!["cli", "config", "set", "TEST_KEY=1"],
-        vec!["cli", "self-test"],
-        vec!["cli", "plugins", "list"],
-        vec!["cli", "plugins", "inspect"],
-    ] {
+    let cases: Vec<(Vec<&str>, &str)> = vec![
+        (vec!["cli", "status"], "runtime"),
+        (vec!["cli", "paths"], "path_binaries"),
+        (vec!["cli", "config", "set", "TEST_KEY=1"], "status"),
+        (vec!["cli", "self-test"], "checks"),
+        (vec!["cli", "plugins", "list"], "plugins"),
+        (vec!["cli", "plugins", "inspect"], "compatibility_warnings"),
+    ];
+    for (args, required_key) in cases {
         let stdout = run(&args);
-        assert!(stdout.contains('{'), "expected structured payload for {args:?}");
+        let payload: serde_json::Value =
+            serde_json::from_str(&stdout).expect("cli command must emit valid json");
+        assert!(
+            payload.get(required_key).is_some(),
+            "expected key `{required_key}` for args {args:?}"
+        );
     }
 }
 
@@ -77,15 +99,39 @@ fn cli_doctor_reports_install_diagnostics() {
 
 #[test]
 fn executes_dev_cli_namespace_commands() {
-    for args in [
-        vec!["dev", "cli", "routes"],
-        vec!["dev", "cli", "registry"],
-        vec!["dev", "cli", "env"],
-        vec!["dev", "cli", "doctor"],
-        vec!["dev", "cli", "contracts"],
-        vec!["dev", "cli", "runtime-identity"],
-    ] {
+    let cases: Vec<(Vec<&str>, &str)> = vec![
+        (vec!["dev", "cli", "inventory"], "scripts"),
+        (vec!["dev", "cli", "routes"], "routes"),
+        (vec!["dev", "cli", "registry"], "registry"),
+        (vec!["dev", "cli", "parity"], "rust_python"),
+        (vec!["dev", "cli", "docs"], "docs_count"),
+        (vec!["dev", "cli", "status"], "current_rust_state"),
+        (vec!["dev", "cli", "scripts-audit"], "scripts"),
+        (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
+        (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),
+        (vec!["dev", "cli", "crate-health"], "crate_metrics"),
+        (vec!["dev", "cli", "package-health"], "package_entrypoints"),
+        (vec!["dev", "cli", "env"], "source_precedence"),
+        (vec!["dev", "cli", "doctor"], "issues"),
+        (vec!["dev", "cli", "contracts"], "contracts"),
+        (vec!["dev", "cli", "runtime-identity"], "entrypoints"),
+        (vec!["dev", "cli", "docs-prune-plan"], "target_cap"),
+    ];
+    for (args, required_key) in cases {
         let stdout = run(&args);
-        assert!(stdout.contains('{'), "expected structured payload for {args:?}");
+        let payload: serde_json::Value =
+            serde_json::from_str(&stdout).expect("dev cli command must emit valid json");
+        assert!(
+            payload.get(required_key).is_some(),
+            "expected key `{required_key}` for args {args:?}"
+        );
     }
+}
+
+#[test]
+fn unsupported_config_set_input_returns_usage_error() {
+    let output = run_raw(&["cli", "config", "set", "INVALID_PAIR"]);
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
+    assert!(stderr.contains("Invalid argument"), "unexpected stderr: {stderr}");
 }
