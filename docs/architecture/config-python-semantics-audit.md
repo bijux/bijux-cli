@@ -39,6 +39,6 @@ This audit freezes Python behavior for configuration commands as implemented in 
 
 ## Current Ambiguities To Keep Explicit
 
-- `config set` stdin mode: preserved in Python but not yet implemented in Rust baseline.
+- `config set` stdin mode: preserved in Python and implemented in Rust baseline.
 - Python exposes more subcommands (`unset`, `clear`, `load`, `reload`, `export`) than current Rust parity scope for this batch.
 - Python includes richer runtime metadata in some payload modes depending on execution policy.
