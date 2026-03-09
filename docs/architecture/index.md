@@ -14,6 +14,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Walk-through](walkthrough.md)
 - [ADR: CLI binary ownership](adr-cli-binary-ownership.md)
 - [Config crate ownership](config-crate-ownership.md)
+- [Config domain invariants](config-domain-invariants.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)
 - [Python public API lifecycle](python-public-api-lifecycle.md)
