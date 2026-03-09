@@ -1,84 +1,35 @@
 # Diff Commands
 
-Document command usage for graph, run, and artifact diff operations.
+Use `diff` commands to classify change across graph, run, and artifact surfaces.
 
-Diff commands are used to classify change and isolate causes of divergence.
+## Surface semantics
 
-## Explanation
-Diff operations:
-- `diff graph`
-- `diff run`
-- `diff artifact`
+- `diff graph`: definition semantics changed or equivalent.
+- `diff run`: execution outcomes changed or equivalent.
+- `diff artifact`: output identities/lineage changed or equivalent.
 
-Common flags:
-- `--left <id-or-path>`
-- `--right <id-or-path>`
-- `--output <format>` where supported
+Choose surface by question; do not force one surface to answer all questions.
 
-Command lifecycle role:
-- `diff graph` for definition drift.
-- `diff run` for behavioral drift.
-- `diff artifact` for output drift.
-- run scopes in that order when triaging unknown regressions.
+## Core invocation patterns
 
-Command discovery:
-- `bijux-dag diff --help`
-- `bijux-dag diff graph --help`
-- `bijux-dag diff run --help`
-- `bijux-dag diff artifact --help`
-
-Error handling guidance:
-- incomparable entities: input/compatibility error
-- missing IDs or paths: lookup/input error
-- unsupported comparison scope: compatibility/runtime error
-
-## Examples
 ```bash
+bijux-dag diff --help
 bijux-dag diff graph --left ./pipelines/a.dag.json --right ./pipelines/b.dag.json --output json
 bijux-dag diff run --left RUN_20260309_220 --right RUN_20260309_221 --output json
 bijux-dag diff artifact --left ART_001 --right ART_002 --output json
 ```
 
-```json
-{
-  "diff_scope": "run",
-  "classification": "suspicious_change",
-  "reason_code": "NODE_EXIT_NONZERO"
-}
-```
+## Classification interpretation
 
-```text
-Command discovery pattern:
-bijux-dag diff --help
-bijux-dag diff run --help
-```
+- `equivalent`: no contract-relevant divergence on requested surface.
+- `drift`: divergence detected and attributed.
+- `unknown`/incomplete-style states: required evidence missing or incomparable.
 
-## Guarantees
-- Diff usage is documented across all three supported scopes.
-- Option patterns are consistent with other command-family docs.
-- Examples include classification output fields useful for automation.
+Operator rule: unresolved states require more evidence, not forced acceptance.
 
-## Limitations
-- Detailed classification semantics are owned by specification docs.
-- This page does not define comparison engine internals.
+## Example outcomes
 
-## Related
-- `docs/04-cli-reference/05-inspect-commands.md`
-- `docs/04-cli-reference/07-replay-commands.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/06-specification/08-diff-semantics.md`
-
-## Semantics by diff surface
-
-Interpret each diff command against a distinct semantic surface:
-
-- `diff graph`: definition semantics changed or equivalent.
-- `diff run`: execution outcomes changed or equivalent under comparable intent.
-- `diff artifact`: output identity/lineage changed or equivalent.
-
-## Equivalent versus drift examples
-
-Equivalent case:
+Equivalent run case:
 
 ```text
 diff_scope: run
@@ -86,19 +37,15 @@ classification: equivalent
 reason_code: NONE
 ```
 
-Drift case:
+Drift artifact case:
 
 ```text
 diff_scope: artifact
-classification: suspicious_change
-reason_code: HASH_MISMATCH
+classification: drift
+reason_code: ARTIFACT_HASH_MISMATCH
 ```
 
-## How to interpret classification results
+## Next reading
 
-- `equivalent`: no contract-relevant divergence detected for the requested surface.
-- `expected_change`: divergence exists and matches declared/approved change intent.
-- `suspicious_change`: divergence is not yet explained and requires investigation.
-- `breaking_change`: divergence violates a declared contract boundary.
-
-Do not treat classification as optional metadata; it is the decision input for acceptance, rollback, or deeper diagnosis.
+- Replay pairing and downgrade handling: [Replay Commands](../04-cli-reference/07-replay-commands.md)
+- Formal diff contract: [Diff Semantics Specification](../06-specification/08-diff-semantics.md)
