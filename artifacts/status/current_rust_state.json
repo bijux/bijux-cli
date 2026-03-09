@@ -151,6 +151,7 @@
     "docs/architecture/config-set-post-parity-improvements.md",
     "docs/architecture/config-unset-clear-reload-parity-report.md",
     "docs/architecture/core-kernel-parity-audit.md",
+    "docs/architecture/crate_boundaries.md",
     "docs/architecture/decision-rules.md",
     "docs/architecture/diagnostics-baseline.md",
     "docs/architecture/diagnostics-parity-report.md",
@@ -192,6 +193,7 @@
     "docs/architecture/routing/command-tree-diff.md",
     "docs/architecture/routing/parser-parity-audit.md",
     "docs/architecture/routing/python-rust-parse-corpus.md",
+    "docs/architecture/runtime_identity_law.md",
     "docs/architecture/rust-baseline-parity-v1.md",
     "docs/architecture/rust-config-baseline-parity-milestone.md",
     "docs/architecture/rust-parity-status-table.md",
@@ -356,6 +358,7 @@
     "dev cli registry json",
     "dev cli routes",
     "dev cli routes json",
+    "dev cli runtime-identity",
     "doctor",
     "history",
     "history json",
@@ -378,7 +381,7 @@
     "status",
     "version"
   ],
-  "generated_at": "2026-03-09T22:20:49.461841+00:00",
+  "generated_at": "2026-03-09T22:33:22.106029+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
@@ -399,7 +402,7 @@
     {
       "assumption": "env::var_os(\"HOME\").map(std::path::PathBuf::from)",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 52
+      "line": 53
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
@@ -574,22 +577,22 @@
     {
       "assumption": "let home = temp.path().join(\"XDG DATA HOME\");",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 172
+      "line": 191
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 187
+      "line": 206
     },
     {
       "assumption": "#[cfg(windows)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 189
+      "line": 208
     },
     {
       "assumption": "#[cfg(unix)]",
       "file": "crates/bijux-cli-install/src/lib.rs",
-      "line": 211
+      "line": 230
     },
     {
       "assumption": "- Predictable deprecation windows reduce CI breakage and migration cost.",
@@ -758,6 +761,7 @@
     "bijux_version"
   ],
   "parity_fixtures": [
+    "artifacts/parity/binary_vs_python_bridge_parity_report.json",
     "artifacts/parity/rust_python_parity_report.json",
     "artifacts/rust-parity/config-parity-report.md",
     "artifacts/rust-parity/repl-parity-report.md",
@@ -775,6 +779,7 @@
     "crates/bijux-cli-output/tests/output_parity_matrix.rs",
     "crates/bijux-cli-output/tests/python_parity.rs",
     "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
+    "crates/bijux-cli-python/tests/bridge_binary_parity_report.rs",
     "crates/bijux-cli-repl/tests/transcript_parity.rs",
     "docs/architecture/config-export-load-parity-report.md",
     "docs/architecture/config-get-parity-report.md",
@@ -842,6 +847,44 @@
     "plugins scaffold",
     "plugins uninstall"
   ],
+  "runtime_identity_rules": {
+    "canonical_user_binary": "bijux",
+    "cargo_bin_names": [
+      "bijux-rs"
+    ],
+    "forbidden_public_runtime_names_present": [],
+    "internal_runtime_labels": {
+      "python_package_concept": "bijux-cli-py",
+      "rust_package_concept": "bijux-cli-rs"
+    },
+    "python_package_entrypoints": [
+      "bijux"
+    ],
+    "python_package_points_users_to_bijux": true
+  },
+  "runtime_parity_assertions": {
+    "checked_commands": [
+      "behavior_config_precedence_cli_override",
+      "behavior_plugins_check",
+      "bijux_config_root",
+      "bijux_dev_help",
+      "bijux_doctor",
+      "bijux_help",
+      "bijux_history_root",
+      "bijux_plugins_list",
+      "bijux_status_json_no_pretty",
+      "bijux_status_text",
+      "bijux_status_yaml_pretty",
+      "bijux_version"
+    ],
+    "same_command_tree_where_parity_exists": true,
+    "same_exit_codes_where_parity_exists": true,
+    "same_output_envelopes_where_parity_exists": false,
+    "source": "artifacts/parity/rust_python_parity_report.json",
+    "violations": [
+      "output_envelope=behavior_config_precedence_cli_override,behavior_plugins_check,bijux_config_root,bijux_dev_help,bijux_doctor,bijux_help,bijux_history_root,bijux_plugins_list,bijux_status_json_no_pretty,bijux_status_text,bijux_status_yaml_pretty,bijux_version"
+    ]
+  },
   "rust_routed_commands": {
     "aliases": [
       "completion",
@@ -857,6 +900,7 @@
       "dev env",
       "dev registry",
       "dev routes",
+      "dev runtime-identity",
       "doctor",
       "inspect",
       "plugins inspect",
@@ -889,6 +933,7 @@
       "dev cli env",
       "dev cli registry",
       "dev cli routes",
+      "dev cli runtime-identity",
       "docs",
       "history",
       "memory",
@@ -932,11 +977,13 @@
       "dev cli env",
       "dev cli registry",
       "dev cli routes",
+      "dev cli runtime-identity",
       "dev contracts",
       "dev doctor",
       "dev env",
       "dev registry",
       "dev routes",
+      "dev runtime-identity",
       "docs",
       "doctor",
       "history",
@@ -1074,7 +1121,10 @@
     "scripts/git-hooks/prepare-commit-msg",
     "scripts/helper_comments.py",
     "scripts/helper_pip_audit.py",
+    "scripts/parity/generate_binary_bridge_parity.py",
     "scripts/parity/run_rust_python_parity.py",
+    "scripts/status/check_runtime_unity.py",
+    "scripts/status/generate_crate_boundary_metrics.py",
     "scripts/status/generate_current_rust_state.py",
     "scripts/verify-install-channels.sh"
   ],
@@ -1101,6 +1151,8 @@
     "dev cli env",
     "dev cli registry",
     "dev cli routes",
+    "dev cli runtime",
+    "dev cli runtime identity",
     "docs",
     "doctor",
     "history",
@@ -1139,6 +1191,7 @@
     "crates/bijux-cli-bin/tests/snapshots/dev_cli_env_text.txt",
     "crates/bijux-cli-bin/tests/snapshots/dev_cli_registry_text.txt",
     "crates/bijux-cli-bin/tests/snapshots/dev_cli_routes_text.txt",
+    "crates/bijux-cli-bin/tests/snapshots/dev_cli_runtime_identity_text.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_audit.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_cli_config_get.txt",
@@ -1156,6 +1209,7 @@
     "crates/bijux-cli-bin/tests/snapshots/help_dev_cli_env.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_dev_cli_registry.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_dev_cli_routes.txt",
+    "crates/bijux-cli-bin/tests/snapshots/help_dev_cli_runtime_identity.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_docs.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_doctor.txt",
     "crates/bijux-cli-bin/tests/snapshots/help_history.txt",
@@ -1267,6 +1321,8 @@
     "dev cli routes",
     "dev cli routes json",
     "dev cli routes text",
+    "dev cli runtime-identity",
+    "dev cli runtime-identity text",
     "dev doctor",
     "doctor",
     "history",

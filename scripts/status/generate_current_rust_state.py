@@ -150,6 +150,57 @@ def parse_parity_report() -> tuple[list[str], list[dict[str, object]]]:
     return covered, mismatches
 
 
+def parity_assertions() -> dict[str, object]:
+    report_path = ROOT / "artifacts" / "parity" / "rust_python_parity_report.json"
+    if not report_path.exists():
+        return {
+            "source": str(report_path.relative_to(ROOT)),
+            "same_command_tree_where_parity_exists": False,
+            "same_exit_codes_where_parity_exists": False,
+            "same_output_envelopes_where_parity_exists": False,
+            "checked_commands": [],
+            "violations": ["missing parity report artifact"],
+        }
+
+    data = json.loads(report_path.read_text(encoding="utf-8"))
+    commands = data.get("commands", []) if isinstance(data, dict) else []
+
+    checked_commands: list[str] = []
+    tree_violations: list[str] = []
+    exit_violations: list[str] = []
+    envelope_violations: list[str] = []
+
+    for row in commands:
+        name = str(row.get("name", "")).strip()
+        status = str(row.get("status", "")).strip()
+        if not name or status == "python-only":
+            continue
+        checked_commands.append(name)
+        if status not in {"rust-complete", "rust-partial"}:
+            tree_violations.append(name)
+        if not bool(row.get("exit_match")):
+            exit_violations.append(name)
+        if not bool(row.get("stdout_match")) or not bool(row.get("stderr_match")):
+            envelope_violations.append(name)
+
+    violations: list[str] = []
+    if tree_violations:
+        violations.append(f"command_tree={','.join(sorted(tree_violations))}")
+    if exit_violations:
+        violations.append(f"exit_code={','.join(sorted(exit_violations))}")
+    if envelope_violations:
+        violations.append(f"output_envelope={','.join(sorted(envelope_violations))}")
+
+    return {
+        "source": str(report_path.relative_to(ROOT)),
+        "same_command_tree_where_parity_exists": not tree_violations,
+        "same_exit_codes_where_parity_exists": not exit_violations,
+        "same_output_envelopes_where_parity_exists": not envelope_violations,
+        "checked_commands": sorted(set(checked_commands)),
+        "violations": violations,
+    }
+
+
 def parse_snapshot_coverage() -> list[str]:
     snap_root = ROOT / "crates" / "bijux-cli-bin" / "tests" / "snapshots"
     cmds: set[str] = set()
@@ -329,6 +380,30 @@ def package_entrypoints() -> list[dict[str, str]]:
     return sorted(out, key=lambda x: (x["package"], x["entrypoint"]))
 
 
+def runtime_identity_rules() -> dict[str, object]:
+    pyproject = parse_toml(ROOT / "pyproject.toml")
+    project_scripts = pyproject.get("project", {}).get("scripts", {})
+    python_entrypoints = sorted(project_scripts.keys())
+    canonical_python_entrypoint = "bijux" in project_scripts
+    forbidden_public_runtime_names = {"bijux-rs", "bijux-cli-rs", "bijux-cli-py"}
+    forbidden_present = sorted(name for name in python_entrypoints if name in forbidden_public_runtime_names)
+
+    cargo_bin = parse_toml(ROOT / "crates" / "bijux-cli-bin" / "Cargo.toml")
+    cargo_bins = [row.get("name", "") for row in cargo_bin.get("bin", []) if isinstance(row, dict)]
+
+    return {
+        "canonical_user_binary": "bijux",
+        "python_package_entrypoints": python_entrypoints,
+        "python_package_points_users_to_bijux": canonical_python_entrypoint and not forbidden_present,
+        "forbidden_public_runtime_names_present": forbidden_present,
+        "internal_runtime_labels": {
+            "rust_package_concept": "bijux-cli-rs",
+            "python_package_concept": "bijux-cli-py",
+        },
+        "cargo_bin_names": sorted(cargo_bins),
+    }
+
+
 def plugin_reserved_namespaces() -> list[str]:
     registry = read_text(ROOT / "crates/bijux-cli-routing/src/registry.rs")
     idx = registry.find("let reserved")
@@ -381,6 +456,8 @@ def main() -> None:
         "parity_fixtures": list_parity_fixtures(),
         "snapshot_fixtures": list_snapshot_fixtures(),
         "rust_vs_python_mismatches": mismatches,
+        "runtime_parity_assertions": parity_assertions(),
+        "runtime_identity_rules": runtime_identity_rules(),
         "known_platform_assumptions": list_platform_assumptions(),
         "package_entrypoints": package_entrypoints(),
         "plugin_reserved_namespaces": plugin_reserved_namespaces(),
