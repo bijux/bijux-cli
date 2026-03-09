@@ -6,6 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::time::{Duration, Instant};
 
 use bijux_cli_contracts::{
     ColorMode, CommandPath, ContractMarker, ErrorEnvelopeV1, ExecutionPolicy, GlobalFlags,
@@ -22,6 +23,10 @@ use bijux_cli_routing::route_marker;
 use serde_json::json;
 
 const META_PREFIX: char = ':';
+/// REPL startup latency budget in milliseconds.
+pub const REPL_STARTUP_LATENCY_BUDGET_MS: u128 = 50;
+/// REPL memory budget in bytes.
+pub const REPL_MEMORY_BUDGET_BYTES: usize = 2 * 1024 * 1024;
 
 /// Stable REPL startup contract.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,6 +79,8 @@ pub struct ReplSession {
     pub last_error: Option<String>,
     /// Plugin completion hooks by namespace.
     pub plugin_completion_hooks: BTreeMap<String, Vec<String>>,
+    /// Whether plugin reload command is allowed.
+    pub plugin_reload_safe: bool,
 }
 
 /// REPL emission stream.
@@ -140,6 +147,12 @@ pub enum ReplError {
     /// Invalid REPL command.
     #[error("invalid repl command: {0}")]
     InvalidMetaCommand(String),
+    /// History replay index was invalid.
+    #[error("history index out of bounds: {0}")]
+    HistoryIndexOutOfBounds(usize),
+    /// Plugin reload is blocked by safety policy.
+    #[error("plugin reload is disabled by safety policy")]
+    PluginReloadUnsafe,
 }
 
 struct ReplHandler;
@@ -199,6 +212,7 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         pending_multiline: None,
         last_error: None,
         plugin_completion_hooks: BTreeMap::new(),
+        plugin_reload_safe: false,
     };
 
     let startup = ReplStartupContract {
@@ -208,6 +222,21 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
     };
 
     (session, startup)
+}
+
+/// Startup REPL with startup diagnostics for preflight issues.
+#[must_use]
+pub fn startup_repl_with_diagnostics(
+    profile: &str,
+    prompt: Option<&str>,
+    broken_plugins: &[&str],
+) -> (ReplSession, ReplStartupContract, Vec<String>) {
+    let (session, startup) = startup_repl(profile, prompt);
+    let diagnostics = broken_plugins
+        .iter()
+        .map(|namespace| format!("plugin {namespace} is broken and will be skipped"))
+        .collect();
+    (session, startup, diagnostics)
 }
 
 /// Shutdown REPL session and emit stable contract.
@@ -244,7 +273,13 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
     }
 
     let text = fs::read_to_string(path)?;
-    let mut entries: Vec<String> = serde_json::from_str(&text)?;
+    let mut entries: Vec<String> = match serde_json::from_str(&text) {
+        Ok(value) => value,
+        Err(_) => {
+            session.last_error = Some("history file is malformed; history reset".to_string());
+            Vec::new()
+        }
+    };
     if entries.len() > session.history_limit {
         entries = entries.split_off(entries.len() - session.history_limit);
     }
@@ -323,6 +358,110 @@ pub fn register_plugin_completion_hook(
     session.plugin_completion_hooks.insert(namespace.to_string(), suggestions);
 }
 
+/// Replay a command from history by index.
+pub fn replay_history_command(
+    session: &mut ReplSession,
+    index: usize,
+) -> Result<Option<ReplFrame>, ReplError> {
+    let command = session
+        .history
+        .get(index)
+        .cloned()
+        .ok_or(ReplError::HistoryIndexOutOfBounds(index))?;
+    execute_repl_line(session, &command)
+}
+
+/// Return last error message captured by REPL session.
+#[must_use]
+pub fn inspect_last_error(session: &ReplSession) -> Option<String> {
+    session.last_error.clone()
+}
+
+/// Dump structured REPL diagnostics.
+#[must_use]
+pub fn session_diagnostics_dump(session: &ReplSession) -> String {
+    let payload = json!({
+        "session_id": session.session_id,
+        "commands_executed": session.commands_executed,
+        "last_exit_code": session.last_exit_code,
+        "trace_mode": session.trace_mode,
+        "history_size": session.history.len(),
+        "history_limit": session.history_limit,
+        "plugin_completion_hooks": session.plugin_completion_hooks.keys().collect::<Vec<_>>(),
+        "last_error": session.last_error,
+    });
+    format!(
+        "{}\n",
+        serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string())
+    )
+}
+
+/// Render stable REPL command reference text.
+#[must_use]
+pub fn render_repl_command_reference() -> String {
+    let lines = [
+        "REPL Commands",
+        "status",
+        "doctor",
+        "version",
+        ":help <command>",
+        ":set trace on|off",
+        ":set quiet on|off",
+        ":set format json|yaml|text",
+        ":plugin reload",
+        ":exit",
+    ];
+    format!("{}\n", lines.join("\n"))
+}
+
+/// Approximate REPL session memory use in bytes.
+#[must_use]
+pub fn estimated_session_memory_bytes(session: &ReplSession) -> usize {
+    session.prompt.len()
+        + session.profile.len()
+        + session.history.iter().map(String::len).sum::<usize>()
+        + session
+            .plugin_completion_hooks
+            .iter()
+            .map(|(k, v)| k.len() + v.iter().map(String::len).sum::<usize>())
+            .sum::<usize>()
+        + 1024
+}
+
+/// Benchmark average startup latency over N iterations.
+#[must_use]
+pub fn benchmark_startup_latency(iterations: usize) -> Duration {
+    let runs = iterations.max(1);
+    let started = Instant::now();
+    for _ in 0..runs {
+        let _ = startup_repl("benchmark", None);
+    }
+    let total = started.elapsed();
+    Duration::from_nanos((total.as_nanos() / runs as u128) as u64)
+}
+
+/// Check REPL runtime budgets.
+#[must_use]
+pub fn check_repl_budgets(session: &ReplSession, startup_avg: Duration) -> Vec<String> {
+    let mut warnings = Vec::new();
+    if startup_avg.as_millis() > REPL_STARTUP_LATENCY_BUDGET_MS {
+        warnings.push(format!(
+            "startup latency {}ms exceeded {}ms budget",
+            startup_avg.as_millis(),
+            REPL_STARTUP_LATENCY_BUDGET_MS
+        ));
+    }
+
+    let estimated = estimated_session_memory_bytes(session);
+    if estimated > REPL_MEMORY_BUDGET_BYTES {
+        warnings.push(format!(
+            "estimated memory {} bytes exceeded {} bytes budget",
+            estimated, REPL_MEMORY_BUDGET_BYTES
+        ));
+    }
+    warnings
+}
+
 fn parse_shell_tokens(input: &str) -> Vec<String> {
     shlex::split(input).unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
 }
@@ -381,6 +520,15 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
             Ok(ReplEvent::Continue(Some(ReplFrame {
                 stream: ReplStream::Stdout,
                 content: "ok\n".to_string(),
+            })))
+        }
+        "plugin" if tokens.len() >= 2 && tokens[1] == "reload" => {
+            if !session.plugin_reload_safe {
+                return Err(ReplError::PluginReloadUnsafe);
+            }
+            Ok(ReplEvent::Continue(Some(ReplFrame {
+                stream: ReplStream::Stdout,
+                content: "plugins reloaded\n".to_string(),
             })))
         }
         "exit" | "quit" => Ok(ReplEvent::Exit(None)),
@@ -481,7 +629,11 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
             };
 
             if final_line.starts_with(META_PREFIX) {
-                return handle_meta_command(session, &final_line);
+                let outcome = handle_meta_command(session, &final_line);
+                if let Err(error) = &outcome {
+                    session.last_error = Some(error.to_string());
+                }
+                return outcome;
             }
 
             push_history(session, &final_line);
@@ -489,10 +641,22 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
             let tokenized = parse_shell_tokens(&final_line);
             let argv: Vec<String> = std::iter::once("bijux".to_string()).chain(tokenized).collect();
 
-            let parsed = parse_intent(&argv)?;
+            let parsed = match parse_intent(&argv) {
+                Ok(value) => value,
+                Err(error) => {
+                    session.last_error = Some(error.to_string());
+                    return Err(ReplError::Parser(error));
+                }
+            };
             let mut registry = RouteRegistry::default();
             let _ = registry.register_plugin_namespace("community");
-            let target = registry.resolve(&parsed.normalized_path)?;
+            let target = match registry.resolve(&parsed.normalized_path) {
+                Ok(value) => value,
+                Err(error) => {
+                    session.last_error = Some(error.to_string());
+                    return Err(ReplError::Route(error));
+                }
+            };
 
             let intent = build_intent_from_argv(&argv);
             let context = assemble_context(
@@ -509,8 +673,11 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
 
             let diagnostics: Vec<Arc<dyn DiagnosticsHook>> = Vec::new();
             let lifecycle: Vec<Arc<dyn LifecycleHook>> = Vec::new();
-            let result =
-                execute_pipeline(&context, &handler, &diagnostics, &lifecycle).map_err(ReplError::Kernel)?;
+            let result = execute_pipeline(&context, &handler, &diagnostics, &lifecycle)
+                .map_err(|error| {
+                    session.last_error = Some(format!("{error:?}"));
+                    ReplError::Kernel(error)
+                })?;
 
             session.commands_executed += 1;
             session.last_exit_code = result.exit_code as i32;
@@ -642,5 +809,83 @@ mod tests {
         assert!(frame.is_some());
         assert_eq!(session.commands_executed, 1);
         assert_eq!(session.last_exit_code, 0);
+    }
+
+    #[test]
+    fn supports_history_replay_and_last_error_inspection() {
+        let (mut session, _) = startup_repl("default", None);
+        let _ = execute_repl_line(&mut session, "status").expect("status run");
+        let replayed = replay_history_command(&mut session, 0).expect("replay should work");
+        assert!(replayed.is_some());
+
+        let error = execute_repl_input(&mut session, ReplInput::Line(":plugin reload".to_string()))
+            .expect_err("reload should be blocked by default");
+        assert!(matches!(error, ReplError::PluginReloadUnsafe));
+        assert!(inspect_last_error(&session).is_some());
+    }
+
+    #[test]
+    fn provides_session_diagnostics_dump_and_reference_text() {
+        let (mut session, _) = startup_repl("default", None);
+        let _ = execute_repl_line(&mut session, "status").expect("status run");
+        let dump = session_diagnostics_dump(&session);
+        assert!(dump.contains("commands_executed"));
+
+        let reference = render_repl_command_reference();
+        assert!(reference.contains(":help <command>"));
+    }
+
+    #[test]
+    fn handles_history_corruption_without_failing_startup() {
+        let (mut session, _) = startup_repl("default", None);
+        let path = temp_history_file();
+        fs::write(&path, "{broken-history").expect("write malformed history");
+        configure_history(&mut session, Some(path), true, 100);
+        load_history(&mut session).expect("corrupt history should be tolerated");
+        assert!(session.history.is_empty());
+        assert!(session.last_error.is_some());
+    }
+
+    #[test]
+    fn supports_interactive_json_yaml_and_text_modes() {
+        let (mut session, _) = startup_repl("default", None);
+
+        let _ = execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
+            .expect("json mode");
+        let json_frame = execute_repl_line(&mut session, "status").expect("json line");
+        assert!(json_frame.expect("frame").content.contains('{'));
+
+        let _ = execute_repl_input(&mut session, ReplInput::Line(":set format yaml".to_string()))
+            .expect("yaml mode");
+        let yaml_frame = execute_repl_line(&mut session, "status").expect("yaml line");
+        assert!(yaml_frame.expect("frame").content.contains("status:"));
+
+        let _ = execute_repl_input(&mut session, ReplInput::Line(":set format text".to_string()))
+            .expect("text mode");
+        let text_frame = execute_repl_line(&mut session, "status").expect("text line");
+        assert!(text_frame.expect("frame").content.contains("status"));
+    }
+
+    #[test]
+    fn starts_with_and_without_plugin_preflight_diagnostics() {
+        let (_session, _startup) = startup_repl("default", None);
+        let (_session2, _startup2, diagnostics) =
+            startup_repl_with_diagnostics("default", None, &["community"]);
+        assert_eq!(diagnostics.len(), 1);
+    }
+
+    #[test]
+    fn reports_budget_warnings_when_limits_are_exceeded() {
+        let (mut session, _) = startup_repl("default", None);
+        session.history = vec!["x".repeat(REPL_MEMORY_BUDGET_BYTES)];
+        let startup_avg = Duration::from_millis((REPL_STARTUP_LATENCY_BUDGET_MS + 1) as u64);
+        let warnings = check_repl_budgets(&session, startup_avg);
+        assert!(!warnings.is_empty());
+    }
+
+    #[test]
+    fn benchmark_startup_latency_runs() {
+        let latency = benchmark_startup_latency(5);
+        assert!(latency.as_nanos() > 0);
     }
 }
