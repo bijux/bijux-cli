@@ -1712,6 +1712,11 @@ pub(crate) fn command_output_with_timeout(
             return child.wait_with_output().map_err(RuntimeError::Io);
         }
         if start.elapsed().as_millis() > limit_ms as u128 {
+            #[cfg(unix)]
+            {
+                let pid = child.id();
+                kill_child_descendants_best_effort(pid);
+            }
             let _ = child.kill();
             let _ = child.wait();
             return Err(RuntimeError::Executor(format!(
@@ -1720,6 +1725,17 @@ pub(crate) fn command_output_with_timeout(
         }
         std::thread::sleep(Duration::from_millis(10));
     }
+}
+
+#[cfg(unix)]
+fn kill_child_descendants_best_effort(pid: u32) {
+    let parent = pid.to_string();
+    let _ = std::process::Command::new("pkill")
+        .args(["-TERM", "-P", &parent])
+        .status();
+    let _ = std::process::Command::new("pkill")
+        .args(["-KILL", "-P", &parent])
+        .status();
 }
 
 fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
