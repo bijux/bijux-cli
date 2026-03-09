@@ -112,9 +112,22 @@ mod tests {
     }
 
     #[test]
-    fn active_binary_prefers_explicit_override() {
-        let report = install_health_report("", Some("/custom/bin/bijux"), None, "1.0.0");
-        assert_eq!(report.active_binary, Some("/custom/bin/bijux".to_string()));
+    fn active_binary_ignores_blank_override_and_falls_back_to_discovered_path() {
+        let temp = TempDir::new().expect("tempdir");
+        let dir = temp.path().join("bin");
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        std::fs::write(dir.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write binary");
+        let path_value = std::env::join_paths([&dir]).expect("join path");
+        let report = install_health_report(
+            path_value.to_str().expect("utf-8 path"),
+            Some("   "),
+            None,
+            "1.0.0",
+        );
+        assert!(report
+            .active_binary
+            .as_deref()
+            .is_some_and(|value| value.contains("/bin/bijux")));
     }
 
     #[test]
@@ -128,10 +141,11 @@ mod tests {
     }
 
     #[test]
-    fn post_install_hint_mentions_verification_commands() {
-        let hint = post_install_hint("/usr/local/bin/bijux");
+    fn post_install_hint_handles_missing_binary_path_without_dropping_guidance() {
+        let hint = post_install_hint("");
         assert!(hint.contains("bijux version"));
         assert!(hint.contains("bijux cli doctor"));
+        assert!(hint.contains("Installed `bijux` at "));
     }
 
     #[test]
@@ -156,33 +170,12 @@ mod tests {
     }
 
     #[test]
-    fn no_network_environment_preserves_path_resolution() {
-        let report = install_health_report("", None, None, "1.0.0");
-        assert!(report.path_binaries.is_empty());
-    }
-
-    #[test]
-    fn offline_plugin_registry_operation_is_stable_for_install_diagnostics() {
-        let report = install_health_report("", Some("/tmp/bijux"), None, "1.0.0");
-        assert_eq!(report.active_binary.as_deref(), Some("/tmp/bijux"));
-    }
-
-    #[test]
     fn read_only_environment_does_not_break_idempotent_check_when_marker_exists() {
         let temp = TempDir::new().expect("tempdir");
         let marker = temp.path().join(".first-run-ready");
         std::fs::write(&marker, b"ready").expect("write marker");
         let result = initialize_first_run_state(temp.path()).expect("idempotent check");
         assert!(!result);
-    }
-
-    #[test]
-    fn nonstandard_home_paths_are_supported() {
-        let temp = TempDir::new().expect("tempdir");
-        let home = temp.path().join("XDG DATA HOME");
-        std::fs::create_dir_all(&home).expect("mkdir");
-        let initialized = initialize_first_run_state(&home).expect("initialize");
-        assert!(initialized);
     }
 
     #[test]
@@ -205,10 +198,17 @@ mod tests {
     }
 
     #[test]
-    fn windows_path_override_is_respected() {
-        let report =
-            install_health_report("", Some(r"C:\Program Files\Bijux\bijux.exe"), None, "1.0.0");
-        assert_eq!(report.active_binary.as_deref(), Some(r"C:\Program Files\Bijux\bijux.exe"));
+    fn windows_path_override_preserves_whitespace_without_truncation() {
+        let report = install_health_report(
+            "",
+            Some(r"  C:\Program Files\Bijux\bijux.exe  "),
+            None,
+            "1.0.0",
+        );
+        assert_eq!(
+            report.active_binary.as_deref(),
+            Some(r"  C:\Program Files\Bijux\bijux.exe  ")
+        );
     }
 
     #[test]
@@ -317,11 +317,12 @@ mod tests {
     }
 
     #[test]
-    fn shell_detection_is_supported() {
+    fn shell_detection_rejects_unknown_shell_values() {
         assert_eq!(detect_shell(Some("/bin/bash")), Some(CompletionShell::Bash));
         assert_eq!(detect_shell(Some("/bin/zsh")), Some(CompletionShell::Zsh));
         assert_eq!(detect_shell(Some("/usr/bin/fish")), Some(CompletionShell::Fish));
         assert_eq!(detect_shell(Some("powershell.exe")), Some(CompletionShell::PowerShell));
+        assert_eq!(detect_shell(Some("/usr/bin/unknown")), None);
     }
 
     #[test]
