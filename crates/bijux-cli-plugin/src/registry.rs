@@ -180,6 +180,13 @@ fn set_plugin_state(
             .plugins
             .get_mut(namespace)
             .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
+        if state == bijux_cli_contracts::PluginLifecycleState::Enabled
+            && plugin.state == bijux_cli_contracts::PluginLifecycleState::Broken
+        {
+            return Err(PluginError::InvalidField(
+                "cannot enable broken plugin".to_string(),
+            ));
+        }
         plugin.state = state;
         updated = Some(plugin.clone());
         Ok(())
