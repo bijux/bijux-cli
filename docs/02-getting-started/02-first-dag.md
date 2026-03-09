@@ -37,6 +37,12 @@ Dependency explanation:
 - `transform` depends on `prepare`, so scheduler cannot run `transform` before `prepare` succeeds.
 - if `prepare` fails, `transform` will not execute in normal dependency-correct mode.
 
+Why this graph is valid:
+- node IDs are unique (`prepare`, `transform`).
+- dependency targets are resolvable (`transform` references existing node `prepare`).
+- dependency graph is acyclic.
+- each node has executable intent (`command`) and explicit dependency set.
+
 ## Examples
 ```json
 {
@@ -65,6 +71,11 @@ graph LR
 # 1) Save the JSON as ./examples/first.dag.json
 # 2) Execute the graph
 bijux-dag run --dag ./examples/first.dag.json > run-output.txt
+
+# Example important output fields:
+# run_id: RUN_20260309_001
+# status: succeeded
+# graph_id: EXAMPLE_GRAPH_001
 
 # 3) Read run id from output, then inspect
 bijux-dag inspect run --run-id RUN_20260309_001

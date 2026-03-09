@@ -51,6 +51,20 @@ Always verify before continuing:
 - no missing dynamic dependency errors
 - version command succeeds and reports expected binary
 
+First command check:
+- run `bijux-dag --help` and confirm command families (`dag`, `run`, `artifact`, `inspect`, `diff`, `replay`, `bundle`) appear.
+
+Common installation mismatches:
+- command not found:
+  - cause: binary path not in `PATH`.
+  - action: add install directory to shell profile and restart shell.
+- wrong binary version:
+  - cause: multiple binaries on path.
+  - action: run `command -v bijux-dag` and remove stale binary earlier in path order.
+- cargo install succeeds but command fails:
+  - cause: `$HOME/.cargo/bin` missing from `PATH`.
+  - action: export/update `PATH` and retry.
+
 ## Examples
 ```bash
 # Verify CLI is resolvable
