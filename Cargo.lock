@@ -122,6 +122,7 @@ name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
+ "thiserror",
 ]
 
 [[package]]
