@@ -14,7 +14,7 @@ jobs:
         with:
           toolchain: 1.81
       - name: check compatibility fixtures
-        run: cargo run -p bijux-dev-dag -- contracts run --domain contracts --report artifacts/reports/compatibility-fixtures.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- contracts run --domain contracts
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

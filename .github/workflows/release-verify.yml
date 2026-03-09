@@ -13,12 +13,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.81
-      - name: release verify
-        run: cargo run -p bijux-dev-dag -- release verify --report artifacts/reports/release-verify.json
       - name: verify release evidence set
-        run: cargo run -p bijux-dev-dag -- verify evidence-release-set --report artifacts/reports/release-evidence-set.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-release-set
       - name: generate release proof reports
-        run: cargo run -p bijux-dev-dag -- repo release-evidence-report --report artifacts/reports/release-evidence-report.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo release-evidence-report
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

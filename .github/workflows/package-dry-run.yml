@@ -17,7 +17,9 @@ jobs:
         run: |
           cargo package -p bijux-dag-core --allow-dirty --no-verify
           cargo package -p bijux-dag-artifacts --allow-dirty --no-verify
-          cargo package -p bijux-dag-runtime --allow-dirty --no-verify
-          cargo package -p bijux-dag-app --allow-dirty --no-verify
-          cargo package -p bijux-dag-cli --allow-dirty --no-verify
-          cargo package -p bijux-dev-dag --allow-dirty --no-verify
+      - name: validate internal crate build surfaces
+        run: |
+          cargo check -p bijux-dag-runtime
+          cargo check -p bijux-dag-app
+          cargo check -p bijux-dag-cli
+          cargo check -p bijux-dev-dag

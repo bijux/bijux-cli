@@ -15,7 +15,7 @@ jobs:
           toolchain: 1.81
           components: clippy,rustfmt
       - name: checks
-        run: cargo run -p bijux-dev-dag -- checks run --include-slow --report artifacts/reports/checks.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- checks run --include-slow
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

@@ -15,4 +15,4 @@ jobs:
           toolchain: 1.81
           components: rustfmt
       - name: cargo fmt
-        run: cargo run -p bijux-dev-dag -- fmt
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- fmt

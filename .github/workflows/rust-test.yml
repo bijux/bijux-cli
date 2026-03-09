@@ -22,7 +22,7 @@ jobs:
       - name: run nextest
         run: cargo nextest run --config-file configs/nextest/nextest.toml --profile ci --workspace
       - name: run architecture tests
-        run: cargo run -p bijux-dev-dag -- tests run --domain governance --report artifacts/reports/tests-governance.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- tests run --domain governance
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:

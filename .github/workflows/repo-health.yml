@@ -18,8 +18,8 @@ jobs:
       - name: generate planner hardening report
         run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo planner-hardening-report
       - name: verify generated hotspot reports are committed
-        run: git diff --exit-code docs/reports/foundation/file_size_hotspot_report.md docs/reports/foundation/long_function_hotspot_report.md docs/reports/foundation/public_api_hotspot_report.md docs/reports/foundation/dependency_cycle_report.md
+        run: git diff --exit-code docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md docs/reports/foundation/dependency_cycle_report.md
       - name: verify generated planner hardening report is committed
-        run: git diff --exit-code docs/reports/foundation/planner_hardening_report.md
+        run: git diff --exit-code docs/reports/foundation/PLANNER_HARDENING_REPORT.md
       - name: run repo health contract tests
         run: cargo test -p bijux-dev-dag --test repo_health_contracts

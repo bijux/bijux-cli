@@ -16,7 +16,7 @@ jobs:
       - name: install audit
         run: cargo install cargo-audit --locked
       - name: run audit
-        run: cargo run -p bijux-dev-dag -- security --report artifacts/reports/dependency-audit.json
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- security
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
