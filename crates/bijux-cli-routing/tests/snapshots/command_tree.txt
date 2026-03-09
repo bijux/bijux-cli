@@ -1,9 +1,15 @@
+audit
 cli
 completion
+config
 dev
+docs
 doctor
 help
+history
 inspect
 plugins
 repl
+sleep
+status
 version

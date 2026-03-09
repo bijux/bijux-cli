@@ -153,7 +153,7 @@ fn help_attached_at_multiple_levels_returns_help_intent_shape() {
 #[test]
 fn hidden_compatibility_aliases_are_normalized() {
     let cases = [
-        (vec!["bijux", "status"], vec!["cli", "status"]),
+        (vec!["bijux", "status"], vec!["status"]),
         (vec!["bijux", "plugins", "inspect"], vec!["cli", "plugins", "inspect"]),
         (vec!["bijux", "dev", "doctor"], vec!["dev", "cli", "doctor"]),
     ];

@@ -42,6 +42,15 @@ pub struct RouteRegistry {
 impl Default for RouteRegistry {
     fn default() -> Self {
         let built_ins = BTreeSet::from([
+            "status".to_string(),
+            "audit".to_string(),
+            "docs".to_string(),
+            "sleep".to_string(),
+            "config".to_string(),
+            "history".to_string(),
+            "plugins list".to_string(),
+            "plugins inspect".to_string(),
+            "plugins check".to_string(),
             "cli status".to_string(),
             "cli doctor".to_string(),
             "cli version".to_string(),
@@ -62,7 +71,6 @@ impl Default for RouteRegistry {
         ]);
 
         let aliases = BTreeMap::from([
-            ("status".to_string(), "cli status".to_string()),
             ("doctor".to_string(), "cli doctor".to_string()),
             ("version".to_string(), "cli version".to_string()),
             ("repl".to_string(), "cli repl".to_string()),

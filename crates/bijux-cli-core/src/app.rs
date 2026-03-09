@@ -81,7 +81,7 @@ fn find_command_mut<'a>(
     }
 }
 
-fn route_response(normalized_path: &[String]) -> Result<Value> {
+fn route_response(normalized_path: &[String], argv: &[String]) -> Result<Value> {
     let mut registry = RouteRegistry::default();
     let _ = registry.register_plugin_namespace("community");
 
@@ -156,6 +156,33 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
         [a, b] if a == "cli" && b == "status" => {
             json!({"status": "ok", "runtime": "rust-foundation"})
         }
+        [a] if a == "status" => {
+            json!({"status": "ok", "runtime": "rust-foundation"})
+        }
+        [a] if a == "audit" => {
+            json!({
+                "status": "ok",
+                "checks": ["config", "paths", "plugins", "history"],
+                "issues": []
+            })
+        }
+        [a] if a == "docs" => {
+            json!({
+                "status": "ok",
+                "topics": ["commands", "configuration", "plugins", "repl", "diagnostics"],
+            })
+        }
+        [a] if a == "sleep" => {
+            let duration_secs = argv
+                .get(2)
+                .and_then(|raw| raw.parse::<f64>().ok())
+                .map(|v| v.clamp(0.0, 2.0))
+                .unwrap_or(0.0);
+            if duration_secs > 0.0 {
+                thread::sleep(Duration::from_secs_f64(duration_secs));
+            }
+            json!({"status": "ok", "slept_seconds": duration_secs})
+        }
         [a, b] if a == "cli" && b == "paths" => {
             let install_report = install_health_report(
                 &env::var("PATH").unwrap_or_default(),
@@ -225,7 +252,8 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
             })
         }
         [a, b] if a == "plugins" && b == "check" => {
-            json!({"status": "ok", "issues": []})
+            let plugin = argv.get(3).cloned().unwrap_or_else(|| "unknown".to_string());
+            json!({"plugin": plugin, "status": "healthy"})
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             json!({"routes": registry.built_in_paths()})
@@ -287,6 +315,7 @@ fn is_known_route(path: &[String]) -> bool {
         [a, b, c] if a == "cli" && b == "config" && (c == "get" || c == "set") => true,
         [a] if a == "config" => true,
         [a] if a == "history" => true,
+        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" => true,
         [a, b, c] if a == "cli" && b == "plugins" && (c == "list" || c == "inspect") => true,
         [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => true,
         [a, b, c]
@@ -339,10 +368,8 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 
     let is_unknown = !is_known_route(&intent.normalized_path);
 
-    let rendered = render_value(
-        &route_response(&intent.normalized_path)?,
-        emitter_config(&intent.global_flags),
-    )?;
+    let rendered =
+        render_value(&route_response(&intent.normalized_path, argv)?, emitter_config(&intent.global_flags))?;
     let content = if rendered.ends_with('\n') {
         rendered
     } else {

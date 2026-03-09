@@ -1,7 +1,22 @@
 [
   {
     "argv": ["bijux", "status"],
-    "expected_normalized": ["cli", "status"],
+    "expected_normalized": ["status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "audit"],
+    "expected_normalized": ["audit"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "docs"],
+    "expected_normalized": ["docs"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "sleep"],
+    "expected_normalized": ["sleep"],
     "routed": true
   },
   {

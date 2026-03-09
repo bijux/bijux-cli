@@ -171,6 +171,9 @@ pub fn root_command() -> Command {
         .subcommand(dev_group)
         // Legacy roots kept for alias normalization.
         .subcommand(Command::new("status"))
+        .subcommand(Command::new("audit"))
+        .subcommand(Command::new("docs"))
+        .subcommand(Command::new("sleep").arg(Arg::new("duration").num_args(1)))
         .subcommand(Command::new("doctor"))
         .subcommand(Command::new("version"))
         .subcommand(config_group)
@@ -195,8 +198,7 @@ fn extract_path(matches: &ArgMatches) -> Vec<String> {
 
 fn normalize_path(path: &[String]) -> Vec<String> {
     match path {
-        [a] if a == "status"
-            || a == "doctor"
+        [a] if a == "doctor"
             || a == "version"
             || a == "inspect"
             || a == "completion"

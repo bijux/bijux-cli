@@ -24,7 +24,7 @@ fn parses_root_and_nested_paths_with_global_flags() {
 
     let intent = parse_intent(&argv).expect("parse should succeed");
     assert_eq!(intent.command_path, vec!["status"]);
-    assert_eq!(intent.normalized_path, vec!["cli", "status"]);
+    assert_eq!(intent.normalized_path, vec!["status"]);
     assert!(intent.global_flags.quiet);
     assert!(intent.global_flags.output_format.is_some());
     assert!(intent.global_flags.log_level.is_some());

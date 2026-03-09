@@ -15,7 +15,7 @@ use serde_json as _;
 fn legacy_status_maps_to_cli_status_and_resolves() {
     let argv = vec!["bijux".to_string(), "status".to_string()];
     let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.normalized_path, vec!["cli", "status"]);
+    assert_eq!(intent.normalized_path, vec!["status"]);
 
     let registry = RouteRegistry::default();
     let target = registry.resolve(&intent.normalized_path).expect("should resolve builtin");
