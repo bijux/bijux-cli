@@ -12,6 +12,11 @@ Portability architecture model:
 - bundle import restores that context in a target environment
 - replay and diff validate behavioral equivalence or bounded divergence
 
+Supported execution environment model:
+- source and target environments are compared through capability descriptors, not marketing labels.
+- portability acceptance depends on shared capability envelope across adapters.
+- portability decisions are evidence-backed (replay + diff + identity consistency), not transfer-success backed.
+
 Bundle portability design:
 - portability is identity-aware and evidence-aware
 - portability verification requires replay/diff, not assumption
@@ -23,15 +28,40 @@ Backend equivalence boundaries:
 Architecture tradeoff:
 - strict semantic preservation is prioritized over broad but ambiguous compatibility claims
 
+Additional tradeoffs:
+- tighter portability guarantees reduce number of environments that can claim equivalence.
+- broader compatibility claims increase ambiguity and reduce diagnostic confidence.
+- strict validation increases operational effort but prevents false confidence.
+
 System non-goals (deliberate omissions):
 - universal backend parity regardless of support boundaries
 - performance identity across heterogeneous runtime environments
 - speculative portability claims without validation workflows
 
+Architecture-to-implementation alignment checks:
+- portability docs must align with active backend support tiers in operations docs.
+- portability claims must map to replay/diff classification vocabulary in specification docs.
+- no architecture statement should assume capabilities not declared by adapter contracts.
+
 ## Examples
 ```text
 Portability validation flow:
 source run -> bundle export -> target import -> replay -> diff -> release decision
+```
+
+```text
+Supported environment check example:
+source adapter: local-shell (stable)
+target adapter: local-shell (stable)
+shared capability envelope: full for this workflow
+portability decision path: replay + diff required before acceptance
+```
+
+```text
+Bounded mismatch example:
+source adapter supports timeout enforcement
+target adapter lacks timeout enforcement
+result: portability classified as bounded non-equivalence for timeout-sensitive workloads
 ```
 
 ```mermaid
@@ -43,13 +73,24 @@ graph LR
   E --> F[Portability Decision]
 ```
 
+```mermaid
+graph TD
+  A[Source Capability Descriptor] --> B[Shared Capability Envelope]
+  C[Target Capability Descriptor] --> B
+  B --> D[Bundle Import]
+  D --> E[Replay and Diff]
+  E --> F[Equivalent or Bounded Drift]
+```
+
 ## Guarantees
 - Portability is documented as a validated workflow, not a blanket promise.
 - Backend support boundaries are explicit architecture constraints.
+- Supported-environment decision criteria are explicit and evidence-based.
 
 ## Limitations
 - Portability does not guarantee identical timing or resource behavior.
 - Deep bundle schema internals belong to specification docs.
+- Portability acceptance can change when capability descriptors or support tiers change.
 
 ## Related
 - `docs/05-system-architecture/05-adapters.md`
