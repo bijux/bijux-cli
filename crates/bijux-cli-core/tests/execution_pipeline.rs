@@ -9,9 +9,9 @@ use bijux_cli_contracts::{
     ColorMode, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
 };
 use bijux_cli_core::kernel::{
-    assemble_context, build_intent_from_argv, execute_pipeline, resolve_policy, AsyncHandler,
-    DiagnosticsHook, ExecutionIntent, Handler, KernelError, LifecycleHook, PolicyInputs,
-    SyncHandler,
+    assemble_context, build_intent_from_argv, execute_pipeline, map_error_category_to_exit,
+    resolve_policy, AsyncHandler, DiagnosticsHook, ExecutionIntent, Handler, KernelError,
+    LifecycleHook, PolicyInputs, SyncHandler,
 };
 use futures::future;
 use serde_json::json;
@@ -219,4 +219,10 @@ fn pipeline_invokes_plugin_and_repl_lifecycle_hooks() {
         .expect("repl path should execute");
     assert!(repl_start_flag.load(Ordering::SeqCst));
     assert!(repl_shutdown_flag.load(Ordering::SeqCst));
+}
+
+#[test]
+fn maps_usage_category_to_stable_usage_exit_code() {
+    assert_eq!(map_error_category_to_exit("usage"), ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
 }

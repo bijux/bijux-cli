@@ -311,11 +311,17 @@ fn map_outcome_to_emission(outcome: HandlerOutcome, quiet: bool) -> Option<Emiss
 fn map_outcome_to_exit(outcome: &HandlerOutcome) -> ExitCode {
     match outcome {
         HandlerOutcome::Success(_) => ExitCode::Success,
-        HandlerOutcome::Error(err) => match err.error.category.as_str() {
-            "usage" | "validation" => ExitCode::Usage,
-            "plugin" | "internal" => ExitCode::Error,
-            _ => ExitCode::Error,
-        },
+        HandlerOutcome::Error(err) => map_error_category_to_exit(&err.error.category),
+    }
+}
+
+/// Map stable error category to stable exit code contract.
+#[must_use]
+pub fn map_error_category_to_exit(category: &str) -> ExitCode {
+    match category {
+        "usage" | "validation" => ExitCode::Usage,
+        "plugin" | "internal" => ExitCode::Error,
+        _ => ExitCode::Error,
     }
 }
 
