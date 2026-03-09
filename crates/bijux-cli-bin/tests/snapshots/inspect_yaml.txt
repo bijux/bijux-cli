@@ -87,6 +87,14 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
+  - docs-audit
+  canonical:
+  - dev
+  - cli
+  - docs-audit
+  source: compatibility-alias
+- alias:
+  - dev
   - docs-prune-plan
   canonical:
   - dev
@@ -151,6 +159,14 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
+  - route-audit
+  canonical:
+  - dev
+  - cli
+  - route-audit
+  source: compatibility-alias
+- alias:
+  - dev
   - routes
   canonical:
   - dev
@@ -164,6 +180,14 @@ alias_rewrites:
   - dev
   - cli
   - runtime-identity
+  source: compatibility-alias
+- alias:
+  - dev
+  - script-audit
+  canonical:
+  - dev
+  - cli
+  - script-audit
   source: compatibility-alias
 - alias:
   - dev
@@ -227,6 +251,14 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - plugins
+  - doctor
+  canonical:
+  - cli
+  - plugins
+  - doctor
+  source: compatibility-alias
+- alias:
+  - plugins
   - explain
   canonical:
   - cli
@@ -240,6 +272,14 @@ alias_rewrites:
   - cli
   - plugins
   - inspect
+  source: compatibility-alias
+- alias:
+  - plugins
+  - install
+  canonical:
+  - cli
+  - plugins
+  - install
   source: compatibility-alias
 - alias:
   - plugins
@@ -259,11 +299,27 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - plugins
+  - scaffold
+  canonical:
+  - cli
+  - plugins
+  - scaffold
+  source: compatibility-alias
+- alias:
+  - plugins
   - schema
   canonical:
   - cli
   - plugins
   - schema
+  source: compatibility-alias
+- alias:
+  - plugins
+  - uninstall
+  canonical:
+  - cli
+  - plugins
+  - uninstall
   source: compatibility-alias
 - alias:
   - plugins
@@ -335,11 +391,19 @@ builtins:
 - segments:
   - cli
   - plugins
+  - doctor
+- segments:
+  - cli
+  - plugins
   - explain
 - segments:
   - cli
   - plugins
   - inspect
+- segments:
+  - cli
+  - plugins
+  - install
 - segments:
   - cli
   - plugins
@@ -351,7 +415,15 @@ builtins:
 - segments:
   - cli
   - plugins
+  - scaffold
+- segments:
+  - cli
+  - plugins
   - schema
+- segments:
+  - cli
+  - plugins
+  - uninstall
 - segments:
   - cli
   - plugins
@@ -382,6 +454,10 @@ builtins:
   - dev
   - cli
   - docs
+- segments:
+  - dev
+  - cli
+  - docs-audit
 - segments:
   - dev
   - cli
@@ -417,11 +493,19 @@ builtins:
 - segments:
   - dev
   - cli
+  - route-audit
+- segments:
+  - dev
+  - cli
   - routes
 - segments:
   - dev
   - cli
   - runtime-identity
+- segments:
+  - dev
+  - cli
+  - script-audit
 - segments:
   - dev
   - cli
@@ -456,10 +540,22 @@ builtins:
   - check
 - segments:
   - plugins
+  - doctor
+- segments:
+  - plugins
   - inspect
 - segments:
   - plugins
+  - install
+- segments:
+  - plugins
   - list
+- segments:
+  - plugins
+  - scaffold
+- segments:
+  - plugins
+  - uninstall
 - segments:
   - sleep
 - segments:
@@ -580,6 +676,12 @@ route_sources:
   segments:
   - cli
   - plugins
+  - doctor
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
   - explain
   source: built-in
 - owner: bijux-cli
@@ -587,6 +689,12 @@ route_sources:
   - cli
   - plugins
   - inspect
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
+  - install
   source: built-in
 - owner: bijux-cli
   segments:
@@ -604,7 +712,19 @@ route_sources:
   segments:
   - cli
   - plugins
+  - scaffold
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
   - schema
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
+  - uninstall
   source: built-in
 - owner: bijux-cli
   segments:
@@ -658,6 +778,12 @@ route_sources:
   segments:
   - dev
   - cli
+  - docs-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
   - docs-prune-plan
   source: built-in
 - owner: bijux-cli
@@ -706,6 +832,12 @@ route_sources:
   segments:
   - dev
   - cli
+  - route-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
   - routes
   source: built-in
 - owner: bijux-cli
@@ -713,6 +845,12 @@ route_sources:
   - dev
   - cli
   - runtime-identity
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - script-audit
   source: built-in
 - owner: bijux-cli
   segments:
@@ -769,12 +907,32 @@ route_sources:
 - owner: bijux-cli
   segments:
   - plugins
+  - doctor
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
   - inspect
   source: built-in
 - owner: bijux-cli
   segments:
   - plugins
+  - install
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
   - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - scaffold
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - uninstall
   source: built-in
 - owner: bijux-cli
   segments:

@@ -1,0 +1,17 @@
+Usage: bijux-rs plugins scaffold [OPTIONS] [kind] [namespace]
+
+Arguments:
+  [kind]       
+  [namespace]  
+
+Options:
+  -f, --format <FORMAT>     
+      --path <path>         
+      --force <force>       
+  -q, --quiet               
+      --log-level <LEVEL>   
+      --color <MODE>        
+      --pretty              
+      --no-pretty           
+      --config-path <PATH>  
+  -h, --help                Print help

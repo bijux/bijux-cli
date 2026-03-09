@@ -30,7 +30,7 @@ fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
 
 #[test]
 fn help_snapshots_match_expected_output() {
-    let cases: [(&[&str], &str); 37] = [
+    let cases: [(&[&str], &str); 45] = [
         (&["--help"], include_str!("snapshots/help_root.txt")),
         (&["--color", "never", "--help"], include_str!("snapshots/help_root_no_color.txt")),
         (&["cli", "--help"], include_str!("snapshots/help_cli.txt")),
@@ -43,6 +43,16 @@ fn help_snapshots_match_expected_output() {
         (&["doctor", "--help"], include_str!("snapshots/help_doctor.txt")),
         (&["config", "--help"], include_str!("snapshots/help_config.txt")),
         (&["plugins", "--help"], include_str!("snapshots/help_plugins.txt")),
+        (&["plugins", "install", "--help"], include_str!("snapshots/help_plugins_install.txt")),
+        (
+            &["plugins", "uninstall", "--help"],
+            include_str!("snapshots/help_plugins_uninstall.txt"),
+        ),
+        (
+            &["plugins", "scaffold", "--help"],
+            include_str!("snapshots/help_plugins_scaffold.txt"),
+        ),
+        (&["plugins", "doctor", "--help"], include_str!("snapshots/help_plugins_doctor.txt")),
         (
             &["plugins", "reserved-names", "--help"],
             include_str!("snapshots/help_plugins_reserved_names.txt"),
@@ -67,6 +77,22 @@ fn help_snapshots_match_expected_output() {
         (
             &["cli", "plugins", "inspect", "--help"],
             include_str!("snapshots/help_cli_plugins_inspect.txt"),
+        ),
+        (
+            &["cli", "plugins", "install", "--help"],
+            include_str!("snapshots/help_cli_plugins_install.txt"),
+        ),
+        (
+            &["cli", "plugins", "uninstall", "--help"],
+            include_str!("snapshots/help_cli_plugins_uninstall.txt"),
+        ),
+        (
+            &["cli", "plugins", "scaffold", "--help"],
+            include_str!("snapshots/help_cli_plugins_scaffold.txt"),
+        ),
+        (
+            &["cli", "plugins", "doctor", "--help"],
+            include_str!("snapshots/help_cli_plugins_doctor.txt"),
         ),
         (&["dev", "cli", "routes", "--help"], include_str!("snapshots/help_dev_cli_routes.txt")),
         (

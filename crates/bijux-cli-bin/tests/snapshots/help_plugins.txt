@@ -4,6 +4,10 @@ Commands:
   list            
   inspect         
   check           
+  install         
+  uninstall       
+  scaffold        
+  doctor          
   reserved-names  
   where           
   explain         

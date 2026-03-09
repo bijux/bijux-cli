@@ -1,0 +1,11 @@
+Usage: bijux-rs plugins doctor [OPTIONS]
+
+Options:
+  -f, --format <FORMAT>     
+  -q, --quiet               
+      --log-level <LEVEL>   
+      --color <MODE>        
+      --pretty              
+      --no-pretty           
+      --config-path <PATH>  
+  -h, --help                Print help
