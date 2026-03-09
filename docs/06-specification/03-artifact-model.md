@@ -26,9 +26,30 @@ Artifact hashing algorithm contract:
 - algorithm changes require versioned migration policy and compatibility handling.
 - hash computation must be deterministic for equivalent canonical content.
 
+Formal artifact rules:
+- RULE-ART-001: each artifact MUST have one `artifact.id`.
+- RULE-ART-002: each artifact MUST reference producing `run_id` and `node_id`.
+- RULE-ART-003: artifact identity MUST be derived from canonical content policy.
+- RULE-ART-004: lineage links MUST remain queryable for inspect/diff workflows.
+
 Portability rules:
 - export/import workflows preserve artifact identity context and lineage metadata.
 - portability validation is determined through replay and diff, not by transport success alone.
+
+Invalid state definitions:
+- INVALID-ART-MISSING-ID: artifact identity absent.
+- INVALID-ART-MISSING-LINEAGE: missing run or node linkage.
+- INVALID-ART-HASH-MISSING: artifact expected to be identity-tracked but hash unavailable.
+- INVALID-ART-CANONICALIZATION-UNKNOWN: canonical content basis cannot be determined.
+
+Edge cases:
+- zero-byte artifacts are valid if canonicalized and lineage-attributed.
+- directory artifacts are valid if canonical directory representation policy is defined.
+- partial artifact availability is valid in failed runs but must be explicitly represented.
+
+Compatibility notes:
+- hash algorithm upgrades require documented compatibility window and migration path.
+- new artifact kinds are compatible when canonicalization and lineage semantics are defined.
 
 ## Examples
 ```text

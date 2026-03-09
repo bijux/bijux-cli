@@ -27,6 +27,13 @@ State transition rules:
 - terminal states are immutable (`succeeded`, `failed`, `canceled`).
 - a run cannot transition between terminal states.
 
+Formal run-state rules:
+- RULE-RUN-001: each run MUST have one unique `run.id`.
+- RULE-RUN-002: run MUST reference one `run.graph_id`.
+- RULE-RUN-003: run state MUST follow legal transition graph.
+- RULE-RUN-004: terminal state MUST be immutable once reached.
+- RULE-RUN-005: node outcomes MUST be attributable to run identity.
+
 Node result contract:
 - each scheduled node yields exactly one terminal node outcome for that run attempt.
 - node outcome includes status, timing, adapter/backend context, and output references.
@@ -35,6 +42,21 @@ Node result contract:
 Run evidence contract:
 - run directory materializes run-level metadata and node-level outcomes.
 - run records must be sufficient for inspect, replay planning, and diff attribution.
+
+Invalid state definitions:
+- INVALID-RUN-MISSING-ID: run identity absent.
+- INVALID-RUN-MISSING-GRAPH-REFERENCE: `run.graph_id` absent.
+- INVALID-RUN-ILLEGAL-TRANSITION: state transition violates lifecycle graph.
+- INVALID-RUN-TERMINAL-MUTATION: terminal run changed after completion.
+
+Edge cases:
+- canceled runs are valid terminal states with incomplete execution coverage.
+- failed runs may still produce partial artifact sets and valid evidence records.
+- repeated executions on same graph are valid with distinct run identities.
+
+Compatibility notes:
+- additional run metadata fields are compatible if core state/lifecycle semantics remain unchanged.
+- lifecycle vocabulary expansion must preserve existing terminal-state meaning.
 
 ## Examples
 ```text

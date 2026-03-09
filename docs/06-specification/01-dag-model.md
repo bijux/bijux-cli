@@ -37,6 +37,28 @@ Deterministic DAG normalization rules:
 - normalize field ordering for canonical hash materialization.
 - treat explicitly semantic metadata as hash-relevant; non-semantic metadata as hash-irrelevant.
 
+Formal validation rule set:
+- RULE-DAG-001: `dag.nodes` MUST be present and non-empty.
+- RULE-DAG-002: every node `id` MUST be unique within DAG scope.
+- RULE-DAG-003: every `depends_on` reference MUST resolve to an existing node `id`.
+- RULE-DAG-004: dependency graph MUST be acyclic.
+- RULE-DAG-005: canonicalization MUST preserve semantics and remove non-semantic variance.
+
+Invalid state definitions:
+- INVALID-DAG-EMPTY-NODES: node list missing or empty.
+- INVALID-DAG-DUPLICATE-NODE-ID: same node identifier appears multiple times.
+- INVALID-DAG-UNKNOWN-DEPENDENCY: dependency references unknown node.
+- INVALID-DAG-CYCLE-DETECTED: dependency cycle prevents valid topological ordering.
+
+Edge cases:
+- isolated source nodes are valid when they represent independent work.
+- disconnected DAG components are valid if each component is acyclic and internally consistent.
+- declaration ordering differences are valid when canonical semantics are unchanged.
+
+Compatibility notes:
+- additional optional metadata fields are allowed if they do not alter existing semantic rules.
+- semantic rule changes require explicit versioning and migration guidance.
+
 ## Examples
 ```yaml
 dag:
