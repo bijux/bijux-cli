@@ -263,6 +263,8 @@ jobs:
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_dev_cli_inventory.py
           python3 scripts/status/generate_docs_audit.py
+          python3 scripts/status/generate_test_quality_audit.py
+          python3 scripts/status/generate_flaky_test_labels.py
 
       - name: Runtime unity gate
         run: |
@@ -305,6 +307,24 @@ jobs:
         with:
           name: docs-audit
           path: artifacts/status/docs_audit.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload test quality audit artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-quality-audit
+          path: artifacts/status/test_quality_audit.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload flaky test label artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-test-labels
+          path: artifacts/status/flaky_tests.json
           if-no-files-found: warn
           retention-days: 14
 
