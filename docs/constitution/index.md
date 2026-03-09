@@ -25,4 +25,5 @@ It covers public behavior that must remain stable across implementation changes.
 - [REPL Parity](REPL_PARITY.md)
 - [Plugin Namespace Policy](PLUGIN_NAMESPACE_POLICY.md)
 - [Plugin Lifecycle](PLUGIN_LIFECYCLE.md)
+- [Plugin Sandboxing Policy](PLUGIN_SANDBOXING_POLICY.md)
 - [Deprecation Policy](DEPRECATION_POLICY.md)
