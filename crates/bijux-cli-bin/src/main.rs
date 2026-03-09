@@ -109,6 +109,7 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
                     "has_path_shadowing": install_report.has_path_shadowing,
                     "has_duplicate_installs": install_report.has_duplicate_installs,
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
+                    "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
                     "has_mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
                 }
             })

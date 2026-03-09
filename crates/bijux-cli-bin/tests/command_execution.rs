@@ -70,6 +70,7 @@ fn cli_doctor_reports_install_diagnostics() {
     assert!(install.get("has_path_shadowing").is_some());
     assert!(install.get("has_duplicate_installs").is_some());
     assert!(install.get("stale_wrapper_scripts").is_some());
+    assert!(install.get("legacy_installer_conflicts").is_some());
     assert!(install.get("has_mismatched_wheel_binary_versions").is_some());
 }
 

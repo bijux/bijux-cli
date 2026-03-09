@@ -52,6 +52,8 @@ pub struct InstallHealthReport {
     pub stale_wrapper_scripts: Vec<String>,
     /// Whether wheel and runtime binary versions differ.
     pub has_mismatched_wheel_binary_versions: bool,
+    /// Legacy installer wrappers that could shadow canonical runtime.
+    pub legacy_installer_conflicts: Vec<String>,
 }
 
 /// Shell targets for completion generation during installation.
@@ -174,6 +176,7 @@ pub fn install_health_report(
         path_binaries.iter().any(|path| path.contains(".cargo")) && path_binaries.iter().any(|path| path.contains("site-packages"));
     let stale_wrapper_scripts = detect_stale_wrapper_scripts(path_value);
     let has_mismatched_wheel_binary_versions = wheel_version.is_some_and(|version| version != runtime_version);
+    let legacy_installer_conflicts = legacy_installer_conflicts(path_value);
 
     InstallHealthReport {
         active_binary,
@@ -182,6 +185,7 @@ pub fn install_health_report(
         has_duplicate_installs,
         stale_wrapper_scripts,
         has_mismatched_wheel_binary_versions,
+        legacy_installer_conflicts,
     }
 }
 
@@ -388,5 +392,32 @@ mod tests {
         let path_value = std::env::join_paths([&link_dir]).expect("join");
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 1);
+    }
+
+    #[test]
+    fn windows_path_override_is_respected() {
+        let report = install_health_report(
+            "",
+            Some(r"C:\Program Files\Bijux\bijux.exe"),
+            None,
+            "1.0.0",
+        );
+        assert_eq!(
+            report.active_binary.as_deref(),
+            Some(r"C:\Program Files\Bijux\bijux.exe")
+        );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn read_only_state_directory_reports_error_on_first_write() {
+        use std::os::unix::fs::PermissionsExt;
+        let temp = TempDir::new().expect("tempdir");
+        let dir = temp.path().join("readonly");
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555))
+            .expect("set readonly");
+        let result = initialize_first_run_state(&dir);
+        assert!(result.is_err());
     }
 }
