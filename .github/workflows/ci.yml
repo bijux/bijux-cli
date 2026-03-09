@@ -274,6 +274,14 @@ jobs:
         run: |
           python3 scripts/parity/generate_binary_bridge_parity.py
 
+      - name: Command parity matrix artifact
+        run: |
+          python3 scripts/parity/generate_command_parity_matrix.py
+
+      - name: Command parity regression gate
+        run: |
+          python3 scripts/parity/check_command_parity_gates.py --enforce
+
       - name: Upload parity report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -343,6 +351,21 @@ jobs:
         with:
           name: binary-bridge-parity
           path: artifacts/parity/binary_vs_python_bridge_parity_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload command parity matrix artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: command-parity-matrix
+          path: |
+            artifacts/parity/command_parity_matrix.json
+            artifacts/parity/command_parity_diffs.json
+            artifacts/parity/stdout_diff.md
+            artifacts/parity/stderr_diff.md
+            artifacts/parity/exit_code_diff.md
+            artifacts/parity/help_diff.md
           if-no-files-found: warn
           retention-days: 14
 
