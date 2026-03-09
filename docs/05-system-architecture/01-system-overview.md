@@ -23,6 +23,13 @@ Execution flow summary:
 5. run and artifact evidence is persisted
 6. inspect/replay/diff operate over persisted state
 
+Execution pipeline interpretation:
+- validation stage protects runtime from malformed dependency structures.
+- scheduling stage computes legal execution opportunities.
+- execution stage produces node outcomes and candidate artifacts.
+- persistence stage materializes evidence needed for future diagnosis.
+- analysis stage (inspect/replay/diff) transforms evidence into operator decisions.
+
 System boundary priorities:
 - deterministic control over hidden behavior
 - explicit operational state over implicit transitions
@@ -38,6 +45,12 @@ Architecture consistency checks:
 - behavior statements in architecture docs must map to specification pages
 - architecture pages must not claim unimplemented future capabilities
 
+Crate dependency viewpoint (conceptual):
+- CLI and user surfaces call into runtime orchestration domains.
+- runtime domains depend on adapter boundaries for environment execution.
+- runtime and adapter results persist through run/artifact evidence domains.
+- replay/diff/inspect consume persisted evidence and identity contracts.
+
 ## Examples
 ```text
 Control flow:
@@ -52,6 +65,14 @@ graph LR
   D --> E[Adapter Boundary]
   E --> F[Run and Artifact Persistence]
   F --> G[Inspect Replay Diff]
+```
+
+```mermaid
+graph TD
+  A[Definition Domain] --> B[Execution Domain]
+  B --> C[Evidence Domain]
+  C --> D[Analysis Domain]
+  D --> E[Operator Decision]
 ```
 
 ## Guarantees

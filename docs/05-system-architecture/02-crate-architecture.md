@@ -18,6 +18,12 @@ Responsibility mapping (conceptual):
 - artifact/storage crate(s): output persistence and retrieval concerns
 - development/control-plane tooling crate(s): repository and operational support tooling
 
+Dependency boundary rules (conceptual):
+- CLI surfaces should depend downward on runtime contracts, not runtime internals.
+- runtime should depend on adapter abstractions, not backend-specific command surfaces.
+- storage/evidence concerns should be isolated from command parsing concerns.
+- development/control-plane tooling should not redefine runtime semantics contracts.
+
 Crate responsibility rules:
 - each crate owns a clear domain boundary
 - cross-crate dependencies should follow domain layering
@@ -36,6 +42,15 @@ Architecture tradeoff:
 ```text
 Responsibility path example:
 cli command -> runtime orchestration -> adapter invocation -> run/artifact persistence
+```
+
+```mermaid
+graph TD
+  CLI[CLI Crates] --> RUNTIME[Runtime Crates]
+  RUNTIME --> ADAPTER[Adapter Boundary]
+  RUNTIME --> EVIDENCE[Run and Artifact Persistence]
+  DEV[Developer and Control Plane Crates] --> CLI
+  DEV --> RUNTIME
 ```
 
 ## Guarantees

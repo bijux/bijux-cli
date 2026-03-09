@@ -12,6 +12,12 @@ Adapter responsibilities:
 - return normalized execution outcomes to runtime
 - expose capability and limitation boundaries
 
+Adapter architecture decisions:
+- keep adapter interface narrow and normalization-focused.
+- isolate backend-specific behavior behind capability descriptors.
+- require explicit mapping from backend-native outcomes to canonical runtime states.
+- refuse silent capability emulation that would hide non-equivalence.
+
 Adapter model constraints:
 - adapters must preserve core runtime semantics where supported
 - adapter-specific behavior differences must be explicit
@@ -24,6 +30,15 @@ Operational implications:
 ## Examples
 ```text
 Runtime intent -> Adapter translation -> Backend execution -> Normalized outcome -> Runtime state update
+```
+
+```mermaid
+graph LR
+  A[Runtime Work Unit] --> B[Adapter Translation]
+  B --> C[Backend API or Shell]
+  C --> D[Backend Result]
+  D --> E[Canonical Outcome Mapping]
+  E --> F[Runtime State Update]
 ```
 
 ## Guarantees

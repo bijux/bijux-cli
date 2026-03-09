@@ -18,6 +18,11 @@ Engine behavior model:
 - failures are surfaced with diagnosable state
 - outputs are handed to artifact persistence surfaces
 
+Execution pipeline decisions:
+- engine should not infer hidden dependencies; it consumes scheduler-ready work only.
+- engine must return normalized outcome envelopes, not backend-native opaque blobs.
+- engine records evidence at each node boundary so post-run diagnosis is possible.
+
 Engine boundary rules:
 - engine executes; scheduler orders
 - engine records outcomes; history/index surfaces present trends
@@ -31,6 +36,15 @@ Deliberate non-goals:
 ```text
 Engine cycle:
 receive schedulable node -> execute -> record result -> notify scheduler/state
+```
+
+```mermaid
+graph LR
+  A[Schedulable Node] --> B[Adapter Invocation]
+  B --> C[Backend Execution]
+  C --> D[Normalized Outcome]
+  D --> E[Evidence Persistence]
+  E --> F[Scheduler Update]
 ```
 
 ## Guarantees

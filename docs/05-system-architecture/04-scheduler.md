@@ -17,6 +17,12 @@ Design principles:
 - predictable ordering behavior
 - clear handling of blocked and failed paths
 
+Scheduler design decisions:
+- prefer dependency correctness over maximum concurrency.
+- treat blocked nodes as explicit states, not silent skips.
+- process completion events incrementally to expose runnable frontier updates.
+- preserve deterministic classification semantics even when runnable nodes are concurrent.
+
 Scheduler workflow:
 1. build dependency state
 2. identify runnable nodes
@@ -28,6 +34,15 @@ Scheduler workflow:
 ```text
 If node C depends on A and B:
 - C is not schedulable until both A and B complete successfully.
+```
+
+```mermaid
+graph TD
+  A[Build Dependency State] --> B[Find Runnable Nodes]
+  B --> C[Dispatch to Engine]
+  C --> D[Receive Outcomes]
+  D --> E[Update Readiness]
+  E --> B
 ```
 
 ## Guarantees
