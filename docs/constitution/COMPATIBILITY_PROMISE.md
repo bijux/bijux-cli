@@ -49,6 +49,43 @@ This document covers behavior contracts, migration expectations, install compati
 - Preserve exit-code meanings and machine-readable output contracts.
 - Announce any CI-relevant change before the release that enforces it.
 
+### Shell scripts consuming JSON/YAML output
+- Preserve envelope top-level keys and semantic meanings.
+- Keep `--format json --no-pretty` machine-safe and compact.
+- Keep YAML and JSON payloads semantically equivalent for the same command.
+
+### Automation relying on exit codes
+- Keep the code-to-meaning mapping stable for documented failure categories.
+- Treat any unplanned exit-code change as a compatibility regression.
+
+### Existing plugin users
+- Preserve plugin discovery semantics for `entrypoint` and local directory plugins.
+- Preserve metadata compatibility validation and stable plugin error categories.
+- Reserve built-in namespaces to prevent plugin route ambiguity.
+
+### REPL users
+- Preserve command parity and command parsing behavior documented in `REPL_PARITY.md`.
+- Preserve stable shortcuts (`exit`, `quit`) and command chaining semantics.
+
+## Legacy Command Continuity Decisions
+These decisions apply when introducing `bijux cli ...` and `bijux dev cli ...` surfaces.
+
+| Existing form | Compatibility decision | Long-term state |
+| --- | --- | --- |
+| `bijux status` | Keep as alias to `bijux cli status` | Supported alias |
+| `bijux plugins ...` | Keep as alias to `bijux cli plugins ...` | Supported alias |
+| `bijux config ...` | Keep as alias to `bijux cli config ...` | Supported alias |
+| `bijux doctor` | Keep as alias to `bijux cli doctor` | Supported alias |
+| `bijux version` | Keep as alias to `bijux cli version` | Supported alias |
+| `bijux dev ...` | Keep as alias to `bijux dev cli ...` | Supported alias |
+
+Commands are not removed without deprecation notice under `DEPRECATION_POLICY.md`.
+
+## Deprecation Notice Contract
+Deprecation messages use the template defined in `DEPRECATION_POLICY.md`:
+
+`DEPRECATED: <subject> is deprecated and will be removed in <version>. Use <replacement>. Reference: <url>.`
+
 ## Dual Install Policy
 - Dual installs (for example pip plus cargo) are supported only when they resolve to the same major version contract.
 - `bijux doctor` must surface path resolution and version details to make conflicts diagnosable.
