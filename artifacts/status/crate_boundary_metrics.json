@@ -1,0 +1,206 @@
+{
+  "boundary_decisions": [
+    {
+      "boundary": "core <-> routing",
+      "decision": "keep separate for now",
+      "reason": "high co-change expected during parity closure; separation still useful for parser test focus",
+      "status": "watch"
+    },
+    {
+      "boundary": "core <-> output",
+      "decision": "keep separate for now",
+      "reason": "output formatting contracts remain reusable and test-scoped",
+      "status": "watch"
+    },
+    {
+      "boundary": "core <-> install",
+      "decision": "keep separate for now",
+      "reason": "install concerns include path and packaging diagnostics outside core execution law",
+      "status": "watch"
+    },
+    {
+      "boundary": "core <-> contracts",
+      "decision": "must stay separate",
+      "reason": "machine contracts must remain independent from execution engine",
+      "status": "keep"
+    },
+    {
+      "boundary": "core <-> python",
+      "decision": "must stay separate",
+      "reason": "bridge packaging/runtime integration is language-boundary specific",
+      "status": "keep"
+    },
+    {
+      "boundary": "core <-> plugin",
+      "decision": "must stay separate",
+      "reason": "plugin lifecycle and registry law should not be merged into base execution core",
+      "status": "keep"
+    },
+    {
+      "boundary": "core <-> repl",
+      "decision": "must stay separate",
+      "reason": "interactive session model and transcript behavior are distinct runtime surfaces",
+      "status": "keep"
+    }
+  ],
+  "generated_at": "2026-03-09T22:22:55.028280+00:00",
+  "generator": "scripts/status/generate_crate_boundary_metrics.py",
+  "metrics": {
+    "cross_crate_change_frequency": {
+      "core_with_routing": 14,
+      "install_with_core": 4,
+      "output_with_contracts": 2,
+      "plugin_with_repl": 2
+    },
+    "per_crate": [
+      {
+        "churn": {
+          "commit_count": 28,
+          "deletions": 454,
+          "files_changed_entries": 154,
+          "insertions": 6550
+        },
+        "compile_ok": false,
+        "compile_seconds": 0.316,
+        "crate": "bijux-cli-bin",
+        "dependency_fan_in": 0,
+        "dependency_fan_out": 1,
+        "public_api_count": 0,
+        "test_build_ok": true,
+        "test_build_seconds": 0.086
+      },
+      {
+        "churn": {
+          "commit_count": 14,
+          "deletions": 370,
+          "files_changed_entries": 55,
+          "insertions": 2386
+        },
+        "compile_ok": true,
+        "compile_seconds": 0.068,
+        "crate": "bijux-cli-contracts",
+        "dependency_fan_in": 7,
+        "dependency_fan_out": 0,
+        "public_api_count": 70,
+        "test_build_ok": true,
+        "test_build_seconds": 0.083
+      },
+      {
+        "churn": {
+          "commit_count": 34,
+          "deletions": 249,
+          "files_changed_entries": 69,
+          "insertions": 3888
+        },
+        "compile_ok": false,
+        "compile_seconds": 0.305,
+        "crate": "bijux-cli-core",
+        "dependency_fan_in": 3,
+        "dependency_fan_out": 5,
+        "public_api_count": 26,
+        "test_build_ok": true,
+        "test_build_seconds": 0.085
+      },
+      {
+        "churn": {
+          "commit_count": 10,
+          "deletions": 540,
+          "files_changed_entries": 20,
+          "insertions": 1583
+        },
+        "compile_ok": true,
+        "compile_seconds": 0.063,
+        "crate": "bijux-cli-install",
+        "dependency_fan_in": 2,
+        "dependency_fan_out": 1,
+        "public_api_count": 47,
+        "test_build_ok": true,
+        "test_build_seconds": 0.067
+      },
+      {
+        "churn": {
+          "commit_count": 6,
+          "deletions": 25,
+          "files_changed_entries": 26,
+          "insertions": 897
+        },
+        "compile_ok": true,
+        "compile_seconds": 0.068,
+        "crate": "bijux-cli-output",
+        "dependency_fan_in": 2,
+        "dependency_fan_out": 1,
+        "public_api_count": 11,
+        "test_build_ok": true,
+        "test_build_seconds": 0.082
+      },
+      {
+        "churn": {
+          "commit_count": 15,
+          "deletions": 839,
+          "files_changed_entries": 34,
+          "insertions": 2689
+        },
+        "compile_ok": true,
+        "compile_seconds": 0.066,
+        "crate": "bijux-cli-plugin",
+        "dependency_fan_in": 1,
+        "dependency_fan_out": 1,
+        "public_api_count": 47,
+        "test_build_ok": true,
+        "test_build_seconds": 0.067
+      },
+      {
+        "churn": {
+          "commit_count": 7,
+          "deletions": 378,
+          "files_changed_entries": 16,
+          "insertions": 1050
+        },
+        "compile_ok": false,
+        "compile_seconds": 0.298,
+        "crate": "bijux-cli-python",
+        "dependency_fan_in": 0,
+        "dependency_fan_out": 3,
+        "public_api_count": 23,
+        "test_build_ok": true,
+        "test_build_seconds": 0.08
+      },
+      {
+        "churn": {
+          "commit_count": 11,
+          "deletions": 1105,
+          "files_changed_entries": 29,
+          "insertions": 2397
+        },
+        "compile_ok": false,
+        "compile_seconds": 0.311,
+        "crate": "bijux-cli-repl",
+        "dependency_fan_in": 0,
+        "dependency_fan_out": 4,
+        "public_api_count": 36,
+        "test_build_ok": true,
+        "test_build_seconds": 0.079
+      },
+      {
+        "churn": {
+          "commit_count": 22,
+          "deletions": 34,
+          "files_changed_entries": 75,
+          "insertions": 1388
+        },
+        "compile_ok": true,
+        "compile_seconds": 0.077,
+        "crate": "bijux-cli-routing",
+        "dependency_fan_in": 2,
+        "dependency_fan_out": 1,
+        "public_api_count": 11,
+        "test_build_ok": true,
+        "test_build_seconds": 0.084
+      }
+    ]
+  },
+  "rules": {
+    "no_large_merge_until_parity_stronger": true,
+    "rule_text": "Large crate merges are frozen until parity coverage and mismatch trend show sustained improvement."
+  }
+}
