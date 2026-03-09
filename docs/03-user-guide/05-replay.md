@@ -1,100 +1,48 @@
 # Replay
 
-Explain how to use replay to validate stability, detect drift, and verify fixes.
+Replay is a validation workflow: it creates candidate evidence and tells you whether behavior stayed equivalent, drifted, or became incomplete.
 
-Replay is a core workflow for confidence, especially after dependency or environment changes.
+## Replay as workflow, not command trivia
 
-## Explanation
-Replay re-executes or re-validates run behavior against a known run context.
+Use replay when a decision depends on reproducibility:
 
-Replay planning guidance:
-- choose a baseline run with trusted outcome
-- choose a candidate run or environment to validate
-- define what must remain equivalent and what may differ
-- identify required inputs/artifacts before execution starts
-- decide strict vs bounded-equivalence expectation for the check
+1. choose trusted baseline run,
+2. run replay in target context,
+3. classify result,
+4. investigate with diff when classification is not equivalent.
 
-Replay validation guidance:
-- compare terminal status
-- compare key output/artifact expectations
-- compare diagnostics and failure classes when mismatch occurs
+## Outcome classes in operator language
 
-Replay guarantees (operator interpretation):
-- replay provides explicit outcome classification rather than implicit "looks fine".
-- replay can be used repeatedly as a regression confidence tool.
-- replay evidence is suitable input for follow-up diff diagnostics.
+- exact equivalence: required outcome surfaces match.
+- bounded equivalence: outcomes match within declared capability limits.
+- drift: contract-relevant differences detected.
+- incomplete: replay could not verify required surfaces.
 
-Replay limitations:
-- replay equivalence is bounded by backend capability envelope.
-- environment/tooling drift can produce classified divergence even with unchanged graph.
-- replay does not guarantee identical timing/resource profile across environments.
+Treat bounded equivalence as conditional acceptance, not unconditional success.
 
-Replay non-goals:
-- replay is not a performance benchmark tool.
-- replay is not evidence of cross-backend equivalence without capability alignment.
-- replay success does not imply every external side effect is equivalent.
+## Investigation example
 
-When to replay:
-- post-upgrade verification
-- flaky behavior investigation
-- "fixed bug" confirmation
-
-## Examples
 ```bash
-# Replay a known run context
-bijux-dag replay --run-id RUN_20260309_010
-
-# Replay with explicit DAG path when needed
-bijux-dag replay --run-id RUN_20260309_010 --dag ./pipelines/main.dag.json
+bijux-dag replay --run-id RUN_20260309_204
+bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_221
 ```
 
-```text
-Replay review checklist:
-- status parity checked
-- critical artifact expectations checked
-- mismatch classified before remediation
-```
+Example interpretation:
 
-```text
-Replay mismatch example:
-- baseline: RUN_010 (succeeded on toolchain X)
-- replay: RUN_111 (failed on toolchain Y)
-- classification: drift
-- next action: run diff and inspect toolchain/environment delta
-```
+- replay status: drift,
+- diff scope: artifact hash mismatch in downstream report,
+- likely next step: inspect producer node and upstream input changes.
 
-## Guarantees
-- Replay is documented as a normal operational tool.
-- Validation steps are explicit and repeatable.
-- Guarantees and limitations are separated for planning clarity.
+## What replay success does not prove
 
-## Limitations
-- Replay equivalence can still be bounded by environment/backend differences.
-- This guide does not define replay algorithm internals.
+Replay equivalence does not prove:
 
-## Related
-- `docs/03-user-guide/04-run-history.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/02-getting-started/03-running-a-pipeline.md`
-- `docs/06-specification/07-replay-semantics.md`
+- identical wall-clock performance,
+- universal cross-backend portability,
+- equivalence of external side effects not captured as artifacts.
 
-## Exact equivalence, bounded equivalence, and drift
+## Next reading
 
-Replay outcomes should be interpreted in three classes:
-
-- Exact equivalence: status and contract-relevant outputs match with no classified divergence.
-- Bounded equivalence: outcomes match within declared backend/environment limits.
-- Drift: one or more contract-relevant outcomes diverge and require investigation.
-
-Bounded equivalence is acceptable only when bounds are explicit and approved for the operating context.
-
-## How to interpret replay mismatch
-
-Treat mismatch as evidence, not failure theater:
-
-1. Identify mismatch scope (status, node outcome, artifact identity, or environment marker).
-2. Check whether the scope is within approved bounded-equivalence rules.
-3. If not bounded, classify as drift and open diff analysis immediately.
-4. Decide disposition: fix code/config, update baseline, or reject change.
-
-A replay mismatch is useful when it narrows uncertainty and points to a specific divergence class.
+- How to choose baselines from history: [Run History](../03-user-guide/04-run-history.md)
+- How to classify replay differences: [Diff](../03-user-guide/06-diff.md)
+- Formal replay contract: [Replay Semantics Specification](../06-specification/07-replay-semantics.md)
