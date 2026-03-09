@@ -93,3 +93,32 @@ diff scope:
 - `docs/03-user-guide/06-diff.md`
 - `docs/03-user-guide/07-inspect-and-debug.md`
 - `docs/06-specification/02-run-model.md`
+
+## Ancestry and history after replay or import
+
+Run history should preserve provenance class so comparisons remain honest:
+
+- Original run: native execution in the local environment.
+- Replayed run: newly executed run that references a prior run as replay baseline.
+- Imported run: run materialized from bundle data, with external provenance.
+
+Do not treat these classes as interchangeable when forming baselines. Imported evidence can be valid, but its trust boundary is different from locally produced evidence.
+
+## Regression investigation workflow using run history
+
+Use history as the backbone of regression analysis:
+
+1. Identify the newest failing run.
+2. Select the latest known-good baseline before failure started.
+3. Confirm whether failure persists across consecutive runs.
+4. Replay the failing context to separate deterministic defects from environment drift.
+5. Run diff between baseline and failing run to classify impact.
+
+Example workflow:
+
+```bash
+bijux-dag run history --limit 30
+bijux-dag inspect run --run-id RUN_20260309_211
+bijux-dag replay --run-id RUN_20260309_211
+bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_211
+```
