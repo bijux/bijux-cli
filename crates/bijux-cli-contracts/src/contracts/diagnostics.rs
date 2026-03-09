@@ -65,3 +65,36 @@ pub struct MemoryKeyList {
     /// Number of keys returned.
     pub count: usize,
 }
+
+/// Stable route metadata used by inspect and dev diagnostics surfaces.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct RouteSourceMetadata {
+    /// Route command segments.
+    pub segments: Vec<String>,
+    /// Route owner (`bijux-cli` or `plugin`).
+    pub owner: String,
+    /// Resolution source (`built-in`, `compatibility-alias`, `plugin`).
+    pub source: String,
+}
+
+/// Stable alias rewrite metadata for routing diagnostics.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct AliasRewrite {
+    /// Alias path segments.
+    pub alias: Vec<String>,
+    /// Canonical normalized path segments.
+    pub canonical: Vec<String>,
+    /// Rewrite source marker.
+    pub source: String,
+}
+
+/// Stable inspect payload contract for machine-readable diagnostics output.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct InspectReport {
+    /// Command execution status.
+    pub status: String,
+    /// Route source metadata rows.
+    pub route_sources: Vec<RouteSourceMetadata>,
+    /// Alias rewrite metadata rows.
+    pub alias_rewrites: Vec<AliasRewrite>,
+}

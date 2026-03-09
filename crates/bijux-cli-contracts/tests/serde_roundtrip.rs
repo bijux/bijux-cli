@@ -8,8 +8,8 @@ use bijux_cli_contracts::{
     ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
     InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
     OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
-    PluginManifestV1, PrettyMode,
-    MemorySummary, MemoryKeyList,
+    PluginManifestV1, PrettyMode, AliasRewrite, InspectReport, MemoryKeyList, MemorySummary,
+    RouteSourceMetadata,
 };
 use proptest as _;
 use schemars as _;
@@ -133,6 +133,19 @@ fn roundtrip_for_all_contract_types() {
         keys: vec!["alpha".to_string(), "beta".to_string()],
         count: 2,
     };
+    let inspect_report = InspectReport {
+        status: "ok".to_string(),
+        route_sources: vec![RouteSourceMetadata {
+            segments: vec!["cli".to_string(), "status".to_string()],
+            owner: "bijux-cli".to_string(),
+            source: "built-in".to_string(),
+        }],
+        alias_rewrites: vec![AliasRewrite {
+            alias: vec!["plugins".to_string(), "inspect".to_string()],
+            canonical: vec!["cli".to_string(), "plugins".to_string(), "inspect".to_string()],
+            source: "compatibility-alias".to_string(),
+        }],
+    };
 
     roundtrip(&ns);
     roundtrip(&flags);
@@ -148,4 +161,5 @@ fn roundtrip_for_all_contract_types() {
     roundtrip(&invocation);
     roundtrip(&memory_summary);
     roundtrip(&memory_list);
+    roundtrip(&inspect_report);
 }

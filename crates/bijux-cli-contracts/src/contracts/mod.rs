@@ -15,7 +15,8 @@ pub mod plugin;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
 pub use diagnostics::{
-    DiagnosticRecord, InvocationEvent, InvocationTrace, MemoryKeyList, MemorySummary,
+    AliasRewrite, DiagnosticRecord, InspectReport, InvocationEvent, InvocationTrace, MemoryKeyList, MemorySummary,
+    RouteSourceMetadata,
 };
 pub use envelope::{ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1};
 pub use execution::{ColorMode, ConfigSource, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
