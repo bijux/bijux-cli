@@ -54,6 +54,25 @@ fn executes_cli_namespace_commands() {
 }
 
 #[test]
+fn cli_paths_reports_active_binary_metadata() {
+    let stdout = run(&["cli", "paths"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert!(payload.get("active_binary").is_some());
+    assert!(payload.get("path_binaries").is_some());
+}
+
+#[test]
+fn cli_doctor_reports_install_diagnostics() {
+    let stdout = run(&["doctor"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    let install = payload.get("install").expect("install diagnostics");
+    assert!(install.get("has_path_shadowing").is_some());
+    assert!(install.get("has_duplicate_installs").is_some());
+    assert!(install.get("stale_wrapper_scripts").is_some());
+    assert!(install.get("has_mismatched_wheel_binary_versions").is_some());
+}
+
+#[test]
 fn executes_dev_cli_namespace_commands() {
     for args in [
         vec!["dev", "cli", "routes"],
