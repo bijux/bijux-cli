@@ -8,6 +8,6 @@ pub use contracts::{
     ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, ContractMarker,
     DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode,
     GlobalFlags, InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata,
-    OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PluginCapability, PluginManifestV1,
-    PrettyMode,
+    OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind,
+    PluginLifecycleState, PluginManifestV1, PrettyMode,
 };

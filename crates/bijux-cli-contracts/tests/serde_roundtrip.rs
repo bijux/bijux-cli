@@ -7,7 +7,8 @@ use bijux_cli_contracts::{
     ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, DiagnosticRecord,
     ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
     InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
-    OutputEnvelopeV1, OutputFormat, PluginCapability, PluginManifestV1, PrettyMode,
+    OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
+    PluginManifestV1, PrettyMode,
 };
 use schemars as _;
 use serde::de::DeserializeOwned;
@@ -86,11 +87,15 @@ fn roundtrip_for_all_contract_types() {
         name: "sample".to_string(),
         version: "1.2.3".to_string(),
         schema_version: "1".to_string(),
+        manifest_version: "1".to_string(),
         compatibility: CompatibilityRange {
             min_inclusive: "1.0.0".to_string(),
             max_exclusive: Some("2.0.0".to_string()),
         },
         namespace: Namespace("sample".to_string()),
+        kind: PluginKind::Delegated,
+        aliases: vec!["sample-status".to_string()],
+        entrypoint: "sample_plugin:main".to_string(),
         capabilities: vec![PluginCapability {
             name: "inspect".to_string(),
             version: Some("1".to_string()),
@@ -119,6 +124,7 @@ fn roundtrip_for_all_contract_types() {
     roundtrip(&flags);
     roundtrip(&ConfigSource::Flags);
     roundtrip(&ExitCode::Usage);
+    roundtrip(&PluginLifecycleState::Enabled);
     roundtrip(&cmd_meta);
     roundtrip(&ns_meta);
     roundtrip(&plugin_manifest);

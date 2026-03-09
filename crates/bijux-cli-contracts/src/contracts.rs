@@ -238,6 +238,46 @@ pub struct PluginCapability {
     pub version: Option<String>,
 }
 
+/// Stable plugin kind declaration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum PluginKind {
+    /// Future in-process plugin ABI.
+    Native,
+    /// Delegated plugin loaded through host contract bridge.
+    Delegated,
+    /// Python delegated plugin runtime.
+    Python,
+    /// External executable plugin.
+    ExternalExec,
+}
+
+impl Default for PluginKind {
+    fn default() -> Self {
+        Self::Delegated
+    }
+}
+
+/// Stable plugin lifecycle state in registry and diagnostics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum PluginLifecycleState {
+    /// Artifact located during discovery.
+    Discovered,
+    /// Manifest and contract validation passed.
+    Validated,
+    /// Plugin installed in registry.
+    Installed,
+    /// Plugin actively enabled for routing.
+    Enabled,
+    /// Plugin present but inactive.
+    Disabled,
+    /// Plugin failed validation or runtime loading.
+    Broken,
+    /// Plugin failed compatibility checks.
+    Incompatible,
+}
+
 /// Stable plugin manifest contract.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct PluginManifestV1 {
@@ -247,10 +287,20 @@ pub struct PluginManifestV1 {
     pub version: String,
     /// Plugin schema version.
     pub schema_version: String,
+    /// Manifest contract version.
+    pub manifest_version: String,
     /// Compatibility range for host CLI.
     pub compatibility: CompatibilityRange,
     /// Declared top-level namespace.
     pub namespace: Namespace,
+    /// Plugin execution kind.
+    #[serde(default)]
+    pub kind: PluginKind,
+    /// Declared command aliases.
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    /// Plugin entrypoint (binary path or module symbol).
+    pub entrypoint: String,
     /// Declared capabilities.
     pub capabilities: Vec<PluginCapability>,
 }
