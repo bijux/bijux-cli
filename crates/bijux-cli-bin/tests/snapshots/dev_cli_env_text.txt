@@ -1,0 +1,14 @@
+{
+  "active": {
+    "config_file": "/Users/bijan/.bijux/.env",
+    "history_file": "/Users/bijan/.bijux/.history",
+    "plugins_dir": "/Users/bijan/.bijux/.plugins"
+  },
+  "env": {},
+  "source_precedence": [
+    "flags",
+    "env",
+    "config",
+    "defaults"
+  ]
+}

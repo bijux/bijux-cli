@@ -1,0 +1,373 @@
+alias_rewrites:
+- alias:
+  - completion
+  canonical:
+  - cli
+  - completion
+  source: compatibility-alias
+- alias:
+  - config
+  - get
+  canonical:
+  - cli
+  - config
+  - get
+  source: compatibility-alias
+- alias:
+  - config
+  - set
+  canonical:
+  - cli
+  - config
+  - set
+  source: compatibility-alias
+- alias:
+  - dev
+  - contracts
+  canonical:
+  - dev
+  - cli
+  - contracts
+  source: compatibility-alias
+- alias:
+  - dev
+  - doctor
+  canonical:
+  - dev
+  - cli
+  - doctor
+  source: compatibility-alias
+- alias:
+  - dev
+  - env
+  canonical:
+  - dev
+  - cli
+  - env
+  source: compatibility-alias
+- alias:
+  - dev
+  - registry
+  canonical:
+  - dev
+  - cli
+  - registry
+  source: compatibility-alias
+- alias:
+  - dev
+  - routes
+  canonical:
+  - dev
+  - cli
+  - routes
+  source: compatibility-alias
+- alias:
+  - doctor
+  canonical:
+  - cli
+  - doctor
+  source: compatibility-alias
+- alias:
+  - inspect
+  canonical:
+  - cli
+  - inspect
+  source: compatibility-alias
+- alias:
+  - plugins
+  - inspect
+  canonical:
+  - cli
+  - plugins
+  - inspect
+  source: compatibility-alias
+- alias:
+  - plugins
+  - list
+  canonical:
+  - cli
+  - plugins
+  - list
+  source: compatibility-alias
+- alias:
+  - repl
+  canonical:
+  - cli
+  - repl
+  source: compatibility-alias
+- alias:
+  - version
+  canonical:
+  - cli
+  - version
+  source: compatibility-alias
+builtins:
+- segments:
+  - audit
+- segments:
+  - cli
+  - completion
+- segments:
+  - cli
+  - config
+  - get
+- segments:
+  - cli
+  - config
+  - set
+- segments:
+  - cli
+  - doctor
+- segments:
+  - cli
+  - inspect
+- segments:
+  - cli
+  - paths
+- segments:
+  - cli
+  - plugins
+  - inspect
+- segments:
+  - cli
+  - plugins
+  - list
+- segments:
+  - cli
+  - repl
+- segments:
+  - cli
+  - self-test
+- segments:
+  - cli
+  - status
+- segments:
+  - cli
+  - version
+- segments:
+  - config
+- segments:
+  - dev
+  - cli
+  - contracts
+- segments:
+  - dev
+  - cli
+  - doctor
+- segments:
+  - dev
+  - cli
+  - env
+- segments:
+  - dev
+  - cli
+  - registry
+- segments:
+  - dev
+  - cli
+  - routes
+- segments:
+  - docs
+- segments:
+  - history
+- segments:
+  - memory
+- segments:
+  - memory
+  - list
+- segments:
+  - plugins
+  - check
+- segments:
+  - plugins
+  - inspect
+- segments:
+  - plugins
+  - list
+- segments:
+  - sleep
+- segments:
+  - status
+compatibility_warnings: []
+contracts:
+  schemas:
+  - output-envelope-v1
+  - error-envelope-v1
+  - plugin-manifest-v1
+  version: v1
+plugin_origins: []
+reserved_namespaces:
+- name: cli
+  owner: bijux-cli
+  reserved: true
+- name: community
+  owner: plugin
+  reserved: false
+- name: completion
+  owner: bijux-cli
+  reserved: true
+- name: dev
+  owner: bijux-cli
+  reserved: true
+- name: doctor
+  owner: bijux-cli
+  reserved: true
+- name: help
+  owner: bijux-cli
+  reserved: true
+- name: inspect
+  owner: bijux-cli
+  reserved: true
+- name: plugins
+  owner: bijux-cli
+  reserved: true
+- name: repl
+  owner: bijux-cli
+  reserved: true
+- name: version
+  owner: bijux-cli
+  reserved: true
+route_sources:
+- owner: bijux-cli
+  segments:
+  - audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - completion
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - get
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - set
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - doctor
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - inspect
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - paths
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
+  - inspect
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
+  - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - repl
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - self-test
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - status
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - version
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - config
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - contracts
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - doctor
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - env
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - registry
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - routes
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - docs
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - history
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
+  - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - check
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - inspect
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - sleep
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - status
+  source: built-in
+status: ok

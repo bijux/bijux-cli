@@ -87,8 +87,12 @@ fn direct_core_invocation_inspect() {
     let out = run_app(&["bijux".to_string(), "inspect".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
-    assert!(payload.get("reserved_namespaces").is_some());
-    assert!(payload.get("builtins").is_some());
+    assert_eq!(payload["status"], "ok");
+    assert!(payload["reserved_namespaces"].is_array());
+    assert!(payload["builtins"].is_array());
+    assert!(payload["route_sources"].is_array());
+    assert!(payload["alias_rewrites"].is_array());
+    assert!(payload["contracts"]["schemas"].is_array());
 }
 
 #[test]
@@ -195,6 +199,66 @@ fn direct_core_invocation_newly_ported_commands_execute() {
         assert_eq!(out.exit_code, 0, "non-zero exit for {argv:?}");
         let _: Value = serde_json::from_str(&out.stdout).expect("output should be valid json");
     }
+}
+
+#[test]
+fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
+    for argv in [
+        vec!["bijux", "dev", "cli", "routes"],
+        vec!["bijux", "dev", "cli", "registry"],
+        vec!["bijux", "dev", "cli", "env"],
+        vec!["bijux", "dev", "cli", "doctor"],
+        vec!["bijux", "dev", "cli", "contracts"],
+    ] {
+        let args: Vec<String> = argv.into_iter().map(ToString::to_string).collect();
+        let out = run_app(&args).expect("run_app should succeed");
+        assert_eq!(out.exit_code, 0);
+        let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+        match args[3].as_str() {
+            "routes" => {
+                assert!(payload["routes"].is_array());
+                assert!(payload["aliases"].is_array());
+            }
+            "registry" => {
+                assert!(payload["registry"].is_array());
+                assert!(payload["ownership"].is_object());
+                assert!(payload["precedence"].is_array());
+            }
+            "env" => {
+                assert!(payload["env"].is_object());
+                assert!(payload["source_precedence"].is_array());
+                assert!(payload["active"]["config_file"].is_string());
+            }
+            "doctor" => {
+                assert!(payload["issues"]["config"].is_array());
+                assert!(payload["issues"]["paths"].is_array());
+                assert!(payload["issues"]["plugins"].is_array());
+            }
+            "contracts" => {
+                assert!(payload["contracts"].is_array());
+                assert!(payload["schema_version"].is_string());
+                assert!(payload["runtime_version"].is_string());
+            }
+            _ => panic!("unexpected command case"),
+        }
+    }
+}
+
+#[test]
+fn direct_core_invocation_inspect_failure_normalizes_usage_error() {
+    let out = run_app(&[
+        "bijux".to_string(),
+        "inspect".to_string(),
+        "unexpected".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        "--no-pretty".to_string(),
+    ])
+    .expect("run_app should return normalized failure");
+    assert_eq!(out.exit_code, 2);
+    assert!(out.stdout.is_empty());
+    assert!(out.stderr.contains("Usage: bijux"));
+    assert!(out.stderr.contains("inspect"));
 }
 
 #[test]

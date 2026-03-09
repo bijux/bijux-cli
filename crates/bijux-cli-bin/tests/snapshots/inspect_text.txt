@@ -1,5 +1,5 @@
 {
-  "aliases": [
+  "alias_rewrites": [
     {
       "alias": [
         "completion"
@@ -159,7 +159,241 @@
       "source": "compatibility-alias"
     }
   ],
-  "routes": [
+  "builtins": [
+    {
+      "segments": [
+        "audit"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "completion"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "config",
+        "get"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "config",
+        "set"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "doctor"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "paths"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "plugins",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "plugins",
+        "list"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "repl"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "self-test"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "status"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "version"
+      ]
+    },
+    {
+      "segments": [
+        "config"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "contracts"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "doctor"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "env"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "registry"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "routes"
+      ]
+    },
+    {
+      "segments": [
+        "docs"
+      ]
+    },
+    {
+      "segments": [
+        "history"
+      ]
+    },
+    {
+      "segments": [
+        "memory"
+      ]
+    },
+    {
+      "segments": [
+        "memory",
+        "list"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "check"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "list"
+      ]
+    },
+    {
+      "segments": [
+        "sleep"
+      ]
+    },
+    {
+      "segments": [
+        "status"
+      ]
+    }
+  ],
+  "compatibility_warnings": [],
+  "contracts": {
+    "schemas": [
+      "output-envelope-v1",
+      "error-envelope-v1",
+      "plugin-manifest-v1"
+    ],
+    "version": "v1"
+  },
+  "plugin_origins": [],
+  "reserved_namespaces": [
+    {
+      "name": "cli",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "community",
+      "owner": "plugin",
+      "reserved": false
+    },
+    {
+      "name": "completion",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "dev",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "doctor",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "help",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "inspect",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "plugins",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "repl",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "version",
+      "owner": "bijux-cli",
+      "reserved": true
+    }
+  ],
+  "route_sources": [
     {
       "owner": "bijux-cli",
       "segments": [
@@ -386,5 +620,6 @@
       ],
       "source": "built-in"
     }
-  ]
+  ],
+  "status": "ok"
 }
