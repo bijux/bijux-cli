@@ -81,3 +81,21 @@ reason: required artifact not found in replay input scope
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/08-diff-semantics.md`
 - `docs/03-user-guide/05-replay.md`
+
+## Invalid and impossible replay states
+
+Additional invalid states:
+
+- INVALID-REPLAY-MISSING-CLASSIFIER-VERSION: result emitted without classification policy reference.
+- INVALID-REPLAY-BASELINE-IDENTITY-CONFLICT: baseline run identity and declared graph identity cannot be reconciled.
+
+Impossible-state rule:
+
+- replay MUST NOT emit `equivalent` when prerequisite resolution failed or when any required comparison scope is `unknown`.
+
+## Meaning of replay proof and equivalence
+
+- replay proof: structured evidence package showing how replay classification was produced.
+- equivalence (replay): classification that all required replay comparison scopes matched under the declared policy and capability envelope.
+
+Proof is evidence of decision quality, not a claim of universal cross-environment sameness.

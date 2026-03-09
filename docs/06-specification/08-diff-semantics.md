@@ -82,3 +82,24 @@ reason_code: ARTIFACT_HASH_MISMATCH
 - `docs/06-specification/04-graph-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
 - `docs/03-user-guide/06-diff.md`
+
+## Semantic drift versus cosmetic difference
+
+Cosmetic-difference example (should remain equivalent):
+
+- DAG file whitespace reordered,
+- comment text changed,
+- canonical semantic graph unchanged.
+
+Expected classification: `equivalent` for graph scope.
+
+Semantic-drift example (must be drift):
+
+- dependency edge removed from `transform` to `validate`,
+- execution eligibility changes and downstream outcomes differ.
+
+Expected classification: `drift` for graph/run scopes.
+
+## Exact interpretation of equivalent
+
+`equivalent` means no contract-relevant divergence for the requested scope under the declared canonicalization and policy version. It does not imply equal timing, resource profile, or external side effects outside that scope.
