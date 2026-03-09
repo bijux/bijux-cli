@@ -1,0 +1,7 @@
+cli status
+cli paths
+cli self-test
+cli config get
+cli config set
+cli plugins list
+cli plugins inspect
