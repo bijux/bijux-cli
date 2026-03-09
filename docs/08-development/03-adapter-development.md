@@ -1,22 +1,64 @@
 # Adapter Development
 
 ## Purpose
-Define the reader-facing intent for this document.
+Define the adapter implementation contract and development workflow for backend integrations.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Adapters bridge runtime intent to backend-specific execution systems and directly affect portability guarantees.
 
 ## Explanation
-Primary explanation content goes here.
+Adapter interface responsibilities:
+- receive normalized runtime work units.
+- execute work in backend-specific environment.
+- return normalized result envelope (status, output references, diagnostics).
+- preserve cancellation/timeout semantics where capability exists.
+
+Adapter development rules:
+- map backend-native states to canonical run/node states.
+- surface unsupported features explicitly; do not emulate silently unless documented.
+- preserve evidence completeness needed for inspect/replay/diff.
+
+Contract checklist for new adapters:
+- run lifecycle support validated.
+- timeout and cancellation behavior documented.
+- artifact lineage attribution preserved.
+- replay/diff compatibility limitations documented.
+- support tier declared (`stable`, `provisional`, `experimental`).
+
+Validation workflow:
+1. implement adapter against runtime boundary interface.
+2. run adapter-focused integration tests and fixture scenarios.
+3. verify replay/diff behavior against baseline backend.
+4. publish support tier and capability notes.
 
 ## Examples
-Add executable and realistic examples.
+```text
+Adapter normalization example:
+backend exit: code 137
+canonical node status: failed_timeout_or_kill (classified)
+diagnostic fields: backend_reason, stderr_excerpt, duration_ms
+```
+
+```text
+Capability declaration sample:
+supports_timeout: true
+supports_cancel: true
+artifact_streaming: false
+tier: provisional
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Adapter responsibilities and normalized output expectations are explicit.
+- Capability gaps are documented rather than hidden.
+- Adapter onboarding has a defined validation workflow.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Backend platform constraints can limit feature parity.
+- This document does not define all adapter-internal implementation details.
+- Full portability still depends on shared capability surface between adapters.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/05-adapters.md`
+- `docs/07-operations/05-backend-support.md`
+- `docs/06-specification/02-run-model.md`
+- `docs/06-specification/03-artifact-model.md`
