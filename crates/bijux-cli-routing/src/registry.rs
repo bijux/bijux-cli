@@ -243,6 +243,23 @@ impl RouteRegistry {
             })
             .collect()
     }
+
+    /// Render alias route rewrites for diagnostics introspection.
+    #[must_use]
+    pub fn alias_rewrites(&self) -> Vec<(CommandPath, CommandPath)> {
+        self.aliases
+            .iter()
+            .map(|(alias, canonical)| {
+                let to_path = |raw: &str| CommandPath {
+                    segments: raw
+                        .split(' ')
+                        .map(|segment| Namespace(segment.to_string()))
+                        .collect(),
+                };
+                (to_path(alias), to_path(canonical))
+            })
+            .collect()
+    }
 }
 
 fn normalize_namespace(input: &str) -> String {

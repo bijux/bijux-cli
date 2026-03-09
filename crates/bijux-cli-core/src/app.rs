@@ -17,7 +17,8 @@ use bijux_cli_install::{
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
-    compatibility_warnings, list_plugins, plugin_origin_metadata, registry_path_from_plugins_dir,
+    compatibility_warnings, list_plugins, load_time_diagnostics, plugin_origin_metadata,
+    registry_path_from_plugins_dir,
 };
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
@@ -396,11 +397,38 @@ fn route_response(
             json!({"shells": ["bash", "zsh", "fish", "powershell"]})
         }
         [a, b] if a == "cli" && b == "inspect" => {
+            let route_sources: Vec<Value> = registry
+                .built_in_paths()
+                .into_iter()
+                .map(|path| {
+                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "segments": segments,
+                        "owner": "bijux-cli",
+                        "source": "built-in",
+                    })
+                })
+                .collect();
             json!({
+                "status": "ok",
                 "reserved_namespaces": registry.route_tree(),
                 "builtins": registry.built_in_paths(),
+                "route_sources": route_sources,
+                "alias_rewrites": registry.alias_rewrites().into_iter().map(|(alias, canonical)| {
+                    let alias_segments: Vec<String> = alias.segments.into_iter().map(|s| s.0).collect();
+                    let canonical_segments: Vec<String> = canonical.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "alias": alias_segments,
+                        "canonical": canonical_segments,
+                        "source": "compatibility-alias",
+                    })
+                }).collect::<Vec<_>>(),
                 "plugin_origins": plugin_origin_metadata(&plugin_registry_path).unwrap_or_default(),
                 "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+                "contracts": {
+                    "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"],
+                    "version": "v1",
+                }
             })
         }
         [a, b] if a == "cli" && b == "status" => {
@@ -572,19 +600,131 @@ fn route_response(
             json!({"plugin": plugin, "status": "healthy"})
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
-            json!({"routes": registry.built_in_paths()})
+            let routes: Vec<Value> = registry
+                .built_in_paths()
+                .into_iter()
+                .map(|path| {
+                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "segments": segments,
+                        "owner": "bijux-cli",
+                        "source": "built-in",
+                    })
+                })
+                .collect();
+            let aliases: Vec<Value> = registry
+                .alias_rewrites()
+                .into_iter()
+                .map(|(alias, canonical)| {
+                    let alias_segments: Vec<String> = alias.segments.into_iter().map(|s| s.0).collect();
+                    let canonical_segments: Vec<String> = canonical.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "alias": alias_segments,
+                        "canonical": canonical_segments,
+                        "source": "compatibility-alias",
+                    })
+                })
+                .collect();
+            json!({
+                "routes": routes,
+                "aliases": aliases,
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
-            json!({"registry": registry.route_tree()})
+            let registry_rows = registry.route_tree();
+            let mut ownership: std::collections::BTreeMap<String, Vec<String>> =
+                std::collections::BTreeMap::new();
+            for row in &registry_rows {
+                ownership
+                    .entry(row.owner.clone())
+                    .or_default()
+                    .push(row.name.0.clone());
+            }
+            json!({
+                "registry": registry_rows,
+                "ownership": ownership,
+                "precedence": ["reserved", "plugin"],
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "env" => {
-            json!({"env": env_map()})
+            json!({
+                "env": env_map(),
+                "source_precedence": ["flags", "env", "config", "defaults"],
+                "active": {
+                    "config_file": paths.config_file,
+                    "history_file": paths.history_file,
+                    "plugins_dir": paths.plugins_dir,
+                }
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "doctor" => {
-            json!({"status": "healthy", "runtime": "dev-cli"})
+            let install_report = install_health_report(
+                &env::var("PATH").unwrap_or_default(),
+                env::var("BIJUX_BIN").ok().as_deref(),
+                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
+                env!("CARGO_PKG_VERSION"),
+            );
+            let plugin_diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                .unwrap_or_default();
+            let config_issues = parse_compat_config_kv(&paths.config_file).err().map_or_else(Vec::new, |err| {
+                vec![json!({"category":"config", "message": err.to_string()})]
+            });
+            let path_issues = if install_report.has_path_shadowing || install_report.has_duplicate_installs {
+                vec![
+                    json!({"category":"paths", "has_path_shadowing": install_report.has_path_shadowing}),
+                    json!({"category":"paths", "has_duplicate_installs": install_report.has_duplicate_installs}),
+                ]
+            } else {
+                Vec::new()
+            };
+            let plugin_issues: Vec<Value> = plugin_diagnostics
+                .into_iter()
+                .map(|diag| {
+                    json!({
+                        "category": "plugins",
+                        "namespace": diag.namespace,
+                        "severity": diag.severity,
+                        "message": diag.message,
+                    })
+                })
+                .collect();
+            let status = if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
+                "healthy"
+            } else {
+                "degraded"
+            };
+            json!({
+                "status": status,
+                "runtime": "dev-cli",
+                "issues": {
+                    "config": config_issues,
+                    "paths": path_issues,
+                    "plugins": plugin_issues,
+                },
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
-            json!({"schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"]})
+            json!({
+                "contracts": [
+                    {
+                        "name": "output-envelope",
+                        "schema": "output-envelope-v1",
+                        "version": "1.0.0",
+                    },
+                    {
+                        "name": "error-envelope",
+                        "schema": "error-envelope-v1",
+                        "version": "1.0.0",
+                    },
+                    {
+                        "name": "plugin-manifest",
+                        "schema": "plugin-manifest-v1",
+                        "version": "1.0.0",
+                    }
+                ],
+                "schema_version": "v1",
+                "runtime_version": env!("CARGO_PKG_VERSION"),
+            })
         }
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => {
             for _ in 0..200_u16 {
