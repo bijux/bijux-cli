@@ -231,7 +231,17 @@ def count_public_api(crate_dir: Path) -> int:
 
 
 def crate_dependency_edges(members: list[str]) -> list[dict[str, str]]:
-    member_names = {Path(m).name.replace("-", "_"): Path(m).name for m in members}
+    member_names: dict[str, str] = {}
+    for rel in members:
+        cpath = ROOT / rel / "Cargo.toml"
+        data = parse_toml(cpath) if cpath.exists() else {}
+        folder_name = Path(rel).name
+        package_name = data.get("package", {}).get("name", folder_name)
+        member_names[folder_name] = folder_name
+        member_names[folder_name.replace("-", "_")] = folder_name
+        member_names[package_name] = folder_name
+        member_names[package_name.replace("-", "_")] = folder_name
+
     edges = []
     for rel in members:
         cpath = ROOT / rel / "Cargo.toml"
