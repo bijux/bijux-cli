@@ -137,6 +137,11 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("paths"))
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
+        .subcommand(
+            Command::new("hold")
+                .hide(true)
+                .subcommand(Command::new("interruptible").hide(true)),
+        )
         .subcommand(plugins_group.clone());
 
     let dev_cli_group = Command::new("cli")

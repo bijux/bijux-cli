@@ -11,7 +11,6 @@ use bijux_cli_contracts::{
     CompatibilityRange, ContractMarker, Namespace, PluginCapability, PluginKind,
     PluginLifecycleState, PluginManifestV1,
 };
-use bijux_cli_core::core_marker;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -219,9 +218,7 @@ pub struct PluginOriginMetadata {
 /// Build plugin marker chained from core state.
 #[must_use]
 pub fn plugin_marker() -> ContractMarker {
-    let mut marker = core_marker();
-    marker.namespace = format!("{}:plugin", marker.namespace);
-    marker
+    ContractMarker { namespace: "core:plugin".to_string() }
 }
 
 /// Parse `PluginManifestV1` from JSON text.
