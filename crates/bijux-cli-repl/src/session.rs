@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use bijux_cli_contracts::{
-    ColorMode, ContractMarker, ExecutionPolicy, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
+    ColorMode, ContractMarker, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
 };
 use bijux_cli_core::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
 use bijux_cli_routing::route_marker;
@@ -87,10 +87,4 @@ pub fn shutdown_repl(session: &ReplSession) -> ReplShutdownContract {
         session_id: session.session_id.clone(),
         commands_executed: session.commands_executed,
     }
-}
-
-/// Return current session policy snapshot.
-#[must_use]
-pub fn session_policy(session: &ReplSession) -> ExecutionPolicy {
-    session.policy.clone()
 }
