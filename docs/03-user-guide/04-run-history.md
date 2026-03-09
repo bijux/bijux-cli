@@ -25,6 +25,16 @@ Run indexing model (user-level view):
 - ordering supports chronological comparison and triage
 - recent and baseline runs should be easy to locate for replay and diff
 
+Run lookup patterns:
+- exact lookup by run ID for targeted diagnosis.
+- latest-N lookup for operational trend review.
+- baseline lookup (known-good run) for replay/diff anchor.
+
+Indexing expectations:
+- stable ordering by creation or start time.
+- fast direct access by run ID.
+- preserved linkage to graph and artifact references.
+
 Practical usage pattern:
 1. identify the latest failing run
 2. pick a known-good baseline run
@@ -39,13 +49,37 @@ bijux-dag run history --limit 20
 # Inspect a specific run
 bijux-dag inspect run --run-id RUN_20260309_010
 
+# Lookup baseline then compare
+bijux-dag inspect run --run-id RUN_20260309_007
+
 # Compare latest failing run against baseline
 bijux-dag diff run --left RUN_20260309_007 --right RUN_20260309_010
+```
+
+```text
+Run history inspection example:
+- RUN_007: succeeded (baseline)
+- RUN_008: succeeded
+- RUN_009: failed (node transform timeout)
+- RUN_010: failed (node transform timeout)
+Interpretation:
+- recurring failure at same node suggests deterministic issue, not random flake.
+```
+
+```text
+Run comparison example:
+left: RUN_007 (known good)
+right: RUN_010 (failing)
+diff scope:
+- graph: equivalent
+- run: drift at node transform
+- artifact: missing output from transform
 ```
 
 ## Guarantees
 - Run history is treated as an active operational surface.
 - Guidance here aligns with replay and diff workflows.
+- Lookup, indexing, inspection, and comparison paths are explicit.
 
 ## Limitations
 - This guide does not define persistence engine internals.
