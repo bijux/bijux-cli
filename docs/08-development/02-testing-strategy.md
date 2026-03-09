@@ -69,3 +69,34 @@ Failure triage example:
 - `docs/06-specification/08-diff-semantics.md`
 - `docs/07-operations/01-ci-integration.md`
 - `docs/08-development/01-repository-structure.md`
+
+## What each lane proves
+
+- unit lane proves local logic invariants and deterministic helpers.
+- integration lane proves cross-component contract compatibility.
+- end-to-end lane proves user-visible workflow guarantees.
+- smoke lane proves release-critical behavior remains operational on every change.
+
+## Good tests versus bad tests
+
+Good test traits:
+
+- asserts contract outcomes, not incidental implementation details,
+- deterministic fixture inputs and explicit expected classifications,
+- failure messages explain broken guarantee.
+
+Bad test traits:
+
+- relies on timing races or external mutable state,
+- asserts unstable formatting rather than semantic outcome,
+- duplicates coverage without proving a distinct guarantee.
+
+## Fixture discipline and trust boundaries
+
+Fixture discipline rules:
+
+- fixture content must represent declared trust boundary conditions,
+- fixture provenance must be known and reviewable,
+- fixture updates must state which guarantee changed and why.
+
+Treat fixture imports as boundary crossings: re-validate canonicalization and expected classifications before trusting new fixtures.

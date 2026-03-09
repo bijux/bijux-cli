@@ -62,3 +62,29 @@ Good ownership check:
 - `docs/08-development/02-testing-strategy.md`
 - `docs/08-development/03-adapter-development.md`
 - `docs/08-development/04-contributing.md`
+
+## Conceptual organization over filesystem listing
+
+Repository navigation should start from conceptual surfaces:
+
+- product runtime surface: execution semantics and identity-bearing behavior,
+- interface surface: CLI and user-facing command semantics,
+- support surface: tooling, CI, and maintenance automation,
+- contract surface: docs/specification that define expected behavior.
+
+## Product versus support versus internal surfaces
+
+- product surfaces: crates and docs directly defining runtime behavior and operator-visible contracts,
+- support surfaces: CI scripts, helper tooling, and fixture generation utilities,
+- internal/governance surfaces: maintenance reports and process aids not intended as runtime contracts.
+
+Changes to product surfaces require contract-aware review; support/internal changes should not silently redefine runtime semantics.
+
+## How to navigate without getting lost
+
+Practical navigation sequence:
+
+1. find affected contract in `docs/06-specification/` or user-facing guide,
+2. locate owning crate/domain from crate architecture docs,
+3. inspect tests in the matching lane before editing,
+4. update docs and code in the same conceptual surface when behavior changes.
