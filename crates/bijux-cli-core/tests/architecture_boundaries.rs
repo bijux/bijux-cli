@@ -77,7 +77,7 @@ fn enforces_internal_crate_boundaries() {
             ]),
         ),
         ("bijux-cli-install", BTreeSet::from(["bijux-cli-contracts"])),
-        ("bijux-cli-output", BTreeSet::from(["bijux-cli-contracts"])),
+        ("bijux-cli-output", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"])),
         ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-contracts"])),
         ("bijux-cli-python", BTreeSet::from(["bijux-cli-contracts"])),
         (
