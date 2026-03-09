@@ -2,6 +2,7 @@
 //! Core runtime primitives for Rust bijux-cli.
 
 pub mod app;
+mod config;
 pub mod kernel;
 
 use bijux_cli_contracts::ContractMarker;

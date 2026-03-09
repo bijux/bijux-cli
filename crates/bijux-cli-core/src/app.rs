@@ -1,9 +1,8 @@
 //! Top-level application entrypoint and route execution.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
@@ -12,7 +11,7 @@ use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
     default_compatibility_paths, discover_compatibility_paths, install_health_report,
-    load_compatibility_config, post_install_hint, run_config_migrations, CompatibilityConfig,
+    load_compatibility_config, post_install_hint, CompatibilityConfig,
     PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
@@ -23,6 +22,9 @@ use bijux_cli_plugin::{
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use serde_json::{json, Value};
+
+use crate::config::execute_config_command;
+use crate::config::storage::{ConfigRepository, FileConfigRepository};
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,122 +57,6 @@ fn env_map() -> HashMap<String, String> {
         .iter()
         .filter_map(|key| env::var(key).ok().map(|value| ((*key).to_string(), value)))
         .collect()
-}
-
-fn normalize_config_key(raw: &str) -> Result<String> {
-    let key = raw.trim();
-    if key.is_empty() {
-        anyhow::bail!("Key cannot be empty");
-    }
-    if !key.is_ascii() {
-        anyhow::bail!("Non-ASCII characters are not allowed in keys or values.");
-    }
-    if key.contains('.') {
-        anyhow::bail!("Unknown config section in key: {key}");
-    }
-    let normalized = key.strip_prefix("BIJUXCLI_").unwrap_or(key).to_ascii_lowercase();
-    if !normalized.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        anyhow::bail!("Invalid key: only alphanumerics and underscore allowed.");
-    }
-    Ok(normalized)
-}
-
-fn decode_quoted_value(raw: &str) -> String {
-    let mut out = String::new();
-    let mut chars = raw.chars().peekable();
-    while let Some(ch) = chars.next() {
-        if ch != '\\' {
-            out.push(ch);
-            continue;
-        }
-        match chars.next() {
-            Some('n') => out.push('\n'),
-            Some('r') => out.push('\r'),
-            Some('t') => out.push('\t'),
-            Some('\\') => out.push('\\'),
-            Some('"') => out.push('"'),
-            Some('\'') => out.push('\''),
-            Some(other) => {
-                out.push('\\');
-                out.push(other);
-            }
-            None => out.push('\\'),
-        }
-    }
-    out
-}
-
-fn validate_config_value(value: &str) -> Result<()> {
-    if !value.is_ascii() {
-        anyhow::bail!("Non-ASCII characters are not allowed in keys or values.");
-    }
-    if value
-        .chars()
-        .any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}'))
-    {
-        anyhow::bail!("Control characters are not allowed in config values.");
-    }
-    Ok(())
-}
-
-fn parse_set_pair(raw_pair: &str) -> Result<(String, String)> {
-    if !raw_pair.contains('=') {
-        anyhow::bail!("Invalid argument: KEY=VALUE required");
-    }
-    let (raw_key, raw_value) = raw_pair.split_once('=').expect("contains '=' checked");
-    let key = normalize_config_key(raw_key)?;
-    let mut value = raw_value.to_string();
-    if value.len() >= 2
-        && ((value.starts_with('"') && value.ends_with('"'))
-            || (value.starts_with('\'') && value.ends_with('\'')))
-    {
-        value = decode_quoted_value(&value[1..value.len() - 1]);
-    }
-    validate_config_value(&value)?;
-    Ok((key, value))
-}
-
-fn parse_compat_config_kv(path: &Path) -> Result<BTreeMap<String, String>> {
-    if !path.exists() {
-        return Ok(BTreeMap::new());
-    }
-    let text = fs::read_to_string(path)?;
-    let mut out = BTreeMap::new();
-    for (index, raw_line) in text.lines().enumerate() {
-        let line_no = index + 1;
-        let trimmed = raw_line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
-            anyhow::bail!("Malformed line {line_no}: {raw_line}");
-        };
-        let normalized = normalize_config_key(raw_key)?;
-        let value = decode_quoted_value(raw_value.trim());
-        validate_config_value(&value)?;
-        out.insert(normalized, value);
-    }
-    Ok(out)
-}
-
-fn write_compat_config_kv(path: &Path, values: &BTreeMap<String, String>) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let mut rendered = String::new();
-    for (key, value) in values {
-        rendered.push_str(&format!("BIJUXCLI_{}={}\n", key.to_ascii_uppercase(), value));
-    }
-    let temp_path = path.with_extension("tmp");
-    let mut temp = fs::OpenOptions::new()
-        .create(true)
-        .truncate(true)
-        .write(true)
-        .open(&temp_path)?;
-    temp.write_all(rendered.as_bytes())?;
-    temp.sync_all()?;
-    fs::rename(temp_path, path)?;
-    Ok(())
 }
 
 fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {
@@ -366,6 +252,9 @@ fn route_response(
         &config,
     )?;
     let plugin_registry_path = registry_path_from_plugins_dir(&paths.plugins_dir);
+    if let Some(payload) = execute_config_command(normalized_path, argv, &paths)? {
+        return Ok(payload);
+    }
 
     let payload = match normalized_path {
         [a, b] if a == "cli" && b == "version" => {
@@ -484,42 +373,6 @@ fn route_response(
                 "path_binaries": install_report.path_binaries,
                 "post_install_hint": hint
             })
-        }
-        [a, b, c] if a == "cli" && b == "config" && c == "get" => {
-            let positional = command_positionals(argv, &["cli", "config", "get"]);
-            let Some(raw_key) = positional.first() else {
-                anyhow::bail!("Missing argument: KEY required");
-            };
-            let normalized_key = normalize_config_key(raw_key)?;
-            let env_key = format!("BIJUXCLI_{}", normalized_key.to_ascii_uppercase());
-            let value = if let Ok(value) = env::var(&env_key) {
-                value
-            } else {
-                let values = parse_compat_config_kv(&paths.config_file)?;
-                values.get(&normalized_key).cloned().ok_or_else(|| {
-                    anyhow::anyhow!("Config key not found: {raw_key}")
-                })?
-            };
-            json!({"value": value, "key": normalized_key, "source_path": paths.config_file})
-        }
-        [a] if a == "config" => {
-            json!({
-                "BIJUXCLI_CONFIG": paths.config_file,
-                "BIJUXCLI_HISTORY_FILE": paths.history_file,
-                "BIJUXCLI_PLUGINS_DIR": paths.plugins_dir
-            })
-        }
-        [a, b, c] if a == "cli" && b == "config" && c == "set" => {
-            run_config_migrations(&paths.config_file, 1)?;
-            let positional = command_positionals(argv, &["cli", "config", "set"]);
-            let Some(raw_pair) = positional.first() else {
-                anyhow::bail!("Missing argument: KEY=VALUE required");
-            };
-            let (key, value) = parse_set_pair(raw_pair)?;
-            let mut values = parse_compat_config_kv(&paths.config_file)?;
-            values.insert(key.clone(), value.clone());
-            write_compat_config_kv(&paths.config_file, &values)?;
-            json!({"status": "updated", "key": key, "value": value, "updated": paths.config_file})
         }
         [a] if a == "history" => {
             let positional = command_positionals(argv, &["history"]);
@@ -666,7 +519,8 @@ fn route_response(
             );
             let plugin_diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
                 .unwrap_or_default();
-            let config_issues = parse_compat_config_kv(&paths.config_file).err().map_or_else(Vec::new, |err| {
+            let repository = FileConfigRepository;
+            let config_issues = repository.load(&paths.config_file).err().map_or_else(Vec::new, |err| {
                 vec![json!({"category":"config", "message": err.to_string()})]
             });
             let path_issues = if install_report.has_path_shadowing || install_report.has_duplicate_installs {
