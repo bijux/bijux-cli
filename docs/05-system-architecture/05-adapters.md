@@ -52,3 +52,31 @@ graph LR
 - `docs/07-operations/05-backend-support.md`
 - `docs/08-development/03-adapter-development.md`
 - `docs/06-specification/03-artifact-model.md`
+
+## Adapter contract and non-equivalence boundaries
+
+Adapter contract obligations:
+
+- accept runtime work units without changing graph semantics,
+- map backend-native outcomes into canonical runtime outcome classes,
+- declare capability gaps explicitly so replay/diff can classify bounded equivalence.
+
+Non-equivalence risk appears when backend capabilities differ (timeouts, filesystem model, process isolation, or artifact IO guarantees).
+
+## Backend family constraints
+
+- local-process adapters: strong observability, weaker isolation guarantees.
+- containerized adapters: stronger isolation, added image/runtime drift surface.
+- remote-job adapters: queuing and network boundaries introduce additional failure classes.
+
+Each family may preserve core semantics while differing in fidelity bounds.
+
+## Adapter responsibilities versus runtime responsibilities
+
+| Concern | Adapter | Runtime |
+| --- | --- | --- |
+| Backend invocation | Owns translation and invocation | Consumes abstract execution interface |
+| Outcome shape | Maps native result to canonical envelope | Uses canonical envelope for state transitions |
+| Capability declaration | Publishes supported/unsupported features | Uses declarations for bounded guarantees |
+| Scheduling policy | Must not define | Owns dependency-based ordering |
+| Artifact semantics | Must not redefine | Owns identity and lineage contracts |

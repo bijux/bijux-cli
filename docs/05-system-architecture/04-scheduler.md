@@ -56,3 +56,45 @@ graph TD
 - `docs/03-user-guide/02-dependencies-and-order.md`
 - `docs/06-specification/01-dag-model.md`
 - `docs/06-specification/02-run-model.md`
+
+## Scheduler goals, fairness, and constraints
+
+Scheduler goals are jointly enforced:
+
+- dependency correctness first,
+- deterministic eligibility evaluation,
+- fair progress for concurrent-ready nodes,
+- explicit terminal classification for blocked branches.
+
+Fairness here means ready nodes are not starved indefinitely when constraints allow dispatch.
+
+## Small-DAG scheduling examples
+
+Example A (fan-out then join):
+
+- `extract` -> `clean_a`
+- `extract` -> `clean_b`
+- `clean_a` + `clean_b` -> `join`
+
+Scheduling behavior:
+
+- `extract` runs first.
+- `clean_a` and `clean_b` become concurrently eligible.
+- `join` becomes eligible only after both complete successfully.
+
+Example B (failure propagation):
+
+- `prepare` -> `train`
+- `prepare` -> `evaluate`
+- `train` -> `publish`
+
+If `train` fails, `publish` remains blocked even if `evaluate` succeeds.
+
+## What the scheduler does not decide
+
+- backend-specific execution mechanics,
+- artifact storage policy,
+- semantic interpretation of node payload contents,
+- portability acceptance decisions.
+
+Those decisions belong to adapters, evidence layers, and operator policy.

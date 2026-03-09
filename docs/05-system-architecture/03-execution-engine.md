@@ -59,3 +59,30 @@ graph LR
 - `docs/05-system-architecture/05-adapters.md`
 - `docs/05-system-architecture/07-run-directory.md`
 - `docs/06-specification/02-run-model.md`
+
+## State transitions and evidence recording points
+
+Execution engine transitions should be treated as explicit states with evidence writes at each boundary:
+
+1. `queued` -> node accepted from scheduler frontier
+2. `starting` -> adapter invocation prepared and run context bound
+3. `running` -> backend execution active
+4. `succeeded | failed | canceled` -> terminal outcome normalized
+5. `recorded` -> run directory and artifact references persisted
+
+Evidence recording points:
+
+- pre-execution context snapshot (node inputs and dependency status)
+- terminal outcome envelope (status, reason class, timings)
+- artifact references emitted or missing-output markers
+
+## Engine versus scheduler responsibilities
+
+- scheduler decides when a node is eligible to run.
+- engine decides how the eligible node is executed and recorded.
+- scheduler updates readiness frontier from engine outcomes.
+- engine never reorders dependency semantics.
+
+## Why normalized outcomes matter
+
+Normalized outcomes prevent backend-specific result shapes from leaking into run semantics. They make replay/diff classification stable across adapters and allow incident workflows to compare evidence without backend-specific parsing logic.
