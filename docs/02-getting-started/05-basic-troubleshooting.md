@@ -59,6 +59,11 @@ Common failure stories and fixes:
   - cause: command syntax mismatch.
   - action: use contextual `--help` and correct invocation.
 
+When to stop guessing and inspect evidence:
+- if you have run ID and still do not know failure cause, stop editing commands blindly.
+- inspect run and artifact evidence first, then replay/diff for scope classification.
+- treat unclassified failures as evidence gap problems, not assumption-driven fixes.
+
 ## Examples
 ```bash
 # 1) Command presence and help
@@ -117,3 +122,20 @@ Quick troubleshooting checklist:
 - `docs/02-getting-started/03-running-a-pipeline.md`
 - `docs/03-user-guide/07-inspect-and-debug.md`
 - `docs/07-operations/01-ci-integration.md`
+
+## When to stop guessing and inspect evidence
+
+Stop hypothesis-driven debugging when any of these is true:
+
+- You cannot explain a mismatch from `validate` output alone.
+- Replay and original outcomes disagree but you have not compared structured diff results.
+- A node failed and you are inferring causes without checking recorded inputs, outputs, and environment markers.
+
+At that point switch to evidence mode:
+
+1. Run `validate` and capture exact errors.
+2. Run `inspect` on the failed run and node.
+3. Run `diff` against the expected baseline.
+4. Run `replay` only after evidence establishes what should be equivalent.
+
+This prevents circular debugging and shortens time to root cause.

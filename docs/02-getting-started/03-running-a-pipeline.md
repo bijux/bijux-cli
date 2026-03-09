@@ -29,6 +29,12 @@ Run directory mental model:
 - run evidence includes metadata, node outcomes, and artifact references.
 - inspect/replay/diff consume this persisted evidence.
 
+What files appear after first successful run (conceptual):
+- run metadata record
+- node outcome record
+- artifact index record
+- produced artifact payload files referenced by index
+
 Operational sequence rule:
 - do not jump to replay/diff before confirming baseline run integrity.
 - first confirm run success or failure reason, then compare.
@@ -79,6 +85,12 @@ graph LR
   E --> F[diff run]
 ```
 
+## What Success Looks Like
+- run command returns a run ID and terminal `succeeded` status.
+- inspect run shows no failed nodes.
+- inspect artifact shows expected artifacts with lineage to the run.
+- replay/diff do not report unexpected drift for equivalent context.
+
 ## Guarantees
 - This guide documents a coherent first-response run workflow.
 - Replay and diff usage are integrated into normal operations, not separate tracks.
@@ -94,3 +106,15 @@ graph LR
 - `docs/02-getting-started/05-basic-troubleshooting.md`
 - `docs/03-user-guide/05-replay.md`
 - `docs/03-user-guide/06-diff.md`
+
+## What success looks like
+
+A successful run is more than `status=success`. You should be able to verify all of the following without guessing:
+
+- The run has a stable run ID and appears in history with the expected graph identity.
+- Every node that should execute has a recorded outcome and duration.
+- Expected artifact records exist and resolve to readable payloads or checksums.
+- `inspect` output matches your declared node ordering constraints.
+- A replay against the same inputs reports equivalent outcomes.
+
+If any of those checks fail, treat the run as incomplete validation and continue with inspect + diff before trusting outputs.

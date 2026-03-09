@@ -46,6 +46,12 @@ Run non-goals in this guide:
 - this page does not define storage backend internals.
 - this page does not replace run-model contract language in specification docs.
 
+Run vs attempt vs replayed run vs imported run:
+- run: one execution instance with one run identity and evidence scope.
+- attempt: one try within a run lifecycle when retry behavior is enabled.
+- replayed run: a new run generated from baseline context to validate equivalence/drift.
+- imported run: run context reconstructed from transferred evidence (for example bundle import) and then inspected/replayed.
+
 ## Examples
 ```bash
 # Inspect full run record
@@ -97,3 +103,14 @@ graph LR
 - `docs/02-getting-started/05-basic-troubleshooting.md`
 - `docs/03-user-guide/04-run-history.md`
 - `docs/06-specification/02-run-model.md`
+
+## Run, attempt, replayed run, and imported run
+
+These terms are related but not interchangeable:
+
+- `run`: the canonical recorded execution instance with identity, outcomes, and artifact lineage.
+- `attempt`: an execution try under the same intended graph/input context; attempts may fail before producing a valid run record.
+- `replayed run`: a new run produced by executing replay semantics against prior evidence; it is not the original run.
+- `imported run`: a run record materialized from an external bundle into local history; provenance is external even if identifiers match.
+
+Use these distinctions when debugging history so you do not treat retries, replays, and imports as the same evidence class.
