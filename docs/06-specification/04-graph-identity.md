@@ -27,9 +27,25 @@ Graph identity derivation pipeline:
 4. hash canonical bytes with configured algorithm family.
 5. emit stable graph identity token.
 
+Formal graph-identity rules:
+- RULE-GID-001: equivalent canonical graph semantics MUST yield equal graph identity.
+- RULE-GID-002: semantic graph changes MUST yield graph identity drift.
+- RULE-GID-003: non-semantic formatting differences MUST NOT change identity.
+- RULE-GID-004: identity emission MUST be tied to canonicalization/hash policy version.
+
 Versioning and compatibility:
 - identity algorithm family and canonicalization rules are versioned.
 - compatibility windows must preserve comparability guarantees or provide explicit migration mapping.
+
+Invalid state definitions:
+- INVALID-GID-CANONICALIZATION-FAILURE: canonical semantic form cannot be produced.
+- INVALID-GID-HASH-POLICY-UNKNOWN: hashing policy version unavailable.
+- INVALID-GID-AMBIGUOUS-SEMANTIC-INPUT: semantic relevance cannot be resolved.
+
+Edge cases:
+- node declaration reordering with unchanged semantics is identity-equivalent.
+- comment and whitespace changes are identity-irrelevant.
+- dependency edge changes are identity-relevant and must produce drift.
 
 ## Examples
 ```text

@@ -15,6 +15,12 @@ Identity input domains:
 - artifact kind/type.
 - optional scoped namespace inputs when required by compatibility policy.
 
+Formal artifact-identity rules:
+- RULE-AID-001: equivalent canonical artifact content MUST yield equal artifact identity.
+- RULE-AID-002: canonical content drift MUST yield artifact identity drift.
+- RULE-AID-003: artifact identity MUST remain lineage-attributable to producing run and node.
+- RULE-AID-004: identity comparisons MUST consider policy version compatibility.
+
 Lineage binding:
 - artifact identity must be associated with producing `run_id` and `node_id`.
 - lineage binding enables contextual interpretation without mutating artifact hash value.
@@ -27,6 +33,18 @@ Classification rules:
 Algorithm governance:
 - hashing algorithm family must be explicitly versioned.
 - algorithm migration requires compatibility strategy and documentation.
+
+Invalid state definitions:
+- INVALID-AID-MISSING-CANONICAL-CONTENT: identity computation input unavailable.
+- INVALID-AID-POLICY-MISMATCH: compared artifacts use incompatible identity policy versions without mapping.
+- INVALID-AID-MISSING-LINEAGE-BINDING: artifact cannot be attributed to run/node context.
+
+Edge cases:
+- equivalent content with different file paths can remain identity-equivalent when path is non-semantic.
+- structured artifact identity requires deterministic canonical serialization before hashing.
+
+Compatibility notes:
+- policy-version transitions require explicit compatibility classification (`equivalent`, `drift`, or `unknown`).
 
 ## Examples
 ```text

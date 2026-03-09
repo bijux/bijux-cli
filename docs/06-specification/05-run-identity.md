@@ -16,6 +16,12 @@ Run identity input domains:
 - run creation context (timestamp/nonce/sequence as applicable).
 - execution mode and selected adapter context when declared identity-relevant.
 
+Formal run-identity rules:
+- RULE-RID-001: each run attempt MUST map to one unique run identity.
+- RULE-RID-002: repeated attempts MUST NOT reuse run identity.
+- RULE-RID-003: run identity generation MUST be deterministic with respect to declared inputs.
+- RULE-RID-004: run identity MUST be linkable to graph identity and node outcomes.
+
 Uniqueness contract:
 - no two run attempts in the same identity namespace may share the same run identity.
 - retries create distinct run identities even when graph identity is unchanged.
@@ -27,6 +33,15 @@ Attribution contract:
 Stability boundaries:
 - run identity generation must be deterministic with respect to its generation function and supplied inputs.
 - uniqueness mechanisms may include monotonic sequence or collision-resistant random domains.
+
+Invalid state definitions:
+- INVALID-RID-DUPLICATE: same run identity assigned to distinct run attempts.
+- INVALID-RID-MISSING-GRAPH-LINK: run identity exists but graph reference missing.
+- INVALID-RID-NONDETERMINISTIC-GENERATION: same declared inputs produce divergent run identities.
+
+Edge cases:
+- retry after transient failure is valid and must allocate a new run identity.
+- same graph, same environment, different invocation time remains distinct run identity by attempt.
 
 ## Examples
 ```text
