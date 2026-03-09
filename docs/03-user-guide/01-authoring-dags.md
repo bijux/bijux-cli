@@ -35,6 +35,13 @@ Authoring quality checklist:
 5. graph is acyclic and schedulable
 6. each node command has a clear success/failure signal
 
+Good DAG authoring habits:
+- name nodes by behavior and output intent, not temporary implementation detail.
+- keep fan-out edges explicit when one producer feeds multiple consumers.
+- avoid oversized "god nodes"; split by stable contract boundaries.
+- keep deterministic output paths to make artifact lineage reliable.
+- document non-obvious dependency rationale near node definition.
+
 Concept boundaries:
 - DAG defines execution plan
 - run executes that plan
@@ -97,3 +104,16 @@ Graph validation expectation:
 - `docs/03-user-guide/03-artifacts.md`
 - `docs/06-specification/01-dag-model.md`
 - `docs/06-specification/04-graph-identity.md`
+
+## Good DAG authoring habits
+
+Use these habits to keep graphs reviewable and reproducible:
+
+- Keep node purpose singular; split nodes when one node mixes unrelated responsibilities.
+- Name nodes by stable intent (`extract_customers`, `join_events`) instead of temporary workflow language.
+- Declare dependencies only when data or ordering requires them; avoid decorative edges.
+- Emit explicit artifacts at meaningful boundaries so downstream debugging has evidence.
+- Avoid hidden runtime coupling (implicit files, ambient env assumptions, mutable shared paths).
+- Treat DAG changes as interface changes and validate identity/diff impact before merging.
+
+These habits reduce replay drift and make graph diffs explainable.
