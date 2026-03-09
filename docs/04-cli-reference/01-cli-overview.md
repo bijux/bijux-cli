@@ -1,109 +1,50 @@
 # Cli Overview
 
-Provide the command hierarchy, output conventions, and reference navigation model for bijux-dag CLI usage.
+Use the CLI by job-to-be-done, not by memorizing command families.
 
-This page is the single entrypoint for command-family docs in this section.
+## Job map
 
-## Explanation
-Command hierarchy:
-- `dag`: definition validation and graph inspection.
-- `run`: execution and run-history surfaces.
-- `artifact`: artifact listing and artifact inspection.
-- `inspect`: run and artifact diagnostic views.
-- `diff`: graph, run, and artifact comparison scopes.
-- `replay`: deterministic validation against baseline run context.
-- `bundle`: portability export/import workflows.
+- define and validate workflows: `dag`
+- execute and track runs: `run`
+- inspect evidence and outputs: `inspect`, `artifact`
+- validate reproducibility and change: `replay`, `diff`
+- transfer execution context: `bundle`
 
-Shared reference conventions:
-- IDs are explicit (`run_id`, `artifact_id`).
-- Automation should prefer machine-readable output flags when available.
-- Help discovery follows command depth:
-  - `bijux-dag --help`
-  - `bijux-dag <group> --help`
-  - `bijux-dag <group> <command> --help`
-
-CLI grammar overview:
-- root grammar: `bijux-dag <group> <action> [flags]`.
-- selector pattern: `--run-id <id>` or `--artifact-id <id>` when targeting existing entities.
-- comparator pattern: `--left <value> --right <value>` for diff commands.
-- output pattern: `--output json` for machine-readable pipelines where available.
-
-Command lifecycle model:
-1. define and validate DAG (`dag`).
-2. execute and record run (`run`).
-3. inspect evidence (`inspect`, `artifact`).
-4. validate and compare (`replay`, `diff`).
-5. transfer context when needed (`bundle`).
-
-Recommended command discovery sequence:
-1. `bijux-dag --help`
-2. `bijux-dag <group> --help`
-3. `bijux-dag <group> <action> --help`
-4. run with `--output json` where automation requires stable parsing
-
-Readability conventions used in CLI docs:
-- command families are documented as operational workflows, not isolated commands.
-- examples include both successful and failure-oriented usage when practical.
-- JSON snippets focus on key fields used by operators and automation.
-
-Shared error and exit model:
-- `0`: successful completion.
-- non-zero validation category: malformed input, invalid graph, missing required flags.
-- non-zero lookup category: unknown run/artifact IDs or missing referenced files.
-- non-zero runtime category: execution/replay/import failures.
-
-## Examples
-```bash
-# Top-level discovery
-bijux-dag --help
-
-# Group-level discovery
-bijux-dag run --help
-bijux-dag run history --help
-
-# Common machine-readable invocation pattern
-bijux-dag run history --limit 20 --output json
-```
+## Main workflow command map
 
 ```text
-Reference navigation:
-1) read this page for hierarchy and shared conventions
-2) open command-family page
-3) use --help at matching depth for exact runtime syntax
+define -> run -> inspect -> replay -> diff -> bundle (when cross-environment transfer is needed)
 ```
 
-## Guarantees
-- CLI hierarchy is documented in one place.
-- Shared conventions are reused across all command-family docs.
-- Grammar and lifecycle mental model are explicit for operator workflows.
+Typical command sequence:
 
-## Limitations
-- Subcommand details are owned by each command-family document.
-- Exact non-zero exit-code mapping can vary by implementation version.
+```bash
+bijux-dag dag validate --dag ./pipelines/main.dag.json
+bijux-dag run --dag ./pipelines/main.dag.json
+bijux-dag inspect run --run-id RUN_20260309_301
+bijux-dag replay --run-id RUN_20260309_301
+bijux-dag diff run --left RUN_20260309_301 --right RUN_20260309_322
+```
 
-## Related
-- `docs/04-cli-reference/02-dag-commands.md`
-- `docs/04-cli-reference/03-run-commands.md`
-- `docs/04-cli-reference/04-artifact-commands.md`
-- `docs/04-cli-reference/05-inspect-commands.md`
-- `docs/04-cli-reference/07-replay-commands.md`
-- `docs/04-cli-reference/06-diff-commands.md`
+## Stable versus advanced surfaces
 
-## Command map by job to be done
+Stable surfaces (day-to-day operators):
 
-Choose command families by intent:
+- basic validation,
+- run execution/history,
+- run/artifact inspect,
+- replay and diff for release confidence.
 
-- Author and validate workflow definitions: `dag`.
-- Execute and track operational history: `run`.
-- Inspect produced evidence: `inspect`, `artifact`.
-- Compare behavior across versions/environments: `diff`, `replay`.
-- Transfer workflow context across environments: `bundle`.
+Advanced surfaces (deep diagnostics/automation):
 
-## Stable and advanced command surfaces
+- machine-output integrations,
+- capability-sensitive replay/diff flows,
+- bundle integrity and portability verification modes.
 
-Documentation uses two practical tiers:
+Start with stable surfaces; adopt advanced surfaces when your workflows require stronger automation or deeper forensics.
 
-- Stable operator surface: commands expected in routine day-to-day workflows.
-- Advanced diagnostic surface: commands or flags used for deeper forensics and automation.
+## Next reading
 
-Start on stable surface for onboarding. Move to advanced surface when you need machine pipelines, deep drift analysis, or backend-specific diagnostics.
+- Graph command reference: [Dag Commands](../04-cli-reference/02-dag-commands.md)
+- Run and artifact references: [Run Commands](../04-cli-reference/03-run-commands.md), [Artifact Commands](../04-cli-reference/04-artifact-commands.md)
+- Validation and comparison references: [Replay Commands](../04-cli-reference/07-replay-commands.md), [Diff Commands](../04-cli-reference/06-diff-commands.md)
