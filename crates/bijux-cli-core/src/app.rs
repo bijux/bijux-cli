@@ -17,8 +17,9 @@ use bijux_cli_install::{
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
-    compatibility_warnings, list_plugins, load_time_diagnostics, plugin_origin_metadata,
-    registry_path_from_plugins_dir,
+    compatibility_warnings, list_plugins, load_time_diagnostics, plugin_doctor,
+    plugin_origin_metadata, registry_path_from_plugins_dir, CORE_NAMESPACES,
+    FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
@@ -368,7 +369,16 @@ fn route_response(
 
     let target = match normalized_path {
         [a] if a == "config" || a == "history" || a == "memory" => RouteTarget::BuiltIn,
-        [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => {
+        [a, b]
+            if a == "plugins"
+                && (b == "list"
+                    || b == "inspect"
+                    || b == "check"
+                    || b == "reserved-names"
+                    || b == "where"
+                    || b == "explain"
+                    || b == "schema") =>
+        {
             RouteTarget::BuiltIn
         }
         _ => registry.resolve(normalized_path)?,
@@ -579,9 +589,6 @@ fn route_response(
         [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
             json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
         }
-        [a, b] if a == "plugins" && b == "list" => {
-            json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
-        }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
             json!({
                 "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
@@ -589,16 +596,74 @@ fn route_response(
                 "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
             })
         }
-        [a, b] if a == "plugins" && b == "inspect" => {
+        [a, b, c] if a == "cli" && b == "plugins" && c == "check" => {
+            let plugin = command_positionals(argv, &["cli", "plugins", "check"])
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
+            json!({"plugin": plugin, "status": "healthy"})
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "reserved-names" => {
             json!({
-                "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
-                "status": "loaded",
-                "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+                "reserved_namespaces": RESERVED_NAMESPACES,
+                "core_namespaces": CORE_NAMESPACES,
+                "future_product_namespaces": FUTURE_PRODUCT_NAMESPACES,
             })
         }
-        [a, b] if a == "plugins" && b == "check" => {
-            let plugin = argv.get(3).cloned().unwrap_or_else(|| "unknown".to_string());
-            json!({"plugin": plugin, "status": "healthy"})
+        [a, b, c] if a == "cli" && b == "plugins" && c == "where" => {
+            json!({
+                "plugins_dir": paths.plugins_dir,
+                "registry_file": plugin_registry_path,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "explain" => {
+            let plugin = command_positionals(argv, &["cli", "plugins", "explain"])
+                .first()
+                .cloned();
+            let diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                .unwrap_or_default();
+            let report = plugin_doctor(&plugin_registry_path).ok();
+            let filtered: Vec<Value> = diagnostics
+                .into_iter()
+                .filter(|d| plugin.as_ref().is_none_or(|wanted| d.namespace == *wanted))
+                .map(|diag| {
+                    json!({
+                        "namespace": diag.namespace,
+                        "severity": diag.severity,
+                        "message": diag.message,
+                    })
+                })
+                .collect();
+            let summary = report
+                .map(|value| {
+                    json!({
+                        "installed": value.installed,
+                        "broken": value.broken,
+                        "incompatible": value.incompatible,
+                    })
+                })
+                .unwrap_or_else(|| json!({"installed": 0, "broken": [], "incompatible": []}));
+            json!({
+                "plugin": plugin,
+                "diagnostics": filtered,
+                "summary": summary,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "schema" => {
+            json!({
+                "schema": "plugin-manifest-v1",
+                "required_fields": [
+                    "name",
+                    "version",
+                    "schema_version",
+                    "manifest_version",
+                    "compatibility",
+                    "namespace",
+                    "kind",
+                    "entrypoint",
+                ],
+                "optional_fields": ["aliases", "capabilities"],
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             let routes: Vec<Value> = registry
@@ -935,8 +1000,19 @@ fn is_known_route(path: &[String]) -> bool {
         [a] if a == "history" || a == "memory" => true,
         [a, b] if a == "memory" && b == "list" => true,
         [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" => true,
-        [a, b, c] if a == "cli" && b == "plugins" && (c == "list" || c == "inspect") => true,
-        [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => true,
+        [a, b, c]
+            if a == "cli"
+                && b == "plugins"
+                && (c == "list"
+                    || c == "inspect"
+                    || c == "check"
+                    || c == "reserved-names"
+                    || c == "where"
+                    || c == "explain"
+                    || c == "schema") =>
+        {
+            true
+        }
         [a, b, c]
             if a == "dev"
                 && b == "cli"

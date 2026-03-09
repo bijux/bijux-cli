@@ -143,7 +143,11 @@ pub fn root_command() -> Command {
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
         .subcommand(Command::new("inspect"))
-        .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)));
+        .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)))
+        .subcommand(Command::new("reserved-names"))
+        .subcommand(Command::new("where"))
+        .subcommand(Command::new("explain").arg(Arg::new("plugin").num_args(1)))
+        .subcommand(Command::new("schema"));
 
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
@@ -264,11 +268,17 @@ fn normalize_path(path: &[String]) -> Vec<String> {
         {
             vec!["cli".to_string(), "config".to_string(), b.clone()]
         }
-        [a, b] if a == "plugins" && (b == "list" || b == "inspect") => {
+        [a, b]
+            if a == "plugins"
+                && (b == "list"
+                    || b == "inspect"
+                    || b == "check"
+                    || b == "reserved-names"
+                    || b == "where"
+                    || b == "explain"
+                    || b == "schema") =>
+        {
             vec!["cli".to_string(), "plugins".to_string(), b.clone()]
-        }
-        [a, b] if a == "plugins" && b == "check" => {
-            vec!["plugins".to_string(), b.clone()]
         }
         [a, b]
             if a == "dev"
