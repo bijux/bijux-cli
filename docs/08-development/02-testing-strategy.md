@@ -1,102 +1,80 @@
 # Testing Strategy
 
-Define test lanes, fixture governance, and quality gates for maintainable correctness.
+This document defines what each test lane proves, what it does not prove, and how fixtures are governed to keep evidence trustworthy.
 
-Testing is the executable trust boundary for contracts declared in specification and architecture docs.
+## Lane purpose and proof boundaries
 
-## Explanation
-Test lane model:
-- unit lane: pure logic validation with minimal setup.
-- integration lane: cross-component behavior and contract interactions.
-- end-to-end lane: full workflow validation (authoring -> run -> artifacts -> inspect/replay/diff).
-- smoke lane: fast coverage for release-critical behavior.
+Unit lane proves:
+- local logic invariants,
+- deterministic helper behavior,
+- edge-case handling within one component.
 
-Lane quality rules:
-- keep unit tests deterministic and isolated.
-- integration tests must assert behavior contracts, not implementation trivia.
-- end-to-end tests should focus on reader-visible guarantees.
-- smoke lane should remain stable and fast for frequent execution.
+Unit lane does not prove:
+- cross-component contract compatibility,
+- backend capability behavior.
 
-Fixture governance:
-- fixtures must be minimal, versioned, and reproducible.
-- fixture changes must include rationale and expected behavior delta.
-- avoid oversized fixture trees that obscure intent.
+Integration lane proves:
+- component interaction contracts,
+- normalized outcome behavior across internal boundaries.
 
-Fixture system guidance:
-- store fixtures with clear naming tied to behavior contract under test.
-- keep fixture payloads small but semantically representative.
-- annotate fixture ownership and intended test lanes.
-- version fixture schema assumptions when fixture format evolves.
-- delete orphan fixtures that no longer map to active tests.
+Integration lane does not prove:
+- full operator workflow semantics across environments.
 
-Failure triage rules:
-- classify failures as product regression, test defect, or environment instability.
-- flaky tests require immediate stabilization or quarantine with explicit tracking.
-- remove outdated tests only when their contract is obsolete and replaced.
+End-to-end lane proves:
+- user-visible workflows from DAG input to run/artifact/replay/diff outcomes,
+- release-critical evidence paths.
 
-## Examples
-```bash
-cargo test --workspace --locked
-```
+End-to-end lane does not prove:
+- universal backend equivalence outside tested matrix.
 
-```text
-Fixture review checklist:
-- fixture name maps to one behavior contract
-- fixture is used by at least one active test
-- fixture delta rationale recorded in PR
-- fixture remains deterministic across CI/local runs
-```
+Fast lane (smoke) proves:
+- essential health of critical paths on every change.
 
-```text
-Failure triage example:
-- test: replay_equivalence_for_stable_backend
-- class: environment instability
-- action: isolate external dependency, add deterministic fixture
-```
+Fast lane does not replace:
+- deep scenario coverage,
+- compatibility and degradation checks.
+
+## Good tests and bad tests
+
+Good tests:
+- assert contract-level outcomes,
+- use deterministic inputs,
+- include clear failure reasons tied to guarantees.
+
+Bad tests:
+- depend on timing races or mutable external state,
+- assert formatting noise instead of semantic behavior,
+- duplicate existing coverage without new guarantee.
+
+## Fixture discipline
+
+Fixture rules:
+- each fixture maps to a named contract expectation,
+- fixtures remain minimal but semantically representative,
+- fixture provenance is known and reviewable,
+- fixture updates explain which guarantee changed and why.
+
+Treat external fixture imports as trust-boundary crossings and re-verify expected classifications.
+
+## Trust boundaries in testing
+
+Testing results are only as strong as the boundary assumptions:
+- environment assumptions must be explicit,
+- backend capability assumptions must be declared,
+- unknown or incomplete evidence must remain explicit.
 
 ## Guarantees
-- Test lane purposes and boundaries are explicit.
-- Fixture and triage governance are defined for repeatable quality.
-- Release-critical behavior has a dedicated fast verification lane.
 
-## Limitations
-- No test strategy can prove complete absence of defects.
-- End-to-end coverage depth is bounded by fixture realism and backend availability.
-- This document does not prescribe specific CI vendor configuration.
+- Lane responsibilities are explicit and non-overlapping.
+- Fixture governance is tied to contract truth, not convenience.
 
-## Related
-- `docs/06-specification/07-replay-semantics.md`
-- `docs/06-specification/08-diff-semantics.md`
-- `docs/07-operations/01-ci-integration.md`
-- `docs/08-development/01-repository-structure.md`
+## Non-guarantees
 
-## What each lane proves
+- Complete defect absence.
+- Cross-environment claims without matching matrix evidence.
 
-- unit lane proves local logic invariants and deterministic helpers.
-- integration lane proves cross-component contract compatibility.
-- end-to-end lane proves user-visible workflow guarantees.
-- smoke lane proves release-critical behavior remains operational on every change.
+## Next reading
 
-## Good tests versus bad tests
-
-Good test traits:
-
-- asserts contract outcomes, not incidental implementation details,
-- deterministic fixture inputs and explicit expected classifications,
-- failure messages explain broken guarantee.
-
-Bad test traits:
-
-- relies on timing races or external mutable state,
-- asserts unstable formatting rather than semantic outcome,
-- duplicates coverage without proving a distinct guarantee.
-
-## Fixture discipline and trust boundaries
-
-Fixture discipline rules:
-
-- fixture content must represent declared trust boundary conditions,
-- fixture provenance must be known and reviewable,
-- fixture updates must state which guarantee changed and why.
-
-Treat fixture imports as boundary crossings: re-validate canonicalization and expected classifications before trusting new fixtures.
+- [CI integration](docs/07-operations/01-ci-integration.md)
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)
