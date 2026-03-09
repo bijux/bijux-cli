@@ -12,7 +12,10 @@ name = "bijux_cli_python"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
+anyhow.workspace = true
+bijux-cli-core = { path = "../bijux-cli-core" }
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-install = { path = "../bijux-cli-install" }
 thiserror = { workspace = true }
 pyo3 = { version = "0.23.5", optional = true, features = ["extension-module"] }
 serde_json = { workspace = true }
