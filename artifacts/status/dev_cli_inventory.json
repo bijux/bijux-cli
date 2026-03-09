@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-09T23:06:38.170060+00:00",
+  "generated_at": "2026-03-09T23:30:03.062338+00:00",
   "generator": "scripts/status/generate_dev_cli_inventory.py",
   "maintainer_script_replacements": [
     {
@@ -20,103 +20,103 @@
       "file": "makefiles/api.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "ALL_API_SCHEMAS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "ALL_API_SCHEMAS_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "API_ARTIFACTS_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "API_LINT_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "API_LOG_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "API_NODE_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "API_TEST_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "HYPOTHESIS_DB_API_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "OPENAPI_GENERATOR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "OPENAPI_SPEC_VALIDATOR"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PRANCE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "REDOCLY_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SCHEMATHESIS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SCHEMATHESIS_JUNIT_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SCHEMA_BUNDLE_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SHELL"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-install"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-lint"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-serve"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-serve-bg"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-stop"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "api-test"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "node_deps"
         }
       ]
@@ -125,35 +125,35 @@
       "file": "makefiles/build.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "BUILD_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PYPROJECT_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build-sdist"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build-tools"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "build-wheel"
         }
       ]
@@ -162,35 +162,35 @@
       "file": "makefiles/changelog.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TC_BASE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TC_ENSURE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TC_PYVER"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TOWNCRIER"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "changelog"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "changelog-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "changelog-preview"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "generate-fragment"
         }
       ]
@@ -199,71 +199,71 @@
       "file": "makefiles/citation.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CFFCONVERT_BIN"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CFFENV"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CFFENV_PY"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CITATION_BIB"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CITATION_DIR"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CITATION_ENDNOTE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CITATION_FILE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CITATION_RIS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-bibtex"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-clean-env"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-endnote"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-install"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-ris"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "citation-validate"
         }
       ]
@@ -272,23 +272,23 @@
       "file": "makefiles/dictionary.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "DICTIONARY_FILE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "DICTIONARY_TMP"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "dictionary"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "dictionary-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "dictionary-clean"
         }
       ]
@@ -297,35 +297,35 @@
       "file": "makefiles/docs.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "MKDOCS_BIN"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-deploy"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-hygiene"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-prep"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "docs-serve"
         }
       ]
@@ -334,15 +334,15 @@
       "file": "makefiles/hooks.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "GIT_HOOKS_DIR"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "LOCAL_HOOKS_DIR"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "install-git-hooks"
         }
       ]
@@ -351,51 +351,51 @@
       "file": "makefiles/lint.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CODESPELL"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "MYPY"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PYDOCSTYLE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "RADON"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "RUFF"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "fmt"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "fmt-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "lint"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "lint-artifacts"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "lint-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "lint-dir"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "lint-file"
         }
       ]
@@ -404,27 +404,27 @@
       "file": "makefiles/mutation.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "COSMIC_RAY"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "MUTMUT"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "mutation"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "mutation-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "mutation-cosmic"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "mutation-mutmut"
         }
       ]
@@ -433,11 +433,11 @@
       "file": "makefiles/publish.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "check-version"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "ensure-dists"
         },
         {
@@ -449,23 +449,23 @@
           "target": "publish-test"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "twine"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "twine-check"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "twine-upload"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "twine-upload-test"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "verify-test-install"
         }
       ]
@@ -474,39 +474,39 @@
       "file": "makefiles/quality.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "DEPTRY"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "INTERROGATE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PYTHON"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "QUALITY_OK_MARKER"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "REUSE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "VULTURE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "interrogate-report"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "quality"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "quality-clean"
         }
       ]
@@ -515,35 +515,35 @@
       "file": "makefiles/sbom.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "GIT_DESCRIBE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "GIT_TAG_EXACT"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "GIT_TAG_LATEST"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PIP_AUDIT"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PKG_VERSION_FULL"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SBOM_DEV_FILE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SBOM_PROD_FILE"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SBOM_VERSION"
         },
         {
@@ -576,19 +576,19 @@
       "file": "makefiles/security.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "BANDIT_JSON"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "BANDIT_TXT"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PIPA_JSON"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PIPA_TXT"
         },
         {
@@ -613,103 +613,103 @@
       "file": "makefiles/test.mk",
       "targets": [
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "BENCHMARK_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "BIJUX_BIN_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "CACHE_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "COVCFG_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "COV_HTML_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "COV_XML_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "HYPOTHESIS_DB_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PYTEST_BIN"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "PYTEST_INI_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "SRC_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_BENCHMARK_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_E2E_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_NIGHTLY_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_REGRESSION_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TEST_PATHS_UNIT_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "TMP_DIR_ABS"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-all"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-benchmark"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-clean"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-e2e"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-nightly"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-regression"
         },
         {
-          "classification": "wrap-with-dev-cli",
+          "classification": "replace",
           "target": "test-unit"
         }
       ]
@@ -722,147 +722,155 @@
       "path": "scripts/__init__.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/capture_python_behavior.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/check-package-metadata.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/check-towncrier-fragment.sh"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/check_e2e_contract.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/__init__.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/__init__.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/api_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/base.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/citation_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/lint_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/quality_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/sbom_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/security_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/artifacts_pages/test_page.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/helpers.py"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/docs_builder/mkdocs_manager.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/generate-provenance-statement.sh"
     },
     {
-      "classification": "keep-external",
+      "classification": "keep",
       "path": "scripts/git-hooks/prepare-commit-msg"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/helper_comments.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/helper_pip_audit.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/parity/check_command_parity_gates.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/parity/generate_binary_bridge_parity.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/parity/generate_command_parity_matrix.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/parity/run_rust_python_parity.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/check_runtime_unity.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
+      "path": "scripts/status/check_status_reports_stale.py"
+    },
+    {
+      "classification": "replace",
       "path": "scripts/status/enforce_release_truth_gates.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_crate_boundary_metrics.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_current_rust_state.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_dev_cli_inventory.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_docs_audit.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_flaky_test_labels.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_plugin_state_report.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_state_parity_reports.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
+      "path": "scripts/status/generate_status_reports.py"
+    },
+    {
+      "classification": "replace",
       "path": "scripts/status/generate_test_quality_audit.py"
     },
     {
-      "classification": "move-to-dev-cli",
+      "classification": "replace",
       "path": "scripts/status/generate_truth_milestone_status.py"
     },
     {
-      "classification": "wrap-with-dev-cli",
+      "classification": "replace",
       "path": "scripts/verify-install-channels.sh"
     }
   ]

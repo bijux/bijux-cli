@@ -121,15 +121,15 @@ fn is_canonical_active_path(active_binary: Option<&str>) -> bool {
 
 fn classify_script(path: &str) -> &'static str {
     if path.starts_with("scripts/status/") || path.starts_with("scripts/parity/") {
-        return "move-to-dev-cli";
+        return "replace";
     }
     if path.starts_with("scripts/git-hooks/") || path.starts_with("scripts/docs_builder/") {
-        return "keep-external";
+        return "keep";
     }
     if path == "scripts/__init__.py" {
         return "delete";
     }
-    "wrap-with-dev-cli"
+    "replace"
 }
 
 fn parse_make_targets(path: &Path) -> Vec<String> {
@@ -161,14 +161,14 @@ fn parse_make_targets(path: &Path) -> Vec<String> {
 
 fn classify_make_target(target: &str) -> &'static str {
     if target.starts_with("docs") || target.starts_with("api") || target.starts_with("test") {
-        "wrap-with-dev-cli"
+        "replace"
     } else if target.starts_with("publish")
         || target.starts_with("sbom")
         || target.starts_with("security")
     {
         "keep"
     } else {
-        "wrap-with-dev-cli"
+        "replace"
     }
 }
 

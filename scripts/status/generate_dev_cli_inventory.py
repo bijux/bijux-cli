@@ -14,20 +14,20 @@ OUT = ROOT / "artifacts" / "status" / "dev_cli_inventory.json"
 
 def classify_script(path: str) -> str:
     if path.startswith("scripts/status/") or path.startswith("scripts/parity/"):
-        return "move-to-dev-cli"
+        return "replace"
     if path.startswith("scripts/git-hooks/") or path.startswith("scripts/docs_builder/"):
-        return "keep-external"
+        return "keep"
     if path == "scripts/__init__.py":
         return "delete"
-    return "wrap-with-dev-cli"
+    return "replace"
 
 
 def classify_make_target(target: str) -> str:
     if target.startswith(("docs", "api", "test")):
-        return "wrap-with-dev-cli"
+        return "replace"
     if target.startswith(("publish", "sbom", "security")):
         return "keep"
-    return "wrap-with-dev-cli"
+    return "replace"
 
 
 def iter_files(base: Path) -> list[Path]:
