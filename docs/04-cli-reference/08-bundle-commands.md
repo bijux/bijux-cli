@@ -1,93 +1,47 @@
 # Bundle Commands
 
-Document bundle export/import command usage for portability workflows.
+Use `bundle` commands to export/import execution context, then verify portability with inspect/replay/diff.
 
-Bundle commands package and transfer workflow context across environments.
+## Command roles
 
-## Explanation
-Bundle operations:
-- `bundle export`
-- `bundle import`
+- `bundle export`: create transferable bundle from selected run context.
+- `bundle import`: load transferable context into target environment.
 
-Common flags:
-- export: source selectors (`--run-id`, output path)
-- import: bundle selector (`--bundle <path>`)
-- `--output <format>` where supported
+## Core invocation patterns
 
-Command lifecycle role:
-- export after run completion and evidence verification.
-- import in target environment before replay/diff portability checks.
-
-Command discovery:
-- `bijux-dag bundle --help`
-- `bijux-dag bundle export --help`
-- `bijux-dag bundle import --help`
-
-Error handling guidance:
-- unreadable path: input error
-- invalid bundle: validation error
-- unsupported environment mapping: compatibility error
-- missing bundle file: filesystem lookup error
-
-## Examples
 ```bash
+bijux-dag bundle --help
 bijux-dag bundle export --run-id RUN_20260309_220 --out ./exports/run220.bundle --output json
 bijux-dag bundle import --bundle ./exports/run220.bundle --output json
 ```
 
-```json
-{
-  "bundle_path": "./exports/run220.bundle",
-  "import_status": "ok",
-  "bundle_id": "BUNDLE_20260309_220"
-}
-```
+If your build exposes verify-only or integrity-check subcommands, run those before mutating imports.
 
-```text
-Bundle portability command flow:
-1) bundle export --run-id ...
-2) transfer bundle
-3) bundle import --bundle ...
-4) replay and diff for equivalence decision
-```
+## Read-only versus mutating behavior
 
-## Guarantees
-- Export/import flow is documented as concrete portability path.
-- Failure interpretation categories are explicit.
-- Output examples support scripted portability pipelines.
+Mutating behavior:
 
-## Limitations
-- Bundle schema internals are specified outside CLI reference.
-- Portability guarantees depend on backend support boundaries.
+- export writes bundle artifact,
+- import writes local bundle-derived state.
 
-## Related
-- `docs/04-cli-reference/07-replay-commands.md`
-- `docs/03-user-guide/08-bundles-and-portability.md`
-- `docs/07-operations/05-backend-support.md`
-- `docs/06-specification/03-artifact-model.md`
+Read-only behavior:
 
-## Precise bundle command roles
+- help/discovery calls,
+- verify-only checks (when supported) that do not persist imported state.
 
-- `bundle export`: creates a transferable evidence package from selected run context.
-- `bundle import`: materializes transferable evidence into local context for verification workflows.
-
-## Export, import, verify-only, and fsck-like workflows
+## Broken bundle example
 
 ```bash
-bijux-dag bundle export --run-id RUN_20260309_220 --out ./exports/run220.bundle --output json
-bijux-dag bundle import --bundle ./exports/run220.bundle --output json
+bijux-dag bundle import --bundle ./exports/corrupted.bundle --output json
 ```
 
-Verification-oriented usage (implementation dependent):
+Expected interpretation:
 
-- verify-only import mode validates bundle integrity without accepting mutable state changes.
-- fsck-like integrity checks validate bundle structure and evidence consistency before replay.
+- command fails validation or marks result as invalid,
+- no portability claim should be made,
+- rerun with known-good bundle or regenerate export from trusted run.
 
-## Mutating versus read-only behavior
+## Next reading
 
-Treat command effects explicitly:
-
-- mutating: export creates/updates bundle artifacts; import writes local bundle-derived state.
-- read-only: help/discovery commands and verification-only checks that do not persist changes.
-
-When in doubt, run verification-first and capture JSON diagnostics before mutating import flows.
+- Portability interpretation workflow: [Bundles And Portability](../03-user-guide/08-bundles-and-portability.md)
+- Backend capability limits: [Backend Support](../07-operations/05-backend-support.md)

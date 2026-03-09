@@ -1,83 +1,32 @@
 # Replay Commands
 
-Document replay command usage for validation and drift detection workflows.
+Use `replay` commands to validate reproducibility and classify equivalence, drift, or incomplete outcomes.
 
-Replay commands are typically used with run history, inspect, and diff commands.
+## Replay modes and intent
 
-## Explanation
-Replay operations:
-- replay a run context
-- evaluate replay status for equivalence/mismatch
+- normal replay: execute replay and classify against baseline,
+- dry-run replay (if supported): validate prerequisites without full execution,
+- proof-oriented replay: generate stronger evidence package for release/audit workflows.
 
-Common flags:
-- `--run-id <id>` baseline selector
-- optional DAG selector where supported
-- `--output <format>` where supported
+Always confirm mode availability with `bijux-dag replay --help` for your build.
 
-Command lifecycle role:
-- replay is a post-run validation command.
-- replay should be paired with inspect/diff for complete diagnosis.
+## Core invocation patterns
 
-Command discovery:
-- `bijux-dag replay --help`
-
-Error handling guidance:
-- unknown run ID: lookup error
-- unsupported replay context: compatibility/runtime error
-- missing baseline evidence: lookup/input error
-
-## Examples
 ```bash
+bijux-dag replay --help
 bijux-dag replay --run-id RUN_20260309_220 --output json
 bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json --output json
 ```
 
-```json
-{
-  "run_id": "RUN_20260309_220",
-  "replay_status": "mismatch",
-  "classification": "drift"
-}
-```
+## Failure, incomplete, and downgrade handling
 
-```text
-Replay command flow:
-1) replay --run-id RUN_...
-2) inspect replay output classification
-3) diff run --left baseline --right replay-run
-```
+- failure: replay could not execute required workflow.
+- incomplete: replay executed partially but required comparison evidence missing.
+- downgrade: replay completed with reduced fidelity due to capability limits.
 
-## Guarantees
-- Replay workflow is documented as explicit validation path.
-- Integration with inspect and diff is clear.
-- Output examples include machine-readable classification fields.
+Downgrade/incomplete are not strict success states; treat them as bounded evidence requiring explicit acceptance.
 
-## Limitations
-- Replay equivalence remains bounded by environment/backend constraints.
-- Replay algorithm internals are not defined here.
+## Next reading
 
-## Related
-- `docs/04-cli-reference/06-diff-commands.md`
-- `docs/04-cli-reference/05-inspect-commands.md`
-- `docs/03-user-guide/05-replay.md`
-- `docs/06-specification/07-replay-semantics.md`
-
-## Replay modes and operator intent
-
-Replay usage can be organized into three operator modes:
-
-- normal replay: execute replay against baseline run context for outcome comparison.
-- dry-run replay: plan and validate replay prerequisites without committing to full execution (when supported).
-- proof-oriented replay: run replay under stricter evidence capture for audit/release confidence workflows.
-
-Use mode selection to match risk level and change scope.
-
-## Replay failure and downgrade handling
-
-Failure/downgrade interpretation:
-
-- hard failure: replay cannot execute or classify due to missing/invalid prerequisites.
-- mismatch: replay executes but classifies drift.
-- downgrade: replay completes with reduced fidelity because backend/environment cannot satisfy full equivalence checks.
-
-Downgrade is not equivalent to success; treat it as bounded evidence and require explicit acceptance.
+- Pairing replay with scoped comparisons: [Diff Commands](../04-cli-reference/06-diff-commands.md)
+- Formal replay semantics: [Replay Semantics Specification](../06-specification/07-replay-semantics.md)
