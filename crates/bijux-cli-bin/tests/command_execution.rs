@@ -7,6 +7,7 @@ use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_output as _;
+use bijux_cli_plugin as _;
 use bijux_cli_python as _;
 use bijux_cli_routing as _;
 use clap as _;
