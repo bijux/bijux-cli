@@ -1,0 +1,39 @@
+{
+  "beyond_python": [
+    "reserved namespace diagnostics surface",
+    "plugin registry origin metadata",
+    "transaction rollback assertions for install/uninstall failures",
+    "explicit plugin schema command"
+  ],
+  "frozen_law": "plugin v1 contract is frozen before expanding command cleverness",
+  "generated_at": "2026-03-09T22:53:41.129346+00:00",
+  "generator": "scripts/status/generate_plugin_state_report.py",
+  "overlap_parity_tests": [
+    "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
+    "crates/bijux-cli-bin/tests/plugin_command_parity.rs"
+  ],
+  "plugin_commands": {
+    "complete": [
+      "plugins list",
+      "plugins inspect",
+      "plugins check",
+      "plugins reserved-names",
+      "plugins where",
+      "plugins explain",
+      "plugins schema"
+    ],
+    "partial": [
+      "plugins scaffold",
+      "plugins install",
+      "plugins uninstall",
+      "plugins enable",
+      "plugins disable"
+    ],
+    "python_only": []
+  },
+  "remaining_gaps": [
+    "scaffold command parity against Python templates",
+    "full CLI lifecycle command parity for install/uninstall/enable/disable",
+    "end-to-end CLI plugin diagnostics parity for all failure classes"
+  ]
+}

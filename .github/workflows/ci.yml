@@ -265,6 +265,7 @@ jobs:
           python3 scripts/status/generate_docs_audit.py
           python3 scripts/status/generate_test_quality_audit.py
           python3 scripts/status/generate_flaky_test_labels.py
+          python3 scripts/status/generate_plugin_state_report.py
 
       - name: Runtime unity gate
         run: |
@@ -333,6 +334,15 @@ jobs:
         with:
           name: flaky-test-labels
           path: artifacts/status/flaky_tests.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload plugin state artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-state
+          path: artifacts/status/plugin_state_report.json
           if-no-files-found: warn
           retention-days: 14
 
