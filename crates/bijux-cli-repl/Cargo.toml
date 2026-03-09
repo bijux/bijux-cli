@@ -8,8 +8,12 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bijux-cli-routing = { path = "../bijux-cli-routing" }
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-output = { path = "../bijux-cli-output" }
+bijux-cli-routing = { path = "../bijux-cli-routing" }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true
