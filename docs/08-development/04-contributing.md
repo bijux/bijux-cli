@@ -1,118 +1,72 @@
 # Contributing
 
-Define contribution workflow, review standards, and merge readiness for repository changes.
+This guide defines the practical path from idea to merged change, with strict expectations on scope, terminology, and evidence.
 
-Contributors need one clear path from idea to merged change with explicit quality gates.
+## Contributor flow
 
-## Explanation
-Contribution workflow:
-1. open a focused change with clear scope.
-2. implement code/docs updates with domain-correct placement.
-3. run required local checks relevant to changed areas.
-4. submit for review with explicit summary of guarantees and limitations affected.
-5. address feedback and merge after gate criteria pass.
+1. define one durable change intent.
+2. locate affected contract surface (spec, user guide, operations, development docs, or code).
+3. implement the minimal coherent change set.
+4. provide evidence (tests, replay/diff outputs, or rationale for doc-only changes).
+5. submit review-ready commits with clear Conventional Commit subjects.
 
-Developer setup before first contribution:
-1. install pinned Rust toolchain and ensure `cargo` is available.
-2. clone repository and verify baseline commands execute locally.
-3. run formatting/linting/tests expected for touched scope.
-4. confirm docs/spec terminology alignment for any contract text edits.
+## Avoiding scope widening and vocabulary drift
 
-Pull request expectations:
-- one change intent per PR whenever possible.
-- clear commit history using conventional commit style.
-- explicit mention of behavior changes, contract changes, and migration impact.
+Before opening a PR:
+- confirm every edited file is necessary for one intent,
+- align terminology with canonical docs,
+- avoid introducing synonyms for established terms,
+- split unrelated edits into separate commits.
 
-Review gates:
-- correctness: behavior and contracts are coherent and test-backed.
-- clarity: names, file locations, and docs are understandable long-term.
-- safety: sensitive operations and trust boundaries are respected.
-- maintainability: no avoidable duplication, coupling, or stale scaffolding.
-- reader-outcome check: reviewer can state what the reader should understand and confirm the doc achieves it.
+If the change starts touching unrelated guarantees, split and stop extending the PR.
 
-Final quality pass guidance:
-- keep prose concise while preserving contract precision.
-- remove stale claims or speculative statements.
-- keep examples realistic and aligned with current command surfaces.
-- ensure every guarantee has an explicit boundary or limitation nearby.
-- avoid link dumps; include only highest-signal next references.
-- ensure opening lines answer the reader's immediate question.
-- prefer direct mechanics over abstract policy language.
+## What maintainers reject immediately
 
-Documentation contribution standards:
-- docs should use the structure that best teaches the topic; fixed template symmetry is not required.
-- claims must distinguish guarantees vs limitations.
-- terminology must align with introduction/specification vocabulary.
-- avoid governance noise in user-facing guides.
-- every section must teach at least one non-obvious fact.
-- no section should exist only to satisfy formatting symmetry.
-- guarantees must be explicit, bounded, and falsifiable.
-- limitations must be concrete and operationally useful.
-- distinguish guarantees from goals and backend-dependent behavior.
-- include realistic examples and expected outcomes.
-- include at least one failure-oriented example where confusion risk is high.
-- include common wrong assumptions when over-interpretation is likely.
+- ambiguous commit intent (`misc`, `cleanup`, vague scope),
+- claims of guarantees without boundaries,
+- contract-changing code without matching spec updates,
+- tests removed without replacement proof,
+- documentation that reintroduces template filler over mechanics,
+- backend changes that hide capability degradation.
 
-Commit message guidelines:
-- use meaningful conventional prefixes (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
-- subject line must describe durable intent, not temporary process step.
-- avoid ambiguous wording such as "misc", "cleanup", or "phase".
+## Choosing the right boundary for a change
 
-## Examples
-```bash
-git commit -m "docs(specification): define replay and diff semantics contracts"
-```
+Use this boundary selection:
+- behavior rule changed -> specification + implementation + tests,
+- operator workflow changed -> operations docs + command behavior evidence,
+- contributor process changed -> development docs only unless runtime behavior changed,
+- wording only -> docs-only commit with no semantic claim changes.
 
-```text
-PR summary template:
-- scope
-- behavior change
-- contract impact
-- validation evidence
-```
+## Checklist: good bijux-dag changes
+
+- one durable intent,
+- precise terminology,
+- explicit guarantees and non-guarantees,
+- evidence aligned with touched surface,
+- commit history readable two years later.
+
+## Checklist: bad bijux-dag changes
+
+- mixed intents in one commit,
+- hidden semantic change under naming/formatting edits,
+- new terms that conflict with canonical vocabulary,
+- missing explanation of degraded guarantees,
+- unverified boundary crossings.
 
 ## Guarantees
-- Contributors and reviewers share a single merge workflow and quality gate.
-- Commit and PR requirements emphasize durable, audit-friendly change history.
-- Documentation contributions are held to explicit contract-quality expectations.
-- Includes actionable developer setup and final quality-pass guidance.
 
-## Limitations
-- This guide does not replace technical design judgment for complex architecture changes.
-- Required checks vary by change scope and repository tooling evolution.
-- Merge approval remains a maintainer responsibility.
+- Contribution expectations are concrete and reviewable.
+- Scope and terminology discipline are first-class requirements.
 
-## Related
-- `docs/08-development/01-repository-structure.md`
-- `docs/08-development/02-testing-strategy.md`
-- `docs/07-operations/01-ci-integration.md`
-- `docs/06-specification/01-dag-model.md`
+## Non-guarantees
 
-## Preventing scope widening and terminology drift
+- Automatic merge for complete checklists.
+- Substitution for technical judgment on complex architecture decisions.
 
-Before opening PR, verify:
+Contributor responsibility: preserve truth in claims, keep scope explicit, and never trade semantic clarity for short-term velocity.
 
-- change scope matches one primary intent,
-- introduced terms map to canonical glossary/spec vocabulary,
-- no side edits silently expand product guarantees.
+## Next reading
 
-If scope widens, split into separate commits/PRs by durable intent.
-
-## Maintainer immediate-rejection criteria
-
-Maintainers should reject immediately when:
-
-- changes redefine contracts without corresponding specification updates,
-- commit messages hide intent (`misc`, `cleanup`, ambiguous scope),
-- docs claim guarantees without explicit boundaries,
-- tests are removed without contract replacement,
-- adapter or backend changes bypass capability/portability documentation,
-- terminology conflicts with canonical definitions.
-
-## Final readability and truth audit checklist
-
-- every claim is testable or explicitly bounded,
-- guarantee and limitation pairs are adjacent and coherent,
-- examples match current command/contract surfaces,
-- no speculative future-state language appears in current-facing docs,
-- readers can identify exact decision implications from each section.
+- [Repository structure](docs/08-development/01-repository-structure.md)
+- [Testing strategy](docs/08-development/02-testing-strategy.md)
+- [Specification index](docs/06-specification/01-dag-model.md)
