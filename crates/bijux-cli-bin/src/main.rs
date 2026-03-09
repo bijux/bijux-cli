@@ -6,7 +6,7 @@ use std::env;
 use std::path::Path;
 
 use anyhow::Result;
-use bijux_cli_install::install_health_report;
+use bijux_cli_install::{install_health_report, post_install_hint};
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core as _;
 use bijux_cli_output::{render_value, EmitterConfig};
@@ -137,12 +137,20 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
+            let hint = install_report
+                .active_binary
+                .as_deref()
+                .map(post_install_hint)
+                .unwrap_or_else(|| {
+                    "Run `bijux version` and `bijux cli doctor` to verify your environment.".to_string()
+                });
             json!({
                 "config": paths.config_file,
                 "history": paths.history_file,
                 "plugins": paths.plugins_dir,
                 "active_binary": install_report.active_binary,
-                "path_binaries": install_report.path_binaries
+                "path_binaries": install_report.path_binaries,
+                "post_install_hint": hint
             })
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {

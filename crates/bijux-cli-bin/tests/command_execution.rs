@@ -59,6 +59,7 @@ fn cli_paths_reports_active_binary_metadata() {
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert!(payload.get("active_binary").is_some());
     assert!(payload.get("path_binaries").is_some());
+    assert!(payload.get("post_install_hint").is_some());
 }
 
 #[test]
