@@ -1,47 +1,43 @@
-# Specification documentation
+# Specification Library
 
-Audience: implementers and maintainers.  
-Owner: platform architecture and protocol maintainers.  
-Status: stable.
+Status: stable
+Audience: maintainers
+Owner: platform documentation guild
 
-This directory is the contract layer.  
-All behavior statements in `spec/` should be normative and implementation-grade.
+This specification library is intentionally reduced to 30 standalone documents:
+- 29 domain specifications
+- this README
 
-## Canonical contract clusters
+Every domain specification is self-contained and contains merged source contract text.
+No appendix directory or external consolidation references are required to read the specification set.
 
-- `TERMINOLOGY_AND_NAMING_CONTRACT.md`  
-  Canonical vocabulary and naming governance with appendices in `appendices/terminology`.
-- `VERSIONING_AND_SCHEMA_EVOLUTION_CONTRACT.md`  
-  Canonical contract/version/schema governance with appendices in `appendices/versioning`.
-- `CONFIG_AND_STATE_BOUNDARIES_CONTRACT.md`  
-  Configuration precedence, deprecation, and boundary rules with appendices in `appendices/config`.
-- `CLI_SURFACE_AND_COMPATIBILITY_CONTRACT.md`  
-  CLI surface, stability, compatibility, and taxonomy with appendices in `appendices/cli`.
-- `BACKEND_AND_ADAPTER_RUNTIME_CONTRACT.md`  
-  Backend, adapter, and protocol/runtime compatibility with appendices in `appendices/backend`.
-- `BENCHMARK_EVIDENCE_AND_CLAIM_CONTRACT.md`  
-  Performance evidence policy with appendices in `appendices/benchmark`.
-- `EVIDENCE_MODEL_AND_PUBLICATION_CONTRACT.md`  
-  Evidence vocabulary, publication boundaries, and proof model with appendices in `appendices/evidence`.
-- `RUNTIME_EXECUTION_AND_SCHEDULER_CONTRACT.md`  
-  Runtime execution semantics and scheduler behavior with appendices in `appendices/runtime`.
-- `SYSTEM_GUARANTEES_AND_INVARIANTS_CONTRACT.md`  
-  System reliability, invariants, introspection, and diagnostics with appendices in `appendices/system`.
-
-## Directory role
-
-- Keep only canonical contracts and their appendices.
-- Do not keep explanatory narratives, how-to guides, or historical status commentary.
-- De-duplicate overlapping documents; each contract family should have one canonical root file.
-- If behavior belongs in a user guide, move it to `user/`.
-
-## Stability contract
-
-Every file should declare whether it is stable, evolving, or historical.
-
-## Shape targets
-
-- Root cluster target: one canonical contract file per cluster.
-- Appendices target: supporting detail, implementation examples, and migration history.
-- Canonical contract rule: each contract should include a `what this spec is not` section.
-- No single spec file should grow beyond practical readability thresholds (~500 lines).
+## Domain Specifications
+- `SYSTEM_GUARANTEES_AND_INVARIANTS.md`
+- `RUNTIME_SEMANTICS_AND_SCHEDULING.md`
+- `BACKEND_AND_ADAPTER_CONTRACTS.md`
+- `CLI_SURFACE_AND_COMPATIBILITY.md`
+- `SCHEMA_AND_VERSIONING.md`
+- `CONFIG_AND_STATE_BOUNDARIES.md`
+- `ARTIFACT_LIFECYCLE_AND_IDENTITY.md`
+- `RUN_HISTORY_AND_RECOVERY.md`
+- `REPLAY_AND_DIFF_CONTRACTS.md`
+- `EVIDENCE_MODEL_AND_PUBLICATION.md`
+- `BENCHMARK_AND_PERFORMANCE_EVIDENCE.md`
+- `SECURITY_TRUST_AND_ISOLATION.md`
+- `DETERMINISM_AND_FORMAL_INVARIANTS.md`
+- `ERRORS_FAILURES_AND_DIAGNOSTICS.md`
+- `OPERATOR_AND_AUTHORING_EXPERIENCE.md`
+- `CRATE_BOUNDARIES_AND_OWNERSHIP.md`
+- `CONTROL_PLANE_AND_REPOSITORY_GOVERNANCE.md`
+- `DISTRIBUTED_AND_REMOTE_EXECUTION.md`
+- `WORKSPACE_PROJECT_AND_API_CONTRACTS.md`
+- `CACHE_AND_STORAGE_CONTRACTS.md`
+- `FIXTURE_TEST_AND_VALIDATION_GOVERNANCE.md`
+- `TERMINOLOGY_AND_NAMING.md`
+- `POLICY_AND_COMPLIANCE_GOVERNANCE.md`
+- `EXTENSIBILITY_AND_PLUGIN_CONTRACTS.md`
+- `BUNDLE_MANIFEST_AND_FORMAT_SCHEMAS.md`
+- `TRACE_AND_OUTPUT_SCHEMAS.md`
+- `ACCEPTANCE_RELEASE_AND_READINESS.md`
+- `EXECUTION_GATES_AND_CAPABILITIES.md`
+- `ROADMAP_AND_SCOPE_BOUNDARIES.md`
