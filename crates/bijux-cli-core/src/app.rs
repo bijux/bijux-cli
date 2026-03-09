@@ -655,9 +655,15 @@ fn route_response(
             let parity_report = read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
             let bridge_parity =
                 read_json_if_exists(&root.join("artifacts/parity/binary_vs_python_bridge_parity_report.json"));
+            let command_matrix =
+                read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
+            let parity_diffs =
+                read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
             json!({
                 "rust_python": parity_report,
                 "binary_bridge": bridge_parity,
+                "command_matrix": command_matrix,
+                "diffs": parity_diffs,
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs" => {
