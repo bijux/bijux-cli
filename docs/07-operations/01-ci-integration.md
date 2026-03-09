@@ -19,6 +19,12 @@ Recommended CI job topology:
 - `determinism`: selected replay/diff checks against known baselines.
 - `release-readiness`: strict gate for tagged builds.
 
+Recommended stage ordering:
+1. `validate` (fast fail on shape/contracts)
+2. `test` (unit/integration correctness)
+3. `determinism` (replay/diff confidence)
+4. `release-readiness` (promotion decision)
+
 CI requirements:
 - pin language/runtime versions to reduce drift.
 - persist essential test/replay artifacts for post-failure diagnostics.
@@ -40,6 +46,19 @@ jobs:
       - uses: actions/checkout@v4
       - run: cargo run -p bijux-dev-dag -- docs validate
       - run: cargo test --workspace --locked
+  determinism:
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -p bijux-dev-dag -- foundation --advisory
+  release-readiness:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs: [validate, determinism]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -p bijux-dev-dag -- release artifact-verify
 ```
 
 ```text
@@ -54,11 +73,13 @@ Expected CI summary fields:
 - CI integration contract defines a reproducible and auditable execution path.
 - Failure classes remain distinguishable for faster remediation.
 - Determinism checks can be enforced as explicit release gates.
+- Includes concrete GitHub Actions topology usable as baseline.
 
 ## Limitations
 - This document does not mandate one CI vendor.
 - Lane composition may differ by repository size or release policy.
 - Network and host volatility can still cause infrastructure-level flakiness.
+- Example workflow is illustrative and may require repository-specific command adjustments.
 
 ## Related
 - `docs/07-operations/02-reproducible-builds.md`

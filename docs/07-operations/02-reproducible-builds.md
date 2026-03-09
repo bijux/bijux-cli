@@ -22,6 +22,12 @@ Cache strategy:
 - never treat cache hits as correctness proof.
 - fallback to clean build path on cache inconsistency.
 
+Artifact caching guidance:
+- separate dependency cache from build-output cache.
+- cache keys should include lockfile hash, toolchain version, and target triple.
+- invalidate caches when compiler/toolchain policy changes.
+- periodically run cache-bypass builds to detect hidden cache coupling.
+
 Drift detection:
 - periodically run clean builds without cache.
 - compare key output hashes for release-critical artifacts.
@@ -32,6 +38,11 @@ Drift detection:
 rustup override set 1.80.1
 cargo build --workspace --locked
 cargo test --workspace --locked
+```
+
+```yaml
+# CI cache key example (conceptual)
+key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-rust-1.80.1
 ```
 
 ```text
@@ -46,6 +57,7 @@ Reproducibility checklist:
 - Reproducibility controls are explicit and operationally enforceable.
 - Build drift can be detected and classified through deterministic checks.
 - Release-critical workflows can require clean, pinned execution paths.
+- Cache strategy explicitly favors correctness over speed when they conflict.
 
 ## Limitations
 - Absolute binary identity can still vary across platform/toolchain families.
