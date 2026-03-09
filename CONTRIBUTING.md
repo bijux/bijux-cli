@@ -204,6 +204,9 @@ tox -av
 
 ## Commits & PRs
 
+For Rust workspace rules and architecture boundary checks, see
+`CONTRIBUTING_RUST.md`.
+
 ### Conventional Commits (required)
 
 ```
