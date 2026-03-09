@@ -87,27 +87,36 @@ fn colorize_error(s: &str, cfg: EmitterConfig) -> String {
     }
 }
 
+fn with_trailing_newline(mut content: String) -> String {
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    content
+}
+
+fn render_json(value: &Value, pretty: bool) -> Result<String, EmitError> {
+    if pretty {
+        serde_json::to_string_pretty(value).map_err(EmitError::from)
+    } else {
+        serde_json::to_string(value).map_err(EmitError::from)
+    }
+}
+
 /// Render arbitrary value in configured format.
 pub fn render_value(value: &Value, cfg: EmitterConfig) -> Result<String, EmitError> {
     match cfg.format {
-        OutputFormat::Json => {
-            if cfg.pretty {
-                serde_json::to_string_pretty(value).map_err(EmitError::from)
-            } else {
-                serde_json::to_string(value).map_err(EmitError::from)
-            }
-        }
+        OutputFormat::Json => render_json(value, cfg.pretty),
         OutputFormat::Yaml => serde_yaml::to_string(value).map_err(EmitError::from),
         OutputFormat::Text => {
             if let Some(text) = value.as_str() {
                 Ok(text.to_string())
             } else if cfg.pretty {
-                serde_json::to_string_pretty(value).map_err(EmitError::from)
+                render_json(value, true)
             } else {
-                serde_json::to_string(value).map_err(EmitError::from)
+                render_json(value, false)
             }
         }
-        _ => serde_json::to_string(value).map_err(EmitError::from),
+        _ => render_json(value, cfg.pretty),
     }
 }
 
@@ -121,10 +130,7 @@ pub fn emit_success(
     }
 
     let value = serde_json::to_value(envelope)?;
-    let mut content = render_value(&value, cfg)?;
-    if !content.ends_with('\n') {
-        content.push('\n');
-    }
+    let content = with_trailing_newline(render_value(&value, cfg)?);
 
     Ok(Some(RenderedOutput { stream: OutputStream::Stdout, content }))
 }
@@ -147,19 +153,14 @@ pub fn emit_error(
 ) -> Result<RenderedOutput, EmitError> {
     let value = serde_json::to_value(envelope)?;
 
-    let mut content = match cfg.format {
+    let content = match cfg.format {
         OutputFormat::Text => {
             let msg = envelope.error.message.as_str();
             colorize_error(msg, cfg)
         }
-        _ => render_value(&value, cfg)?,
+        _ => with_trailing_newline(render_value(&value, cfg)?),
     };
-
-    if !content.ends_with('\n') {
-        content.push('\n');
-    }
-
-    Ok(RenderedOutput { stream: OutputStream::Stderr, content })
+    Ok(RenderedOutput { stream: OutputStream::Stderr, content: with_trailing_newline(content) })
 }
 
 /// Format debug log line when debug/trace logging is enabled.
@@ -180,3 +181,8 @@ pub fn to_json(marker: &ContractMarker) -> Result<String, serde_json::Error> {
 pub fn to_yaml(marker: &ContractMarker) -> Result<String, serde_yaml::Error> {
     serde_yaml::to_string(marker)
 }
+
+#[cfg(test)]
+use bijux_cli_core as _;
+#[cfg(test)]
+use serde as _;

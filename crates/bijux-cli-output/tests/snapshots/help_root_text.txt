@@ -1,0 +1,5 @@
+Usage: bijux-rs [OPTIONS] [COMMAND]
+
+Commands:
+  cli
+  dev

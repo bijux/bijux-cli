@@ -113,6 +113,8 @@ name = "bijux-cli-output"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
+ "bijux-cli-core",
+ "serde",
  "serde_json",
  "serde_yaml",
  "thiserror",

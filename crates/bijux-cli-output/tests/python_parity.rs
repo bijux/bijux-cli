@@ -8,6 +8,8 @@ use bijux_cli_contracts as _;
 use bijux_cli_output as _;
 use serde_json::Value;
 use serde_yaml as _;
+use bijux_cli_core as _;
+use serde as _;
 use thiserror as _;
 
 #[test]

@@ -1,0 +1,16 @@
+{
+  "status": {
+    "required_keys": ["status", "runtime"],
+    "status_value": "ok"
+  },
+  "doctor": {
+    "required_keys": ["status", "checks", "install"],
+    "status_value": "healthy"
+  },
+  "plugins_list": {
+    "required_keys": ["plugins", "directory"]
+  },
+  "cli_paths": {
+    "required_keys": ["config", "history", "plugins", "active_binary", "path_binaries", "post_install_hint"]
+  }
+}

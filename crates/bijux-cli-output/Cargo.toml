@@ -13,5 +13,9 @@ serde_json.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+bijux-cli-core = { path = "../bijux-cli-core" }
+serde = { workspace = true, features = ["derive"] }
+
 [lints]
 workspace = true
