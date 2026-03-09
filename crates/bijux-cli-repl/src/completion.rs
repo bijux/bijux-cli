@@ -13,10 +13,13 @@ pub fn completion_candidates(session: &ReplSession, prefix: &str) -> Vec<String>
         "completion",
         "inspect",
         "status",
+        "atlas",
         "config",
         "plugins",
         "dev",
+        "cli",
         "history",
+        "memory",
     ];
     for builtin in builtins {
         if builtin.starts_with(prefix) {

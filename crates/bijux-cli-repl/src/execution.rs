@@ -38,6 +38,13 @@ fn parse_shell_tokens(input: &str) -> Vec<String> {
         .unwrap_or_else(|| input.split_whitespace().map(ToString::to_string).collect())
 }
 
+/// Build argv using the same tokenization path REPL execution uses.
+#[must_use]
+pub fn repl_argv_from_line(line: &str) -> Vec<String> {
+    let tokenized = parse_shell_tokens(line);
+    std::iter::once("bijux".to_string()).chain(tokenized).collect()
+}
+
 fn needs_multiline_continuation(line: &str) -> bool {
     let trimmed = line.trim_end();
     trimmed.ends_with('\\')
@@ -218,8 +225,7 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
 
             push_history(session, &final_line);
 
-            let tokenized = parse_shell_tokens(&final_line);
-            let argv: Vec<String> = std::iter::once("bijux".to_string()).chain(tokenized).collect();
+            let argv = repl_argv_from_line(&final_line);
 
             let parsed = match parse_intent(&argv) {
                 Ok(value) => value,

@@ -4,6 +4,31 @@ use std::path::PathBuf;
 use crate::execution::execute_repl_line;
 use crate::types::{ReplError, ReplFrame, ReplSession};
 
+fn parse_history_entries(text: &str) -> Option<Vec<String>> {
+    if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {
+        return Some(entries);
+    }
+
+    let mut parsed = Vec::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        // Python prompt-toolkit history format stores one command per line.
+        // We only accept printable command-like lines to avoid treating corrupt
+        // blobs as valid history.
+        if !trimmed
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || " :._/-\"'=".contains(ch))
+        {
+            return None;
+        }
+        parsed.push(trimmed.to_string());
+    }
+    Some(parsed)
+}
+
 /// Configure history persistence behavior.
 pub fn configure_history(
     session: &mut ReplSession,
@@ -29,9 +54,9 @@ pub fn load_history(session: &mut ReplSession) -> Result<(), ReplError> {
     }
 
     let text = fs::read_to_string(path)?;
-    let mut entries: Vec<String> = match serde_json::from_str(&text) {
-        Ok(value) => value,
-        Err(_) => {
+    let mut entries = match parse_history_entries(&text) {
+        Some(value) => value,
+        None => {
             session.last_error = Some("history file is malformed; history reset".to_string());
             Vec::new()
         }
