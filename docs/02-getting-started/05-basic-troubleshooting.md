@@ -1,141 +1,93 @@
 # Basic Troubleshooting
 
-Provide a minimal, high-signal troubleshooting path for setup and first-run failures.
+This guide is for first-week failures where you need fast diagnosis, not generic advice.
 
-This guide is for common failures encountered during first project execution.
+## Failure classes and what to do first
 
-## Explanation
-Troubleshooting sequence:
-1. command discovery works
-2. DAG file validates
-3. dependency IDs are correct
-4. expected artifact paths exist
-5. replay/diff mismatch is classified
+### Invalid DAG
 
-Detailed failure-first checklist:
-1. confirm CLI availability and subcommand help.
-2. validate DAG syntax and dependency references.
-3. execute run and capture run ID and terminal status.
-4. inspect failed node diagnostics.
-5. inspect artifact references and file existence.
-6. replay baseline when reproducibility is in question.
-7. diff baseline vs candidate to isolate scope of drift.
-8. classify issue as config error, runtime error, data drift, or environment drift.
+Symptoms:
 
-Common issues:
-- CLI command not found
-- invalid DAG shape
-- missing dependency node
-- missing artifact output
-- replay mismatch due to context drift
-- scheduler cannot advance because dependencies failed
-- CLI argument misuse (wrong flag or missing required value)
-- environment mismatch (different shell/tool versions or missing binaries)
+- run fails before execution starts,
+- validation reports unknown dependency, duplicate node ID, or cycle.
 
-CLI help discovery:
-- `bijux-dag --help`
-- `bijux-dag run --help`
-- `bijux-dag inspect --help`
+Debug sequence:
 
-Common failure stories and fixes:
-- Invalid DAG:
-  - symptom: run command fails before execution.
-  - cause: malformed JSON, cycle, or unknown dependency target.
-  - action: fix shape/dependencies and re-run validation.
-- Missing artifact:
-  - symptom: inspect artifact shows missing expected output.
-  - cause: producing node failed or wrote to unexpected path.
-  - action: inspect node outcome and command output path.
-- Replay mismatch:
-  - symptom: replay classification reports drift.
-  - cause: graph change, input change, environment/tooling drift, or backend capability gap.
-  - action: use diff classification and inspect changed scope.
-- Scheduler blocked:
-  - symptom: downstream nodes never execute.
-  - cause: upstream dependency failure.
-  - action: debug earliest failed prerequisite node first.
-- CLI usage mistake:
-  - symptom: unknown flag/subcommand error.
-  - cause: command syntax mismatch.
-  - action: use contextual `--help` and correct invocation.
+1. `bijux-dag dag validate --dag <path>`
+2. fix the first structural error only,
+3. re-run validation before trying execution.
 
-When to stop guessing and inspect evidence:
-- if you have run ID and still do not know failure cause, stop editing commands blindly.
-- inspect run and artifact evidence first, then replay/diff for scope classification.
-- treat unclassified failures as evidence gap problems, not assumption-driven fixes.
+### Failed node during run
 
-## Examples
-```bash
-# 1) Command presence and help
-command -v bijux-dag
-bijux-dag --help
+Symptoms:
 
-# 2) Execute and capture run behavior
-bijux-dag run --dag ./examples/first.dag.json
+- run has terminal `failed`,
+- one node is first failing node.
 
-# 3) Inspect run and artifacts
-bijux-dag inspect run --run-id RUN_20260309_001
-bijux-dag inspect artifact --run-id RUN_20260309_001
+Debug sequence:
 
-# 4) Replay and diff diagnostics
-bijux-dag replay --run-id RUN_20260309_001
-bijux-dag diff run --left RUN_20260309_001 --right RUN_20260309_002
-```
+1. `bijux-dag inspect run --run-id <id>`
+2. identify first failed node and reason class,
+3. inspect that node's expected inputs/outputs,
+4. rerun only after cause is identified.
 
-```text
-Invalid DAG example:
-- node "transform" depends_on: ["prepare", "missing_node"]
-Result:
-- validation fails because "missing_node" is undefined
-```
+### Missing artifact
 
-```text
-Environment mismatch example:
-- baseline run used tool version X
-- candidate run used tool version Y
-Result:
-- replay/diff may classify drift even if graph is unchanged
-```
+Symptoms:
 
-```text
-Quick troubleshooting checklist:
-[ ] CLI resolves and help loads
-[ ] DAG validates and dependencies are real
-[ ] run reached terminal state
-[ ] artifact references match expectations
-[ ] replay/diff classification reviewed
-[ ] environment/tooling parity checked
-```
+- downstream node fails with missing input,
+- expected artifact not present in artifact inspect output.
 
-## Guarantees
-- This sequence prioritizes highest-signal checks first.
-- Beginner troubleshooting scope is explicit and practical.
-- Common first-run failure classes include concrete diagnosis and action paths.
+Debug sequence:
 
-## Limitations
-- This guide is not a full incident response playbook.
-- Complex distributed failures are handled in operations docs.
-- Backend-specific low-level diagnostics may require adapter or infrastructure tooling.
+1. `bijux-dag inspect artifact --run-id <id>`
+2. verify producer node outcome in run inspect,
+3. verify output path expectation in graph definition,
+4. compare against known-good run with diff.
 
-## Related
-- `docs/02-getting-started/01-installation.md`
-- `docs/02-getting-started/03-running-a-pipeline.md`
-- `docs/03-user-guide/07-inspect-and-debug.md`
-- `docs/07-operations/01-ci-integration.md`
+### Replay drift
 
-## When to stop guessing and inspect evidence
+Symptoms:
 
-Stop hypothesis-driven debugging when any of these is true:
+- replay completes with `drift` or `incomplete`.
 
-- You cannot explain a mismatch from `validate` output alone.
-- Replay and original outcomes disagree but you have not compared structured diff results.
-- A node failed and you are inferring causes without checking recorded inputs, outputs, and environment markers.
+Debug sequence:
 
-At that point switch to evidence mode:
+1. `bijux-dag replay --run-id <baseline>`
+2. `bijux-dag diff run --left <baseline> --right <replay>`
+3. classify drift scope (graph/run/artifact),
+4. check environment/toolchain differences before blaming graph changes.
 
-1. Run `validate` and capture exact errors.
-2. Run `inspect` on the failed run and node.
-3. Run `diff` against the expected baseline.
-4. Run `replay` only after evidence establishes what should be equivalent.
+### Import mismatch
 
-This prevents circular debugging and shortens time to root cause.
+Symptoms:
+
+- imported evidence cannot be replayed equivalently,
+- lineage or identity comparisons are incomplete.
+
+Debug sequence:
+
+1. validate imported run/artifact identifiers,
+2. verify bundle provenance and integrity,
+3. replay imported baseline,
+4. diff against local known-good run to classify compatibility gap.
+
+## What to inspect first
+
+Use this checklist before changing code or graph files:
+
+- CLI command resolves and `--help` works,
+- DAG validates,
+- run has known terminal status,
+- first failed node is identified,
+- artifact lineage for failure path is visible,
+- replay/diff classification is captured.
+
+## Common wrong assumption
+
+“If I rerun enough times, I will understand the failure.” Reruns without inspect/replay/diff evidence usually hide root causes instead of exposing them.
+
+## Next reading
+
+- Full first-run evidence flow: [Running A Pipeline](../02-getting-started/03-running-a-pipeline.md)
+- Deeper debugging workflows: [Inspect And Debug](../03-user-guide/07-inspect-and-debug.md)
