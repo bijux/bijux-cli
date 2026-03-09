@@ -1,0 +1,49 @@
+{
+  "version": "v1",
+  "commands": [
+    {
+      "name": "bijux_help",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_version",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_doctor",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_status_text",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_status_json_no_pretty",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_status_yaml_pretty",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_plugins_list",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_config_root",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_history_root",
+      "status": "rust-partial"
+    },
+    {
+      "name": "bijux_dev_help",
+      "status": "rust-partial"
+    },
+    {
+      "name": "behavior_plugins_check",
+      "status": "rust-partial"
+    }
+  ]
+}
