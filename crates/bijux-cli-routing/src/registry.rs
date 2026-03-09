@@ -189,6 +189,26 @@ impl RouteRegistry {
         rows
     }
 
+    /// Render namespace tree lines for snapshot testing and diagnostics.
+    #[must_use]
+    pub fn render_command_tree(&self) -> String {
+        let mut roots = BTreeSet::new();
+        for route in &self.built_ins {
+            if let Some(head) = route.split(' ').next() {
+                roots.insert(head.to_string());
+            }
+        }
+        for reserved in &self.reserved {
+            roots.insert(reserved.clone());
+        }
+        let mut out = String::new();
+        for root in roots {
+            out.push_str(&root);
+            out.push('\n');
+        }
+        out
+    }
+
     /// Render built-in route paths for introspection.
     #[must_use]
     pub fn built_in_paths(&self) -> Vec<CommandPath> {

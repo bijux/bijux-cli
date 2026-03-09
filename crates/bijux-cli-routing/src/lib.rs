@@ -14,3 +14,6 @@ pub fn route_marker() -> ContractMarker {
     marker.namespace = format!("{}:routing", marker.namespace);
     marker
 }
+
+#[cfg(test)]
+use proptest as _;

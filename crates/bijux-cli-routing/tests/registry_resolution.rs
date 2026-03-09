@@ -5,6 +5,7 @@ use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
 use clap as _;
+use proptest as _;
 use strsim as _;
 use thiserror as _;
 
@@ -28,10 +29,13 @@ fn resolves_builtins_and_plugins_deterministically() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("alpha").expect("plugin register must succeed");
 
-    let built_in = registry.resolve(&["cli".to_string(), "status".to_string()]).expect("builtin should resolve");
+    let built_in = registry
+        .resolve(&["cli".to_string(), "status".to_string()])
+        .expect("builtin should resolve");
     assert_eq!(built_in, RouteTarget::BuiltIn);
 
-    let plugin = registry.resolve(&["alpha".to_string(), "run".to_string()]).expect("plugin should resolve");
+    let plugin =
+        registry.resolve(&["alpha".to_string(), "run".to_string()]).expect("plugin should resolve");
     assert_eq!(plugin, RouteTarget::Plugin("alpha".to_string()));
 }
 
@@ -40,4 +44,11 @@ fn suggests_typo_namespace() {
     let registry = RouteRegistry::default();
     let suggestion = registry.suggest_namespace("inspekt");
     assert_eq!(suggestion.as_deref(), Some("inspect"));
+}
+
+#[test]
+fn prevents_plugin_shadowing_builtin_root() {
+    let mut registry = RouteRegistry::default();
+    let err = registry.register_plugin_namespace("plugins").expect_err("plugins is reserved");
+    assert_eq!(err, RouteError::Reserved("plugins".to_string()));
 }

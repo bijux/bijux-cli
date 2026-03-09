@@ -1,0 +1,9 @@
+cli
+completion
+dev
+doctor
+help
+inspect
+plugins
+repl
+version
