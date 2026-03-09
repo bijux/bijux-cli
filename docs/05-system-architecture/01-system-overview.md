@@ -88,3 +88,30 @@ graph TD
 - `docs/05-system-architecture/03-execution-engine.md`
 - `docs/05-system-architecture/04-scheduler.md`
 - `docs/05-system-architecture/08-identity-model.md`
+
+## Execution truth loop
+
+The core system loop is:
+
+```text
+graph definition -> run execution -> artifact evidence -> replay/diff/proof -> operator decision
+```
+
+Loop semantics:
+
+- graph definition establishes intended computation semantics.
+- run execution records what actually happened.
+- artifact evidence captures output identity and lineage.
+- replay and diff validate whether behavior remains equivalent or drifted.
+- proof-oriented review determines whether confidence is sufficient for acceptance.
+
+This loop is the architectural center of bijux-dag and should anchor both operator workflows and implementation decisions.
+
+```mermaid
+graph LR
+  A[Graph Definition] --> B[Run Execution]
+  B --> C[Artifact Evidence]
+  C --> D[Replay and Diff]
+  D --> E[Proof and Decision]
+  E --> A
+```
