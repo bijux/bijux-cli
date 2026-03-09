@@ -1,0 +1,15 @@
+[package]
+name = "bijux-cli-plugin"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-core = { path = "../bijux-cli-core" }
+
+[lints]
+workspace = true

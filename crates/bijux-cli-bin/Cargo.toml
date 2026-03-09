@@ -1,0 +1,20 @@
+[package]
+name = "bijux-cli-bin"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "bijux-rs"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-output = { path = "../bijux-cli-output" }
+
+[lints]
+workspace = true

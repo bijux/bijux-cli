@@ -1,0 +1,39 @@
+[workspace]
+members = [
+  "crates/bijux-cli-bin",
+  "crates/bijux-cli-core",
+  "crates/bijux-cli-contracts",
+  "crates/bijux-cli-routing",
+  "crates/bijux-cli-output",
+  "crates/bijux-cli-repl",
+  "crates/bijux-cli-plugin",
+  "crates/bijux-cli-python",
+  "crates/bijux-cli-install",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/bijux/bijux-cli"
+authors = ["Bijan Mousavi"]
+rust-version = "1.90"
+
+[workspace.dependencies]
+anyhow = "1.0.100"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+serde_yaml = "0.9.34"
+thiserror = "2.0.17"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unused_crate_dependencies = "warn"
+
+[workspace.lints.clippy]
+pedantic = "warn"
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
