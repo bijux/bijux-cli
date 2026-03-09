@@ -14,6 +14,7 @@ use bijux_cli_python::{
     ENV_CONFIG_PATH, ENV_HISTORY_PATH,
 };
 use thiserror as _;
+use serde_json as _;
 
 fn temp_dir(label: &str) -> PathBuf {
     let nanos = SystemTime::now()

@@ -2,9 +2,11 @@
 //! Python compatibility bridge surfaces.
 
 use std::collections::{BTreeMap, HashMap};
+use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use bijux_cli_contracts::ContractMarker;
 use thiserror::Error;
@@ -275,6 +277,71 @@ pub fn run_config_migrations(_config_path: &Path, _current_version: u32) -> Resu
     Ok(())
 }
 
+/// Return Rust-backed version string for Python bindings.
+#[must_use]
+pub fn version_api() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// Return command tree introspection payload as JSON.
+#[must_use]
+pub fn command_tree_introspection_api() -> String {
+    serde_json::json!({
+        "root": "bijux",
+        "namespaces": ["cli", "dev", "help", "version", "doctor", "repl", "plugins", "completion", "inspect"],
+    })
+    .to_string()
+}
+
+/// Execute the Rust-backed CLI facade through the canonical runtime binary.
+pub fn execution_facade_api(argv: &[String]) -> Result<String, CompatibilityError> {
+    let binary = env::var("BIJUX_BIN").unwrap_or_else(|_| "bijux-rs".to_string());
+    let output = Command::new(binary).args(argv).output()?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Ok(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+/// Resolve compatibility paths and return JSON payload for Python consumers.
+pub fn config_resolution_api(
+    home_dir: Option<&Path>,
+    cli_overrides: &PathOverrides,
+    env_map: &HashMap<String, String>,
+    file_config: &CompatibilityConfig,
+) -> Result<String, CompatibilityError> {
+    let resolved = discover_compatibility_paths(home_dir, cli_overrides, env_map, file_config)?;
+    Ok(serde_json::json!({
+        "config_file": resolved.config_file,
+        "history_file": resolved.history_file,
+        "plugins_dir": resolved.plugins_dir,
+    })
+    .to_string())
+}
+
+/// Return install-path helpers as JSON.
+#[must_use]
+pub fn install_path_helpers_api(home_dir: &Path) -> String {
+    let defaults = default_compatibility_paths(home_dir);
+    serde_json::json!({
+        "config_file": defaults.config_file,
+        "history_file": defaults.history_file,
+        "plugins_dir": defaults.plugins_dir,
+    })
+    .to_string()
+}
+
+/// Return plugin registry inspection payload as JSON.
+pub fn plugin_registry_inspection_api(registry_path: &Path) -> Result<String, CompatibilityError> {
+    if !registry_path.exists() {
+        return Ok("{\"version\":\"1\",\"plugins\":{}}".to_string());
+    }
+    let text = fs::read_to_string(registry_path)?;
+    Ok(text)
+}
+
 fn select_path(
     cli_value: Option<&PathBuf>,
     env_value: Option<&String>,
@@ -307,6 +374,49 @@ fn normalize_path(path: &Path, home_dir: &Path) -> PathBuf {
     }
 
     home_dir.join(path)
+}
+
+#[cfg(feature = "python-extension")]
+mod python_extension {
+    use super::*;
+    use pyo3::exceptions::PyRuntimeError;
+    use pyo3::prelude::*;
+
+    #[pyfunction]
+    fn version() -> String {
+        version_api()
+    }
+
+    #[pyfunction]
+    fn command_tree_introspection() -> String {
+        command_tree_introspection_api()
+    }
+
+    #[pyfunction]
+    fn execution_facade(args: Vec<String>) -> PyResult<String> {
+        execution_facade_api(&args).map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+
+    #[pyfunction]
+    fn install_paths(home_dir: String) -> String {
+        install_path_helpers_api(Path::new(&home_dir))
+    }
+
+    #[pyfunction]
+    fn plugin_registry_inspection(registry_path: String) -> PyResult<String> {
+        plugin_registry_inspection_api(Path::new(&registry_path))
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+
+    #[pymodule]
+    fn _native(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
+        module.add_function(wrap_pyfunction!(version, module)?)?;
+        module.add_function(wrap_pyfunction!(command_tree_introspection, module)?)?;
+        module.add_function(wrap_pyfunction!(execution_facade, module)?)?;
+        module.add_function(wrap_pyfunction!(install_paths, module)?)?;
+        module.add_function(wrap_pyfunction!(plugin_registry_inspection, module)?)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

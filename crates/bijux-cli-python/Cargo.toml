@@ -7,9 +7,19 @@ repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
 
+[lib]
+name = "bijux_cli_python"
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 thiserror = { workspace = true }
+pyo3 = { version = "0.23.5", optional = true, features = ["extension-module"] }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true
+
+[features]
+default = []
+python-extension = ["dep:pyo3"]
