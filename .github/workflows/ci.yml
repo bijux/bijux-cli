@@ -262,6 +262,14 @@ jobs:
         run: |
           python3 scripts/status/generate_current_rust_state.py
 
+      - name: Runtime unity gate
+        run: |
+          python3 scripts/status/check_runtime_unity.py --enforce
+
+      - name: Binary-vs-bridge parity artifact
+        run: |
+          python3 scripts/parity/generate_binary_bridge_parity.py
+
       - name: Upload parity report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -277,6 +285,24 @@ jobs:
         with:
           name: current-rust-state
           path: artifacts/status/current_rust_state.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload runtime unity report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-unity
+          path: artifacts/status/runtime_unity_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload binary-vs-python-bridge parity report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-bridge-parity
+          path: artifacts/parity/binary_vs_python_bridge_parity_report.json
           if-no-files-found: warn
           retention-days: 14
 
