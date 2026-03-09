@@ -1,0 +1,14 @@
+Usage: bijux-rs history [OPTIONS]
+
+Options:
+  -f, --format <FORMAT>     
+  -l, --limit <limit>       
+  -F, --filter <filter>     
+  -q, --quiet               
+      --log-level <LEVEL>   
+      --sort <sort>         
+      --color <MODE>        
+      --pretty              
+      --no-pretty           
+      --config-path <PATH>  
+  -h, --help                Print help
