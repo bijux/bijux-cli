@@ -1,124 +1,46 @@
 # Run History
 
-Describe how run history should be used to track behavior over time and support replay/diff-driven diagnosis.
+Run history is where you decide whether a failure is new, recurring, or environmental.
 
-Run history is the operational bridge between one-off execution and long-term workflow reliability.
+## How to read history, not just list it
 
-## Explanation
-Run history captures ordered run records for a DAG or operating scope.
+When scanning history, look for patterns, not single rows:
 
-What to inspect first:
-- run ID sequence
-- terminal status trend
-- recurring failure points
-- duration and stability drift
+- first run where behavior changed,
+- whether the same node or artifact path keeps drifting,
+- whether failures cluster around environment/toolchain changes.
 
-Run storage model (user-level view):
-- each run persists execution context and outcome metadata
-- historical runs remain reference points for comparison
-- stable run identity enables longitudinal analysis
+This turns run history into a diagnostic tool, not a timeline dump.
 
-Run indexing model (user-level view):
-- run records are retrievable by run ID
-- ordering supports chronological comparison and triage
-- recent and baseline runs should be easy to locate for replay and diff
+## Regression investigation example
 
-Run lookup patterns:
-- exact lookup by run ID for targeted diagnosis.
-- latest-N lookup for operational trend review.
-- baseline lookup (known-good run) for replay/diff anchor.
+Workflow:
 
-Indexing expectations:
-- stable ordering by creation or start time.
-- fast direct access by run ID.
-- preserved linkage to graph and artifact references.
-
-Canonical reference boundaries:
-- this guide is the practical run-history workflow.
-- canonical run semantics live in `docs/06-specification/02-run-model.md`.
-- canonical replay and diff semantics live in `docs/06-specification/07-replay-semantics.md` and `docs/06-specification/08-diff-semantics.md`.
-
-Practical usage pattern:
-1. identify the latest failing run
-2. pick a known-good baseline run
-3. replay baseline or failing run as needed
-4. run diff to classify divergence
-
-## Examples
-```bash
-# List recent runs
-bijux-dag run history --limit 20
-
-# Inspect a specific run
-bijux-dag inspect run --run-id RUN_20260309_010
-
-# Lookup baseline then compare
-bijux-dag inspect run --run-id RUN_20260309_007
-
-# Compare latest failing run against baseline
-bijux-dag diff run --left RUN_20260309_007 --right RUN_20260309_010
-```
-
-```text
-Run history inspection example:
-- RUN_007: succeeded (baseline)
-- RUN_008: succeeded
-- RUN_009: failed (node transform timeout)
-- RUN_010: failed (node transform timeout)
-Interpretation:
-- recurring failure at same node suggests deterministic issue, not random flake.
-```
-
-```text
-Run comparison example:
-left: RUN_007 (known good)
-right: RUN_010 (failing)
-diff scope:
-- graph: equivalent
-- run: drift at node transform
-- artifact: missing output from transform
-```
-
-## Guarantees
-- Run history is treated as an active operational surface.
-- Guidance here aligns with replay and diff workflows.
-- Lookup, indexing, inspection, and comparison paths are explicit.
-
-## Limitations
-- This guide does not define persistence engine internals.
-- Retention and archival policy is deployment-dependent.
-
-## Related
-- `docs/03-user-guide/05-replay.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/03-user-guide/07-inspect-and-debug.md`
-- `docs/06-specification/02-run-model.md`
-
-## Ancestry and history after replay or import
-
-Run history should preserve provenance class so comparisons remain honest:
-
-- Original run: native execution in the local environment.
-- Replayed run: newly executed run that references a prior run as replay baseline.
-- Imported run: run materialized from bundle data, with external provenance.
-
-Do not treat these classes as interchangeable when forming baselines. Imported evidence can be valid, but its trust boundary is different from locally produced evidence.
-
-## Regression investigation workflow using run history
-
-Use history as the backbone of regression analysis:
-
-1. Identify the newest failing run.
-2. Select the latest known-good baseline before failure started.
-3. Confirm whether failure persists across consecutive runs.
-4. Replay the failing context to separate deterministic defects from environment drift.
-5. Run diff between baseline and failing run to classify impact.
-
-Example workflow:
+1. list recent runs and identify latest failing run,
+2. select the last known-good baseline,
+3. inspect both runs,
+4. replay failing context if needed,
+5. diff baseline vs failing run.
 
 ```bash
 bijux-dag run history --limit 30
 bijux-dag inspect run --run-id RUN_20260309_211
+bijux-dag inspect run --run-id RUN_20260309_204
 bijux-dag replay --run-id RUN_20260309_211
 bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_211
 ```
+
+Interpretation:
+
+- recurring drift at same node suggests deterministic defect,
+- intermittent drift correlated with environment changes suggests bounded non-equivalence.
+
+## Ancestry context for practical use
+
+Treat original, replayed, and imported runs as different evidence classes when selecting baselines. Mixing them without provenance awareness weakens conclusions.
+
+## Next reading
+
+- Replay classification meanings: [Replay](../03-user-guide/05-replay.md)
+- Diff interpretation strategy: [Diff](../03-user-guide/06-diff.md)
+- Formal run semantics: [Run Model Specification](../06-specification/02-run-model.md)
