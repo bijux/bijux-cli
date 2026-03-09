@@ -1,74 +1,58 @@
 # Mission
 
-The mission of bijux-dag is narrow by design: make DAG execution behavior provable through deterministic evidence, not inferred through best-effort logs.
+Build and maintain a DAG execution system where behavior claims are evidence-backed, bounded, and reproducible.
 
-## Explanation
-Mission statement:
-Build a deterministic, inspectable, and portable DAG execution system that lets teams explain workflow behavior with evidence instead of assumption.
+## What this mission forces
 
-Operationally, the mission means:
-- execution behavior should be explicit rather than implicit
-- run outcomes should be auditable through identity and provenance
-- replay and diff should be routine operational tools
-- documentation should prioritize truthful guarantees over broad claims
+This is intentionally a hard technical mission, not a values slogan. It constrains product and documentation decisions:
 
-Design constraints this mission imposes:
-- if a feature weakens replay/diff trustworthiness, it must be redesigned or rejected.
-- if a feature expands scope but weakens guarantees, scope expansion is rejected.
-- if behavior cannot be bounded in docs/spec/tests, it is not release-grade.
+- if behavior cannot be classified through replay/diff evidence, it is not complete;
+- if a feature expands scope but weakens guarantees, scope loses;
+- if a claim cannot be bounded and tested, it is documentation noise.
 
-Long-term design goals:
-- make run-to-artifact lineage reliable enough for incident diagnosis and release decisions.
-- make replay and diff a default quality loop in development and operations.
-- keep user-facing guarantees narrow, testable, and durable across repository evolution.
-- preserve portability through explicit backend capability contracts, not implicit promises.
+## Design implications
 
-The mission excludes common failure modes in workflow platforms:
-- opaque "best effort" semantics without contract boundaries
-- feature sprawl that increases uncertainty instead of reliability
-- documentation that mixes guarantees with speculative future designs
+The mission directly requires:
 
-Explicit non-goals:
-- becoming a general-purpose orchestration platform with every scheduling policy variant.
-- claiming universal cross-environment equivalence without capability and evidence checks.
-- optimizing for maximum feature count at the expense of diagnosability.
+- identity-backed graph/run/artifact model,
+- explicit run evidence surfaces,
+- replay and diff as first-class control loops,
+- narrow backend support language with declared capability envelopes.
 
-This mission guides documentation quality directly:
-- user docs answer practical operational questions
-- architecture docs explain current system boundaries
-- specification docs define exact guarantees and limitations
+This is why bijux-dag chooses deterministic evidence depth over orchestration breadth.
 
-Why deterministic execution matters:
-- release confidence: teams can compare candidate runs against known baselines.
-- incident response: failures can be traced using run and artifact identities.
-- governance: contract language can be anchored to repeatable behavior, not anecdotes.
+## Non-goals
 
-## Examples
-```text
-Mission test for a proposed feature:
-1. Does it improve deterministic control?
-2. Does it improve inspectability?
-3. Does it preserve or improve portability boundaries?
-4. Can the resulting behavior be documented as a concrete guarantee?
-```
+- becoming a general orchestration platform for every scheduling policy and deployment topology,
+- making universal portability claims across unsupported backend capability sets,
+- accepting “best effort” semantics where contract-level behavior is required.
 
-```text
-Mission rejection example:
-- proposal: add backend-specific behavior that bypasses normalized outcome classification
-- result: reject or redesign because inspectability and comparability would degrade
-```
+## Decision filter
 
-## Guarantees
-- The mission is stable and decision-driving.
-- Mission language is technical and measurable.
-- Documents in this tree are expected to align with this mission.
+A proposal is mission-aligned only if it improves at least one of:
 
-## Limitations
-- The mission is not a full product roadmap.
-- The mission does not promise immediate support for every backend or workflow pattern.
+- evidence quality,
+- classification reliability,
+- bounded portability clarity,
+- operator decision confidence.
 
-## Related
-- `docs/01-introduction/01-what-is-bijux-dag.md`
-- `docs/01-introduction/03-design-principles.md`
-- `docs/05-system-architecture/01-system-overview.md`
-- `docs/07-operations/05-backend-support.md`
+If it improves none, or weakens one of these, it should not ship.
+
+## Guarantees you can verify
+
+- Mission language in this repository is technical and scope-bounding, not roadmap marketing.
+- Core docs can be traced to this mission through explicit replay/diff/identity boundaries.
+- Feature justification can be evaluated against the decision filter above.
+
+## Explicit limits
+
+- The mission does not define implementation details; specs do.
+- The mission does not promise support for every backend family.
+- The mission does not replace maintainer judgment when principles conflict; it constrains that judgment.
+
+## Next reading
+
+- Problem framing and system intent: [What Is Bijux Dag](../01-introduction/01-what-is-bijux-dag.md)
+- Engineering tradeoffs behind this mission: [Design Principles](../01-introduction/03-design-principles.md)
+- Architectural realization of this mission: [System Overview](../05-system-architecture/01-system-overview.md)
+- Operational support boundaries: [Backend Support](../07-operations/05-backend-support.md)

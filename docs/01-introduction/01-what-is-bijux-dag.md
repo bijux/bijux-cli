@@ -1,115 +1,79 @@
 # What Is Bijux Dag
 
-Pipeline systems often fail the same way: teams can see that outputs changed, but cannot prove why they changed. Bijux-dag exists to make that question answerable through deterministic execution evidence, replay, and diff.
+Most pipeline systems fail at the same moment: output changed, a release is blocked, and nobody can prove whether the cause was graph definition drift, runtime behavior drift, or output drift. Bijux-dag exists to make that question mechanically answerable.
 
-## Explanation
-Bijux-dag is a deterministic workflow runtime and contract-driven control surface for DAG computation. It is built for teams that need to explain run behavior precisely, compare outcomes reliably, and move workflows across environments without losing attribution.
+## The problem bijux-dag is built to solve
 
-The practical shorthand "Git for computation graphs" means:
-- graph definitions are explicit, inspectable, and comparable
-- run outcomes can be traced to defined inputs and graph structure
-- replay and diff are first-class system operations, not afterthought scripts
+Typical workflow stacks are good at triggering jobs and collecting logs, but weak at producing comparable execution evidence across time. Teams then debug by inference, not by contract:
 
-In concrete terms:
-- DAG definition in bijux-dag plays the role of a tracked "state description"
-- run identity and artifact identity play the role of stable references
-- replay and diff provide "what changed" and "why it changed" workflows
+- they know a run failed, but not whether the definition changed;
+- they know an artifact changed, but not whether it was expected;
+- they can rerun, but cannot classify equivalence versus bounded divergence reliably.
 
-This is intentionally not a scheduler megaplatform. Bijux-dag focuses on deterministic control loops around execution rather than broad orchestration feature breadth.
+Bijux-dag narrows scope to fix that exact failure mode: deterministic graph/run/artifact identity, explicit run evidence, replay classification, and diff classification.
 
-Modern pipeline operations often degrade because they are opaque and drift-prone:
-- hidden mutable state changes behavior over time
-- retries and reruns are hard to reason about
-- output differences are visible, but causes are unclear
-- operations teams cannot confidently answer "what changed and why"
+## What bijux-dag is
 
-Bijux-dag addresses this with deterministic pipeline control:
-- explicit graph and execution semantics
-- identity-backed run and artifact modeling
-- replay and diff as core workflow primitives
-- inspect surfaces for debugging and verification
+Bijux-dag is a DAG execution and evidence system focused on deterministic operational control. It is not an orchestration platform trying to own every scheduling topology and integration surface.
 
-How this differs from orchestration-first tools:
-- orchestration-first tools optimize breadth of scheduling and integrations; bijux-dag optimizes depth of deterministic evidence and comparability.
-- orchestration-first tools often treat replay/diff as auxiliary workflows; bijux-dag treats them as primary control loops.
-- orchestration-first tools prioritize broad platform behavior; bijux-dag narrows scope to make runtime guarantees sharper and testable.
+Design emphasis:
 
-The difference is emphasis, not value judgment. Bijux-dag chooses narrower scope to make guarantees sharper.
+- explicit graph semantics over implicit runtime behavior,
+- identity-backed attribution over best-effort log narratives,
+- replay/diff as normal operational controls rather than optional diagnostics.
 
-Determinism is central because it converts workflow operation from guesswork to controlled analysis.
-Deterministic behavior improves:
-- repeatability: the same inputs and graph produce stable behavior
-- debuggability: divergences are attributable, not mysterious
-- trust: guarantees can be documented, tested, and verified
+## “Git for computation graphs”: useful mapping and hard limits
 
-Execution mental model:
-1. define a DAG with explicit node dependencies.
-2. execute a run that materializes run evidence and artifacts.
-3. inspect outputs and state.
-4. replay from known context.
-5. diff baseline and candidate evidence to classify equivalence or drift.
+| Git concept | Bijux-dag analogue | Why this helps |
+| --- | --- | --- |
+| commit identity | graph/run/artifact identity | stable reference for comparison |
+| diff | graph/run/artifact diff | scoped change classification |
+| checkout/verify workflows | replay workflows | evidence-based equivalence checks |
 
-## Examples
-```mermaid
-graph LR
-  A[DAG Definition] --> B[Run Execution]
-  B --> C[Run Evidence]
-  B --> D[Artifacts]
-  C --> E[Replay]
-  D --> E
-  E --> F[Diff Classification]
+Where the analogy stops: bijux-dag does not try to mirror Git’s storage model, branching model, or command semantics. The phrase is an intuition shortcut, not a compatibility claim.
+
+## Full lifecycle walkthrough
+
+```text
+graph definition -> run execution -> artifact lineage -> replay classification -> diff classification -> release decision
 ```
+
+Worked operator path:
 
 ```bash
-# Execute a pipeline
-bijux-dag run --dag ./examples/basic.dag.json
-
-# Validate behavior with replay
-bijux-dag replay --run-id RUN_20260309_001
-
-# Classify differences between runs
-bijux-dag diff run --left RUN_20260309_001 --right RUN_20260309_002
+bijux-dag run --dag ./pipelines/orders.dag.json
+bijux-dag inspect run --run-id RUN_20260309_220
+bijux-dag inspect artifact --artifact-id ART_20260309_902
+bijux-dag replay --run-id RUN_20260309_220
+bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_220
 ```
 
-```text
-Artifact lineage example:
-graph_id: g_44a...
-run_id: r_9f1...
-node_id: test
-artifact_id: a_712...
-```
+Interpretation flow:
 
-```text
-Replay outcome example:
-baseline run: r_9f1...
-candidate replay: r_9f2...
-classification: equivalent
-```
+1. `run` creates attributable execution evidence.
+2. `inspect` confirms failure/success location and output lineage.
+3. `replay` answers whether behavior reoccurs under replay semantics.
+4. `diff` classifies what changed and where.
 
-```text
-Diff outcome example:
-graph: equivalent
-run: drift (reason: NODE_EXIT_NONZERO:test)
-artifact: drift (reason: ARTIFACT_HASH_MISMATCH)
-```
+## Guarantees you can test
 
-## Guarantees
-- Bijux-dag treats replay, diff, and inspect as core product behavior.
-- Deterministic control is a system objective, not optional guidance.
-- The product framing in this document is aligned to runtime and specification sections.
+- A run can be referenced by run identity and inspected without re-executing the graph.
+- Replay results produce explicit classifications, not only free-form logs.
+- Diff results are scope-specific (`graph`, `run`, `artifact`) and do not collapse all change into one bucket.
 
-## Common Wrong Assumptions
-- "Deterministic" does not mean identical wall-clock timing on every backend.
-- "Git for computation graphs" does not imply feature parity with Git commands or storage model.
-- A successful run does not prove cross-environment portability without replay/diff validation.
+## Non-goals and limits
 
-## Limitations
-- "Git for computation graphs" is a conceptual analogy, not feature parity with Git.
-- Determinism does not imply universal backend or environment equivalence.
-- This document does not define low-level contracts; those are covered in specification docs.
+- Bijux-dag does not guarantee universal backend equivalence.
+- Deterministic classification does not imply identical wall-clock timing.
+- Successful transport of bundles does not, by itself, prove portability equivalence.
 
-## Related
-- `docs/01-introduction/02-mission.md`
-- `docs/01-introduction/03-design-principles.md`
-- `docs/01-introduction/04-core-concepts.md`
-- `docs/06-specification/01-dag-model.md`
+## Common wrong assumption
+
+“Deterministic” means “everything is byte-for-byte identical everywhere.” In bijux-dag, determinism claims are bounded by declared identity policy and backend capability envelope.
+
+## Next reading
+
+- Mission and scope constraints: [Mission](../01-introduction/02-mission.md)
+- Tradeoff rules that drive design: [Design Principles](../01-introduction/03-design-principles.md)
+- Object model and relationships: [Core Concepts](../01-introduction/04-core-concepts.md)
+- Normative DAG contract: [DAG Model Specification](../06-specification/01-dag-model.md)
