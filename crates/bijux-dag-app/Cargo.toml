@@ -12,9 +12,9 @@ workspace = true
 clap = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
-bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core" }
-bijux_dag_runtime = { package = "bijux-dag-runtime", path = "../bijux-dag-runtime" }
-bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts" }
+bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.1.0" }
+bijux_dag_runtime = { package = "bijux-dag-runtime", path = "../bijux-dag-runtime", version = "0.1.0" }
+bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.1.0" }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
