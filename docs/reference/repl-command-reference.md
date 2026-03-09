@@ -1,0 +1,16 @@
+# REPL Command Reference
+
+The reference below is generated from the stable REPL command surface:
+
+```
+REPL Commands
+status
+doctor
+version
+:help <command>
+:set trace on|off
+:set quiet on|off
+:set format json|yaml|text
+:plugin reload
+:exit
+```
