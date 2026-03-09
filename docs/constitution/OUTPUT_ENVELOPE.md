@@ -22,6 +22,9 @@ This document governs JSON and YAML success payload contracts.
 ## Failure Modes
 - If requested format cannot be emitted, return an encoding/serialization error.
 
+## Schema Artifact
+- JSON Schema (v1): `docs/constitution/schemas/output-envelope-v1.schema.json`
+
 ## Design Rationale
 - Stable envelopes decouple script contracts from text presentation.
 
