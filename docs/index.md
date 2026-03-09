@@ -6,6 +6,7 @@ High-value documents only. Everything else is supporting detail.
 - [Honest status](HONEST_STATUS.md)
 - [Known gaps](KNOWN_GAPS.md)
 - [Stability and breakage](STABILITY_AND_BREAKAGE.md)
+- [Plugin state](plugin_state.md)
 
 ## Core Law
 - [Architecture index](architecture/index.md)

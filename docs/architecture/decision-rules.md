@@ -34,3 +34,6 @@ No vanity test counts. Quality claims require evidence from failure-path, exit-c
 
 ## Parity Report Freeze
 Every release candidate must include command-level parity matrix and diff artifacts.
+
+## Plugin V1 Freeze
+Plugin v1 behavior is frozen before introducing new plugin command complexity beyond parity-backed scope.
