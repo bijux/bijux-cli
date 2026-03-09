@@ -1,123 +1,47 @@
 # Portability
 
-Define portability architecture design, guarantees, and non-goals.
+Portability means transferable evidence with verifiable interpretation, not blanket cross-backend parity.
 
-Portability determines how workflow context and outputs move across environments while preserving trust.
+## Portability surfaces
 
-## Explanation
-Portability architecture model:
-- bundle export packages transferable workflow context
-- bundle import restores that context in a target environment
-- replay and diff validate behavioral equivalence or bounded divergence
+- portable state: run/artifact identity context that can be imported and inspected,
+- portable evidence: lineage and diagnostics sufficient for replay/diff interpretation,
+- portable bundles: transport artifact that carries required context.
 
-Supported execution environment model:
-- source and target environments are compared through capability descriptors, not marketing labels.
-- portability acceptance depends on shared capability envelope across adapters.
-- portability decisions are evidence-backed (replay + diff + identity consistency), not transfer-success backed.
+## Bounded portability model
 
-Bundle portability design:
-- portability is identity-aware and evidence-aware
-- portability verification requires replay/diff, not assumption
+Portability is conditional on:
 
-Backend equivalence boundaries:
-- supported adapters define the meaningful portability envelope
-- unsupported adapter features are explicit non-equivalence zones
+- shared capability envelope between source and target backends,
+- compatible identity/canonicalization policy versions,
+- required evidence availability after import.
 
-Architecture tradeoff:
-- strict semantic preservation is prioritized over broad but ambiguous compatibility claims
+Without those conditions, portability degrades from strict-equivalent to bounded or non-portable.
 
-Additional tradeoffs:
-- tighter portability guarantees reduce number of environments that can claim equivalence.
-- broader compatibility claims increase ambiguity and reduce diagnostic confidence.
-- strict validation increases operational effort but prevents false confidence.
+## Bundle transfer versus equivalence
 
-System non-goals (deliberate omissions):
-- universal backend parity regardless of support boundaries
-- performance identity across heterogeneous runtime environments
-- speculative portability claims without validation workflows
+- bundle export/import proves transport,
+- replay/diff proves behavioral class,
+- operator policy decides acceptance.
 
-Architecture-to-implementation alignment checks:
-- portability docs must align with active backend support tiers in operations docs.
-- portability claims must map to replay/diff classification vocabulary in specification docs.
-- no architecture statement should assume capabilities not declared by adapter contracts.
+Transport success alone is not a portability guarantee.
 
-## Examples
-```text
-Portability validation flow:
-source run -> bundle export -> target import -> replay -> diff -> release decision
-```
+## Failure and downgrade interpretation
 
-```text
-Supported environment check example:
-source adapter: local-shell (stable)
-target adapter: local-shell (stable)
-shared capability envelope: full for this workflow
-portability decision path: replay + diff required before acceptance
-```
+Typical downgrade triggers:
 
-```text
-Bounded mismatch example:
-source adapter supports timeout enforcement
-target adapter lacks timeout enforcement
-result: portability classified as bounded non-equivalence for timeout-sensitive workloads
-```
+- capability gap in target backend,
+- missing artifact evidence required for comparison,
+- incompatible policy versions.
 
-```mermaid
-graph LR
-  A[Source Environment] -->|Export Bundle| B[Bundle Artifact]
-  B -->|Import| C[Target Environment]
-  C --> D[Replay]
-  D --> E[Diff]
-  E --> F[Portability Decision]
-```
+Interpretation rule:
 
-```mermaid
-graph TD
-  A[Source Capability Descriptor] --> B[Shared Capability Envelope]
-  C[Target Capability Descriptor] --> B
-  B --> D[Bundle Import]
-  D --> E[Replay and Diff]
-  E --> F[Equivalent or Bounded Drift]
-```
+- strict equivalence only with full comparable evidence,
+- bounded-equivalent when limits are explicit and accepted,
+- non-portable when comparison trust cannot be established.
 
-## Guarantees
-- Portability is documented as a validated workflow, not a blanket promise.
-- Backend support boundaries are explicit architecture constraints.
-- Supported-environment decision criteria are explicit and evidence-based.
+## Next reading
 
-## Limitations
-- Portability does not guarantee identical timing or resource behavior.
-- Deep bundle schema internals belong to specification docs.
-- Portability acceptance can change when capability descriptors or support tiers change.
-
-## Related
-- `docs/05-system-architecture/05-adapters.md`
-- `docs/03-user-guide/08-bundles-and-portability.md`
-- `docs/07-operations/05-backend-support.md`
-- `docs/06-specification/03-artifact-model.md`
-
-## Portability classes
-
-Portability should be classified explicitly:
-
-- portable: replay and diff support equivalence decisions within declared support envelope,
-- conditionally portable: transferable with bounded-equivalence limits,
-- non-portable: capability gaps prevent trustworthy equivalence classification.
-
-## Bundle portability versus backend equivalence
-
-Bundle transport proves context transfer; it does not prove backend equivalence.
-
-- bundle success + replay/diff equivalence -> accepted portability claim,
-- bundle success + replay/diff drift -> portability claim rejected or downgraded,
-- bundle success + incomplete replay -> bounded claim only.
-
-## Portability failure and downgrade cases
-
-Typical downgrade/failure triggers:
-
-- missing adapter capability required by the workflow,
-- incompatible canonicalization/hash policy versions,
-- target environment constraints that block faithful execution.
-
-When these occur, classify outcome as bounded or non-portable rather than forcing an equivalence conclusion.
+- User-facing portability workflow: [Bundles And Portability](../03-user-guide/08-bundles-and-portability.md)
+- Backend support classes: [Backend Support](../07-operations/05-backend-support.md)
+- Artifact portability contract: [Artifact Model Specification](../06-specification/03-artifact-model.md)
