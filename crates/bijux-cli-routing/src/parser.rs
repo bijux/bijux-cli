@@ -158,22 +158,42 @@ pub fn root_command() -> Command {
         .subcommand(plugins_group.clone());
 
     let dev_cli_group = Command::new("cli")
+        .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("registry"))
+        .subcommand(Command::new("parity"))
+        .subcommand(Command::new("docs"))
+        .subcommand(Command::new("status"))
+        .subcommand(Command::new("scripts-audit"))
+        .subcommand(Command::new("snapshots-audit"))
+        .subcommand(Command::new("fixture-audit"))
+        .subcommand(Command::new("crate-health"))
+        .subcommand(Command::new("package-health"))
         .subcommand(Command::new("env"))
         .subcommand(Command::new("doctor"))
         .subcommand(Command::new("contracts"))
-        .subcommand(Command::new("runtime-identity"));
+        .subcommand(Command::new("runtime-identity"))
+        .subcommand(Command::new("docs-prune-plan"));
 
     let dev_group = Command::new("dev")
         .subcommand(dev_cli_group.clone())
         // Legacy path support normalized later to `dev cli ...`.
         .subcommand(Command::new("routes").hide(true))
+        .subcommand(Command::new("inventory").hide(true))
         .subcommand(Command::new("registry").hide(true))
+        .subcommand(Command::new("parity").hide(true))
+        .subcommand(Command::new("docs").hide(true))
+        .subcommand(Command::new("status").hide(true))
+        .subcommand(Command::new("scripts-audit").hide(true))
+        .subcommand(Command::new("snapshots-audit").hide(true))
+        .subcommand(Command::new("fixture-audit").hide(true))
+        .subcommand(Command::new("crate-health").hide(true))
+        .subcommand(Command::new("package-health").hide(true))
         .subcommand(Command::new("env").hide(true))
         .subcommand(Command::new("doctor").hide(true))
         .subcommand(Command::new("contracts").hide(true))
-        .subcommand(Command::new("runtime-identity").hide(true));
+        .subcommand(Command::new("runtime-identity").hide(true))
+        .subcommand(Command::new("docs-prune-plan").hide(true));
 
     Command::new("bijux")
         .args([
@@ -253,12 +273,22 @@ fn normalize_path(path: &[String]) -> Vec<String> {
         [a, b]
             if a == "dev"
                 && [
+                    "inventory",
                     "routes",
                     "registry",
+                    "parity",
+                    "docs",
+                    "status",
+                    "scripts-audit",
+                    "snapshots-audit",
+                    "fixture-audit",
+                    "crate-health",
+                    "package-health",
                     "env",
                     "doctor",
                     "contracts",
                     "runtime-identity",
+                    "docs-prune-plan",
                 ]
                 .contains(&b.as_str()) =>
         {

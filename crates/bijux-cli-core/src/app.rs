@@ -1,6 +1,6 @@
 //! Top-level application entrypoint and route execution.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -58,6 +58,153 @@ fn env_map() -> HashMap<String, String> {
         .iter()
         .filter_map(|key| env::var(key).ok().map(|value| ((*key).to_string(), value)))
         .collect()
+}
+
+fn workspace_root() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .canonicalize()
+        .unwrap_or_else(|_| Path::new(".").to_path_buf())
+}
+
+fn collect_files(base: &Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    if !base.exists() {
+        return out;
+    }
+    let mut stack = vec![base.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        if let Ok(entries) = fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    stack.push(path);
+                } else if path.is_file() {
+                    out.push(path);
+                }
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
+fn rel_to_root(path: &Path, root: &Path) -> String {
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+fn classify_script(path: &str) -> &'static str {
+    if path.starts_with("scripts/status/") || path.starts_with("scripts/parity/") {
+        return "move-to-dev-cli";
+    }
+    if path.starts_with("scripts/git-hooks/") || path.starts_with("scripts/docs_builder/") {
+        return "keep-external";
+    }
+    if path == "scripts/__init__.py" {
+        return "delete";
+    }
+    "wrap-with-dev-cli"
+}
+
+fn parse_make_targets(path: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    let Ok(text) = fs::read_to_string(path) else {
+        return out;
+    };
+    for raw in text.lines() {
+        if raw.starts_with('\t') || raw.starts_with('#') || raw.trim().is_empty() {
+            continue;
+        }
+        let Some((left, _)) = raw.split_once(':') else {
+            continue;
+        };
+        let target = left.trim();
+        if target.is_empty() || target.contains(' ') || target.contains('=') || target.starts_with('.') {
+            continue;
+        }
+        out.push(target.to_string());
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+fn classify_make_target(target: &str) -> &'static str {
+    if target.starts_with("docs") || target.starts_with("api") || target.starts_with("test") {
+        "wrap-with-dev-cli"
+    } else if target.starts_with("publish") || target.starts_with("sbom") || target.starts_with("security") {
+        "keep"
+    } else {
+        "wrap-with-dev-cli"
+    }
+}
+
+fn dev_cli_inventory_payload() -> Value {
+    let root = workspace_root();
+    let script_files = collect_files(&root.join("scripts"));
+    let scripts: Vec<Value> = script_files
+        .iter()
+        .map(|p| {
+            let rel = rel_to_root(p, &root);
+            json!({
+                "path": rel,
+                "classification": classify_script(&rel),
+            })
+        })
+        .collect();
+
+    let mut makefiles = Vec::new();
+    for mk in collect_files(&root.join("makefiles")) {
+        let rel = rel_to_root(&mk, &root);
+        let targets: Vec<Value> = parse_make_targets(&mk)
+            .into_iter()
+            .map(|target| {
+                json!({
+                    "target": target,
+                    "classification": classify_make_target(&target),
+                })
+            })
+            .collect();
+        makefiles.push(json!({
+            "file": rel,
+            "targets": targets,
+        }));
+    }
+
+    let script_summary = scripts.iter().fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
+        let key = item
+            .get("classification")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string();
+        *acc.entry(key).or_insert(0) += 1;
+        acc
+    });
+
+    json!({
+        "scripts": scripts,
+        "makefiles": makefiles,
+        "summary": {
+            "script_classification_counts": script_summary,
+        },
+        "maintainer_script_replacements": [
+            {"from": "scripts/status/generate_current_rust_state.py", "to": "bijux dev cli status"},
+            {"from": "scripts/status/generate_crate_boundary_metrics.py", "to": "bijux dev cli crate-health"},
+            {"from": "scripts/parity/run_rust_python_parity.py", "to": "bijux dev cli parity"},
+        ],
+        "rule": "new maintainer automation defaults to bijux dev cli commands",
+    })
+}
+
+fn read_json_if_exists(path: &Path) -> Value {
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_else(|| json!({}))
 }
 
 fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {
@@ -484,6 +631,9 @@ fn route_response(
                 "aliases": aliases,
             })
         }
+        [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => {
+            dev_cli_inventory_payload()
+        }
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
             let registry_rows = registry.route_tree();
             let mut ownership: std::collections::BTreeMap<String, Vec<String>> =
@@ -498,6 +648,93 @@ fn route_response(
                 "registry": registry_rows,
                 "ownership": ownership,
                 "precedence": ["reserved", "plugin"],
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "parity" => {
+            let root = workspace_root();
+            let parity_report = read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
+            let bridge_parity =
+                read_json_if_exists(&root.join("artifacts/parity/binary_vs_python_bridge_parity_report.json"));
+            json!({
+                "rust_python": parity_report,
+                "binary_bridge": bridge_parity,
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "docs" => {
+            let root = workspace_root();
+            let docs_files: Vec<String> = collect_files(&root.join("docs"))
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            json!({
+                "docs_count": docs_files.len(),
+                "docs": docs_files,
+                "index": "docs/INDEX.md",
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "status" => {
+            let root = workspace_root();
+            let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
+            let parity = read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
+            json!({
+                "current_rust_state": state,
+                "parity": parity,
+                "inventory": dev_cli_inventory_payload(),
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "scripts-audit" => {
+            let inventory = dev_cli_inventory_payload();
+            json!({
+                "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
+                "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "snapshots-audit" => {
+            let root = workspace_root();
+            let snapshots: Vec<String> = collect_files(&root.join("crates"))
+                .into_iter()
+                .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            json!({
+                "snapshot_count": snapshots.len(),
+                "snapshots": snapshots,
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "fixture-audit" => {
+            let root = workspace_root();
+            let parity_files: Vec<String> = collect_files(&root.join("artifacts/parity"))
+                .into_iter()
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            let snapshots: Vec<String> = collect_files(&root.join("crates"))
+                .into_iter()
+                .filter(|p| p.to_string_lossy().contains("tests/snapshots/"))
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            json!({
+                "parity_fixtures": parity_files,
+                "snapshot_fixtures": snapshots,
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "crate-health" => {
+            let root = workspace_root();
+            let metrics = read_json_if_exists(&root.join("artifacts/status/crate_boundary_metrics.json"));
+            let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
+            json!({
+                "crate_metrics": metrics,
+                "public_api_counts": state.get("crates_public_api_counts").cloned().unwrap_or_else(|| json!([])),
+                "dependency_edges": state.get("crate_dependency_edges").cloned().unwrap_or_else(|| json!([])),
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
+            let root = workspace_root();
+            let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
+            json!({
+                "package_entrypoints": state.get("package_entrypoints").cloned().unwrap_or_else(|| json!([])),
+                "runtime_identity_rules": state.get("runtime_identity_rules").cloned().unwrap_or_else(|| json!({})),
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "env" => {
@@ -556,6 +793,24 @@ fn route_response(
                     "paths": path_issues,
                     "plugins": plugin_issues,
                 },
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "docs-prune-plan" => {
+            let root = workspace_root();
+            let docs_files: Vec<String> = collect_files(&root.join("docs"))
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            json!({
+                "docs_count": docs_files.len(),
+                "target_cap": 60,
+                "actions": [
+                    "merge overlapping architecture docs",
+                    "merge overlapping compatibility docs",
+                    "move low-value prose detail into generated JSON artifacts",
+                    "freeze docs rule: every doc explains law or change",
+                ],
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
@@ -679,12 +934,22 @@ fn is_known_route(path: &[String]) -> bool {
         [a, b, c]
             if a == "dev"
                 && b == "cli"
-                && (c == "routes"
+                && (c == "inventory"
+                    || c == "routes"
                     || c == "registry"
+                    || c == "parity"
+                    || c == "docs"
+                    || c == "status"
+                    || c == "scripts-audit"
+                    || c == "snapshots-audit"
+                    || c == "fixture-audit"
+                    || c == "crate-health"
+                    || c == "package-health"
                     || c == "env"
                     || c == "doctor"
                     || c == "contracts"
-                    || c == "runtime-identity") =>
+                    || c == "runtime-identity"
+                    || c == "docs-prune-plan") =>
         {
             true
         }
