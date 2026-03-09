@@ -21,6 +21,12 @@ pub fn classify_failure(exit_code: i32, stderr: &str) -> BridgeErrorKind {
         return BridgeErrorKind::Usage;
     }
     let lower = stderr.to_ascii_lowercase();
+    if lower.contains("unknown route")
+        || lower.contains("unknown namespace")
+        || lower.contains("usage")
+    {
+        return BridgeErrorKind::Usage;
+    }
     if lower.contains("validation") || lower.contains("invalid") {
         return BridgeErrorKind::Validation;
     }
