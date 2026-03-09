@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "bijux-cli"
+version = "0.1.0"
+description = "Rust-backed Bijux CLI Python distribution"
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Bijux" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "License :: OSI Approved :: Apache Software License",
+]
+
+[project.scripts]
+bijux = "bijux_cli_py.cli:main"
+
+[tool.maturin]
+python-source = "python"
+module-name = "bijux_cli_py._native"
+manifest-path = "../../crates/bijux-cli-python/Cargo.toml"
+features = ["python-extension"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
