@@ -290,6 +290,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_release_truth_gates.py --enforce
 
+      - name: Maintainer automation policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_automation_policy.py
+
       - name: Status report freshness gate
         run: |
           python3 scripts/status/check_status_reports_stale.py

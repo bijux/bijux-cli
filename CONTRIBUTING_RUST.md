@@ -19,6 +19,8 @@ This guide defines engineering standards for the Rust workspace in `bijux-cli`.
 - Crate dependency boundaries must pass `architecture_boundaries` tests.
 - New public contract types belong in `bijux-cli-contracts`.
 - Command behavior changes must preserve documented compatibility contracts.
+- New maintainer automation defaults to `bijux dev cli` command entrypoints.
+- Direct script usage is allowed only as implementation detail behind routed dev-cli commands.
 
 ## Local validation commands
 - `cargo fmt --all`
