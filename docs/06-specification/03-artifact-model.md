@@ -1,100 +1,71 @@
 # Artifact Model
 
-Define artifact entity semantics, lineage requirements, and portability constraints.
+Normative contract for artifact payload, metadata, lineage, and corruption handling.
 
-Artifacts are the durable output contract connecting execution, inspection, replay, and diff.
+## Terms
 
-## Explanation
-Artifact entity fields:
-- `artifact.id`: identity-derived artifact key.
-- `artifact.run_id`: producing run identity.
-- `artifact.node_id`: producing node identifier.
-- `artifact.path` or logical location descriptor.
-- `artifact.kind`: classification (file/directory/structured output).
-- `artifact.hash`: content-derived checksum.
-- `artifact.metadata`: optional non-semantic annotations.
+- Artifact: persisted output unit with identity and provenance linkage.
+- Payload: canonical content basis used for identity.
+- Lineage: producing run/node and ancestry references.
 
-Artifact creation rules:
-- an artifact is attributable to one producing node result in one run.
-- artifact content hash is computed over canonical bytes for that artifact kind.
-- lineage links to `run_id` and `node_id` are mandatory for auditable provenance.
+## Required fields
 
-Artifact hashing algorithm contract:
-- hashing algorithm family must be stable for a compatibility window.
-- algorithm changes require versioned migration policy and compatibility handling.
-- hash computation must be deterministic for equivalent canonical content.
+- `artifact_id`
+- producing `run_id`
+- producing `node_id`
+- artifact kind/type
+- identity/hash reference
+- storage/payload reference
 
-Formal artifact rules:
-- RULE-ART-001: each artifact MUST have one `artifact.id`.
-- RULE-ART-002: each artifact MUST reference producing `run_id` and `node_id`.
-- RULE-ART-003: artifact identity MUST be derived from canonical content policy.
-- RULE-ART-004: lineage links MUST remain queryable for inspect/diff workflows.
+## Field classes
 
-Portability rules:
-- export/import workflows preserve artifact identity context and lineage metadata.
-- portability validation is determined through replay and diff, not by transport success alone.
+Payload fields:
 
-Invalid state definitions:
-- INVALID-ART-MISSING-ID: artifact identity absent.
-- INVALID-ART-MISSING-LINEAGE: missing run or node linkage.
-- INVALID-ART-HASH-MISSING: artifact expected to be identity-tracked but hash unavailable.
-- INVALID-ART-CANONICALIZATION-UNKNOWN: canonical content basis cannot be determined.
+- canonical output content or canonicalized representation.
 
-Edge cases:
-- zero-byte artifacts are valid if canonicalized and lineage-attributed.
-- directory artifacts are valid if canonical directory representation policy is defined.
-- partial artifact availability is valid in failed runs but must be explicitly represented.
+Metadata fields:
 
-Compatibility notes:
-- hash algorithm upgrades require documented compatibility window and migration path.
-- new artifact kinds are compatible when canonicalization and lineage semantics are defined.
+- identity values, kind, timestamps, storage references.
 
-## Examples
-```text
-Artifact lineage example:
-artifact.id: a_7b4...
-produced_by: run r_9f1... / node test
-hash: sha256:2f67...
-```
+Lineage fields:
 
-```text
-Artifact portability check:
-source artifact hash == target artifact hash
--> classified as equivalent output for that artifact unit
-```
+- run/node producer linkage,
+- ancestry references used by inspect/replay/diff.
 
-## Guarantees
-- Every durable artifact has explicit producer lineage.
-- Artifact identity is hash-backed and deterministic for equivalent content.
-- Artifact contract supports replay/diff comparability across runs.
+RULE-ART-001: these classes MUST remain distinguishable.
 
-## Limitations
-- This model does not require all nodes to emit artifacts.
-- External system side effects are not automatically captured as artifacts.
-- Physical storage backend implementation is outside this contract.
+## Core rules
 
-## Related
-- `docs/06-specification/02-run-model.md`
-- `docs/06-specification/06-artifact-identity.md`
-- `docs/06-specification/08-diff-semantics.md`
-- `docs/05-system-architecture/06-artifact-store.md`
+- RULE-ART-002: artifact identity MUST derive from canonical payload policy.
+- RULE-ART-003: lineage links to producing run/node MUST be present.
+- RULE-ART-004: artifact records MUST be queryable for diff/replay workflows.
 
-## Payload, metadata, and lineage field boundaries
+## Provenance and identity
 
-Field classes:
+Artifact identity proves content-equivalence class.
+Provenance proves production context.
+Both are required for trustworthy interpretation.
 
-- payload fields: canonical output bytes/content representation.
-- metadata fields: artifact ID, hash, kind, timestamps, storage reference.
-- lineage fields: producing run ID, producing node ID, ancestry references.
+## Invalid and corrupt states
 
-These classes MUST remain distinguishable so identity and provenance checks are auditable.
+- INVALID-ART-MISSING-ID
+- INVALID-ART-MISSING-LINEAGE
+- INVALID-ART-HASH-MISSING
+- INVALID-ART-CANONICALIZATION-UNKNOWN
+- CORRUPT-ART-METADATA-PAYLOAD-MISMATCH
+- CORRUPT-ART-MISSING-PAYLOAD-REFERENCE
 
-## Corruption and invalid-state handling
+Corrupt artifacts MUST be treated as non-trustworthy evidence until repaired or regenerated.
 
-Additional invalid/corrupt states:
+## Incomplete-state cases
 
-- metadata exists but referenced payload missing,
-- payload exists but hash mismatch against stored identity,
-- lineage references unknown run/node records.
+- artifact reference exists but payload unavailable due to retention,
+- lineage partially available after import,
+- identity present but policy-version compatibility unresolved.
 
-Corrupt artifacts MUST be classified as non-trustworthy evidence for replay/diff until repaired or regenerated.
+Incomplete states require bounded/unknown comparison handling, not forced equivalence.
+
+## Next reading
+
+- Artifact identity inputs/exclusions: [Artifact Identity](../06-specification/06-artifact-identity.md)
+- Portability implications: [Portability](../05-system-architecture/10-portability.md)

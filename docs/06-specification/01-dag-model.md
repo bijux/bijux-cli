@@ -1,114 +1,86 @@
 # DAG Model
 
-Define the canonical DAG structure and validation contract used by bijux-dag.
+Normative contract for graph definition validity and canonical semantics.
 
-DAG structure is the root contract for scheduling, execution, replay, and diff behavior.
+## Terms
 
-## Explanation
-Canonical DAG entity fields:
-- `dag.name`: stable human-readable identifier for the graph definition.
-- `dag.nodes`: list of node definitions.
-- `dag.edges` or equivalent dependency declarations: directed ordering constraints.
-- optional metadata: authoring and annotation fields that do not alter execution semantics unless explicitly declared as semantic inputs.
+- DAG: directed acyclic graph of nodes and dependency edges.
+- Node: executable definition unit identified by unique `id`.
+- Dependency edge: prerequisite relation constraining execution eligibility.
 
-Node model requirements:
-- each node has a unique node identifier within the DAG scope.
-- each node declares executable intent (command/action) and explicit inputs.
-- node behavior must be representable as deterministic intent under equivalent resolved inputs.
+## Required fields
 
-Edge model requirements:
-- edges form a directed acyclic graph.
-- self-dependency is invalid.
-- cycles are invalid.
-- missing dependency targets are invalid.
+- `graph_id` (or equivalent definition identifier)
+- `nodes` (non-empty list)
+- per-node `id`
+- per-node executable intent field (command/action)
+- dependency declarations (`depends_on` or equivalent)
 
-Validation pipeline:
-1. parse DAG definition.
-2. validate schema shape and required fields.
-3. validate node identifier uniqueness.
-4. validate dependency target integrity.
-5. validate acyclicity.
-6. produce canonical representation for scheduling and identity derivation.
+## Validation rules
 
-Deterministic DAG normalization rules:
-- preserve semantic content, discard formatting-only variance.
-- normalize field ordering for canonical hash materialization.
-- treat explicitly semantic metadata as hash-relevant; non-semantic metadata as hash-irrelevant.
-
-Formal validation rule set:
-- RULE-DAG-001: `dag.nodes` MUST be present and non-empty.
-- RULE-DAG-002: every node `id` MUST be unique within DAG scope.
-- RULE-DAG-003: every `depends_on` reference MUST resolve to an existing node `id`.
+- RULE-DAG-001: `nodes` MUST be present and non-empty.
+- RULE-DAG-002: node IDs MUST be unique within graph scope.
+- RULE-DAG-003: every dependency reference MUST resolve to an existing node ID.
 - RULE-DAG-004: dependency graph MUST be acyclic.
-- RULE-DAG-005: canonicalization MUST preserve semantics and remove non-semantic variance.
+- RULE-DAG-005: canonical semantic form MUST be derivable for identity computation.
 
-Invalid state definitions:
-- INVALID-DAG-EMPTY-NODES: node list missing or empty.
-- INVALID-DAG-DUPLICATE-NODE-ID: same node identifier appears multiple times.
-- INVALID-DAG-UNKNOWN-DEPENDENCY: dependency references unknown node.
-- INVALID-DAG-CYCLE-DETECTED: dependency cycle prevents valid topological ordering.
+## Invariants
 
-Edge cases:
-- isolated source nodes are valid when they represent independent work.
-- disconnected DAG components are valid if each component is acyclic and internally consistent.
-- declaration ordering differences are valid when canonical semantics are unchanged.
+- dependency relation is directed,
+- no self-dependency,
+- topological ordering exists for valid graph,
+- canonicalization preserves semantic meaning while removing non-semantic variance.
 
-Compatibility notes:
-- additional optional metadata fields are allowed if they do not alter existing semantic rules.
-- semantic rule changes require explicit versioning and migration guidance.
+## Invalid states
+
+- INVALID-DAG-EMPTY-NODES
+- INVALID-DAG-DUPLICATE-NODE-ID
+- INVALID-DAG-UNKNOWN-DEPENDENCY
+- INVALID-DAG-CYCLE-DETECTED
+- INVALID-DAG-NONCANONICAL-SEMANTIC-RESOLUTION
+
+## Graph-identity relevant fields
+
+Identity-relevant:
+
+- node execution semantics,
+- dependency topology,
+- semantic config declared identity-relevant by policy.
+
+Identity-irrelevant:
+
+- formatting-only differences,
+- comments/whitespace,
+- explicitly non-semantic annotations.
 
 ## Examples
-```yaml
-dag:
-  name: build-and-test
-  nodes:
-    - id: lint
-      run: "cargo clippy --all-targets --all-features"
-    - id: test
-      run: "cargo test --workspace"
-      needs: ["lint"]
+
+Valid normalized example:
+
+```json
+{
+  "graph_id": "BUILD_TEST",
+  "nodes": [
+    {"id": "lint", "command": "cargo clippy", "depends_on": []},
+    {"id": "test", "command": "cargo test", "depends_on": ["lint"]}
+  ]
+}
 ```
 
-```text
-Validation result:
-- valid DAG (acyclic)
-- execution order envelope: lint -> test
+Invalid example:
+
+```json
+{
+  "graph_id": "INVALID",
+  "nodes": [
+    {"id": "train", "command": "./train.sh", "depends_on": ["prepare_data"]}
+  ]
+}
 ```
 
-## Guarantees
-- DAG validation rejects malformed or cyclic dependency structures.
-- Canonicalization rules provide stable scheduling and identity input surfaces.
-- Equivalent DAG semantics produce equivalent normalized DAG representations.
+Expected invalid reason: `INVALID-DAG-UNKNOWN-DEPENDENCY`.
 
-## Limitations
-- This document does not define backend execution behavior.
-- DAG validity does not guarantee runtime success of node commands.
-- Schema encoding details may evolve while preserving this semantic contract.
+## Next reading
 
-## Related
-- `docs/06-specification/02-run-model.md`
-- `docs/06-specification/04-graph-identity.md`
-- `docs/05-system-architecture/04-scheduler.md`
-- `docs/03-user-guide/01-authoring-dags.md`
-
-## Contract form: invariants and graph-identity relevance
-
-Invariant set:
-
-- every dependency edge endpoint MUST resolve to a declared node,
-- topological ordering MUST exist for a valid DAG,
-- canonical semantic representation MUST be derivable.
-
-Graph-identity relevant fields include node semantics and dependency topology. Graph-identity irrelevant fields include formatting and explicitly non-semantic annotations.
-
-## Normalized and invalid examples
-
-Normalized example (identity-preserving):
-
-- reorder node declarations without changing dependency semantics.
-- expected result: same canonical form and same graph identity.
-
-Invalid example (identity generation blocked):
-
-- node `train` depends on unknown node `prepare_data`.
-- expected result: validation failure `INVALID-DAG-UNKNOWN-DEPENDENCY`; graph identity MUST NOT be emitted.
+- Graph identity derivation: [Graph Identity](../06-specification/04-graph-identity.md)
+- Execution semantics over this model: [Run Model](../06-specification/02-run-model.md)

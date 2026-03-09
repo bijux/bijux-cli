@@ -1,120 +1,75 @@
 # Run Model
 
-Define the execution run lifecycle, state transitions, and run-level evidence contract.
+Normative contract for run objects, state transitions, and evidence truth boundaries.
 
-Run behavior operationalizes DAG definitions into auditable execution outcomes.
+## Terms
 
-## Explanation
-Run entity fields:
-- `run.id`: unique run identity.
-- `run.graph_id`: identity of the DAG definition under execution.
-- `run.started_at` / `run.finished_at`: temporal bounds.
-- `run.status`: lifecycle state.
-- `run.node_results`: per-node execution outcomes.
-- `run.metadata`: optional annotations.
+- Run: one execution instance anchored by run identity.
+- Run class: provenance category (original, replayed, imported).
+- Node outcome: terminal status record for one node in one run context.
 
-Canonical run lifecycle states:
-- `planned`: run created, execution not started.
-- `running`: one or more nodes are being executed.
-- `succeeded`: all required nodes completed successfully.
-- `failed`: terminal failure due to one or more node failures.
-- `canceled`: execution terminated by explicit stop request.
+## Required fields
 
-State transition rules:
-- `planned -> running` only once.
-- terminal states are immutable (`succeeded`, `failed`, `canceled`).
-- a run cannot transition between terminal states.
+- `run_id`
+- `graph_id` reference
+- `status`
+- run timing envelope
+- node outcome records
+- artifact linkage references (when produced)
 
-Formal run-state rules:
-- RULE-RUN-001: each run MUST have one unique `run.id`.
-- RULE-RUN-002: run MUST reference one `run.graph_id`.
-- RULE-RUN-003: run state MUST follow legal transition graph.
-- RULE-RUN-004: terminal state MUST be immutable once reached.
-- RULE-RUN-005: node outcomes MUST be attributable to run identity.
+## State model
 
-Node result contract:
-- each scheduled node yields exactly one terminal node outcome for that run attempt.
-- node outcome includes status, timing, adapter/backend context, and output references.
-- failed upstream dependencies can classify downstream nodes as blocked/skipped, depending on policy.
+Allowed lifecycle states:
 
-Run evidence contract:
-- run directory materializes run-level metadata and node-level outcomes.
-- run records must be sufficient for inspect, replay planning, and diff attribution.
+- planned
+- running
+- succeeded
+- failed
+- canceled
 
-Invalid state definitions:
-- INVALID-RUN-MISSING-ID: run identity absent.
-- INVALID-RUN-MISSING-GRAPH-REFERENCE: `run.graph_id` absent.
-- INVALID-RUN-ILLEGAL-TRANSITION: state transition violates lifecycle graph.
-- INVALID-RUN-TERMINAL-MUTATION: terminal run changed after completion.
+Transition rules:
 
-Edge cases:
-- canceled runs are valid terminal states with incomplete execution coverage.
-- failed runs may still produce partial artifact sets and valid evidence records.
-- repeated executions on same graph are valid with distinct run identities.
+- RULE-RUN-001: run MUST have unique `run_id` in namespace.
+- RULE-RUN-002: `planned -> running` occurs at most once.
+- RULE-RUN-003: terminal states are immutable.
+- RULE-RUN-004: run MUST retain graph reference for attribution.
 
-Compatibility notes:
-- additional run metadata fields are compatible if core state/lifecycle semantics remain unchanged.
-- lifecycle vocabulary expansion must preserve existing terminal-state meaning.
+## Run classes
 
-## Examples
-```text
-Run lifecycle example:
-planned -> running -> failed
+Run records MUST distinguish:
 
-Reason:
-- node "lint" succeeded
-- node "test" failed with non-zero exit code
-```
-
-```text
-Run record linkage:
-run.id = r_9f1...
-run.graph_id = g_44a...
-node_result.test.artifacts = [a_12b..., a_712...]
-```
-
-## Guarantees
-- Run lifecycle states and legal transitions are explicit and finite.
-- Terminal run state is immutable once reached.
-- Run records provide a stable evidence surface for inspection and comparison.
-
-## Limitations
-- This contract does not guarantee identical wall-clock timing across environments.
-- Retry policy and orchestration policy may vary by implementation mode.
-- Storage retention policy is operational and outside this model contract.
-
-## Related
-- `docs/06-specification/01-dag-model.md`
-- `docs/06-specification/03-artifact-model.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/03-user-guide/04-run-history.md`
-
-## Run classes and evidence interpretation
-
-Run classes that MUST be distinguishable:
-
-- successful run,
-- failed run,
-- canceled run,
+- original run,
 - replayed run,
 - imported run.
 
-Replayed and imported runs are valid run records but have distinct provenance class and should not be silently merged with original native runs.
+Failed/canceled are status classes, not provenance classes.
 
-## Authoritative versus derived run data
+## Authoritative versus derived data
 
-Authoritative fields:
+Authoritative data:
 
 - run identity,
-- graph identity reference,
+- graph linkage,
 - terminal status,
 - node terminal outcomes,
-- artifact linkage references.
+- artifact references.
 
-Derived fields:
+Derived data:
 
-- summarized dashboards,
-- trend aggregates,
-- cached labels for convenience.
+- summaries,
+- dashboards,
+- cached trend artifacts.
 
-Contract rule: derived fields may be regenerated; authoritative fields define run truth.
+RULE-RUN-005: derived data MUST NOT override authoritative run facts.
+
+## Invalid states
+
+- INVALID-RUN-MISSING-ID
+- INVALID-RUN-MISSING-GRAPH-LINK
+- INVALID-RUN-ILLEGAL-TRANSITION
+- INVALID-RUN-TERMINAL-MUTATION
+
+## Next reading
+
+- Execution identity relation: [Run Identity](../06-specification/05-run-identity.md)
+- Output linkage contract: [Artifact Model](../06-specification/03-artifact-model.md)
