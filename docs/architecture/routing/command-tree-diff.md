@@ -7,9 +7,9 @@ Inputs:
 
 ## Summary
 - Python documented root commands: 16
-- Rust routed root commands: 10
-- Overlap: 9
-- Python-only: 7
+- Rust routed root commands: 12
+- Overlap: 11
+- Python-only: 5
 - Rust-only: 1
 
 ## Overlap
@@ -18,6 +18,8 @@ Inputs:
 - `dev`
 - `doctor`
 - `inspect`
+- `history`
+- `memory`
 - `plugins`
 - `repl`
 - `status`
@@ -28,8 +30,6 @@ Inputs:
 - `audit`
 - `docs`
 - `help`
-- `history`
-- `memory`
 - `sleep`
 
 ## Rust-only
