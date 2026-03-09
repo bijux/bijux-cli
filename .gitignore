@@ -79,6 +79,9 @@ doctrees/
 # JS/Node
 node_modules/
 
+# Rust
+target/
+
 # Data/Bioinformatics
 *.bam
 *.bai
@@ -142,5 +145,4 @@ artifacts/
 artifacts
 .cache
 changelog.d/*.md
-
 

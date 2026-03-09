@@ -29,6 +29,7 @@ name = "bijux-cli-core"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
+ "serde_json",
 ]
 
 [[package]]
