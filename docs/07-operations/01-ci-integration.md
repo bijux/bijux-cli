@@ -1,112 +1,101 @@
 # CI Integration
 
-Define the contract for integrating bijux-dag execution and validation into CI pipelines.
+This guide defines how to integrate bijux-dag into CI so pipeline results are promotable evidence, not just pass/fail noise.
 
-CI is the operational control point for consistent DAG validation, deterministic execution checks, and release readiness.
+## What CI should prove
 
-## Explanation
-CI pipeline baseline stages:
-1. environment setup and toolchain pinning.
-2. DAG/schema validation.
-3. deterministic test and replay/diff checks.
-4. quality gates and publishing decisions.
+A correct CI integration should prove, for the code and matrix you executed:
+- DAG definitions are valid and schedulable.
+- runtime behavior matches expected test outcomes.
+- replay/diff classification is stable for required release scopes.
+- release gates were evaluated with explicit evidence.
 
-Recommended CI job topology:
-- `validate`: static checks, DAG/schema validation, basic command surface verification.
-- `test`: unit/integration lanes and fixture-backed behavior checks.
-- `determinism`: selected replay/diff checks against known baselines.
-- `release-readiness`: strict gate for tagged builds.
+CI does not prove:
+- equivalence on untested backends,
+- correctness of external systems not represented in evidence,
+- security of unverified imported inputs.
 
-Recommended stage ordering:
-1. `validate` (fast fail on shape/contracts)
-2. `test` (unit/integration correctness)
-3. `determinism` (replay/diff confidence)
-4. `release-readiness` (promotion decision)
+## Baseline job model
 
-CI requirements:
-- pin language/runtime versions to reduce drift.
-- persist essential test/replay artifacts for post-failure diagnostics.
-- publish concise run summary with failure reason classification.
+Use four jobs, with strict dependency order:
+1. `validate`: DAG/schema/command-surface checks.
+2. `test`: unit and integration checks.
+3. `determinism`: replay/diff/proof checks against approved baselines.
+4. `promote`: release decision from evidence summary.
 
-Failure handling:
-- fail fast for schema/contract violations.
-- classify runtime failures separately from infrastructure failures.
-- retain enough context for deterministic reproduction.
+A failed earlier job MUST block downstream promotion.
 
-What CI is expected to prove:
-- command and contract surfaces remain healthy for covered lanes.
-- selected replay/diff checks remain classification-consistent.
-- release gating policy is applied consistently.
+## Evidence contract per job
 
-What CI cannot prove by itself:
-- universal backend equivalence outside tested capability envelope.
-- absence of environment-specific failures outside covered matrix.
-- correctness of external systems not represented in test evidence.
+Each job should emit machine-readable records:
+- `validate`: invalid-DAG counts, failing identifiers.
+- `test`: failing suites, environment fingerprint.
+- `determinism`: replay/diff classifications with reason codes.
+- `promote`: final decision plus evidence references.
 
-## Examples
+If `determinism` is skipped, `promote` must report that scope as not proven.
+
+## Practical CI integrations
+
+GitHub Actions example:
+
 ```yaml
-name: ci
+name: bijux-ci
 on: [push, pull_request]
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-dev-dag -- docs validate
-      - run: cargo test --workspace --locked
-  determinism:
+      - run: cargo run -p bijux-dev-dag -- dag validate examples/pipeline.dag.json
+  test:
     runs-on: ubuntu-latest
     needs: [validate]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-dev-dag -- foundation --advisory
-  release-readiness:
-    if: startsWith(github.ref, 'refs/tags/')
+      - run: cargo test --workspace --locked
+  determinism:
     runs-on: ubuntu-latest
-    needs: [validate, determinism]
+    needs: [test]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -p bijux-dev-dag -- release artifact-verify
+      - run: cargo run -p bijux-dev-dag -- run replay --baseline runs/r_120 --mode strict
+      - run: cargo run -p bijux-dev-dag -- run diff --baseline runs/r_120 --candidate runs/latest --json
+  promote:
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    needs: [determinism]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -p bijux-dev-dag -- release verify --require-equivalent
 ```
 
-```text
-Expected CI summary fields:
-- commit_sha
-- lane_statuses
-- replay_or_diff_gate
-- final_decision
-```
+Jenkins/GitLab/CircleCI mapping pattern:
+- keep the same four logical jobs,
+- preserve artifact retention on failure,
+- produce one normalized evidence summary independent of vendor.
+
+## CI anti-patterns
+
+Avoid these patterns:
+- running replay/diff only on green tags with no pull-request coverage,
+- passing promotion when replay/diff output is `unknown` or missing,
+- mixing infrastructure failure with semantic drift in one generic failure status,
+- deleting failed-run evidence to save storage.
 
 ## Guarantees
-- CI integration contract defines a reproducible and auditable execution path.
-- Failure classes remain distinguishable for faster remediation.
-- Determinism checks can be enforced as explicit release gates.
-- Includes concrete GitHub Actions topology usable as baseline.
 
-## Limitations
-- This document does not mandate one CI vendor.
-- Lane composition may differ by repository size or release policy.
-- Network and host volatility can still cause infrastructure-level flakiness.
-- Example workflow is illustrative and may require repository-specific command adjustments.
+- This integration model yields auditable promotion decisions.
+- Replay/diff evidence is part of the release gate, not a side report.
+- Missing determinism evidence is explicit.
 
-## Related
-- `docs/07-operations/02-reproducible-builds.md`
-- `docs/07-operations/05-backend-support.md`
-- `docs/08-development/02-testing-strategy.md`
-- `docs/08-development/04-contributing.md`
+## Non-guarantees
 
-## Integrating bijux-dag into existing CI systems
+- CI success is not universal backend certification.
+- CI success is not a substitute for runtime trust-boundary checks.
 
-Adopt bijux-dag in incremental layers:
+## Next reading
 
-1. add DAG validation to existing lint/validate jobs,
-2. add run/test evidence capture to existing test jobs,
-3. add replay/diff gates only for release-critical workflows.
-
-This avoids disruptive pipeline rewrites while still improving evidence quality.
-
-Cross-CI adaptation pattern:
-
-- map `validate`, `test`, `determinism`, `release-readiness` stages to native job primitives,
-- preserve artifact retention for failing lanes,
-- emit one normalized summary for gate decisions regardless of CI vendor.
+- [Reproducible builds](docs/07-operations/02-reproducible-builds.md)
+- [Security model](docs/07-operations/03-security-model.md)
+- [Trust boundaries](docs/07-operations/04-trust-boundaries.md)

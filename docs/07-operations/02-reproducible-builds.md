@@ -1,92 +1,71 @@
 # Reproducible Builds
 
-Define how to produce deterministic build and test results across environments.
+Reproducible builds in bijux-dag mean build and validation outcomes remain classification-equivalent when the declared input set is unchanged.
 
-Reproducibility is required for trustworthy replay/diff outcomes and reliable release decisions.
+## Required reproducibility inputs
 
-## Explanation
-Reproducible build controls:
-- pin Rust toolchain version and lockfile.
-- pin CI container/image base where feasible.
-- avoid non-deterministic build inputs (floating dependency versions, mutable environment defaults).
+Track and pin these inputs:
+- compiler/toolchain version,
+- dependency lockfiles,
+- build image or host baseline,
+- target triple,
+- environment variables that affect build/runtime behavior,
+- fixture/input versions used in tests and replay checks.
 
-Runtime reproducibility controls:
-- explicitly set locale and timezone assumptions in CI.
-- avoid hidden environment coupling in DAG node commands.
-- keep fixture inputs versioned and immutable per test lane.
+Changing any required input invalidates prior reproducibility claims until re-verified.
 
-Cache strategy:
-- use dependency caching for speed, but key cache by lockfile/toolchain.
-- never treat cache hits as correctness proof.
-- fallback to clean build path on cache inconsistency.
+## Build discipline
 
-Artifact caching guidance:
+Minimum operator discipline:
+- run `--locked` dependency resolution,
+- pin toolchain per repository,
+- keep build and test commands deterministic,
 - separate dependency cache from build-output cache.
-- cache keys should include lockfile hash, toolchain version, and target triple.
-- invalidate caches when compiler/toolchain policy changes.
-- periodically run cache-bypass builds to detect hidden cache coupling.
 
-Drift detection:
-- periodically run clean builds without cache.
-- compare key output hashes for release-critical artifacts.
-- classify drift as code/input/environment before mitigation.
+Cache keys should include lockfile hash, toolchain version, and target triple.
 
-## Examples
-```bash
-rustup override set 1.80.1
-cargo build --workspace --locked
-cargo test --workspace --locked
-```
+## What reproducible-build claims mean
 
-```yaml
-# CI cache key example (conceptual)
-key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-rust-1.80.1
-```
+A reproducible-build claim means:
+- under the declared input set and environment envelope,
+- repeated builds produce equivalent classification for required evidence scopes.
 
-```text
-Reproducibility checklist:
-- toolchain pinned
-- lockfile committed
-- clean lane passes
-- artifact hash comparison stable
-```
+It does not mean:
+- byte-identical binaries across all platforms,
+- equivalence on unsupported backends,
+- immunity to external service variability.
+
+## Common drift causes
+
+Most drift incidents come from:
+- floating dependencies or uncommitted lockfile changes,
+- mutable base images,
+- hidden timezone/locale differences,
+- test commands that call external network resources,
+- stale caches masking source or toolchain changes.
+
+## Operator checklist
+
+Before promotion:
+- confirm pinned toolchain and committed lockfile,
+- execute one clean build lane with cache bypass,
+- compare release-critical artifact identities,
+- classify any drift as code/input/environment,
+- block promotion when drift classification is unresolved.
 
 ## Guarantees
-- Reproducibility controls are explicit and operationally enforceable.
-- Build drift can be detected and classified through deterministic checks.
-- Release-critical workflows can require clean, pinned execution paths.
-- Cache strategy explicitly favors correctness over speed when they conflict.
 
-## Limitations
-- Absolute binary identity can still vary across platform/toolchain families.
-- External services used by commands can introduce non-reproducible behavior.
-- This document does not define cryptographic provenance attestation format.
+- Reproducibility inputs are explicit and auditable.
+- Drift sources can be classified instead of guessed.
+- Clean-lane checks prevent cache-only confidence.
 
-## Related
-- `docs/07-operations/01-ci-integration.md`
-- `docs/07-operations/05-backend-support.md`
-- `docs/08-development/02-testing-strategy.md`
-- `docs/06-specification/07-replay-semantics.md`
+## Non-guarantees
 
-## Exact reproducibility inputs
+- No universal byte-identity guarantee across heterogeneous hosts.
+- No guarantee for unpinned external services.
 
-Track these inputs as part of reproducibility contract:
+## Next reading
 
-- toolchain version,
-- dependency lockfile digest,
-- build image/base environment version,
-- deterministic environment variables affecting build/runtime.
-
-Any change to these inputs should trigger reproducibility re-validation.
-
-## How to interpret reproducible-build claims
-
-A reproducible-build claim means: under declared input set and environment envelope, build and validation outcomes are expected to classify equivalently. It is not a claim of universal equivalence across all hosts and backend families.
-
-## What can still drift
-
-Even with strong discipline, drift can still occur from:
-
-- kernel/host differences outside pinned image boundary,
-- external services or network-dependent steps,
-- backend capability differences not covered by build pinning.
+- [CI integration](docs/07-operations/01-ci-integration.md)
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [Backend support](docs/07-operations/05-backend-support.md)
