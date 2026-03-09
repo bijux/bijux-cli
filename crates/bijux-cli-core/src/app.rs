@@ -835,7 +835,66 @@ fn route_response(
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
             let parity =
                 read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
+            let status_report = read_json_if_exists(&root.join("artifacts/status/status.json"));
+            let root_commands =
+                read_json_if_exists(&root.join("artifacts/status/status_root_commands.json"));
+            let cli_subcommands =
+                read_json_if_exists(&root.join("artifacts/status/status_cli_subcommands.json"));
+            let dev_cli_subcommands =
+                read_json_if_exists(&root.join("artifacts/status/status_dev_cli_subcommands.json"));
+            let plugin_commands =
+                read_json_if_exists(&root.join("artifacts/status/status_plugin_commands.json"));
+            let repl_parity = read_json_if_exists(
+                &root.join("artifacts/status/status_repl_parity_coverage.json"),
+            );
+            let python_bridge_parity = read_json_if_exists(
+                &root.join("artifacts/status/status_python_bridge_parity_coverage.json"),
+            );
+            let install_packaging = read_json_if_exists(
+                &root.join("artifacts/status/status_install_packaging_parity_coverage.json"),
+            );
+            let state_behavior = read_json_if_exists(
+                &root.join("artifacts/status/status_state_behavior_coverage.json"),
+            );
+            let snapshot_coverage =
+                read_json_if_exists(&root.join("artifacts/status/status_snapshot_coverage.json"));
+            let stream_coverage =
+                read_json_if_exists(&root.join("artifacts/status/status_stream_coverage.json"));
+            let exit_code_coverage =
+                read_json_if_exists(&root.join("artifacts/status/status_exit_code_coverage.json"));
+            let failure_path_coverage = read_json_if_exists(
+                &root.join("artifacts/status/status_failure_path_coverage.json"),
+            );
+            let compatibility_aliases = read_json_if_exists(
+                &root.join("artifacts/status/status_compatibility_aliases.json"),
+            );
+            let known_parity_gaps =
+                read_json_if_exists(&root.join("artifacts/status/status_known_parity_gaps.json"));
+            let intentional_differences = read_json_if_exists(
+                &root.join("artifacts/status/status_intentional_differences.json"),
+            );
+            let unowned_scripts =
+                read_json_if_exists(&root.join("artifacts/status/status_unowned_scripts.json"));
             json!({
+                "status_report": status_report,
+                "reports": {
+                    "root_commands": root_commands,
+                    "cli_subcommands": cli_subcommands,
+                    "dev_cli_subcommands": dev_cli_subcommands,
+                    "plugin_commands": plugin_commands,
+                    "repl_parity_coverage": repl_parity,
+                    "python_bridge_parity_coverage": python_bridge_parity,
+                    "install_packaging_parity_coverage": install_packaging,
+                    "state_behavior_coverage": state_behavior,
+                    "snapshot_coverage": snapshot_coverage,
+                    "stream_coverage": stream_coverage,
+                    "exit_code_coverage": exit_code_coverage,
+                    "failure_path_coverage": failure_path_coverage,
+                    "compatibility_aliases": compatibility_aliases,
+                    "known_parity_gaps": known_parity_gaps,
+                    "intentional_differences": intentional_differences,
+                    "unowned_scripts": unowned_scripts,
+                },
                 "current_rust_state": state,
                 "parity": parity,
                 "inventory": dev_cli_inventory_payload(),

@@ -253,6 +253,36 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
 }
 
 #[test]
+fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "status".to_string(),
+    ])
+    .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload["status_report"].is_object());
+    assert!(payload["reports"]["root_commands"].is_object());
+    assert!(payload["reports"]["cli_subcommands"].is_object());
+    assert!(payload["reports"]["dev_cli_subcommands"].is_object());
+    assert!(payload["reports"]["plugin_commands"].is_object());
+    assert!(payload["reports"]["repl_parity_coverage"].is_object());
+    assert!(payload["reports"]["python_bridge_parity_coverage"].is_object());
+    assert!(payload["reports"]["install_packaging_parity_coverage"].is_object());
+    assert!(payload["reports"]["state_behavior_coverage"].is_object());
+    assert!(payload["reports"]["snapshot_coverage"].is_object());
+    assert!(payload["reports"]["stream_coverage"].is_object());
+    assert!(payload["reports"]["exit_code_coverage"].is_object());
+    assert!(payload["reports"]["failure_path_coverage"].is_object());
+    assert!(payload["reports"]["compatibility_aliases"].is_object());
+    assert!(payload["reports"]["known_parity_gaps"].is_object());
+    assert!(payload["reports"]["intentional_differences"].is_object());
+    assert!(payload["reports"]["unowned_scripts"].is_object());
+}
+
+#[test]
 fn direct_core_invocation_inspect_failure_normalizes_usage_error() {
     let out = run_app(&[
         "bijux".to_string(),
