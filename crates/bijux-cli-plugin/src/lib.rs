@@ -15,7 +15,9 @@ use std::path::Path;
 use bijux_cli_contracts::ContractMarker;
 
 pub use constants::{CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES};
-pub use diagnostics::{compatibility_warnings, load_time_diagnostics, self_repair_registry};
+pub use diagnostics::{
+    compatibility_warnings, load_time_diagnostics, prune_registry_backup, self_repair_registry,
+};
 pub use discovery::{
     discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir,
 };

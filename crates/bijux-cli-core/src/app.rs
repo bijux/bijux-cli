@@ -19,9 +19,9 @@ use bijux_cli_install::{
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
     compatibility_warnings, install_plugin as install_plugin_manifest, list_plugins,
-    load_time_diagnostics, plugin_doctor, plugin_origin_metadata, registry_path_from_plugins_dir,
-    uninstall_plugin, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
-    FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
+    load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
+    registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest, PluginTrustLevel,
+    CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
@@ -407,11 +407,41 @@ fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
     Ok(entries)
 }
 
-fn memory_file_path_from_home(home: Option<&Path>) -> std::path::PathBuf {
-    match home {
+#[derive(Debug, Clone)]
+struct ResolvedStatePaths {
+    config_file: PathBuf,
+    history_file: PathBuf,
+    plugins_dir: PathBuf,
+    plugin_registry_file: PathBuf,
+    memory_file: PathBuf,
+}
+
+fn resolve_state_paths(flags: &ParsedGlobalFlags) -> Result<ResolvedStatePaths> {
+    let home = home_dir();
+    let defaults = home
+        .as_deref()
+        .map(default_compatibility_paths)
+        .unwrap_or_else(|| default_compatibility_paths(Path::new(".")));
+
+    let config = load_compatibility_config(&defaults.config_file)
+        .unwrap_or_else(|_| CompatibilityConfig::default());
+    let mut overrides = PathOverrides::default();
+    if let Some(path) = &flags.config_path {
+        overrides.config_file = Some(path.into());
+    }
+    let resolved = discover_compatibility_paths(home.as_deref(), &overrides, &env_map(), &config)?;
+    let plugin_registry_file = registry_path_from_plugins_dir(&resolved.plugins_dir);
+    let memory_file = match home.as_deref() {
         Some(root) => root.join(".bijux").join(".memory.json"),
         None => Path::new(".").join(".bijux").join(".memory.json"),
-    }
+    };
+    Ok(ResolvedStatePaths {
+        config_file: resolved.config_file,
+        history_file: resolved.history_file,
+        plugins_dir: resolved.plugins_dir,
+        plugin_registry_file,
+        memory_file,
+    })
 }
 
 fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Value>> {
@@ -452,8 +482,9 @@ fn state_path_status(path: &Path) -> Value {
     })
 }
 
-fn state_diagnostics(paths: &CompatibilityPaths, plugin_registry_path: &Path) -> Value {
+fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
     let mut issues = Vec::<Value>::new();
+    let mut repairs = Vec::<Value>::new();
 
     let repository = FileConfigRepository;
     if let Err(err) = repository.load(&paths.config_file) {
@@ -485,6 +516,15 @@ fn state_diagnostics(paths: &CompatibilityPaths, plugin_registry_path: &Path) ->
             }));
         }
     }
+    let config_tmp = paths.config_file.with_extension("tmp");
+    if config_tmp.exists() {
+        issues.push(json!({
+            "area": "config",
+            "severity": "warning",
+            "message": "partial-write rollback artifact detected",
+            "path": config_tmp,
+        }));
+    }
 
     if let Err(err) = read_history_entries(&paths.history_file, 20) {
         issues.push(json!({
@@ -495,18 +535,55 @@ fn state_diagnostics(paths: &CompatibilityPaths, plugin_registry_path: &Path) ->
         }));
     }
 
-    if let Err(err) = plugin_doctor(plugin_registry_path) {
+    match read_memory_map(&paths.memory_file) {
+        Ok(memory) => {
+            let wrong_type_keys: Vec<String> = memory
+                .iter()
+                .filter_map(|(key, value)| (!value.is_object()).then_some(key.clone()))
+                .collect();
+            if !wrong_type_keys.is_empty() {
+                issues.push(json!({
+                    "area": "memory",
+                    "severity": "warning",
+                    "message": "memory entries with wrong-type values detected",
+                    "keys": wrong_type_keys,
+                    "path": paths.memory_file,
+                }));
+            }
+        }
+        Err(err) => {
+            issues.push(json!({
+                "area": "memory",
+                "severity": "error",
+                "message": err.to_string(),
+                "path": paths.memory_file,
+            }));
+        }
+    }
+
+    if bijux_cli_plugin::self_repair_registry(&paths.plugin_registry_file).is_ok() {
+        if let Ok(true) = prune_registry_backup(&paths.plugin_registry_file) {
+            repairs.push(json!({
+                "area": "plugins",
+                "action": "removed-stale-backup",
+                "path": paths.plugin_registry_file.with_extension("bak"),
+            }));
+        }
+    }
+
+    if let Err(err) = plugin_doctor(&paths.plugin_registry_file) {
         issues.push(json!({
             "area": "plugins",
             "severity": "error",
             "message": err.to_string(),
-            "path": plugin_registry_path,
+            "path": paths.plugin_registry_file,
         }));
     }
 
     json!({
         "status": if issues.is_empty() { "healthy" } else { "degraded" },
         "issues": issues,
+        "repairs": repairs,
     })
 }
 
@@ -569,21 +646,14 @@ fn route_response(
         }));
     }
 
-    let home = home_dir();
-    let defaults = home
-        .as_deref()
-        .map(default_compatibility_paths)
-        .unwrap_or_else(|| default_compatibility_paths(Path::new(".")));
-
-    let config = load_compatibility_config(&defaults.config_file)
-        .unwrap_or_else(|_| CompatibilityConfig::default());
-    let mut overrides = PathOverrides::default();
-    if let Some(path) = &global_flags.config_path {
-        overrides.config_file = Some(path.into());
-    }
-    let paths = discover_compatibility_paths(home.as_deref(), &overrides, &env_map(), &config)?;
-    let plugin_registry_path = registry_path_from_plugins_dir(&paths.plugins_dir);
-    if let Some(payload) = execute_config_command(normalized_path, argv, &paths)? {
+    let paths = resolve_state_paths(global_flags)?;
+    let compatibility_paths = CompatibilityPaths {
+        config_file: paths.config_file.clone(),
+        history_file: paths.history_file.clone(),
+        plugins_dir: paths.plugins_dir.clone(),
+    };
+    let plugin_registry_path = paths.plugin_registry_file.clone();
+    if let Some(payload) = execute_config_command(normalized_path, argv, &compatibility_paths)? {
         return Ok(payload);
     }
 
@@ -744,13 +814,11 @@ fn route_response(
             json!({"entries": entries})
         }
         [a] if a == "memory" => {
-            let memory_path = memory_file_path_from_home(home.as_deref());
-            let memory = read_memory_map(&memory_path)?;
+            let memory = read_memory_map(&paths.memory_file)?;
             json!({"status": "ok", "count": memory.len(), "message": "Memory command executed"})
         }
         [a, b] if a == "memory" && b == "list" => {
-            let memory_path = memory_file_path_from_home(home.as_deref());
-            let memory = read_memory_map(&memory_path)?;
+            let memory = read_memory_map(&paths.memory_file)?;
             let mut keys: Vec<String> = memory.keys().cloned().collect();
             keys.sort_unstable();
             json!({"status": "ok", "keys": keys, "count": keys.len()})
@@ -1073,6 +1141,11 @@ fn route_response(
             let state_behavior = read_json_if_exists(
                 &root.join("artifacts/status/status_state_behavior_coverage.json"),
             );
+            let state_paths =
+                read_json_if_exists(&root.join("artifacts/status/status_state_paths_report.json"));
+            let state_corruption = read_json_if_exists(
+                &root.join("artifacts/status/status_state_corruption_health_report.json"),
+            );
             let snapshot_coverage =
                 read_json_if_exists(&root.join("artifacts/status/status_snapshot_coverage.json"));
             let stream_coverage =
@@ -1103,6 +1176,8 @@ fn route_response(
                     "python_bridge_parity_coverage": python_bridge_parity,
                     "install_packaging_parity_coverage": install_packaging,
                     "state_behavior_coverage": state_behavior,
+                    "state_paths_report": state_paths,
+                    "state_corruption_health_report": state_corruption,
                     "snapshot_coverage": snapshot_coverage,
                     "stream_coverage": stream_coverage,
                     "exit_code_coverage": exit_code_coverage,
@@ -1265,19 +1340,20 @@ fn route_response(
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-audit" => {
-            let memory_path = memory_file_path_from_home(home.as_deref());
+            let corruption = state_diagnostics(&paths);
             json!({
                 "paths": {
                     "config": state_path_status(&paths.config_file),
                     "history": state_path_status(&paths.history_file),
                     "plugins_registry": state_path_status(&plugin_registry_path),
-                    "memory": state_path_status(&memory_path),
+                    "memory": state_path_status(&paths.memory_file),
                 },
+                "corruption_health": corruption,
                 "runtime": "dev-cli",
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor" => {
-            let diagnosis = state_diagnostics(&paths, &plugin_registry_path);
+            let diagnosis = state_diagnostics(&paths);
             json!({
                 "runtime": "dev-cli",
                 "doctor": diagnosis,

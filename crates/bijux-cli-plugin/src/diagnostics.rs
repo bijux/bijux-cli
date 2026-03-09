@@ -82,3 +82,13 @@ pub fn self_repair_registry(path: &Path) -> Result<crate::models::PluginRegistry
         Err(error) => Err(error),
     }
 }
+
+/// Remove stale transactional backup file left next to registry path.
+pub fn prune_registry_backup(path: &Path) -> Result<bool, PluginError> {
+    let backup = path.with_extension("bak");
+    if !backup.exists() {
+        return Ok(false);
+    }
+    fs::remove_file(backup)?;
+    Ok(true)
+}

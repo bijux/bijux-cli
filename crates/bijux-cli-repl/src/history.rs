@@ -8,6 +8,21 @@ fn parse_history_entries(text: &str) -> Option<Vec<String>> {
     if let Ok(entries) = serde_json::from_str::<Vec<String>>(text) {
         return Some(entries);
     }
+    if let Ok(entries) = serde_json::from_str::<Vec<serde_json::Value>>(text) {
+        let commands: Vec<String> = entries
+            .into_iter()
+            .filter_map(|entry| {
+                entry
+                    .as_object()
+                    .and_then(|obj| obj.get("command"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(ToString::to_string)
+            })
+            .collect();
+        if !commands.is_empty() {
+            return Some(commands);
+        }
+    }
 
     let mut parsed = Vec::new();
     for line in text.lines() {
