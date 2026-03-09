@@ -226,3 +226,10 @@ fn maps_usage_category_to_stable_usage_exit_code() {
     assert_eq!(map_error_category_to_exit("usage"), ExitCode::Usage);
     assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
 }
+
+#[test]
+fn maps_validation_plugin_and_internal_categories_to_stable_exit_codes() {
+    assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("plugin"), ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("internal"), ExitCode::Error);
+}
