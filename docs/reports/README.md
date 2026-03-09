@@ -8,7 +8,7 @@ Status: stable
 
 This directory is not part of the primary documentation navigation. It stores evidence and archival material only.
 
-- `docs/index.md` lists only high-signal entrypoints.
+- `docs/INDEX.md` lists only high-signal entrypoints.
 - `docs/README.md` documents section boundaries and cleanup rules.
 
 ## Report surface policy
@@ -31,31 +31,31 @@ This directory is not part of the primary documentation navigation. It stores ev
 
 ## Foundation reports kept in-tree
 
-- `docs/reports/foundation/foundation_final_report.md` — [runtime dashboard](./runtime-dashboard.md)
-- `docs/reports/foundation/release_evidence_report.md` — [evidence dashboard](./evidence-dashboard.md)
-- `docs/reports/foundation/release_critical_evidence_matrix.md` — [evidence dashboard](./evidence-dashboard.md)
-- `docs/reports/foundation/evidence_dashboard.md`
-- `docs/reports/foundation/evidence_ci_exercise_report.md`
-- `docs/reports/foundation/repository_proof_statement.md`
-- `docs/reports/foundation/system_health_diagnostics_documentation.md`
-- `docs/reports/foundation/runtime_architecture_health_dashboard.md`
-- `docs/reports/foundation/runtime_boundary_report.md`
-- `docs/reports/foundation/runtime_broad_surface_inventory.md`
-- `docs/reports/foundation/runtime_contract_backing_report.md`
-- `docs/reports/foundation/runtime_modeled_only_surfaces.md`
-- `docs/reports/foundation/runtime_stable_vs_experimental_surface_page.md`
-- `docs/reports/foundation/runtime_public_api_map.md`
-- `docs/reports/foundation/kernel_api_surface_report.md`
-- `docs/reports/foundation/docs_root_inventory_report.md`
-- `docs/reports/foundation/run_history_size_growth_report.md`
-- `docs/reports/foundation/run_history_corruption_resilience_report.md`
-- `docs/reports/foundation/app_hot_path_quality_dashboard.md`
-- `docs/reports/foundation/cli_stability_dashboard.md`
-- `docs/reports/foundation/inspect_diagnostics_dashboard.md`
+- `docs/reports/foundation/FOUNDATION_FINAL_REPORT.md` — [runtime dashboard](./RUNTIME-DASHBOARD.md)
+- `docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md` — [evidence dashboard](./EVIDENCE-DASHBOARD.md)
+- `docs/reports/foundation/RELEASE_CRITICAL_EVIDENCE_MATRIX.md` — [evidence dashboard](./EVIDENCE-DASHBOARD.md)
+- `docs/reports/foundation/EVIDENCE_DASHBOARD.md`
+- `docs/reports/foundation/EVIDENCE_CI_EXERCISE_REPORT.md`
+- `docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md`
+- `docs/reports/foundation/SYSTEM_HEALTH_DIAGNOSTICS_DOCUMENTATION.md`
+- `docs/reports/foundation/RUNTIME_ARCHITECTURE_HEALTH_DASHBOARD.md`
+- `docs/reports/foundation/RUNTIME_BOUNDARY_REPORT.md`
+- `docs/reports/foundation/RUNTIME_BROAD_SURFACE_INVENTORY.md`
+- `docs/reports/foundation/RUNTIME_CONTRACT_BACKING_REPORT.md`
+- `docs/reports/foundation/RUNTIME_MODELED_ONLY_SURFACES.md`
+- `docs/reports/foundation/RUNTIME_STABLE_VS_EXPERIMENTAL_SURFACE_PAGE.md`
+- `docs/reports/foundation/RUNTIME_PUBLIC_API_MAP.md`
+- `docs/reports/foundation/KERNEL_API_SURFACE_REPORT.md`
+- `docs/reports/foundation/DOCS_ROOT_INVENTORY_REPORT.md`
+- `docs/reports/foundation/RUN_HISTORY_SIZE_GROWTH_REPORT.md`
+- `docs/reports/foundation/RUN_HISTORY_CORRUPTION_RESILIENCE_REPORT.md`
+- `docs/reports/foundation/APP_HOT_PATH_QUALITY_DASHBOARD.md`
+- `docs/reports/foundation/CLI_STABILITY_DASHBOARD.md`
+- `docs/reports/foundation/INSPECT_DIAGNOSTICS_DASHBOARD.md`
 - `docs/reports/foundation/ARCHIVED_LOW_VALUE_FOUNDATION_REPORTS_100.md`
 
 ## Dashboard entrypoints
 
-- [Runtime dashboard](./runtime-dashboard.md)
-- [Evidence and release dashboard](./evidence-dashboard.md)
-- [Quality and operator dashboard](./quality-dashboard.md)
+- [Runtime dashboard](./RUNTIME-DASHBOARD.md)
+- [Evidence and release dashboard](./EVIDENCE-DASHBOARD.md)
+- [Quality and operator dashboard](./QUALITY-DASHBOARD.md)

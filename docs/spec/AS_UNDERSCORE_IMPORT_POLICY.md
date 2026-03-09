@@ -19,7 +19,7 @@
 
 - Policy source: `configs/policy/as_underscore_import_policy.json`
 - Contract test: `crates/bijux-dev-dag/tests/as_underscore_import_contracts.rs`
-- Audit report: `docs/reports/foundation/as_underscore_import_audit.md`
+- Audit report: `docs/reports/foundation/AS_UNDERSCORE_IMPORT_AUDIT.md`
 
 ## Review rule
 

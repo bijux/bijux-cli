@@ -11,7 +11,7 @@ Runtime modules classified as `move` in `configs/policy/runtime_overreach_cleanu
 ## Enforcement
 
 - Contract test: `crates/bijux-dev-dag/tests/runtime_overreach_contracts.rs`
-- Report: `docs/reports/foundation/runtime_overreach_before_after_report.md`
+- Report: `docs/reports/foundation/RUNTIME_OVERREACH_BEFORE_AFTER_REPORT.md`
 
 ## Scope decisions
 

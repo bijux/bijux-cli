@@ -23,4 +23,4 @@ Contract guarantees are defined in:
 
 - `docs/spec/REPLAY_CONTRACT.md`
 - `docs/spec/REPLAY_EVIDENCE_CONTRACT.md`
-- `docs/spec/RUN_ARTIFACT_SPEC_v0.1.md`
+- `docs/spec/RUN_ARTIFACT_SPEC_V0.1.md`

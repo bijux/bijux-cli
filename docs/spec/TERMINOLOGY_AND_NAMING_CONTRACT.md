@@ -43,11 +43,11 @@ This contract is the single source of meaning and naming rules for contract term
 - canonical glossary table: `docs/spec/appendices/terminology/GLOSSARY.md`
 - term index: `docs/spec/appendices/terminology/TERMS.md`
 - `docs/reference/NAMING_AUDIT.md`
-- `docs/adr/20260308-vocabulary-and-scope-honesty.md`
+- `docs/adr/20260308-VOCABULARY-AND-SCOPE-HONESTY.md`
 
 ## Implementation and evidence sources
 
 - Naming and vocabulary checks run with architecture and governance audits in:
   - `crates/bijux-dev-dag/tests`
   - `docs/reference/NAMING_AUDIT.md`
-  - `docs/adr/20260308-documentation-truth-policy.md`
+  - `docs/adr/20260308-DOCUMENTATION-TRUTH-POLICY.md`

@@ -18,7 +18,7 @@ Runtime behavior changes that alter node status semantics or manifest layout mus
 
 Artifact layout changes require updates to:
 
-- `docs/spec/RUN_ARTIFACT_SPEC_v0.1.md`
+- `docs/spec/RUN_ARTIFACT_SPEC_V0.1.md`
 - golden/replay contract tests
 - public API baselines where applicable
 

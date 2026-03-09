@@ -42,5 +42,5 @@ Kernel means the deterministic execution truth path:
 
 ## Related reports
 
-- `docs/reports/foundation/kernel_api_surface_report.md`
-- `docs/reports/foundation/public_api_shrink_report.md`
+- `docs/reports/foundation/KERNEL_API_SURFACE_REPORT.md`
+- `docs/reports/foundation/PUBLIC_API_SHRINK_REPORT.md`

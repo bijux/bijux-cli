@@ -32,6 +32,6 @@ and artifact lineage.
 ## Related contracts
 
 - `docs/spec/GRAPH_IDENTITY_CONTRACT.md`
-- `docs/spec/FINGERPRINTS_v0.1.md`
+- `docs/spec/FINGERPRINTS_V0.1.md`
 - `docs/spec/PLANNER_CONTRACT.md`
-- `docs/spec/RUN_ARTIFACT_SPEC_v0.1.md`
+- `docs/spec/RUN_ARTIFACT_SPEC_V0.1.md`

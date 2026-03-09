@@ -275,7 +275,7 @@ distribution, crash-recovery outcomes, and determinism drift detections.
 # App Hot-Path Latency Report
 
 Primary signal: operator command routing and response assembly latency.
-Reference baseline: `docs/reports/foundation/app_hot_path_fast_suite.md`.
+Reference baseline: `docs/reports/foundation/APP_HOT_PATH_FAST_SUITE.md`.
 ```
 
 ### 008. `docs/reports/foundation/app_no_dead_module_report.md`
@@ -360,8 +360,8 @@ Reference baseline: `docs/reports/foundation/artifact_contract_report.md`.
 # Artifact Integrity Dashboard
 
 Primary sources:
-- `docs/reports/foundation/artifact_store_integrity_report.md`
-- `docs/reports/foundation/artifact_lifecycle_invariants_report.md`
+- `docs/reports/foundation/ARTIFACT_STORE_INTEGRITY_REPORT.md`
+- `docs/reports/foundation/ARTIFACT_LIFECYCLE_INVARIANTS_REPORT.md`
 Status: artifact integrity contracts gate lifecycle regressions.
 ```
 
@@ -582,7 +582,7 @@ This report tracks runtime and runtime-adjacent surfaces that still look broader
 ```markdown
 # Backend Divergence Dashboard
 
-Primary source: `docs/reports/foundation/backend_divergence_diagnostics_report.md`.
+Primary source: `docs/reports/foundation/BACKEND_DIVERGENCE_DIAGNOSTICS_REPORT.md`.
 Status: divergence diagnostics summarize local/container/external mismatch classes.
 ```
 
@@ -601,7 +601,7 @@ Status: divergence diagnostics summarize local/container/external mismatch class
 ## Source anchors
 
 - `docs/spec/RUNTIME_TELEMETRY_SCHEMA.md`
-- `docs/reports/foundation/distributed_execution_telemetry_report.md`
+- `docs/reports/foundation/DISTRIBUTED_EXECUTION_TELEMETRY_REPORT.md`
 - `evidence/cache/backend_protocol/regression_corpus.json`
 ```
 
@@ -748,7 +748,7 @@ Current focus:
 
 Primary sources:
 - `docs/reports/foundation/benchmark_trend_by_claim_family_report.md`
-- `docs/reports/foundation/benchmark_signal_governance_161_180_status_report.md`
+- `docs/reports/foundation/BENCHMARK_SIGNAL_GOVERNANCE_161_180_STATUS_REPORT.md`
 Status: benchmark lanes are split into release-critical and advisory governance.
 ```
 
@@ -769,7 +769,7 @@ Coverage:
 # Bundle Export and Import Latency Report
 
 Primary signal: bundle export/import wall time and variance.
-Reference baseline: `docs/reports/foundation/bundle_export_import_benchmarks.md`.
+Reference baseline: `docs/reports/foundation/BUNDLE_EXPORT_IMPORT_BENCHMARKS.md`.
 ```
 
 ### 044. `docs/reports/foundation/bundle_portability_dashboard.md`
@@ -778,8 +778,8 @@ Reference baseline: `docs/reports/foundation/bundle_export_import_benchmarks.md`
 # Bundle Portability Dashboard
 
 Primary sources:
-- `docs/reports/foundation/bundle_portability_report.md`
-- `docs/reports/foundation/bundle_import_diagnostics_report.md`
+- `docs/reports/foundation/BUNDLE_PORTABILITY_REPORT.md`
+- `docs/reports/foundation/BUNDLE_IMPORT_DIAGNOSTICS_REPORT.md`
 Status: bundle import/export portability is enforced by bundle verification suites.
 ```
 
@@ -798,7 +798,7 @@ Status: bundle import/export portability is enforced by bundle verification suit
 
 - `docs/spec/RUNTIME_TELEMETRY_SCHEMA.md`
 - `evidence/cache/telemetry/regression_corpus.json`
-- `docs/reports/foundation/telemetry_coverage_report.md`
+- `docs/reports/foundation/TELEMETRY_COVERAGE_REPORT.md`
 ```
 
 ### 046. `docs/reports/foundation/canonical_diff_fixture_inventory_report.md`
@@ -847,7 +847,7 @@ Total fixtures: 2
 # CI Gate Health Dashboard
 
 Primary sources:
-- `docs/reports/foundation/release_signal_benchmarks_completion_report.md`
+- `docs/reports/foundation/RELEASE_SIGNAL_BENCHMARKS_COMPLETION_REPORT.md`
 - `docs/reports/foundation/system_health_reporting_dashboard.md`
 Status: gate health is measured through release-critical contract and benchmark signals.
 ```
@@ -869,7 +869,7 @@ All release-facing performance claims in this scope have at least one benchmark 
 ```markdown
 # CLI Error Classification Dashboard
 
-Primary source: `docs/reports/foundation/cli_error_taxonomy_report.md`.
+Primary source: `docs/reports/foundation/CLI_ERROR_TAXONOMY_REPORT.md`.
 Status: CLI failures are grouped by stable error classes used in operator workflows.
 ```
 
@@ -960,12 +960,12 @@ generated_from: `crates/bijux-dag-core/src/lib.rs`
 ```markdown
 # Crate API Size Delta Report
 
-generated_from: `public_api_hotspot_report.md + runtime_public_api_map.md`
+generated_from: `PUBLIC_API_HOTSPOT_REPORT.md + RUNTIME_PUBLIC_API_MAP.md`
 
 ## Current Snapshot
 
-- `bijux-dag-core`: tracked in `core_public_api_shrink_report.md`
-- `bijux-dag-runtime`: tracked in `runtime_public_api_shrink_report.md`
+- `bijux-dag-core`: tracked in `core_PUBLIC_API_SHRINK_REPORT.md`
+- `bijux-dag-runtime`: tracked in `runtime_PUBLIC_API_SHRINK_REPORT.md`
 - `bijux-dag-artifacts`: tracked in `artifact_contract_report.md`
 
 ## Delta Policy
@@ -1118,8 +1118,8 @@ Reference checks:
 Current result: no stale governed evidence/governance pages requiring deletion.
 
 Reference sources:
-- `docs/reports/foundation/evidence_command_owner_map.md`
-- `docs/reports/foundation/release_critical_evidence_matrix.md`
+- `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md`
+- `docs/reports/foundation/RELEASE_CRITICAL_EVIDENCE_MATRIX.md`
 - `docs/reports/foundation/advisory_evidence_matrix.md`
 ```
 
@@ -1131,8 +1131,8 @@ Reference sources:
 Current result: no stale governed runtime pages requiring deletion.
 
 Reference sources:
-- `docs/reports/foundation/runtime_broad_surface_inventory.md`
-- `docs/reports/foundation/runtime_stable_vs_experimental_surface_page.md`
+- `docs/reports/foundation/RUNTIME_BROAD_SURFACE_INVENTORY.md`
+- `docs/reports/foundation/RUNTIME_STABLE_VS_EXPERIMENTAL_SURFACE_PAGE.md`
 ```
 
 ### 074. `docs/reports/foundation/docs_merge_candidates_report.md`
@@ -1294,7 +1294,7 @@ Current audit result:
 
 Audit source:
 - `configs/policy/evidence_suite_policy.json`
-- `docs/reports/foundation/evidence_command_owner_map.md`
+- `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md`
 ```
 
 ### 087. `docs/reports/foundation/evidence_claim_links.md`
@@ -1325,7 +1325,7 @@ Current audit result:
 - none
 
 Audit source:
-- `docs/reports/foundation/evidence_command_owner_map.md`
+- `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md`
 - `configs/policy/evidence_suite_policy.json`
 ```
 
@@ -1430,7 +1430,7 @@ generated_from: `configs/policy/crate_taxonomy_v2.json + crate graph snapshot`
 # FSCK and Deep Verification Cost Report
 
 Primary signal: cost of `fsck`-style integrity verification and deep run/artifact checks.
-Reference baselines: `docs/reports/foundation/artifact_contract_report.md` and `docs/reports/foundation/release_evidence_report.md`.
+Reference baselines: `docs/reports/foundation/artifact_contract_report.md` and `docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md`.
 ```
 
 ### 097. `docs/reports/foundation/full_lane_slowest_ten.md`
@@ -1605,9 +1605,9 @@ Performance impact of invariant checks is tracked against scheduler/runtime stre
 
 ## Benchmark anchors
 
-- `docs/reports/foundation/runtime_engine_scheduler_hotpath_benchmark.md`
-- `docs/reports/foundation/large_dag_scalability_benchmarks.md`
-- `docs/reports/foundation/determinism_benchmark_suite.md`
+- `docs/reports/foundation/RUNTIME_ENGINE_SCHEDULER_HOTPATH_BENCHMARK.md`
+- `docs/reports/foundation/LARGE_DAG_SCALABILITY_BENCHMARKS.md`
+- `docs/reports/foundation/DETERMINISM_BENCHMARK_SUITE.md`
 
 ## Expectation
 
@@ -1975,7 +1975,7 @@ Essential outputs only:
 - `docs/reports/foundation/release_gate_machine_summaries.json`
 - `docs/reports/foundation/release_gate_runtime_budget_trend_report.md`
 - `docs/reports/foundation/compact_release_evidence_pack.json`
-- `docs/reports/foundation/release_critical_evidence_matrix.md`
+- `docs/reports/foundation/RELEASE_CRITICAL_EVIDENCE_MATRIX.md`
 ```
 
 ### 134. `docs/reports/foundation/replay_determinism_dashboard.md`
@@ -1984,7 +1984,7 @@ Essential outputs only:
 # Replay Determinism Dashboard
 
 Primary sources:
-- `docs/reports/foundation/replay_planning_determinism_report.md`
+- `docs/reports/foundation/REPLAY_PLANNING_DETERMINISM_REPORT.md`
 - `docs/reports/foundation/determinism_drift_detection_report.md`
 Status: replay determinism regressions are tracked and fail contracts when violated.
 ```
@@ -2191,8 +2191,8 @@ Each class maps to deterministic diagnostics and operator-visible remediation co
 # Runtime Invariants Dashboard
 
 Primary sources:
-- `docs/reports/foundation/internal_invariants_coverage_report.md`
-- `docs/reports/foundation/runtime_architecture_health_dashboard.md`
+- `docs/reports/foundation/INTERNAL_INVARIANTS_COVERAGE_REPORT.md`
+- `docs/reports/foundation/RUNTIME_ARCHITECTURE_HEALTH_DASHBOARD.md`
 Status: runtime invariant checks are part of contract suites.
 ```
 
@@ -2226,8 +2226,8 @@ Recovery latency tracking for checkpoint interruption, partial-run continuation,
 
 ## Source anchors
 
-- `docs/reports/foundation/failure_handling_benchmarks.md`
-- `docs/reports/foundation/run_directory_filesystem_recovery_benchmarks.md`
+- `docs/reports/foundation/FAILURE_HANDLING_BENCHMARKS.md`
+- `docs/reports/foundation/RUN_DIRECTORY_FILESYSTEM_RECOVERY_BENCHMARKS.md`
 - `configs/suites/failure_recovery_injection_stress.json`
 ```
 
@@ -2274,7 +2274,7 @@ Reference baseline: `docs/reports/foundation/scheduler_overhead_baseline.md`.
 # Schema Compatibility Dashboard
 
 Primary sources:
-- `docs/reports/foundation/schema_compatibility_matrix_report.md`
+- `docs/reports/foundation/SCHEMA_COMPATIBILITY_MATRIX_REPORT.md`
 - `docs/reports/foundation/schema_stability_dashboard.md`
 Status: schema compatibility drift is blocked by schema governance contracts.
 ```
@@ -2285,7 +2285,7 @@ Status: schema compatibility drift is blocked by schema governance contracts.
 # Schema Evolution Dashboard
 
 Primary sources:
-- `docs/reports/foundation/schema_changelog.md`
+- `docs/reports/foundation/SCHEMA_CHANGELOG.md`
 - `docs/reports/foundation/schema_change_detection_ci_report.md`
 Status: schema evolution policy and drift controls are continuously enforced.
 ```
@@ -2822,8 +2822,8 @@ Documentation linkage drift is monitored via:
 # Replay Correctness Dashboard
 
 Primary sources:
-- `docs/reports/foundation/replay_planning_determinism_report.md`
-- `docs/reports/foundation/replay_plan_consistency_dashboard.md`
+- `docs/reports/foundation/REPLAY_PLANNING_DETERMINISM_REPORT.md`
+- `docs/reports/foundation/REPLAY_PLAN_CONSISTENCY_DASHBOARD.md`
 Status: replay correctness and determinism checks are green when contract suites pass.
 ```
 
@@ -2856,7 +2856,7 @@ Primary benchmark surface:
 Primary benchmark surface:
 
 - `docs/reports/foundation/runtime_scheduler_helper_boundary_benchmark.md`
-- `docs/reports/foundation/runtime_engine_scheduler_hotpath_benchmark.md`
+- `docs/reports/foundation/RUNTIME_ENGINE_SCHEDULER_HOTPATH_BENCHMARK.md`
 - threshold assertion: `docs/reports/foundation/benchmark_threshold_assertions_runtime_helpers.json`
 ```
 
@@ -2937,7 +2937,7 @@ All benchmark surfaces mapped in release-signal scope have threshold assertions.
 - generate trend-based historical evidence for foundation metrics
 ```
 
-### 215. `docs/reports/foundation/core_public_api_shrink_report.md`
+### 215. `docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md`
 ```markdown
 # Core Public API Shrink Report
 
@@ -2956,7 +2956,7 @@ Current result: no dead re-export or unused prelude additions in this revision.
 
 Reference checks:
 - workspace lint gates (`make lint`)
-- `docs/reports/foundation/as_underscore_import_audit.md`
+- `docs/reports/foundation/AS_UNDERSCORE_IMPORT_AUDIT.md`
 ```
 
 ### 217. `docs/reports/foundation/evidence_maintenance_checklist.md`
@@ -2987,7 +2987,7 @@ Shrink trend anchors:
 
 Primary unconsumed/orphan inputs:
 
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 - `docs/reports/foundation/fixtures_with_no_owning_suite_report.md`
 - `docs/reports/foundation/fixtures_with_no_owning_crate_report.md`
 ```
@@ -2999,8 +2999,8 @@ Primary unconsumed/orphan inputs:
 Coverage evidence sources:
 
 - contract suite pass/fail status across app/runtime/artifacts/dev domains
-- `docs/reports/foundation/line_coverage_under_25_report.md`
-- `docs/reports/foundation/line_coverage_under_50_report.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md`
 ```
 
 ### 221. `docs/reports/foundation/internal_contract_review_checklist.md`
@@ -3064,12 +3064,12 @@ Trend sources:
 
 Candidate source:
 
-- `docs/reports/foundation/module_inventory_under_10_lines_review.md`
+- `docs/reports/foundation/MODULE_INVENTORY_UNDER_10_LINES_REVIEW.md`
 
 Policy: tiny wrappers without meaningful semantic value should be inlined or justified.
 ```
 
-### 227. `docs/reports/foundation/runtime_public_api_shrink_report.md`
+### 227. `docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md`
 ```markdown
 # Runtime Public API Shrink Report
 
@@ -3143,7 +3143,7 @@ Primary indicators:
 
 Primary measurements:
 
-- `docs/reports/foundation/dev_dag_command_size_report_by_family.md`
+- `docs/reports/foundation/DEV_DAG_COMMAND_SIZE_REPORT_BY_FAMILY.md`
 - `docs/reports/foundation/top_10_slowest_dev_dag_commands_report.md`
 
 Interpretation: command-size/latency trend helps prioritize future contraction work on dense command families.
@@ -3239,7 +3239,7 @@ Primary indicators:
 
 Orphan cleanup references:
 
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 - `docs/reports/foundation/fixtures_with_no_owning_suite_report.md`
 
 Current policy: no orphan fixture should remain without owner and suite linkage metadata.
@@ -3299,7 +3299,7 @@ Candidate consolidation targets:
 
 Primary indicators:
 
-- compact command set stability: `compact_operator_command_set_report.md`
+- compact command set stability: `COMPACT_OPERATOR_COMMAND_SET_REPORT.md`
 - command complexity and latency concentration: `operator_command_complexity_report.md`
 - usage concentration in tests/examples: `operator_command_usage_heatmap_report.md`
 - help/output contract health: app operator contract tests
@@ -3335,7 +3335,7 @@ Prioritized by size, coverage, and ownership concentration.
 
 Candidate sources:
 
-- `docs/reports/foundation/module_inventory_over_500_lines.md`
+- `docs/reports/foundation/MODULE_INVENTORY_OVER_500_LINES.md`
 - `docs/reports/foundation/module_inventory_over_1000_lines.md`
 
 Policy: large modules require split rationale and split-plan governance metadata.
@@ -3347,9 +3347,9 @@ Policy: large modules require split rationale and split-plan governance metadata
 
 Repository inventory dimensions:
 
-- size: `docs/reports/foundation/top_25_largest_files_remaining_report.md`
-- churn: `docs/reports/foundation/top_25_highest_churn_files_remaining_report.md`
-- coverage: `docs/reports/foundation/top_25_lowest_covered_product_paths_report.md`
+- size: `docs/reports/foundation/TOP_25_LARGEST_FILES_REMAINING_REPORT.md`
+- churn: `docs/reports/foundation/TOP_25_HIGHEST_CHURN_FILES_REMAINING_REPORT.md`
+- coverage: `docs/reports/foundation/TOP_25_LOWEST_COVERED_PRODUCT_PATHS_REPORT.md`
 - ownership: `configs/policy/crate_ownership.json` and `docs/reports/foundation/module_ownership_dashboard.md`
 ```
 
@@ -3371,7 +3371,7 @@ generated_from: `configs/policy/runtime_broad_surface_ownership.json`
 
 Trend sources:
 
-- `docs/reports/foundation/runtime_public_api_shrink_report.md`
+- `docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md`
 - `docs/reports/foundation/release_gate_runtime_budget_trend_report.md`
 
 Status: runtime public-surface growth is monitored and drift is surfaced in release gate trend reporting.
@@ -3383,8 +3383,8 @@ Status: runtime public-surface growth is monitored and drift is surfaced in rele
 
 Primary measurements:
 
-- `docs/reports/foundation/runtime_public_api_shrink_report.md`
-- `docs/reports/foundation/runtime_public_api_map.md`
+- `docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md`
+- `docs/reports/foundation/RUNTIME_PUBLIC_API_MAP.md`
 
 Status: public runtime surface size is tracked through generated API shrink reporting and contract checks.
 ```
@@ -3472,9 +3472,9 @@ This map keeps contract execution coverage tied to executable suite definitions.
 
 Trend anchors:
 
-- `docs/reports/foundation/dev_dag_contraction_completion_report.md`
-- `docs/reports/foundation/dev_dag_command_decomposition_completion_report.md`
-- `docs/reports/foundation/dev_dag_command_size_report_by_family.md`
+- `docs/reports/foundation/DEV_DAG_CONTRACTION_COMPLETION_REPORT.md`
+- `docs/reports/foundation/DEV_DAG_COMMAND_DECOMPOSITION_COMPLETION_REPORT.md`
+- `docs/reports/foundation/DEV_DAG_COMMAND_SIZE_REPORT_BY_FAMILY.md`
 
 Status: command-family decomposition and compact packs provide continued surface reduction guidance.
 ```
@@ -3511,7 +3511,7 @@ generated_from: `line coverage + file size hotspots + churn`
 
 Complexity signals:
 
-- route complexity: `docs/reports/foundation/app_route_complexity_score_report.md`
+- route complexity: `docs/reports/foundation/APP_ROUTE_COMPLEXITY_SCORE_REPORT.md`
 - command latency hotspots: `docs/reports/foundation/top_10_slowest_commands.md`
 - app hot path baseline: `docs/reports/foundation/app_hot_path_latency_report.md`
 
@@ -3524,7 +3524,7 @@ Interpretation: complexity is concentrated in inspect/replay/diagnostics flows; 
 
 Usage evidence sources:
 
-- `docs/reports/foundation/cli_command_usage_heatmap.md`
+- `docs/reports/foundation/CLI_COMMAND_USAGE_HEATMAP.md`
 - `docs/reports/foundation/benchmark_suite_app_operator_workflows.md`
 - app operator contract tests in `crates/bijux-dag-app/tests/`
 
@@ -3570,7 +3570,7 @@ Evidence source:
 - artifacts/benchmarks/replay_proof_generation.json
 ```
 
-### 268. `docs/reports/foundation/advisory_evidence_dashboard.md`
+### 268. `docs/reports/foundation/advisory_EVIDENCE_DASHBOARD.md`
 ```markdown
 # Advisory Evidence Dashboard
 
@@ -3637,7 +3637,7 @@ Evidence families primarily internal/support or advisory:
 Support artifacts:
 
 - `docs/reports/foundation/advisory_only_evidence_commands_report.md`
-- `docs/reports/foundation/evidence_command_owner_map.md`
+- `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md`
 ```
 
 ### 273. `docs/reports/foundation/evidence_weak_decision_value_report.md`
@@ -3646,7 +3646,7 @@ Support artifacts:
 
 Lowest-value evidence outputs are tracked in:
 
-- `docs/reports/foundation/top_25_evidence_outputs_low_decision_value_report.md`
+- `docs/reports/foundation/TOP_25_EVIDENCE_OUTPUTS_LOW_DECISION_VALUE_REPORT.md`
 
 Rationalization policy:
 
@@ -3706,7 +3706,7 @@ Current result: none in governed critical paths.
 
 Reference sources:
 - `configs/policy/fixture_family_governance.json`
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 - `docs/reports/foundation/fixture_governance_missing_owner_report.md`
 ```
 
@@ -3729,9 +3729,9 @@ Current stance: retain stable command IDs while consolidating operator story via
 # Repo-Tree Health Dashboard
 
 Key indicators:
-- large modules: see `module_inventory_over_500_lines.md`
+- large modules: see `MODULE_INVENTORY_OVER_500_LINES.md`
 - very large modules: see `module_inventory_over_1000_lines.md`
-- zero direct tests: see `module_inventory_zero_direct_tests.md`
+- zero direct tests: see `MODULE_INVENTORY_ZERO_DIRECT_TESTS.md`
 - hotspots: see `repo_tree_hotspots_report.md`
 - cleanup candidates: see `repo_tree_cleanup_candidates_report.md`
 
@@ -3894,9 +3894,9 @@ Canonical owners for repeated evidence signals.
 
 | Signal | Canonical owner output | Consolidated outputs |
 | --- | --- | --- |
-| release decision summary | `docs/reports/foundation/release_evidence_dashboard.json` | `docs/reports/foundation/release_evidence_report.md` |
-| benchmark evidence summary | `docs/reports/foundation/performance_evidence_report.md` | `docs/reports/foundation/top_10_slowest_evidence_commands.md` |
-| ownership/topology inventory | `docs/reports/foundation/evidence_command_owner_map.md` | `evidence/reports/current_evidence_topology.md` |
+| release decision summary | `docs/reports/foundation/release_evidence_dashboard.json` | `docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md` |
+| benchmark evidence summary | `docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md` | `docs/reports/foundation/top_10_slowest_evidence_commands.md` |
+| ownership/topology inventory | `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md` | `evidence/reports/current_evidence_topology.md` |
 
 Source: `configs/policy/evidence_rationalization_policy.json`
 ```
@@ -3928,7 +3928,7 @@ Current governance posture:
 Anchors:
 
 - `crates/bijux-dev-dag/tests/*contract*.rs`
-- `docs/reports/foundation/line_coverage_zero_direct_report.md`
+- `docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md`
 ```
 
 ### 293. `docs/reports/foundation/module_hygiene_drift_gate_report.md`
@@ -3985,7 +3985,7 @@ Classification source: `configs/policy/runtime_module_lifecycle_status.json`.
 | Compatibility fixtures present | `evidence/compat/**` | Required |
 | Migration contract determinism | schema migration tests | Required |
 | Stable schema hash freeze | `stable_schema_hashes.json` contracts | Required |
-| Changelog freshness | `schema_changelog.md` | Required |
+| Changelog freshness | `SCHEMA_CHANGELOG.md` | Required |
 | Governance workflow | `.github/workflows/schema-governance.yml` | Required |
 
 This dashboard is intentionally compact and release-oriented.
@@ -4020,7 +4020,7 @@ Advisory commands:
 Evidence linkage:
 
 - `docs/reports/foundation/advisory_only_evidence_commands_report.md`
-- `docs/reports/foundation/advisory_evidence_dashboard.md`
+- `docs/reports/foundation/advisory_EVIDENCE_DASHBOARD.md`
 ```
 
 ### 299. `docs/reports/foundation/evidence_claim_to_family_map_report.md`
@@ -4288,7 +4288,7 @@ Merge/consolidation anchors:
 
 - `docs/reports/foundation/evidence_report_consolidation.md`
 - `docs/reports/foundation/release_gate_redundancy_decisions_report.md`
-- `docs/reports/foundation/dev_dag_evidence_completion_report.md`
+- `docs/reports/foundation/DEV_DAG_EVIDENCE_COMPLETION_REPORT.md`
 ```
 
 ### 315. `docs/reports/foundation/dev_dag_legacy_command_namespace_report.md`
@@ -4465,7 +4465,7 @@ Data sources:
 
 - `docs/reports/foundation/fixtures_with_no_owning_crate_report.md`
 - `docs/reports/foundation/fixtures_with_no_owning_suite_report.md`
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 ```
 
 ### 325. `docs/reports/foundation/artifact_contract_report.md`
@@ -4535,9 +4535,9 @@ Hotspot candidates:
 - `crates/bijux-dag-runtime/src/runtime_core/execution/scheduler.rs`
 
 Sources:
-- `docs/reports/foundation/file_size_hotspot_report.md`
-- `docs/reports/foundation/line_coverage_under_50_report.md`
-- `docs/reports/foundation/public_api_hotspot_report.md`
+- `docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md`
+- `docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md`
 ```
 
 ### 329. `docs/reports/foundation/full_lane_only_tests_report.md`
@@ -4590,8 +4590,8 @@ Command purpose classes:
 Primary command-family references:
 
 - decomposition: `docs/reports/foundation/dev_dag_command_module_boundaries.md`
-- size by family: `docs/reports/foundation/dev_dag_command_size_report_by_family.md`
-- evidence command ownership: `docs/reports/foundation/evidence_command_owner_map.md`
+- size by family: `docs/reports/foundation/DEV_DAG_COMMAND_SIZE_REPORT_BY_FAMILY.md`
+- evidence command ownership: `docs/reports/foundation/EVIDENCE_COMMAND_OWNER_MAP.md`
 ```
 
 ### 332. `docs/reports/foundation/fast_lane_slowest_ten.md`
@@ -4710,11 +4710,11 @@ Included direct route modules:
 ```markdown
 # App Modules Below 50% Coverage Report
 
-generated_from: `docs/reports/foundation/line_coverage_under_50_report.md`
+generated_from: `docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md`
 
 Focused app modules currently below the desired line-coverage target are tracked in:
 
-- `docs/reports/foundation/line_coverage_under_50_report.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md`
 
 Primary route hardening batch:
 
@@ -4770,10 +4770,10 @@ This report records duplication-detection sources for fixture payloads and fixtu
 Derived from existing low-coverage and hotspot reports.
 
 Primary references:
-- `docs/reports/foundation/line_coverage_under_25_report.md`
-- `docs/reports/foundation/line_coverage_under_50_report.md`
-- `docs/reports/foundation/file_size_hotspot_report.md`
-- `docs/reports/foundation/long_function_hotspot_report.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md`
+- `docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md`
+- `docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md`
 
 Current focus set:
 - `crates/bijux-dag-app/src/lib.rs`
@@ -4792,7 +4792,7 @@ Schema change detection is enforced through deterministic contract checks in CI.
 
 - Stable hash freeze of schema files via `configs/policy/stable_schema_hashes.json`
 - Contract test guard that fails when a frozen schema hash changes
-- Changelog presence requirement in `docs/reports/foundation/schema_changelog.md`
+- Changelog presence requirement in `docs/reports/foundation/SCHEMA_CHANGELOG.md`
 - Schema governance workflow presence check: `.github/workflows/schema-governance.yml`
 
 ## Enforced by
@@ -5129,9 +5129,9 @@ Generated coverage-oriented inventory for runtime modules.
 
 ## Source of truth
 
-- `docs/reports/foundation/module_inventory_zero_direct_tests.md`
-- `docs/reports/foundation/line_coverage_under_25_report.md`
-- `docs/reports/foundation/runtime_contract_backing_report.md`
+- `docs/reports/foundation/MODULE_INVENTORY_ZERO_DIRECT_TESTS.md`
+- `docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md`
+- `docs/reports/foundation/RUNTIME_CONTRACT_BACKING_REPORT.md`
 ```
 
 ### 360. `docs/reports/foundation/app_route_responsibilities_report.md`
@@ -5198,7 +5198,7 @@ Cache corruption and invalidation causes are visible in explain outputs and rema
 ```markdown
 # Runtime Broad Surface Zero Executable Path Coverage
 
-generated_from: `docs/reports/foundation/line_coverage_zero_direct_report.md`
+generated_from: `docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md`
 
 ## Zero-Coverage Broad Modules
 
@@ -5225,7 +5225,7 @@ Benchmark and stress signals for cache behavior under deterministic reuse and in
 ## Benchmark anchors
 
 - cache-heavy scenarios: `evidence/perf/scenarios/cache_heavy_canonical.json`
-- performance evidence rollup: `docs/reports/foundation/performance_evidence_report.md`
+- performance evidence rollup: `docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md`
 - warm/cold behavior scenarios: `evidence/cache/scenarios/warm_cold.json`
 
 ## Verification anchors
@@ -5245,8 +5245,8 @@ Benchmark anchors for execution trace-heavy workflows.
 ## Benchmark surfaces
 
 - trace artifact latency: `docs/reports/foundation/artifact_inspect_hash_trace_benchmarks.md`
-- runtime observability throughput: `docs/reports/foundation/runtime_observability_benchmarks.md`
-- scheduler trace-related latency: `docs/reports/foundation/runtime_engine_scheduler_hotpath_benchmark.md`
+- runtime observability throughput: `docs/reports/foundation/RUNTIME_OBSERVABILITY_BENCHMARKS.md`
+- scheduler trace-related latency: `docs/reports/foundation/RUNTIME_ENGINE_SCHEDULER_HOTPATH_BENCHMARK.md`
 
 ## Verification anchors
 
@@ -5344,9 +5344,9 @@ Protocol latency and resilience benchmark signals for remote/distributed worker 
 
 ## Benchmark anchors
 
-- distributed execution benchmarks: `docs/reports/foundation/distributed_execution_benchmarks.md`
+- distributed execution benchmarks: `docs/reports/foundation/DISTRIBUTED_EXECUTION_BENCHMARKS.md`
 - runtime fault tolerance benchmarks: `docs/reports/foundation/runtime_fault_tolerance_benchmarks.md`
-- telemetry-backed stability signals: `docs/reports/foundation/telemetry_coverage_report.md`
+- telemetry-backed stability signals: `docs/reports/foundation/TELEMETRY_COVERAGE_REPORT.md`
 
 ## Verification anchors
 
@@ -5424,9 +5424,9 @@ Durability benchmark signals for artifact writes, verification, retention planni
 
 ## Benchmark anchors
 
-- lifecycle benchmarks: `docs/reports/foundation/artifact_storage_lifecycle_benchmarks.md`
-- filesystem recovery benchmarks: `docs/reports/foundation/run_directory_filesystem_recovery_benchmarks.md`
-- distributed checksum pathways: `docs/reports/foundation/distributed_execution_benchmarks.md`
+- lifecycle benchmarks: `docs/reports/foundation/ARTIFACT_STORAGE_LIFECYCLE_BENCHMARKS.md`
+- filesystem recovery benchmarks: `docs/reports/foundation/RUN_DIRECTORY_FILESYSTEM_RECOVERY_BENCHMARKS.md`
+- distributed checksum pathways: `docs/reports/foundation/DISTRIBUTED_EXECUTION_BENCHMARKS.md`
 
 ## Verification anchors
 
@@ -5504,9 +5504,9 @@ Resilience benchmark signals for interruption handling, recovery behavior, and r
 
 ## Benchmark anchors
 
-- failure and recovery benchmark signals: `docs/reports/foundation/failure_handling_benchmarks.md`
-- filesystem recovery latency anchors: `docs/reports/foundation/run_directory_filesystem_recovery_benchmarks.md`
-- workflow recovery memory and latency anchors: `docs/reports/foundation/workflow_latency_benchmarks.md`, `docs/reports/foundation/workflow_memory_benchmarks.md`
+- failure and recovery benchmark signals: `docs/reports/foundation/FAILURE_HANDLING_BENCHMARKS.md`
+- filesystem recovery latency anchors: `docs/reports/foundation/RUN_DIRECTORY_FILESYSTEM_RECOVERY_BENCHMARKS.md`
+- workflow recovery memory and latency anchors: `docs/reports/foundation/WORKFLOW_LATENCY_BENCHMARKS.md`, `docs/reports/foundation/WORKFLOW_MEMORY_BENCHMARKS.md`
 
 ## Verification anchors
 
@@ -5820,10 +5820,10 @@ Generated complexity-focused inventory for runtime modules.
 
 ## Source of truth
 
-- `docs/reports/foundation/module_inventory_over_500_lines.md`
+- `docs/reports/foundation/MODULE_INVENTORY_OVER_500_LINES.md`
 - `docs/reports/foundation/module_inventory_over_1000_lines.md`
-- `docs/reports/foundation/public_api_hotspot_report.md`
-- `docs/reports/foundation/runtime_broad_surface_inventory.md`
+- `docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md`
+- `docs/reports/foundation/RUNTIME_BROAD_SURFACE_INVENTORY.md`
 ```
 
 ### 394. `docs/reports/foundation/large_dag_telemetry_report.md`
@@ -5917,7 +5917,7 @@ Advanced explainability completeness is validated across:
 ## Current inventory
 
 - runtime rust module files (`crates/bijux-dag-runtime/src/*.rs`): `84`
-- sacred module inventory maintained in `docs/architecture/runtime_module_triage.md`
+- sacred module inventory maintained in `docs/architecture/RUNTIME_MODULE_TRIAGE.md`
 
 ## Ownership model
 
@@ -5938,9 +5938,9 @@ Advanced explainability completeness is validated across:
 Generated: 2026-03-08
 
 Source of truth:
-- `docs/reports/foundation/backend_capability_query_reference.md`
+- `docs/reports/foundation/BACKEND_CAPABILITY_QUERY_REFERENCE.md`
 - `docs/reports/foundation/adapter_conformance_coverage_matrix.json`
-- `docs/reports/foundation/backend_claims_evidence_links.md`
+- `docs/reports/foundation/BACKEND_CLAIMS_EVIDENCE_LINKS.md`
 
 Release drift checks:
 - Backend set remains: `local`, `kubernetes`, `hpc`, `remote`.
@@ -5963,7 +5963,7 @@ Fixture cleanup is governed as a repeatable maintenance workflow with explicit b
 ## Automation and diagnostics surfaces
 
 - `docs/reports/foundation/repo_tree_cleanup_candidates_report.md`
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 - `docs/reports/foundation/stale_fixture_schema_field_report.md`
 
 ## Governance expectation

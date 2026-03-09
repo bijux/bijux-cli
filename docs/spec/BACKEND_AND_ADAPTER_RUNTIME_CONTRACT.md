@@ -34,9 +34,9 @@ This contract is the canonical source for:
 
 - [backend contract](./appendices/backend/BACKEND_CONTRACT.md)
 - [adapter contract](./appendices/backend/ADAPTER_CONTRACT.md)
-- [adapter interface](./appendices/backend/ADAPTER_INTERFACE_SPEC_v0.1.md)
+- [adapter interface](./appendices/backend/ADAPTER_INTERFACE_SPEC_V0.1.md)
 - [backend protocol stability](./appendices/backend/BACKEND_PROTOCOL_STABILITY_CONTRACT.md)
-- [adapter runtime contract](./appendices/backend/ADAPTER_RUNTIME_CONTRACT_v0.1.md)
+- [adapter runtime contract](./appendices/backend/ADAPTER_RUNTIME_CONTRACT_V0.1.md)
 - [adapter placement and boundaries](./appendices/backend/ADAPTER_PLACEMENT.md)
 - [backend execution maturity](./appendices/backend/BACKEND_EXECUTION_MATURITY.md)
 - [backend equivalence](./appendices/backend/BACKEND_EQUIVALENCE_CONTRACT.md)

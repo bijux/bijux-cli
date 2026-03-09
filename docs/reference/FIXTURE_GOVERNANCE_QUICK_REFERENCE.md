@@ -18,18 +18,18 @@ Policy source: `configs/policy/fixture_family_governance.json`
 
 ## Generated reports
 
-- `docs/reports/foundation/graph_fixture_inventory_report.md`
-- `docs/reports/foundation/run_fixture_inventory_report.md`
-- `docs/reports/foundation/artifact_fixture_inventory_report.md`
+- `docs/reports/foundation/GRAPH_FIXTURE_INVENTORY_REPORT.md`
+- `docs/reports/foundation/RUN_FIXTURE_INVENTORY_REPORT.md`
+- `docs/reports/foundation/ARTIFACT_FIXTURE_INVENTORY_REPORT.md`
 - `docs/reports/foundation/replay_fixture_inventory_report.md`
 - `docs/reports/foundation/diff_fixture_inventory_report.md`
-- `docs/reports/foundation/bundle_fixture_inventory_report.md`
+- `docs/reports/foundation/BUNDLE_FIXTURE_INVENTORY_REPORT.md`
 - `docs/reports/foundation/capability_fixture_inventory_report.md`
-- `docs/reports/foundation/benchmark_fixture_inventory_report.md`
-- `docs/reports/foundation/evidence_fixture_inventory_report.md`
+- `docs/reports/foundation/BENCHMARK_FIXTURE_INVENTORY_REPORT.md`
+- `docs/reports/foundation/EVIDENCE_FIXTURE_INVENTORY_REPORT.md`
 - `docs/reports/foundation/fixture_governance_missing_owner_report.md`
 - `docs/reports/foundation/fixtures_with_no_owning_suite_report.md`
 - `docs/reports/foundation/fixtures_with_no_owning_crate_report.md`
-- `docs/reports/foundation/unreferenced_fixtures_report.md`
+- `docs/reports/foundation/UNREFERENCED_FIXTURES_REPORT.md`
 - `docs/reports/foundation/duplicate_fixtures_semantic_hash_report.md`
 - `docs/reports/foundation/stale_fixture_schema_field_report.md`

@@ -16,7 +16,7 @@ Generated: 2026-03-09
 - `architecture`: 23
 - `dev`: 4
 - `examples`: 1
-- `index.md`: 1
+- `INDEX.md`: 1
 - `operations`: 4
 - `reference`: 71
 - `reports`: 27

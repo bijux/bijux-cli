@@ -8,26 +8,26 @@ This folder keeps the minimal set of foundation reports still used as decision s
 
 ## Curated content
 
-- `foundation_final_report.md`
-- `release_evidence_report.md`
-- `release_critical_evidence_matrix.md`
-- `evidence_dashboard.md`
-- `evidence_ci_exercise_report.md`
-- `system_health_diagnostics_documentation.md`
-- `runtime_architecture_health_dashboard.md`
-- `runtime_boundary_report.md`
-- `runtime_broad_surface_inventory.md`
-- `runtime_contract_backing_report.md`
-- `runtime_modeled_only_surfaces.md`
-- `runtime_stable_vs_experimental_surface_page.md`
-- `runtime_public_api_map.md`
-- `kernel_api_surface_report.md`
-- `docs_root_inventory_report.md`
-- `run_history_size_growth_report.md`
-- `run_history_corruption_resilience_report.md`
-- `app_hot_path_quality_dashboard.md`
-- `cli_stability_dashboard.md`
-- `inspect_diagnostics_dashboard.md`
+- `FOUNDATION_FINAL_REPORT.md`
+- `RELEASE_EVIDENCE_REPORT.md`
+- `RELEASE_CRITICAL_EVIDENCE_MATRIX.md`
+- `EVIDENCE_DASHBOARD.md`
+- `EVIDENCE_CI_EXERCISE_REPORT.md`
+- `SYSTEM_HEALTH_DIAGNOSTICS_DOCUMENTATION.md`
+- `RUNTIME_ARCHITECTURE_HEALTH_DASHBOARD.md`
+- `RUNTIME_BOUNDARY_REPORT.md`
+- `RUNTIME_BROAD_SURFACE_INVENTORY.md`
+- `RUNTIME_CONTRACT_BACKING_REPORT.md`
+- `RUNTIME_MODELED_ONLY_SURFACES.md`
+- `RUNTIME_STABLE_VS_EXPERIMENTAL_SURFACE_PAGE.md`
+- `RUNTIME_PUBLIC_API_MAP.md`
+- `KERNEL_API_SURFACE_REPORT.md`
+- `DOCS_ROOT_INVENTORY_REPORT.md`
+- `RUN_HISTORY_SIZE_GROWTH_REPORT.md`
+- `RUN_HISTORY_CORRUPTION_RESILIENCE_REPORT.md`
+- `APP_HOT_PATH_QUALITY_DASHBOARD.md`
+- `CLI_STABILITY_DASHBOARD.md`
+- `INSPECT_DIAGNOSTICS_DASHBOARD.md`
 
 ## Archive and retention
 

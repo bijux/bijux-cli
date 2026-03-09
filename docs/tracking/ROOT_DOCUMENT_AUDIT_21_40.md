@@ -23,7 +23,7 @@
 | CLI_BACKWARD_COMPAT.md | CLI compatibility policy | Maintainers | CLI team | Merge into `docs/CLI.md` |
 | CLI_COMMAND_TAXONOMY.md | CLI command organization | Operators and maintainers | CLI teams | Move to `docs/reference/COMMAND_TAXONOMY.md` |
 | COMPATIBILITY.md | Compatibility model | Maintainers and users | Core architecture owners | Keep and merge compatibility docs |
-| COMPATIBILITY_WINDOW_v0.1.md | v0.1 compatibility details | Maintainers | Compatibility owners | Merge into `docs/COMPATIBILITY.md` |
+| COMPATIBILITY_WINDOW_V0.1.md | v0.1 compatibility details | Maintainers | Compatibility owners | Merge into `docs/COMPATIBILITY.md` |
 | CONTROL_PLANE.md | Control-plane boundaries | Maintainers | Architecture team | Move to `docs/architecture/CONTROL_PLANE.md` |
 | CONTROL_PLANE_MIGRATION.md | Control-plane migration plan | Maintainers | Architecture team | Merge to `docs/architecture/CONTROL_PLANE.md` |
 | COST_AWARE_SCHEDULING.md | Cost-aware scheduling model | Maintainers | Scheduler and finance teams | Archive as reference in `docs/reports/` |
@@ -102,4 +102,4 @@
 | WORKFLOW_INNOVATION_ROADMAP.md | Future workflow roadmap | Maintainers | Product owners | Archive `docs/reports/` |
 | WORKFLOW_OPERATING_SYSTEM.md | Product positioning | Maintainers | Product owners | Move to `docs/reference/` |
 | WORK_STEALING_SCHEDULER_BOUNDARIES.md | Scheduler behavior boundary | Maintainers | Scheduler owners | Move to `docs/spec/` |
-| index.md | Root discovery entrypoint | All | Docs owner | Keep and reduce to high-signal map |
+| INDEX.md | Root discovery entrypoint | All | Docs owner | Keep and reduce to high-signal map |

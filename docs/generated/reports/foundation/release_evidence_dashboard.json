@@ -15,7 +15,7 @@
   ],
   "blocking": true,
   "sources": [
-    "docs/reports/foundation/release_critical_evidence_matrix.md",
+    "docs/reports/foundation/RELEASE_CRITICAL_EVIDENCE_MATRIX.md",
     "configs/policy/evidence_command_classification.json"
   ]
 }

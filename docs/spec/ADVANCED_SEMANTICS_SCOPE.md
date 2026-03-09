@@ -10,4 +10,4 @@ Why quarantined:
 Governance sources:
 - `configs/policy/advanced_semantics_governance.json`
 - `configs/policy/runtime_scope_v2.json`
-- `docs/reports/foundation/advanced_semantics_inventory.md`
+- `docs/reports/foundation/ADVANCED_SEMANTICS_INVENTORY.md`

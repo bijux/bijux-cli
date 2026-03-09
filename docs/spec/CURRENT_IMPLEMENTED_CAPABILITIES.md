@@ -21,4 +21,4 @@ This document lists behavior that is implemented in code and protected by passin
 
 - `docs/spec/MODELED_AND_FUTURE_SURFACES.md`
 - `docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md`
-- `docs/reports/foundation/renovation_burndown_report.md`
+- `docs/reports/foundation/RENOVATION_BURNDOWN_REPORT.md`

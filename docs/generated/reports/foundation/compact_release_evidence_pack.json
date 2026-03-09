@@ -14,6 +14,6 @@
   "primary_outputs": [
     "docs/reports/foundation/release_evidence_dashboard.json",
     "evidence/release/release_evidence.json",
-    "docs/reports/foundation/release_critical_evidence_matrix.md"
+    "docs/reports/foundation/RELEASE_CRITICAL_EVIDENCE_MATRIX.md"
   ]
 }

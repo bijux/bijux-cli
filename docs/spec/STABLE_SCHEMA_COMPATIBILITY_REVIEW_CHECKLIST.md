@@ -5,8 +5,8 @@
 3. Confirm minimal and maximal examples exist under `evidence/operator/examples/stable_json/<schema>/`.
 4. Confirm lockstep test marker exists in `crates/bijux-dev-dag/tests/json_output_governance_contracts.rs`.
 5. Confirm generated inventories are refreshed:
-- `docs/reports/foundation/json_command_schema_inventory_report.md`
-- `docs/reports/foundation/schema_command_test_inventory_report.md`
+- `docs/reports/foundation/JSON_COMMAND_SCHEMA_INVENTORY_REPORT.md`
+- `docs/reports/foundation/SCHEMA_COMMAND_TEST_INVENTORY_REPORT.md`
 6. Confirm gap reports stay zero:
 - `docs/reports/foundation/schema_without_example_output_report.md`
 - `docs/reports/foundation/commands_without_json_lockstep_report.md`

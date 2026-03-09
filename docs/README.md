@@ -12,7 +12,7 @@ Global documentation policy is defined in this file.
 
 ## Primary entrypoints
 
-- [`index.md`](./index.md) — discovery path and curated navigation
+- [`INDEX.md`](./INDEX.md) — discovery path and curated navigation
 - [`README.md`](./README.md) — this file
 
 ## Documentation Information Architecture
@@ -22,7 +22,7 @@ Global documentation policy is defined in this file.
 
 ## Final top-level sections
 
-- `docs/README.md` and `docs/index.md` (entrypoints only)
+- `docs/README.md` and `docs/INDEX.md` (entrypoints only)
 - `architecture/` — live system maps and boundary documentation
 - `adr/` — durable historical decisions
 - `operations/` — maintainer operation workflows

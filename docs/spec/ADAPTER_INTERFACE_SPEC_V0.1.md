@@ -1,0 +1,4 @@
+# Superseded by backend cluster contract
+
+- Superseded by: [BACKEND_AND_ADAPTER_RUNTIME_CONTRACT.md](./BACKEND_AND_ADAPTER_RUNTIME_CONTRACT.md)
+- Appendix source: [appendices/backend/ADAPTER_INTERFACE_SPEC_V0.1.md](./appendices/backend/ADAPTER_INTERFACE_SPEC_V0.1.md)

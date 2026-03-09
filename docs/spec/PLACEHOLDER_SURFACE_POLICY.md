@@ -17,7 +17,7 @@ Prevent fake completeness by banning placeholder implementations in stable code 
 ## Governance artifacts
 
 - Policy: `configs/policy/placeholder_surface_policy.json`
-- Inventory report: `docs/reports/foundation/placeholder_inventory_report.md`
+- Inventory report: `docs/reports/foundation/PLACEHOLDER_INVENTORY_REPORT.md`
 - Removal report: `docs/reports/foundation/placeholder_removal_report.md`
 - Retention report: `docs/reports/foundation/placeholder_retention_report.md`
 - Enforcement test: `crates/bijux-dev-dag/tests/placeholder_surface_contracts.rs`

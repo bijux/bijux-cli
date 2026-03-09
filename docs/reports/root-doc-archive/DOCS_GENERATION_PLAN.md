@@ -2,7 +2,7 @@
 
 ## Source-of-truth documentation
 
-Keep static docs in `docs/` and maintain a manually-updated map in `docs/index.md`.
+Keep static docs in `docs/` and maintain a manually-updated map in `docs/INDEX.md`.
 
 ## Generated artifacts (future work)
 
