@@ -109,6 +109,26 @@ fn memory_malformed_state_is_treated_as_empty_like_python() {
 }
 
 #[test]
+fn memory_non_object_json_state_fails_with_error_envelope() {
+    let temp = make_temp_dir("non-object");
+    let home = temp.join("home");
+    let memory_file = home.join(".bijux").join(".memory.json");
+    fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
+    fs::write(&memory_file, "[]").expect("write non-object json");
+
+    let out = run_with_env(
+        &["memory", "list", "--format", "json", "--no-pretty"],
+        &[("HOME", home.display().to_string())],
+    );
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    let payload = parse_json(&out.stderr);
+    assert_eq!(payload["status"], "error");
+    assert_eq!(payload["code"], 1);
+    assert_eq!(payload["command"], "memory list");
+}
+
+#[test]
 fn memory_command_ignores_config_path_override_and_uses_home_memory_file() {
     let temp = make_temp_dir("config-env");
     let home = temp.join("home");
