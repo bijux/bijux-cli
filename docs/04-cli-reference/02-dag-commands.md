@@ -1,121 +1,67 @@
 # Dag Commands
 
-Document DAG command usage for graph validation, inspection, and definition-level operations.
+Use `dag` commands to prove definition validity before execution. This surface is definition-oriented, not run-history oriented.
 
-DAG commands act on graph definitions, not on specific historical runs.
+## What this command family is for
 
-## Explanation
-Common DAG operations:
-- validate graph shape and constraints.
-- inspect graph metadata and topology.
-- provide definition-level diagnostics before execution.
+`dag` commands answer:
 
-Common flags:
-- `--dag <path>` graph file selector
-- `--output <format>` machine-readable output where supported
+- Is this graph valid?
+- What is this graph’s canonical identity?
+- What changed at definition level?
 
-Command lifecycle role:
-- DAG commands are pre-run controls.
-- use `dag validate` before every new or changed pipeline execution.
-- use `dag inspect` when debugging definition-level drift.
+If a graph fails here, execution commands should not be trusted as diagnostic tools yet.
 
-Command discovery:
-- `bijux-dag dag --help`
-- `bijux-dag dag validate --help`
-- `bijux-dag dag inspect --help`
+## Core invocation patterns
 
-Error handling guidance:
-- missing DAG path: input error
-- invalid graph structure: validation error
-- non-readable DAG file path: filesystem input error
-
-## Examples
 ```bash
-# Validate definition before execution
+bijux-dag dag --help
 bijux-dag dag validate --dag ./pipelines/main.dag.json
-
-# Inspect topology metadata for review
 bijux-dag dag inspect --dag ./pipelines/main.dag.json --output json
 ```
 
+If your build exposes a dedicated identity/hash action, use it for gate checks; otherwise read `graph_hash` from inspect JSON output.
+
+## Inputs, outputs, and failure modes
+
+Primary inputs:
+
+- DAG path,
+- optional machine-output mode.
+
+Expected outputs:
+
+- validation status,
+- graph identity fields (`graph_id`, optional `graph_hash`),
+- diagnostics for schema/dependency violations.
+
+Failure classes:
+
+- input failure: unreadable/missing DAG path,
+- parse/shape failure: malformed document,
+- semantic failure: cycle, unknown dependency target, duplicate node id.
+
+## JSON behavior for automation
+
+Automation should treat `dag` output as gate evidence:
+
+- parse stable keys for status and identity,
+- persist validation diagnostics for CI review,
+- fail fast on non-zero exit.
+
+Example JSON shape:
+
 ```json
 {
-  "graph_id": "PIPELINE_MAIN",
   "status": "valid",
+  "graph_id": "PIPELINE_MAIN",
+  "graph_hash": "sha256:5a6f...",
   "node_count": 12,
   "edge_count": 16
 }
 ```
 
-```text
-Failure example:
-command: bijux-dag dag validate --dag ./pipelines/invalid-cycle.dag.json
-result: non-zero exit
-reason: cycle detected in dependency graph
-```
+## Next reading
 
-## Guarantees
-- DAG command behavior is documented as definition-first.
-- Validation-first usage is explicit.
-- Examples cover normal and failing definition workflows.
-
-## Limitations
-- Full validation rule taxonomy belongs to specification docs.
-- Option names can evolve across releases.
-
-## Related
-- `docs/04-cli-reference/01-cli-overview.md`
-- `docs/04-cli-reference/03-run-commands.md`
-- `docs/03-user-guide/01-authoring-dags.md`
-- `docs/06-specification/01-dag-model.md`
-- `docs/04-cli-reference/06-diff-commands.md`
-
-## Graph-oriented command coverage
-
-DAG command workflows should cover three intents:
-
-- Structural validation before execution.
-- Topology and metadata inspection for review/debugging.
-- Graph identity verification using canonical hash fields in machine output.
-
-## Validate and graph-identity hash workflows
-
-Validation workflow:
-
-```bash
-bijux-dag dag validate --dag ./pipelines/main.dag.json
-```
-
-Identity-hash workflow using inspect output:
-
-```bash
-bijux-dag dag inspect --dag ./pipelines/main.dag.json --output json
-```
-
-Expected JSON fields (example):
-
-```json
-{
-  "graph_id": "PIPELINE_MAIN",
-  "graph_hash": "sha256:5a6f...",
-  "status": "valid"
-}
-```
-
-Use `graph_hash` for reproducibility gates and definition-level comparisons across environments.
-
-## Output, failure, and JSON interpretation
-
-Treat `dag` command output as pre-execution contract evidence:
-
-- Human-readable output should state validity result and blocking reasons.
-- JSON output should expose stable keys used by automation (`status`, `graph_id`, `graph_hash`, and validation diagnostics when present).
-- Validation failures should be interpreted as definition blockers, not runtime incidents.
-
-Practical failure classes:
-
-- malformed DAG document (parse/shape failure)
-- semantic DAG invalidity (cycle, missing dependency, invalid node references)
-- input path/readability failure
-
-Automation rule: fail fast on non-zero validation and persist JSON diagnostics for review comments and CI artifacts.
+- Run-time execution surface: [Run Commands](../04-cli-reference/03-run-commands.md)
+- Definition-level contract semantics: [DAG Model Specification](../06-specification/01-dag-model.md)

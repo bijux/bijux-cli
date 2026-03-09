@@ -1,104 +1,53 @@
 # Run Commands
 
-Document run command usage for execution and run-history workflows.
+Use `run` commands to create execution evidence and navigate run history.
 
-Run commands are the primary operator surface for starting workflows and reviewing results.
+## What this command family is for
 
-## Explanation
-Common run operations:
-- execute a DAG.
-- view run history.
-- retrieve run-scoped operational status.
+`run` commands answer:
 
-Common flags:
-- `--dag <path>` for run creation
-- `--run-id <id>` for targeted run follow-up
-- `--limit <n>` for history windowing
-- `--output <format>` where supported
+- create run: what happened in this execution instance?
+- list/history: where is my baseline and where did behavior change?
+- inspect handoff: which run ID should replay/diff inspect next?
 
-Command lifecycle role:
-- run execution is the source of run IDs used by inspect/replay/diff.
-- run history is the indexing surface for selecting baselines and failing candidates.
+## Core invocation patterns
 
-Command discovery:
-- `bijux-dag run --help`
-- `bijux-dag run history --help`
-
-Error handling guidance:
-- invalid DAG: validation error
-- unknown run ID: lookup error
-- runtime node failure: run completes with failed status and non-zero exit where applicable
-
-## Examples
 ```bash
-# Start a run
+bijux-dag run --help
 bijux-dag run --dag ./pipelines/main.dag.json
-
-# Query recent history
 bijux-dag run history --limit 20 --output json
 ```
 
-```json
-{
-  "run_id": "RUN_20260309_220",
-  "status": "completed",
-  "graph_id": "PIPELINE_MAIN"
-}
-```
+Some builds may expose additional run surfaces (for example summary/timeline/show). Use `bijux-dag run --help` to discover those exact commands before scripting.
 
-```text
-Run lifecycle command flow:
-1) run --dag ...
-2) run history --limit ...
-3) inspect run --run-id ...
-```
+## Run ID and imported-run references
 
-## Guarantees
-- Run command usage is documented as execution-plus-history flow.
-- Command examples align with user-guide run workflows.
-- Flags and output examples support both human and automation usage.
+Run ID is the primary evidence selector across inspect/replay/diff.
 
-## Limitations
-- Storage engine internals are outside CLI reference scope.
-- Detailed run schema contract is defined in specification docs.
+Imported runs should be treated as separate provenance class in history analysis. Do not substitute imported run IDs for native baselines without explicit trust-boundary checks.
 
-## Related
-- `docs/04-cli-reference/01-cli-overview.md`
-- `docs/04-cli-reference/02-dag-commands.md`
-- `docs/04-cli-reference/05-inspect-commands.md`
-- `docs/04-cli-reference/07-replay-commands.md`
-- `docs/03-user-guide/04-run-history.md`
-
-## Definitive run command usage model
-
-Use `run` commands as the authoritative path for creating and locating execution evidence:
-
-- create run: execute validated graph and record run identity.
-- list history: locate baseline, candidate, and failing runs.
-- select run ID: pass into inspect, replay, and diff flows.
-
-## Run history and run inspection examples
+## Example operator flow
 
 ```bash
 bijux-dag run --dag ./pipelines/main.dag.json
-bijux-dag run history --limit 10 --output json
-bijux-dag inspect run --run-id RUN_20260309_220 --output json
+bijux-dag run history --limit 10
+bijux-dag inspect run --run-id RUN_20260309_220
+bijux-dag replay --run-id RUN_20260309_220
 ```
 
-Expected outcome pattern:
+Expected behavior:
 
-```text
-- new run record created with stable run_id
-- history includes new run in ordered index
-- inspect returns status and failure/success evidence for that run_id
-```
+- execution command emits run ID,
+- history exposes ordering for baseline selection,
+- inspect/replay consume the same run ID as identity anchor.
 
-## Run identity semantics in command workflows
+## Failure modes
 
-Commands depend on run identity as the stable selector for evidence retrieval:
+- invalid DAG reference,
+- run creation failure due to node/runtime errors,
+- unknown run ID in history-followup flows.
 
-- history discovers candidate IDs.
-- inspect resolves one run ID to detailed evidence.
-- replay and diff compare behaviors anchored to specific run IDs.
+## Next reading
 
-If run identity changes, treat it as new evidence, not an update-in-place of prior execution history.
+- Artifact evidence navigation: [Artifact Commands](../04-cli-reference/04-artifact-commands.md)
+- Run semantics contract: [Run Model Specification](../06-specification/02-run-model.md)
