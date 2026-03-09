@@ -1,101 +1,100 @@
-# Replay Semantics
+# Replay Semantics Specification
 
-Define normative replay behavior, validation outcomes, and bounded divergence handling.
+Replay semantics define how a baseline run is re-executed and classified. The contract exists so replay results are interpretable, comparable, and auditable instead of ad hoc judgments.
 
-Replay semantics determine whether a historical run can be re-executed and assessed consistently.
+## Contract surface
 
-## Explanation
-Replay definition:
-- replay executes a graph using baseline identity context and compares resulting evidence against baseline expectations.
+This specification defines:
+- replay prerequisites,
+- replay outcome classes,
+- invalid and impossible states,
+- meaning of replay proof and equivalence.
 
-Replay prerequisites:
-- accessible baseline run record.
-- accessible graph definition or equivalent graph identity material.
-- required artifacts/inputs available according to replay mode.
+This specification does not define CLI formatting or scheduling algorithm internals.
 
-Replay modes:
-- strict replay: maximize equivalence requirements for identity and outputs.
-- permissive replay: allow configured bounded divergence while preserving explicit classification.
+## Replay prerequisites
 
-Replay validation outcomes:
-- `equivalent`: replay evidence matches baseline contract expectations.
-- `drift`: replay completed but one or more identity/output checks diverged.
-- `incomplete`: replay could not complete due to missing prerequisites or unsupported features.
+A replay request MUST provide:
+- baseline run reference,
+- graph definition or graph identity material required by mode,
+- required comparison-scope evidence,
+- selected capability envelope (backend/environment constraints).
 
-Formal replay rules:
-- RULE-REPLAY-001: replay MUST emit one explicit classification outcome.
-- RULE-REPLAY-002: missing prerequisites MUST classify as `incomplete`, not `equivalent`.
-- RULE-REPLAY-003: detected divergence MUST classify as `drift`.
-- RULE-REPLAY-004: successful equivalence check MUST classify as `equivalent`.
+Missing prerequisite material MUST prevent `equivalent` classification.
 
-Determinism rules:
-- equivalent semantic inputs under supported environment constraints should converge to equivalent classification.
-- environment drift must be surfaced as classified divergence, never silently ignored.
+## Outcome classes
 
-Replay planning rules:
-- planner identifies required inputs/artifacts before execution start.
-- unresolved prerequisites block strict replay and classify result as incomplete.
+Replay classification vocabulary is fixed:
+- `equivalent`: all required replay comparison scopes matched under declared policy and capability envelope.
+- `drift`: replay completed and at least one required comparison scope diverged.
+- `incomplete`: replay could not classify required scopes because prerequisites or capabilities were missing.
 
-Specification consistency rules:
-- replay outcome vocabulary must match `docs/06-specification/08-diff-semantics.md`.
-- replay guarantees must remain aligned with identity contracts in `04`, `05`, and `06`.
+## Normative rules
 
-Invalid state definitions:
-- INVALID-REPLAY-MISSING-BASELINE: replay requested without baseline run context.
-- INVALID-REPLAY-UNCLASSIFIED-RESULT: replay ends without explicit classification.
-- INVALID-REPLAY-INCOMPATIBLE-CAPABILITY: required capability absent in selected environment.
+- `RULE-REPLAY-001`: every replay result MUST emit exactly one classification.
+- `RULE-REPLAY-002`: unmet prerequisites MUST classify as `incomplete`.
+- `RULE-REPLAY-003`: detected divergence in any required scope MUST classify as `drift`.
+- `RULE-REPLAY-004`: `equivalent` is valid only when all required scopes are resolved and non-divergent.
+- `RULE-REPLAY-005`: replay result MUST include policy/capability references used for classification.
 
-Edge cases:
-- replay may be `drift` despite equal graph identity when environment inputs differ.
-- replay may be `incomplete` for intentionally partial artifact retention policies.
+## Invalid and impossible states
 
-Compatibility notes:
-- replay classification semantics are stable; new outcomes require coordinated spec update with diff semantics.
+Invalid states:
+- `INVALID-REPLAY-MISSING-BASELINE`: baseline run not specified or unresolved.
+- `INVALID-REPLAY-NO-CLASSIFICATION`: replay finished without classification.
+- `INVALID-REPLAY-MISSING-POLICY`: classification emitted without policy reference.
+- `INVALID-REPLAY-CAPABILITY-CONFLICT`: required scope cannot be evaluated in declared capability envelope.
 
-## Examples
+Impossible-state rules:
+- replay MUST NOT emit `equivalent` when any required scope is unresolved.
+- replay MUST NOT emit `equivalent` when any required scope is divergent.
+
+## Replay proof and equivalence meaning
+
+Replay proof is the evidence package that documents:
+- baseline reference,
+- candidate run reference,
+- evaluated scopes,
+- classification and reason codes,
+- policy and capability envelope.
+
+Replay proof demonstrates how classification was decided. It is not a claim of universal sameness across every environment.
+
+## Worked examples
+
+Equivalent replay.
+
 ```text
-Strict replay result:
-baseline run: r_100...
-replay run  : r_131...
+baseline: r_100...
+candidate: r_131...
+required scopes: graph, run, artifact
 classification: equivalent
 ```
 
+Incomplete replay due to missing artifact.
+
 ```text
-Replay with missing artifact input:
+baseline: r_100...
+candidate: r_132...
+required scope artifact: unavailable
 classification: incomplete
-reason: required artifact not found in replay input scope
+reason_code: REPLAY_MISSING_ARTIFACT_SCOPE
 ```
 
 ## Guarantees
-- Replay provides explicit outcome classification (`equivalent`, `drift`, `incomplete`).
-- Missing prerequisites are surfaced as explicit replay failure/incomplete states.
-- Replay semantics are identity-aware and auditable.
 
-## Limitations
-- Replay does not guarantee identical wall-clock behavior.
-- Unsupported backend capabilities can limit strict replay applicability.
-- Replay success does not imply complete equivalence of external side effects.
+- Replay returns explicit, bounded classification.
+- Replay never silently upgrades unresolved comparison to `equivalent`.
+- Replay proof captures the basis for classification.
 
-## Related
-- `docs/06-specification/04-graph-identity.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/06-specification/08-diff-semantics.md`
-- `docs/03-user-guide/05-replay.md`
+## Non-guarantees
 
-## Invalid and impossible replay states
+- Replay equivalence does not guarantee equal timing or resource profile.
+- Replay equivalence does not guarantee equivalence for scopes not requested.
+- Replay may be incomplete under bounded backend capabilities.
 
-Additional invalid states:
+## Next reading
 
-- INVALID-REPLAY-MISSING-CLASSIFIER-VERSION: result emitted without classification policy reference.
-- INVALID-REPLAY-BASELINE-IDENTITY-CONFLICT: baseline run identity and declared graph identity cannot be reconciled.
-
-Impossible-state rule:
-
-- replay MUST NOT emit `equivalent` when prerequisite resolution failed or when any required comparison scope is `unknown`.
-
-## Meaning of replay proof and equivalence
-
-- replay proof: structured evidence package showing how replay classification was produced.
-- equivalence (replay): classification that all required replay comparison scopes matched under the declared policy and capability envelope.
-
-Proof is evidence of decision quality, not a claim of universal cross-environment sameness.
+- [Graph identity contract](docs/06-specification/04-graph-identity.md)
+- [Run identity contract](docs/06-specification/05-run-identity.md)
+- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)

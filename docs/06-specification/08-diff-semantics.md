@@ -1,105 +1,112 @@
-# Diff Semantics
+# Diff Semantics Specification
 
-Define normative diff classification across graph, run, and artifact domains.
+Diff semantics define how differences are classified across graph, run, and artifact surfaces. The contract exists so operators can answer three concrete questions: what changed, where it changed, and whether the change is contract-relevant.
 
-Diff semantics is the comparison contract used by validation, release decisions, and troubleshooting.
+## Contract surface
 
-## Explanation
-Diff scope levels:
-- graph diff: compares canonical DAG semantics via graph identity/material.
-- run diff: compares run-level outcomes, statuses, and execution evidence.
-- artifact diff: compares artifact identity and content equivalence.
+This specification defines:
+- diff surfaces,
+- classification vocabulary,
+- rules for equivalent vs drift vs unknown,
+- semantic-drift versus cosmetic-difference interpretation.
 
-Classification vocabulary:
-- `equivalent`: no contract-relevant divergence detected.
-- `drift`: divergence detected and attributable.
-- `unknown`: comparison could not be completed with available evidence.
+This specification does not define remediation policy or UI presentation.
 
-Formal diff rules:
-- RULE-DIFF-001: diff output MUST include scope and classification.
-- RULE-DIFF-002: unresolved comparisons MUST classify as `unknown`.
-- RULE-DIFF-003: attributable divergence MUST classify as `drift`.
-- RULE-DIFF-004: equivalent classification requires absence of contract-relevant divergence for that scope.
+## Diff surfaces
 
-Comparison rules:
-- diff must operate on canonicalized data where available.
-- classification must include machine-readable reason codes.
-- unknown states must not be silently downgraded to equivalent.
+Supported comparison surfaces:
+- `graph`: canonical DAG semantics,
+- `run`: run-attempt evidence and outcomes,
+- `artifact`: canonical artifact payload identity.
 
-Determinism compatibility:
-- stable identity inputs should yield stable diff outcomes.
-- non-deterministic or incomplete inputs must be classified explicitly.
+Composite diff results MAY contain multiple surfaces. Each surface MUST be classified independently.
 
-Ambiguity control:
-- every diff result must include scope (`graph|run|artifact`) and classification.
-- mixed outcomes across scopes must be represented as a structured composite result.
+## Classification vocabulary
 
-Specification audit and maintenance rules:
-- diff classification terms are reserved and cannot be redefined ad hoc.
-- any new classification term requires coordinated updates in replay semantics and user guidance.
-- wording is intentionally strict to prevent ambiguous interpretation across tooling.
+- `equivalent`: no contract-relevant divergence for the requested surface under declared policy.
+- `drift`: contract-relevant divergence detected for the requested surface.
+- `unknown`: required evidence or capability missing for the requested surface.
 
-Invalid state definitions:
-- INVALID-DIFF-MISSING-SCOPE: scope omitted from diff result.
-- INVALID-DIFF-MISSING-CLASSIFICATION: result emitted without classification.
-- INVALID-DIFF-UNSUPPORTED-COERCION: unknown state coerced into equivalent or drift without evidence.
+## Normative rules
 
-Edge cases:
-- graph equivalent with run drift is valid and common under environment/input differences.
-- artifact comparison can be unknown when one side is missing retained artifact evidence.
+- `RULE-DIFF-001`: each diff result MUST include surface and classification.
+- `RULE-DIFF-002`: unresolved required evidence MUST classify as `unknown`.
+- `RULE-DIFF-003`: detected contract-relevant divergence MUST classify as `drift`.
+- `RULE-DIFF-004`: `equivalent` is valid only when requested surface has no contract-relevant divergence.
+- `RULE-DIFF-005`: reason codes MUST be emitted for `drift` and `unknown`.
 
-Compatibility notes:
-- reason-code catalogs may expand, but core classification vocabulary (`equivalent`, `drift`, `unknown`) remains stable.
+## Semantic drift versus cosmetic difference
 
-## Examples
+Cosmetic difference means representation changed but canonical semantics did not change.
+
+Semantic drift means canonical semantics changed in a way relevant to the requested surface.
+
+Example cosmetic difference:
+
 ```text
-Graph equivalent, run drift:
-graph: equivalent
-run  : drift (reason: node test failed in candidate run)
-artifact: unknown (node output missing)
+graph file whitespace/comments changed
+canonical graph unchanged
+classification: graph = equivalent
 ```
 
+Example semantic drift:
+
 ```text
-Artifact diff record:
-artifact_id_baseline: a_712...
-artifact_id_candidate: a_7af...
+dependency edge removed from transform -> validate
+execution frontier changes
+classification: graph = drift
+```
+
+## Exact meaning of equivalent
+
+`equivalent` means equivalence for the requested surface, under declared policy and available evidence.
+
+`equivalent` does not mean:
+- equal wall-clock behavior,
+- equal resource profile,
+- equal external side effects outside requested surface.
+
+## Invalid states
+
+- `INVALID-DIFF-MISSING-SURFACE`: surface not declared.
+- `INVALID-DIFF-MISSING-CLASSIFICATION`: classification not declared.
+- `INVALID-DIFF-ILLEGAL-COERCION`: unresolved scope coerced from `unknown` to `equivalent` or `drift` without evidence.
+
+Implementations MUST reject invalid diff results.
+
+## Worked examples
+
+Composite diff with mixed classifications.
+
+```text
+graph: equivalent
+run: drift (reason_code: NODE_TEST_FAILED)
+artifact: unknown (reason_code: ARTIFACT_NOT_RETAINED)
+```
+
+Artifact drift.
+
+```text
+baseline artifact: a_712...
+candidate artifact: a_7af...
 classification: drift
 reason_code: ARTIFACT_HASH_MISMATCH
 ```
 
 ## Guarantees
-- Diff output is explicitly classified and scope-aware.
-- Unknown comparison states are represented explicitly.
-- Diff semantics is aligned with replay and identity contracts.
 
-## Limitations
-- Diff classification does not prescribe automatic remediation.
-- Some domains may remain unknown when evidence is missing or unsupported.
-- This specification does not define UI/CLI rendering format details.
+- Diff output is explicit and surface-scoped.
+- Unknown state is represented explicitly instead of hidden.
+- Diff semantics align with replay semantics vocabulary.
 
-## Related
-- `docs/06-specification/07-replay-semantics.md`
-- `docs/06-specification/04-graph-identity.md`
-- `docs/06-specification/06-artifact-identity.md`
-- `docs/03-user-guide/06-diff.md`
+## Non-guarantees
 
-## Semantic drift versus cosmetic difference
+- Diff does not prescribe automatic rollback or remediation.
+- Diff does not guarantee complete conclusions when evidence is missing.
+- Diff does not replace policy decisions about acceptable drift.
 
-Cosmetic-difference example (should remain equivalent):
+## Next reading
 
-- DAG file whitespace reordered,
-- comment text changed,
-- canonical semantic graph unchanged.
-
-Expected classification: `equivalent` for graph scope.
-
-Semantic-drift example (must be drift):
-
-- dependency edge removed from `transform` to `validate`,
-- execution eligibility changes and downstream outcomes differ.
-
-Expected classification: `drift` for graph/run scopes.
-
-## Exact interpretation of equivalent
-
-`equivalent` means no contract-relevant divergence for the requested scope under the declared canonicalization and policy version. It does not imply equal timing, resource profile, or external side effects outside that scope.
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [Artifact identity contract](docs/06-specification/06-artifact-identity.md)
+- [User guide: diff interpretation](docs/03-user-guide/06-diff.md)
