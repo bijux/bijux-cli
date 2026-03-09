@@ -193,7 +193,10 @@ fn direct_core_invocation_newly_ported_commands_execute() {
         vec!["bijux", "cli", "plugins", "list"],
         vec!["bijux", "cli", "plugins", "inspect"],
         vec!["bijux", "dev", "cli", "routes"],
+        vec!["bijux", "dev", "cli", "route-audit"],
         vec!["bijux", "dev", "cli", "registry"],
+        vec!["bijux", "dev", "cli", "docs-audit"],
+        vec!["bijux", "dev", "cli", "script-audit"],
         vec!["bijux", "dev", "cli", "env"],
         vec!["bijux", "dev", "cli", "doctor"],
         vec!["bijux", "dev", "cli", "contracts"],
@@ -213,7 +216,10 @@ fn direct_core_invocation_newly_ported_commands_execute() {
 fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
     for argv in [
         vec!["bijux", "dev", "cli", "routes"],
+        vec!["bijux", "dev", "cli", "route-audit"],
         vec!["bijux", "dev", "cli", "registry"],
+        vec!["bijux", "dev", "cli", "docs-audit"],
+        vec!["bijux", "dev", "cli", "script-audit"],
         vec!["bijux", "dev", "cli", "env"],
         vec!["bijux", "dev", "cli", "doctor"],
         vec!["bijux", "dev", "cli", "contracts"],
@@ -231,6 +237,20 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
                 assert!(payload["registry"].is_array());
                 assert!(payload["ownership"].is_object());
                 assert!(payload["precedence"].is_array());
+            }
+            "route-audit" => {
+                assert!(payload["routes"].is_array());
+                assert!(payload["aliases"].is_array());
+                assert!(payload["summary"].is_object());
+            }
+            "docs-audit" => {
+                assert!(payload["docs_audit"].is_object());
+                assert!(payload["docs"].is_array());
+                assert!(payload["docs_count"].is_number());
+            }
+            "script-audit" => {
+                assert!(payload["scripts"].is_array());
+                assert!(payload["summary"].is_object());
             }
             "env" => {
                 assert!(payload["env"].is_object());

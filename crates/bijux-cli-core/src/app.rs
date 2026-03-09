@@ -797,6 +797,43 @@ fn route_response(
                 "aliases": aliases,
             })
         }
+        [a, b, c] if a == "dev" && b == "cli" && c == "route-audit" => {
+            let routes: Vec<Value> = registry
+                .built_in_paths()
+                .into_iter()
+                .map(|path| {
+                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "segments": segments,
+                        "owner": "bijux-cli",
+                        "source": "built-in",
+                    })
+                })
+                .collect();
+            let aliases: Vec<Value> = registry
+                .alias_rewrites()
+                .into_iter()
+                .map(|(alias, canonical)| {
+                    let alias_segments: Vec<String> =
+                        alias.segments.into_iter().map(|s| s.0).collect();
+                    let canonical_segments: Vec<String> =
+                        canonical.segments.into_iter().map(|s| s.0).collect();
+                    json!({
+                        "alias": alias_segments,
+                        "canonical": canonical_segments,
+                        "source": "compatibility-alias",
+                    })
+                })
+                .collect();
+            json!({
+                "routes": routes,
+                "aliases": aliases,
+                "summary": {
+                    "route_count": routes.len(),
+                    "alias_count": aliases.len(),
+                },
+            })
+        }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => dev_cli_inventory_payload(),
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
             let registry_rows = registry.route_tree();
@@ -924,6 +961,14 @@ fn route_response(
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "scripts-audit" => {
+            let inventory = dev_cli_inventory_payload();
+            json!({
+                "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
+                "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "script-audit" => {
             let inventory = dev_cli_inventory_payload();
             json!({
                 "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
@@ -1076,6 +1121,20 @@ fn route_response(
             json!({
                 "runtime": "dev-cli",
                 "doctor": diagnosis,
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
+            let root = workspace_root();
+            let docs_audit = read_json_if_exists(&root.join("artifacts/status/docs_audit.json"));
+            let docs_files: Vec<String> = collect_files(&root.join("docs"))
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
+                .map(|p| rel_to_root(&p, &root))
+                .collect();
+            json!({
+                "docs_audit": docs_audit,
+                "docs": docs_files,
+                "docs_count": docs_files.len(),
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
@@ -1245,17 +1304,20 @@ fn is_known_route(path: &[String]) -> bool {
                     || c == "docs"
                     || c == "status"
                     || c == "scripts-audit"
+                    || c == "script-audit"
                     || c == "snapshots-audit"
                     || c == "fixture-audit"
                     || c == "crate-health"
                     || c == "package-health"
+                    || c == "route-audit"
                     || c == "env"
                     || c == "doctor"
                     || c == "contracts"
                     || c == "runtime-identity"
                     || c == "docs-prune-plan"
                     || c == "state-audit"
-                    || c == "state-doctor") =>
+                    || c == "state-doctor"
+                    || c == "docs-audit") =>
         {
             true
         }

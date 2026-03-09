@@ -1,10 +1,13 @@
 dev cli inventory
 dev cli routes
+dev cli route-audit
 dev cli registry
 dev cli parity
 dev cli docs
+dev cli docs-audit
 dev cli status
 dev cli scripts-audit
+dev cli script-audit
 dev cli snapshots-audit
 dev cli fixture-audit
 dev cli crate-health
@@ -14,3 +17,5 @@ dev cli doctor
 dev cli contracts
 dev cli runtime-identity
 dev cli docs-prune-plan
+dev cli state-audit
+dev cli state-doctor
