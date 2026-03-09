@@ -24,3 +24,4 @@ This document does not define project process or governance.
 
 ## Runtime Law Freeze
 The single canonical runtime identity rule is non-negotiable and frozen until an explicit breaking-change policy replaces it.
+New maintainer automation defaults to `bijux dev cli` commands, not ad hoc scripts.
