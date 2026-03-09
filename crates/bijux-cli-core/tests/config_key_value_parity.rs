@@ -17,10 +17,7 @@ use futures as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-cli-key-value-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path

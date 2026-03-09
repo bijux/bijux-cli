@@ -13,9 +13,7 @@ use thiserror as _;
 #[test]
 fn route_tree_is_json_serializable_with_expected_fields() {
     let mut registry = RouteRegistry::default();
-    registry
-        .register_plugin_namespace("community")
-        .expect("plugin namespace should register");
+    registry.register_plugin_namespace("community").expect("plugin namespace should register");
 
     let rows = registry.route_tree();
     let value = serde_json::to_value(&rows).expect("route tree should serialize");

@@ -1,11 +1,11 @@
-use bijux_cli_contracts::{
-    ColorMode, LogLevel, OutputFormat, PrettyMode,
-};
+use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core::app::run_app;
 use bijux_cli_routing::parser::root_command;
 
 use crate::history::push_history;
-use crate::types::{META_PREFIX, ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream};
+use crate::types::{
+    ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream, META_PREFIX,
+};
 
 fn parse_shell_tokens(input: &str) -> Vec<String> {
     shlex::split(input)
@@ -55,11 +55,7 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
             let body = render_meta_help(&tokens[1..]);
             Ok(ReplEvent::Continue(Some(ReplFrame {
                 stream: ReplStream::Stdout,
-                content: if body.ends_with('\n') {
-                    body
-                } else {
-                    format!("{body}\n")
-                },
+                content: if body.ends_with('\n') { body } else { format!("{body}\n") },
             })))
         }
         "set" if tokens.len() >= 3 => {
@@ -132,28 +128,29 @@ fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> 
     );
 
     argv.push("--log-level".to_string());
-    argv.push(
-        if session.trace_mode {
-            "trace".to_string()
-        } else {
-            match session.policy.log_level {
-                LogLevel::Trace => "trace",
-                LogLevel::Debug => "debug",
-                LogLevel::Info => "info",
-                LogLevel::Warning => "warning",
-                LogLevel::Error => "error",
-                _ => "info",
-            }
-            .to_string()
-        },
-    );
+    argv.push(if session.trace_mode {
+        "trace".to_string()
+    } else {
+        match session.policy.log_level {
+            LogLevel::Trace => "trace",
+            LogLevel::Debug => "debug",
+            LogLevel::Info => "info",
+            LogLevel::Warning => "warning",
+            LogLevel::Error => "error",
+            _ => "info",
+        }
+        .to_string()
+    });
 
     argv.extend_from_slice(&line_argv[1..]);
     argv
 }
 
 /// Execute one REPL input event with interrupt/EOF-safe behavior.
-pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result<ReplEvent, ReplError> {
+pub fn execute_repl_input(
+    session: &mut ReplSession,
+    input: ReplInput,
+) -> Result<ReplEvent, ReplError> {
     match input {
         ReplInput::Interrupt => {
             session.pending_multiline = None;
@@ -207,16 +204,10 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
             session.last_exit_code = result.exit_code;
 
             let frame = if !result.stdout.is_empty() {
-                Some(ReplFrame {
-                    stream: ReplStream::Stdout,
-                    content: result.stdout,
-                })
+                Some(ReplFrame { stream: ReplStream::Stdout, content: result.stdout })
             } else if !result.stderr.is_empty() {
                 session.last_error = Some(result.stderr.clone());
-                Some(ReplFrame {
-                    stream: ReplStream::Stderr,
-                    content: result.stderr,
-                })
+                Some(ReplFrame { stream: ReplStream::Stderr, content: result.stderr })
             } else {
                 None
             };
@@ -227,7 +218,10 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
 }
 
 /// Backward-compatible one-line execution adapter.
-pub fn execute_repl_line(session: &mut ReplSession, line: &str) -> Result<Option<ReplFrame>, ReplError> {
+pub fn execute_repl_line(
+    session: &mut ReplSession,
+    line: &str,
+) -> Result<Option<ReplFrame>, ReplError> {
     match execute_repl_input(session, ReplInput::Line(line.to_string()))? {
         ReplEvent::Continue(frame) => Ok(frame),
         ReplEvent::Exit(frame) => Ok(frame),

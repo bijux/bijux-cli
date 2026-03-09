@@ -12,10 +12,7 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-compat-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -32,10 +29,7 @@ fn run_with_env(binary: &str, args: &[&str], envs: &HashMap<String, String>) -> 
 
 fn python_cli() -> String {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .expect("workspace root");
+    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
     root.join("bin").join("bijux").display().to_string()
 }
 

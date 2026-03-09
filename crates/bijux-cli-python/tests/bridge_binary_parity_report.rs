@@ -24,9 +24,7 @@ fn repo_root() -> PathBuf {
 
 fn run_binary(argv: &[&str]) -> (i32, String, String) {
     let mut cmd = Command::new("cargo");
-    cmd.current_dir(repo_root())
-        .args(["run", "-q", "-p", "bijux-cli-bin", "--"])
-        .args(argv);
+    cmd.current_dir(repo_root()).args(["run", "-q", "-p", "bijux-cli-bin", "--"]).args(argv);
     let out = cmd.output().expect("run binary through cargo");
     let code = out.status.code().unwrap_or(1);
     (
@@ -37,10 +35,8 @@ fn run_binary(argv: &[&str]) -> (i32, String, String) {
 }
 
 fn run_bridge(argv: &[&str]) -> (i32, String, String) {
-    let as_vec: Vec<String> = std::iter::once("bijux")
-        .chain(argv.iter().copied())
-        .map(ToString::to_string)
-        .collect();
+    let as_vec: Vec<String> =
+        std::iter::once("bijux").chain(argv.iter().copied()).map(ToString::to_string).collect();
     let raw = execution_outcome_api(&as_vec).expect("bridge execution outcome");
     let payload: Value = serde_json::from_str(&raw).expect("valid bridge payload");
     (
@@ -88,9 +84,21 @@ fn binary_and_python_bridge_parity_report_is_generated() {
         .expect("write report");
 
     for case in payload["cases"].as_array().expect("array") {
-        assert!(case["exit_match"].as_bool().unwrap_or(false), "exit mismatch for {}", case["command"]);
-        assert!(case["stdout_match"].as_bool().unwrap_or(false), "stdout mismatch for {}", case["command"]);
-        assert!(case["stderr_match"].as_bool().unwrap_or(false), "stderr mismatch for {}", case["command"]);
+        assert!(
+            case["exit_match"].as_bool().unwrap_or(false),
+            "exit mismatch for {}",
+            case["command"]
+        );
+        assert!(
+            case["stdout_match"].as_bool().unwrap_or(false),
+            "stdout mismatch for {}",
+            case["command"]
+        );
+        assert!(
+            case["stderr_match"].as_bool().unwrap_or(false),
+            "stderr mismatch for {}",
+            case["command"]
+        );
     }
 }
 

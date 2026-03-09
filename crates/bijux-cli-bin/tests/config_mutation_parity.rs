@@ -12,20 +12,14 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-mutation-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -63,7 +57,8 @@ fn config_unset_clear_reload_text_snapshots() {
     let path = config_path.to_str().expect("utf-8");
 
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("seed unset");
-    let unset = run(&["cli", "config", "unset", "alpha", "--format", "text", "--config-path", path]);
+    let unset =
+        run(&["cli", "config", "unset", "alpha", "--format", "text", "--config-path", path]);
     assert!(unset.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(unset.stdout).expect("utf-8"), path),
@@ -118,35 +113,20 @@ fn config_clear_and_reload_handle_missing_and_malformed_files() {
     let malformed = temp.join("malformed.env");
     fs::write(&malformed, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("seed malformed");
 
-    let clear_missing = run(&[
-        "cli",
-        "config",
-        "clear",
-        "--config-path",
-        missing.to_str().expect("utf-8"),
-    ]);
+    let clear_missing =
+        run(&["cli", "config", "clear", "--config-path", missing.to_str().expect("utf-8")]);
     assert_eq!(clear_missing.status.code(), Some(0));
     let clear_missing_json: Value = serde_json::from_slice(&clear_missing.stdout).expect("json");
     assert_eq!(clear_missing_json["removed_keys"], 0);
 
-    let reload_missing = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        missing.to_str().expect("utf-8"),
-    ]);
+    let reload_missing =
+        run(&["cli", "config", "reload", "--config-path", missing.to_str().expect("utf-8")]);
     assert_eq!(reload_missing.status.code(), Some(0));
     let reload_missing_json: Value = serde_json::from_slice(&reload_missing.stdout).expect("json");
     assert_eq!(reload_missing_json["entry_count"], 0);
 
-    let reload_malformed = run(&[
-        "cli",
-        "config",
-        "reload",
-        "--config-path",
-        malformed.to_str().expect("utf-8"),
-    ]);
+    let reload_malformed =
+        run(&["cli", "config", "reload", "--config-path", malformed.to_str().expect("utf-8")]);
     assert_eq!(reload_malformed.status.code(), Some(1));
     assert!(reload_malformed.stdout.is_empty());
     assert!(!reload_malformed.stderr.is_empty());
@@ -165,13 +145,8 @@ fn config_clear_reports_write_failure() {
 
     fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).expect("chmod");
 
-    let out = run(&[
-        "cli",
-        "config",
-        "clear",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let out =
+        run(&["cli", "config", "clear", "--config-path", config_path.to_str().expect("utf-8")]);
 
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
@@ -191,7 +166,8 @@ fn config_mutation_python_parity_for_exit_and_streams() {
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("seed unset parity");
-    let py_unset = run_python(&["config", "unset", "alpha", "--format", "json", "--no-pretty"], &envs);
+    let py_unset =
+        run_python(&["config", "unset", "alpha", "--format", "json", "--no-pretty"], &envs);
     let rs_unset = run_with_env(
         &[
             "cli",
@@ -204,7 +180,11 @@ fn config_mutation_python_parity_for_exit_and_streams() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", config_path.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
     assert_eq!(py_unset.status.code(), rs_unset.status.code());
     assert!(py_unset.stderr.is_empty());
@@ -223,7 +203,11 @@ fn config_mutation_python_parity_for_exit_and_streams() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", config_path.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
     assert_eq!(py_clear.status.code(), rs_clear.status.code());
     assert!(py_clear.stderr.is_empty());
@@ -242,7 +226,11 @@ fn config_mutation_python_parity_for_exit_and_streams() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", config_path.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
     assert_eq!(py_reload.status.code(), rs_reload.status.code());
     assert!(py_reload.stderr.is_empty());

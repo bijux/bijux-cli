@@ -12,10 +12,7 @@ use libc as _;
 use serde_json::Value;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
@@ -32,10 +29,7 @@ fn parse_json(bytes: &[u8]) -> Value {
 }
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-diagnostics-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -64,14 +58,7 @@ fn inspect_supports_text_json_yaml_modes() {
 #[test]
 fn inspect_trace_and_quiet_behaviors_are_stable() {
     let plain = run(&["inspect", "--format", "json", "--no-pretty"]);
-    let trace = run(&[
-        "--log-level",
-        "trace",
-        "inspect",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]);
+    let trace = run(&["--log-level", "trace", "inspect", "--format", "json", "--no-pretty"]);
     assert!(plain.status.success());
     assert!(trace.status.success());
 
@@ -99,7 +86,8 @@ fn inspect_failure_normalization_routes_to_stderr() {
 #[test]
 fn inspect_and_dev_routes_are_internally_consistent() {
     let inspect = parse_json(&run(&["inspect", "--format", "json", "--no-pretty"]).stdout);
-    let routes = parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let routes =
+        parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
 
     let inspect_set: BTreeSet<String> = inspect["route_sources"]
         .as_array()
@@ -136,7 +124,8 @@ fn inspect_and_dev_routes_are_internally_consistent() {
 
 #[test]
 fn dev_diagnostics_payloads_expose_metadata_contracts() {
-    let registry = parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
+    let registry =
+        parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
     assert!(registry["registry"].is_array());
     assert!(registry["ownership"].is_object());
     assert!(registry["precedence"].is_array());
@@ -145,19 +134,14 @@ fn dev_diagnostics_payloads_expose_metadata_contracts() {
     assert!(env["source_precedence"].is_array());
     assert!(env["active"]["config_file"].is_string());
 
-    let doctor = parse_json(&run(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"]).stdout);
+    let doctor =
+        parse_json(&run(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"]).stdout);
     assert!(doctor["issues"]["config"].is_array());
     assert!(doctor["issues"]["paths"].is_array());
     assert!(doctor["issues"]["plugins"].is_array());
 
-    let contracts = parse_json(&run(&[
-        "dev",
-        "cli",
-        "contracts",
-        "--format",
-        "json",
-        "--no-pretty",
-    ]).stdout);
+    let contracts =
+        parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);
     assert!(contracts["contracts"].is_array());
     assert!(contracts["schema_version"].is_string());
     assert!(contracts["runtime_version"].is_string());

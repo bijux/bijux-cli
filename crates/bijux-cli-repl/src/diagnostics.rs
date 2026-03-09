@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use serde_json::json;
 
 use crate::session::startup_repl;
-use crate::types::{REPL_MEMORY_BUDGET_BYTES, REPL_STARTUP_LATENCY_BUDGET_MS, ReplSession};
+use crate::types::{ReplSession, REPL_MEMORY_BUDGET_BYTES, REPL_STARTUP_LATENCY_BUDGET_MS};
 
 /// Return last error message captured by REPL session.
 #[must_use]
@@ -24,10 +24,7 @@ pub fn session_diagnostics_dump(session: &ReplSession) -> String {
         "plugin_completion_hooks": session.plugin_completion_hooks.keys().collect::<Vec<_>>(),
         "last_error": session.last_error,
     });
-    format!(
-        "{}\n",
-        serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string())
-    )
+    format!("{}\n", serde_json::to_string_pretty(&payload).unwrap_or_else(|_| "{}".to_string()))
 }
 
 /// Approximate REPL session memory use in bytes.

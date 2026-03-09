@@ -6,8 +6,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use bijux_cli_contracts::schema::error_envelope_v1_schema;
-use schemars as _;
 use proptest as _;
+use schemars as _;
 use semver as _;
 use serde as _;
 

@@ -11,10 +11,7 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-history-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -80,7 +77,8 @@ fn history_missing_and_malformed_behaviors_are_stable() {
     let malformed_path = temp.join("malformed.history");
     fs::write(&malformed_path, "{\"oops\":true}").expect("write malformed");
     let envs_malformed = [("BIJUXCLI_HISTORY_FILE", malformed_path.display().to_string())];
-    let out_malformed = run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_malformed);
+    let out_malformed =
+        run_with_env(&["history", "--format", "json", "--no-pretty"], &envs_malformed);
     assert_eq!(out_malformed.status.code(), Some(1));
     assert!(out_malformed.stdout.is_empty());
     assert!(!out_malformed.stderr.is_empty());
@@ -146,8 +144,14 @@ fn history_handles_huge_files_with_stable_tail_limit() {
     let payload = parse_json(&out.stdout);
     let loaded = payload["entries"].as_array().expect("entries");
     assert_eq!(loaded.len(), 20);
-    assert_eq!(loaded.first().and_then(|v| v.get("command")).and_then(Value::as_str), Some("cmd-1980"));
-    assert_eq!(loaded.last().and_then(|v| v.get("command")).and_then(Value::as_str), Some("cmd-1999"));
+    assert_eq!(
+        loaded.first().and_then(|v| v.get("command")).and_then(Value::as_str),
+        Some("cmd-1980")
+    );
+    assert_eq!(
+        loaded.last().and_then(|v| v.get("command")).and_then(Value::as_str),
+        Some("cmd-1999")
+    );
 }
 
 #[test]

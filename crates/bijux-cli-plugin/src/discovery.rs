@@ -48,9 +48,8 @@ pub fn refresh_discovery_cache(
 
     cache.root = plugins_dir.to_path_buf();
     cache.manifests = manifests;
-    cache.last_updated_millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |duration| duration.as_millis());
+    cache.last_updated_millis =
+        SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |duration| duration.as_millis());
     Ok(())
 }
 

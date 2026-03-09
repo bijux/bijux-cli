@@ -21,8 +21,5 @@ pub fn execute_delegated_plugin(
         return Err(PluginError::MissingCapability(required_capability.to_string()));
     }
 
-    Ok(format!(
-        "delegated:{}:{}",
-        manifest.namespace.0, manifest.entrypoint
-    ))
+    Ok(format!("delegated:{}:{}", manifest.namespace.0, manifest.entrypoint))
 }

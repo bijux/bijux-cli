@@ -28,9 +28,7 @@ fn normalize_node(value: Value, home: &str) -> Value {
             Value::Array(items.into_iter().map(|item| normalize_node(item, home)).collect())
         }
         Value::Object(map) => Value::Object(
-            map.into_iter()
-                .map(|(key, val)| (key, normalize_node(val, home)))
-                .collect(),
+            map.into_iter().map(|(key, val)| (key, normalize_node(val, home))).collect(),
         ),
         other => other,
     }
@@ -61,14 +59,8 @@ fn ported_command_outputs_match_goldens() {
     ];
     assert_snapshot(&set_args, "tests/snapshots/ported/cli_config_set.json");
 
-    let get_args = [
-        "cli",
-        "config",
-        "get",
-        "golden_key",
-        "--config-path",
-        golden_config_path.as_str(),
-    ];
+    let get_args =
+        ["cli", "config", "get", "golden_key", "--config-path", golden_config_path.as_str()];
     assert_snapshot(&get_args, "tests/snapshots/ported/cli_config_get.json");
 
     let cases: [(&[&str], &str); 12] = [
@@ -78,21 +70,12 @@ fn ported_command_outputs_match_goldens() {
         (&["sleep", "0"], "tests/snapshots/ported/root_sleep.json"),
         (&["cli", "self-test"], "tests/snapshots/ported/cli_self_test.json"),
         (&["cli", "plugins", "list"], "tests/snapshots/ported/cli_plugins_list.json"),
-        (
-            &["cli", "plugins", "inspect"],
-            "tests/snapshots/ported/cli_plugins_inspect.json",
-        ),
+        (&["cli", "plugins", "inspect"], "tests/snapshots/ported/cli_plugins_inspect.json"),
         (&["dev", "cli", "routes"], "tests/snapshots/ported/dev_cli_routes.json"),
-        (
-            &["dev", "cli", "registry"],
-            "tests/snapshots/ported/dev_cli_registry.json",
-        ),
+        (&["dev", "cli", "registry"], "tests/snapshots/ported/dev_cli_registry.json"),
         (&["dev", "cli", "env"], "tests/snapshots/ported/dev_cli_env.json"),
         (&["dev", "cli", "doctor"], "tests/snapshots/ported/dev_cli_doctor.json"),
-        (
-            &["dev", "cli", "contracts"],
-            "tests/snapshots/ported/dev_cli_contracts.json",
-        ),
+        (&["dev", "cli", "contracts"], "tests/snapshots/ported/dev_cli_contracts.json"),
     ];
 
     for (args, snapshot) in cases {

@@ -16,7 +16,9 @@ use bijux_cli_contracts::ContractMarker;
 
 pub use constants::{CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES};
 pub use diagnostics::{compatibility_warnings, load_time_diagnostics, self_repair_registry};
-pub use discovery::{discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir};
+pub use discovery::{
+    discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir,
+};
 pub use errors::PluginError;
 pub use execution::execute_delegated_plugin;
 pub use manifest::{parse_manifest_v1, validate_manifest};
@@ -26,9 +28,9 @@ pub use models::{
     ValidatedPlugin,
 };
 pub use registry::{
-    compatibility_check, disable_plugin, enable_plugin, inspect_plugin, install_plugin as install_plugin_with_reserved,
-    list_plugins, load_registry, plugin_doctor, plugin_load_order, plugin_origin_metadata,
-    save_registry, uninstall_plugin, update_registry,
+    compatibility_check, disable_plugin, enable_plugin, inspect_plugin,
+    install_plugin as install_plugin_with_reserved, list_plugins, load_registry, plugin_doctor,
+    plugin_load_order, plugin_origin_metadata, save_registry, uninstall_plugin, update_registry,
 };
 
 /// Build plugin marker chained from core state.

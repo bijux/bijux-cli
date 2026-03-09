@@ -8,9 +8,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use bijux_cli_contracts as _;
 use bijux_cli_contracts::PluginLifecycleState;
 use bijux_cli_plugin::{
-    discover_plugin_manifests, disable_plugin, enable_plugin, install_plugin, load_time_diagnostics,
-    plugin_load_order, refresh_discovery_cache, self_repair_registry, uninstall_plugin,
-    InstallPluginRequest, PluginDiscoveryCache, PluginError, PluginTrustLevel,
+    disable_plugin, discover_plugin_manifests, enable_plugin, install_plugin,
+    load_time_diagnostics, plugin_load_order, refresh_discovery_cache, self_repair_registry,
+    uninstall_plugin, InstallPluginRequest, PluginDiscoveryCache, PluginError, PluginTrustLevel,
 };
 use semver as _;
 use serde as _;
@@ -19,10 +19,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir
@@ -141,7 +139,8 @@ fn reports_load_time_diagnostics_and_repairs_corrupt_registry() {
     )
     .expect("install should succeed");
 
-    let diagnostics = load_time_diagnostics(&registry_path, "9.9.9").expect("diagnostics should run");
+    let diagnostics =
+        load_time_diagnostics(&registry_path, "9.9.9").expect("diagnostics should run");
     assert!(!diagnostics.is_empty());
 
     fs::write(&registry_path, "{broken-json").expect("corrupt write should succeed");

@@ -7,17 +7,19 @@ use bijux_cli_contracts::{
     ColorMode, CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };
+use bijux_cli_core as _;
 use bijux_cli_output::{emit_error, emit_success, render_value, EmitterConfig, OutputStream};
+use serde as _;
 use serde_json::json;
 use serde_yaml as _;
-use bijux_cli_core as _;
-use serde as _;
 use thiserror as _;
 
 fn meta() -> OutputEnvelopeMetaV1 {
     OutputEnvelopeMetaV1 {
         version: "v1".to_string(),
-        command: CommandPath { segments: vec![Namespace("cli".to_string()), Namespace("status".to_string())] },
+        command: CommandPath {
+            segments: vec![Namespace("cli".to_string()), Namespace("status".to_string())],
+        },
         timestamp: "1970-01-01T00:00:00Z".to_string(),
     }
 }
@@ -25,12 +27,19 @@ fn meta() -> OutputEnvelopeMetaV1 {
 #[test]
 fn text_help_style_snapshots_for_root_and_grouped_help() {
     let root_help = json!("Usage: bijux-rs [OPTIONS] [COMMAND]\n\nCommands:\n  cli\n  dev\n");
-    let grouped_help = json!("Usage: bijux-rs cli [OPTIONS] [COMMAND]\n\nCommands:\n  status\n  paths\n");
+    let grouped_help =
+        json!("Usage: bijux-rs cli [OPTIONS] [COMMAND]\n\nCommands:\n  status\n  paths\n");
 
-    let root_rendered = render_value(&root_help, EmitterConfig { format: OutputFormat::Text, ..EmitterConfig::default() })
-        .expect("root help should render");
-    let grouped_rendered = render_value(&grouped_help, EmitterConfig { format: OutputFormat::Text, ..EmitterConfig::default() })
-        .expect("grouped help should render");
+    let root_rendered = render_value(
+        &root_help,
+        EmitterConfig { format: OutputFormat::Text, ..EmitterConfig::default() },
+    )
+    .expect("root help should render");
+    let grouped_rendered = render_value(
+        &grouped_help,
+        EmitterConfig { format: OutputFormat::Text, ..EmitterConfig::default() },
+    )
+    .expect("grouped help should render");
 
     assert_eq!(root_rendered, include_str!("snapshots/help_root_text.txt"));
     assert_eq!(grouped_rendered, include_str!("snapshots/help_grouped_text.txt"));
@@ -38,10 +47,7 @@ fn text_help_style_snapshots_for_root_and_grouped_help() {
 
 #[test]
 fn stable_field_order_for_machine_output() {
-    let envelope = OutputEnvelopeV1::success(
-        json!({"alpha": 1, "beta": 2}),
-        meta(),
-    );
+    let envelope = OutputEnvelopeV1::success(json!({"alpha": 1, "beta": 2}), meta());
 
     let out = emit_success(
         &envelope,
@@ -109,16 +115,25 @@ fn nested_error_details_and_multiline_unicode_rendering() {
 fn empty_payload_rendering_is_valid_in_all_formats() {
     let payload = json!({});
 
-    let json_out = render_value(&payload, EmitterConfig { format: OutputFormat::Json, pretty: false, ..EmitterConfig::default() })
-        .expect("json render");
+    let json_out = render_value(
+        &payload,
+        EmitterConfig { format: OutputFormat::Json, pretty: false, ..EmitterConfig::default() },
+    )
+    .expect("json render");
     assert_eq!(json_out, "{}");
 
-    let yaml_out = render_value(&payload, EmitterConfig { format: OutputFormat::Yaml, pretty: true, ..EmitterConfig::default() })
-        .expect("yaml render");
+    let yaml_out = render_value(
+        &payload,
+        EmitterConfig { format: OutputFormat::Yaml, pretty: true, ..EmitterConfig::default() },
+    )
+    .expect("yaml render");
     assert!(yaml_out.trim() == "{}" || yaml_out.trim().is_empty());
 
-    let text_out = render_value(&payload, EmitterConfig { format: OutputFormat::Text, pretty: false, ..EmitterConfig::default() })
-        .expect("text render");
+    let text_out = render_value(
+        &payload,
+        EmitterConfig { format: OutputFormat::Text, pretty: false, ..EmitterConfig::default() },
+    )
+    .expect("text render");
     assert_eq!(text_out, "{}");
 }
 

@@ -12,20 +12,14 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-root-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -58,13 +52,8 @@ fn root_config_output_snapshots_text_json_yaml() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write config");
 
-    let text = run(&[
-        "config",
-        "--format",
-        "text",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let text =
+        run(&["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")]);
     assert!(text.status.success());
     assert_eq!(
         String::from_utf8(text.stdout).expect("utf-8"),
@@ -120,24 +109,13 @@ fn root_config_quiet_and_no_color_modes() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
 
-    let quiet = run(&[
-        "config",
-        "--quiet",
-        "--config-path",
-        config_path.to_str().expect("utf-8"),
-    ]);
+    let quiet = run(&["config", "--quiet", "--config-path", config_path.to_str().expect("utf-8")]);
     assert!(quiet.status.success());
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
 
     let no_color = run_with_env(
-        &[
-            "config",
-            "--format",
-            "text",
-            "--config-path",
-            config_path.to_str().expect("utf-8"),
-        ],
+        &["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")],
         &[("NO_COLOR", "1".to_string())],
     );
     assert!(no_color.status.success());

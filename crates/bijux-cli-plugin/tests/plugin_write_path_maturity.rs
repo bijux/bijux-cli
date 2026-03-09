@@ -18,10 +18,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_plugins_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir
@@ -153,19 +151,16 @@ fn enabling_broken_plugin_is_rejected_and_disabling_missing_plugin_fails_cleanly
 
     // Corrupt lifecycle intentionally to emulate a broken plugin recorded in registry.
     let mut registry = bijux_cli_plugin::load_registry(&registry_path).expect("load registry");
-    registry
-        .plugins
-        .get_mut("recoverable")
-        .expect("plugin exists")
-        .state = PluginLifecycleState::Broken;
+    registry.plugins.get_mut("recoverable").expect("plugin exists").state =
+        PluginLifecycleState::Broken;
     bijux_cli_plugin::save_registry(&registry_path, &registry).expect("save registry");
 
     let enable_error = enable_plugin(&registry_path, "recoverable")
         .expect_err("broken plugin must not be enabled");
     assert!(matches!(enable_error, PluginError::InvalidField(_)));
 
-    let disable_error = disable_plugin(&registry_path, "missing")
-        .expect_err("missing plugin disable should fail");
+    let disable_error =
+        disable_plugin(&registry_path, "missing").expect_err("missing plugin disable should fail");
     assert!(matches!(disable_error, PluginError::PluginNotFound(_)));
 }
 

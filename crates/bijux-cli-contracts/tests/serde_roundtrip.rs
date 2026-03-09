@@ -4,11 +4,11 @@
 use std::collections::BTreeMap;
 
 use bijux_cli_contracts::{
-    ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, DiagnosticRecord,
-    ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
-    InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
-    OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
-    PluginManifestV1, PrettyMode, AliasRewrite, InspectReport, MemoryKeyList, MemorySummary,
+    AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource,
+    DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode,
+    GlobalFlags, InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList,
+    MemorySummary, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1,
+    OutputFormat, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
     RouteSourceMetadata,
 };
 use proptest as _;

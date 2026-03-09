@@ -5,13 +5,13 @@ use std::collections::BTreeMap;
 use std::fs;
 
 use bijux_cli_contracts as _;
+use bijux_cli_core as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_output as _;
+use serde as _;
 use serde::Deserialize;
 use serde_json::Value;
 use serde_yaml as _;
-use bijux_cli_core as _;
-use serde as _;
 use thiserror as _;
 
 #[derive(Debug, Deserialize)]
@@ -43,7 +43,10 @@ fn parity_fixtures_for_status_doctor_plugins_cli_status_cli_paths() {
     for key in &status_fx.required_keys {
         assert!(status_json.get(key).is_some(), "missing status key {key}");
     }
-    assert_eq!(status_json["status"], Value::String(status_fx.status_value.clone().expect("status value")));
+    assert_eq!(
+        status_json["status"],
+        Value::String(status_fx.status_value.clone().expect("status value"))
+    );
 
     let (_, doctor_stdout, doctor_stderr) = run(&["bijux", "doctor"]);
     assert!(doctor_stderr.is_empty());
@@ -55,7 +58,8 @@ fn parity_fixtures_for_status_doctor_plugins_cli_status_cli_paths() {
 
     let (_, plugins_stdout, plugins_stderr) = run(&["bijux", "cli", "plugins", "list"]);
     assert!(plugins_stderr.is_empty());
-    let plugins_json: Value = serde_json::from_str(&plugins_stdout).expect("plugins list should be json");
+    let plugins_json: Value =
+        serde_json::from_str(&plugins_stdout).expect("plugins list should be json");
     let plugins_fx = fixtures.get("plugins_list").expect("plugins fixture should exist");
     for key in &plugins_fx.required_keys {
         assert!(plugins_json.get(key).is_some(), "missing plugins key {key}");
@@ -83,23 +87,28 @@ fn compare_rust_outputs_against_python_captures_with_gap_report_guard() {
     let lock_json: Value = serde_json::from_str(&lock).expect("lock should be valid json");
     let captures = lock_json["captures"].as_object().expect("captures should be object");
 
-    let rust_status: Value = serde_json::from_str(&run(&["bijux", "status"]).1).expect("status json");
-    let py_status: Value =
-        serde_json::from_str(captures["bijux_status_json_no_pretty"]["stdout"].as_str().expect("py status stdout"))
-            .expect("python status json");
+    let rust_status: Value =
+        serde_json::from_str(&run(&["bijux", "status"]).1).expect("status json");
+    let py_status: Value = serde_json::from_str(
+        captures["bijux_status_json_no_pretty"]["stdout"].as_str().expect("py status stdout"),
+    )
+    .expect("python status json");
     assert_eq!(rust_status["status"], py_status["status"]);
 
-    let rust_doctor: Value = serde_json::from_str(&run(&["bijux", "doctor"]).1).expect("doctor json");
-    let py_doctor: Value =
-        serde_json::from_str(captures["bijux_doctor"]["stdout"].as_str().expect("py doctor stdout"))
-            .expect("python doctor json");
+    let rust_doctor: Value =
+        serde_json::from_str(&run(&["bijux", "doctor"]).1).expect("doctor json");
+    let py_doctor: Value = serde_json::from_str(
+        captures["bijux_doctor"]["stdout"].as_str().expect("py doctor stdout"),
+    )
+    .expect("python doctor json");
     assert_eq!(rust_doctor["status"], py_doctor["status"]);
 
     let rust_plugins: Value =
         serde_json::from_str(&run(&["bijux", "cli", "plugins", "list"]).1).expect("plugins json");
-    let py_plugins: Value =
-        serde_json::from_str(captures["bijux_plugins_list"]["stdout"].as_str().expect("py plugins stdout"))
-            .expect("python plugins json");
+    let py_plugins: Value = serde_json::from_str(
+        captures["bijux_plugins_list"]["stdout"].as_str().expect("py plugins stdout"),
+    )
+    .expect("python plugins json");
     assert!(rust_plugins.get("plugins").is_some());
     assert!(py_plugins.get("plugins").is_some());
 

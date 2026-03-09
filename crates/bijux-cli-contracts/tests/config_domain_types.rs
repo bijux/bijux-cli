@@ -36,14 +36,17 @@ fn config_domain_types_serialize_roundtrip() {
     let key = ConfigKey::new("alpha").expect("key");
     let value = ConfigValue::new("1").expect("value");
     let entry = ConfigEntry { key: key.clone(), value: value.clone() };
-    let snapshot = ConfigSnapshot { entries: std::collections::BTreeMap::from([(key.clone(), value.clone())]) };
+    let snapshot = ConfigSnapshot {
+        entries: std::collections::BTreeMap::from([(key.clone(), value.clone())]),
+    };
     let paths = ConfigPathSet {
         config_file: "/tmp/.bijux/.env".to_string(),
         history_file: "/tmp/.bijux/.history".to_string(),
         plugins_dir: "/tmp/.bijux/.plugins".to_string(),
     };
     let load = ConfigLoadResult { snapshot: snapshot.clone(), paths: paths.clone() };
-    let write = ConfigWriteResult { updated: true, entry_count: 1, target_path: paths.config_file.clone() };
+    let write =
+        ConfigWriteResult { updated: true, entry_count: 1, target_path: paths.config_file.clone() };
     let resolved = ResolvedConfigValue {
         key: key.clone(),
         value: value.clone(),
@@ -51,8 +54,10 @@ fn config_domain_types_serialize_roundtrip() {
         source_path: Some(paths.config_file.clone()),
     };
     let clear = ConfigClearResult { status: "ok".to_string(), removed_keys: 1 };
-    let reload = ConfigReloadResult { status: "ok".to_string(), reloaded_path: paths.config_file.clone() };
-    let command = ConfigCommandResult { status: "ok".to_string(), command: "config get".to_string() };
+    let reload =
+        ConfigReloadResult { status: "ok".to_string(), reloaded_path: paths.config_file.clone() };
+    let command =
+        ConfigCommandResult { status: "ok".to_string(), command: "config get".to_string() };
 
     for encoded in [
         serde_json::to_string(&entry).expect("serialize"),

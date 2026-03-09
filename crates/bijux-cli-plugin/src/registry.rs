@@ -45,11 +45,8 @@ pub fn save_registry(path: &Path, registry: &PluginRegistry) -> Result<(), Plugi
     let temporary = path.with_extension("tmp");
 
     {
-        let mut file = OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&temporary)?;
+        let mut file =
+            OpenOptions::new().create(true).truncate(true).write(true).open(&temporary)?;
         file.write_all(&data)?;
         file.write_all(b"\n")?;
         file.sync_all()?;
@@ -183,9 +180,7 @@ fn set_plugin_state(
         if state == bijux_cli_contracts::PluginLifecycleState::Enabled
             && plugin.state == bijux_cli_contracts::PluginLifecycleState::Broken
         {
-            return Err(PluginError::InvalidField(
-                "cannot enable broken plugin".to_string(),
-            ));
+            return Err(PluginError::InvalidField("cannot enable broken plugin".to_string()));
         }
         plugin.state = state;
         updated = Some(plugin.clone());
@@ -216,7 +211,9 @@ pub fn inspect_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRec
 }
 
 /// Build plugin-origin metadata from registry contents.
-pub fn plugin_origin_metadata(registry_path: &Path) -> Result<Vec<PluginOriginMetadata>, PluginError> {
+pub fn plugin_origin_metadata(
+    registry_path: &Path,
+) -> Result<Vec<PluginOriginMetadata>, PluginError> {
     let registry = load_registry(registry_path)?;
     Ok(registry
         .plugins

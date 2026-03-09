@@ -6,11 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow as _;
-use bijux_cli_install as _;
-use bijux_cli_output as _;
-use bijux_cli_plugin as _;
-use bijux_cli_routing as _;
-use clap as _;
 use bijux_cli_contracts::{
     ColorMode, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
 };
@@ -19,6 +14,11 @@ use bijux_cli_core::kernel::{
     resolve_policy, AsyncHandler, DiagnosticsHook, ExecutionIntent, Handler, KernelError,
     LifecycleHook, PolicyInputs, SyncHandler,
 };
+use bijux_cli_install as _;
+use bijux_cli_output as _;
+use bijux_cli_plugin as _;
+use bijux_cli_routing as _;
+use clap as _;
 use futures::future;
 use serde_json::json;
 

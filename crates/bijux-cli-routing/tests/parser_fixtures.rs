@@ -8,11 +8,11 @@ use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use clap as _;
 use proptest as _;
+use serde as _;
 use serde::Deserialize;
+use serde_json as _;
 use strsim as _;
 use thiserror as _;
-use serde as _;
-use serde_json as _;
 
 #[derive(Debug, Deserialize)]
 struct ParseCase {
@@ -22,7 +22,8 @@ struct ParseCase {
 }
 
 fn load_cases() -> Vec<ParseCase> {
-    let text = fs::read_to_string("tests/fixtures/parse_cases.json").expect("fixture file should load");
+    let text =
+        fs::read_to_string("tests/fixtures/parse_cases.json").expect("fixture file should load");
     serde_json::from_str(&text).expect("fixture json should parse")
 }
 
@@ -99,28 +100,24 @@ fn parser_flag_order_permutations_keep_same_result() {
 
 #[test]
 fn parser_supports_global_flags_before_and_after_namespace() {
-    let before = parse_intent(
-        &[
-            "bijux".to_string(),
-            "--color".to_string(),
-            "never".to_string(),
-            "dev".to_string(),
-            "cli".to_string(),
-            "routes".to_string(),
-        ],
-    )
+    let before = parse_intent(&[
+        "bijux".to_string(),
+        "--color".to_string(),
+        "never".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "routes".to_string(),
+    ])
     .expect("before parse");
 
-    let after = parse_intent(
-        &[
-            "bijux".to_string(),
-            "dev".to_string(),
-            "cli".to_string(),
-            "routes".to_string(),
-            "--color".to_string(),
-            "never".to_string(),
-        ],
-    )
+    let after = parse_intent(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "routes".to_string(),
+        "--color".to_string(),
+        "never".to_string(),
+    ])
     .expect("after parse");
 
     assert_eq!(before.normalized_path, after.normalized_path);
@@ -132,8 +129,8 @@ fn empty_grouped_commands_are_detected() {
     let cli = parse_intent(&["bijux".to_string(), "cli".to_string()]).expect("parse cli");
     assert_eq!(cli.normalized_path, vec!["cli"]);
 
-    let dev_cli =
-        parse_intent(&["bijux".to_string(), "dev".to_string(), "cli".to_string()]).expect("parse dev cli");
+    let dev_cli = parse_intent(&["bijux".to_string(), "dev".to_string(), "cli".to_string()])
+        .expect("parse dev cli");
     assert_eq!(dev_cli.normalized_path, vec!["dev", "cli"]);
 }
 

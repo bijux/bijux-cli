@@ -5,11 +5,11 @@ use bijux_cli_contracts::{
     ColorMode, CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };
+use bijux_cli_core as _;
 use bijux_cli_output::{emit_error, emit_success, EmitterConfig};
+use serde as _;
 use serde_json::json;
 use serde_yaml as _;
-use bijux_cli_core as _;
-use serde as _;
 use thiserror as _;
 
 fn sample_meta() -> OutputEnvelopeMetaV1 {

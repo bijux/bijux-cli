@@ -19,10 +19,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_plugins_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir
@@ -95,7 +93,8 @@ fn compatibility_and_doctor_are_reported() {
     )
     .expect("plugin should install");
 
-    let is_compatible = compatibility_check(&installed.manifest, "0.1.0").expect("check should pass");
+    let is_compatible =
+        compatibility_check(&installed.manifest, "0.1.0").expect("check should pass");
     assert!(is_compatible);
 
     let report = plugin_doctor(&registry_path).expect("doctor should run");

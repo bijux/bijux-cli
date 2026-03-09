@@ -6,6 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
@@ -15,15 +16,12 @@ use bijux_cli_python::{
     write_compatibility_config, CompatibilityConfig, CompatibilityError, PathOverrides,
     ENV_CONFIG_PATH, ENV_HISTORY_PATH,
 };
-use anyhow as _;
-use thiserror as _;
 use serde_json as _;
+use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let nanos =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-cli-{label}-{nanos}"));
     fs::create_dir_all(&dir).expect("temp directory should be created");
     dir
@@ -56,8 +54,9 @@ fn env_values_override_config_values() {
     let mut env_map = HashMap::new();
     env_map.insert(ENV_HISTORY_PATH.to_string(), "from-env.log".to_string());
 
-    let resolved = discover_compatibility_paths(Some(&home), &PathOverrides::default(), &env_map, &config)
-        .expect("resolution should succeed");
+    let resolved =
+        discover_compatibility_paths(Some(&home), &PathOverrides::default(), &env_map, &config)
+            .expect("resolution should succeed");
 
     assert_eq!(resolved.config_file, home.join("from-config.env"));
     assert_eq!(resolved.history_file, home.join("from-env.log"));

@@ -11,10 +11,10 @@ use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
     canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
-    discover_compatibility_paths, install_health_report, load_compatibility_config, pip_install_strategy,
-    post_install_hint, CompatibilityConfig, CompatibilityPaths, PackageChannel, PathOverrides,
-    CANONICAL_EXECUTABLE,
-    ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+    discover_compatibility_paths, install_health_report, load_compatibility_config,
+    pip_install_strategy, post_install_hint, CompatibilityConfig, CompatibilityPaths,
+    PackageChannel, PathOverrides, CANONICAL_EXECUTABLE, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
+    ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
@@ -93,10 +93,7 @@ fn collect_files(base: &Path) -> Vec<std::path::PathBuf> {
 }
 
 fn rel_to_root(path: &Path, root: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
 fn classify_script(path: &str) -> &'static str {
@@ -125,7 +122,11 @@ fn parse_make_targets(path: &Path) -> Vec<String> {
             continue;
         };
         let target = left.trim();
-        if target.is_empty() || target.contains(' ') || target.contains('=') || target.starts_with('.') {
+        if target.is_empty()
+            || target.contains(' ')
+            || target.contains('=')
+            || target.starts_with('.')
+        {
             continue;
         }
         out.push(target.to_string());
@@ -138,7 +139,10 @@ fn parse_make_targets(path: &Path) -> Vec<String> {
 fn classify_make_target(target: &str) -> &'static str {
     if target.starts_with("docs") || target.starts_with("api") || target.starts_with("test") {
         "wrap-with-dev-cli"
-    } else if target.starts_with("publish") || target.starts_with("sbom") || target.starts_with("security") {
+    } else if target.starts_with("publish")
+        || target.starts_with("sbom")
+        || target.starts_with("security")
+    {
         "keep"
     } else {
         "wrap-with-dev-cli"
@@ -178,11 +182,8 @@ fn dev_cli_inventory_payload() -> Value {
     }
 
     let script_summary = scripts.iter().fold(BTreeMap::<String, usize>::new(), |mut acc, item| {
-        let key = item
-            .get("classification")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown")
-            .to_string();
+        let key =
+            item.get("classification").and_then(Value::as_str).unwrap_or("unknown").to_string();
         *acc.entry(key).or_insert(0) += 1;
         acc
     });
@@ -370,7 +371,9 @@ fn state_diagnostics(paths: &CompatibilityPaths, plugin_registry_path: &Path) ->
     }
     if let Ok(text) = fs::read_to_string(&paths.config_file) {
         let mut seen = std::collections::BTreeMap::<String, usize>::new();
-        for line in text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#')) {
+        for line in
+            text.lines().map(str::trim).filter(|line| !line.is_empty() && !line.starts_with('#'))
+        {
             if let Some((left, _)) = line.split_once('=') {
                 *seen.entry(left.trim().to_string()).or_insert(0) += 1;
             }
@@ -483,12 +486,7 @@ fn route_response(
     if let Some(path) = &global_flags.config_path {
         overrides.config_file = Some(path.into());
     }
-    let paths = discover_compatibility_paths(
-        home.as_deref(),
-        &overrides,
-        &env_map(),
-        &config,
-    )?;
+    let paths = discover_compatibility_paths(home.as_deref(), &overrides, &env_map(), &config)?;
     let plugin_registry_path = registry_path_from_plugins_dir(&paths.plugins_dir);
     if let Some(payload) = execute_config_command(normalized_path, argv, &paths)? {
         return Ok(payload);
@@ -595,14 +593,13 @@ fn route_response(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
-            let hint = install_report
-                .active_binary
-                .as_deref()
-                .map(post_install_hint)
-                .unwrap_or_else(|| {
-                    "Run `bijux version` and `bijux cli doctor` to verify your environment."
-                        .to_string()
-                });
+            let hint =
+                install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
+                    || {
+                        "Run `bijux version` and `bijux cli doctor` to verify your environment."
+                            .to_string()
+                    },
+                );
             json!({
                 "config": paths.config_file,
                 "history": paths.history_file,
@@ -697,11 +694,10 @@ fn route_response(
             })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "explain" => {
-            let plugin = command_positionals(argv, &["cli", "plugins", "explain"])
-                .first()
-                .cloned();
-            let diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                .unwrap_or_default();
+            let plugin = command_positionals(argv, &["cli", "plugins", "explain"]).first().cloned();
+            let diagnostics =
+                load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                    .unwrap_or_default();
             let report = plugin_doctor(&plugin_registry_path).ok();
             let filtered: Vec<Value> = diagnostics
                 .into_iter()
@@ -762,8 +758,10 @@ fn route_response(
                 .alias_rewrites()
                 .into_iter()
                 .map(|(alias, canonical)| {
-                    let alias_segments: Vec<String> = alias.segments.into_iter().map(|s| s.0).collect();
-                    let canonical_segments: Vec<String> = canonical.segments.into_iter().map(|s| s.0).collect();
+                    let alias_segments: Vec<String> =
+                        alias.segments.into_iter().map(|s| s.0).collect();
+                    let canonical_segments: Vec<String> =
+                        canonical.segments.into_iter().map(|s| s.0).collect();
                     json!({
                         "alias": alias_segments,
                         "canonical": canonical_segments,
@@ -776,18 +774,13 @@ fn route_response(
                 "aliases": aliases,
             })
         }
-        [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => {
-            dev_cli_inventory_payload()
-        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => dev_cli_inventory_payload(),
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
             let registry_rows = registry.route_tree();
             let mut ownership: std::collections::BTreeMap<String, Vec<String>> =
                 std::collections::BTreeMap::new();
             for row in &registry_rows {
-                ownership
-                    .entry(row.owner.clone())
-                    .or_default()
-                    .push(row.name.0.clone());
+                ownership.entry(row.owner.clone()).or_default().push(row.name.0.clone());
             }
             json!({
                 "registry": registry_rows,
@@ -797,9 +790,11 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "parity" => {
             let root = workspace_root();
-            let parity_report = read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
-            let bridge_parity =
-                read_json_if_exists(&root.join("artifacts/parity/binary_vs_python_bridge_parity_report.json"));
+            let parity_report =
+                read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
+            let bridge_parity = read_json_if_exists(
+                &root.join("artifacts/parity/binary_vs_python_bridge_parity_report.json"),
+            );
             let command_matrix =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
             let parity_diffs =
@@ -838,7 +833,8 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "status" => {
             let root = workspace_root();
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
-            let parity = read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
+            let parity =
+                read_json_if_exists(&root.join("artifacts/parity/rust_python_parity_report.json"));
             json!({
                 "current_rust_state": state,
                 "parity": parity,
@@ -883,7 +879,8 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "crate-health" => {
             let root = workspace_root();
-            let metrics = read_json_if_exists(&root.join("artifacts/status/crate_boundary_metrics.json"));
+            let metrics =
+                read_json_if_exists(&root.join("artifacts/status/crate_boundary_metrics.json"));
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
             json!({
                 "crate_metrics": metrics,
@@ -917,13 +914,17 @@ fn route_response(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
-            let plugin_diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                .unwrap_or_default();
+            let plugin_diagnostics =
+                load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                    .unwrap_or_default();
             let repository = FileConfigRepository;
-            let config_issues = repository.load(&paths.config_file).err().map_or_else(Vec::new, |err| {
-                vec![json!({"category":"config", "message": err.to_string()})]
-            });
-            let path_issues = if install_report.has_path_shadowing || install_report.has_duplicate_installs {
+            let config_issues =
+                repository.load(&paths.config_file).err().map_or_else(Vec::new, |err| {
+                    vec![json!({"category":"config", "message": err.to_string()})]
+                });
+            let path_issues = if install_report.has_path_shadowing
+                || install_report.has_duplicate_installs
+            {
                 vec![
                     json!({"category":"paths", "has_path_shadowing": install_report.has_path_shadowing}),
                     json!({"category":"paths", "has_duplicate_installs": install_report.has_duplicate_installs}),
@@ -942,11 +943,12 @@ fn route_response(
                     })
                 })
                 .collect();
-            let status = if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
-                "healthy"
-            } else {
-                "degraded"
-            };
+            let status =
+                if config_issues.is_empty() && path_issues.is_empty() && plugin_issues.is_empty() {
+                    "healthy"
+                } else {
+                    "degraded"
+                };
             json!({
                 "status": status,
                 "runtime": "dev-cli",
@@ -1221,16 +1223,16 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
             } else {
                 format!("{rendered_error}\n")
             };
-            return Ok(AppRunResult { exit_code: code, stdout: String::new(), stderr: error_content });
+            return Ok(AppRunResult {
+                exit_code: code,
+                stdout: String::new(),
+                stderr: error_content,
+            });
         }
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') {
-        rendered
-    } else {
-        format!("{rendered}\n")
-    };
+    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
         return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });

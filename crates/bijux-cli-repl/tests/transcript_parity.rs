@@ -9,9 +9,9 @@ use bijux_cli_core as _;
 use bijux_cli_output as _;
 use bijux_cli_repl::{
     check_repl_budgets, completion_candidates, configure_history, execute_repl_input,
-    execute_repl_line, flush_history, inspect_last_error, load_history, register_plugin_completion_hook,
-    render_repl_command_reference, replay_history_command, startup_repl, ReplEvent, ReplInput,
-    ReplStream, REPL_MEMORY_BUDGET_BYTES,
+    execute_repl_line, flush_history, inspect_last_error, load_history,
+    register_plugin_completion_hook, render_repl_command_reference, replay_history_command,
+    startup_repl, ReplEvent, ReplInput, ReplStream, REPL_MEMORY_BUDGET_BYTES,
 };
 use bijux_cli_routing as _;
 use serde_json as _;

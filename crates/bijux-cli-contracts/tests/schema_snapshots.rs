@@ -16,24 +16,15 @@ fn assert_snapshot(schema: schemars::schema::RootSchema, path: &str) {
 
 #[test]
 fn output_schema_matches_snapshot() {
-    assert_snapshot(
-        output_envelope_v1_schema(),
-        "tests/snapshots/output_envelope_v1.schema.json",
-    );
+    assert_snapshot(output_envelope_v1_schema(), "tests/snapshots/output_envelope_v1.schema.json");
 }
 
 #[test]
 fn error_schema_matches_snapshot() {
-    assert_snapshot(
-        error_envelope_v1_schema(),
-        "tests/snapshots/error_envelope_v1.schema.json",
-    );
+    assert_snapshot(error_envelope_v1_schema(), "tests/snapshots/error_envelope_v1.schema.json");
 }
 
 #[test]
 fn plugin_schema_matches_snapshot() {
-    assert_snapshot(
-        plugin_manifest_v1_schema(),
-        "tests/snapshots/plugin_manifest_v1.schema.json",
-    );
+    assert_snapshot(plugin_manifest_v1_schema(), "tests/snapshots/plugin_manifest_v1.schema.json");
 }

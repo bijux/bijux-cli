@@ -14,14 +14,14 @@ impl Namespace {
         if normalized.is_empty() {
             return Err("namespace cannot be empty".to_string());
         }
-        if !normalized
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+        if !normalized.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
         {
             return Err("namespace must be lowercase kebab-case".to_string());
         }
         if normalized.starts_with('-') || normalized.ends_with('-') || normalized.contains("--") {
-            return Err("namespace cannot start/end with '-' or contain consecutive '-'".to_string());
+            return Err(
+                "namespace cannot start/end with '-' or contain consecutive '-'".to_string()
+            );
         }
         Ok(Self(normalized))
     }
@@ -81,11 +81,7 @@ impl CommandPath {
     /// Join path segments as a single command string.
     #[must_use]
     pub fn to_command_string(&self) -> String {
-        self.segments
-            .iter()
-            .map(|segment| segment.as_str())
-            .collect::<Vec<_>>()
-            .join(" ")
+        self.segments.iter().map(|segment| segment.as_str()).collect::<Vec<_>>().join(" ")
     }
 }
 

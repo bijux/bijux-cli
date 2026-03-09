@@ -5,10 +5,10 @@ use bijux_cli_contracts as _;
 use bijux_cli_routing::parser::parse_intent;
 use clap as _;
 use proptest as _;
-use strsim as _;
-use thiserror as _;
 use serde as _;
 use serde_json as _;
+use strsim as _;
+use thiserror as _;
 
 #[test]
 fn parser_handles_diverse_argv_inputs_without_panics() {

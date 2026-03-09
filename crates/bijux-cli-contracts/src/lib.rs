@@ -15,8 +15,7 @@ pub use contracts::{
     ConfigValidationError, ConfigValue, ConfigWriteResult, ContractMarker, DiagnosticRecord,
     ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
     InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList, MemorySummary,
+    Namespace, NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
+    PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
     ResolvedConfigValue, RouteSourceMetadata,
-    Namespace, NamespaceMetadata,
-    OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind,
-    PluginLifecycleState, PluginManifestV1, PrettyMode,
 };

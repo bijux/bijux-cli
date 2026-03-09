@@ -21,7 +21,9 @@ pub use compatibility::{
     CompatibilityPaths, PathOverrides, StateLockGuard, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
     ENV_PLUGINS_PATH,
 };
-pub use conversions::{classify_core_error, classify_failure, python_exception_tag, BridgeErrorKind};
+pub use conversions::{
+    classify_core_error, classify_failure, python_exception_tag, BridgeErrorKind,
+};
 
 #[cfg(feature = "python-extension")]
 mod python_extension {

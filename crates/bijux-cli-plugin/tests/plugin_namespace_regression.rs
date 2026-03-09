@@ -16,10 +16,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir

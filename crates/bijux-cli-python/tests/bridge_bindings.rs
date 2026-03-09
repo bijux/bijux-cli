@@ -11,9 +11,8 @@ use bijux_cli_install as _;
 use bijux_cli_python::{
     classify_failure, cli_status_binding_api, config_resolution_api, doctor_binding_api,
     execution_facade_api, execution_outcome_api, plugins_list_binding_api,
-    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api,
-    version_binding_api, BridgeErrorKind, CompatibilityConfig, PathOverrides,
-    ENV_CONFIG_PATH,
+    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_binding_api,
+    BridgeErrorKind, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH,
 };
 use serde_json::Value;
 use thiserror as _;
@@ -25,7 +24,9 @@ fn parse_json(text: &str) -> Value {
 #[test]
 fn version_binding_matches_core_output() {
     let bridge = parse_json(&version_binding_api().expect("bridge version"));
-    let direct = parse_json(&run_app(&["bijux".to_string(), "version".to_string()]).expect("core run").stdout);
+    let direct = parse_json(
+        &run_app(&["bijux".to_string(), "version".to_string()]).expect("core run").stdout,
+    );
     assert_eq!(bridge, direct);
 }
 
@@ -33,9 +34,7 @@ fn version_binding_matches_core_output() {
 fn doctor_binding_matches_core_output() {
     let bridge = parse_json(&doctor_binding_api().expect("bridge doctor"));
     let direct = parse_json(
-        &run_app(&["bijux".to_string(), "doctor".to_string()])
-            .expect("core run")
-            .stdout,
+        &run_app(&["bijux".to_string(), "doctor".to_string()]).expect("core run").stdout,
     );
     assert_eq!(bridge, direct);
 }
@@ -43,7 +42,9 @@ fn doctor_binding_matches_core_output() {
 #[test]
 fn status_binding_matches_core_output() {
     let bridge = parse_json(&status_binding_api().expect("bridge status"));
-    let direct = parse_json(&run_app(&["bijux".to_string(), "status".to_string()]).expect("core run").stdout);
+    let direct = parse_json(
+        &run_app(&["bijux".to_string(), "status".to_string()]).expect("core run").stdout,
+    );
     assert_eq!(bridge, direct);
 }
 

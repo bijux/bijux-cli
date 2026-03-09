@@ -17,9 +17,7 @@ pub fn acquire_state_lock(lock_path: &Path) -> Result<StateLockGuard, Compatibil
             use std::io::Write as _;
             file.write_all(b"bijux-cli lock\n")?;
             file.sync_all()?;
-            Ok(StateLockGuard {
-                path: lock_path.to_path_buf(),
-            })
+            Ok(StateLockGuard { path: lock_path.to_path_buf() })
         }
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
             Err(CompatibilityError::LockHeld(lock_path.to_path_buf()))

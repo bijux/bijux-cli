@@ -9,10 +9,7 @@ use libc as _;
 use serde_json as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], env: &[(&str, &str)]) -> std::process::Output {
@@ -97,7 +94,10 @@ fn compact_json_executes_through_binary() {
     let out = run_with(&["--format", "json", "--no-pretty", "cli", "status"]);
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).expect("stdout should be utf-8");
-    assert!(text.lines().count() <= 2, "compact output should be single-line json with trailing newline");
+    assert!(
+        text.lines().count() <= 2,
+        "compact output should be single-line json with trailing newline"
+    );
 }
 
 #[test]

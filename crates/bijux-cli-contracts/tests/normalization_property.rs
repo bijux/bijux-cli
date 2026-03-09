@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
 //! Property tests for namespace and command-path normalization.
 
-use bijux_cli_contracts::{CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV1};
+use bijux_cli_contracts::{
+    CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV1,
+};
 use proptest::prelude::*;
 use schemars as _;
 use semver as _;

@@ -18,10 +18,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_plugins_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir
@@ -58,7 +56,8 @@ fn plugins_list_parity_shape_matches_python_capture_baseline() {
 
     let plugins_dir = temp_plugins_dir("list-parity");
     let registry_path = registry_path_from_plugins_dir(&plugins_dir);
-    let rust_plugins = list_plugins(&registry_path).expect("list should succeed for empty registry");
+    let rust_plugins =
+        list_plugins(&registry_path).expect("list should succeed for empty registry");
 
     assert!(python_plugins.get("plugins").is_some());
     assert!(rust_plugins.is_empty());
@@ -174,10 +173,12 @@ fn broken_metadata_and_missing_entrypoint_are_reported() {
     )
     .expect("external plugin install should succeed");
 
-    let diagnostics = load_time_diagnostics(&registry_path, "0.1.0").expect("diagnostics should run");
+    let diagnostics =
+        load_time_diagnostics(&registry_path, "0.1.0").expect("diagnostics should run");
     assert!(diagnostics
         .iter()
-        .any(|item| item.namespace == "external" && item.message.contains("entrypoint was not found")));
+        .any(|item| item.namespace == "external"
+            && item.message.contains("entrypoint was not found")));
 }
 
 #[test]

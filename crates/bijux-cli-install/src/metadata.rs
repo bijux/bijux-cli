@@ -38,9 +38,7 @@ pub struct InstallStrategy {
 /// Build installer marker.
 #[must_use]
 pub fn installer_marker() -> ContractMarker {
-    ContractMarker {
-        namespace: "install".to_string(),
-    }
+    ContractMarker { namespace: "install".to_string() }
 }
 
 /// Decide canonical crate naming strategy.
@@ -86,7 +84,5 @@ pub fn pip_install_strategy(channel: PackageChannel) -> InstallStrategy {
 /// Validate that an install strategy does not produce conflicting executables.
 #[must_use]
 pub fn has_secondary_executable_conflict(strategies: &[InstallStrategy]) -> bool {
-    strategies
-        .iter()
-        .any(|strategy| strategy.executable_name != CANONICAL_EXECUTABLE)
+    strategies.iter().any(|strategy| strategy.executable_name != CANONICAL_EXECUTABLE)
 }

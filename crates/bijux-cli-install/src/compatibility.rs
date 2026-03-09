@@ -103,11 +103,7 @@ pub fn discover_compatibility_paths(
         home,
     );
 
-    Ok(CompatibilityPaths {
-        config_file,
-        history_file,
-        plugins_dir,
-    })
+    Ok(CompatibilityPaths { config_file, history_file, plugins_dir })
 }
 
 /// Default compatibility paths anchored in the user home directory.
@@ -146,9 +142,7 @@ pub fn parse_compatibility_config(text: &str) -> Result<CompatibilityConfig, Com
                 values.insert(trimmed_key.to_string(), trimmed_value.to_string());
             }
             _ => {
-                return Err(CompatibilityError::UnsupportedConfigKey(
-                    trimmed_key.to_string(),
-                ));
+                return Err(CompatibilityError::UnsupportedConfigKey(trimmed_key.to_string()));
             }
         }
     }
@@ -201,11 +195,8 @@ pub fn write_compatibility_config(
 
     let temp_path = path.with_extension("tmp");
     {
-        let mut temp = fs::OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&temp_path)?;
+        let mut temp =
+            fs::OpenOptions::new().create(true).truncate(true).write(true).open(&temp_path)?;
         use std::io::Write as _;
         temp.write_all(rendered.as_bytes())?;
         temp.sync_all()?;

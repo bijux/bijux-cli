@@ -12,20 +12,14 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-get-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -70,7 +64,17 @@ fn config_get_output_snapshots_text_json_yaml() {
         include_str!("snapshots/config_get_text.txt")
     );
 
-    let pretty = run(&["cli", "config", "get", "alpha", "--format", "json", "--pretty", "--config-path", path]);
+    let pretty = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "json",
+        "--pretty",
+        "--config-path",
+        path,
+    ]);
     assert!(pretty.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(pretty.stdout).expect("utf-8"), path),
@@ -94,7 +98,17 @@ fn config_get_output_snapshots_text_json_yaml() {
         include_str!("snapshots/config_get_json_compact.txt")
     );
 
-    let yaml = run(&["cli", "config", "get", "alpha", "--format", "yaml", "--pretty", "--config-path", path]);
+    let yaml = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "yaml",
+        "--pretty",
+        "--config-path",
+        path,
+    ]);
     assert!(yaml.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(yaml.stdout).expect("utf-8"), path),
@@ -141,28 +155,15 @@ fn config_get_path_override_malformed_quiet_no_color_and_trace() {
     fs::write(&bad_path, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("write bad");
 
     let override_out = run_with_env(
-        &[
-            "cli",
-            "config",
-            "get",
-            "alpha",
-            "--config-path",
-            flag_path.to_str().expect("utf-8"),
-        ],
+        &["cli", "config", "get", "alpha", "--config-path", flag_path.to_str().expect("utf-8")],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
     assert_eq!(override_out.status.code(), Some(0));
     let override_json: Value = serde_json::from_slice(&override_out.stdout).expect("json");
     assert_eq!(override_json["value"], "flag");
 
-    let malformed = run(&[
-        "cli",
-        "config",
-        "get",
-        "alpha",
-        "--config-path",
-        bad_path.to_str().expect("utf-8"),
-    ]);
+    let malformed =
+        run(&["cli", "config", "get", "alpha", "--config-path", bad_path.to_str().expect("utf-8")]);
     assert_eq!(malformed.status.code(), Some(1));
     assert!(malformed.stdout.is_empty());
     assert!(!malformed.stderr.is_empty());
@@ -250,7 +251,11 @@ fn config_get_python_parity_for_success_and_missing() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", config_path.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
     assert_eq!(py_ok.status.code(), rs_ok.status.code());
     assert!(py_ok.stderr.is_empty());
@@ -259,10 +264,8 @@ fn config_get_python_parity_for_success_and_missing() {
     let rs_ok_json: Value = serde_json::from_slice(&rs_ok.stdout).expect("rs json");
     assert_eq!(py_ok_json["value"], rs_ok_json["value"]);
 
-    let py_missing = run_python(
-        &["config", "get", "missing", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let py_missing =
+        run_python(&["config", "get", "missing", "--format", "json", "--no-pretty"], &envs);
     let rs_missing = run_with_env(
         &[
             "cli",
@@ -275,7 +278,11 @@ fn config_get_python_parity_for_success_and_missing() {
             "--config-path",
             config_path.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", config_path.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", config_path.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
     assert_eq!(py_missing.status.code(), rs_missing.status.code());
     assert!(py_missing.stdout.is_empty());

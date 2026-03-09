@@ -57,14 +57,8 @@ fn help_snapshots_match_expected_output() {
         (&["memory", "--help"], include_str!("snapshots/help_memory.txt")),
         (&["cli", "status", "--help"], include_str!("snapshots/help_cli_status.txt")),
         (&["cli", "paths", "--help"], include_str!("snapshots/help_cli_paths.txt")),
-        (
-            &["cli", "config", "get", "--help"],
-            include_str!("snapshots/help_cli_config_get.txt"),
-        ),
-        (
-            &["cli", "config", "set", "--help"],
-            include_str!("snapshots/help_cli_config_set.txt"),
-        ),
+        (&["cli", "config", "get", "--help"], include_str!("snapshots/help_cli_config_get.txt")),
+        (&["cli", "config", "set", "--help"], include_str!("snapshots/help_cli_config_set.txt")),
         (&["cli", "self-test", "--help"], include_str!("snapshots/help_cli_self_test.txt")),
         (
             &["cli", "plugins", "list", "--help"],
@@ -126,26 +120,18 @@ fn nested_help_and_unknown_command_diagnostics_are_stable() {
 fn hidden_alias_help_matches_canonical_options_and_flags() {
     let alias_plugins = run_help(&["plugins", "inspect", "--help"]);
     let canonical_plugins = run_help(&["cli", "plugins", "inspect", "--help"]);
-    let alias_plugins_tail = alias_plugins
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
-    let canonical_plugins_tail = canonical_plugins
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
+    let alias_plugins_tail =
+        alias_plugins.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
+    let canonical_plugins_tail =
+        canonical_plugins.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
     assert_eq!(alias_plugins_tail, canonical_plugins_tail);
 
     let alias_dev_doctor = run_help(&["dev", "doctor", "--help"]);
     let canonical_dev_doctor = run_help(&["dev", "cli", "doctor", "--help"]);
-    let alias_dev_tail = alias_dev_doctor
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
-    let canonical_dev_tail = canonical_dev_doctor
-        .split_once("\n\n")
-        .map(|(_, tail)| tail)
-        .expect("help sections");
+    let alias_dev_tail =
+        alias_dev_doctor.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
+    let canonical_dev_tail =
+        canonical_dev_doctor.split_once("\n\n").map(|(_, tail)| tail).expect("help sections");
     assert_eq!(alias_dev_tail, canonical_dev_tail);
 }
 

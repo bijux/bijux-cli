@@ -23,7 +23,8 @@ impl ConfigRepository for FileConfigRepository {
         if !path.exists() {
             return Ok(BTreeMap::new());
         }
-        let text = fs::read_to_string(path).map_err(|err| ConfigError::persistence(err.to_string()))?;
+        let text =
+            fs::read_to_string(path).map_err(|err| ConfigError::persistence(err.to_string()))?;
         let mut out = BTreeMap::new();
         for (index, raw_line) in text.lines().enumerate() {
             let line_no = index + 1;
@@ -81,10 +82,7 @@ mod tests {
     use super::{ConfigRepository, FileConfigRepository};
 
     fn make_temp_dir(name: &str) -> PathBuf {
-        let nanos = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("clock")
-            .as_nanos();
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
         let path = std::env::temp_dir().join(format!("bijux-storage-{name}-{nanos}"));
         fs::create_dir_all(&path).expect("mkdir");
         path
@@ -170,8 +168,7 @@ mod tests {
         repo.save(&path, &map).expect("save");
         let written = fs::read_to_string(&path).expect("read");
         assert_eq!(
-            written,
-            "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n",
+            written, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n",
             "BTreeMap-backed rendering should stay stable"
         );
     }

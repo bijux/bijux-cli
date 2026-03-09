@@ -52,7 +52,5 @@ pub fn register_plugin_completion_hook(
     namespace: &str,
     suggestions: Vec<String>,
 ) {
-    session
-        .plugin_completion_hooks
-        .insert(namespace.to_string(), suggestions);
+    session.plugin_completion_hooks.insert(namespace.to_string(), suggestions);
 }

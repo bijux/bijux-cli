@@ -18,10 +18,7 @@ fn parse_history_entries(text: &str) -> Option<Vec<String>> {
         // Python prompt-toolkit history format stores one command per line.
         // We only accept printable command-like lines to avoid treating corrupt
         // blobs as valid history.
-        if !trimmed
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || " :._/-\"'=".contains(ch))
-        {
+        if !trimmed.chars().all(|ch| ch.is_ascii_alphanumeric() || " :._/-\"'=".contains(ch)) {
             return None;
         }
         parsed.push(trimmed.to_string());
@@ -101,10 +98,7 @@ pub fn replay_history_command(
     session: &mut ReplSession,
     index: usize,
 ) -> Result<Option<ReplFrame>, ReplError> {
-    let command = session
-        .history
-        .get(index)
-        .cloned()
-        .ok_or(ReplError::HistoryIndexOutOfBounds(index))?;
+    let command =
+        session.history.get(index).cloned().ok_or(ReplError::HistoryIndexOutOfBounds(index))?;
     execute_repl_line(session, &command)
 }

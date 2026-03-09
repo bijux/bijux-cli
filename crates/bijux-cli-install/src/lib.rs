@@ -21,8 +21,8 @@ pub use completion::{
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use metadata::{
     canonical_crate_name, cargo_install_strategy, has_secondary_executable_conflict,
-    installer_marker, pip_install_strategy, publish_compatibility_package_alias,
-    Ecosystem, InstallStrategy, PackageChannel, CANONICAL_EXECUTABLE,
+    installer_marker, pip_install_strategy, publish_compatibility_package_alias, Ecosystem,
+    InstallStrategy, PackageChannel, CANONICAL_EXECUTABLE,
 };
 pub use paths::{
     detect_stale_wrapper_scripts, discover_path_binaries, initialize_first_run_state,
@@ -73,8 +73,7 @@ mod tests {
         std::fs::create_dir_all(&first).expect("first");
         std::fs::create_dir_all(&second).expect("second");
         std::fs::write(first.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write first");
-        std::fs::write(second.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n")
-            .expect("write second");
+        std::fs::write(second.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write second");
         let path_value = std::env::join_paths([&first, &second]).expect("join");
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 2);
@@ -89,8 +88,7 @@ mod tests {
         std::fs::create_dir_all(&pip_like).expect("pip dir");
         std::fs::create_dir_all(&cargo_like).expect("cargo dir");
         std::fs::write(pip_like.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write pip");
-        std::fs::write(cargo_like.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n")
-            .expect("write cargo");
+        std::fs::write(cargo_like.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write cargo");
         let path_value = std::env::join_paths([&pip_like, &cargo_like]).expect("join");
 
         let report = install_health_report(
@@ -111,15 +109,18 @@ mod tests {
         std::fs::create_dir_all(&pip_bin).expect("pip dir");
         std::fs::create_dir_all(&cargo_bin).expect("cargo dir");
         std::fs::write(pip_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write pip");
-        std::fs::write(cargo_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n")
-            .expect("write cargo");
+        std::fs::write(cargo_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write cargo");
         let path_value = std::env::join_paths([&pip_bin, &cargo_bin]).expect("join");
 
-        let report = install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
+        let report =
+            install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
 
         assert!(report.has_path_shadowing);
         assert!(report.has_duplicate_installs);
-        assert!(report.active_binary.as_deref().is_some_and(|value| value.contains("venv-site-packages-bin")));
+        assert!(report
+            .active_binary
+            .as_deref()
+            .is_some_and(|value| value.contains("venv-site-packages-bin")));
     }
 
     #[test]
@@ -133,7 +134,9 @@ mod tests {
         assert!(completion_script(CompletionShell::Bash).contains("complete"));
         assert!(completion_script(CompletionShell::Zsh).contains("#compdef"));
         assert!(completion_script(CompletionShell::Fish).contains("complete -c"));
-        assert!(completion_script(CompletionShell::PowerShell).contains("Register-ArgumentCompleter"));
+        assert!(
+            completion_script(CompletionShell::PowerShell).contains("Register-ArgumentCompleter")
+        );
     }
 
     #[test]
@@ -206,7 +209,8 @@ mod tests {
         #[cfg(unix)]
         std::os::unix::fs::symlink(&binary, link_dir.join(CANONICAL_EXECUTABLE)).expect("symlink");
         #[cfg(windows)]
-        std::os::windows::fs::symlink_file(&binary, link_dir.join(CANONICAL_EXECUTABLE)).expect("symlink");
+        std::os::windows::fs::symlink_file(&binary, link_dir.join(CANONICAL_EXECUTABLE))
+            .expect("symlink");
         let path_value = std::env::join_paths([&link_dir]).expect("join");
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 1);
@@ -214,16 +218,9 @@ mod tests {
 
     #[test]
     fn windows_path_override_is_respected() {
-        let report = install_health_report(
-            "",
-            Some(r"C:\Program Files\Bijux\bijux.exe"),
-            None,
-            "1.0.0",
-        );
-        assert_eq!(
-            report.active_binary.as_deref(),
-            Some(r"C:\Program Files\Bijux\bijux.exe")
-        );
+        let report =
+            install_health_report("", Some(r"C:\Program Files\Bijux\bijux.exe"), None, "1.0.0");
+        assert_eq!(report.active_binary.as_deref(), Some(r"C:\Program Files\Bijux\bijux.exe"));
     }
 
     #[test]
@@ -278,10 +275,7 @@ mod tests {
     fn windows_path_resolution_is_supported() {
         let home = std::path::PathBuf::from(r"C:\Users\bijan");
         let mut env_map = std::collections::HashMap::new();
-        env_map.insert(
-            ENV_PLUGINS_PATH.to_string(),
-            r"C:\Users\bijan\.bijux\.plugins".to_string(),
-        );
+        env_map.insert(ENV_PLUGINS_PATH.to_string(), r"C:\Users\bijan\.bijux\.plugins".to_string());
         let resolved = discover_compatibility_paths(
             Some(&home),
             &PathOverrides::default(),
@@ -289,12 +283,7 @@ mod tests {
             &CompatibilityConfig::default(),
         )
         .expect("resolve");
-        assert!(
-            resolved
-                .plugins_dir
-                .to_string_lossy()
-                .contains(r"C:\Users\bijan\.bijux\.plugins")
-        );
+        assert!(resolved.plugins_dir.to_string_lossy().contains(r"C:\Users\bijan\.bijux\.plugins"));
     }
 
     #[test]
@@ -328,9 +317,15 @@ mod tests {
     #[test]
     fn completion_file_paths_are_generated() {
         let home = std::path::PathBuf::from("/tmp/home");
-        assert!(completion_file_path(CompletionShell::Bash, &home).to_string_lossy().contains(".bash_completion.d"));
-        assert!(completion_file_path(CompletionShell::Zsh, &home).to_string_lossy().contains(".zsh"));
-        assert!(completion_file_path(CompletionShell::Fish, &home).to_string_lossy().contains(".config/fish/completions"));
+        assert!(completion_file_path(CompletionShell::Bash, &home)
+            .to_string_lossy()
+            .contains(".bash_completion.d"));
+        assert!(completion_file_path(CompletionShell::Zsh, &home)
+            .to_string_lossy()
+            .contains(".zsh"));
+        assert!(completion_file_path(CompletionShell::Fish, &home)
+            .to_string_lossy()
+            .contains(".config/fish/completions"));
     }
 
     #[test]

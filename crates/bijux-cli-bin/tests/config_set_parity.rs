@@ -12,20 +12,14 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-set-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -47,12 +41,7 @@ fn run_with_stdin(args: &[&str], input: &str) -> Output {
         .expect("spawn");
 
     use std::io::Write;
-    child
-        .stdin
-        .as_mut()
-        .expect("stdin")
-        .write_all(input.as_bytes())
-        .expect("write stdin");
+    child.stdin.as_mut().expect("stdin").write_all(input.as_bytes()).expect("write stdin");
 
     child.wait_with_output().expect("wait")
 }
@@ -89,7 +78,17 @@ fn config_set_output_snapshots_text_json_yaml() {
         include_str!("snapshots/config_set_text.txt")
     );
 
-    let pretty = run(&["cli", "config", "set", "alpha=1", "--format", "json", "--pretty", "--config-path", path]);
+    let pretty = run(&[
+        "cli",
+        "config",
+        "set",
+        "alpha=1",
+        "--format",
+        "json",
+        "--pretty",
+        "--config-path",
+        path,
+    ]);
     assert!(pretty.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(pretty.stdout).expect("utf-8"), path),
@@ -113,7 +112,17 @@ fn config_set_output_snapshots_text_json_yaml() {
         include_str!("snapshots/config_set_json_compact.txt")
     );
 
-    let yaml = run(&["cli", "config", "set", "alpha=1", "--format", "yaml", "--pretty", "--config-path", path]);
+    let yaml = run(&[
+        "cli",
+        "config",
+        "set",
+        "alpha=1",
+        "--format",
+        "yaml",
+        "--pretty",
+        "--config-path",
+        path,
+    ]);
     assert!(yaml.status.success());
     assert_eq!(
         normalize_snapshot(String::from_utf8(yaml.stdout).expect("utf-8"), path),
@@ -244,10 +253,8 @@ fn config_set_stream_routing_and_python_parity() {
     assert_eq!(py_ok_json["status"], rs_ok_json["status"]);
     assert_eq!(py_ok_json["key"], rs_ok_json["key"]);
 
-    let py_bad = run_python(
-        &["config", "set", "invalid", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let py_bad =
+        run_python(&["config", "set", "invalid", "--format", "json", "--no-pretty"], &envs);
     let rs_bad = run_with_env(
         &[
             "cli",

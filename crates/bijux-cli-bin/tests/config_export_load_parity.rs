@@ -11,20 +11,14 @@ use bijux_cli_core as _;
 use libc as _;
 use serde_json as _;
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-export-load-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -78,7 +72,11 @@ fn config_export_json_yaml_and_text_error_snapshots() {
     ]);
     assert_eq!(json.status.code(), Some(0));
     assert_eq!(
-        normalize_snapshot(String::from_utf8(json.stdout).expect("utf-8"), active_path, export_path),
+        normalize_snapshot(
+            String::from_utf8(json.stdout).expect("utf-8"),
+            active_path,
+            export_path
+        ),
         include_str!("snapshots/config_export_json_compact.txt")
     );
 
@@ -95,7 +93,11 @@ fn config_export_json_yaml_and_text_error_snapshots() {
     ]);
     assert_eq!(yaml.status.code(), Some(0));
     assert_eq!(
-        normalize_snapshot(String::from_utf8(yaml.stdout).expect("utf-8"), active_path, export_path),
+        normalize_snapshot(
+            String::from_utf8(yaml.stdout).expect("utf-8"),
+            active_path,
+            export_path
+        ),
         include_str!("snapshots/config_export_yaml_pretty.txt")
     );
 
@@ -112,7 +114,11 @@ fn config_export_json_yaml_and_text_error_snapshots() {
     assert_eq!(text.status.code(), Some(2));
     assert!(text.stdout.is_empty());
     assert_eq!(
-        normalize_snapshot(String::from_utf8(text.stderr).expect("utf-8"), active_path, export_path),
+        normalize_snapshot(
+            String::from_utf8(text.stderr).expect("utf-8"),
+            active_path,
+            export_path
+        ),
         include_str!("snapshots/config_export_text_error.txt")
     );
 }
@@ -295,7 +301,11 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
             "--config-path",
             active.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", active.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", active.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
 
     assert_eq!(py_export.status.code(), rs_export.status.code());
@@ -303,14 +313,7 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
     assert!(rs_export.stderr.is_empty());
 
     let py_load = run_python(
-        &[
-            "config",
-            "load",
-            source.to_str().expect("utf-8"),
-            "--format",
-            "json",
-            "--no-pretty",
-        ],
+        &["config", "load", source.to_str().expect("utf-8"), "--format", "json", "--no-pretty"],
         &envs,
     );
     let rs_load = run_with_env(
@@ -325,7 +328,11 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
             "--config-path",
             active.to_str().expect("utf-8"),
         ],
-        &[("BIJUXCLI_CONFIG", active.display().to_string()), ("HOME", temp.display().to_string()), ("NO_COLOR", "1".to_string())],
+        &[
+            ("BIJUXCLI_CONFIG", active.display().to_string()),
+            ("HOME", temp.display().to_string()),
+            ("NO_COLOR", "1".to_string()),
+        ],
     );
 
     assert_eq!(py_load.status.code(), rs_load.status.code());

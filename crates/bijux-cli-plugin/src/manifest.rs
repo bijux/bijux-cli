@@ -55,9 +55,7 @@ fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
         return Err(PluginError::InvalidNamespace(raw.to_string()));
     }
 
-    if !bytes
-        .iter()
-        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+    if !bytes.iter().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
     {
         return Err(PluginError::InvalidNamespace(raw.to_string()));
     }
@@ -100,11 +98,12 @@ fn validate_aliases(aliases: &[String]) -> Result<(), PluginError> {
     Ok(())
 }
 
-fn validate_compatibility(range: &CompatibilityRange, host_version: &str) -> Result<(), PluginError> {
+fn validate_compatibility(
+    range: &CompatibilityRange,
+    host_version: &str,
+) -> Result<(), PluginError> {
     if !is_version_compatible(range, host_version)? {
-        return Err(PluginError::IncompatibleVersion {
-            host_version: host_version.to_string(),
-        });
+        return Err(PluginError::IncompatibleVersion { host_version: host_version.to_string() });
     }
     Ok(())
 }

@@ -7,8 +7,8 @@ use bijux_cli_contracts::{
 };
 use bijux_cli_core::app::run_app;
 use bijux_cli_core::kernel::{
-    build_intent_from_argv, internal_error, map_error_category_to_exit, resolve_policy, usage_error,
-    ExecutionContext, ExecutionIntent, HandlerOutcome, PolicyInputs,
+    build_intent_from_argv, internal_error, map_error_category_to_exit, resolve_policy,
+    usage_error, ExecutionContext, ExecutionIntent, HandlerOutcome, PolicyInputs,
 };
 use bijux_cli_install as _;
 use bijux_cli_output as _;
@@ -34,7 +34,8 @@ fn baseline_flags() -> GlobalFlags {
 
 #[test]
 fn direct_core_invocation_version() {
-    let out = run_app(&["bijux".to_string(), "version".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "version".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload.get("version").is_some());
@@ -42,7 +43,8 @@ fn direct_core_invocation_version() {
 
 #[test]
 fn direct_core_invocation_doctor() {
-    let out = run_app(&["bijux".to_string(), "doctor".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "doctor".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "healthy");
@@ -54,7 +56,8 @@ fn direct_core_invocation_doctor() {
 
 #[test]
 fn direct_core_invocation_status() {
-    let out = run_app(&["bijux".to_string(), "status".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "status".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -62,8 +65,8 @@ fn direct_core_invocation_status() {
 
 #[test]
 fn direct_core_invocation_cli_status() {
-    let out =
-        run_app(&["bijux".to_string(), "cli".to_string(), "status".to_string()]).expect("run_app should succeed");
+    let out = run_app(&["bijux".to_string(), "cli".to_string(), "status".to_string()])
+        .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -84,7 +87,8 @@ fn direct_core_invocation_cli_paths() {
 
 #[test]
 fn direct_core_invocation_inspect() {
-    let out = run_app(&["bijux".to_string(), "inspect".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "inspect".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -97,7 +101,8 @@ fn direct_core_invocation_inspect() {
 
 #[test]
 fn direct_core_invocation_config_root() {
-    let out = run_app(&["bijux".to_string(), "config".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "config".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload.is_object());
@@ -105,7 +110,8 @@ fn direct_core_invocation_config_root() {
 
 #[test]
 fn direct_core_invocation_history_root() {
-    let out = run_app(&["bijux".to_string(), "history".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "history".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload["entries"].is_array());
@@ -113,7 +119,8 @@ fn direct_core_invocation_history_root() {
 
 #[test]
 fn direct_core_invocation_memory_root() {
-    let out = run_app(&["bijux".to_string(), "memory".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "memory".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -141,7 +148,8 @@ fn direct_core_invocation_plugins_root_list() {
 
 #[test]
 fn direct_core_invocation_root_status_without_cli_alias() {
-    let out = run_app(&["bijux".to_string(), "status".to_string()]).expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "status".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -339,7 +347,11 @@ fn precedence_defaults_when_no_inputs() {
     let defaults = baseline_flags();
     let policy = resolve_policy(
         &intent,
-        &PolicyInputs { env: GlobalFlags::empty(), config: GlobalFlags::empty(), defaults: defaults.clone() },
+        &PolicyInputs {
+            env: GlobalFlags::empty(),
+            config: GlobalFlags::empty(),
+            defaults: defaults.clone(),
+        },
     );
 
     assert_eq!(policy.output_format, defaults.output_format.expect("defaults format"));
@@ -374,8 +386,10 @@ fn trace_mode_does_not_change_functional_results() {
     let plain = run_app(&["bijux".to_string(), "cli".to_string(), "status".to_string()])
         .expect("plain run should succeed");
 
-    let traced_value: Value = serde_json::from_str(&traced.stdout).expect("trace output should be json");
-    let plain_value: Value = serde_json::from_str(&plain.stdout).expect("plain output should be json");
+    let traced_value: Value =
+        serde_json::from_str(&traced.stdout).expect("trace output should be json");
+    let plain_value: Value =
+        serde_json::from_str(&plain.stdout).expect("plain output should be json");
     assert_eq!(traced.exit_code, plain.exit_code);
     assert_eq!(traced_value["status"], plain_value["status"]);
 }

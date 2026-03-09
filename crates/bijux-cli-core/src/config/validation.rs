@@ -8,7 +8,9 @@ pub(crate) fn normalize_key(raw: &str) -> Result<String, ConfigError> {
         return Err(ConfigError::validation("Key cannot be empty"));
     }
     if !key.is_ascii() {
-        return Err(ConfigError::validation("Non-ASCII characters are not allowed in keys or values."));
+        return Err(ConfigError::validation(
+            "Non-ASCII characters are not allowed in keys or values.",
+        ));
     }
     if key.contains('.') {
         return Err(ConfigError::validation(format!("Unknown config section in key: {key}")));
@@ -16,7 +18,9 @@ pub(crate) fn normalize_key(raw: &str) -> Result<String, ConfigError> {
 
     let normalized = key.strip_prefix("BIJUXCLI_").unwrap_or(key).to_ascii_lowercase();
     if !normalized.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
-        return Err(ConfigError::validation("Invalid key: only alphanumerics and underscore allowed."));
+        return Err(ConfigError::validation(
+            "Invalid key: only alphanumerics and underscore allowed.",
+        ));
     }
 
     Ok(normalized)
@@ -24,13 +28,14 @@ pub(crate) fn normalize_key(raw: &str) -> Result<String, ConfigError> {
 
 pub(crate) fn validate_value(value: &str) -> Result<(), ConfigError> {
     if !value.is_ascii() {
-        return Err(ConfigError::validation("Non-ASCII characters are not allowed in keys or values."));
+        return Err(ConfigError::validation(
+            "Non-ASCII characters are not allowed in keys or values.",
+        ));
     }
-    if value
-        .chars()
-        .any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}'))
-    {
-        return Err(ConfigError::validation("Control characters are not allowed in config values."));
+    if value.chars().any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}')) {
+        return Err(ConfigError::validation(
+            "Control characters are not allowed in config values.",
+        ));
     }
     Ok(())
 }

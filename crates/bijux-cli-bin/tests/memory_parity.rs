@@ -11,10 +11,7 @@ use libc as _;
 use serde_json::Value;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-memory-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -80,10 +77,8 @@ fn memory_missing_state_is_empty_and_quiet_mode_suppresses_output() {
     let payload = parse_json(&out.stdout);
     assert_eq!(payload["count"], 0);
 
-    let quiet = run_with_env(
-        &["memory", "list", "--quiet"],
-        &[("HOME", home.display().to_string())],
-    );
+    let quiet =
+        run_with_env(&["memory", "list", "--quiet"], &[("HOME", home.display().to_string())]);
     assert!(quiet.status.success());
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
@@ -138,7 +133,15 @@ fn memory_command_ignores_config_path_override_and_uses_home_memory_file() {
     fs::write(&memory_file, "{\"home_only\":true}").expect("write memory");
 
     let out = run_with_env(
-        &["memory", "list", "--format", "json", "--no-pretty", "--config-path", config_path.to_str().expect("utf-8")],
+        &[
+            "memory",
+            "list",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            config_path.to_str().expect("utf-8"),
+        ],
         &[
             ("HOME", home.display().to_string()),
             ("BIJUXCLI_CONFIG", config_path.display().to_string()),

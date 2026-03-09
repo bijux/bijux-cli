@@ -17,10 +17,8 @@ use sha2 as _;
 use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock should be monotonic")
-        .as_nanos();
+    let ts =
+        SystemTime::now().duration_since(UNIX_EPOCH).expect("clock should be monotonic").as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-plugin-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("directory should be created");
     dir
@@ -49,7 +47,14 @@ fn deterministic_discovery_order_is_stable_independent_of_creation_order() {
     let manifests = discover_plugin_manifests(&plugins_dir).expect("discovery should succeed");
     let names = manifests
         .iter()
-        .map(|path| path.parent().expect("manifest parent").file_name().expect("name").to_string_lossy().to_string())
+        .map(|path| {
+            path.parent()
+                .expect("manifest parent")
+                .file_name()
+                .expect("name")
+                .to_string_lossy()
+                .to_string()
+        })
         .collect::<Vec<_>>();
 
     assert_eq!(names, vec!["alpha", "gamma", "zeta"]);
@@ -72,6 +77,7 @@ fn registry_self_repair_recovers_from_partial_write() {
     assert!(repaired.plugins.is_empty());
 
     let repaired_text = fs::read_to_string(&registry_path).expect("repaired registry should exist");
-    let parsed: serde_json::Value = serde_json::from_str(&repaired_text).expect("repaired json should parse");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&repaired_text).expect("repaired json should parse");
     assert_eq!(parsed["version"], "1");
 }

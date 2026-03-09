@@ -19,14 +19,13 @@ fn workspace_root() -> PathBuf {
 fn read_captures() -> Value {
     let root = workspace_root();
     let path = root.join("artifacts/current-python-behavior-lock.json");
-    serde_json::from_str(&std::fs::read_to_string(path).expect("capture file")).expect("capture json")
+    serde_json::from_str(&std::fs::read_to_string(path).expect("capture file"))
+        .expect("capture json")
 }
 
 fn run(args: &[&str]) -> (i32, String, String) {
-    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary run");
+    let output =
+        Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary run");
     (
         output.status.code().unwrap_or(1),
         String::from_utf8(output.stdout).expect("stdout utf-8"),
@@ -43,7 +42,8 @@ fn plugins_list_parity_shape_matches_python_capture_overlap() {
     assert_eq!(code, py["exit_code"].as_i64().unwrap_or(0) as i32);
     assert!(err.is_empty());
 
-    let py_json: Value = serde_json::from_str(py["stdout"].as_str().unwrap_or("{}")).expect("python list json");
+    let py_json: Value =
+        serde_json::from_str(py["stdout"].as_str().unwrap_or("{}")).expect("python list json");
     let rs_json: Value = serde_json::from_str(&out).expect("rust list json");
 
     assert!(py_json.get("plugins").is_some());

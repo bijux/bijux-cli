@@ -162,10 +162,8 @@ fn malformed_history_recovers_without_crashing() {
 #[test]
 fn large_history_load_stays_within_sanity_budget() {
     let path = temp_history_path("perf");
-    let lines = (0..20_000)
-        .map(|idx| format!("status --item {idx}"))
-        .collect::<Vec<_>>()
-        .join("\n");
+    let lines =
+        (0..20_000).map(|idx| format!("status --item {idx}")).collect::<Vec<_>>().join("\n");
     fs::write(&path, format!("{lines}\n")).expect("write history");
 
     let (mut session, _) = startup_repl("default", None);
@@ -191,13 +189,8 @@ fn startup_works_without_config_or_plugin_registry() {
 #[test]
 fn transcript_cases_cover_status_doctor_plugins_config_get_and_history() {
     let (mut session, _) = startup_repl("default", None);
-    let commands = [
-        "status",
-        "doctor",
-        "plugins list",
-        "cli config get repl_missing_key",
-        "history",
-    ];
+    let commands =
+        ["status", "doctor", "plugins list", "cli config get repl_missing_key", "history"];
 
     for command in commands {
         let frame = execute_repl_line(&mut session, command).expect("command should execute");
@@ -208,7 +201,8 @@ fn transcript_cases_cover_status_doctor_plugins_config_get_and_history() {
 #[test]
 fn transcript_case_command_failure_recovery_and_syntax_errors() {
     let (mut session, _) = startup_repl("default", None);
-    let failed = execute_repl_line(&mut session, "inspect unexpected").expect("execution should return frame");
+    let failed = execute_repl_line(&mut session, "inspect unexpected")
+        .expect("execution should return frame");
     let failed_frame = failed.expect("failure should emit frame");
     assert_eq!(failed_frame.stream, bijux_cli_repl::ReplStream::Stderr);
     assert!(failed_frame.content.contains("Usage: bijux"));
@@ -281,7 +275,8 @@ fn completion_covers_grouped_cli_dev_and_partial_tokens() {
 #[test]
 fn reserved_namespace_collision_diagnostics_are_reported_in_session() {
     let (mut session, _) = startup_repl("default", None);
-    let frame = execute_repl_line(&mut session, "cli unknown-subcommand").expect("command should execute");
+    let frame =
+        execute_repl_line(&mut session, "cli unknown-subcommand").expect("command should execute");
     let failure = frame.expect("expected diagnostics frame");
     assert_eq!(failure.stream, bijux_cli_repl::ReplStream::Stderr);
     assert!(failure.content.contains("Usage: bijux"));
@@ -303,9 +298,7 @@ fn repl_startup_latency_stays_within_loaded_registry_budget() {
 #[test]
 fn repl_output_parity_with_non_interactive_cli_for_status() {
     let (mut session, _) = startup_repl("default", None);
-    let repl = execute_repl_line(&mut session, "status")
-        .expect("repl status")
-        .expect("repl frame");
+    let repl = execute_repl_line(&mut session, "status").expect("repl status").expect("repl frame");
     assert_eq!(repl.stream, bijux_cli_repl::ReplStream::Stdout);
     let repl_value: serde_json::Value = serde_json::from_str(&repl.content).expect("repl json");
 
