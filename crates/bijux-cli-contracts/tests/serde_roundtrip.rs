@@ -11,6 +11,7 @@ use bijux_cli_contracts::{
     PluginManifestV1, PrettyMode,
 };
 use schemars as _;
+use semver as _;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;

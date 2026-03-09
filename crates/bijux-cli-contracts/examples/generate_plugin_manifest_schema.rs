@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use bijux_cli_contracts::schema::plugin_manifest_v1_schema;
 use schemars as _;
+use semver as _;
 use serde as _;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
