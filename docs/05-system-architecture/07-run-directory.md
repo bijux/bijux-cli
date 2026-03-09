@@ -12,6 +12,12 @@ Run directory responsibilities:
 - preserve node execution outcomes
 - provide structured evidence for diagnostics and comparison
 
+Run directory layout guidance (conceptual):
+- run metadata record (identity, status, timing envelope).
+- node outcome records (per-node terminal outcomes and diagnostics).
+- artifact reference index (produced artifact links).
+- replay/diff helper records where applicable.
+
 Design principles:
 - one run identity maps to one coherent run evidence scope
 - file/layout organization should support fast operational lookup
@@ -25,6 +31,14 @@ Run directory in workflow:
 ## Examples
 ```text
 Run start -> directory materialization -> incremental evidence writes -> terminal state snapshot
+```
+
+```text
+Conceptual layout:
+runs/RUN_.../
+  run-metadata.json
+  node-results.json
+  artifacts-index.json
 ```
 
 ## Guarantees
