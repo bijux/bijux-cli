@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-03-10T00:46:55+01:00",
+  "generator": "scripts/status/generate_status_reports.py",
+  "source_precedence": [
+    "flags",
+    "env",
+    "config",
+    "defaults"
+  ],
+  "state_paths": {
+    "config": "BIJUXCLI_CONFIG or <HOME>/.bijux/.env",
+    "history": "BIJUXCLI_HISTORY_FILE or <HOME>/.bijux/.history",
+    "memory": "<HOME>/.bijux/.memory.json",
+    "plugins_dir": "BIJUXCLI_PLUGINS_DIR or <HOME>/.bijux/.plugins",
+    "plugins_registry": "<plugins_dir>/registry.json"
+  }
+}

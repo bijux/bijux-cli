@@ -1,0 +1,160 @@
+{
+  "areas": {
+    "config": {
+      "focus": [
+        "malformed file",
+        "duplicate key",
+        "partial-write rollback"
+      ],
+      "report": {
+        "artifact": "config_parity_report",
+        "better_than_python": [
+          "typed output modes are consistent across json/yaml/text for config commands",
+          "config error envelopes include explicit machine-readable code and command path",
+          "config diagnostics integrate with dev-cli doctor checks"
+        ],
+        "generated_at": "2026-03-09T23:06:39Z",
+        "source": "artifacts/parity/rust_python_parity_report.json",
+        "summary": {
+          "commands": [
+            {
+              "exit_match": false,
+              "name": "behavior_config_precedence_config_only",
+              "status": "python-only",
+              "stderr_match": false,
+              "stdout_match": false
+            },
+            {
+              "exit_match": false,
+              "name": "behavior_config_precedence_env_override",
+              "status": "python-only",
+              "stderr_match": false,
+              "stdout_match": false
+            },
+            {
+              "exit_match": true,
+              "name": "bijux_config_root",
+              "status": "rust-partial",
+              "stderr_match": true,
+              "stdout_match": false
+            }
+          ],
+          "complete": 0,
+          "count": 3,
+          "covered": true,
+          "partial": 1,
+          "python_only": 2
+        },
+        "weaker_than_python": [
+          "full command-by-command parity for every config edge case still depends on more capture coverage",
+          "historical python compatibility aliases are still present and should shrink over time"
+        ]
+      }
+    },
+    "history": {
+      "focus": [
+        "malformed array entries",
+        "line-format compatibility",
+        "oversized budget"
+      ],
+      "report": {
+        "artifact": "history_parity_report",
+        "generated_at": "2026-03-09T23:06:39Z",
+        "resilience_focus": [
+          "malformed history lines",
+          "huge history files",
+          "missing history storage"
+        ],
+        "source": "artifacts/parity/rust_python_parity_report.json",
+        "summary": {
+          "commands": [
+            {
+              "exit_match": true,
+              "name": "bijux_history_root",
+              "status": "rust-partial",
+              "stderr_match": true,
+              "stdout_match": false
+            }
+          ],
+          "complete": 0,
+          "count": 1,
+          "covered": true,
+          "partial": 1,
+          "python_only": 0
+        }
+      }
+    },
+    "memory": {
+      "focus": [
+        "malformed json",
+        "wrong-type object rejection"
+      ],
+      "report": {
+        "artifact": "memory_parity_report",
+        "generated_at": "2026-03-09T23:06:39Z",
+        "resilience_focus": [
+          "malformed memory state",
+          "empty memory state",
+          "missing memory storage"
+        ],
+        "source": "artifacts/parity/rust_python_parity_report.json",
+        "summary": {
+          "commands": [],
+          "complete": 0,
+          "count": 0,
+          "covered": false,
+          "partial": 0,
+          "python_only": 0
+        }
+      }
+    },
+    "plugin_registry": {
+      "focus": [
+        "malformed registry json",
+        "partial-write self-repair",
+        "stale backup cleanup"
+      ],
+      "report": {
+        "beyond_python": [
+          "reserved namespace diagnostics surface",
+          "plugin registry origin metadata",
+          "transaction rollback assertions for install/uninstall failures",
+          "explicit plugin schema command"
+        ],
+        "frozen_law": "plugin v1 contract is frozen before expanding command cleverness",
+        "generated_at": "2026-03-09T23:06:39.096872+00:00",
+        "generator": "scripts/status/generate_plugin_state_report.py",
+        "overlap_parity_tests": [
+          "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
+          "crates/bijux-cli-bin/tests/plugin_command_parity.rs"
+        ],
+        "plugin_commands": {
+          "complete": [
+            "plugins list",
+            "plugins inspect",
+            "plugins check",
+            "plugins reserved-names",
+            "plugins where",
+            "plugins explain",
+            "plugins schema"
+          ],
+          "partial": [
+            "plugins scaffold",
+            "plugins install",
+            "plugins uninstall",
+            "plugins enable",
+            "plugins disable"
+          ],
+          "python_only": []
+        },
+        "remaining_gaps": [
+          "scaffold command parity against Python templates",
+          "full CLI lifecycle command parity for install/uninstall/enable/disable",
+          "end-to-end CLI plugin diagnostics parity for all failure classes"
+        ]
+      }
+    }
+  },
+  "generated_at": "2026-03-10T00:46:55+01:00",
+  "generator": "scripts/status/generate_status_reports.py"
+}

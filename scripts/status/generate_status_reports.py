@@ -275,6 +275,48 @@ def main() -> int:
             "plugin_state": plugin_state,
         },
     )
+    write_json(
+        "status_state_paths_report.json",
+        {
+            **base,
+            "state_paths": {
+                "config": "BIJUXCLI_CONFIG or <HOME>/.bijux/.env",
+                "history": "BIJUXCLI_HISTORY_FILE or <HOME>/.bijux/.history",
+                "plugins_dir": "BIJUXCLI_PLUGINS_DIR or <HOME>/.bijux/.plugins",
+                "plugins_registry": "<plugins_dir>/registry.json",
+                "memory": "<HOME>/.bijux/.memory.json",
+            },
+            "source_precedence": ["flags", "env", "config", "defaults"],
+        },
+    )
+    write_json(
+        "status_state_corruption_health_report.json",
+        {
+            **base,
+            "areas": {
+                "config": {
+                    "report": state_config,
+                    "focus": ["malformed file", "duplicate key", "partial-write rollback"],
+                },
+                "history": {
+                    "report": state_history,
+                    "focus": ["malformed array entries", "line-format compatibility", "oversized budget"],
+                },
+                "memory": {
+                    "report": state_memory,
+                    "focus": ["malformed json", "wrong-type object rejection"],
+                },
+                "plugin_registry": {
+                    "report": plugin_state,
+                    "focus": [
+                        "malformed registry json",
+                        "partial-write self-repair",
+                        "stale backup cleanup",
+                    ],
+                },
+            },
+        },
+    )
 
     write_json("status_snapshot_coverage.json", {**base, "commands": snapshot_covered})
     write_json("status_stream_coverage.json", {**base, "commands": stream_covered})

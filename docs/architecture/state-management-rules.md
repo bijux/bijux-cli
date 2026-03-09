@@ -9,6 +9,7 @@ This document freezes the state-management law for `config`, `history`, `memory`
 3. Every stateful area must expose both machine-readable diagnostics and plain text diagnostics through `bijux dev cli state-audit` and `bijux dev cli state-doctor`.
 4. Every stateful area must keep no-color output snapshots for diagnostics to prevent hidden formatting regressions.
 5. New stateful features are blocked unless they first define parity expectations and failure behavior.
+6. State path resolution is centralized; stateful commands must use one shared provider for config/history/plugins/registry/memory paths.
 
 ## Current Enforcement Points
 - `crates/bijux-cli-bin/tests/config_set_parity.rs`
