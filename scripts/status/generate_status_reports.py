@@ -26,17 +26,8 @@ def stable_generated_at() -> str:
     if source_date_epoch.isdigit():
         return datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
 
-    commit_time = subprocess.run(
-        ["git", "log", "-1", "--format=%cI"],
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    if commit_time:
-        return commit_time
-
-    return datetime.now(timezone.utc).isoformat()
+    # Keep generated artifacts reproducible in local and CI runs.
+    return "1970-01-01T00:00:00+00:00"
 
 
 def read_json(path: Path) -> dict[str, Any]:
