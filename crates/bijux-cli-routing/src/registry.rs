@@ -96,6 +96,21 @@ impl Default for RouteRegistry {
 }
 
 impl RouteRegistry {
+    fn blocked_namespace_roots(&self) -> BTreeSet<String> {
+        let mut blocked = BTreeSet::new();
+        for route in &self.built_ins {
+            if let Some(head) = route.split(' ').next() {
+                blocked.insert(head.to_string());
+            }
+        }
+        for alias in self.aliases.keys() {
+            if let Some(head) = alias.split(' ').next() {
+                blocked.insert(head.to_string());
+            }
+        }
+        blocked
+    }
+
     /// Register a plugin namespace with deterministic rejection rules.
     pub fn register_plugin_namespace(&mut self, raw_namespace: &str) -> Result<(), RouteError> {
         let ns = normalize_namespace(raw_namespace);
@@ -103,8 +118,7 @@ impl RouteRegistry {
             return Err(RouteError::Reserved(ns));
         }
 
-        if self.built_ins.iter().any(|route| route.split(' ').next().is_some_and(|head| head == ns))
-        {
+        if self.blocked_namespace_roots().contains(&ns) {
             return Err(RouteError::Conflict(ns));
         }
 

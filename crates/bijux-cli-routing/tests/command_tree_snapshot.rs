@@ -7,6 +7,8 @@ use clap as _;
 use proptest as _;
 use strsim as _;
 use thiserror as _;
+use serde as _;
+use serde_json as _;
 
 #[test]
 fn command_tree_snapshot_matches_expected() {

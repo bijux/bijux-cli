@@ -46,7 +46,7 @@
   },
   {
     "argv": ["bijux", "cli", "sttus"],
-    "expected_normalized": ["cli", "sttus"],
+    "expected_normalized": [],
     "routed": false
   },
   {

@@ -8,6 +8,8 @@ use clap as _;
 use proptest as _;
 use strsim as _;
 use thiserror as _;
+use serde as _;
+use serde_json as _;
 
 #[test]
 fn legacy_status_maps_to_cli_status_and_resolves() {

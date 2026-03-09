@@ -14,3 +14,8 @@ pub fn route_marker() -> ContractMarker {
 
 #[cfg(test)]
 use proptest as _;
+
+#[cfg(test)]
+use serde as _;
+#[cfg(test)]
+use serde_json as _;

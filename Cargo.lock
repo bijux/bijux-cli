@@ -160,6 +160,8 @@ dependencies = [
  "bijux-cli-contracts",
  "clap",
  "proptest",
+ "serde",
+ "serde_json",
  "strsim",
  "thiserror",
 ]
