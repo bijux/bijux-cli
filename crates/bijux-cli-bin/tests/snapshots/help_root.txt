@@ -4,6 +4,9 @@ Commands:
   cli         
   dev         
   status      
+  audit       
+  docs        
+  sleep       
   doctor      
   version     
   config      

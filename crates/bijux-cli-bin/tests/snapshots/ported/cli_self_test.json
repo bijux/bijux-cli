@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "routing",
+    "contracts",
+    "emitters"
+  ],
+  "status": "ok"
+}

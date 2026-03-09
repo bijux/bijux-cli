@@ -1,0 +1,163 @@
+{
+  "routes": [
+    {
+      "segments": [
+        "audit"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "completion"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "config",
+        "get"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "config",
+        "set"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "doctor"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "paths"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "plugins",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "plugins",
+        "list"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "repl"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "self-test"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "status"
+      ]
+    },
+    {
+      "segments": [
+        "cli",
+        "version"
+      ]
+    },
+    {
+      "segments": [
+        "config"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "contracts"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "doctor"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "env"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "registry"
+      ]
+    },
+    {
+      "segments": [
+        "dev",
+        "cli",
+        "routes"
+      ]
+    },
+    {
+      "segments": [
+        "docs"
+      ]
+    },
+    {
+      "segments": [
+        "history"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "check"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "inspect"
+      ]
+    },
+    {
+      "segments": [
+        "plugins",
+        "list"
+      ]
+    },
+    {
+      "segments": [
+        "sleep"
+      ]
+    },
+    {
+      "segments": [
+        "status"
+      ]
+    }
+  ]
+}

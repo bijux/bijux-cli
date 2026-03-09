@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "config",
+    "paths",
+    "plugins",
+    "history"
+  ],
+  "issues": [],
+  "status": "ok"
+}

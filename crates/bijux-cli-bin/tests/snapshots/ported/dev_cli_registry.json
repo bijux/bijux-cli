@@ -1,0 +1,54 @@
+{
+  "registry": [
+    {
+      "name": "cli",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "community",
+      "owner": "plugin",
+      "reserved": false
+    },
+    {
+      "name": "completion",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "dev",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "doctor",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "help",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "inspect",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "plugins",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "repl",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "version",
+      "owner": "bijux-cli",
+      "reserved": true
+    }
+  ]
+}

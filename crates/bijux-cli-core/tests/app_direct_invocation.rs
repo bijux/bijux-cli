@@ -117,6 +117,68 @@ fn direct_core_invocation_plugins_root_list() {
 }
 
 #[test]
+fn direct_core_invocation_root_status_without_cli_alias() {
+    let out = run_app(&["bijux".to_string(), "status".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["status"], "ok");
+}
+
+#[test]
+fn direct_core_invocation_root_audit() {
+    let out = run_app(&["bijux".to_string(), "audit".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload["checks"].is_array());
+}
+
+#[test]
+fn direct_core_invocation_root_docs() {
+    let out = run_app(&["bijux".to_string(), "docs".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload["topics"].is_array());
+}
+
+#[test]
+fn direct_core_invocation_root_sleep() {
+    let out = run_app(&["bijux".to_string(), "sleep".to_string(), "0".to_string()])
+        .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["status"], "ok");
+}
+
+#[test]
+fn direct_core_invocation_newly_ported_commands_execute() {
+    let cases: Vec<Vec<String>> = vec![
+        vec!["bijux", "status"],
+        vec!["bijux", "audit"],
+        vec!["bijux", "docs"],
+        vec!["bijux", "sleep", "0"],
+        vec!["bijux", "cli", "config", "get"],
+        vec!["bijux", "cli", "config", "set"],
+        vec!["bijux", "cli", "self-test"],
+        vec!["bijux", "cli", "plugins", "list"],
+        vec!["bijux", "cli", "plugins", "inspect"],
+        vec!["bijux", "dev", "cli", "routes"],
+        vec!["bijux", "dev", "cli", "registry"],
+        vec!["bijux", "dev", "cli", "env"],
+        vec!["bijux", "dev", "cli", "doctor"],
+        vec!["bijux", "dev", "cli", "contracts"],
+    ]
+    .into_iter()
+    .map(|parts| parts.into_iter().map(ToString::to_string).collect())
+    .collect();
+
+    for argv in cases {
+        let out = run_app(&argv).expect("run_app should succeed");
+        assert_eq!(out.exit_code, 0, "non-zero exit for {argv:?}");
+        let _: Value = serde_json::from_str(&out.stdout).expect("output should be valid json");
+    }
+}
+
+#[test]
 fn precedence_flags_over_env() {
     let intent = ExecutionIntent {
         command_path: vec!["cli".to_string(), "status".to_string()],

@@ -19,8 +19,12 @@ fn run(args: &[&str]) -> String {
 #[test]
 fn executes_root_commands() {
     for args in [
+        vec!["status"],
         vec!["version"],
         vec!["doctor"],
+        vec!["audit"],
+        vec!["docs"],
+        vec!["sleep", "0"],
         vec!["config"],
         vec!["history"],
         vec!["plugins", "list"],

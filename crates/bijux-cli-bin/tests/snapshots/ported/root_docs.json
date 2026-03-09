@@ -1,0 +1,10 @@
+{
+  "status": "ok",
+  "topics": [
+    "commands",
+    "configuration",
+    "plugins",
+    "repl",
+    "diagnostics"
+  ]
+}
