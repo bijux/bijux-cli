@@ -47,10 +47,22 @@ artifact_streaming: false
 tier: provisional
 ```
 
+```rust
+// Conceptual adapter result mapping example
+fn map_backend_exit(exit_code: i32) -> NodeOutcome {
+    match exit_code {
+        0 => NodeOutcome::Succeeded,
+        124 => NodeOutcome::FailedTimeout,
+        _ => NodeOutcome::FailedNonZero(exit_code),
+    }
+}
+```
+
 ## Guarantees
 - Adapter responsibilities and normalized output expectations are explicit.
 - Capability gaps are documented rather than hidden.
 - Adapter onboarding has a defined validation workflow.
+- Includes implementation-oriented mapping example for adapter authors.
 
 ## Limitations
 - Backend platform constraints can limit feature parity.
