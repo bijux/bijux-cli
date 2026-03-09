@@ -1,0 +1,18 @@
+{
+  "name": "config_get_missing",
+  "argv": [
+    "bijux",
+    "config",
+    "get",
+    "missing_key"
+  ],
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "{\"error\": \"Config key not found: missing_key\", \"code\": 2, \"failure\": \"not_found\", \"command\": \"config get\", \"fmt\": \"json\", \"key\": \"missing_key\"}\n",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/plugins",
+    "NO_COLOR": "1"
+  }
+}

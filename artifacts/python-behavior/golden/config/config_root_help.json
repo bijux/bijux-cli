@@ -1,0 +1,17 @@
+{
+  "name": "config_root_help",
+  "argv": [
+    "bijux",
+    "config",
+    "--help"
+  ],
+  "exit_code": 0,
+  "stdout": "Usage: bijux config [OPTIONS] COMMAND [ARGS]...\n\n  Manage CLI configuration.\n\nOptions:\n  -q, --quiet             Suppress normal output; exit code still indicates\n                          success/failure.\n  -v, --verbose           Include extra runtime details.\n  -f, --format TEXT       Machine‑readable output format (json|yaml); defaults\n                          to json.  [default: json]\n  --pretty / --no-pretty  Disable pretty‑printing (indentation) in JSON/YAML\n                          output.  [default: pretty]\n  -d, --debug             Enable diagnostics to stderr.\n  -h, --help              Show this message and exit.\n\nCommands:\n  clear   Clears all configuration settings from the active store.\n  export  Exports the current configuration to a file or standard output.\n  get     Retrieves the value for a given configuration key.\n  list    Lists all configuration keys from the active configuration store.\n  load    Loads configuration from a specified file.\n  reload  Reloads the configuration from disk and emits a structured result.\n  set     Sets or updates a configuration key-value pair.\n  unset   Removes a key from the active configuration store.\n\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/plugins",
+    "NO_COLOR": "1"
+  }
+}

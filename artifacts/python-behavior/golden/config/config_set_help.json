@@ -1,0 +1,18 @@
+{
+  "name": "config_set_help",
+  "argv": [
+    "bijux",
+    "config",
+    "set",
+    "--help"
+  ],
+  "exit_code": 0,
+  "stdout": "Usage: bijux config set [OPTIONS] [PAIR]\n\n  Sets or updates a configuration key-value pair.\n\n  This function orchestrates the `set` operation. It accepts a `KEY=VALUE`\n  pair from either a command-line argument or standard input. It performs\n  extensive validation on the key and value for format and content, handles\n  file locking to prevent race conditions, and emits a structured payload\n  confirming the update.\n\n  Args:     ctx (typer.Context): The Typer context for the CLI.     pair (str\n  | None): A string in \"KEY=VALUE\" format. If None, the pair         is read\n  from stdin.     quiet (bool): If True, suppresses all output except for\n  errors.     verbose (bool): If True, includes Python/platform details in the\n  output.     fmt (str): The output format, \"json\" or \"yaml\".     pretty\n  (bool): If True, pretty-prints the output.     debug (bool): If True,\n  enables debug diagnostics.\n\n  Returns:     None:\n\n  Raises:     SystemExit: Always exits with a contract-compliant status code\n  and         payload, indicating success or detailing the error.\n\nArguments:\n  [PAIR]  KEY=VALUE to set; if omitted, read from stdin\n\nOptions:\n  -q, --quiet             Suppress normal output; exit code still indicates\n                          success/failure.\n  -v, --verbose           Include extra runtime details.\n  -f, --format TEXT       Machine‑readable output format (json|yaml); defaults\n                          to json.  [default: json]\n  --pretty / --no-pretty  Disable pretty‑printing (indentation) in JSON/YAML\n                          output.  [default: pretty]\n  -d, --debug             Enable diagnostics to stderr.\n  -h, --help              Show this message and exit.\n\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/plugins",
+    "NO_COLOR": "1"
+  }
+}

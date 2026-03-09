@@ -1,0 +1,18 @@
+{
+  "name": "config_load_help",
+  "argv": [
+    "bijux",
+    "config",
+    "load",
+    "--help"
+  ],
+  "exit_code": 0,
+  "stdout": "Usage: bijux config load [OPTIONS] PATH\n\n  Loads configuration from a specified file.\n\n  This function replaces the current in-memory configuration with the contents\n  of the file at the given path. It provides a structured payload to confirm\n  the operation was successful.\n\n  Args:     ctx (typer.Context): The Typer context for the CLI.     path\n  (str): The path to the configuration file to load.     quiet (bool): If\n  True, suppresses all output except for errors.     verbose (bool): If True,\n  includes Python/platform details in the output.     fmt (str): The output\n  format, \"json\" or \"yaml\".     pretty (bool): If True, pretty-prints the\n  output.     debug (bool): If True, enables debug diagnostics.\n\n  Returns:     None:\n\n  Raises:     SystemExit: Always exits with a contract-compliant status code\n  and         payload, indicating success or detailing the error.\n\nArguments:\n  PATH  Path to load from  [required]\n\nOptions:\n  -q, --quiet             Suppress normal output; exit code still indicates\n                          success/failure.\n  -v, --verbose           Include extra runtime details.\n  -f, --format TEXT       Machine‑readable output format (json|yaml); defaults\n                          to json.  [default: json]\n  --pretty / --no-pretty  Disable pretty‑printing (indentation) in JSON/YAML\n                          output.  [default: pretty]\n  -d, --debug             Enable diagnostics to stderr.\n  -h, --help              Show this message and exit.\n\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/plugins",
+    "NO_COLOR": "1"
+  }
+}
