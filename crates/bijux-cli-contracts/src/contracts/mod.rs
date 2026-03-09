@@ -2,6 +2,8 @@
 
 /// Command-path and namespace contracts.
 pub mod command;
+/// Config domain contracts.
+pub mod config;
 /// Diagnostic and trace contracts.
 pub mod diagnostics;
 /// Output and error envelope contracts.
@@ -14,6 +16,12 @@ pub mod marker;
 pub mod plugin;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
+pub use config::{
+    ConfigClearResult, ConfigCommandResult, ConfigConflictError, ConfigEntry, ConfigErrorKind,
+    ConfigExportFormat, ConfigKey, ConfigLoadResult, ConfigMutation, ConfigParseError,
+    ConfigPathSet, ConfigPersistenceError, ConfigReloadResult, ConfigSnapshot, ConfigValidationError,
+    ConfigValue, ConfigSource as ConfigReadSource, ConfigWriteResult, ResolvedConfigValue,
+};
 pub use diagnostics::{
     AliasRewrite, DiagnosticRecord, InspectReport, InvocationEvent, InvocationTrace, MemoryKeyList, MemorySummary,
     RouteSourceMetadata,
