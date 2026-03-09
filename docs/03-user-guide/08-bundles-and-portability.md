@@ -97,3 +97,30 @@ graph LR
 - `docs/03-user-guide/06-diff.md`
 - `docs/07-operations/05-backend-support.md`
 - `docs/06-specification/03-artifact-model.md`
+
+## Import and export roundtrip example
+
+Roundtrip workflow:
+
+```bash
+bijux-dag bundle export --run-id RUN_20260309_120 --out ./exports/run120.bundle
+bijux-dag bundle import --bundle ./exports/run120.bundle
+bijux-dag replay --run-id RUN_20260309_120
+bijux-dag diff run --left RUN_20260309_120 --right RUN_20260309_121
+```
+
+Expected interpretation:
+
+- Import succeeds with intact metadata.
+- Replay produces comparable evidence in target environment.
+- Diff determines whether result is equivalent, bounded-equivalent, or drift.
+
+## Portability limits and backend-dependent fidelity
+
+Bundle transport preserves context, not universal backend behavior. Fidelity depends on backend capability parity:
+
+- Stable backend parity: portability may achieve exact equivalence.
+- Partial capability parity: portability may be bounded-equivalent.
+- Missing capability parity: portability may degrade to drift or incomplete replay.
+
+Always document backend class and capability envelope next to portability claims.

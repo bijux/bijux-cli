@@ -100,3 +100,37 @@ graph LR
 - `docs/03-user-guide/05-replay.md`
 - `docs/03-user-guide/06-diff.md`
 - `docs/07-operations/01-ci-integration.md`
+
+## Worked example: failed run to diagnosis
+
+Scenario:
+
+- `RUN_20260309_211` failed at node `transform_orders`.
+- Expected artifact `out/orders_normalized.parquet` missing.
+
+Investigation sequence:
+
+```bash
+bijux-dag inspect run --run-id RUN_20260309_211
+bijux-dag inspect artifact --artifact-id ART_20260309_902
+bijux-dag replay --run-id RUN_20260309_211
+bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_211
+```
+
+Diagnosis logic:
+
+- Inspect shows first failing node and missing artifact reference.
+- Replay reproduces failure, indicating deterministic defect rather than transient flake.
+- Diff localizes behavior drift to `transform_orders` only.
+- Root cause scope narrows to transform command or its immediate inputs.
+
+## Using inspect, explain, replay, and diff together
+
+Treat `explain` as the interpretation layer between evidence and action:
+
+1. `inspect` to gather raw run/artifact evidence.
+2. explain observed failure class in dependency context.
+3. `replay` to test repeatability of the explanation.
+4. `diff` to validate whether explanation accounts for all observed drift.
+
+Do not skip explanation between inspect and replay; otherwise you test guesses instead of hypotheses.
