@@ -40,7 +40,7 @@ Covered scenarios include:
 
 - Python `config set` stdin fallback (no-argument mode) is not yet enabled in Rust.
 - Cross-process lock contention parity is not yet modeled in Rust config writes.
-- Full parity for `load` and `export` remains outside this batch.
+- `load` and `export` parity are now covered in the export/load parity report.
 
 ## Status (221-240)
 

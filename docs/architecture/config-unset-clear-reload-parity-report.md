@@ -34,4 +34,4 @@ Scope: tasks `161-180` for Rust configuration parity.
 
 ## Remaining Config Scope
 
-The remaining config parity scope after this report is `181-199` (`export/load` and post-parity design candidates).
+Config command baseline parity is now frozen. Remaining work is post-parity improvements and explicit UX changes only.
