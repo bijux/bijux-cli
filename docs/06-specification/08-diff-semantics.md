@@ -17,6 +17,12 @@ Classification vocabulary:
 - `drift`: divergence detected and attributable.
 - `unknown`: comparison could not be completed with available evidence.
 
+Formal diff rules:
+- RULE-DIFF-001: diff output MUST include scope and classification.
+- RULE-DIFF-002: unresolved comparisons MUST classify as `unknown`.
+- RULE-DIFF-003: attributable divergence MUST classify as `drift`.
+- RULE-DIFF-004: equivalent classification requires absence of contract-relevant divergence for that scope.
+
 Comparison rules:
 - diff must operate on canonicalized data where available.
 - classification must include machine-readable reason codes.
@@ -34,6 +40,18 @@ Specification audit and maintenance rules:
 - diff classification terms are reserved and cannot be redefined ad hoc.
 - any new classification term requires coordinated updates in replay semantics and user guidance.
 - wording is intentionally strict to prevent ambiguous interpretation across tooling.
+
+Invalid state definitions:
+- INVALID-DIFF-MISSING-SCOPE: scope omitted from diff result.
+- INVALID-DIFF-MISSING-CLASSIFICATION: result emitted without classification.
+- INVALID-DIFF-UNSUPPORTED-COERCION: unknown state coerced into equivalent or drift without evidence.
+
+Edge cases:
+- graph equivalent with run drift is valid and common under environment/input differences.
+- artifact comparison can be unknown when one side is missing retained artifact evidence.
+
+Compatibility notes:
+- reason-code catalogs may expand, but core classification vocabulary (`equivalent`, `drift`, `unknown`) remains stable.
 
 ## Examples
 ```text

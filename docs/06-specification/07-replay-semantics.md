@@ -24,6 +24,12 @@ Replay validation outcomes:
 - `drift`: replay completed but one or more identity/output checks diverged.
 - `incomplete`: replay could not complete due to missing prerequisites or unsupported features.
 
+Formal replay rules:
+- RULE-REPLAY-001: replay MUST emit one explicit classification outcome.
+- RULE-REPLAY-002: missing prerequisites MUST classify as `incomplete`, not `equivalent`.
+- RULE-REPLAY-003: detected divergence MUST classify as `drift`.
+- RULE-REPLAY-004: successful equivalence check MUST classify as `equivalent`.
+
 Determinism rules:
 - equivalent semantic inputs under supported environment constraints should converge to equivalent classification.
 - environment drift must be surfaced as classified divergence, never silently ignored.
@@ -35,6 +41,18 @@ Replay planning rules:
 Specification consistency rules:
 - replay outcome vocabulary must match `docs/06-specification/08-diff-semantics.md`.
 - replay guarantees must remain aligned with identity contracts in `04`, `05`, and `06`.
+
+Invalid state definitions:
+- INVALID-REPLAY-MISSING-BASELINE: replay requested without baseline run context.
+- INVALID-REPLAY-UNCLASSIFIED-RESULT: replay ends without explicit classification.
+- INVALID-REPLAY-INCOMPATIBLE-CAPABILITY: required capability absent in selected environment.
+
+Edge cases:
+- replay may be `drift` despite equal graph identity when environment inputs differ.
+- replay may be `incomplete` for intentionally partial artifact retention policies.
+
+Compatibility notes:
+- replay classification semantics are stable; new outcomes require coordinated spec update with diff semantics.
 
 ## Examples
 ```text
