@@ -40,6 +40,12 @@ class ExecutionResult:
     stderr: str
 
 
+@dataclass(frozen=True)
+class PathAmbiguityReport:
+    has_ambiguity: bool
+    message: str
+
+
 def _resolve_binary() -> RuntimeResolution:
     candidate = os.environ.get("BIJUX_BIN")
     if candidate:
@@ -165,3 +171,60 @@ def deprecated_version_api() -> str:
         stacklevel=2,
     )
     return version()
+
+
+def path_ambiguity_detection_message(binaries: Iterable[str]) -> PathAmbiguityReport:
+    resolved = [item for item in binaries if item]
+    unique = sorted(set(resolved))
+    if len(unique) <= 1:
+        return PathAmbiguityReport(has_ambiguity=False, message="No PATH ambiguity detected.")
+
+    return PathAmbiguityReport(
+        has_ambiguity=True,
+        message=(
+            "Multiple bijux binaries detected in PATH order: "
+            + ", ".join(unique)
+            + ". Keep only one canonical entrypoint."
+        ),
+    )
+
+
+def simulate_pip_uninstall_cleanup(install_root: str) -> dict[str, bool]:
+    root = Path(install_root)
+    removed = {"site_package_removed": False, "entrypoint_removed": False}
+
+    for path in [root / "bijux_cli_py", root / "bin" / "bijux"]:
+        if path.exists():
+            if path.is_dir():
+                for nested in sorted(path.rglob("*"), reverse=True):
+                    if nested.is_file():
+                        nested.unlink(missing_ok=True)
+                    elif nested.is_dir():
+                        nested.rmdir()
+                path.rmdir()
+            else:
+                path.unlink()
+
+        if path.name == "bijux_cli_py":
+            removed["site_package_removed"] = not path.exists()
+        if path.name == "bijux":
+            removed["entrypoint_removed"] = not path.exists()
+
+    return removed
+
+
+def simulate_pip_upgrade_preserves_state(home_dir: str) -> dict[str, bool]:
+    base = Path(home_dir) / ".bijux"
+    expected = [base / ".env", base / ".history", base / ".plugins"]
+    return {
+        "config_preserved": expected[0].exists(),
+        "history_preserved": expected[1].exists(),
+        "plugins_preserved": expected[2].exists(),
+    }
+
+
+def side_by_side_install_report(
+    pip_binary: str | None,
+    cargo_binary: str | None,
+) -> PathAmbiguityReport:
+    return path_ambiguity_detection_message([pip_binary or "", cargo_binary or ""])
