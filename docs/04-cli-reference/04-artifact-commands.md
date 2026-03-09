@@ -21,6 +21,11 @@ Command lifecycle role:
 - artifact commands are post-run evidence tools.
 - use list first to find candidate artifacts, then inspect for lineage and identity details.
 
+Command discovery:
+- `bijux-dag artifact --help`
+- `bijux-dag artifact list --help`
+- `bijux-dag artifact inspect --help`
+
 Error handling guidance:
 - unknown artifact ID: lookup error
 - malformed selection flags: input error
@@ -59,6 +64,7 @@ Artifact discovery flow:
 
 ## Related
 - `docs/04-cli-reference/01-cli-overview.md`
+- `docs/04-cli-reference/03-run-commands.md`
 - `docs/04-cli-reference/06-diff-commands.md`
 - `docs/03-user-guide/03-artifacts.md`
 - `docs/06-specification/06-artifact-identity.md`

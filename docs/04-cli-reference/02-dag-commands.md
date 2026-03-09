@@ -21,6 +21,11 @@ Command lifecycle role:
 - use `dag validate` before every new or changed pipeline execution.
 - use `dag inspect` when debugging definition-level drift.
 
+Command discovery:
+- `bijux-dag dag --help`
+- `bijux-dag dag validate --help`
+- `bijux-dag dag inspect --help`
+
 Error handling guidance:
 - missing DAG path: input error
 - invalid graph structure: validation error
@@ -62,6 +67,7 @@ reason: cycle detected in dependency graph
 
 ## Related
 - `docs/04-cli-reference/01-cli-overview.md`
+- `docs/04-cli-reference/03-run-commands.md`
 - `docs/03-user-guide/01-authoring-dags.md`
 - `docs/06-specification/01-dag-model.md`
 - `docs/04-cli-reference/06-diff-commands.md`

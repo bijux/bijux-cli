@@ -20,6 +20,11 @@ Command lifecycle role:
 - export after run completion and evidence verification.
 - import in target environment before replay/diff portability checks.
 
+Command discovery:
+- `bijux-dag bundle --help`
+- `bijux-dag bundle export --help`
+- `bijux-dag bundle import --help`
+
 Error handling guidance:
 - unreadable path: input error
 - invalid bundle: validation error

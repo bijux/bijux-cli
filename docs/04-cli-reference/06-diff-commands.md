@@ -23,6 +23,12 @@ Command lifecycle role:
 - `diff artifact` for output drift.
 - run scopes in that order when triaging unknown regressions.
 
+Command discovery:
+- `bijux-dag diff --help`
+- `bijux-dag diff graph --help`
+- `bijux-dag diff run --help`
+- `bijux-dag diff artifact --help`
+
 Error handling guidance:
 - incomparable entities: input/compatibility error
 - missing IDs or paths: lookup/input error

@@ -22,6 +22,10 @@ Command lifecycle role:
 - run execution is the source of run IDs used by inspect/replay/diff.
 - run history is the indexing surface for selecting baselines and failing candidates.
 
+Command discovery:
+- `bijux-dag run --help`
+- `bijux-dag run history --help`
+
 Error handling guidance:
 - invalid DAG: validation error
 - unknown run ID: lookup error
@@ -62,6 +66,7 @@ Run lifecycle command flow:
 
 ## Related
 - `docs/04-cli-reference/01-cli-overview.md`
+- `docs/04-cli-reference/02-dag-commands.md`
 - `docs/04-cli-reference/05-inspect-commands.md`
 - `docs/04-cli-reference/07-replay-commands.md`
 - `docs/03-user-guide/04-run-history.md`

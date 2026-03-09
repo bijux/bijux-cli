@@ -21,6 +21,11 @@ Command lifecycle role:
 - inspect is the first diagnostic command family after run execution.
 - inspect output should drive whether replay or diff is needed next.
 
+Command discovery:
+- `bijux-dag inspect --help`
+- `bijux-dag inspect run --help`
+- `bijux-dag inspect artifact --help`
+
 Exit and error conventions:
 - `0`: inspection completed
 - non-zero: input, lookup, or runtime retrieval failure

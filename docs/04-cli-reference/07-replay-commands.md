@@ -20,6 +20,9 @@ Command lifecycle role:
 - replay is a post-run validation command.
 - replay should be paired with inspect/diff for complete diagnosis.
 
+Command discovery:
+- `bijux-dag replay --help`
+
 Error handling guidance:
 - unknown run ID: lookup error
 - unsupported replay context: compatibility/runtime error

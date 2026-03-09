@@ -37,6 +37,17 @@ Command lifecycle model:
 4. validate and compare (`replay`, `diff`).
 5. transfer context when needed (`bundle`).
 
+Recommended command discovery sequence:
+1. `bijux-dag --help`
+2. `bijux-dag <group> --help`
+3. `bijux-dag <group> <action> --help`
+4. run with `--output json` where automation requires stable parsing
+
+Readability conventions used in CLI docs:
+- command families are documented as operational workflows, not isolated commands.
+- examples include both successful and failure-oriented usage when practical.
+- JSON snippets focus on key fields used by operators and automation.
+
 Shared error and exit model:
 - `0`: successful completion.
 - non-zero validation category: malformed input, invalid graph, missing required flags.
@@ -75,5 +86,7 @@ Reference navigation:
 ## Related
 - `docs/04-cli-reference/02-dag-commands.md`
 - `docs/04-cli-reference/03-run-commands.md`
+- `docs/04-cli-reference/04-artifact-commands.md`
 - `docs/04-cli-reference/05-inspect-commands.md`
+- `docs/04-cli-reference/07-replay-commands.md`
 - `docs/04-cli-reference/06-diff-commands.md`
