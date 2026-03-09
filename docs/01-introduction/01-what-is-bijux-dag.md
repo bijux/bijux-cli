@@ -1,9 +1,7 @@
 # What Is Bijux Dag
 
-## Purpose
 Explain what bijux-dag is, what problem it solves, and why its deterministic model matters.
 
-## Context
 This is the first technical entrypoint for new readers. It defines the system identity and its problem space before command details or architecture internals.
 
 ## Explanation
@@ -101,6 +99,11 @@ artifact: drift (reason: ARTIFACT_HASH_MISMATCH)
 - Bijux-dag treats replay, diff, and inspect as core product behavior.
 - Deterministic control is a system objective, not optional guidance.
 - The product framing in this document is aligned to runtime and specification sections.
+
+## Common Wrong Assumptions
+- "Deterministic" does not mean identical wall-clock timing on every backend.
+- "Git for computation graphs" does not imply feature parity with Git commands or storage model.
+- A successful run does not prove cross-environment portability without replay/diff validation.
 
 ## Limitations
 - "Git for computation graphs" is a conceptual analogy, not feature parity with Git.

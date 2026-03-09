@@ -1,9 +1,7 @@
 # Diff
 
-## Purpose
 Show how to compare graph, run, and artifact behavior using structured diff workflows.
 
-## Context
 Diff is the main tool for answering "what changed" after drift or regression.
 
 ## Explanation
@@ -78,6 +76,11 @@ graph LR
 - Diff usage is documented across graph, run, and artifact scopes.
 - Classification guidance is explicit for operational triage.
 - Includes practical ordering for graph/run/artifact comparison flow.
+
+## Common Wrong Assumptions
+- `equivalent` does not mean every runtime metric (such as timing) is identical.
+- `drift` does not automatically mean a breaking release issue; scope and reason code matter.
+- `unknown` is not safe-to-ignore; it requires additional evidence before approval decisions.
 
 ## Limitations
 - Exact field-by-field diff semantics are specified in contract docs.

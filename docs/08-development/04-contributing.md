@@ -1,9 +1,7 @@
 # Contributing
 
-## Purpose
 Define contribution workflow, review standards, and merge readiness for repository changes.
 
-## Context
 Contributors need one clear path from idea to merged change with explicit quality gates.
 
 ## Explanation
@@ -36,12 +34,23 @@ Final quality pass guidance:
 - remove stale claims or speculative statements.
 - keep examples realistic and aligned with current command surfaces.
 - ensure every guarantee has an explicit boundary or limitation nearby.
+- avoid link dumps; include only highest-signal next references.
+- ensure opening lines answer the reader's immediate question.
+- prefer direct mechanics over abstract policy language.
 
 Documentation contribution standards:
 - docs must use required section template.
 - claims must distinguish guarantees vs limitations.
 - terminology must align with introduction/specification vocabulary.
 - avoid governance noise in user-facing guides.
+- every section must teach at least one non-obvious fact.
+- no section should exist only to satisfy formatting symmetry.
+- guarantees must be explicit, bounded, and falsifiable.
+- limitations must be concrete and operationally useful.
+- distinguish guarantees from goals and backend-dependent behavior.
+- include realistic examples and expected outcomes.
+- include at least one failure-oriented example where confusion risk is high.
+- include common wrong assumptions when over-interpretation is likely.
 
 Commit message guidelines:
 - use meaningful conventional prefixes (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
