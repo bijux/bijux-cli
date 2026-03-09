@@ -104,6 +104,25 @@ mod tests {
     }
 
     #[test]
+    fn mixed_pip_and_cargo_install_ambiguity_is_detected() {
+        let temp = TempDir::new().expect("tempdir");
+        let pip_bin = temp.path().join("venv-site-packages-bin");
+        let cargo_bin = temp.path().join(".cargo/bin");
+        std::fs::create_dir_all(&pip_bin).expect("pip dir");
+        std::fs::create_dir_all(&cargo_bin).expect("cargo dir");
+        std::fs::write(pip_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n").expect("write pip");
+        std::fs::write(cargo_bin.join(CANONICAL_EXECUTABLE), b"#!/bin/sh\n")
+            .expect("write cargo");
+        let path_value = std::env::join_paths([&pip_bin, &cargo_bin]).expect("join");
+
+        let report = install_health_report(path_value.to_str().expect("utf-8 path"), None, None, "1.0.0");
+
+        assert!(report.has_path_shadowing);
+        assert!(report.has_duplicate_installs);
+        assert!(report.active_binary.as_deref().is_some_and(|value| value.contains("venv-site-packages-bin")));
+    }
+
+    #[test]
     fn active_binary_prefers_explicit_override() {
         let report = install_health_report("", Some("/custom/bin/bijux"), None, "1.0.0");
         assert_eq!(report.active_binary, Some("/custom/bin/bijux".to_string()));
