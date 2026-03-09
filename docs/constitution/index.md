@@ -27,4 +27,5 @@ It covers public behavior that must remain stable across implementation changes.
 - [Plugin Lifecycle](PLUGIN_LIFECYCLE.md)
 - [Plugin Sandboxing Policy](PLUGIN_SANDBOXING_POLICY.md)
 - [Python Distribution Policy](PYTHON_DISTRIBUTION_POLICY.md)
+- [Binary Ownership And Install Policy](BINARY_OWNERSHIP_AND_INSTALL_POLICY.md)
 - [Deprecation Policy](DEPRECATION_POLICY.md)

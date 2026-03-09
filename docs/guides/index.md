@@ -16,6 +16,7 @@ Each guide explains a single workflow, its prerequisites, the exact commands to 
 - [CLI usage](cli-usage.md)
 - [Configuration](configuration.md)
 - [Plugins](plugins.md)
+- [Install channels](install-channels.md)
 - [API usage](api-usage.md)
 - [Development](development.md)
 - [Atlas local routing](atlas-local-routing.md)
@@ -26,3 +27,4 @@ Each guide explains a single workflow, its prerequisites, the exact commands to 
 - [Python pipx installs](python/pipx-installs.md)
 - [Python virtualenv installs](python/virtualenv-installs.md)
 - [Python internal differences](python/internal-differences.md)
+- [Python packaging maintainers](python/packaging-maintainers.md)
