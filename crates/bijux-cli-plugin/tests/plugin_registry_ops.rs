@@ -16,6 +16,7 @@ use bijux_cli_plugin::{
 use semver as _;
 use serde as _;
 use serde_json as _;
+use sha2 as _;
 use thiserror as _;
 
 fn temp_plugins_dir(label: &str) -> PathBuf {
