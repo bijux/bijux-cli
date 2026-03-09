@@ -29,6 +29,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Config parity matrix](config-parity-matrix.md)
 - [Rust config baseline parity milestone](rust-config-baseline-parity-milestone.md)
 - [Crate boundaries](crate_boundaries.md)
+- [Runtime identity law](runtime_identity_law.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)
 - [Python public API lifecycle](python-public-api-lifecycle.md)

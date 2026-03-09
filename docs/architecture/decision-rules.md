@@ -8,6 +8,7 @@ It covers decision ownership and forbidden behaviors. It does not specify implem
 
 ## Core Rules
 Decisions about policy, output routing, and exit behavior must occur in core. Infra components must execute explicit instructions and never guess or normalize values.
+Runtime identity is singular: `bijux` is the only canonical user-facing runtime binary name, and all supported entrypoints must execute the same law.
 
 ## Why These Rules Exist
 These rules prevent late overrides and inconsistent behavior across different entry points. They are enforced by tests and are considered part of the public contract.
@@ -20,3 +21,6 @@ By centralizing decisions, we make the system predictable and testable. This als
 
 ## Non-Goals
 This document does not define project process or governance.
+
+## Runtime Law Freeze
+The single canonical runtime identity rule is non-negotiable and frozen until an explicit breaking-change policy replaces it.
