@@ -7,6 +7,7 @@ use std::process::Command;
 
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
+use futures as _;
 use serde_json::Value;
 
 fn internal_workspace_deps(pkg: &Value) -> BTreeSet<String> {
@@ -39,9 +40,7 @@ fn enforces_internal_crate_boundaries() {
             "--format-version",
             "1",
             "--manifest-path",
-            manifest
-                .to_str()
-                .expect("workspace manifest path must be valid UTF-8"),
+            manifest.to_str().expect("workspace manifest path must be valid UTF-8"),
         ])
         .output()
         .expect("cargo metadata command must execute");
@@ -53,10 +52,8 @@ fn enforces_internal_crate_boundaries() {
     );
 
     let root: Value = serde_json::from_slice(&output.stdout).expect("valid metadata JSON");
-    let packages = root
-        .get("packages")
-        .and_then(Value::as_array)
-        .expect("metadata contains packages");
+    let packages =
+        root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
         ("bijux-cli-bin", BTreeSet::from(["bijux-cli-core", "bijux-cli-output"])),
@@ -64,19 +61,10 @@ fn enforces_internal_crate_boundaries() {
         ("bijux-cli-core", BTreeSet::from(["bijux-cli-contracts"])),
         ("bijux-cli-install", BTreeSet::from(["bijux-cli-contracts"])),
         ("bijux-cli-output", BTreeSet::from(["bijux-cli-contracts"])),
-        (
-            "bijux-cli-plugin",
-            BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"]),
-        ),
+        ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"])),
         ("bijux-cli-python", BTreeSet::from(["bijux-cli-contracts"])),
-        (
-            "bijux-cli-repl",
-            BTreeSet::from(["bijux-cli-contracts", "bijux-cli-routing"]),
-        ),
-        (
-            "bijux-cli-routing",
-            BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"]),
-        ),
+        ("bijux-cli-repl", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-routing"])),
+        ("bijux-cli-routing", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"])),
     ]);
 
     for pkg in packages {
