@@ -1,19 +1,7 @@
-# Next Five Command Priorities
+# Next Command Priorities
 
-Date: 2026-03-09
+Priority planning is generated from parity and status artifacts:
+- `artifacts/parity/command_parity_matrix.json`
+- `artifacts/status/status_known_parity_gaps.json`
 
-Selection basis: observed user value in current Python captures and parity impact.
-
-1. `history` (read-only)
-2. `plugins check <plugin>` (diagnostics)
-3. `config` (config)
-4. `plugins list` (plugin read path)
-5. `repl --help` (REPL parity gap)
-
-Current implementation status:
-
-- `history`: implemented in Rust baseline routes.
-- `plugins check <plugin>`: implemented in Rust baseline routes.
-- `config`: implemented in Rust baseline routes.
-- `plugins list`: implemented in Rust baseline routes.
-- `repl --help`: covered by binary help path and parity runner command set.
+Use `bijux dev cli parity --format json` to select current priorities.

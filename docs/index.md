@@ -6,9 +6,7 @@ High-value documents only. Everything else is supporting detail.
 - [Honest status](HONEST_STATUS.md)
 - [Known gaps](KNOWN_GAPS.md)
 - [Stability and breakage](STABILITY_AND_BREAKAGE.md)
-- [No hype](NO_HYPE.md)
-- [What we do not do](WHAT_WE_DO_NOT_DO.md)
-- [What still needs work](WHAT_STILL_NEEDS_WORK.md)
+- [Contributor engineering rules](CONTRIBUTOR_ENGINEERING_RULES.md)
 - [Plugin state](plugin_state.md)
 
 ## Core Law
@@ -19,7 +17,7 @@ High-value documents only. Everything else is supporting detail.
 
 ## Usage
 - [Getting started](getting-started/index.md)
-- [Installation](getting-started/installation.md)
+- [Installation](guides/installation-unified.md)
 - [Quickstart](getting-started/quickstart.md)
 - [Commands reference](reference/commands.md)
 - [Exit codes](reference/exit-codes.md)

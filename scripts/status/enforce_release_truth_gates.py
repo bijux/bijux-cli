@@ -82,8 +82,7 @@ def main() -> int:
         ROOT / "docs" / "HONEST_STATUS.md",
         ROOT / "docs" / "KNOWN_GAPS.md",
         ROOT / "docs" / "STABILITY_AND_BREAKAGE.md",
-        ROOT / "docs" / "NO_HYPE.md",
-        ROOT / "docs" / "WHAT_STILL_NEEDS_WORK.md",
+        ROOT / "docs" / "CONTRIBUTOR_ENGINEERING_RULES.md",
         ROOT / "docs" / "index.md",
     ]
     docs = "\n".join(read_text(path) for path in public_claim_docs if path.exists())
