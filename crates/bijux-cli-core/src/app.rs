@@ -85,7 +85,13 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
     let mut registry = RouteRegistry::default();
     let _ = registry.register_plugin_namespace("community");
 
-    let target = registry.resolve(normalized_path)?;
+    let target = match normalized_path {
+        [a] if a == "config" || a == "history" => RouteTarget::BuiltIn,
+        [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => {
+            RouteTarget::BuiltIn
+        }
+        _ => registry.resolve(normalized_path)?,
+    };
     if matches!(target, RouteTarget::Plugin(_)) {
         return Ok(json!({
             "status": "ok",
@@ -181,14 +187,27 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
                 "BIJUXCLI_PLUGINS_DIR": paths.plugins_dir
             })
         }
+        [a] if a == "config" => {
+            json!({
+                "BIJUXCLI_CONFIG": paths.config_file,
+                "BIJUXCLI_HISTORY_FILE": paths.history_file,
+                "BIJUXCLI_PLUGINS_DIR": paths.plugins_dir
+            })
+        }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             run_config_migrations(&paths.config_file, 1)?;
             json!({"status": "ok", "updated": paths.config_file})
+        }
+        [a] if a == "history" => {
+            json!({"entries": [], "count": 0})
         }
         [a, b] if a == "cli" && b == "self-test" => {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
+            json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
+        }
+        [a, b] if a == "plugins" && b == "list" => {
             json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
@@ -197,6 +216,16 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
                 "status": "loaded",
                 "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
             })
+        }
+        [a, b] if a == "plugins" && b == "inspect" => {
+            json!({
+                "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
+                "status": "loaded",
+                "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+            })
+        }
+        [a, b] if a == "plugins" && b == "check" => {
+            json!({"status": "ok", "issues": []})
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             json!({"routes": registry.built_in_paths()})
@@ -256,7 +285,10 @@ fn is_known_route(path: &[String]) -> bool {
             true
         }
         [a, b, c] if a == "cli" && b == "config" && (c == "get" || c == "set") => true,
+        [a] if a == "config" => true,
+        [a] if a == "history" => true,
         [a, b, c] if a == "cli" && b == "plugins" && (c == "list" || c == "inspect") => true,
+        [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => true,
         [a, b, c]
             if a == "dev"
                 && b == "cli"

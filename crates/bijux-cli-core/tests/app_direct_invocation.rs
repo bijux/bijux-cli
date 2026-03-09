@@ -92,6 +92,31 @@ fn direct_core_invocation_inspect() {
 }
 
 #[test]
+fn direct_core_invocation_config_root() {
+    let out = run_app(&["bijux".to_string(), "config".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload.get("BIJUXCLI_CONFIG").is_some());
+}
+
+#[test]
+fn direct_core_invocation_history_root() {
+    let out = run_app(&["bijux".to_string(), "history".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["count"], 0);
+}
+
+#[test]
+fn direct_core_invocation_plugins_root_list() {
+    let out = run_app(&["bijux".to_string(), "plugins".to_string(), "list".to_string()])
+        .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert!(payload.get("plugins").is_some());
+}
+
+#[test]
 fn precedence_flags_over_env() {
     let intent = ExecutionIntent {
         command_path: vec!["cli".to_string(), "status".to_string()],

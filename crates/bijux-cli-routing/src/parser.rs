@@ -125,12 +125,15 @@ pub fn root_command() -> Command {
         .overrides_with("pretty")
         .global(true);
 
-    let config_group =
-        Command::new("config").subcommand(Command::new("get")).subcommand(Command::new("set"));
+    let config_group = Command::new("config")
+        .subcommand_required(false)
+        .subcommand(Command::new("get"))
+        .subcommand(Command::new("set"));
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
-        .subcommand(Command::new("inspect"));
+        .subcommand(Command::new("inspect"))
+        .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)));
 
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
@@ -175,6 +178,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("repl"))
         .subcommand(Command::new("completion"))
         .subcommand(Command::new("inspect"))
+        .subcommand(Command::new("history"))
 }
 
 fn extract_path(matches: &ArgMatches) -> Vec<String> {
@@ -205,6 +209,9 @@ fn normalize_path(path: &[String]) -> Vec<String> {
         }
         [a, b] if a == "plugins" && (b == "list" || b == "inspect") => {
             vec!["cli".to_string(), "plugins".to_string(), b.clone()]
+        }
+        [a, b] if a == "plugins" && b == "check" => {
+            vec!["plugins".to_string(), b.clone()]
         }
         [a, b]
             if a == "dev"

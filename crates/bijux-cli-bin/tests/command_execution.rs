@@ -21,6 +21,9 @@ fn executes_root_commands() {
     for args in [
         vec!["version"],
         vec!["doctor"],
+        vec!["config"],
+        vec!["history"],
+        vec!["plugins", "list"],
         vec!["repl"],
         vec!["completion"],
         vec!["inspect"],
