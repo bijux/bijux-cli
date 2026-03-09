@@ -33,6 +33,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Test policy](test-policy.md)
 - [Test review checklist](test-review-checklist.md)
 - [Test quality priorities](test-quality-priorities.md)
+- [Parity release candidate rule](parity_release_candidate_rule.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)
 - [Python public API lifecycle](python-public-api-lifecycle.md)

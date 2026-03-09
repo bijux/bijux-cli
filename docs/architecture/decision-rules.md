@@ -31,3 +31,6 @@ Documentation stays intentionally small. Each long-form document must explain la
 
 ## Test Rule Freeze
 No vanity test counts. Quality claims require evidence from failure-path, exit-code, output-regression, and resilience coverage.
+
+## Parity Report Freeze
+Every release candidate must include command-level parity matrix and diff artifacts.
