@@ -19,6 +19,7 @@ It does not teach workflows or concepts.
 - [Environment](environment.md)
 - [Exit codes](exit-codes.md)
 - [Glossary](glossary.md)
+- [Current Python behavior inventory](current-python/index.md)
 - [Pre-1.0 change policy](pre-1.0.md)
 
 ## Failure Modes
