@@ -7,4 +7,6 @@ repl
 completion
 inspect
 config
+history
+memory
 plugins

@@ -133,6 +133,17 @@
     },
     {
       "segments": [
+        "memory"
+      ]
+    },
+    {
+      "segments": [
+        "memory",
+        "list"
+      ]
+    },
+    {
+      "segments": [
         "plugins",
         "check"
       ]

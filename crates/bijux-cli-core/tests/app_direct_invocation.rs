@@ -108,6 +108,25 @@ fn direct_core_invocation_history_root() {
 }
 
 #[test]
+fn direct_core_invocation_memory_root() {
+    let out = run_app(&["bijux".to_string(), "memory".to_string()]).expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["status"], "ok");
+    assert!(payload["count"].is_number());
+}
+
+#[test]
+fn direct_core_invocation_memory_list() {
+    let out = run_app(&["bijux".to_string(), "memory".to_string(), "list".to_string()])
+        .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["status"], "ok");
+    assert!(payload["keys"].is_array());
+}
+
+#[test]
 fn direct_core_invocation_plugins_root_list() {
     let out = run_app(&["bijux".to_string(), "plugins".to_string(), "list".to_string()])
         .expect("run_app should succeed");

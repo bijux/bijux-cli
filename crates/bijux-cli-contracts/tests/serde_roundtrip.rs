@@ -9,6 +9,7 @@ use bijux_cli_contracts::{
     InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
     OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
     PluginManifestV1, PrettyMode,
+    MemorySummary, MemoryKeyList,
 };
 use proptest as _;
 use schemars as _;
@@ -122,6 +123,17 @@ fn roundtrip_for_all_contract_types() {
         }],
     };
 
+    let memory_summary = MemorySummary {
+        status: "ok".to_string(),
+        count: 2,
+        message: "Memory command executed".to_string(),
+    };
+    let memory_list = MemoryKeyList {
+        status: "ok".to_string(),
+        keys: vec!["alpha".to_string(), "beta".to_string()],
+        count: 2,
+    };
+
     roundtrip(&ns);
     roundtrip(&flags);
     roundtrip(&ConfigSource::Flags);
@@ -134,4 +146,6 @@ fn roundtrip_for_all_contract_types() {
     roundtrip(&error);
     roundtrip(&diagnostic);
     roundtrip(&invocation);
+    roundtrip(&memory_summary);
+    roundtrip(&memory_list);
 }

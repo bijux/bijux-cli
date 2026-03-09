@@ -8,6 +8,7 @@ doctor
 help
 history
 inspect
+memory
 plugins
 repl
 sleep

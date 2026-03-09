@@ -27,6 +27,8 @@ fn executes_root_commands() {
         vec!["sleep", "0"],
         vec!["config"],
         vec!["history"],
+        vec!["memory"],
+        vec!["memory", "list"],
         vec!["plugins", "list"],
         vec!["repl"],
         vec!["completion"],
