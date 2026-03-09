@@ -10,3 +10,12 @@ cli config export
 cli config load
 cli plugins list
 cli plugins inspect
+cli plugins check
+cli plugins install
+cli plugins uninstall
+cli plugins scaffold
+cli plugins doctor
+cli plugins reserved-names
+cli plugins where
+cli plugins explain
+cli plugins schema

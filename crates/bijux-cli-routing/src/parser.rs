@@ -144,6 +144,21 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("list"))
         .subcommand(Command::new("inspect"))
         .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)))
+        .subcommand(
+            Command::new("install")
+                .arg(Arg::new("manifest").num_args(1))
+                .arg(Arg::new("source").long("source").num_args(1))
+                .arg(Arg::new("trust").long("trust").num_args(1)),
+        )
+        .subcommand(Command::new("uninstall").arg(Arg::new("namespace").num_args(1)))
+        .subcommand(
+            Command::new("scaffold")
+                .arg(Arg::new("kind").num_args(1))
+                .arg(Arg::new("namespace").num_args(1))
+                .arg(Arg::new("path").long("path").num_args(1))
+                .arg(Arg::new("force").long("force")),
+        )
+        .subcommand(Command::new("doctor"))
         .subcommand(Command::new("reserved-names"))
         .subcommand(Command::new("where"))
         .subcommand(Command::new("explain").arg(Arg::new("plugin").num_args(1)))
