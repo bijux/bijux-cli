@@ -1,126 +1,55 @@
 # Bundles And Portability
 
-Explain bundle export/import workflows and portability boundaries with practical validation steps.
+Bundles transport execution context and evidence. Portability is proven by replay/diff outcomes, not by transport success alone.
 
-Bundles are the handoff mechanism for moving workflow context between environments.
+## What bundles preserve and what they omit
 
-## Explanation
-Bundle workflow:
-1. export bundle from a known run
-2. transfer bundle to target environment
-3. import bundle
-4. replay and diff against baseline
+Bundles preserve:
 
-Bundle content model (operator-level):
-- graph identity context
-- run evidence references
-- artifact references and metadata required for validation workflows
-- portability metadata needed for replay/diff interpretation
+- graph context,
+- run/artifact identity references,
+- lineage metadata needed for verification workflows.
 
-Export guidance:
-- choose a known-good baseline run or an explicitly labeled candidate run.
-- record source environment and toolchain context alongside bundle.
-- retain checksum/signature metadata if your environment requires integrity verification.
+Bundles do not automatically preserve:
 
-Import guidance:
-- import into a clean, known target environment when possible.
-- verify bundle integrity before trusting imported context.
-- record target environment details before replay.
+- backend capability parity,
+- timing/resource equivalence,
+- external side effects not captured as artifacts.
 
-Portability boundaries:
-- portability means transferable workflow context, not universal backend parity
-- behavior remains bounded by environment and support matrix constraints
-
-Portability limits and implications:
-- equivalent bundle import does not guarantee equivalent runtime timing.
-- missing backend capabilities can produce replay incompleteness or drift.
-- environment/tool differences can cause bounded divergence that must be classified, not ignored.
-
-End-to-end operator workflow:
-```text
-Author DAG -> Run -> Export bundle -> Import bundle -> Replay -> Diff -> Decision
-```
-
-This workflow is the recommended baseline for release confidence and migration checks.
-
-## Examples
-```bash
-bijux-dag bundle export --run-id RUN_20260309_120 --out ./exports/run120.bundle
-bijux-dag bundle import --bundle ./exports/run120.bundle
-bijux-dag replay --run-id RUN_20260309_120
-bijux-dag diff run --left RUN_20260309_120 --right RUN_20260309_121
-```
-
-```text
-Bundle validation example:
-source run: RUN_20260309_120
-target replay run: RUN_20260309_121
-diff result:
-- graph: equivalent
-- run: equivalent
-- artifact: equivalent
-decision:
-- portability validated for this support envelope
-```
-
-```text
-Bounded portability mismatch example:
-- source backend: local-shell (stable)
-- target backend: adapter-X (provisional)
-- replay classification: incomplete (missing timeout capability)
-decision:
-- portability not accepted as equivalent for release gate
-```
-
-```mermaid
-graph LR
-  A[Source Run] --> B[Bundle Export]
-  B --> C[Transfer]
-  C --> D[Bundle Import]
-  D --> E[Replay]
-  E --> F[Diff]
-  F --> G[Portability Decision]
-```
-
-## Guarantees
-- Bundle flow is documented as a complete operational loop.
-- Portability limits are explicit and non-speculative.
-- Export/import/replay/diff sequence is documented with concrete validation outcomes.
-
-## Limitations
-- Does not define low-level bundle schema internals.
-- Does not guarantee identical performance across environments.
-- Final portability acceptance still depends on backend support tier and operational policy.
-
-## Related
-- `docs/03-user-guide/05-replay.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/07-operations/05-backend-support.md`
-- `docs/06-specification/03-artifact-model.md`
-
-## Import and export roundtrip example
-
-Roundtrip workflow:
+## Export to import roundtrip
 
 ```bash
 bijux-dag bundle export --run-id RUN_20260309_120 --out ./exports/run120.bundle
 bijux-dag bundle import --bundle ./exports/run120.bundle
+bijux-dag inspect run --run-id RUN_20260309_120
 bijux-dag replay --run-id RUN_20260309_120
 bijux-dag diff run --left RUN_20260309_120 --right RUN_20260309_121
 ```
 
-Expected interpretation:
+Interpretation sequence:
 
-- Import succeeds with intact metadata.
-- Replay produces comparable evidence in target environment.
-- Diff determines whether result is equivalent, bounded-equivalent, or drift.
+1. export/import proves transfer,
+2. inspect proves evidence shape is available,
+3. replay/diff proves equivalence class.
 
-## Portability limits and backend-dependent fidelity
+## Portability versus backend equivalence
 
-Bundle transport preserves context, not universal backend behavior. Fidelity depends on backend capability parity:
+- portability: transferable context can be validated in target environment.
+- backend equivalence: target backend can satisfy required capability envelope.
 
-- Stable backend parity: portability may achieve exact equivalence.
-- Partial capability parity: portability may be bounded-equivalent.
-- Missing capability parity: portability may degrade to drift or incomplete replay.
+Portability can be valid while strict backend equivalence is not.
 
-Always document backend class and capability envelope next to portability claims.
+## When portability degrades
+
+Degradation signals:
+
+- replay classification becomes `bounded` or `incomplete`,
+- capability gaps appear in target backend,
+- artifact lineage or payload availability is partial.
+
+Interpret degraded portability as conditional evidence, not release-ready equivalence.
+
+## Next reading
+
+- Backend capability boundaries: [Backend Support](../07-operations/05-backend-support.md)
+- Formal artifact transport semantics: [Artifact Model Specification](../06-specification/03-artifact-model.md)

@@ -1,136 +1,58 @@
 # Inspect And Debug
 
-Provide a practical debugging path using inspect outputs and failure-oriented triage.
+Use inspect as your first evidence source, then replay and diff to validate and classify what you found.
 
-Inspect is the first operational interface for understanding failed or unexpected runs.
+## Authoritative versus derived inspect surfaces
 
-## Explanation
-Inspect scope:
-- run inspect: status, timing, failure summary
-- artifact inspect: produced output metadata and lineage context
+Authoritative surfaces:
 
-Debugging mental model:
-- inspect gives evidence.
-- replay validates repeatability.
-- diff classifies divergence.
-- do them in that order to avoid premature conclusions.
+- run terminal status and node outcomes,
+- artifact identity and lineage links,
+- recorded failure reason classes.
 
-Debugging path:
-1. inspect failing run
-2. isolate failing node or divergence area
-3. inspect relevant artifacts
-4. replay and diff if needed
+Derived surfaces:
 
-Failure state interpretation:
-- validation failure: DAG or input contract issue
-- execution failure: node command/runtime issue
-- mismatch failure: replay/diff divergence requiring classification
+- rollup summaries,
+- trend dashboards,
+- cached diagnostic shortcuts.
 
-Failure analysis flow:
-1. find first failing node in dependency order.
-2. inspect node diagnostics and exit classification.
-3. confirm whether expected artifacts were produced.
-4. identify whether failure is deterministic (recurs on replay) or environment-specific.
-5. decide remediation: DAG fix, command fix, dependency/tooling fix, or baseline update.
+If authoritative and derived views disagree, trust authoritative run/artifact records.
 
-Cancellation guidance:
-- canceled runs should be treated as incomplete evidence
-- compare against last complete run before drawing behavior conclusions
-
-Inspect output signals to focus on:
-- terminal status and failure code/class.
-- first failing node and upstream dependency context.
-- missing artifact references.
-- timing outliers indicating environment/tool pressure.
-
-## Examples
-```bash
-# Inspect failing run
-bijux-dag inspect run --run-id RUN_20260309_501
-
-# Inspect artifact associated with failure path
-bijux-dag inspect artifact --artifact-id ART_20260309_902
-
-# Continue diagnosis with replay and diff
-bijux-dag replay --run-id RUN_20260309_501
-bijux-dag diff run --left RUN_20260309_500 --right RUN_20260309_501
-```
-
-```text
-Artifact inspection example:
-- artifact_id: ART_20260309_902
-- run_id: RUN_20260309_501
-- node_id: transform
-- hash: sha256:8ad1...
-Interpretation:
-- lineage confirms artifact came from failing-path node
-```
-
-```text
-Failure analysis example:
-- run status: failed
-- first failing node: transform
-- reason class: NODE_EXIT_NONZERO
-- missing expected artifact: out/result.txt
-next action:
-- inspect command stderr
-- validate input artifact from prerequisite node
-```
-
-```mermaid
-graph LR
-  A[Inspect Run] --> B[Identify Failure Scope]
-  B --> C[Inspect Artifact]
-  C --> D[Replay]
-  D --> E[Diff]
-  E --> F[Remediation Decision]
-```
-
-## Guarantees
-- Debug path is sequential and actionable.
-- Inspect guidance is aligned with replay/diff workflows.
-- Failure analysis includes concrete evidence signals and decision path.
-
-## Limitations
-- This is not a deep incident-management guide.
-- Backend-specific failure internals are out of scope.
-
-## Related
-- `docs/03-user-guide/04-run-history.md`
-- `docs/03-user-guide/05-replay.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/07-operations/01-ci-integration.md`
-
-## Worked example: failed run to diagnosis
+## Worked failure investigation
 
 Scenario:
 
-- `RUN_20260309_211` failed at node `transform_orders`.
-- Expected artifact `out/orders_normalized.parquet` missing.
+- run `RUN_20260309_211` failed,
+- expected artifact `out/orders_normalized.parquet` missing.
 
-Investigation sequence:
+Workflow:
 
 ```bash
 bijux-dag inspect run --run-id RUN_20260309_211
-bijux-dag inspect artifact --artifact-id ART_20260309_902
+bijux-dag inspect artifact --run-id RUN_20260309_211
 bijux-dag replay --run-id RUN_20260309_211
 bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_211
 ```
 
-Diagnosis logic:
+Interpretation:
 
-- Inspect shows first failing node and missing artifact reference.
-- Replay reproduces failure, indicating deterministic defect rather than transient flake.
-- Diff localizes behavior drift to `transform_orders` only.
-- Root cause scope narrows to transform command or its immediate inputs.
+1. inspect identifies first failed node and missing artifact,
+2. replay confirms whether failure repeats,
+3. diff localizes drift scope,
+4. remediation targets the smallest confirmed scope.
 
-## Using inspect, explain, replay, and diff together
+## Imported runs and replay mismatches
 
-Treat `explain` as the interpretation layer between evidence and action:
+When debugging imported runs:
 
-1. `inspect` to gather raw run/artifact evidence.
-2. explain observed failure class in dependency context.
-3. `replay` to test repeatability of the explanation.
-4. `diff` to validate whether explanation accounts for all observed drift.
+- verify imported provenance class before selecting baseline,
+- treat missing lineage/payload as evidence gaps,
+- do not claim equivalence when replay is incomplete.
 
-Do not skip explanation between inspect and replay; otherwise you test guesses instead of hypotheses.
+Replay mismatch on imported evidence may indicate provenance boundary issues, not only graph/runtime defects.
+
+## Next reading
+
+- Baseline selection from history: [Run History](../03-user-guide/04-run-history.md)
+- Replay class semantics: [Replay](../03-user-guide/05-replay.md)
+- Diff scope interpretation: [Diff](../03-user-guide/06-diff.md)
