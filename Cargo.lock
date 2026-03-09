@@ -71,6 +71,7 @@ dependencies = [
  "anyhow",
  "bijux-cli-core",
  "bijux-cli-output",
+ "serde_json",
 ]
 
 [[package]]
@@ -105,6 +106,7 @@ dependencies = [
  "bijux-cli-contracts",
  "serde_json",
  "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]

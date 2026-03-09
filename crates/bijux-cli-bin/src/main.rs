@@ -3,11 +3,12 @@
 
 use anyhow::Result;
 use bijux_cli_core::core_marker;
-use bijux_cli_output::to_json;
+use bijux_cli_output::{EmitterConfig, render_value};
+use serde_json::to_value;
 
 fn main() -> Result<()> {
     let marker = core_marker();
-    let rendered = to_json(&marker)?;
+    let rendered = render_value(&to_value(marker)?, EmitterConfig::default())?;
     println!("{rendered}");
     Ok(())
 }

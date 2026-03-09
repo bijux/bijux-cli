@@ -11,6 +11,7 @@ rust-version.workspace = true
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 serde_json.workspace = true
 serde_yaml.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true
