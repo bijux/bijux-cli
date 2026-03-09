@@ -236,11 +236,42 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  rust-parity:
+    name: rust-parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust-vs-Python parity baseline gate
+        run: |
+          python3 scripts/parity/run_rust_python_parity.py --enforce-baseline
+
+      - name: Command-tree drift gate
+        run: |
+          cargo test -p bijux-cli-routing --test command_tree_snapshot --test command_tree_diff_report
+
+      - name: Schema drift gate
+        run: |
+          cargo test -p bijux-cli-contracts --test schema_snapshots
+
+      - name: Upload parity report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-python-parity
+          path: artifacts/parity/rust_python_parity_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
   # 3) Lint — ONLY if all tests + checks pass
   lint:
     name: lint
     runs-on: ubuntu-latest
-    needs: [tests, checks]
+    needs: [tests, checks, rust-parity]
     timeout-minutes: 45
 
     steps:
