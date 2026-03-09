@@ -1,0 +1,10 @@
+Usage: bijux-rs cli plugins list [OPTIONS]
+
+Options:
+  -f, --format <FORMAT>    
+  -q, --quiet              
+      --log-level <LEVEL>  
+      --color <MODE>       
+      --pretty             
+      --no-pretty          
+  -h, --help               Print help
