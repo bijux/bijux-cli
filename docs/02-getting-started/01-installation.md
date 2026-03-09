@@ -7,6 +7,12 @@ Provide reliable installation paths for bijux-dag and a quick verification flow.
 This is the entrypoint for first-time setup before creating or running any DAG.
 
 ## Explanation
+System requirements:
+- OS: Linux or macOS.
+- Shell: POSIX-compatible shell (`bash` or `zsh`) for examples in this guide.
+- Tooling for source install: Rust toolchain + Cargo.
+- Optional: Git, when installing from repository source.
+
 Supported installation paths for local usage:
 - prebuilt binary on `PATH`
 - Cargo install from source package
@@ -22,34 +28,55 @@ If your release process provides a binary artifact, place it on `PATH` and verif
 - command resolves
 - version command executes
 
+Linux/macOS placement guidance:
+- install into a directory already on `PATH` (for example `/usr/local/bin` or `$HOME/.local/bin`).
+- ensure executable permission is set on the binary.
+
 ### Cargo installation
 Use Cargo when you need a local install from Rust packaging.
 
+Linux/macOS Cargo path note:
+- Cargo-installed binaries are typically placed under `$HOME/.cargo/bin`.
+- ensure that directory is available on `PATH`.
+
 ### Local build
 Use local build when working inside the repository or validating unmerged changes.
+
+Linux/macOS build note:
+- local build is useful when testing branch changes before installation.
+- invoke binary from `target/release` to validate the exact built artifact.
 
 ### Post-install verification
 Always verify before continuing:
 - CLI resolves (`--help` works)
 - runtime command surface loads
 - no missing dynamic dependency errors
+- version command succeeds and reports expected binary
 
 ## Examples
 ```bash
 # Verify CLI is resolvable
 bijux-dag --help
+bijux-dag --version
+
+# Binary install example (path may vary by release process)
+install -m 0755 ./bijux-dag "$HOME/.local/bin/bijux-dag"
+bijux-dag --version
 
 # Cargo install path
 cargo install bijux-dag
+bijux-dag --version
 
 # Local repository build path
 cargo build --release
 ./target/release/bijux-dag --help
+./target/release/bijux-dag --version
 ```
 
 ```text
 Expected successful verification:
 - help text is printed
+- version text is printed
 - exit status is zero
 ```
 

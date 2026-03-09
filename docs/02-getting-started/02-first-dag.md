@@ -28,6 +28,17 @@ Quick start summary:
 - Replay if needed
 - Diff when behavior changes
 
+Field-level explanation for the first DAG:
+- `graph_id`: stable identifier for this graph definition example.
+- `nodes`: ordered list of node definitions (ordering in file is authoring order, not execution guarantee by itself).
+- `id`: unique node identifier within this graph.
+- `command`: shell command executed for the node.
+- `depends_on`: list of prerequisite node IDs that must complete first.
+
+Dependency explanation:
+- `transform` depends on `prepare`, so scheduler cannot run `transform` before `prepare` succeeds.
+- if `prepare` fails, `transform` will not execute in normal dependency-correct mode.
+
 ## Examples
 ```json
 {
@@ -47,14 +58,40 @@ Quick start summary:
 }
 ```
 
+```mermaid
+graph LR
+  A[prepare] --> B[transform]
+```
+
 ```bash
-bijux-dag run --dag ./examples/first.dag.json
+# 1) Save the JSON as ./examples/first.dag.json
+# 2) Execute the graph
+bijux-dag run --dag ./examples/first.dag.json > run-output.txt
+
+# 3) Read run id from output, then inspect
 bijux-dag inspect run --run-id RUN_20260309_001
+
+# 4) Inspect produced artifacts (example command surface)
+bijux-dag inspect artifact --run-id RUN_20260309_001
+```
+
+```text
+Expected artifact outcomes:
+- after node "prepare": out/input.txt exists
+- after node "transform": out/result.txt exists
+```
+
+```text
+Execution graph behavior:
+- schedulable set at start: [prepare]
+- schedulable set after prepare success: [transform]
+- terminal state: succeeded (if both commands succeed)
 ```
 
 ## Guarantees
 - This tutorial uses explicit dependency ordering.
 - Example shape is intentionally minimal and readable.
+- The dependency chain produces deterministic ordering for this sample graph.
 
 ## Limitations
 - Advanced backend/runtime options are out of scope.
