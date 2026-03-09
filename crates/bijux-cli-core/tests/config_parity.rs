@@ -282,3 +282,31 @@ fn config_set_reports_error_for_unwritable_parent() {
         assert_eq!(out.exit_code, 1);
     }
 }
+
+#[test]
+#[cfg(unix)]
+fn config_get_reports_error_for_unreadable_file() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp = make_temp_dir("unreadable");
+    let path = temp.join("unreadable.env");
+    fs::write(&path, "BIJUXCLI_ALPHA=1\n").expect("write");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).expect("chmod");
+
+    let out = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "get".to_string(),
+        "alpha".to_string(),
+        "--config-path".to_string(),
+        path.display().to_string(),
+    ])
+    .expect("run_app");
+
+    assert_eq!(out.exit_code, 1);
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).expect("restore");
+}

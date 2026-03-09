@@ -61,3 +61,122 @@ impl ConfigRepository for FileConfigRepository {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::{ConfigRepository, FileConfigRepository};
+
+    fn make_temp_dir(name: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("bijux-storage-{name}-{nanos}"));
+        fs::create_dir_all(&path).expect("mkdir");
+        path
+    }
+
+    #[test]
+    fn parser_handles_empty_and_missing_files() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("missing");
+        let missing = temp.join("missing.env");
+        let loaded = repo.load(&missing).expect("missing treated as empty");
+        assert!(loaded.is_empty());
+
+        let empty = temp.join("empty.env");
+        fs::write(&empty, "").expect("write empty");
+        let loaded_empty = repo.load(&empty).expect("empty parse");
+        assert!(loaded_empty.is_empty());
+    }
+
+    #[test]
+    fn parser_rejects_malformed_lines() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("malformed");
+        let malformed = temp.join("malformed.env");
+        fs::write(&malformed, "BIJUXCLI_OK=1\nMALFORMED\n").expect("write malformed");
+        let err = repo.load(&malformed).expect_err("must fail");
+        assert!(err.to_string().contains("Malformed line 2"));
+    }
+
+    #[test]
+    fn parser_keeps_last_duplicate_key_value() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("dupes");
+        let path = temp.join("dupes.env");
+        fs::write(
+            &path,
+            "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=old\nBIJUXCLI_BETA=new\n",
+        )
+        .expect("write dupes");
+
+        let loaded = repo.load(&path).expect("parse");
+        assert_eq!(loaded.get("alpha").map(String::as_str), Some("1"));
+        assert_eq!(loaded.get("beta").map(String::as_str), Some("new"));
+    }
+
+    #[test]
+    fn parser_ignores_blank_and_comment_lines() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("comments");
+        let path = temp.join("comments.env");
+        fs::write(
+            &path,
+            "\n# top comment\nBIJUXCLI_ALPHA=1\n\n   # indented comment\nBIJUXCLI_BETA=2\n",
+        )
+        .expect("write comments");
+
+        let loaded = repo.load(&path).expect("parse");
+        assert_eq!(loaded.len(), 2);
+        assert_eq!(loaded.get("alpha").map(String::as_str), Some("1"));
+        assert_eq!(loaded.get("beta").map(String::as_str), Some("2"));
+    }
+
+    #[test]
+    fn parser_trims_trailing_whitespace_in_values() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("whitespace");
+        let path = temp.join("whitespace.env");
+        fs::write(&path, "BIJUXCLI_ALPHA=value   \n").expect("write");
+
+        let loaded = repo.load(&path).expect("parse");
+        assert_eq!(loaded.get("alpha").map(String::as_str), Some("value"));
+    }
+
+    #[test]
+    fn writer_creates_parent_and_uses_deterministic_order() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("writer");
+        let path = temp.join("nested").join("config.env");
+        let mut map = BTreeMap::new();
+        map.insert("beta".to_string(), "2".to_string());
+        map.insert("alpha".to_string(), "1".to_string());
+
+        repo.save(&path, &map).expect("save");
+        let written = fs::read_to_string(&path).expect("read");
+        assert_eq!(
+            written,
+            "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n",
+            "BTreeMap-backed rendering should stay stable"
+        );
+    }
+
+    #[test]
+    fn writer_drops_comments_and_formatting_by_design() {
+        let repo = FileConfigRepository;
+        let temp = make_temp_dir("rewrite");
+        let path = temp.join("rewrite.env");
+        fs::write(&path, "# comment\nBIJUXCLI_ALPHA=1\n").expect("seed");
+
+        let loaded = repo.load(&path).expect("load");
+        repo.save(&path, &loaded).expect("save");
+        let rewritten = fs::read_to_string(&path).expect("read rewritten");
+        assert_eq!(rewritten, "BIJUXCLI_ALPHA=1\n");
+    }
+}
