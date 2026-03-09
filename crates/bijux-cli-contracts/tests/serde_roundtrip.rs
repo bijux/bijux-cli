@@ -10,6 +10,7 @@ use bijux_cli_contracts::{
     OutputEnvelopeV1, OutputFormat, PluginCapability, PluginKind, PluginLifecycleState,
     PluginManifestV1, PrettyMode,
 };
+use proptest as _;
 use schemars as _;
 use semver as _;
 use serde::de::DeserializeOwned;

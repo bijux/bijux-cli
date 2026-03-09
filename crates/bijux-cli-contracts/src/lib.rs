@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 //! Shared durable contracts for all Rust bijux-cli crates.
 
+#[cfg(test)]
+use proptest as _;
+
 pub mod contracts;
 pub mod schema;
 

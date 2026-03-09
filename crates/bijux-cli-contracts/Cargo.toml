@@ -13,5 +13,8 @@ schemars = { version = "0.8.22", features = ["derive"] }
 serde.workspace = true
 serde_json.workspace = true
 
+[dev-dependencies]
+proptest = "1.6.0"
+
 [lints]
 workspace = true
