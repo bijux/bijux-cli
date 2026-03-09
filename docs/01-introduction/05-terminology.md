@@ -1,95 +1,44 @@
 # Terminology
 
-Canonical glossary for terms that appear repeatedly across user, architecture, and specification docs.
+This is the canonical vocabulary for bijux-dag docs. Use these meanings consistently.
 
-## Explanation
-Use these definitions exactly. If a term is not listed here, define it before using it as contract language.
+## Canonical glossary
 
-Graph
-- Canonical DAG definition object: nodes + dependency edges + semantic configuration.
-- Use "graph" for definition state, not for execution outcomes.
+- `graph`: DAG definition state (nodes, dependencies, semantic config).
+- `node`: executable unit inside a graph.
+- `run`: one concrete execution instance of one graph state.
+- `attempt`: one execution try inside a run lifecycle where retry behavior exists.
+- `artifact`: persisted, identity-tracked output unit with lineage.
+- `output`: generic produced data; use when identity/lineage tracking is not the point.
+- `replay`: validation-oriented re-execution against baseline context.
+- `diff`: scoped comparison classification across graph, run, or artifact surfaces.
+- `inspect`: read-only retrieval of run/artifact evidence.
+- `pipeline`: operational view of running and comparing graph executions over time.
 
-Pipeline
-- Operational view of executing a graph over time (run history, artifacts, comparisons).
-- Use when describing workflow operations, not schema structure.
+## Preferred terms and discouraged synonyms
 
-Node
-- Executable unit inside a graph with defined dependencies and execution intent.
+- Prefer `graph`; discourage `pipeline file` when meaning DAG definition.
+- Prefer `run`; discourage `execution record` as primary term.
+- Prefer `artifact`; discourage `output file` when lineage/identity matters.
+- Prefer `replay classification`; discourage “rerun looked fine.”
 
-Run
-- One concrete execution instance of one graph definition.
+## Distinctions that prevent confusion
 
-Attempt
-- One execution try inside a run lifecycle when retry/recovery is enabled.
-- Default mental model: one run can contain one or more attempts.
-
-Artifact
-- Persisted output object with identity and lineage links.
-- Preferred term for output data that is tracked and comparable.
-
-Output
-- Generic produced data.
-- Use only when persistence/identity tracking is irrelevant.
-
-Replay
-- Validation-oriented re-execution against baseline graph/run context.
-
-Diff
-- Structured comparison classification across graph, run, or artifact scope.
-
-Inspect
-- Read-only introspection of run state, node outcomes, and artifacts.
-
-Canonical distinction set:
 - Artifact vs output:
-  - output = generic produced bytes/data
-  - artifact = persisted, identity-tracked output unit
-
+  - artifact is persisted and identity-tracked;
+  - output is generic produced data.
 - Run vs attempt:
-  - run = full execution instance and evidence container
-  - attempt = one try within the run lifecycle
-
+  - run is evidence container and identity anchor;
+  - attempt is one try within run lifecycle.
 - Graph vs pipeline:
-  - graph = formal dependency definition
-  - pipeline = operational execution framing built from graph runs over time
+  - graph is formal definition;
+  - pipeline is operational execution history of graphs.
 
-- Replay vs diff:
-  - replay = produce candidate evidence through re-execution
-  - diff = classify divergence between baseline and candidate evidence
+## Scope boundary
 
-Ambiguity policy:
-- Do not use "job", "step", or "result bundle" as aliases unless explicitly mapped to canonical terms.
-- Prefer canonical terms in headings, examples, and CLI explanations.
+This glossary defines words, not algorithms. Field rules and invalid states live in specification docs.
 
-Preferred vs discouraged synonyms:
-- prefer `graph`; discourage `pipeline file` when referring to formal DAG definition.
-- prefer `run`; discourage `execution record` as primary term.
-- prefer `artifact`; discourage `output file` when identity and lineage are relevant.
-- prefer `replay classification`; discourage `rerun looked fine` as evidence statement.
+## Next reading
 
-Non-goal for this page:
-- this glossary does not define algorithms, schemas, or policy logic; it defines shared vocabulary only.
-
-## Examples
-```text
-Example usage:
-- "Run RUN_100 had two attempts."
-- "Artifact ART_42 was produced by node transform_data."
-- "Graph diff identified dependency edge changes."
-```
-
-## Guarantees
-- Canonical term definitions here are normative for this docs tree.
-- Distinction sets remove common ambiguity points.
-- Each canonical term has one preferred meaning and usage boundary.
-
-## Limitations
-- This glossary does not define schema fields or hashing algorithms.
-- Contract-level semantics remain in specification docs.
-
-## Related
-- `docs/01-introduction/04-core-concepts.md`
-- `docs/03-user-guide/03-artifacts.md`
-- `docs/03-user-guide/05-replay.md`
-- `docs/03-user-guide/06-diff.md`
-- `docs/06-specification/04-graph-identity.md`
+- Relationship model using these terms: [Core Concepts](../01-introduction/04-core-concepts.md)
+- Identity contracts: [Graph Identity](../06-specification/04-graph-identity.md), [Run Identity](../06-specification/05-run-identity.md), [Artifact Identity](../06-specification/06-artifact-identity.md)
