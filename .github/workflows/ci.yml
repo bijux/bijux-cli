@@ -268,6 +268,7 @@ jobs:
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_state_parity_reports.py
           python3 scripts/status/generate_truth_milestone_status.py
+          python3 scripts/status/generate_status_reports.py
 
       - name: Runtime unity gate
         run: |
@@ -288,6 +289,10 @@ jobs:
       - name: Release truth gate
         run: |
           python3 scripts/status/enforce_release_truth_gates.py --enforce
+
+      - name: Status report freshness gate
+        run: |
+          python3 scripts/status/check_status_reports_stale.py
 
       - name: Upload parity report
         if: ${{ always() }}
@@ -408,6 +413,15 @@ jobs:
             artifacts/status/what_is_partial.json
             artifacts/status/what_is_deferred.json
             artifacts/status/what_is_intentionally_different.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload status report bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: status-report
+          path: artifacts/status/status*.json
           if-no-files-found: warn
           retention-days: 14
 
