@@ -104,7 +104,7 @@ cargo run -p bijux-dag-cli -- dag cache verify
 
 ## License
 
-Apache-2.0. See `LICENSE` and `NOTICE`.
+Apache-2.0. See `LICENSE`.
 
 ## Security
 

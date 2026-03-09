@@ -3168,7 +3168,6 @@ fn run_root_directory_guard() -> Result<(), String> {
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "LICENSE",
-        "NOTICE",
         ".gitignore",
         "rust-toolchain.toml",
         "Makefile",
