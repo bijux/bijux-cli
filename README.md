@@ -1,115 +1,114 @@
 # bijux-dag
 
-**Git for computation graphs.**
+`bijux-dag` helps you run computation graphs with evidence you can trust later: stable graph identity, attempt-level run history, artifact lineage, replay validation, and semantic diff.
 
-Canonical mission statements live in
-`docs/spec/MISSION_STATEMENT.md`. Root docs and command help must use that wording.
+Most pipeline tools tell you what happened *now*. They are weaker at proving what changed, why it changed, and whether the change is meaningful. `bijux-dag` exists to close that gap with explicit identity and comparison contracts.
 
-## What bijux-dag is
+In one concrete sentence: `bijux-dag` is like Git for computation graphs because it gives stable identity, history, and comparison primitives for graph execution evidence, not just one-off job runs.
 
-- A deterministic computation-graph engine.
-- A canonical graph and run identity model.
-- A run-directory and artifact truth system with replay, diff, and proof surfaces.
-- A CLI for validate/plan/run/replay/diff/inspect workflows.
+## Why this exists
+
+Teams need more than "green" or "red" jobs. They need auditable answers to:
+- what graph ran,
+- what outputs were produced,
+- whether a replay stayed equivalent,
+- where semantic drift started.
+
+`bijux-dag` is built around those questions.
 
 ## What bijux-dag is not
 
-- Not a managed workflow platform.
-- Not a scheduler control plane for distributed clusters.
-- Not a claim of production container/Kubernetes/HPC execution in this repo.
-- Not a replacement for every orchestration product category.
+- It is not a managed orchestration platform.
+- It is not a universal backend-equivalence claim.
+- It is not a replacement for trust-boundary verification in operations.
 
-See `docs/reference/POSITIONING_NOTE.md`.
+## Core ideas
 
-## Architecture overview
+- `graph`: the canonical computation definition and dependency structure.
+- `run`: one concrete execution attempt of a graph.
+- `artifact`: output produced by a run, with lineage to producing node/run.
+- `replay`: evidence-oriented re-execution to classify equivalence, drift, or incomplete.
+- `diff`: semantic comparison across graph/run/artifact surfaces.
 
 ```text
-                +-----------------------------+
-                |         bijux-dag-cli       |
-                |      operator command UX    |
-                +--------------+--------------+
-                               |
-                               v
-                +-----------------------------+
-                |         bijux-dag-app       |
-                | command routing + renderers |
-                +--------------+--------------+
-                               |
-                               v
-        +-----------------------------------------------+
-        |                  bijux-dag-runtime            |
-        | planner -> scheduler -> execution -> artifacts|
-        +----------------------+------------------------+
-                               |
-                               v
-                +-----------------------------+
-                |         bijux-dag-core      |
-                | canonical graph/run identity|
-                +-----------------------------+
-
-Evidence and trust boundaries:
-evidence/ + bijux-dev-dag verify suites
+graph -> run -> artifacts -> replay/diff -> decision
 ```
 
-## Current implemented capabilities
+## First 5 minutes
 
-Short summary:
-- Deterministic local DAG validation, planning, execution, replay, and diff.
-- Run-directory artifact integrity verification and import/export compatibility checks.
-- Evidence-governed trust reporting for release blocking vs advisory proof.
+Create a small DAG with a dependency and a visible output:
 
-Canonical capability list:
-- `docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md`
+```json
+{
+  "version": "1",
+  "graph": {
+    "nodes": [
+      {
+        "id": "prepare",
+        "command": "mkdir -p out && echo 'hello bijux' > out/message.txt"
+      },
+      {
+        "id": "summarize",
+        "depends_on": ["prepare"],
+        "command": "wc -c out/message.txt > out/message.count"
+      }
+    ]
+  }
+}
+```
 
-Status matrix (implemented vs modeled/experimental/simulated):
-
-| Surface | Mode | Notes |
-| --- | --- | --- |
-| Local process execution | implemented | Deterministic runtime path in this repo |
-| Replay/diff/inspect workflows | implemented | Operator and evidence suites enforce behavior |
-| Evidence release verification | implemented | Blocking/advisory split with drift checks |
-| Container execution contract | simulated | Contract and fixtures; not production runtime support claim |
-| Kubernetes execution | simulated | No production execution backend implementation in this repo |
-| Batch/HPC execution | modeled/simulated | Modeled semantics and fixtures only |
-| Remote distributed execution | modeled/simulated | Not a production execution mode in this repo |
-
-Full matrix:
-- `docs/reference/ROOT_CAPABILITY_MATRIX.md`
-
-## Quickstart
+Save as `examples/hello.dag.json`, then run:
 
 ```bash
-make test
-make lint
-make security
-
-cargo build -p bijux-dag-cli
-cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json
-cargo run -p bijux-dag-cli -- dag plan evidence/authoring/examples/hello.dag.json
-cargo run -p bijux-dag-cli -- dag run evidence/authoring/examples/hello.dag.json --out runs/
+cargo run -p bijux-dag-cli -- dag validate examples/hello.dag.json
+cargo run -p bijux-dag-cli -- dag run examples/hello.dag.json --out runs/
 cargo run -p bijux-dag-cli -- dag inspect runs/run-<id>
-cargo run -p bijux-dag-cli -- dag replay runs/run-<id> --out runs/
-cargo run -p bijux-dag-cli -- dag diff runs/run-<id-a> runs/run-<id-b>
-cargo run -p bijux-dag-cli -- dag cache verify
 ```
 
-## Key references
+Continue with verification:
 
-- Mission: `docs/spec/MISSION_STATEMENT.md`
-- Positioning: `docs/reference/POSITIONING_NOTE.md`
-- Git mapping: `docs/reference/GIT_FOR_COMPUTATION_GRAPHS_MAPPING.md`
-- Support policy: `docs/reference/EXECUTION_SUPPORT_POLICY.md`
-- Glossary: `docs/reference/COMPUTATION_GRAPH_GLOSSARY.md`
-- Evidence model: `docs/spec/EVIDENCE_MODEL.md`
+```bash
+cargo run -p bijux-dag-cli -- dag replay runs/run-<id> --out runs/
+cargo run -p bijux-dag-cli -- dag diff runs/run-<baseline-id> runs/run-<candidate-id>
+```
+
+## What you get after a run
+
+- a run directory with execution evidence,
+- artifacts such as `out/message.txt` and `out/message.count`,
+- inspectable identity and lineage fields used by replay/diff.
+
+## Typical workflow
+
+```bash
+cargo run -p bijux-dag-cli -- dag validate <graph>
+cargo run -p bijux-dag-cli -- dag run <graph> --out runs/
+cargo run -p bijux-dag-cli -- dag inspect runs/run-<id>
+cargo run -p bijux-dag-cli -- dag replay runs/run-<id> --out runs/
+cargo run -p bijux-dag-cli -- dag diff runs/run-<baseline-id> runs/run-<candidate-id>
+```
+
+## Repository contents
+
+- user-facing guides and contracts in `docs/`
+- runnable and inspectable examples in `examples/`
+- runtime and CLI implementation in `crates/`
+- contract guardrails and verification tooling in `crates/bijux-dev-dag`
+
+## Start here (read next)
+
+- Learn the model: [What is bijux-dag](docs/01-introduction/01-what-is-bijux-dag.md)
+- Run your first pipeline: [Getting started](docs/02-getting-started/03-running-a-pipeline.md)
+- Use commands confidently: [CLI overview](docs/04-cli-reference/01-cli-overview.md)
+- Understand exact guarantees: [Specification](docs/06-specification/01-dag-model.md)
+
+## Maintainer-oriented commands
+
+```bash
+cargo run -p bijux-dev-dag -- --help
+cargo test -p bijux-dev-dag
+```
 
 ## License
 
 Apache-2.0. See `LICENSE`.
-
-## Security
-
-`make security` runs `cargo audit`. Install once:
-
-```bash
-cargo install cargo-audit
-```
