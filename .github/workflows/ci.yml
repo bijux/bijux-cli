@@ -263,3 +263,58 @@ jobs:
           path: artifacts/lint/**
           if-no-files-found: ignore
           retention-days: 14
+
+  install-smoke:
+    name: install-smoke (${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    needs: [tests, checks]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [cargo, pip, pipx, homebrew]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Rust
+        if: ${{ matrix.channel == 'cargo' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cargo install smoke
+        if: ${{ matrix.channel == 'cargo' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _smoke/cargo
+          cargo install --path crates/bijux-cli-bin --root _smoke/cargo --force
+          _smoke/cargo/bin/bijux-rs version
+
+      - name: Pip install smoke
+        if: ${{ matrix.channel == 'pip' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install .
+          bijux --version
+
+      - name: Pipx install smoke
+        if: ${{ matrix.channel == 'pipx' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip pipx
+          python -m pipx install . --force
+          python -m pipx ensurepath
+          ~/.local/bin/bijux --version
+
+      - name: Homebrew smoke placeholder
+        if: ${{ matrix.channel == 'homebrew' }}
+        shell: bash
+        run: |
+          echo "Homebrew smoke test is intentionally deferred until formula publishing is enabled."

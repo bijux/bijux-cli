@@ -241,6 +241,31 @@ jobs:
           if compgen -G "artifacts/dist/*" >/dev/null; then
             sha256sum artifacts/dist/* >> "$chks"
           fi
+
+          # Release tarball (curated assets + dist artifacts)
+          rm -rf _tarball_root
+          mkdir -p _tarball_root/release
+          cp -R _release/. _tarball_root/release/
+          if [ -d artifacts/dist ]; then
+            mkdir -p _tarball_root/dist
+            cp -R artifacts/dist/. _tarball_root/dist/
+          fi
+          tar -czf "_release/release-${{ needs.publish.outputs.tag }}.tar.gz" -C _tarball_root .
+          sha256sum "_release/release-${{ needs.publish.outputs.tag }}.tar.gz" >> "$chks"
+
+          # Artifact manifest
+          manifest="_release/artifact-manifest-${{ needs.publish.outputs.tag }}.txt"
+          : > "$manifest"
+          {
+            echo "tag=${{ needs.publish.outputs.tag }}"
+            echo "version=${{ needs.publish.outputs.version }}"
+            echo "generated_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "files:"
+            ls -1 _release | sed 's/^/  - _release\//'
+            if [ -d artifacts/dist ]; then
+              ls -1 artifacts/dist | sed 's/^/  - artifacts\/dist\//'
+            fi
+          } >> "$manifest"
   
           echo "Release payload:"
           ls -lh _release || true
@@ -270,7 +295,9 @@ jobs:
             See the full changelog entry at https://bijux.github.io/bijux-cli/changelog/#${{ steps.anchor.outputs.anchor }}
           files: |
             _release/*.zip
+            _release/*.tar.gz
             _release/checksums-${{ needs.publish.outputs.tag }}.txt
+            _release/artifact-manifest-${{ needs.publish.outputs.tag }}.txt
             artifacts/dist/*
           fail_on_unmatched_files: false
           make_latest: true
