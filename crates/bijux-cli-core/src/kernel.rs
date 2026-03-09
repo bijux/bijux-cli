@@ -159,6 +159,8 @@ pub enum KernelError {
 /// Build intent from argv (simple kernel parser).
 #[must_use]
 pub fn build_intent_from_argv(argv: &[String]) -> ExecutionIntent {
+    // PARITY-PARTIAL: This lightweight argv parser exists only for kernel-local tests.
+    // Final parity paths should use routing parser intent output.
     let mut command_path = Vec::new();
     let mut args = Vec::new();
 
@@ -270,6 +272,8 @@ fn error_envelope(
     message: &str,
     category: &str,
 ) -> ErrorEnvelopeV1 {
+    // PARITY-PARTIAL: error details source mapping is coarse and should be aligned with
+    // final command/runtime error normalization rules.
     ErrorEnvelopeV1 {
         status: "error".to_string(),
         error: ErrorPayloadV1 {
@@ -357,6 +361,8 @@ pub fn execute_pipeline(
     }
 
     if is_fast_path(&ctx.intent) {
+        // PARITY-PARTIAL: fast-path currently emits a generic payload; full parity requires
+        // command-specific payloads for help/version/completion.
         let payload = OutputEnvelopeV1 {
             status: "ok".to_string(),
             data: json!({"fast_path": true}),
