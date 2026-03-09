@@ -23,6 +23,9 @@ CAPTURE_KEYS = [
     "bijux_history_root",
     "bijux_dev_help",
     "behavior_plugins_check",
+    "behavior_config_precedence_config_only",
+    "behavior_config_precedence_env_override",
+    "behavior_config_precedence_cli_override",
 ]
 
 NEXT_FIVE_PORTS = [
