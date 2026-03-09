@@ -19,8 +19,6 @@
   },
   "path_binaries": [
     "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
-    "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
-    "/Users/bijan/.local/bin/bijux",
     "/Users/bijan/.local/bin/bijux"
   ],
   "runtime": "rust-foundation"

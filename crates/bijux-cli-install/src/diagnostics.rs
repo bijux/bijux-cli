@@ -33,7 +33,8 @@ pub fn install_health_report(
     wheel_version: Option<&str>,
     runtime_version: &str,
 ) -> InstallHealthReport {
-    let path_binaries = discover_path_binaries(path_value);
+    let mut path_binaries = discover_path_binaries(path_value);
+    path_binaries.dedup();
     let active_binary = resolve_active_binary(path_value, bin_override);
     let has_path_shadowing = path_binaries.len() > 1;
     let has_duplicate_installs = path_binaries.iter().any(|path| path.contains(".cargo"))
