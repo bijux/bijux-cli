@@ -87,3 +87,32 @@ PR summary template:
 - `docs/08-development/02-testing-strategy.md`
 - `docs/07-operations/01-ci-integration.md`
 - `docs/06-specification/01-dag-model.md`
+
+## Preventing scope widening and terminology drift
+
+Before opening PR, verify:
+
+- change scope matches one primary intent,
+- introduced terms map to canonical glossary/spec vocabulary,
+- no side edits silently expand product guarantees.
+
+If scope widens, split into separate commits/PRs by durable intent.
+
+## Maintainer immediate-rejection criteria
+
+Maintainers should reject immediately when:
+
+- changes redefine contracts without corresponding specification updates,
+- commit messages hide intent (`misc`, `cleanup`, ambiguous scope),
+- docs claim guarantees without explicit boundaries,
+- tests are removed without contract replacement,
+- adapter or backend changes bypass capability/portability documentation,
+- terminology conflicts with canonical definitions.
+
+## Final readability and truth audit checklist
+
+- every claim is testable or explicitly bounded,
+- guarantee and limitation pairs are adjacent and coherent,
+- examples match current command/contract surfaces,
+- no speculative future-state language appears in current-facing docs,
+- readers can identify exact decision implications from each section.

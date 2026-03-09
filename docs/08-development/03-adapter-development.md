@@ -72,3 +72,44 @@ fn map_backend_exit(exit_code: i32) -> NodeOutcome {
 - `docs/07-operations/05-backend-support.md`
 - `docs/06-specification/02-run-model.md`
 - `docs/06-specification/03-artifact-model.md`
+
+## Adapter lifecycle and failure-case handling
+
+Adapter lifecycle:
+
+1. declare capability model and support tier,
+2. implement runtime interface mapping,
+3. validate normalization against fixture-backed scenarios,
+4. verify replay/diff behavior against baseline adapter,
+5. publish documented limitations and maintenance owner.
+
+Failure cases adapter authors must handle explicitly:
+
+- backend timeout/cancel mismatch,
+- missing artifact write acknowledgment,
+- partial execution completion with ambiguous exit reason,
+- backend error payloads that do not map directly to canonical outcomes.
+
+## Worked end-to-end adapter example
+
+Example flow for a new `container-x` adapter:
+
+1. implement work-unit execution wrapper,
+2. map container exit + diagnostics to canonical node outcomes,
+3. emit artifact lineage references into run evidence,
+4. run integration fixtures comparing `container-x` to stable `local-shell`,
+5. classify capability gaps and mark tier `provisional` until parity checks pass.
+
+## What adapters may decide versus must not redefine
+
+Adapters may decide:
+
+- backend invocation mechanics,
+- backend-specific diagnostics collection,
+- capability declaration values.
+
+Adapters must not redefine:
+
+- DAG semantics,
+- run/artifact identity contracts,
+- diff/replay classification vocabulary.
