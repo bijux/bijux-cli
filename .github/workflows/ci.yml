@@ -258,12 +258,25 @@ jobs:
         run: |
           cargo test -p bijux-cli-contracts --test schema_snapshots
 
+      - name: Generate current Rust state artifact
+        run: |
+          python3 scripts/status/generate_current_rust_state.py
+
       - name: Upload parity report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: rust-python-parity
           path: artifacts/parity/rust_python_parity_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload current Rust state artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-rust-state
+          path: artifacts/status/current_rust_state.json
           if-no-files-found: warn
           retention-days: 14
 
