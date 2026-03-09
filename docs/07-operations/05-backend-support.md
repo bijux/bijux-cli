@@ -1,80 +1,79 @@
 # Backend Support
 
-Define backend capability expectations, support tiers, and portability boundaries.
+This document defines what operators can expect from each backend support class and where guarantees are intentionally bounded.
 
-Backend support directly affects determinism, replay guarantees, and operational portability.
+## Support classes
 
-## Explanation
-Support tier model:
-- `stable`: actively supported and release-gated.
-- `provisional`: supported for targeted scenarios with explicit caveats.
-- `experimental`: available for development feedback, not release-critical guarantees.
+bijux-dag uses three support classes:
+- `stable`: release-gated, continuously verified for required capability set.
+- `bounded`: supported for defined scenarios with documented capability gaps.
+- `unsupported`: available only for experimentation; no release guarantee.
 
-Capability domains:
-- execution lifecycle support (start/stop/exit classification).
-- artifact persistence compatibility.
-- timeout/cancellation enforcement.
-- replay/diff evidence completeness.
+## Operator expectations by backend class
 
-Supported execution environment examples:
-- local-shell runners on Linux/macOS (common stable baseline for development and CI).
-- containerized runners where command/runtime surfaces are pinned and reproducible.
-- provisional adapters where capability gaps are explicitly documented and tested.
+### Stable
 
-Backend policy rules:
-- stable tier backends must satisfy core run/artifact identity contracts.
-- portability claims are bounded by shared capability subset.
-- unsupported capability gaps must be documented as explicit limitations.
+Operators can expect:
+- complete run lifecycle reporting,
+- artifact lineage sufficient for inspect/replay/diff,
+- deterministic classification behavior within declared environment envelope,
+- inclusion in release readiness CI gates.
 
-Operational governance:
-- backend tier changes require changelog and documentation updates.
-- release gates must verify stable tier coverage.
-- regressions in stable capability surface block release readiness.
+### Bounded
 
-Operational recommendations:
-- select one stable backend as release gate authority.
-- use provisional/experimental backends for compatibility exploration, not primary release decisions.
-- maintain a capability matrix artifact and update it with every backend behavior change.
+Operators can expect:
+- documented capability subset,
+- explicit downgrade behavior when unsupported features are requested,
+- inclusion in targeted compatibility lanes, not universal release gates.
 
-## Examples
-```text
-Capability matrix sample:
-backend: local-shell
-tier: stable
-supports: run lifecycle, artifacts, timeout, replay evidence
-limits: environment-specific shell differences
-```
+Operators must not expect full equivalence with stable backends.
 
-```text
-Portability statement example:
-"Equivalent replay is guaranteed only across stable backends that share required capability set."
-```
+### Unsupported
+
+Operators can expect:
+- no compatibility promise,
+- no replay/diff equivalence commitment,
+- no regression response SLA.
+
+## Backend family notes
+
+Local shell family:
+- strongest baseline for development and CI.
+- bounded by host environment drift (shell/toolchain/locale).
+
+Containerized family:
+- stronger environment pinning when image is immutable.
+- bounded by runtime engine differences and host kernel behavior.
+
+Remote/managed execution family:
+- may offer scale and isolation controls.
+- bounded by provider APIs, scheduling behavior, and artifact egress policies.
+
+## Non-equivalence and capability limits
+
+Backend portability does not imply backend equivalence.
+
+Common non-equivalence patterns:
+- same graph identity, different timing/resource profile,
+- replay possible but only `bounded` classification,
+- artifact lifecycle available with reduced lineage detail on one backend.
+
+When non-equivalence appears, operators must classify it explicitly and avoid stable-equivalence claims.
 
 ## Guarantees
-- Support tiers and capability expectations are explicit.
-- Portability promises are constrained by declared backend capabilities.
-- Stable-tier backend regressions are operationally visible.
-- Supported execution environment guidance is explicit and actionable.
 
-## Limitations
-- No guarantee of identical performance across backend families.
-- Experimental backends are not release-grade by default.
-- This document does not define every backend implementation detail.
+- Support class semantics are explicit and auditable.
+- Stable and bounded expectations are separated.
+- Degraded guarantees are declared, not hidden.
 
-## Related
-- `docs/05-system-architecture/05-adapters.md`
-- `docs/05-system-architecture/10-portability.md`
-- `docs/07-operations/01-ci-integration.md`
-- `docs/06-specification/07-replay-semantics.md`
+## Non-guarantees
 
-## Non-equivalence and degraded guarantees
+- Cross-backend wall-clock equivalence.
+- Identical behavior outside declared capability envelope.
+- Promotion safety when classifications are downgraded or unknown.
 
-Backend variation can preserve functional execution while degrading guarantee strength.
+## Next reading
 
-Degraded-guarantee examples:
-
-- replay possible but only `bounded-equivalent`, not strict-equivalent,
-- cancellation supported but timeout classification incomplete,
-- artifact persistence available but lineage completeness reduced.
-
-Policy rule: when guarantees degrade, release decisions must use degraded classification language explicitly and avoid stable-tier equivalence claims.
+- [Adapters architecture](docs/05-system-architecture/05-adapters.md)
+- [Portability architecture](docs/05-system-architecture/10-portability.md)
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
