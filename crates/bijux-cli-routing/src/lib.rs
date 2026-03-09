@@ -2,6 +2,7 @@
 //! Routing graph and namespace resolution surfaces.
 
 pub mod parser;
+pub mod registry;
 
 use bijux_cli_contracts::ContractMarker;
 use bijux_cli_core::core_marker;

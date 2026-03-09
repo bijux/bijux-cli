@@ -1,0 +1,213 @@
+//! Routing registry, conflict handling, and introspection APIs.
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use bijux_cli_contracts::{CommandPath, Namespace, NamespaceMetadata};
+
+/// Route target categories.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RouteTarget {
+    /// Built-in route target.
+    BuiltIn,
+    /// Plugin route target by namespace.
+    Plugin(String),
+}
+
+/// Route resolution error categories.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum RouteError {
+    /// Namespace is reserved.
+    #[error("namespace is reserved: {0}")]
+    Reserved(String),
+    /// Namespace collides with existing route owner.
+    #[error("namespace conflict: {0}")]
+    Conflict(String),
+    /// Route is unknown.
+    #[error("unknown route: {0}")]
+    Unknown(String),
+    /// Ambiguous route due to multiple owners.
+    #[error("ambiguous route: {0}")]
+    Ambiguous(String),
+}
+
+/// Deterministic routing registry for built-ins and plugins.
+#[derive(Debug, Clone)]
+pub struct RouteRegistry {
+    built_ins: BTreeSet<String>,
+    plugin_namespaces: BTreeSet<String>,
+    aliases: BTreeMap<String, String>,
+    reserved: BTreeSet<String>,
+}
+
+impl Default for RouteRegistry {
+    fn default() -> Self {
+        let built_ins = BTreeSet::from([
+            "cli status".to_string(),
+            "cli doctor".to_string(),
+            "cli version".to_string(),
+            "cli completion".to_string(),
+            "cli inspect".to_string(),
+            "cli repl".to_string(),
+            "cli paths".to_string(),
+            "cli self-test".to_string(),
+            "cli config get".to_string(),
+            "cli config set".to_string(),
+            "cli plugins list".to_string(),
+            "cli plugins inspect".to_string(),
+            "dev cli routes".to_string(),
+            "dev cli registry".to_string(),
+            "dev cli env".to_string(),
+            "dev cli doctor".to_string(),
+            "dev cli contracts".to_string(),
+        ]);
+
+        let aliases = BTreeMap::from([
+            ("status".to_string(), "cli status".to_string()),
+            ("doctor".to_string(), "cli doctor".to_string()),
+            ("version".to_string(), "cli version".to_string()),
+            ("repl".to_string(), "cli repl".to_string()),
+            ("completion".to_string(), "cli completion".to_string()),
+            ("inspect".to_string(), "cli inspect".to_string()),
+            ("config get".to_string(), "cli config get".to_string()),
+            ("config set".to_string(), "cli config set".to_string()),
+            ("plugins list".to_string(), "cli plugins list".to_string()),
+            ("plugins inspect".to_string(), "cli plugins inspect".to_string()),
+            ("dev routes".to_string(), "dev cli routes".to_string()),
+            ("dev registry".to_string(), "dev cli registry".to_string()),
+            ("dev env".to_string(), "dev cli env".to_string()),
+            ("dev doctor".to_string(), "dev cli doctor".to_string()),
+            ("dev contracts".to_string(), "dev cli contracts".to_string()),
+        ]);
+
+        let reserved = BTreeSet::from([
+            "cli".to_string(),
+            "dev".to_string(),
+            "help".to_string(),
+            "version".to_string(),
+            "doctor".to_string(),
+            "repl".to_string(),
+            "plugins".to_string(),
+            "completion".to_string(),
+            "inspect".to_string(),
+        ]);
+
+        Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
+    }
+}
+
+impl RouteRegistry {
+    /// Register a plugin namespace with deterministic rejection rules.
+    pub fn register_plugin_namespace(&mut self, raw_namespace: &str) -> Result<(), RouteError> {
+        let ns = normalize_namespace(raw_namespace);
+        if self.reserved.contains(&ns) {
+            return Err(RouteError::Reserved(ns));
+        }
+
+        if self.built_ins.iter().any(|route| route.split(' ').next().is_some_and(|head| head == ns))
+        {
+            return Err(RouteError::Conflict(ns));
+        }
+
+        if self.plugin_namespaces.contains(&ns) {
+            return Err(RouteError::Conflict(ns));
+        }
+
+        self.plugin_namespaces.insert(ns);
+        Ok(())
+    }
+
+    /// Resolve normalized command path to a route target.
+    pub fn resolve(&self, normalized_path: &[String]) -> Result<RouteTarget, RouteError> {
+        if normalized_path.is_empty() {
+            return Err(RouteError::Unknown(String::new()));
+        }
+
+        let key = normalized_path.join(" ");
+        let rewritten = self.aliases.get(&key).map_or(key.as_str(), String::as_str);
+
+        if self.built_ins.contains(rewritten) {
+            return Ok(RouteTarget::BuiltIn);
+        }
+
+        let root = rewritten.split(' ').next().unwrap_or_default();
+        if self.plugin_namespaces.contains(root) {
+            if self.built_ins.iter().any(|x| x.split(' ').next() == Some(root)) {
+                return Err(RouteError::Ambiguous(root.to_string()));
+            }
+            return Ok(RouteTarget::Plugin(root.to_string()));
+        }
+
+        Err(RouteError::Unknown(rewritten.to_string()))
+    }
+
+    /// Suggest nearest namespace for unknown routes.
+    #[must_use]
+    pub fn suggest_namespace(&self, raw: &str) -> Option<String> {
+        let query = normalize_namespace(raw);
+        let mut universe = BTreeSet::new();
+
+        for route in &self.built_ins {
+            if let Some(head) = route.split(' ').next() {
+                universe.insert(head.to_string());
+            }
+        }
+        for ns in &self.plugin_namespaces {
+            universe.insert(ns.clone());
+        }
+        for reserved in &self.reserved {
+            universe.insert(reserved.clone());
+        }
+
+        universe.into_iter().max_by_key(|candidate| {
+            let left = strsim::jaro_winkler(&query, candidate);
+            (left * 1000.0) as i32
+        })
+    }
+
+    /// Build route-tree introspection payload.
+    #[must_use]
+    pub fn route_tree(&self) -> Vec<NamespaceMetadata> {
+        let mut rows = Vec::new();
+
+        for ns in &self.reserved {
+            rows.push(NamespaceMetadata {
+                name: Namespace(ns.clone()),
+                reserved: true,
+                owner: "bijux-cli".to_string(),
+            });
+        }
+
+        for ns in &self.plugin_namespaces {
+            rows.push(NamespaceMetadata {
+                name: Namespace(ns.clone()),
+                reserved: false,
+                owner: "plugin".to_string(),
+            });
+        }
+
+        rows.sort_by(|a, b| a.name.0.cmp(&b.name.0));
+        rows
+    }
+
+    /// Render built-in route paths for introspection.
+    #[must_use]
+    pub fn built_in_paths(&self) -> Vec<CommandPath> {
+        self.built_ins
+            .iter()
+            .map(|raw| CommandPath {
+                segments: raw.split(' ').map(|segment| Namespace(segment.to_string())).collect(),
+            })
+            .collect()
+    }
+}
+
+fn normalize_namespace(input: &str) -> String {
+    input
+        .trim()
+        .to_ascii_lowercase()
+        .replace('_', "-")
+        .split('-')
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
