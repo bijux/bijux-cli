@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ErrorEnvelopeV1",
+  "description": "Stable error envelope.",
+  "type": "object",
+  "required": [
+    "error",
+    "meta",
+    "status"
+  ],
+  "properties": {
+    "error": {
+      "description": "Structured error payload.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ErrorPayloadV1"
+        }
+      ]
+    },
+    "meta": {
+      "description": "Shared metadata.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/OutputEnvelopeMetaV1"
+        }
+      ]
+    },
+    "status": {
+      "description": "Fixed status marker.",
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "CommandPath": {
+      "description": "Canonical command path composed from namespace segments.",
+      "type": "object",
+      "required": [
+        "segments"
+      ],
+      "properties": {
+        "segments": {
+          "description": "Ordered namespace segments from root to leaf.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Namespace"
+          }
+        }
+      }
+    },
+    "ErrorDetailsV1": {
+      "description": "Stable structured error details.",
+      "type": "object",
+      "required": [
+        "context"
+      ],
+      "properties": {
+        "context": {
+          "description": "Arbitrary additional context.",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "failure": {
+          "description": "Stable machine failure identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ErrorPayloadV1": {
+      "description": "Stable structured error payload.",
+      "type": "object",
+      "required": [
+        "category",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "category": {
+          "description": "Error category (`usage`, `validation`, `plugin`, `internal`).",
+          "type": "string"
+        },
+        "code": {
+          "description": "Stable symbolic error code.",
+          "type": "string"
+        },
+        "details": {
+          "description": "Structured optional details.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ErrorDetailsV1"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "description": "Human-readable message.",
+          "type": "string"
+        }
+      }
+    },
+    "Namespace": {
+      "description": "Canonical command namespace segment.",
+      "type": "string"
+    },
+    "OutputEnvelopeMetaV1": {
+      "description": "Stable output envelope metadata.",
+      "type": "object",
+      "required": [
+        "command",
+        "timestamp",
+        "version"
+      ],
+      "properties": {
+        "command": {
+          "description": "Canonical command path.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CommandPath"
+            }
+          ]
+        },
+        "timestamp": {
+          "description": "RFC3339 timestamp.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Envelope version identifier.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

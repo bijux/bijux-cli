@@ -22,6 +22,9 @@ This document governs structured error payloads across JSON and YAML formats.
 ## Failure Modes
 - Malformed envelope emission is treated as an internal failure.
 
+## Schema Artifact
+- JSON Schema (v1): `docs/constitution/schemas/error-envelope-v1.schema.json`
+
 ## Design Rationale
 - Stable error envelopes preserve automation compatibility while allowing text improvements.
 

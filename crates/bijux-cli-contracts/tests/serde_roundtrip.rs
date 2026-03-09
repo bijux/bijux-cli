@@ -1,0 +1,128 @@
+#![forbid(unsafe_code)]
+//! Ensures contract models serialize and deserialize without loss.
+
+use std::collections::BTreeMap;
+
+use bijux_cli_contracts::{
+    ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, DiagnosticRecord,
+    ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
+    InvocationEvent, InvocationTrace, LogLevel, Namespace, NamespaceMetadata, OutputEnvelopeMetaV1,
+    OutputEnvelopeV1, OutputFormat, PluginCapability, PluginManifestV1, PrettyMode,
+};
+use schemars as _;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde_json::json;
+
+fn roundtrip<T>(value: &T)
+where
+    T: Serialize + DeserializeOwned + PartialEq + std::fmt::Debug,
+{
+    let encoded = serde_json::to_vec(value).expect("serialize must succeed");
+    let decoded: T = serde_json::from_slice(&encoded).expect("deserialize must succeed");
+    assert_eq!(&decoded, value);
+}
+
+#[test]
+fn roundtrip_for_all_contract_types() {
+    let ns = Namespace("cli".to_string());
+    let path = CommandPath { segments: vec![ns.clone(), Namespace("status".to_string())] };
+
+    let flags = GlobalFlags {
+        output_format: Some(OutputFormat::Json),
+        pretty_mode: Some(PrettyMode::Compact),
+        color_mode: Some(ColorMode::Never),
+        log_level: Some(LogLevel::Debug),
+        quiet: false,
+        include_runtime: true,
+    };
+
+    let policy = ExecutionPolicy {
+        output_format: OutputFormat::Json,
+        pretty_mode: PrettyMode::Compact,
+        color_mode: ColorMode::Never,
+        log_level: LogLevel::Debug,
+        quiet: false,
+        include_runtime: true,
+    };
+
+    let meta = OutputEnvelopeMetaV1 {
+        version: "v1".to_string(),
+        command: path.clone(),
+        timestamp: "2026-03-09T00:00:00Z".to_string(),
+    };
+
+    let output = OutputEnvelopeV1 { status: "ok".to_string(), data: json!({"healthy": true}), meta: meta.clone() };
+
+    let error = ErrorEnvelopeV1 {
+        status: "error".to_string(),
+        error: ErrorPayloadV1 {
+            code: "invalid_format".to_string(),
+            message: "Unsupported format".to_string(),
+            category: "usage".to_string(),
+            details: Some(ErrorDetailsV1 {
+                failure: Some("invalid_format".to_string()),
+                context: BTreeMap::from([("flag".to_string(), json!("--format"))]),
+            }),
+        },
+        meta: meta.clone(),
+    };
+
+    let cmd_meta = CommandMetadata {
+        path: path.clone(),
+        summary: "Show status".to_string(),
+        hidden: false,
+        aliases: vec![CommandPath { segments: vec![Namespace("status".to_string())] }],
+    };
+
+    let ns_meta = NamespaceMetadata {
+        name: ns.clone(),
+        reserved: true,
+        owner: "bijux-cli".to_string(),
+    };
+
+    let plugin_manifest = PluginManifestV1 {
+        name: "sample".to_string(),
+        version: "1.2.3".to_string(),
+        schema_version: "1".to_string(),
+        compatibility: CompatibilityRange {
+            min_inclusive: "1.0.0".to_string(),
+            max_exclusive: Some("2.0.0".to_string()),
+        },
+        namespace: Namespace("sample".to_string()),
+        capabilities: vec![PluginCapability {
+            name: "inspect".to_string(),
+            version: Some("1".to_string()),
+        }],
+    };
+
+    let diagnostic = DiagnosticRecord {
+        id: "diag-1".to_string(),
+        severity: "warning".to_string(),
+        message: "example".to_string(),
+        fields: BTreeMap::from([("component".to_string(), json!("routing"))]),
+    };
+
+    let invocation = InvocationTrace {
+        invocation_id: "inv-123".to_string(),
+        command: path,
+        policy,
+        events: vec![InvocationEvent {
+            timestamp: "2026-03-09T00:00:01Z".to_string(),
+            name: "dispatch".to_string(),
+            payload: BTreeMap::from([("route".to_string(), json!("cli status"))]),
+        }],
+    };
+
+    roundtrip(&ns);
+    roundtrip(&flags);
+    roundtrip(&ConfigSource::Flags);
+    roundtrip(&ExitCode::Usage);
+    roundtrip(&cmd_meta);
+    roundtrip(&ns_meta);
+    roundtrip(&plugin_manifest);
+    roundtrip(&output);
+    roundtrip(&error);
+    roundtrip(&diagnostic);
+    roundtrip(&invocation);
+}
