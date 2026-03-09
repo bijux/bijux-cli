@@ -43,3 +43,25 @@ pub struct InvocationTrace {
     /// Ordered execution events.
     pub events: Vec<InvocationEvent>,
 }
+
+/// Stable memory summary payload contract.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct MemorySummary {
+    /// Command execution status.
+    pub status: String,
+    /// Number of keys stored in memory state.
+    pub count: usize,
+    /// Human-readable summary message.
+    pub message: String,
+}
+
+/// Stable memory key listing payload contract.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct MemoryKeyList {
+    /// Command execution status.
+    pub status: String,
+    /// Sorted memory keys.
+    pub keys: Vec<String>,
+    /// Number of keys returned.
+    pub count: usize,
+}

@@ -48,6 +48,8 @@ impl Default for RouteRegistry {
             "sleep".to_string(),
             "config".to_string(),
             "history".to_string(),
+            "memory".to_string(),
+            "memory list".to_string(),
             "plugins list".to_string(),
             "plugins inspect".to_string(),
             "plugins check".to_string(),

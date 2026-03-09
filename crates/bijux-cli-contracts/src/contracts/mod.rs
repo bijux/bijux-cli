@@ -14,7 +14,9 @@ pub mod marker;
 pub mod plugin;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
-pub use diagnostics::{DiagnosticRecord, InvocationEvent, InvocationTrace};
+pub use diagnostics::{
+    DiagnosticRecord, InvocationEvent, InvocationTrace, MemoryKeyList, MemorySummary,
+};
 pub use envelope::{ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1};
 pub use execution::{ColorMode, ConfigSource, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 pub use marker::ContractMarker;

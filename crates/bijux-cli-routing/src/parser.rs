@@ -200,6 +200,7 @@ pub fn root_command() -> Command {
                 .arg(Arg::new("filter").long("filter").short('F').num_args(1))
                 .arg(Arg::new("sort").long("sort").num_args(1)),
         )
+        .subcommand(Command::new("memory").subcommand(Command::new("list")))
 }
 
 fn extract_path(matches: &ArgMatches) -> Vec<String> {

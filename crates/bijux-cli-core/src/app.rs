@@ -274,6 +274,28 @@ fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
     Ok(entries)
 }
 
+fn memory_file_path_from_home(home: Option<&Path>) -> std::path::PathBuf {
+    match home {
+        Some(root) => root.join(".bijux").join(".memory.json"),
+        None => Path::new(".").join(".bijux").join(".memory.json"),
+    }
+}
+
+fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Value>> {
+    if !path.exists() {
+        return Ok(serde_json::Map::new());
+    }
+    let text = fs::read_to_string(path)?;
+    let parsed: Value = match serde_json::from_str(&text) {
+        Ok(value) => value,
+        Err(_) => return Ok(serde_json::Map::new()),
+    };
+    let Some(object) = parsed.as_object() else {
+        anyhow::bail!("Malformed memory state: expected JSON object");
+    };
+    Ok(object.clone())
+}
+
 fn render_command_help(path: &[&str]) -> Result<String> {
     let mut cmd = root_command();
     let target =
@@ -310,7 +332,7 @@ fn route_response(
     let _ = registry.register_plugin_namespace("community");
 
     let target = match normalized_path {
-        [a] if a == "config" || a == "history" => RouteTarget::BuiltIn,
+        [a] if a == "config" || a == "history" || a == "memory" => RouteTarget::BuiltIn,
         [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => {
             RouteTarget::BuiltIn
         }
@@ -510,6 +532,18 @@ fn route_response(
             }
             json!({"entries": entries})
         }
+        [a] if a == "memory" => {
+            let memory_path = memory_file_path_from_home(home.as_deref());
+            let memory = read_memory_map(&memory_path)?;
+            json!({"status": "ok", "count": memory.len(), "message": "Memory command executed"})
+        }
+        [a, b] if a == "memory" && b == "list" => {
+            let memory_path = memory_file_path_from_home(home.as_deref());
+            let memory = read_memory_map(&memory_path)?;
+            let mut keys: Vec<String> = memory.keys().cloned().collect();
+            keys.sort_unstable();
+            json!({"status": "ok", "keys": keys, "count": keys.len()})
+        }
         [a, b] if a == "cli" && b == "self-test" => {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
         }
@@ -596,7 +630,8 @@ fn is_known_route(path: &[String]) -> bool {
         }
         [a, b, c] if a == "cli" && b == "config" && (c == "get" || c == "set") => true,
         [a] if a == "config" => true,
-        [a] if a == "history" => true,
+        [a] if a == "history" || a == "memory" => true,
+        [a, b] if a == "memory" && b == "list" => true,
         [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" => true,
         [a, b, c] if a == "cli" && b == "plugins" && (c == "list" || c == "inspect") => true,
         [a, b] if a == "plugins" && (b == "list" || b == "inspect" || b == "check") => true,
