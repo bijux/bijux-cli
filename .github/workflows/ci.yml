@@ -266,6 +266,7 @@ jobs:
           python3 scripts/status/generate_test_quality_audit.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
+          python3 scripts/status/generate_state_parity_reports.py
 
       - name: Runtime unity gate
         run: |
@@ -376,6 +377,18 @@ jobs:
             artifacts/parity/stderr_diff.md
             artifacts/parity/exit_code_diff.md
             artifacts/parity/help_diff.md
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload state parity artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-parity
+          path: |
+            artifacts/parity/config_parity_report.json
+            artifacts/parity/history_parity_report.json
+            artifacts/parity/memory_parity_report.json
           if-no-files-found: warn
           retention-days: 14
 

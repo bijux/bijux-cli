@@ -724,11 +724,22 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
             let parity_diffs =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
+            let config_parity =
+                read_json_if_exists(&root.join("artifacts/parity/config_parity_report.json"));
+            let history_parity =
+                read_json_if_exists(&root.join("artifacts/parity/history_parity_report.json"));
+            let memory_parity =
+                read_json_if_exists(&root.join("artifacts/parity/memory_parity_report.json"));
             json!({
                 "rust_python": parity_report,
                 "binary_bridge": bridge_parity,
                 "command_matrix": command_matrix,
                 "diffs": parity_diffs,
+                "state_parity": {
+                    "config": config_parity,
+                    "history": history_parity,
+                    "memory": memory_parity,
+                },
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs" => {
