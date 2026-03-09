@@ -1,22 +1,47 @@
 # Replay Commands
 
 ## Purpose
-Define the reader-facing intent for this document.
+Document replay command usage for validation and drift detection workflows.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Replay commands are used with run history and diff commands to verify behavioral stability.
 
 ## Explanation
-Primary explanation content goes here.
+Replay command intents:
+- rerun/validate prior run context
+- compare expected and observed behavior over time
+
+Options and flags pattern:
+- `--run-id <id>` baseline selector
+- optional DAG/path selectors when surface supports explicit override
+
+Output usage:
+- inspect replay status first
+- route mismatch findings into diff flow
 
 ## Examples
-Add executable and realistic examples.
+```bash
+bijux-dag replay --run-id RUN_20260309_220
+bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json
+```
+
+```json
+{
+  "run_id": "RUN_20260309_220",
+  "replay_status": "mismatch"
+}
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Replay command workflow is documented with explicit follow-up behavior.
+- Integration with diff/inspect is clear.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Replay equivalence remains bounded by environment and backend support.
+- Algorithmic replay internals are specified elsewhere.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/04-cli-reference/06-diff-commands.md`
+- `docs/04-cli-reference/05-inspect-commands.md`
+- `docs/03-user-guide/05-replay.md`
+- `docs/06-specification/07-replay-semantics.md`

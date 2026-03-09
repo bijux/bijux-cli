@@ -1,22 +1,50 @@
 # Diff Commands
 
 ## Purpose
-Define the reader-facing intent for this document.
+Document command usage for graph, run, and artifact diff operations.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Diff commands classify behavioral and structural changes.
 
 ## Explanation
-Primary explanation content goes here.
+Diff command intents:
+- `diff graph` for definition changes
+- `diff run` for execution outcome changes
+- `diff artifact` for output changes
+
+Options and flags pattern:
+- `--left <id-or-path>`
+- `--right <id-or-path>`
+- output-format flags for machine parsing
+
+Error handling guidance:
+- incomparable entities should be treated as input error
+- missing IDs/paths produce lookup errors
 
 ## Examples
-Add executable and realistic examples.
+```bash
+bijux-dag diff graph --left ./pipelines/a.dag.json --right ./pipelines/b.dag.json
+bijux-dag diff run --left RUN_20260309_220 --right RUN_20260309_221
+bijux-dag diff artifact --left ART_001 --right ART_002
+```
+
+```json
+{
+  "diff_scope": "run",
+  "classification": "suspicious_change"
+}
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Diff command family usage is explicit across all three scopes.
+- Shared option pattern is documented consistently.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Full classification taxonomy details belong to specification docs.
+- This page does not define underlying comparison algorithms.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/04-cli-reference/05-inspect-commands.md`
+- `docs/04-cli-reference/07-replay-commands.md`
+- `docs/03-user-guide/06-diff.md`
+- `docs/06-specification/08-diff-semantics.md`
