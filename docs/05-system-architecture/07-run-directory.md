@@ -52,3 +52,47 @@ runs/RUN_.../
 - `docs/03-user-guide/04-run-history.md`
 - `docs/03-user-guide/07-inspect-and-debug.md`
 - `docs/06-specification/02-run-model.md`
+
+## Run-directory semantics in practice
+
+Run directory is the authoritative evidence envelope for one run identity. It is not just a file tree; it is the persisted execution narrative used by inspect, replay, and diff.
+
+## Realistic run-directory tree example
+
+```text
+runs/RUN_20260309_220/
+  run-metadata.json
+  node-outcomes/
+    extract.json
+    transform_orders.json
+    publish.json
+  artifacts-index.json
+  replay/
+    replay-summary.json
+  diagnostics/
+    stderr-transform_orders.log
+```
+
+What each record means:
+
+- `run-metadata.json`: run identity, graph identity, terminal status, timing envelope.
+- `node-outcomes/*.json`: per-node normalized outcomes and reason codes.
+- `artifacts-index.json`: artifact IDs, hashes, producer-node linkage.
+- `replay/replay-summary.json`: replay classification evidence when replay exists.
+- `diagnostics/*`: backend diagnostics referenced by inspect workflows.
+
+## Authoritative versus derived data
+
+Authoritative run records:
+
+- run metadata,
+- node terminal outcomes,
+- artifact identity/linkage references.
+
+Derived views:
+
+- summarized dashboards,
+- trend indexes,
+- cached comparison artifacts.
+
+If authoritative and derived views diverge, trust authoritative run-directory records and regenerate derived views.
