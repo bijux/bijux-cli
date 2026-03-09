@@ -1,41 +1,33 @@
 # Architecture Decision Records
 
-Audience: maintainers.  
-Owner: platform documentation guild.  
-Status: historical.
+Audience: maintainers.
+Owner: platform documentation guild.
+Status: stable.
 
-ADRs capture durable decisions that changed architecture direction.
+This directory contains the 20 active, durable ADRs.
+Superseded and intermediate ADRs are archived under `docs/adr/archive/`.
 
-## Directory role
-
-- Keep ADRs as historical artifacts with rationale and outcomes.
-- Remove user guidance and operational narratives from ADRs.
-- Do not duplicate root-level governance pages or reference material.
-
-## Operationally relevant ADRs
-
-- Documentation and evidence governance:
-  - `20260308-documentation-truth-policy.md`
-  - `20260308-evidence-minimalism.md`
-  - `20260308-evidence-severity-rationalization.md`
-- Runtime and boundary governance:
-  - `20260309-runtime-contraction-governance.md`
-  - `20260309-runtime-quarantine-rationale.md`
-  - `20260309-app-crate-boundary.md`
-  - `20260309-crate-boundary-governance.md`
-  - `20260309-control-plane-service-migration-boundary.md`
-- Release and operator guarantees:
-  - `20260308-cli-stability-guarantees.md`
-  - `20260308-schema-compatibility-guarantees.md`
-  - `20260308-run-history-guarantees.md`
-  - `20260308-inspect-guarantees.md`
-  - `20260308-replay-planning-guarantees.md`
-
-## Archived intermediate decisions
-
-- Intermediate, superseded, and checkpoint ADRs are under `docs/adr/archive/`.
-- These documents remain for traceability and should not be used as current policy.
+## Active ADR set (20)
+- `20260309-DOCUMENTATION-GOVERNANCE-AND-TRUTH-BOUNDARY.md`
+- `20260309-EVIDENCE-GOVERNANCE-AND-SEVERITY-MODEL.md`
+- `20260309-RUNTIME-SCOPE-AND-QUARANTINE-POLICY.md`
+- `20260309-CRATE-BOUNDARY-AND-OWNERSHIP-GOVERNANCE.md`
+- `20260309-CONTROL-PLANE-SERVICE-BOUNDARY.md`
+- `20260309-CLI-SURFACE-STABILITY-POLICY.md`
+- `20260309-SCHEMA-COMPATIBILITY-GOVERNANCE.md`
+- `20260309-RUN-HISTORY-INTEGRITY-GUARANTEES.md`
+- `20260309-REPLAY-AND-PLANNING-GUARANTEES.md`
+- `20260309-INSPECT-AND-DIAGNOSTICS-GUARANTEES.md`
+- `20260309-ARTIFACT-LIFECYCLE-AND-PORTABILITY-POLICY.md`
+- `20260309-BACKEND-EQUIVALENCE-AND-ADAPTER-REGISTRY-POLICY.md`
+- `20260309-BENCHMARK-SIGNAL-AND-MINIMALISM-POLICY.md`
+- `20260309-FIXTURE-GOVERNANCE-AND-CANONICALIZATION-POLICY.md`
+- `20260309-OUTPUT-AND-HUMAN-READABILITY-GOVERNANCE.md`
+- `20260309-RELEASE-GATE-AND-READINESS-POLICY.md`
+- `20260309-VOCABULARY-AND-NAMING-GOVERNANCE.md`
+- `20260309-REPOSITORY-STRUCTURE-AND-GOVERNANCE-POLICY.md`
+- `20260309-APP-ROUTING-AND-SERVICE-BOUNDARY-POLICY.md`
+- `20260309-DEV-CONTROL-PLANE-LONG-TERM-ROLE.md`
 
 ## Naming rule
-
-Use `YYYYMMDD-title.md`.
+Use `YYYYMMDD-TITLE.md` for active ADR files.
