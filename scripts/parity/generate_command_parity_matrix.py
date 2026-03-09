@@ -1,0 +1,309 @@
+#!/usr/bin/env python3
+"""Generate command-level parity matrix and side-by-side diffs."""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+MATRIX_OUT = ROOT / "artifacts" / "parity" / "command_parity_matrix.json"
+DIFFS_OUT = ROOT / "artifacts" / "parity" / "command_parity_diffs.json"
+STDOUT_MD = ROOT / "artifacts" / "parity" / "stdout_diff.md"
+STDERR_MD = ROOT / "artifacts" / "parity" / "stderr_diff.md"
+EXIT_MD = ROOT / "artifacts" / "parity" / "exit_code_diff.md"
+HELP_MD = ROOT / "artifacts" / "parity" / "help_diff.md"
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+
+
+def run_cmd(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, cwd=cwd or ROOT, text=True, capture_output=True, check=False)
+
+
+def parse_python_command_tree() -> list[str]:
+    exe = ROOT / "bin" / "bijux"
+    if not exe.exists():
+        return []
+
+    def subcommands(path_tokens: tuple[str, ...]) -> list[str]:
+        proc = run_cmd([str(exe), *path_tokens, "--help"])
+        if proc.returncode != 0:
+            return []
+        out = []
+        in_commands = False
+        for line in proc.stdout.splitlines():
+            stripped = line.strip()
+            if stripped == "Commands:":
+                in_commands = True
+                continue
+            if in_commands and stripped.startswith("Options:"):
+                break
+            if not in_commands or not stripped:
+                continue
+            token = stripped.split()[0]
+            if token == "help":
+                continue
+            if re.match(r"^[a-z][a-z0-9_-]*$", token):
+                out.append(token)
+        return out
+
+    seen: set[tuple[str, ...]] = set()
+    queue: list[tuple[str, ...]] = [tuple()]
+    while queue:
+        path = queue.pop(0)
+        if path in seen:
+            continue
+        seen.add(path)
+        if len(path) >= 4:
+            continue
+        for sub in subcommands(path):
+            child = (*path, sub)
+            if child not in seen:
+                queue.append(child)
+    return sorted(" ".join(parts) for parts in seen if parts)
+
+
+def parse_rust_surface_commands() -> list[str]:
+    report = ROOT / "artifacts" / "status" / "current_rust_state.json"
+    if not report.exists():
+        return []
+    data = json.loads(read_text(report))
+    return sorted(set(data.get("rust_routed_commands", {}).get("surface", [])))
+
+
+def load_parity_results() -> dict[str, dict]:
+    path = ROOT / "artifacts" / "parity" / "rust_python_parity_report.json"
+    if not path.exists():
+        return {}
+    data = json.loads(read_text(path))
+    mapping = {}
+    for row in data.get("commands", []):
+        argv = row.get("argv", [])
+        command = " ".join(argv[1:]) if isinstance(argv, list) else ""
+        if command:
+            mapping[command] = row
+    return mapping
+
+
+def normalize_command(name: str) -> str:
+    return " ".join(name.split())
+
+
+def classify_group(command: str) -> str:
+    if command.startswith("dev cli "):
+        return "dev-cli"
+    if command.startswith("cli "):
+        if command.startswith("cli config "):
+            return "config"
+        if command.startswith("cli plugins "):
+            return "plugin"
+        return "cli"
+    if command.startswith("plugins "):
+        return "plugin"
+    if command.startswith("config"):
+        return "config"
+    if command.startswith("history"):
+        return "history"
+    if command.startswith("memory"):
+        return "memory"
+    return "root"
+
+
+def load_intentional_differences() -> dict[str, str]:
+    path = ROOT / "docs" / "architecture" / "parity" / "intentional_differences.json"
+    if not path.exists():
+        return {}
+    data = json.loads(read_text(path))
+    return {normalize_command(k): v for k, v in data.items()}
+
+
+def confidence_for(row: dict | None, status: str) -> float:
+    if status == "missing":
+        return 0.0
+    if row is None:
+        return 0.35
+    score = 0.2
+    score += 0.25 if row.get("exit_match") else 0.0
+    score += 0.25 if row.get("stdout_match") else 0.0
+    score += 0.25 if row.get("stderr_match") else 0.0
+    if row.get("status") == "rust-complete":
+        score += 0.05
+    return round(min(score, 1.0), 2)
+
+
+def build_matrix() -> tuple[list[dict], dict]:
+    python_commands = {normalize_command(c) for c in parse_python_command_tree()}
+    rust_commands = {normalize_command(c) for c in parse_rust_surface_commands()}
+    parity_rows = load_parity_results()
+    intentional = load_intentional_differences()
+
+    universe = sorted(python_commands | rust_commands)
+    matrix: list[dict] = []
+
+    for command in universe:
+        row = parity_rows.get(command)
+        in_python = command in python_commands
+        in_rust = command in rust_commands
+
+        if command in intentional:
+            status = "intentionally-different"
+            reason = intentional[command]
+            blocker = ""
+            owner = "parity-council"
+        elif not in_rust and in_python:
+            status = "missing"
+            reason = ""
+            blocker = "not routed by rust yet"
+            owner = "routing-core"
+        elif row and row.get("status") == "rust-complete":
+            status = "complete"
+            reason = ""
+            blocker = ""
+            owner = ""
+        else:
+            status = "partial"
+            reason = ""
+            blocker = "parity coverage incomplete"
+            owner = "rust-foundation"
+
+        matrix.append(
+            {
+                "command": command,
+                "group": classify_group(command),
+                "status": status,
+                "reason": reason,
+                "blocker": blocker,
+                "owner": owner,
+                "confidence": confidence_for(row, status),
+                "python_available": in_python,
+                "rust_available": in_rust,
+            }
+        )
+
+    grouped = {
+        "root": [m for m in matrix if m["group"] == "root"],
+        "cli": [m for m in matrix if m["group"] == "cli"],
+        "dev_cli": [m for m in matrix if m["group"] == "dev-cli"],
+        "plugin": [m for m in matrix if m["group"] == "plugin"],
+        "config": [m for m in matrix if m["group"] == "config"],
+        "history": [m for m in matrix if m["group"] == "history"],
+        "memory": [m for m in matrix if m["group"] == "memory"],
+    }
+    return matrix, grouped
+
+
+def diff_rows() -> list[dict]:
+    path = ROOT / "artifacts" / "parity" / "rust_python_parity_report.json"
+    if not path.exists():
+        return []
+    data = json.loads(read_text(path))
+    out = []
+    for row in data.get("commands", []):
+        argv = row.get("argv", [])
+        command = " ".join(argv[1:]) if isinstance(argv, list) else ""
+        if not command:
+            continue
+        out.append(
+            {
+                "command": command,
+                "stdout": {
+                    "match": bool(row.get("stdout_match")),
+                    "python": row.get("python_stdout", ""),
+                    "rust": row.get("rust_stdout", ""),
+                },
+                "stderr": {
+                    "match": bool(row.get("stderr_match")),
+                    "python": row.get("python_stderr", ""),
+                    "rust": row.get("rust_stderr", ""),
+                },
+                "exit_code": {
+                    "match": bool(row.get("exit_match")),
+                    "python": row.get("python_exit"),
+                    "rust": row.get("rust_exit"),
+                },
+                "help": {
+                    "is_help_command": "help" in command or "--help" in command,
+                    "match": bool(row.get("stdout_match")) and bool(row.get("stderr_match")),
+                },
+            }
+        )
+    return out
+
+
+def write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_markdown_diffs(diffs: list[dict]) -> None:
+    def snippet(text: str) -> str:
+        compact = text.replace("\n", "\\n")
+        if len(compact) > 180:
+            return compact[:177] + "..."
+        return compact
+
+    stdout_lines = ["# Stdout Diff", "", "| Command | Match | Python | Rust |", "|---|---|---|---|"]
+    stderr_lines = ["# Stderr Diff", "", "| Command | Match | Python | Rust |", "|---|---|---|---|"]
+    exit_lines = ["# Exit Code Diff", "", "| Command | Match | Python | Rust |", "|---|---|---|---|"]
+    help_lines = ["# Help Diff", "", "| Command | Help Command | Match |", "|---|---|---|"]
+
+    for row in diffs:
+        command = row["command"]
+        stdout_lines.append(
+            f"| `{command}` | {'yes' if row['stdout']['match'] else 'no'} | `{snippet(str(row['stdout']['python']))}` | `{snippet(str(row['stdout']['rust']))}` |"
+        )
+        stderr_lines.append(
+            f"| `{command}` | {'yes' if row['stderr']['match'] else 'no'} | `{snippet(str(row['stderr']['python']))}` | `{snippet(str(row['stderr']['rust']))}` |"
+        )
+        exit_lines.append(
+            f"| `{command}` | {'yes' if row['exit_code']['match'] else 'no'} | `{row['exit_code']['python']}` | `{row['exit_code']['rust']}` |"
+        )
+        help_lines.append(
+            f"| `{command}` | {'yes' if row['help']['is_help_command'] else 'no'} | {'yes' if row['help']['match'] else 'no'} |"
+        )
+
+    for path, lines in [
+        (STDOUT_MD, stdout_lines),
+        (STDERR_MD, stderr_lines),
+        (EXIT_MD, exit_lines),
+        (HELP_MD, help_lines),
+    ]:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    matrix, grouped = build_matrix()
+    diffs = diff_rows()
+
+    matrix_payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generator": "scripts/parity/generate_command_parity_matrix.py",
+        "commands": matrix,
+        "groups": grouped,
+    }
+    diffs_payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generator": "scripts/parity/generate_command_parity_matrix.py",
+        "diffs": diffs,
+    }
+
+    write_json(MATRIX_OUT, matrix_payload)
+    write_json(DIFFS_OUT, diffs_payload)
+    write_markdown_diffs(diffs)
+    print(f"wrote {MATRIX_OUT.relative_to(ROOT)}")
+    print(f"wrote {DIFFS_OUT.relative_to(ROOT)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

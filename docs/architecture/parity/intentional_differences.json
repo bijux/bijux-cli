@@ -1,0 +1,3 @@
+{
+  "plugins check": "Rust emits normalized diagnostics while Python emits plugin-loader stderr traces."
+}
