@@ -78,6 +78,10 @@ This guide establishes the documentation foundation for bijux-dag. It sets writi
 14. Maximum document length guidance
 - Default target: concise and readable in one sitting.
 - Split a document when it becomes a topic bundle rather than a topic.
+- Guidance threshold:
+  - 0-120 lines: normal.
+  - 121-220 lines: require explicit justification in review.
+  - 221+ lines: split unless contract continuity demands a single file.
 
 15. Example DAG style
 - Use minimal deterministic DAG examples.
@@ -98,6 +102,7 @@ This guide establishes the documentation foundation for bijux-dag. It sets writi
 - Uses canonical terminology.
 - Includes realistic examples.
 - Keeps links focused and non-redundant.
+- Marks every non-obvious claim as either observed behavior or intended contract.
 
 19. Maintainer review checklist
 - Claims match current system behavior.
@@ -105,6 +110,7 @@ This guide establishes the documentation foundation for bijux-dag. It sets writi
 - Guarantees are testable or contract-backed.
 - Limitations are explicit and honest.
 - Language is neutral and precise.
+- Any moved/merged content preserves reader meaning without archaeology.
 
 20. Documentation quality acceptance criteria
 - Accurate: factual and implementation-aligned.
@@ -112,6 +118,14 @@ This guide establishes the documentation foundation for bijux-dag. It sets writi
 - Minimal: no duplication and no governance noise in user-facing docs.
 - Useful: includes practical examples and operational meaning.
 - Durable: understandable two years later without archaeology.
+
+### Enforceable Review Gates
+Before merge, maintainers must answer all gates with `yes`:
+1. Is this document necessary and non-duplicate?
+2. Are guarantees and limitations explicit?
+3. Are terms aligned with `05-terminology.md`?
+4. Are examples concrete and executable or clearly marked illustrative?
+5. Does this change improve or preserve the reading path?
 
 ### Contribution Workflow
 1. Draft content inside the target document using the required structure.
