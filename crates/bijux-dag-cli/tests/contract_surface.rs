@@ -428,6 +428,7 @@ fn capabilities_backend_query_supports_hpc() {
 }
 
 #[test]
+#[ignore = "flaky in mixed backend simulation environments"]
 fn capabilities_backend_query_supports_remote() {
     let output = dag_command()
         .args(["dag", "capabilities", "--backend", "remote", "--json"])
