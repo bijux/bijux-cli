@@ -67,3 +67,38 @@ bijux-dag diff run --help
 - `docs/04-cli-reference/07-replay-commands.md`
 - `docs/03-user-guide/06-diff.md`
 - `docs/06-specification/08-diff-semantics.md`
+
+## Semantics by diff surface
+
+Interpret each diff command against a distinct semantic surface:
+
+- `diff graph`: definition semantics changed or equivalent.
+- `diff run`: execution outcomes changed or equivalent under comparable intent.
+- `diff artifact`: output identity/lineage changed or equivalent.
+
+## Equivalent versus drift examples
+
+Equivalent case:
+
+```text
+diff_scope: run
+classification: equivalent
+reason_code: NONE
+```
+
+Drift case:
+
+```text
+diff_scope: artifact
+classification: suspicious_change
+reason_code: HASH_MISMATCH
+```
+
+## How to interpret classification results
+
+- `equivalent`: no contract-relevant divergence detected for the requested surface.
+- `expected_change`: divergence exists and matches declared/approved change intent.
+- `suspicious_change`: divergence is not yet explained and requires investigation.
+- `breaking_change`: divergence violates a declared contract boundary.
+
+Do not treat classification as optional metadata; it is the decision input for acceptance, rollback, or deeper diagnosis.
