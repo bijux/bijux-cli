@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -18,8 +18,9 @@ use bijux_cli_install::{
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
-    compatibility_warnings, list_plugins, load_time_diagnostics, plugin_doctor,
-    plugin_origin_metadata, registry_path_from_plugins_dir, CORE_NAMESPACES,
+    compatibility_warnings, install_plugin as install_plugin_manifest, list_plugins,
+    load_time_diagnostics, plugin_doctor, plugin_origin_metadata, registry_path_from_plugins_dir,
+    uninstall_plugin, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
     FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
@@ -278,6 +279,77 @@ fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> 
         i += 1;
     }
     positional
+}
+
+fn command_option_value(argv: &[String], name: &str) -> Option<String> {
+    let prefixed = format!("{name}=");
+    if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
+        return Some(found[prefixed.len()..].to_string());
+    }
+    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
+}
+
+fn command_has_flag(argv: &[String], flag: &str) -> bool {
+    argv.iter().any(|arg| arg == flag)
+}
+
+fn is_safe_scaffold_path(path: &Path) -> bool {
+    !path.components().any(|component| matches!(component, Component::ParentDir))
+}
+
+fn scaffold_manifest_json(kind: &str, namespace: &str) -> String {
+    let plugin_kind = if kind == "python" { "python" } else { "delegated" };
+    let entrypoint = if kind == "python" { "plugin:main" } else { "plugin:main" };
+    format!(
+        "{{\n  \"name\": \"{}\",\n  \"version\": \"0.1.0\",\n  \"schema_version\": \"v1\",\n  \"manifest_version\": \"v1\",\n  \"compatibility\": {{ \"min_inclusive\": \"0.1.0\", \"max_exclusive\": null }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
+        namespace,
+        namespace,
+        plugin_kind,
+        entrypoint,
+    )
+}
+
+fn scaffold_plugin_layout(
+    base_dir: &Path,
+    kind: &str,
+    namespace: &str,
+    force: bool,
+) -> Result<PathBuf> {
+    if RESERVED_NAMESPACES.iter().any(|value| *value == namespace) {
+        anyhow::bail!("plugin namespace is reserved: {namespace}");
+    }
+    if !namespace
+        .chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+    {
+        anyhow::bail!("plugin namespace must be lowercase kebab-case");
+    }
+    if !is_safe_scaffold_path(base_dir) {
+        anyhow::bail!("scaffold path is unsafe");
+    }
+    if base_dir.exists() && !force {
+        anyhow::bail!("scaffold path already exists; pass --force to overwrite");
+    }
+    fs::create_dir_all(base_dir)?;
+    let manifest_path = base_dir.join("plugin.manifest.json");
+    fs::write(&manifest_path, scaffold_manifest_json(kind, namespace))?;
+    if kind == "python" {
+        fs::write(
+            base_dir.join("plugin.py"),
+            "def main(argv: list[str]) -> dict:\n    return {\"status\": \"ok\", \"argv\": argv}\n",
+        )?;
+    } else {
+        fs::create_dir_all(base_dir.join("src"))?;
+        fs::write(
+            base_dir.join("src/lib.rs"),
+            "pub fn main(argv: &[String]) -> String { format!(\"ok {}\", argv.len()) }\n",
+        )?;
+    }
+    // Shared validation step: generated manifest must pass plugin parser.
+    let manifest_text = fs::read_to_string(&manifest_path)?;
+    let manifest = bijux_cli_plugin::parse_manifest_v1(&manifest_text)?;
+    let _ = bijux_cli_plugin::validate_manifest(manifest, env!("CARGO_PKG_VERSION"), RESERVED_NAMESPACES)?;
+    Ok(manifest_path)
 }
 
 fn history_entry_from_command(command: &str) -> Value {
@@ -702,6 +774,91 @@ fn route_response(
                 .cloned()
                 .unwrap_or_else(|| "unknown".to_string());
             json!({"plugin": plugin, "status": "healthy"})
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
+            let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
+            let kind = positional.first().cloned().unwrap_or_else(|| "python".to_string());
+            let namespace = positional
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| "sample-plugin".to_string());
+            let force = command_has_flag(argv, "--force");
+            let target = command_option_value(argv, "--path")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace));
+            let manifest = scaffold_plugin_layout(&target, &kind, &namespace, force)?;
+            json!({
+                "status": "scaffolded",
+                "kind": kind,
+                "namespace": namespace,
+                "path": target,
+                "manifest": manifest,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "install" => {
+            let manifest_arg = command_positionals(argv, &["cli", "plugins", "install"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("manifest path is required"))?;
+            let manifest_path = PathBuf::from(&manifest_arg);
+            let manifest_text = fs::read_to_string(&manifest_path)?;
+            let source = command_option_value(argv, "--source").unwrap_or_else(|| manifest_arg.clone());
+            let trust_level = match command_option_value(argv, "--trust")
+                .unwrap_or_else(|| "community".to_string())
+                .as_str()
+            {
+                "core" => PluginTrustLevel::Core,
+                "verified" => PluginTrustLevel::Verified,
+                "unknown" => PluginTrustLevel::Unknown,
+                _ => PluginTrustLevel::Community,
+            };
+            let installed = install_plugin_manifest(
+                &plugin_registry_path,
+                InstallPluginRequest { manifest_text, source, trust_level },
+                env!("CARGO_PKG_VERSION"),
+            )?;
+            json!({
+                "status": "installed",
+                "plugin": installed,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "uninstall" => {
+            let namespace = command_positionals(argv, &["cli", "plugins", "uninstall"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+            uninstall_plugin(&plugin_registry_path, &namespace)?;
+            json!({
+                "status": "uninstalled",
+                "namespace": namespace,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
+            let repaired = bijux_cli_plugin::self_repair_registry(&plugin_registry_path).is_ok();
+            let report = plugin_doctor(&plugin_registry_path)?;
+            let diagnostics = load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                .unwrap_or_default();
+            let diagnostics_json: Vec<Value> = diagnostics
+                .into_iter()
+                .map(|diag| {
+                    json!({
+                        "namespace": diag.namespace,
+                        "severity": diag.severity,
+                        "message": diag.message,
+                    })
+                })
+                .collect();
+            json!({
+                "status": "ok",
+                "doctor": {
+                    "installed": report.installed,
+                    "broken": report.broken,
+                    "incompatible": report.incompatible,
+                },
+                "diagnostics": diagnostics_json,
+                "self_repair_attempted": true,
+                "self_repair_success": repaired,
+            })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "reserved-names" => {
             json!({
@@ -1290,6 +1447,10 @@ fn is_known_route(path: &[String]) -> bool {
                 && (c == "list"
                     || c == "inspect"
                     || c == "check"
+                    || c == "install"
+                    || c == "uninstall"
+                    || c == "scaffold"
+                    || c == "doctor"
                     || c == "reserved-names"
                     || c == "where"
                     || c == "explain"
