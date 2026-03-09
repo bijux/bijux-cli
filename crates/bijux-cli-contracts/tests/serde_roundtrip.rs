@@ -10,8 +10,8 @@ use bijux_cli_contracts::{
     OutputEnvelopeV1, OutputFormat, PluginCapability, PluginManifestV1, PrettyMode,
 };
 use schemars as _;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::json;
 
 fn roundtrip<T>(value: &T)
@@ -52,7 +52,11 @@ fn roundtrip_for_all_contract_types() {
         timestamp: "2026-03-09T00:00:00Z".to_string(),
     };
 
-    let output = OutputEnvelopeV1 { status: "ok".to_string(), data: json!({"healthy": true}), meta: meta.clone() };
+    let output = OutputEnvelopeV1 {
+        status: "ok".to_string(),
+        data: json!({"healthy": true}),
+        meta: meta.clone(),
+    };
 
     let error = ErrorEnvelopeV1 {
         status: "error".to_string(),
@@ -75,11 +79,8 @@ fn roundtrip_for_all_contract_types() {
         aliases: vec![CommandPath { segments: vec![Namespace("status".to_string())] }],
     };
 
-    let ns_meta = NamespaceMetadata {
-        name: ns.clone(),
-        reserved: true,
-        owner: "bijux-cli".to_string(),
-    };
+    let ns_meta =
+        NamespaceMetadata { name: ns.clone(), reserved: true, owner: "bijux-cli".to_string() };
 
     let plugin_manifest = PluginManifestV1 {
         name: "sample".to_string(),

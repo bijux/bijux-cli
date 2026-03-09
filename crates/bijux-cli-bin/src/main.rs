@@ -3,7 +3,7 @@
 
 use anyhow::Result;
 use bijux_cli_core::core_marker;
-use bijux_cli_output::{EmitterConfig, render_value};
+use bijux_cli_output::{render_value, EmitterConfig};
 use serde_json::to_value;
 
 fn main() -> Result<()> {
