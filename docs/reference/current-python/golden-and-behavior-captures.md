@@ -5,6 +5,7 @@ Provide concrete capture files for tasks 41-60 from the current Python implement
 
 ## Capture root
 - `artifacts/python-behavior/golden/*.json`
+- `artifacts/python-behavior/golden/config/*.json`
 - `artifacts/python-behavior/runtime/repl-interactive.txt`
 - `artifacts/current-python-behavior-lock.json`
 
