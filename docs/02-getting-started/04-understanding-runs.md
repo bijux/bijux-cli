@@ -1,116 +1,65 @@
 # Understanding Runs
 
-Define the run model a beginner needs for confident execution analysis.
+A run is the primary historical object in bijux-dag. It is the unit you inspect, replay, diff, and audit.
 
-Run interpretation is required for troubleshooting, replay, and diff.
+## What a run contains
 
-## Explanation
-Run identity fundamentals:
-- every run has a unique `run_id`.
-- `run_id` identifies one concrete execution instance, even when graph definition is unchanged.
-- multiple runs can reference the same graph identity but always have different run identities.
+A run record typically contains:
 
-Run metadata model (operator view):
-- `run_id`: execution identifier.
-- `graph_id`: definition identity used for execution.
-- `status`: planned/running/succeeded/failed/canceled (implementation vocabulary may vary in presentation).
-- timing data: started/finished timestamps or durations.
-- node outcomes: per-node success/failure and diagnostics.
-- artifact references: links to produced artifacts and lineage fields.
+- `run_id`: unique execution identity,
+- `graph_id`: identity of the graph definition executed,
+- lifecycle status and timing envelope,
+- per-node outcome records,
+- artifact references and lineage links.
 
-Beginner mental model:
-- graph answers "what should happen."
-- run answers "what happened this time."
-- artifact answers "what output was produced by which node/run."
+Why this matters: if you cannot identify and inspect a run, you cannot make reliable equivalence or drift claims.
 
-Lifecycle behavior:
-1. run is created with graph context.
-2. scheduler and engine execute nodes according to dependencies.
-3. node outcomes and artifact references are persisted.
-4. run transitions to terminal state.
-
-Lineage relationship:
-- a run links graph identity to node outcomes.
-- artifacts link back to the run and producing node.
-- replay and diff consume these links for equivalence classification.
-
-Quick run review checklist:
-1. capture `run_id` from command output.
-2. confirm terminal status.
-3. inspect failed/blocked node outcomes.
-4. inspect artifact references for missing or unexpected outputs.
-5. compare against prior run when behavior changed.
-
-Run non-goals in this guide:
-- this page does not define run hashing algorithm details.
-- this page does not define storage backend internals.
-- this page does not replace run-model contract language in specification docs.
-
-Run vs attempt vs replayed run vs imported run:
-- run: one execution instance with one run identity and evidence scope.
-- attempt: one try within a run lifecycle when retry behavior is enabled.
-- replayed run: a new run generated from baseline context to validate equivalence/drift.
-- imported run: run context reconstructed from transferred evidence (for example bundle import) and then inspected/replayed.
-
-## Examples
-```bash
-# Inspect full run record
-bijux-dag inspect run --run-id RUN_20260309_001
-
-# Inspect associated artifacts
-bijux-dag inspect artifact --run-id RUN_20260309_001
-
-# Compare runs when behavior changed
-bijux-dag diff run --left RUN_20260309_001 --right RUN_20260309_002
-```
+## Concrete run record example
 
 ```json
 {
-  "run_id": "RUN_20260309_001",
-  "graph_id": "GRAPH_44A",
+  "run_id": "RUN_20260309_301",
+  "graph_id": "ORDERS_FIRST_GRAPH",
   "status": "succeeded",
   "nodes": {
-    "prepare": {"status": "succeeded"},
-    "transform": {"status": "succeeded"}
+    "extract_orders": {"status": "succeeded"},
+    "summarize_orders": {"status": "succeeded"}
   },
   "artifacts": [
-    {"artifact_id": "ART_001", "node_id": "prepare"},
-    {"artifact_id": "ART_002", "node_id": "transform"}
+    {"artifact_id": "ART_901", "node_id": "extract_orders"},
+    {"artifact_id": "ART_902", "node_id": "summarize_orders"}
   ]
 }
 ```
 
-```mermaid
-graph LR
-  A[Graph Identity] --> B[Run Identity]
-  B --> C[Node Outcomes]
-  B --> D[Artifact References]
-  D --> E[Artifact Identity]
-```
+How to read it:
 
-## Guarantees
-- Run identity and status interpretation are defined consistently with getting-started flow.
-- The checklist is sufficient for first-pass diagnostics.
-- This guide defines run metadata and lineage concepts needed for replay/diff orientation.
+- `run_id` identifies the exact execution instance,
+- `graph_id` ties it to definition state,
+- `nodes` show outcome surface,
+- `artifacts` show output lineage anchors.
 
-## Limitations
-- Backend-specific storage details are not covered here.
-- This is an operational guide, not schema contract text.
-- Exact JSON fields may differ by output mode or CLI version presentation.
+## Run classes you must distinguish
 
-## Related
-- `docs/02-getting-started/03-running-a-pipeline.md`
-- `docs/02-getting-started/05-basic-troubleshooting.md`
-- `docs/03-user-guide/04-run-history.md`
-- `docs/06-specification/02-run-model.md`
+- successful run: reaches terminal success with full expected outcomes.
+- failed run: terminal failure with diagnosable node-level reason.
+- replayed run: new run produced by replay workflow against baseline context.
+- imported run: run context materialized from external bundle/provenance source.
 
-## Run, attempt, replayed run, and imported run
+Treat these as different evidence classes during incident and release analysis.
 
-These terms are related but not interchangeable:
+## Run identity, graph identity, and ancestry
 
-- `run`: the canonical recorded execution instance with identity, outcomes, and artifact lineage.
-- `attempt`: an execution try under the same intended graph/input context; attempts may fail before producing a valid run record.
-- `replayed run`: a new run produced by executing replay semantics against prior evidence; it is not the original run.
-- `imported run`: a run record materialized from an external bundle into local history; provenance is external even if identifiers match.
+Relationship model:
 
-Use these distinctions when debugging history so you do not treat retries, replays, and imports as the same evidence class.
+- many runs can share one graph identity,
+- each run has its own run identity,
+- ancestry links (original/replayed/imported) explain provenance lineage.
+
+Common mistake: assuming equal graph identity implies equal run behavior. It does not.
+
+## Next reading
+
+- First-run operational sequence: [Running A Pipeline](../02-getting-started/03-running-a-pipeline.md)
+- Practical history interpretation: [Run History](../03-user-guide/04-run-history.md)
+- Formal run contract: [Run Model Specification](../06-specification/02-run-model.md)
