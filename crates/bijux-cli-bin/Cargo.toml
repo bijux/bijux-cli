@@ -14,5 +14,10 @@ path = "src/main.rs"
 [dependencies]
 bijux-cli-core = { path = "../bijux-cli-core" }
 
+[dev-dependencies]
+bijux-cli-core = { path = "../bijux-cli-core" }
+serde_json.workspace = true
+libc = "0.2.177"
+
 [lints]
 workspace = true

@@ -5,8 +5,23 @@ use std::env;
 use std::io::{self, Write};
 use std::process::ExitCode;
 
+#[cfg(test)]
+use libc as _;
+#[cfg(test)]
+use serde_json as _;
+
 fn main() -> ExitCode {
-    let argv: Vec<String> = env::args().collect();
+    let mut argv: Vec<String> = Vec::new();
+    for value in env::args_os() {
+        let value = match value.into_string() {
+            Ok(valid) => valid,
+            Err(_) => {
+                let _ = writeln!(io::stderr(), "invalid UTF-8 argument in argv");
+                return ExitCode::from(2);
+            }
+        };
+        argv.push(value);
+    }
     let result = match bijux_cli_core::app::run_app(&argv) {
         Ok(value) => value,
         Err(error) => {

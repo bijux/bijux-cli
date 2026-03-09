@@ -68,15 +68,8 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 name = "bijux-cli-bin"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "bijux-cli-contracts",
  "bijux-cli-core",
- "bijux-cli-install",
- "bijux-cli-output",
- "bijux-cli-plugin",
- "bijux-cli-python",
- "bijux-cli-routing",
- "clap",
+ "libc",
  "serde_json",
 ]
 
@@ -93,7 +86,14 @@ dependencies = [
 name = "bijux-cli-core"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bijux-cli-contracts",
+ "bijux-cli-install",
+ "bijux-cli-output",
+ "bijux-cli-plugin",
+ "bijux-cli-python",
+ "bijux-cli-routing",
+ "clap",
  "futures",
  "serde_json",
 ]
@@ -121,7 +121,6 @@ name = "bijux-cli-plugin"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
- "bijux-cli-core",
  "semver",
  "serde",
  "serde_json",
@@ -157,7 +156,6 @@ name = "bijux-cli-routing"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
- "bijux-cli-core",
  "clap",
  "proptest",
  "strsim",
