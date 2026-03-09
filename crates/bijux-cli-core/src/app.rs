@@ -686,6 +686,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
             let message = error.to_string();
             let code = if message.contains("Missing argument")
                 || message.contains("Invalid argument")
+                || message.contains("Key cannot be empty")
                 || message.contains("Invalid key")
                 || message.contains("Unknown config section")
                 || message.contains("Config key not found")
