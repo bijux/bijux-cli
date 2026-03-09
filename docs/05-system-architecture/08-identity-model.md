@@ -71,3 +71,31 @@ graph LR
 - `docs/06-specification/04-graph-identity.md`
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
+
+## Identity model as the architecture center
+
+Graph, run, and artifact identity are the traceability spine of bijux-dag. Scheduling and execution produce behavior, but identity makes that behavior comparable across time and environments.
+
+Without identity linkage, replay and diff become heuristic; with identity linkage, they become contract-driven.
+
+## Comparing graph, run, and artifact identities
+
+- Graph identity answers: "what was intended to run?"
+- Run identity answers: "which concrete execution instance produced this evidence?"
+- Artifact identity answers: "what output unit was produced, and can it be compared?"
+
+Interaction pattern:
+
+1. graph identity scopes execution intent,
+2. run identity records one execution instance under that intent,
+3. artifact identity binds outputs back to run and graph context.
+
+## Identity boundaries and common confusion
+
+Common confusion to avoid:
+
+- equal graph identity does not mean equal run outcome,
+- equal run identity does not imply equal artifact set unless artifact records are complete,
+- equal artifact hash does not imply equivalent upstream run context.
+
+Boundary rule: use all three identities together when making equivalence claims.

@@ -95,3 +95,29 @@ graph TD
 - `docs/03-user-guide/08-bundles-and-portability.md`
 - `docs/07-operations/05-backend-support.md`
 - `docs/06-specification/03-artifact-model.md`
+
+## Portability classes
+
+Portability should be classified explicitly:
+
+- portable: replay and diff support equivalence decisions within declared support envelope,
+- conditionally portable: transferable with bounded-equivalence limits,
+- non-portable: capability gaps prevent trustworthy equivalence classification.
+
+## Bundle portability versus backend equivalence
+
+Bundle transport proves context transfer; it does not prove backend equivalence.
+
+- bundle success + replay/diff equivalence -> accepted portability claim,
+- bundle success + replay/diff drift -> portability claim rejected or downgraded,
+- bundle success + incomplete replay -> bounded claim only.
+
+## Portability failure and downgrade cases
+
+Typical downgrade/failure triggers:
+
+- missing adapter capability required by the workflow,
+- incompatible canonicalization/hash policy versions,
+- target environment constraints that block faithful execution.
+
+When these occur, classify outcome as bounded or non-portable rather than forcing an equivalence conclusion.

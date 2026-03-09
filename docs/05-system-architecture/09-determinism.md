@@ -104,3 +104,21 @@ graph TD
 - `docs/06-specification/04-graph-identity.md`
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
+
+## Determinism categories in bijux-dag
+
+Determinism is split into three categories:
+
+- deterministic identity: stable graph/run/artifact identity derivation under fixed policy,
+- deterministic planning: stable schedulable frontier under equivalent dependency state,
+- deterministic execution: stable classified outcomes under equivalent inputs and capability envelope.
+
+## Determinism limits across backends and environments
+
+Determinism is bounded, not absolute:
+
+- capability differences between adapters can reduce equivalence to bounded-equivalent outcomes,
+- environment/toolchain drift can alter execution outcomes while preserving graph identity,
+- timing/resource variance is expected and not itself determinism failure unless it changes classified outcomes.
+
+Operational implication: determinism claims are only valid inside a declared capability and environment envelope.
