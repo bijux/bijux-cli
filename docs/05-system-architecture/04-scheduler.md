@@ -1,22 +1,45 @@
 # Scheduler
 
 ## Purpose
-Define the reader-facing intent for this document.
+Explain scheduler design and how dependency constraints become executable order.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Scheduler behavior defines ordering guarantees and concurrency opportunities.
 
 ## Explanation
-Primary explanation content goes here.
+Scheduler responsibilities:
+- evaluate dependency graph readiness
+- produce next executable node set
+- react to node completion/failure events
+
+Design principles:
+- strict dependency correctness
+- predictable ordering behavior
+- clear handling of blocked and failed paths
+
+Scheduler workflow:
+1. build dependency state
+2. identify runnable nodes
+3. dispatch work to engine
+4. update state based on outcomes
+5. continue until terminal run state
 
 ## Examples
-Add executable and realistic examples.
+```text
+If node C depends on A and B:
+- C is not schedulable until both A and B complete successfully.
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Scheduler semantics are described as dependency-correct ordering logic.
+- Concurrency is permitted only where dependency constraints allow it.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- This page does not define optimization heuristics or advanced policy tuning.
+- Low-level scheduler contract details are specified in specification docs.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/03-execution-engine.md`
+- `docs/03-user-guide/02-dependencies-and-order.md`
+- `docs/06-specification/01-dag-model.md`
+- `docs/06-specification/02-run-model.md`

@@ -1,22 +1,41 @@
 # Adapters
 
 ## Purpose
-Define the reader-facing intent for this document.
+Define the adapter model and its role in separating runtime semantics from execution backends.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Adapters are the architecture boundary between core runtime intent and environment-specific execution mechanisms.
 
 ## Explanation
-Primary explanation content goes here.
+Adapter responsibilities:
+- translate runtime work units to backend/execution substrate actions
+- return normalized execution outcomes to runtime
+- expose capability and limitation boundaries
+
+Adapter model constraints:
+- adapters must preserve core runtime semantics where supported
+- adapter-specific behavior differences must be explicit
+- portability claims are bounded by adapter support contracts
+
+Operational implications:
+- same DAG can be evaluated across supported adapters
+- equivalence checks require replay/diff validation
 
 ## Examples
-Add executable and realistic examples.
+```text
+Runtime intent -> Adapter translation -> Backend execution -> Normalized outcome -> Runtime state update
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Adapter boundary is explicit and architecture-visible.
+- Support and limitation framing is aligned with portability docs.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Full backend compatibility matrix is in operations docs.
+- Adapter interface details are in development/spec docs.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/03-execution-engine.md`
+- `docs/07-operations/05-backend-support.md`
+- `docs/08-development/03-adapter-development.md`
+- `docs/06-specification/03-artifact-model.md`

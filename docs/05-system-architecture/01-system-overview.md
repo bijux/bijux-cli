@@ -1,22 +1,49 @@
 # System Overview
 
 ## Purpose
-Define the reader-facing intent for this document.
+Describe the high-level architecture of bijux-dag and how core subsystems interact.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+This is the architecture entrypoint before subsystem-level details.
 
 ## Explanation
-Primary explanation content goes here.
+Primary architectural domains:
+- CLI control surface
+- DAG definition and validation layer
+- execution engine and scheduler
+- adapter boundary for environment/backend execution
+- run directory and artifact persistence surfaces
+- identity model for graph/run/artifact traceability
+
+Execution flow summary:
+1. user submits graph through CLI
+2. graph is validated and prepared
+3. scheduler derives executable order from dependencies
+4. engine executes nodes via appropriate adapters
+5. run and artifact evidence is persisted
+6. inspect/replay/diff operate over persisted state
+
+System boundary priorities:
+- deterministic control over hidden behavior
+- explicit operational state over implicit transitions
+- traceability over opaque execution outcomes
 
 ## Examples
-Add executable and realistic examples.
+```text
+Control flow:
+CLI -> Graph validation -> Scheduler -> Engine -> Adapter -> Run/Artifact persistence -> Inspect/Replay/Diff
+```
 
 ## Guarantees
-State explicit guarantees only.
+- System domains and control flow are documented in one coherent model.
+- Boundary emphasis aligns with deterministic and inspectable operation goals.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- This document is conceptual; it does not define contracts field-by-field.
+- Backend-specific implementation details are documented in dedicated pages.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/02-crate-architecture.md`
+- `docs/05-system-architecture/03-execution-engine.md`
+- `docs/05-system-architecture/04-scheduler.md`
+- `docs/05-system-architecture/08-identity-model.md`

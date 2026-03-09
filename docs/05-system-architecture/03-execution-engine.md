@@ -1,22 +1,43 @@
 # Execution Engine
 
 ## Purpose
-Define the reader-facing intent for this document.
+Describe how the execution engine runs nodes, handles outcomes, and coordinates with scheduling.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+The execution engine is the runtime core that turns DAG plans into concrete run behavior.
 
 ## Explanation
-Primary explanation content goes here.
+Execution engine responsibilities:
+- consume scheduler-ready node work units
+- execute node commands through adapter/runtime boundaries
+- capture success/failure outcomes
+- emit state transitions and operational evidence
+
+Engine behavior model:
+- node execution follows dependency readiness
+- failures are surfaced with diagnosable state
+- outputs are handed to artifact persistence surfaces
+
+Engine boundary rules:
+- engine executes; scheduler orders
+- engine records outcomes; history/index surfaces present trends
 
 ## Examples
-Add executable and realistic examples.
+```text
+Engine cycle:
+receive schedulable node -> execute -> record result -> notify scheduler/state
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Engine responsibilities are separated from scheduler responsibilities.
+- Outcome handling is described as explicit stateful behavior.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- This page does not define all runtime state-machine internals.
+- Adapter-specific execution details are covered in adapter architecture docs.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/04-scheduler.md`
+- `docs/05-system-architecture/05-adapters.md`
+- `docs/05-system-architecture/07-run-directory.md`
+- `docs/06-specification/02-run-model.md`
