@@ -1,53 +1,44 @@
 # Bundles And Portability
 
 ## Purpose
-Explain bundle export/import workflows and practical portability guarantees.
+Explain bundle export/import workflows and portability boundaries with practical validation steps.
 
 ## Context
-Bundles are the primary mechanism for moving reproducible workflow context across environments.
+Bundles are the handoff mechanism for moving workflow context between environments.
 
 ## Explanation
 Bundle workflow:
-1. export bundle from known run/graph context
+1. export bundle from a known run
 2. transfer bundle to target environment
 3. import bundle
-4. replay or run validation in target
+4. replay and diff against baseline
 
-Portability guarantees (user-level):
-- bundle format is intended for cross-environment handoff
-- portability is bounded by supported backend/runtime constraints
+Portability boundaries:
+- portability means transferable workflow context, not universal backend parity
+- behavior remains bounded by environment and support matrix constraints
 
-What portability does not mean:
-- identical performance across all environments
-- universal feature parity across unsupported backends
+End-to-end operator workflow:
+```text
+Author DAG -> Run -> Export bundle -> Import bundle -> Replay -> Diff -> Decision
+```
 
-End-to-end workflow example:
-- author DAG
-- execute run
-- export bundle
-- import bundle in target
-- replay and diff against source baseline
+This workflow is the recommended baseline for release confidence and migration checks.
 
 ## Examples
 ```bash
-# Export bundle
 bijux-dag bundle export --run-id RUN_20260309_120 --out ./exports/run120.bundle
-
-# Import bundle
 bijux-dag bundle import --bundle ./exports/run120.bundle
-
-# Validate behavior after import
 bijux-dag replay --run-id RUN_20260309_120
 bijux-dag diff run --left RUN_20260309_120 --right RUN_20260309_121
 ```
 
 ## Guarantees
-- Bundle workflow is documented as a concrete operational path.
-- Portability boundaries are described explicitly, not implied.
+- Bundle flow is documented as a complete operational loop.
+- Portability limits are explicit and non-speculative.
 
 ## Limitations
-- Portability remains constrained by backend support and environment contracts.
-- This guide does not define low-level bundle schema internals.
+- Does not define low-level bundle schema internals.
+- Does not guarantee identical performance across environments.
 
 ## Related
 - `docs/03-user-guide/05-replay.md`

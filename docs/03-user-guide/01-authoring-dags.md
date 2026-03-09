@@ -1,30 +1,32 @@
 # Authoring Dags
 
 ## Purpose
-Define practical authoring rules for building clear, maintainable DAG definitions.
+Define practical authoring rules for clear, maintainable DAG definitions.
 
 ## Context
-This document is the primary user guide for writing DAG files beyond the first tutorial.
+This is the canonical user-guide entry for writing DAG files beyond first-run tutorials.
 
 ## Explanation
-Authoring goals:
-- explicit node intent
-- explicit dependencies
-- deterministic command behavior
+Authoring principles:
+- model true dependencies only
+- keep node scope single-purpose
+- prefer deterministic commands over environment-dependent behavior
 
-Recommended DAG file structure:
-- graph metadata (`graph_id` and optional descriptive fields)
-- node list
-- per-node command and dependency declarations
+Recommended file shape:
+- graph identity metadata
+- node list with stable IDs
+- explicit dependency declarations
 
-Node definition guidance:
-- `id` must be stable and descriptive
-- `command` should avoid hidden mutable behavior
-- `depends_on` should represent real prerequisites only
+Authoring quality checklist:
+1. every node ID is unique and descriptive
+2. every dependency target exists
+3. no hidden dependency in shell scripts
+4. outputs are explicit and inspectable
 
-Execution-order guidance:
-- model true constraints, not incidental preference
-- avoid over-constraining parallelizable nodes
+Concept boundaries:
+- DAG defines execution plan
+- run executes that plan
+- artifact stores produced outputs
 
 ## Examples
 ```json
@@ -38,16 +40,22 @@ Execution-order guidance:
 }
 ```
 
+```text
+Authoring review example:
+- if transform depends on extract output, dependency must be explicit
+- if publish can run without transform, remove that edge
+```
+
 ## Guarantees
-- Authoring guidance prioritizes explicit dependency semantics.
-- Documented structure aligns with getting-started and specification DAG model docs.
+- Guidance is aligned with dependency semantics and scheduler behavior described elsewhere.
+- This document is the single user-guide source for DAG authoring baseline.
 
 ## Limitations
-- This guide does not define full schema validation rules.
-- Backend-specific command execution constraints are covered elsewhere.
+- Does not define full schema validation internals.
+- Does not cover backend-specific command execution constraints.
 
 ## Related
 - `docs/03-user-guide/02-dependencies-and-order.md`
-- `docs/02-getting-started/02-first-dag.md`
+- `docs/03-user-guide/03-artifacts.md`
 - `docs/06-specification/01-dag-model.md`
 - `docs/06-specification/04-graph-identity.md`
