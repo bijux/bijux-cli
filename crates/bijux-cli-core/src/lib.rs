@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 //! Core runtime primitives for Rust bijux-cli.
 
+pub mod kernel;
+
 use bijux_cli_contracts::ContractMarker;
 
 /// Build a canonical core marker for diagnostics.

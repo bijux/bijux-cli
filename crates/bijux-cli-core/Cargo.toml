@@ -8,10 +8,11 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+futures = "0.3.31"
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+serde_json.workspace = true
 
 [lints]
 workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
