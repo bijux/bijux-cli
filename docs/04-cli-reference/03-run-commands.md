@@ -8,8 +8,9 @@ Run commands are the primary operator surface for starting workflows and reviewi
 
 ## Explanation
 Common run operations:
-- execute a DAG
-- view run history
+- execute a DAG.
+- view run history.
+- retrieve run-scoped operational status.
 
 Common flags:
 - `--dag <path>` for run creation
@@ -17,26 +18,43 @@ Common flags:
 - `--limit <n>` for history windowing
 - `--output <format>` where supported
 
+Command lifecycle role:
+- run execution is the source of run IDs used by inspect/replay/diff.
+- run history is the indexing surface for selecting baselines and failing candidates.
+
 Error handling guidance:
 - invalid DAG: validation error
 - unknown run ID: lookup error
+- runtime node failure: run completes with failed status and non-zero exit where applicable
 
 ## Examples
 ```bash
+# Start a run
 bijux-dag run --dag ./pipelines/main.dag.json
+
+# Query recent history
 bijux-dag run history --limit 20 --output json
 ```
 
 ```json
 {
   "run_id": "RUN_20260309_220",
-  "status": "completed"
+  "status": "completed",
+  "graph_id": "PIPELINE_MAIN"
 }
+```
+
+```text
+Run lifecycle command flow:
+1) run --dag ...
+2) run history --limit ...
+3) inspect run --run-id ...
 ```
 
 ## Guarantees
 - Run command usage is documented as execution-plus-history flow.
 - Command examples align with user-guide run workflows.
+- Flags and output examples support both human and automation usage.
 
 ## Limitations
 - Storage engine internals are outside CLI reference scope.
