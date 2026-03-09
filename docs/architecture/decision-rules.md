@@ -37,3 +37,18 @@ Every release candidate must include command-level parity matrix and diff artifa
 
 ## Plugin V1 Freeze
 Plugin v1 behavior is frozen before introducing new plugin command complexity beyond parity-backed scope.
+
+## Contributor Status Rule
+Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
+
+## Maintainer Milestone Rule
+Every milestone update must include explicit `done`, `left`, and `blocked/deferred` lists backed by artifact paths.
+
+## Major Command Rule
+Each major command area requires a parity report before non-parity improvements are accepted.
+
+## Public Claim Rule
+Any public claim in README must be evidence-backed by repository artifacts or generated reports.
+
+## Truth Before Polish Freeze
+Truth-reporting and parity evidence gates are frozen as release requirements before polish-only work.

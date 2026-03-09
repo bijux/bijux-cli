@@ -44,3 +44,11 @@ This guide defines engineering standards for the Rust workspace in `bijux-cli`.
 - Use Conventional Commits.
 - Keep commits small and logically grouped.
 - Prefer one behavior change per commit.
+
+## Maintainer milestone reporting
+- Every milestone report must include explicit `done`, `left`, and `blocked/deferred` sections.
+- Milestone completion claims require evidence artifacts:
+  - `artifacts/status/what_is_done.json`
+  - `artifacts/status/what_is_left.json`
+  - `artifacts/status/what_is_partial.json`
+  - `artifacts/status/what_is_deferred.json`

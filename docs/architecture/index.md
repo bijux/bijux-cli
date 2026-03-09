@@ -34,6 +34,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Test review checklist](test-review-checklist.md)
 - [Test quality priorities](test-quality-priorities.md)
 - [State management rules](state-management-rules.md)
+- [Truth before polish milestone](truth-before-polish-milestone.md)
 - [Parity release candidate rule](parity_release_candidate_rule.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)

@@ -25,9 +25,11 @@ Bijux focuses on:
 > **At a glance**
 > Plugin-driven · Deterministic flags · Dependency Injection · Sync + Async · REPL · JSON/YAML output
 > **Quality**
-> 1,800+ tests across all layers · 98%+ coverage · Multi-Python CI
-> → See [Test Artifacts](https://bijux.github.io/bijux-cli/artifacts/test/) and
-> [HTML coverage](https://bijux.github.io/bijux-cli/artifacts/test/htmlcov/index.html)
+> Quality status is evidence-backed by generated artifacts in this repo.
+> → See `artifacts/parity/command_parity_matrix.json`,
+> `artifacts/status/test_quality_audit.json`,
+> `artifacts/status/docs_audit.json`,
+> and `artifacts/status/what_is_partial.json`.
 
 ---
 

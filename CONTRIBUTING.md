@@ -240,6 +240,17 @@ BREAKING CHANGE: <explanation>
 3. Ensure Conventional Commits
 4. Open PR with clear summary & rationale
 
+### Status Update Rule
+
+- Describe current observed state, not aspiration.
+- Reference generated evidence artifacts for milestone claims:
+  - `artifacts/status/what_is_done.json`
+  - `artifacts/status/what_is_left.json`
+  - `artifacts/status/what_is_partial.json`
+  - `artifacts/parity/command_parity_matrix.json`
+  - `artifacts/status/docs_audit.json`
+  - `artifacts/status/test_quality_audit.json`
+
 [Back to top](#top)
 
 ---
