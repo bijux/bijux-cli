@@ -28,19 +28,41 @@ System boundary priorities:
 - explicit operational state over implicit transitions
 - traceability over opaque execution outcomes
 
+Architecture tradeoff posture:
+- prefer explicit guarantees over broad but unverifiable claims
+- prefer stable contract language over roadmap-oriented speculation
+- prefer diagnosable evidence surfaces over implicit runtime behavior
+
+Architecture consistency checks:
+- terminology in architecture docs must match `docs/01-introduction/05-terminology.md`
+- behavior statements in architecture docs must map to specification pages
+- architecture pages must not claim unimplemented future capabilities
+
 ## Examples
 ```text
 Control flow:
 CLI -> Graph validation -> Scheduler -> Engine -> Adapter -> Run/Artifact persistence -> Inspect/Replay/Diff
 ```
 
+```mermaid
+graph LR
+  A[CLI] --> B[Graph Validation]
+  B --> C[Scheduler]
+  C --> D[Execution Engine]
+  D --> E[Adapter Boundary]
+  E --> F[Run and Artifact Persistence]
+  F --> G[Inspect Replay Diff]
+```
+
 ## Guarantees
 - System domains and control flow are documented in one coherent model.
 - Boundary emphasis aligns with deterministic and inspectable operation goals.
+- Architecture documentation explicitly excludes speculative or roadmap claims.
 
 ## Limitations
 - This document is conceptual; it does not define contracts field-by-field.
 - Backend-specific implementation details are documented in dedicated pages.
+- Consistency checks are governance expectations and do not replace implementation tests.
 
 ## Related
 - `docs/05-system-architecture/02-crate-architecture.md`

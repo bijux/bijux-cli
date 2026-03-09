@@ -22,6 +22,11 @@ Engine boundary rules:
 - engine executes; scheduler orders
 - engine records outcomes; history/index surfaces present trends
 
+Deliberate non-goals:
+- engine is not a policy layer for cross-backend equivalence decisions
+- engine does not redefine adapter capability boundaries
+- engine does not treat wall-clock identity as determinism
+
 ## Examples
 ```text
 Engine cycle:
@@ -35,6 +40,7 @@ receive schedulable node -> execute -> record result -> notify scheduler/state
 ## Limitations
 - This page does not define all runtime state-machine internals.
 - Adapter-specific execution details are covered in adapter architecture docs.
+- Performance tuning heuristics are outside this architecture baseline.
 
 ## Related
 - `docs/05-system-architecture/04-scheduler.md`
