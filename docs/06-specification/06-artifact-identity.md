@@ -74,3 +74,31 @@ artifact identity: drift
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/08-diff-semantics.md`
 - `docs/03-user-guide/03-artifacts.md`
+
+## Identity inputs and exclusions
+
+Identity inputs (normative):
+
+- canonical artifact content representation,
+- artifact kind canonicalization policy,
+- identity policy version.
+
+Identity exclusions (normative):
+
+- storage path when path is not declared semantic,
+- display labels and UI metadata,
+- transport container metadata not part of canonical content.
+
+## Provenance-sensitive comparison examples
+
+Identical content, different provenance:
+
+- artifact A and B share hash `sha256:2f67...`,
+- artifact A produced by `run r_101/node transform`,
+- artifact B produced by `run r_188/node transform`.
+
+Interpretation: content-equivalent artifacts can still have different lineage significance for audit/debug flows.
+
+## Interaction between identity and lineage
+
+Artifact identity answers content-equivalence. Lineage answers production context. Both are required for trustworthy replay/diff interpretation and incident attribution.

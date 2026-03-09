@@ -72,3 +72,39 @@ artifact.run_id: r_101...
 - `docs/06-specification/04-graph-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
 - `docs/03-user-guide/04-run-history.md`
+
+## Identity inputs and exclusions
+
+Identity inputs (normative):
+
+- graph identity reference,
+- run-attempt uniqueness input (sequence/nonce/time slot within namespace),
+- identity policy version.
+
+Identity exclusions (normative):
+
+- human-readable labels,
+- non-semantic annotations,
+- post-hoc derived analytics fields.
+
+## What changes run identity and what does not
+
+Changes run identity:
+
+- new execution attempt over same graph,
+- change in identity namespace or uniqueness input,
+- identity-policy version change without compatibility mapping.
+
+Does not change run identity:
+
+- rendering format changes of the same run record,
+- addition of derived dashboard summaries,
+- non-semantic annotation edits.
+
+## Relationship to graph identity and ancestry
+
+Run identity is a child of graph identity in attribution terms:
+
+- one graph identity can parent many run identities,
+- run ancestry links distinguish original, replayed, and imported provenance classes,
+- ancestry links MUST NOT collapse distinct run identities into one logical attempt.
