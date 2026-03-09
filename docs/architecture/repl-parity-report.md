@@ -1,6 +1,7 @@
 # REPL Parity Report
 
 Date: 2026-03-09
+Scope: tasks 341-360
 
 ## Inputs used for comparison
 
@@ -20,35 +21,37 @@ Rust references:
 - `crates/bijux-cli-repl/tests/transcript_parity.rs`
 - `crates/bijux-cli-repl/tests/transcript_cases.rs`
 
-## Parity status
+## Baseline status for 341-360
 
-| Behavior | Status | Evidence |
-|---|---|---|
-| Session startup/shutdown flow | Partial parity | `startup_repl` and `shutdown_repl` tests |
-| Help transcript | Parity-covered | `transcript_case_help_command` |
-| Plugin command transcript | Parity-covered | `transcript_case_plugin_command` |
-| Error transcript | Parity-covered | `transcript_case_error_command` |
-| Quiet transcript behavior | Parity-covered | `transcript_case_quiet_mode` |
-| JSON transcript behavior | Parity-covered | `transcript_case_json_mode` |
-| YAML transcript behavior | Parity-covered | `transcript_case_yaml_mode` |
-| Interrupt behavior | Parity-covered | `transcript_case_interrupt` |
-| EOF exit behavior | Parity-covered | `transcript_case_eof_exit` |
-| History malformed-file recovery | Parity-covered | `malformed_history_recovers_without_crashing` |
-| History large-file handling | Parity-covered | `large_history_load_stays_within_sanity_budget` |
-| Python history layout compatibility | Parity-covered | `history_file_supports_python_prompt_toolkit_layout` |
-| Parser parity with CLI parser | Parity-covered | `repl_line_tokenization_matches_cli_parser_expectations` |
-| Completion reserved namespaces | Parity-covered | `completion_includes_reserved_namespace_candidates` |
-| Completion plugin namespaces | Parity-covered | `completion_includes_plugin_namespace_candidates` |
-| Startup without config/registry | Parity-covered | `startup_works_without_config_or_plugin_registry` |
+- `341`: complete (transcript cases include `status`, `doctor`, `plugins list`, `config get`, `history`)
+- `342`: complete (failure and recovery transcript case)
+- `343`: complete (syntax/usage error transcript case)
+- `344`: complete (nested help transcript case)
+- `345`: complete (session format switching transcript case)
+- `346`: complete (quiet mode transcript case)
+- `347`: complete (trace mode transcript case)
+- `348`: complete (plugin namespace transcript case)
+- `349`: complete (reserved-name collision diagnostics transcript case)
+- `350`: complete (root completion coverage)
+- `351`: complete (grouped `cli` completion coverage)
+- `352`: complete (grouped `dev cli` completion coverage)
+- `353`: complete (plugin namespace completion coverage)
+- `354`: complete (partial token completion coverage)
+- `355`: complete (interrupt/cancellation transcript behavior coverage)
+- `356`: complete (startup latency check under loaded plugin diagnostics inputs)
+- `357`: complete (repl output parity check against non-interactive CLI for `status`)
+- `358`: complete (this report)
+- `359`: complete (`docs/architecture/repl-ux-review.md`)
+- `360`: complete (`docs/architecture/repl-baseline.md`)
 
-## Explicit mismatches and gaps
+## Key implementation updates
 
-1. Python interactive UI uses prompt-toolkit and colored prompt rendering; Rust REPL crate currently validates runtime behavior but does not duplicate prompt-toolkit UX.
-2. Python supports semicolon command splitting and certain piped-mode affordances that are not fully replicated in Rust tests.
-3. Python emits some no-command/unknown-command wording from UI helpers; Rust wording for equivalent errors is stable but not string-identical.
+1. REPL command execution now routes through `bijux_cli_core::app::run_app` using session policy-derived global flags.
+2. This aligns non-interactive and interactive behavior for output envelopes, stream routing, and exit semantics.
+3. REPL keeps meta-command controls (`:set`, `:help`, `:quit`) while delegating normal command behavior to core.
 
-## Next steps
+## Remaining gaps after baseline
 
-1. Add semicolon-segment transcript parity fixtures from Python REPL scripts.
-2. Add explicit piped-mode transcript fixtures for line comments and doc shortcuts.
-3. Decide whether prompt-toolkit-specific UX is required for parity scope or intentionally excluded.
+1. Python prompt-toolkit UI rendering details remain intentionally out of this baseline.
+2. Semicolon command-splitting and additional piped-mode affordances are still excluded.
+3. Plugin registry-heavy startup behavior can be extended with filesystem-backed load tests in later batches.
