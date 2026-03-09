@@ -1,22 +1,42 @@
 # Artifact Store
 
 ## Purpose
-Define the reader-facing intent for this document.
+Explain artifact store architecture and how outputs are persisted and retrieved.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Artifact store design underpins traceability, diffability, and reproducibility workflows.
 
 ## Explanation
-Primary explanation content goes here.
+Artifact store responsibilities:
+- persist artifact payloads and metadata
+- expose retrieval by artifact identity
+- preserve lineage links to producing run/node context
+
+Architecture principles:
+- stable identity-addressable retrieval
+- explicit metadata model for auditability
+- separation of storage concerns from execution control logic
+
+Operational behavior:
+- engine emits artifacts
+- store persists and indexes artifacts
+- inspect/diff surfaces consume stored artifact data
 
 ## Examples
-Add executable and realistic examples.
+```text
+Execution result -> Artifact persistence -> Identity index -> Inspect/Diff consumption
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Artifact persistence and retrieval responsibilities are clearly defined.
+- Lineage-aware storage behavior is explicit.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Backend storage implementation choices are deployment-specific.
+- Hash algorithm internals are defined in specification docs.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/05-system-architecture/03-execution-engine.md`
+- `docs/05-system-architecture/08-identity-model.md`
+- `docs/03-user-guide/03-artifacts.md`
+- `docs/06-specification/03-artifact-model.md`
