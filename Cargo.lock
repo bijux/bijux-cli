@@ -93,7 +93,6 @@ dependencies = [
  "bijux-cli-install",
  "bijux-cli-output",
  "bijux-cli-plugin",
- "bijux-cli-python",
  "bijux-cli-routing",
  "clap",
  "futures",
@@ -106,6 +105,7 @@ version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
  "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -136,7 +136,10 @@ dependencies = [
 name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bijux-cli-contracts",
+ "bijux-cli-core",
+ "bijux-cli-install",
  "pyo3",
  "serde_json",
  "thiserror",
