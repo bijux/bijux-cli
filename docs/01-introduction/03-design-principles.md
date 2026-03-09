@@ -1,101 +1,56 @@
 # Design Principles
 
-These principles are decision filters. If a proposed change does not improve at least one principle without violating another, it should not ship.
+These principles are tradeoff rules. Each one exists to force a concrete engineering decision.
 
-## Explanation
-1. Determinism first
-- Stable behavior under equivalent inputs is preferred over convenience shortcuts.
-- Why: deterministic systems can be validated and trusted.
-- Tradeoff: strict determinism can reduce shortcut flexibility and may require more explicit configuration.
-- Example in practice: replay and diff operate on identity-backed evidence, not informal run notes.
+## Principle set as enforceable tradeoffs
 
-2. Explicit contracts
-- Guarantees and boundaries must be named and testable.
-- Why: unnamed boundaries create hidden assumptions and operational surprises.
-- Tradeoff: contract maintenance adds documentation and test discipline cost.
-- Example in practice: specification pages define formal outcome vocabularies and invalid states.
+| Principle | Tradeoff it enforces | Concrete consequence |
+| --- | --- | --- |
+| Determinism before convenience | reject hidden mutable state shortcuts | classification workflows must stay stable under equivalent inputs |
+| Explicit contracts over implied behavior | pay spec/test overhead to avoid ambiguity | invalid states and invariants must be documented, not guessed |
+| Inspectability by default | store more structured evidence | run and artifact surfaces must remain queryable after execution |
+| Replay as routine control | constrain side-effect-heavy runtime behavior | release confidence can depend on replay classes |
+| Diff as decision input | maintain scoped classification logic | graph/run/artifact divergence cannot be collapsed into one result |
+| Identity-backed attribution | govern hash/canonicalization policy carefully | graph/run/artifact links must remain machine-resolvable |
+| Narrow surface area | trade feature breadth for clarity | commands and contracts stay smaller and more predictable |
+| Honest limits near guarantees | accept less marketing-friendly language | every strong claim must carry scope boundary and non-guarantee |
+| Portability with capability bounds | reject universal parity claims | backend support classes must be explicit and evidence-based |
+| Reader-first reference docs | spend effort on mechanics, not template symmetry | docs must teach action and judgment, not only define terms |
+| No speculative architecture in normative docs | separate current truth from ideas | user-facing references must describe implemented behavior only |
+| Operational usefulness over novelty | reject elegant but unverifiable designs | CI/tests/docs must prove behavior, not narrate intent |
 
-3. Inspectability by default
-- Operational states and outcomes should be observable without hidden tooling.
-- Why: diagnosis quality depends on available evidence.
-- Tradeoff: richer evidence surfaces require structured persistence and indexing effort.
-- Example in practice: run records and artifact lineage are first-class data surfaces.
+## How to use these principles in review
 
-4. Replayability as a core capability
-- Replay is a normal control loop for validation, not an emergency path.
-- Why: reproducibility is strongest when replay is routine.
-- Tradeoff: replay support constrains acceptable hidden state and side effects.
-- Example in practice: release checks can require replay classification before promotion.
+Evaluate changes in order:
 
-5. Diff-driven diagnosis
-- Differences should be classifiable and attributable.
-- Why: teams need actionable drift explanation, not generic mismatch signals.
-- Tradeoff: classification logic is more complex than binary pass/fail reporting.
-- Example in practice: graph/run/artifact scopes classify divergence with reason codes.
+1. Which principle is improved?
+2. Which principle is made worse?
+3. Is the tradeoff explicit and documented?
+4. Are specs/tests/docs updated to keep the tradeoff honest?
 
-6. Identity-backed traceability
-- Graph, run, and artifact identity should support reasoning across time.
-- Why: traceability enables credible comparisons between historical and candidate behavior.
-- Tradeoff: identity derivation must stay versioned and carefully governed.
-- Example in practice: artifact lineage joins `graph_id`, `run_id`, `node_id`, and `artifact_id`.
+A change that cannot answer these questions is not ready.
 
-7. Minimal surface area
-- Prefer clear, small interfaces over broad ambiguous ones.
-- Why: smaller surfaces reduce accidental coupling and cognitive load.
-- Tradeoff: some advanced scenarios require explicit extension rather than built-in shortcuts.
-- Example in practice: narrow command semantics with explicit capability boundaries.
+## Principle failure examples
 
-8. Honest limitations
-- Non-guarantees must be documented where guarantees are documented.
-- Why: reliability depends on knowing boundaries, not only promises.
-- Tradeoff: explicit limitations may look less impressive in shallow comparisons.
-- Example in practice: portability docs state support envelope and non-equivalence zones.
+- adding backend-specific behavior that bypasses normalized outcomes violates contract explicitness and diff reliability;
+- broadening portability language without capability evidence violates honest limits;
+- introducing opaque automation that cannot be inspected violates inspectability and replayability.
 
-9. Portability with boundaries
-- Portability is valuable, but constrained by explicit support contracts.
-- Why: portable workflows are useful only when equivalence claims are trustworthy.
-- Tradeoff: support matrices and validation flows must be maintained.
-- Example in practice: backend tiers and capability constraints govern portability assertions.
+## Guarantees you can test
 
-10. Reader-first documentation
-- Docs should optimize for user understanding and action, not internal process narratives.
-- Why: docs are operational tools, not archival dumps.
-- Tradeoff: writer convenience decreases because content must be curated and pruned.
-- Example in practice: user guides focus on executable workflows and troubleshooting paths.
+- Each principle maps to at least one observable system behavior.
+- Each principle includes a real cost, not only a virtue statement.
+- Principle checks can be applied during design review and PR review.
 
-11. No speculative architecture in reference docs
-- Future ideas do not belong in normative user-facing explanations.
-- Why: speculative text becomes stale and undermines trust.
-- Tradeoff: exploratory ideas must live outside normative references.
-- Example in practice: architecture pages describe implemented boundaries and explicit non-goals.
+## Limits
 
-12. Operational usefulness over conceptual novelty
-- Prefer behavior that is testable, diagnosable, and maintainable.
-- Why: production systems fail in operations, not in whiteboard narratives.
-- Tradeoff: technically elegant but untestable designs are rejected.
-- Example in practice: CI and test lanes prioritize deterministic contract validation.
+- Principles do not replace specifications; they constrain design direction.
+- Principle conflicts still require maintainer judgment, but tradeoff rationale must be explicit.
+- Principles are stable by default and should change only when contract posture changes.
 
-Principle validity rule:
-- a principle that does not force at least one concrete design tradeoff is not a real principle and should be removed.
+## Next reading
 
-## Examples
-```text
-Change evaluation example:
-- If a feature increases hidden mutable state, it violates principles 1 and 3.
-- If a doc adds broad claims without boundaries, it violates principles 2 and 8.
-```
-
-## Guarantees
-- The principle set is intentionally stable and reusable.
-- Principles can be applied as a review filter for new docs and features.
-- Each principle includes rationale, tradeoff, and system-facing example.
-
-## Limitations
-- Principles are not implementation-level specs.
-- Conflicts between principles require maintainer judgment and explicit tradeoff notes.
-
-## Related
-- `docs/01-introduction/01-what-is-bijux-dag.md`
-- `docs/01-introduction/02-mission.md`
-- `docs/08-development/04-contributing.md`
-- `docs/06-specification/08-diff-semantics.md`
+- Product intent that these principles implement: [Mission](../01-introduction/02-mission.md)
+- Identity and determinism architecture: [Identity Model](../05-system-architecture/08-identity-model.md)
+- Contract-level vocabulary for change classification: [Diff Semantics](../06-specification/08-diff-semantics.md)
+- Contribution standards that enforce these principles: [Contributing](../08-development/04-contributing.md)
