@@ -119,6 +119,10 @@ version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
  "bijux-cli-core",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

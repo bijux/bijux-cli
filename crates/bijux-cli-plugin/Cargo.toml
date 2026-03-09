@@ -10,6 +10,10 @@ rust-version.workspace = true
 [dependencies]
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 bijux-cli-core = { path = "../bijux-cli-core" }
+semver = "1.0.27"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true
