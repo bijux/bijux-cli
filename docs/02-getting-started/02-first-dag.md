@@ -1,34 +1,32 @@
 # First Dag
 
 ## Purpose
-Guide a new user from an empty project to a valid minimal DAG definition and first successful run.
+Guide a new user from empty workspace to a valid DAG with explicit execution order.
 
 ## Context
-This is the first practical tutorial after installation.
+This is the first hands-on step after installation.
 
 ## Explanation
-A minimal DAG needs:
-- graph identity metadata
-- at least one node
-- explicit dependency order when multiple nodes exist
+Use a two-node DAG to make ordering explicit and easy to debug.
 
-Start with two nodes where one depends on the other. This makes ordering explicit and easy to inspect.
+Beginner walkthrough:
+1. Create a DAG file.
+2. Define two nodes.
+3. Make node B depend on node A.
+4. Run the DAG.
+5. Inspect run output.
 
-Authoring flow:
-1. Create DAG file.
-2. Define nodes and deterministic command behavior.
-3. Define dependency edge.
-4. Validate and run.
+Beginner mental model:
+- A graph is a plan.
+- A run is one execution of that plan.
+- A dependency edge means "must run after".
 
-Dependency walkthrough:
-- `build_inputs` has no prerequisites.
-- `transform_data` depends on `build_inputs`.
-- Scheduler can execute only when dependencies are satisfied.
-
-Node definition walkthrough:
-- `id`: stable node identity label.
-- `command`: executable behavior.
-- `depends_on`: prerequisite node IDs.
+Quick start summary:
+- Author DAG
+- Run DAG
+- Inspect run
+- Replay if needed
+- Diff when behavior changes
 
 ## Examples
 ```json
@@ -36,41 +34,34 @@ Node definition walkthrough:
   "graph_id": "EXAMPLE_GRAPH_001",
   "nodes": [
     {
-      "id": "build_inputs",
-      "command": "echo preparing-inputs > out/input.txt",
+      "id": "prepare",
+      "command": "echo ok > out/input.txt",
       "depends_on": []
     },
     {
-      "id": "transform_data",
+      "id": "transform",
       "command": "cat out/input.txt > out/result.txt",
-      "depends_on": ["build_inputs"]
+      "depends_on": ["prepare"]
     }
   ]
 }
 ```
 
 ```bash
-# Run your first DAG
 bijux-dag run --dag ./examples/first.dag.json
-```
-
-```text
-Expected success indicators:
-- run_id emitted
-- status reports successful completion
-- artifact/output path references are present
+bijux-dag inspect run --run-id RUN_20260309_001
 ```
 
 ## Guarantees
-- The tutorial DAG is minimal but valid for dependency-order learning.
-- The flow shows explicit node and dependency modeling.
+- This tutorial uses explicit dependency ordering.
+- Example shape is intentionally minimal and readable.
 
 ## Limitations
-- This tutorial omits advanced runtime options and backend variation.
-- JSON schema details are covered in specification docs.
+- Advanced backend/runtime options are out of scope.
+- Schema-level constraints are documented in specification docs.
 
 ## Related
 - `docs/02-getting-started/03-running-a-pipeline.md`
+- `docs/02-getting-started/04-understanding-runs.md`
 - `docs/03-user-guide/01-authoring-dags.md`
-- `docs/03-user-guide/02-dependencies-and-order.md`
 - `docs/06-specification/01-dag-model.md`
