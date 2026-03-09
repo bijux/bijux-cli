@@ -61,3 +61,23 @@ Replay command flow:
 - `docs/04-cli-reference/05-inspect-commands.md`
 - `docs/03-user-guide/05-replay.md`
 - `docs/06-specification/07-replay-semantics.md`
+
+## Replay modes and operator intent
+
+Replay usage can be organized into three operator modes:
+
+- normal replay: execute replay against baseline run context for outcome comparison.
+- dry-run replay: plan and validate replay prerequisites without committing to full execution (when supported).
+- proof-oriented replay: run replay under stricter evidence capture for audit/release confidence workflows.
+
+Use mode selection to match risk level and change scope.
+
+## Replay failure and downgrade handling
+
+Failure/downgrade interpretation:
+
+- hard failure: replay cannot execute or classify due to missing/invalid prerequisites.
+- mismatch: replay executes but classifies drift.
+- downgrade: replay completes with reduced fidelity because backend/environment cannot satisfy full equivalence checks.
+
+Downgrade is not equivalent to success; treat it as bounded evidence and require explicit acceptance.
