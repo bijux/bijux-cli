@@ -1,0 +1,18 @@
+{
+  "name": "behavior_plugins_uninstall",
+  "argv": [
+    "bijux",
+    "plugins",
+    "uninstall",
+    "capture_plugin"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"status\": \"uninstalled\",\n  \"plugin\": \"capture_plugin\"\n}\n",
+  "stderr": "Plugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\nPlugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\n",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

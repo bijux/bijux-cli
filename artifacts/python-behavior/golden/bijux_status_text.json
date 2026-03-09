@@ -1,0 +1,16 @@
+{
+  "name": "bijux_status_text",
+  "argv": [
+    "bijux",
+    "status"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"status\": \"ok\",\n  \"products\": {\n    \"atlas\": [\n      {\n        \"binary\": \"bijux-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      },\n      {\n        \"binary\": \"bijux-dev-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      }\n    ]\n  }\n}\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

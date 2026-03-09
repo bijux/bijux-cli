@@ -1,0 +1,17 @@
+{
+  "name": "behavior_internal_failure_streams",
+  "argv": [
+    "bijux",
+    "dev",
+    "di"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "{\"error\":\"Forced serialization failure\",\"code\":1,\"failure\":\"serialize\",\"command\":\"dev di\",\"fmt\":\"json\"}\n",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

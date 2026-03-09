@@ -1,0 +1,16 @@
+{
+  "name": "bijux_history_root",
+  "argv": [
+    "bijux",
+    "history"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"entries\": [\n    {\n      \"command\": \"doctor\",\n      \"params\": [],\n      \"timestamp\": 1773079320.774014,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"doctor\",\n      \"params\": [],\n      \"timestamp\": 1773079320.775048,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.0448298,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.045737,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.315746,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status -f json --no-pretty\",\n      \"params\": [\n        \"-f\",\n        \"json\",\n        \"--no-pretty\"\n      ],\n      \"timestamp\": 1773079321.317081,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.5826602,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status -f yaml --pretty\",\n      \"params\": [\n        \"-f\",\n        \"yaml\",\n        \"--pretty\"\n      ],\n      \"timestamp\": 1773079321.584382,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 12.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"plugins list\",\n      \"params\": [],\n      \"timestamp\": 1773079321.843055,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"plugins list\",\n      \"params\": [\n        \"list\"\n      ],\n      \"timestamp\": 1773079321.844464,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"config\",\n      \"params\": [],\n      \"timestamp\": 1773079322.103202,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"config\",\n      \"params\": [],\n      \"timestamp\": 1773079322.1047318,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 12.0,\n      \"raw\": {}\n    }\n  ]\n}\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

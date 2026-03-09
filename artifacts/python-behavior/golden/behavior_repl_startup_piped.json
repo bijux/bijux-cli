@@ -1,0 +1,16 @@
+{
+  "name": "behavior_repl_startup_piped",
+  "argv": [
+    "bijux",
+    "repl"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

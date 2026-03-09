@@ -1,0 +1,18 @@
+{
+  "name": "behavior_validation_failure_streams",
+  "argv": [
+    "bijux",
+    "status",
+    "--format",
+    "toml"
+  ],
+  "exit_code": 2,
+  "stdout": "{\"error\": \"Unsupported format: toml\", \"code\": 2}\n",
+  "stderr": "",
+  "env_overrides": {
+    "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+    "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+    "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+    "NO_COLOR": "1"
+  }
+}

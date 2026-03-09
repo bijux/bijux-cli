@@ -1,0 +1,28 @@
+{
+  "captured": [
+    "bijux_help",
+    "bijux_version",
+    "bijux_doctor",
+    "bijux_status_text",
+    "bijux_status_json_no_pretty",
+    "bijux_status_yaml_pretty",
+    "bijux_plugins_list",
+    "bijux_config_root",
+    "bijux_history_root",
+    "bijux_dev_help",
+    "behavior_success_streams",
+    "behavior_validation_failure_streams",
+    "behavior_internal_failure_streams",
+    "behavior_quiet_mode",
+    "behavior_debug_log_level",
+    "behavior_help_short_circuit",
+    "behavior_repl_startup_piped",
+    "behavior_repl_startup_interactive",
+    "behavior_plugins_install",
+    "behavior_plugins_check",
+    "behavior_plugins_uninstall",
+    "behavior_config_precedence_config_only",
+    "behavior_config_precedence_env_override",
+    "behavior_config_precedence_cli_override"
+  ]
+}

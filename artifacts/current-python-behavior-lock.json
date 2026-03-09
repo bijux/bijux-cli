@@ -1,0 +1,421 @@
+{
+  "schema_version": "1",
+  "captured_at": "2026-03-09T18:02:06Z",
+  "environment": {
+    "python": "3.10.11",
+    "platform": "darwin",
+    "sandbox_home": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home"
+  },
+  "captures": {
+    "bijux_help": {
+      "name": "bijux_help",
+      "argv": [
+        "bijux",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout": "Usage: bijux [OPTIONS] COMMAND [ARGS]...\n\n  Bijux CLI \u2013 Lean, plug-in-driven command-line interface.\n\nOptions:\n  --install-completion  Install completion for the current shell.\n  --show-completion     Show completion for the current shell, to copy it or\n                        customize the installation.\n  --help                Show this message and exit.\n\nCommands:\n  atlas    Bijux Atlas product runtime commands.\n  audit    Audit the current environment for configuration and state issues.\n  config   Manage CLI configuration.\n  dev      Developer tools and diagnostics.\n  docs     (-h, --help) Generate API specifications (OpenAPI-like) for...\n  doctor   Run CLI health diagnostics and environment checks.\n  help     Show help for any CLI command or subcommand.\n  history  Inspect or manage command history.\n  memory   Manage CLI memory.\n  plugins  Manage Bijux CLI plugins\n  repl     Starts an interactive shell with history and tab-completion.\n  sleep    Pause execution for a specified duration.\n  status   Show the CLI Status (Lean probe).\n  version  Show the CLI version.\n\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_version": {
+      "name": "bijux_version",
+      "argv": [
+        "bijux",
+        "version"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"version\": \"0.1.3\"}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_doctor": {
+      "name": "bijux_doctor",
+      "argv": [
+        "bijux",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"healthy\",\n  \"summary\": [\n    \"All core checks passed\"\n  ],\n  \"products\": {\n    \"atlas\": [\n      {\n        \"binary\": \"bijux-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      },\n      {\n        \"binary\": \"bijux-dev-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      }\n    ],\n    \"warnings\": []\n  }\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_status_text": {
+      "name": "bijux_status_text",
+      "argv": [
+        "bijux",
+        "status"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"ok\",\n  \"products\": {\n    \"atlas\": [\n      {\n        \"binary\": \"bijux-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      },\n      {\n        \"binary\": \"bijux-dev-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      }\n    ]\n  }\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_status_json_no_pretty": {
+      "name": "bijux_status_json_no_pretty",
+      "argv": [
+        "bijux",
+        "status",
+        "-f",
+        "json",
+        "--no-pretty"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"ok\",\n  \"products\": {\n    \"atlas\": [\n      {\n        \"binary\": \"bijux-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      },\n      {\n        \"binary\": \"bijux-dev-atlas\",\n        \"path\": null,\n        \"version\": null,\n        \"compatible_major\": null\n      }\n    ]\n  }\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_status_yaml_pretty": {
+      "name": "bijux_status_yaml_pretty",
+      "argv": [
+        "bijux",
+        "status",
+        "-f",
+        "yaml",
+        "--pretty"
+      ],
+      "exit_code": 0,
+      "stdout": "status: ok\nproducts:\n  atlas:\n  - binary: bijux-atlas\n    path: null\n    version: null\n    compatible_major: null\n  - binary: bijux-dev-atlas\n    path: null\n    version: null\n    compatible_major: null\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_plugins_list": {
+      "name": "bijux_plugins_list",
+      "argv": [
+        "bijux",
+        "plugins",
+        "list"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"plugins\": []\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_config_root": {
+      "name": "bijux_config_root",
+      "argv": [
+        "bijux",
+        "config"
+      ],
+      "exit_code": 0,
+      "stdout": "{}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_history_root": {
+      "name": "bijux_history_root",
+      "argv": [
+        "bijux",
+        "history"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"entries\": [\n    {\n      \"command\": \"doctor\",\n      \"params\": [],\n      \"timestamp\": 1773079320.774014,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"doctor\",\n      \"params\": [],\n      \"timestamp\": 1773079320.775048,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.0448298,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.045737,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.315746,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status -f json --no-pretty\",\n      \"params\": [\n        \"-f\",\n        \"json\",\n        \"--no-pretty\"\n      ],\n      \"timestamp\": 1773079321.317081,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status\",\n      \"params\": [],\n      \"timestamp\": 1773079321.5826602,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"status -f yaml --pretty\",\n      \"params\": [\n        \"-f\",\n        \"yaml\",\n        \"--pretty\"\n      ],\n      \"timestamp\": 1773079321.584382,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 12.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"plugins list\",\n      \"params\": [],\n      \"timestamp\": 1773079321.843055,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"plugins list\",\n      \"params\": [\n        \"list\"\n      ],\n      \"timestamp\": 1773079321.844464,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 11.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"config\",\n      \"params\": [],\n      \"timestamp\": 1773079322.103202,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 0.0,\n      \"raw\": {}\n    },\n    {\n      \"command\": \"config\",\n      \"params\": [],\n      \"timestamp\": 1773079322.1047318,\n      \"success\": true,\n      \"return_code\": 0,\n      \"duration_ms\": 12.0,\n      \"raw\": {}\n    }\n  ]\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "bijux_dev_help": {
+      "name": "bijux_dev_help",
+      "argv": [
+        "bijux",
+        "dev",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout": "Usage: bijux dev [OPTIONS] COMMAND [ARGS]...\n\n  Developer tools and diagnostics.\n\nOptions:\n  -q, --quiet             Suppress normal output; exit code still indicates\n                          success/failure.\n  -f, --format TEXT       Machine-readable output format (json|yaml); defaults\n                          to json.  [default: json]\n  --pretty / --no-pretty  Disable pretty-printing (indentation) in JSON/YAML\n                          output.  [default: pretty]\n  --log-level TEXT        Set logging level (trace|debug|info). Example:\n                          --log-level debug.  [default: info]\n  -h, --help              Show this message and exit.\n\nCommands:\n  di             Generates and outputs the Dependency Injection (DI)...\n  list-products  List product binaries and resolved paths.\n  list-plugins   Lists all installed CLI plugins.\n  atlas          Bijux Atlas control-plane developer commands.\n\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_success_streams": {
+      "name": "behavior_success_streams",
+      "argv": [
+        "bijux",
+        "version"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"version\": \"0.1.3\"}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_validation_failure_streams": {
+      "name": "behavior_validation_failure_streams",
+      "argv": [
+        "bijux",
+        "status",
+        "--format",
+        "toml"
+      ],
+      "exit_code": 2,
+      "stdout": "{\"error\": \"Unsupported format: toml\", \"code\": 2}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_internal_failure_streams": {
+      "name": "behavior_internal_failure_streams",
+      "argv": [
+        "bijux",
+        "dev",
+        "di"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"error\":\"Forced serialization failure\",\"code\":1,\"failure\":\"serialize\",\"command\":\"dev di\",\"fmt\":\"json\"}\n",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_quiet_mode": {
+      "name": "behavior_quiet_mode",
+      "argv": [
+        "bijux",
+        "plugins",
+        "list",
+        "--quiet"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_debug_log_level": {
+      "name": "behavior_debug_log_level",
+      "argv": [
+        "bijux",
+        "plugins",
+        "list",
+        "--log-level",
+        "debug"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"plugins\": [],\n  \"python\": \"3.11.9\",\n  \"platform\": \"macOS-26.3.1-arm64-arm-64bit\"\n}\n",
+      "stderr": "DIContainer initialised\nDIContainer.current auto-initialized singleton\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nResolved service: NoopTelemetry\nResolved service: NoopTelemetry\nResolved service: Registry\nResolved service: Registry\n\u001b[2m2026-03-09T18:02:03.919050Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: Observability\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mObservability\u001b[0m\nCore commands registered: []\nCore groups registered: ['atlas', 'audit', 'config', 'dev', 'docs', 'doctor', 'help', 'history', 'memory', 'plugins', 'repl', 'sleep', 'status', 'version']\n\u001b[2m2026-03-09T18:02:03.920381Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:03.920448Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mOrjsonSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:03.920489Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:03.920520Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:03.920564Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mConsoleEmitter\u001b[0m\n\u001b[2m2026-03-09T18:02:03.920592Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mEmitter\u001b[0m\nUsing selector: KqueueSelector\nUsing selector: KqueueSelector\n\u001b[2m2026-03-09T18:02:03.930516Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ExecutionPolicy\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mExecutionPolicy\u001b[0m\n\u001b[2m2026-03-09T18:02:03.930695Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mEmitter\u001b[0m\n\u001b[2m2026-03-09T18:02:03.930725Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:03.930751Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ExecutionPolicy\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mExecutionPolicy\u001b[0m\n\u001b[2m2026-03-09T18:02:03.940421Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:03.940566Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: Observability\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mObservability\u001b[0m\n\u001b[2m2026-03-09T18:02:03.940674Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistory\u001b[0m\n\u001b[2m2026-03-09T18:02:03.940708Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistoryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:03.941947Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:03.942321Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistory\u001b[0m\n",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_help_short_circuit": {
+      "name": "behavior_help_short_circuit",
+      "argv": [
+        "bijux",
+        "--help",
+        "--format",
+        "toml"
+      ],
+      "exit_code": 0,
+      "stdout": "Usage: bijux [OPTIONS] COMMAND [ARGS]...\n\n  Bijux CLI \u2013 Lean, plug-in-driven command-line interface.\n\nOptions:\n  --install-completion  Install completion for the current shell.\n  --show-completion     Show completion for the current shell, to copy it or\n                        customize the installation.\n  --help                Show this message and exit.\n\nCommands:\n  atlas    Bijux Atlas product runtime commands.\n  audit    Audit the current environment for configuration and state issues.\n  config   Manage CLI configuration.\n  dev      Developer tools and diagnostics.\n  docs     (-h, --help) Generate API specifications (OpenAPI-like) for...\n  doctor   Run CLI health diagnostics and environment checks.\n  help     Show help for any CLI command or subcommand.\n  history  Inspect or manage command history.\n  memory   Manage CLI memory.\n  plugins  Manage Bijux CLI plugins\n  repl     Starts an interactive shell with history and tab-completion.\n  sleep    Pause execution for a specified duration.\n  status   Show the CLI Status (Lean probe).\n  version  Show the CLI version.\n\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_repl_startup_piped": {
+      "name": "behavior_repl_startup_piped",
+      "argv": [
+        "bijux",
+        "repl"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_repl_startup_interactive": {
+      "name": "behavior_repl_startup_interactive",
+      "argv": [
+        "bijux",
+        "repl"
+      ],
+      "exit_code": 0,
+      "stdout": "^D\b\bexit\n\u001b[?12l\u001b[?25hbijux> \n\n\nExiting REPL.\n",
+      "stderr": "",
+      "transcript_file": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/repl-interactive.txt"
+    },
+    "behavior_plugins_install": {
+      "name": "behavior_plugins_install",
+      "argv": [
+        "bijux",
+        "plugins",
+        "install",
+        "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/tmp/capture_plugin"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"installed\",\n  \"package\": \"/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/tmp/capture_plugin\",\n  \"plugins\": [\n    \"capture_plugin\"\n  ]\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_plugins_check": {
+      "name": "behavior_plugins_check",
+      "argv": [
+        "bijux",
+        "plugins",
+        "check",
+        "capture_plugin"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"plugin\": \"capture_plugin\",\n  \"status\": \"healthy\"\n}\n",
+      "stderr": "Plugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\nPlugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\n",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_plugins_uninstall": {
+      "name": "behavior_plugins_uninstall",
+      "argv": [
+        "bijux",
+        "plugins",
+        "uninstall",
+        "capture_plugin"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"uninstalled\",\n  \"plugin\": \"capture_plugin\"\n}\n",
+      "stderr": "Plugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\nPlugin capture_plugin failed to register: Plugin has no CLI entrypoint (expected cli() or app)\n",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_config_precedence_config_only": {
+      "name": "behavior_config_precedence_config_only",
+      "argv": [
+        "bijux",
+        "config",
+        "get",
+        "sample_key"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"value\": \"from_config\"\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_config_precedence_env_override": {
+      "name": "behavior_config_precedence_env_override",
+      "argv": [
+        "bijux",
+        "config",
+        "get",
+        "sample_key"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"value\": \"from_env\"\n}\n",
+      "stderr": "",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    },
+    "behavior_config_precedence_cli_override": {
+      "name": "behavior_config_precedence_cli_override",
+      "argv": [
+        "bijux",
+        "plugins",
+        "list",
+        "--log-level",
+        "debug"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"plugins\": [],\n  \"python\": \"3.11.9\",\n  \"platform\": \"macOS-26.3.1-arm64-arm-64bit\"\n}\n",
+      "stderr": "DIContainer initialised\nDIContainer.current auto-initialized singleton\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nRegistered service\nResolved service: NoopTelemetry\nResolved service: NoopTelemetry\nResolved service: Registry\nResolved service: Registry\n\u001b[2m2026-03-09T18:02:06.327488Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: Observability\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mObservability\u001b[0m\nCore commands registered: []\nCore groups registered: ['atlas', 'audit', 'config', 'dev', 'docs', 'doctor', 'help', 'history', 'memory', 'plugins', 'repl', 'sleep', 'status', 'version']\n\u001b[2m2026-03-09T18:02:06.327901Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:06.327964Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mOrjsonSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:06.328002Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:06.328032Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:06.328080Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mConsoleEmitter\u001b[0m\n\u001b[2m2026-03-09T18:02:06.328109Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mEmitter\u001b[0m\nUsing selector: KqueueSelector\nUsing selector: KqueueSelector\n\u001b[2m2026-03-09T18:02:06.338170Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ExecutionPolicy\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mExecutionPolicy\u001b[0m\n\u001b[2m2026-03-09T18:02:06.338517Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ConsoleEmitter\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mEmitter\u001b[0m\n\u001b[2m2026-03-09T18:02:06.338552Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:06.338577Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: ExecutionPolicy\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mExecutionPolicy\u001b[0m\n\u001b[2m2026-03-09T18:02:06.346901Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: NoopTelemetry\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mTelemetryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:06.347054Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: Observability\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mObservability\u001b[0m\n\u001b[2m2026-03-09T18:02:06.347158Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistory\u001b[0m\n\u001b[2m2026-03-09T18:02:06.347192Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistoryProtocol\u001b[0m\n\u001b[2m2026-03-09T18:02:06.348994Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: OrjsonSerializer\u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mSerializer\u001b[0m\n\u001b[2m2026-03-09T18:02:06.349377Z\u001b[0m [\u001b[32m\u001b[1mdebug    \u001b[0m] \u001b[1mResolved service: History     \u001b[0m \u001b[36mservice_name\u001b[0m=\u001b[35mHistory\u001b[0m\n",
+      "env_overrides": {
+        "BIJUXCLI_CONFIG": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/config.env",
+        "BIJUXCLI_HISTORY_FILE": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/home/.bijux/history.json",
+        "BIJUXCLI_PLUGINS_DIR": "/Users/bijan/bijux/bijux-cli/artifacts/python-behavior/runtime/sandbox/plugins",
+        "NO_COLOR": "1"
+      }
+    }
+  }
+}
