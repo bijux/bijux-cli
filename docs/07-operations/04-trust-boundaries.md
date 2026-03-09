@@ -1,88 +1,76 @@
 # Trust Boundaries
 
-Define where trust assumptions begin and end across CLI, runtime, adapters, and storage.
+Trust boundaries define where evidence can be trusted as-is and where re-verification is required before decisions are made.
 
-Trust boundaries govern how evidence and execution claims are interpreted and enforced.
+## Boundaries that matter
 
-## Explanation
-Primary trust zones:
-- authoring zone: DAG files and configuration sources.
-- control zone: CLI and orchestration surfaces.
-- execution zone: runtime and adapter-managed command execution.
-- evidence zone: run directory and artifact persistence.
+Operationally critical boundaries are:
+- DAG input boundary,
+- bundle import boundary,
+- backend execution boundary,
+- artifact persistence boundary,
+- imported-run provenance boundary,
+- local environment boundary (host/container/runtime configuration).
 
-Boundary rules:
-- untrusted authoring input must be validated before execution.
-- adapter output is accepted only through normalized runtime contracts.
-- evidence writes must preserve attribution (`graph_id`, `run_id`, `node_id`, `artifact_id`).
-- trust does not transitively extend from one zone to another without explicit validation.
+Crossing any boundary changes what can be assumed without new evidence.
 
-Operational implications:
-- replay/diff provides verification across trust zone transitions.
-- unknown states must remain explicit; never coerce unknown to equivalent.
-- privileged operations require explicit and auditable controls.
+## Safe and unsafe assumptions
 
-Trust-boundary recommendations:
-- validate all external DAG or bundle inputs before runtime admission.
-- keep boundary-crossing events observable in logs and evidence records.
-- require operator approval for privileged cross-zone operations.
-- treat unknown trust states as blocking until resolved.
+Safe assumptions:
+- validated DAG input with explicit schema and dependency checks,
+- replay/diff classifications produced under declared policy and capability envelope,
+- artifact lineage linked to producing run and node.
 
-Safe assumptions vs unsafe assumptions:
-- safe: validated DAG input + stable capability descriptor + explicit replay/diff evidence.
-- unsafe: imported bundle trusted without verification.
-- unsafe: unknown classification interpreted as equivalent.
-- unsafe: backend capability gaps ignored during portability decisions.
+Unsafe assumptions:
+- imported bundle treated as trusted without verification,
+- `unknown` classification interpreted as equivalent,
+- backend portability interpreted as backend equivalence,
+- imported run history treated as local baseline without ancestry verification.
 
-If you cross this boundary, re-verify:
-- DAG source changed -> rerun validation and baseline replay.
-- backend/adapter changed -> rerun replay and diff before release decisions.
-- imported bundle from external source -> verify integrity and lineage before execution.
+## Re-verify checklist for boundary crossings
 
-## Examples
+When a boundary is crossed, re-verify at least:
+1. input integrity (hash/signature/provenance as available),
+2. capability envelope (backend and environment constraints),
+3. lineage integrity (`graph_id`, `run_id`, `node_id`, `artifact_id` links),
+4. replay/diff classification against accepted baseline,
+5. policy compatibility version used by identity/replay/diff tooling.
+
+Promotion MUST stop if any re-verification scope remains unresolved.
+
+## Replay and portability interpretation across boundaries
+
+Replay interpretation rule:
+- replay `equivalent` is valid only for the declared boundary context and capability envelope.
+
+Portability interpretation rule:
+- portable evidence means transferable with bounded guarantees,
+- it does not imply semantic equivalence across all backends,
+- downgrade or `incomplete` classifications must be preserved during boundary transitions.
+
+## Practical boundary workflow
+
+Example: external bundle into release pipeline.
+
 ```text
-Boundary crossing example:
-untrusted DAG file -> schema and dependency validation -> schedulable plan -> execution
-```
-
-```text
-Evidence trust chain:
-node result -> run record -> artifact lineage -> replay/diff comparison
+import bundle -> verify integrity/provenance -> inspect lineage completeness
+-> replay required scopes -> diff against approved baseline
+-> classify equivalent/drift/incomplete -> decide promote or block
 ```
 
 ## Guarantees
-- Trust zones and crossing rules are explicit and auditable.
-- Lineage-aware evidence boundaries are preserved in operational model.
-- Verification workflows are required when moving evidence across zones.
-- Includes concrete boundary-operation recommendations.
 
-## Limitations
-- Trust boundaries cannot compensate for compromised host kernels or hypervisors.
-- Cross-organization evidence trust may need additional signing and attestation controls.
-- This document does not define legal/compliance policy text.
+- Boundary crossings require explicit re-verification.
+- Unsafe assumption classes are explicitly named.
+- Replay/portability interpretation is bounded to context.
 
-## Related
-- `docs/07-operations/03-security-model.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/06-specification/06-artifact-identity.md`
-- `docs/06-specification/08-diff-semantics.md`
+## Non-guarantees
 
-## Boundaries that matter operationally
+- Boundaries cannot compensate for full host compromise.
+- Missing provenance cannot be reconstructed by policy text alone.
 
-The critical boundary set is explicit:
+## Next reading
 
-- DAG input boundary,
-- backend execution boundary,
-- artifact evidence boundary,
-- bundle import/export boundary,
-- imported-run provenance boundary.
-
-Crossing any of these without re-validation increases false-confidence risk.
-
-## Re-verify checklist
-
-- verify DAG schema + dependency validity after external input changes,
-- verify backend capability envelope before portability claims,
-- verify artifact lineage integrity before diff/replay conclusions,
-- verify imported bundle provenance before promotion decisions,
-- verify imported-run ancestry labels before treating history as local baseline.
+- [Security model](docs/07-operations/03-security-model.md)
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
+- [Portability architecture](docs/05-system-architecture/10-portability.md)
