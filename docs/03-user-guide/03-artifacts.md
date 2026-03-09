@@ -1,111 +1,55 @@
 # Artifacts
 
-Explain artifact behavior, storage expectations, identity, and lineage.
+Artifacts are the durable output units you can inspect, compare, and carry across environments.
 
-Artifacts are the persisted outputs users inspect, compare, and transport.
+## Artifact lifecycle in practice
 
-## Explanation
-Artifact basics:
-- produced by node execution
-- persisted for later inspection/replay/diff workflows
-- tracked by artifact identity metadata
+A useful mental model:
 
-Artifact lifecycle:
-1. node execution produces output payload.
-2. runtime classifies payload as artifact candidate.
-3. artifact bytes and metadata are persisted.
-4. artifact identity/hash is computed and indexed.
-5. artifact is linked to run/node lineage.
-6. inspect/replay/diff workflows consume artifact record.
+1. node produces output,
+2. runtime records artifact metadata and lineage,
+3. artifact identity is computed,
+4. inspect/replay/diff workflows consume that evidence,
+5. bundle workflows transport artifact context for portability checks.
 
-Artifact path guidance:
-- write to explicit, deterministic paths
-- avoid paths coupled to volatile runtime state
-- keep path conventions consistent across nodes
+## What is an artifact and what is not
 
-Artifact hashing:
-- hashing supports stable identification and comparison
-- hash computation should be tied to artifact content contract
-- identical canonical content should produce identical artifact identity under same identity policy version
+Artifact:
 
-Artifact lineage:
-- lineage links artifact back to run and producing node context
-- lineage is used for traceability and debugging
+- persisted output with identity and lineage,
+- suitable for diff and replay analysis.
 
-Storage structure (user-level view):
-- artifact payload location (file/object path)
-- artifact metadata record (size/type/hash)
-- lineage links (`graph_id`, `run_id`, `node_id`, `artifact_id`)
-- index entry for lookup and diff comparison
+Not artifact (by default):
 
-Artifact non-goals:
-- artifacts are not a universal snapshot of every side effect in external systems.
-- artifact identity is not a substitute for full provenance policy in cross-organization trust models.
+- transient temp files,
+- ad-hoc debug logs,
+- generic metadata entries without output payload meaning.
 
-## Examples
-```bash
-# Inspect artifact details
-bijux-dag inspect artifact --artifact-id ART_20260309_001
-```
+## Realistic lineage example
 
 ```text
-Artifact hashing example:
-artifact payload: out/result.txt
-hash algorithm: sha256
-artifact hash: sha256:2f67...
+extract_orders -> orders_raw.parquet (a_raw)
+normalize_orders -> orders_normalized.parquet (a_norm)
+revenue_report -> revenue_daily.csv (a_report)
 ```
 
-```text
-Realistic downstream use example:
-- node transform produces artifact out/features.parquet
-- node train depends on transform and consumes out/features.parquet
-- artifact lineage ties trained-model outputs back to transform run and graph identity
-```
+If `a_raw` changes, `a_norm` and `a_report` may drift. Lineage links make that drift explainable instead of mysterious.
 
-```text
-Artifact storage structure example:
-artifacts/
-  ART_20260309_001/
-    payload.bin
-    metadata.json
-```
+## Integrity and trust boundaries
 
-```mermaid
-graph LR
-  A[Graph g_44a] --> B[Run r_101]
-  B --> C[Node transform]
-  C --> D[Artifact a_712]
-```
+What users can trust:
 
-```text
-Artifact review checklist:
-- artifact_id exists
-- producing run_id exists
-- producing node_id exists
-- expected path exists
-```
+- artifact identity for canonical content comparison under one policy version,
+- producer linkage (`run_id`, `node_id`) for attribution.
 
-## Guarantees
-- Artifact concepts here align with specification identity and artifact model documents.
-- Path, hashing, and lineage are treated as first-class operational concerns.
-- Includes lifecycle, hashing, storage, and lineage usage in one operator flow.
+What users must still verify:
 
-## Limitations
-- This guide does not define exact hashing algorithm internals.
-- Storage backend implementation details are out of scope.
+- external side effects not captured as artifacts,
+- cross-backend equivalence without replay/diff evidence,
+- imported artifact context without provenance verification.
 
-## Related
-- `docs/01-introduction/05-terminology.md`
-- `docs/05-system-architecture/06-artifact-store.md`
-- `docs/06-specification/03-artifact-model.md`
-- `docs/06-specification/06-artifact-identity.md`
+## Next reading
 
-## Realistic downstream-use example
-
-A practical lineage chain:
-
-- Node `extract_orders` emits artifact `orders_raw.parquet` with identity hash `sha256:...a1`.
-- Node `normalize_orders` consumes `orders_raw.parquet` and emits `orders_normalized.parquet` with hash `sha256:...b7`.
-- Node `daily_revenue_report` consumes `orders_normalized.parquet` and emits `revenue_daily.csv` with hash `sha256:...f2`.
-
-If `orders_raw.parquet` changes, downstream artifact identities are expected to change unless normalization and reporting are provably insensitive to the changed fields. This is why downstream lineage links are part of debugging, not just storage metadata.
+- Formal artifact contract: [Artifact Model Specification](../06-specification/03-artifact-model.md)
+- Identity inputs and exclusions: [Artifact Identity Specification](../06-specification/06-artifact-identity.md)
+- Portability behavior with bundles: [Bundles And Portability](../03-user-guide/08-bundles-and-portability.md)
