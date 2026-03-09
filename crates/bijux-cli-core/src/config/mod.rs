@@ -9,6 +9,7 @@ pub(crate) mod validation;
 use anyhow::{anyhow, Result};
 use bijux_cli_install::CompatibilityPaths;
 use serde_json::Value;
+use std::io::{self, IsTerminal, Read};
 
 use service::{ConfigService, DefaultConfigService, StaticConfigPathProvider};
 use storage::FileConfigRepository;
@@ -79,13 +80,31 @@ pub(crate) fn execute_config_command(
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             let positional = command_positionals(argv, &["cli", "config", "set"]);
-            let raw_pair = positional
-                .first()
-                .ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
-            Some(service.set_pair(raw_pair).map_err(|err| anyhow!(err.to_string()))?)
+            let raw_pair = positional.first().cloned().or_else(read_pair_from_stdin_fallback);
+            let raw_pair = raw_pair.ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
+            Some(service.set_pair(&raw_pair).map_err(|err| anyhow!(err.to_string()))?)
         }
         _ => None,
     };
 
     Ok(result)
+}
+
+fn read_pair_from_stdin_fallback() -> Option<String> {
+    let mut stdin = io::stdin();
+    if stdin.is_terminal() {
+        return None;
+    }
+
+    let mut buf = String::new();
+    if stdin.read_to_string(&mut buf).is_err() {
+        return None;
+    }
+
+    let trimmed = buf.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
 }
