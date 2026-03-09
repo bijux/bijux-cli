@@ -14,6 +14,7 @@ This document governs behavioral parity, not UI styling.
 - Exit-code semantics map to REPL status reporting semantics consistently.
 - Config, env, and flag precedence semantics are shared between CLI and REPL evaluation.
 - Structured output requests in REPL use the same envelope contracts.
+- REPL meta-commands must use the reserved prefix `:` and must never conflict with normal command namespaces.
 
 ## Failure Modes
 - Divergent REPL command semantics are treated as compatibility defects.
