@@ -66,3 +66,15 @@ Portability statement example:
 - `docs/05-system-architecture/10-portability.md`
 - `docs/07-operations/01-ci-integration.md`
 - `docs/06-specification/07-replay-semantics.md`
+
+## Non-equivalence and degraded guarantees
+
+Backend variation can preserve functional execution while degrading guarantee strength.
+
+Degraded-guarantee examples:
+
+- replay possible but only `bounded-equivalent`, not strict-equivalent,
+- cancellation supported but timeout classification incomplete,
+- artifact persistence available but lineage completeness reduced.
+
+Policy rule: when guarantees degrade, release decisions must use degraded classification language explicitly and avoid stable-tier equivalence claims.

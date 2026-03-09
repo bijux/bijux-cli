@@ -76,3 +76,31 @@ bijux-dag security posture is evidence-preserving, least-privilege execution wit
 - separate policy decisions from runtime mechanics so security claims stay testable.
 
 This posture favors verifiable controls over broad security marketing claims.
+
+## Threat model, trust assumptions, and explicit non-guarantees
+
+Threat model assumptions:
+
+- adversary may control DAG input content,
+- adversary may attempt artifact/log tampering post-execution,
+- adversary may exploit weakly isolated execution backends.
+
+Trust assumptions:
+
+- trusted root of control: repository policy + reviewed runtime binaries,
+- conditional trust: backend environment only within declared support envelope,
+- untrusted by default: imported bundles and external DAG inputs until verified.
+
+Explicit non-guarantees:
+
+- no guarantee against fully privileged host compromise,
+- no guarantee that unverified external bundles are safe to execute,
+- no guarantee of confidentiality if operators bypass secret-handling boundaries.
+
+## Policy, enforcement, and operator responsibility
+
+- policy: defines required controls (least privilege, verification, retention).
+- enforcement: runtime/CI mechanisms that implement policy checks.
+- operator responsibility: selecting trusted environments, managing secrets, and refusing unsafe overrides.
+
+Security posture fails when policy exists but enforcement is bypassed or operator actions violate trust boundaries.

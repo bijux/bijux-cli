@@ -66,3 +66,23 @@ node result -> run record -> artifact lineage -> replay/diff comparison
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
 - `docs/06-specification/08-diff-semantics.md`
+
+## Boundaries that matter operationally
+
+The critical boundary set is explicit:
+
+- DAG input boundary,
+- backend execution boundary,
+- artifact evidence boundary,
+- bundle import/export boundary,
+- imported-run provenance boundary.
+
+Crossing any of these without re-validation increases false-confidence risk.
+
+## Re-verify checklist
+
+- verify DAG schema + dependency validity after external input changes,
+- verify backend capability envelope before portability claims,
+- verify artifact lineage integrity before diff/replay conclusions,
+- verify imported bundle provenance before promotion decisions,
+- verify imported-run ancestry labels before treating history as local baseline.
