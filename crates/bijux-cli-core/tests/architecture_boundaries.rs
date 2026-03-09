@@ -11,7 +11,6 @@ use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
 use bijux_cli_plugin as _;
-use bijux_cli_python as _;
 use bijux_cli_routing as _;
 use clap as _;
 use futures as _;
@@ -72,7 +71,6 @@ fn enforces_internal_crate_boundaries() {
                 "bijux-cli-install",
                 "bijux-cli-output",
                 "bijux-cli-plugin",
-                "bijux-cli-python",
                 "bijux-cli-routing",
             ]),
         ),

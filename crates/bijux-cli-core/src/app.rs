@@ -8,15 +8,14 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
-use bijux_cli_install::{install_health_report, post_install_hint};
+use bijux_cli_install::{
+    default_compatibility_paths, discover_compatibility_paths, install_health_report,
+    load_compatibility_config, post_install_hint, run_config_migrations, CompatibilityConfig,
+    PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+};
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
     compatibility_warnings, list_plugins, plugin_origin_metadata, registry_path_from_plugins_dir,
-};
-use bijux_cli_python::{
-    default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
-    run_config_migrations, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
-    ENV_PLUGINS_PATH,
 };
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
