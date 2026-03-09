@@ -22,6 +22,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Config get post-parity improvements](config-get-post-parity-improvements.md)
 - [Config set parity report](config-set-parity-report.md)
 - [Config set post-parity improvements](config-set-post-parity-improvements.md)
+- [Config unset/clear/reload parity report](config-unset-clear-reload-parity-report.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)
 - [Python public API lifecycle](python-public-api-lifecycle.md)
