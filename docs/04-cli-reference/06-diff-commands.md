@@ -17,9 +17,16 @@ Common flags:
 - `--right <id-or-path>`
 - `--output <format>` where supported
 
+Command lifecycle role:
+- `diff graph` for definition drift.
+- `diff run` for behavioral drift.
+- `diff artifact` for output drift.
+- run scopes in that order when triaging unknown regressions.
+
 Error handling guidance:
 - incomparable entities: input/compatibility error
 - missing IDs or paths: lookup/input error
+- unsupported comparison scope: compatibility/runtime error
 
 ## Examples
 ```bash
@@ -31,13 +38,21 @@ bijux-dag diff artifact --left ART_001 --right ART_002 --output json
 ```json
 {
   "diff_scope": "run",
-  "classification": "suspicious_change"
+  "classification": "suspicious_change",
+  "reason_code": "NODE_EXIT_NONZERO"
 }
+```
+
+```text
+Command discovery pattern:
+bijux-dag diff --help
+bijux-dag diff run --help
 ```
 
 ## Guarantees
 - Diff usage is documented across all three supported scopes.
 - Option patterns are consistent with other command-family docs.
+- Examples include classification output fields useful for automation.
 
 ## Limitations
 - Detailed classification semantics are owned by specification docs.

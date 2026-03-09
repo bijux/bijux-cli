@@ -16,10 +16,15 @@ Common flags:
 - import: bundle selector (`--bundle <path>`)
 - `--output <format>` where supported
 
+Command lifecycle role:
+- export after run completion and evidence verification.
+- import in target environment before replay/diff portability checks.
+
 Error handling guidance:
 - unreadable path: input error
 - invalid bundle: validation error
 - unsupported environment mapping: compatibility error
+- missing bundle file: filesystem lookup error
 
 ## Examples
 ```bash
@@ -30,13 +35,23 @@ bijux-dag bundle import --bundle ./exports/run220.bundle --output json
 ```json
 {
   "bundle_path": "./exports/run220.bundle",
-  "import_status": "ok"
+  "import_status": "ok",
+  "bundle_id": "BUNDLE_20260309_220"
 }
+```
+
+```text
+Bundle portability command flow:
+1) bundle export --run-id ...
+2) transfer bundle
+3) bundle import --bundle ...
+4) replay and diff for equivalence decision
 ```
 
 ## Guarantees
 - Export/import flow is documented as concrete portability path.
 - Failure interpretation categories are explicit.
+- Output examples support scripted portability pipelines.
 
 ## Limitations
 - Bundle schema internals are specified outside CLI reference.

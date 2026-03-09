@@ -16,9 +16,14 @@ Common flags:
 - optional DAG selector where supported
 - `--output <format>` where supported
 
+Command lifecycle role:
+- replay is a post-run validation command.
+- replay should be paired with inspect/diff for complete diagnosis.
+
 Error handling guidance:
 - unknown run ID: lookup error
 - unsupported replay context: compatibility/runtime error
+- missing baseline evidence: lookup/input error
 
 ## Examples
 ```bash
@@ -29,13 +34,22 @@ bijux-dag replay --run-id RUN_20260309_220 --dag ./pipelines/main.dag.json --out
 ```json
 {
   "run_id": "RUN_20260309_220",
-  "replay_status": "mismatch"
+  "replay_status": "mismatch",
+  "classification": "drift"
 }
+```
+
+```text
+Replay command flow:
+1) replay --run-id RUN_...
+2) inspect replay output classification
+3) diff run --left baseline --right replay-run
 ```
 
 ## Guarantees
 - Replay workflow is documented as explicit validation path.
 - Integration with inspect and diff is clear.
+- Output examples include machine-readable classification fields.
 
 ## Limitations
 - Replay equivalence remains bounded by environment/backend constraints.
