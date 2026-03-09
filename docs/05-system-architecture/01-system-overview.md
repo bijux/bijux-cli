@@ -115,3 +115,31 @@ graph LR
   D --> E[Proof and Decision]
   E --> A
 ```
+
+## Project orientation diagram
+
+This diagram orients all major architecture surfaces in one view.
+
+```mermaid
+graph TD
+  A[CLI Surface] --> B[DAG Validation]
+  B --> C[Scheduler]
+  C --> D[Execution Engine]
+  D --> E[Adapter Boundary]
+  E --> F[Run Directory]
+  E --> G[Artifact Store]
+  F --> H[Inspect and History]
+  G --> I[Replay and Diff]
+  H --> J[Proof and Operational Decisions]
+  I --> J
+```
+
+## What bijux-dag intentionally excludes
+
+The architecture deliberately does not include:
+
+- long-lived service orchestration concerns unrelated to DAG evidence semantics,
+- implicit backend policy engines that mutate runtime guarantees without explicit contracts,
+- opaque side-channel state as a substitute for run/artifact evidence.
+
+These exclusions keep guarantees inspectable, bounded, and reproducible.

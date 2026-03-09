@@ -66,3 +66,31 @@ graph TD
 - `docs/05-system-architecture/03-execution-engine.md`
 - `docs/08-development/01-repository-structure.md`
 - `docs/08-development/03-adapter-development.md`
+
+## Responsibility-first crate boundaries
+
+Crates are bounded by responsibility classes, not by convenience imports:
+
+- interface crates: user and automation entrypoints.
+- runtime crates: scheduling, execution, and state transitions.
+- evidence crates: run/artifact identity, persistence, retrieval.
+- adapter crates: backend translation and capability exposure.
+
+## Dependency map
+
+```mermaid
+graph LR
+  CLI[Interface Crates] --> RT[Runtime Crates]
+  RT --> AD[Adapter Crates]
+  RT --> EV[Evidence Crates]
+  AD --> EV
+```
+
+## Logic that must never cross boundaries
+
+- CLI crates must not implement runtime state transition logic.
+- Adapter crates must not redefine DAG/run/artifact semantics.
+- Evidence crates must not decide scheduling policy.
+- Runtime crates must not embed backend-specific policy that belongs in adapters.
+
+Violating these boundaries turns architecture contracts into incidental behavior and weakens deterministic guarantees.
