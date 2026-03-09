@@ -625,7 +625,13 @@ fn is_known_route(path: &[String]) -> bool {
         [a, b, c]
             if a == "cli"
                 && b == "config"
-                && (c == "get" || c == "set" || c == "unset" || c == "clear" || c == "reload") =>
+                && (c == "get"
+                    || c == "set"
+                    || c == "unset"
+                    || c == "clear"
+                    || c == "reload"
+                    || c == "export"
+                    || c == "load") =>
         {
             true
         }
@@ -696,6 +702,9 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
                 || message.contains("Invalid key")
                 || message.contains("Unknown config section")
                 || message.contains("Config key not found")
+                || message.contains("Missing parameter")
+                || message.contains("Unsupported format")
+                || message.contains("Failed to load config")
             {
                 2
             } else if message.contains("Non-ASCII") || message.contains("Control characters") {

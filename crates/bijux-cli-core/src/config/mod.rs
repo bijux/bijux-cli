@@ -9,6 +9,7 @@ pub(crate) mod validation;
 use anyhow::{anyhow, Result};
 use bijux_cli_install::CompatibilityPaths;
 use serde_json::Value;
+use std::path::PathBuf;
 use std::io::{self, IsTerminal, Read};
 
 use service::{ConfigService, DefaultConfigService, StaticConfigPathProvider};
@@ -61,6 +62,34 @@ fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> 
     positional
 }
 
+fn command_option_value(argv: &[String], command_tokens: &[&str], option: &str) -> Option<String> {
+    let mut extra_start = 1 + command_tokens.len();
+    if argv.len() < extra_start {
+        return None;
+    }
+    for (idx, token) in command_tokens.iter().enumerate() {
+        if argv.get(idx + 1).map(String::as_str) != Some(*token) {
+            extra_start = idx + 1;
+            break;
+        }
+    }
+
+    let extras = &argv[extra_start..];
+    let mut i = 0;
+    while i < extras.len() {
+        let token = &extras[i];
+        if token == option {
+            return extras.get(i + 1).cloned();
+        }
+        if token.starts_with(&(option.to_string() + "=")) {
+            return token.split_once('=').map(|(_, value)| value.to_string());
+        }
+        i += 1;
+    }
+
+    None
+}
+
 pub(crate) fn execute_config_command(
     normalized_path: &[String],
     argv: &[String],
@@ -96,6 +125,31 @@ pub(crate) fn execute_config_command(
         [a, b, c] if a == "cli" && b == "config" && c == "reload" => {
             let _ = command_positionals(argv, &["cli", "config", "reload"]);
             Some(service.reload().map_err(|err| anyhow!(err.to_string()))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "export" => {
+            let positional = command_positionals(argv, &["cli", "config", "export"]);
+            let raw_path = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
+            let format = command_option_value(argv, &["cli", "config", "export"], "--format")
+                .unwrap_or_else(|| "json".to_string());
+            if format == "text" {
+                return Err(anyhow!("Unsupported format: text"));
+            }
+            let target_path = PathBuf::from(raw_path);
+            Some(service.export_to(&target_path).map_err(|err| anyhow!(err.to_string()))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "load" => {
+            let positional = command_positionals(argv, &["cli", "config", "load"]);
+            let raw_path = positional
+                .first()
+                .ok_or_else(|| anyhow!("Missing parameter: path"))?;
+            let source_path = PathBuf::from(raw_path);
+            Some(
+                service
+                    .load_from(&source_path)
+                    .map_err(|err| anyhow!("Failed to load config: {}", err))?,
+            )
         }
         _ => None,
     };
