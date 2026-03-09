@@ -10,5 +10,8 @@ rust-version.workspace = true
 [dependencies]
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 
+[dev-dependencies]
+tempfile.workspace = true
+
 [lints]
 workspace = true

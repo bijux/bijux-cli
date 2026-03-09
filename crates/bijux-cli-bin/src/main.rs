@@ -6,6 +6,7 @@ use std::env;
 use std::path::Path;
 
 use anyhow::Result;
+use bijux_cli_install::install_health_report;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core as _;
 use bijux_cli_output::{render_value, EmitterConfig};
@@ -95,7 +96,22 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
             json!({"version": env!("CARGO_PKG_VERSION")})
         }
         [a, b] if a == "cli" && b == "doctor" => {
-            json!({"status": "healthy", "checks": ["routing", "output", "config"]})
+            let install_report = install_health_report(
+                &env::var("PATH").unwrap_or_default(),
+                env::var("BIJUX_BIN").ok().as_deref(),
+                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
+                env!("CARGO_PKG_VERSION"),
+            );
+            json!({
+                "status": "healthy",
+                "checks": ["routing", "output", "config", "install"],
+                "install": {
+                    "has_path_shadowing": install_report.has_path_shadowing,
+                    "has_duplicate_installs": install_report.has_duplicate_installs,
+                    "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
+                    "has_mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
+                }
+            })
         }
         [a, b] if a == "cli" && b == "repl" => {
             json!({"status": "ready", "mode": "repl", "history_file": paths.history_file})
@@ -115,7 +131,19 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
             json!({"status": "ok", "runtime": "rust-foundation"})
         }
         [a, b] if a == "cli" && b == "paths" => {
-            json!({"config": paths.config_file, "history": paths.history_file, "plugins": paths.plugins_dir})
+            let install_report = install_health_report(
+                &env::var("PATH").unwrap_or_default(),
+                env::var("BIJUX_BIN").ok().as_deref(),
+                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
+                env!("CARGO_PKG_VERSION"),
+            );
+            json!({
+                "config": paths.config_file,
+                "history": paths.history_file,
+                "plugins": paths.plugins_dir,
+                "active_binary": install_report.active_binary,
+                "path_binaries": install_report.path_binaries
+            })
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             json!({

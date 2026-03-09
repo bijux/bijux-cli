@@ -15,6 +15,7 @@ path = "src/main.rs"
 anyhow.workspace = true
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-install = { path = "../bijux-cli-install" }
 bijux-cli-output = { path = "../bijux-cli-output" }
 bijux-cli-plugin = { path = "../bijux-cli-plugin" }
 bijux-cli-python = { path = "../bijux-cli-python" }

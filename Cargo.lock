@@ -71,6 +71,7 @@ dependencies = [
  "anyhow",
  "bijux-cli-contracts",
  "bijux-cli-core",
+ "bijux-cli-install",
  "bijux-cli-output",
  "bijux-cli-plugin",
  "bijux-cli-python",
@@ -102,6 +103,7 @@ name = "bijux-cli-install"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
+ "tempfile",
 ]
 
 [[package]]
