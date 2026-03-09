@@ -78,6 +78,7 @@ fn executes_cli_namespace_commands() {
         (vec!["cli", "self-test"], "checks"),
         (vec!["cli", "plugins", "list"], "plugins"),
         (vec!["cli", "plugins", "inspect"], "compatibility_warnings"),
+        (vec!["cli", "plugins", "doctor"], "doctor"),
     ];
     for (args, required_key) in cases {
         let stdout = run(&args);

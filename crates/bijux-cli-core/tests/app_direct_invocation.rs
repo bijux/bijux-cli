@@ -192,6 +192,7 @@ fn direct_core_invocation_newly_ported_commands_execute() {
         vec!["bijux", "cli", "self-test"],
         vec!["bijux", "cli", "plugins", "list"],
         vec!["bijux", "cli", "plugins", "inspect"],
+        vec!["bijux", "cli", "plugins", "doctor"],
         vec!["bijux", "dev", "cli", "routes"],
         vec!["bijux", "dev", "cli", "route-audit"],
         vec!["bijux", "dev", "cli", "registry"],
