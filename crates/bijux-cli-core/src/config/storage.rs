@@ -12,6 +12,7 @@ use super::validation::{normalize_key, validate_value};
 pub(crate) trait ConfigRepository {
     fn load(&self, path: &Path) -> Result<BTreeMap<String, String>, ConfigError>;
     fn save(&self, path: &Path, values: &BTreeMap<String, String>) -> Result<(), ConfigError>;
+    fn remove(&self, path: &Path) -> Result<bool, ConfigError>;
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -59,6 +60,14 @@ impl ConfigRepository for FileConfigRepository {
             .map_err(|err| ConfigError::persistence(err.to_string()))?;
         fs::rename(temp_path, path).map_err(|err| ConfigError::persistence(err.to_string()))?;
         Ok(())
+    }
+
+    fn remove(&self, path: &Path) -> Result<bool, ConfigError> {
+        if !path.exists() {
+            return Ok(false);
+        }
+        fs::remove_file(path).map_err(|err| ConfigError::persistence(err.to_string()))?;
+        Ok(true)
     }
 }
 

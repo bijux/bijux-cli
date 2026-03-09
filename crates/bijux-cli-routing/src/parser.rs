@@ -133,7 +133,10 @@ pub fn root_command() -> Command {
     let config_group = Command::new("config")
         .subcommand_required(false)
         .subcommand(Command::new("get").arg(Arg::new("key").num_args(1)))
-        .subcommand(Command::new("set").arg(Arg::new("pair").num_args(1)));
+        .subcommand(Command::new("set").arg(Arg::new("pair").num_args(1)))
+        .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
+        .subcommand(Command::new("clear"))
+        .subcommand(Command::new("reload"));
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
@@ -225,7 +228,7 @@ fn normalize_path(path: &[String]) -> Vec<String> {
         {
             vec!["cli".to_string(), a.clone()]
         }
-        [a, b] if a == "config" && (b == "get" || b == "set") => {
+        [a, b] if a == "config" && (b == "get" || b == "set" || b == "unset" || b == "clear" || b == "reload") => {
             vec!["cli".to_string(), "config".to_string(), b.clone()]
         }
         [a, b] if a == "plugins" && (b == "list" || b == "inspect") => {

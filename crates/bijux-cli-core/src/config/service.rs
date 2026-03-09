@@ -36,6 +36,9 @@ pub(crate) trait ConfigService {
     fn list_entries(&self) -> Result<Value, ConfigError>;
     fn get_value(&self, raw_key: &str) -> Result<Value, ConfigError>;
     fn set_pair(&self, raw_pair: &str) -> Result<Value, ConfigError>;
+    fn unset_key(&self, raw_key: &str) -> Result<Value, ConfigError>;
+    fn clear_all(&self) -> Result<Value, ConfigError>;
+    fn reload(&self) -> Result<Value, ConfigError>;
 }
 
 pub(crate) struct DefaultConfigService<P, R> {
@@ -116,6 +119,48 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
             "key": key,
             "value": value,
             "updated": self.path_provider.config_path(),
+        }))
+    }
+
+    fn unset_key(&self, raw_key: &str) -> Result<Value, ConfigError> {
+        run_config_migrations(self.path_provider.config_path(), 1)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+
+        let key = normalize_key(raw_key)?;
+        let mut values = self.load_map()?;
+        let removed = values.remove(&key).is_some();
+        self.repository.save(self.path_provider.config_path(), &values)?;
+        Ok(json!({
+            "status": "deleted",
+            "key": key,
+            "removed": removed,
+            "updated": self.path_provider.config_path(),
+        }))
+    }
+
+    fn clear_all(&self) -> Result<Value, ConfigError> {
+        run_config_migrations(self.path_provider.config_path(), 1)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+
+        let removed_keys = self.load_map()?.len();
+        let removed_file = self.repository.remove(self.path_provider.config_path())?;
+        Ok(json!({
+            "status": "cleared",
+            "removed_keys": removed_keys,
+            "removed_file": removed_file,
+            "updated": self.path_provider.config_path(),
+        }))
+    }
+
+    fn reload(&self) -> Result<Value, ConfigError> {
+        run_config_migrations(self.path_provider.config_path(), 1)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+
+        let entry_count = self.load_map()?.len();
+        Ok(json!({
+            "status": "reloaded",
+            "reloaded_path": self.path_provider.config_path(),
+            "entry_count": entry_count,
         }))
     }
 }

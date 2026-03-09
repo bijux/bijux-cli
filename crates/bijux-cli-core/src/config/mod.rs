@@ -84,6 +84,19 @@ pub(crate) fn execute_config_command(
             let raw_pair = raw_pair.ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
             Some(service.set_pair(&raw_pair).map_err(|err| anyhow!(err.to_string()))?)
         }
+        [a, b, c] if a == "cli" && b == "config" && c == "unset" => {
+            let positional = command_positionals(argv, &["cli", "config", "unset"]);
+            let raw_key = positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
+            Some(service.unset_key(raw_key).map_err(|err| anyhow!(err.to_string()))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "clear" => {
+            let _ = command_positionals(argv, &["cli", "config", "clear"]);
+            Some(service.clear_all().map_err(|err| anyhow!(err.to_string()))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "reload" => {
+            let _ = command_positionals(argv, &["cli", "config", "reload"]);
+            Some(service.reload().map_err(|err| anyhow!(err.to_string()))?)
+        }
         _ => None,
     };
 

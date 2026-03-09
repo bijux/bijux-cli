@@ -622,7 +622,13 @@ fn is_known_route(path: &[String]) -> bool {
         {
             true
         }
-        [a, b, c] if a == "cli" && b == "config" && (c == "get" || c == "set") => true,
+        [a, b, c]
+            if a == "cli"
+                && b == "config"
+                && (c == "get" || c == "set" || c == "unset" || c == "clear" || c == "reload") =>
+        {
+            true
+        }
         [a] if a == "config" => true,
         [a] if a == "history" || a == "memory" => true,
         [a, b] if a == "memory" && b == "list" => true,
