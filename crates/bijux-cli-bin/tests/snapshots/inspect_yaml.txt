@@ -71,6 +71,30 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
+  - crate-health
+  canonical:
+  - dev
+  - cli
+  - crate-health
+  source: compatibility-alias
+- alias:
+  - dev
+  - docs
+  canonical:
+  - dev
+  - cli
+  - docs
+  source: compatibility-alias
+- alias:
+  - dev
+  - docs-prune-plan
+  canonical:
+  - dev
+  - cli
+  - docs-prune-plan
+  source: compatibility-alias
+- alias:
+  - dev
   - doctor
   canonical:
   - dev
@@ -84,6 +108,38 @@ alias_rewrites:
   - dev
   - cli
   - env
+  source: compatibility-alias
+- alias:
+  - dev
+  - fixture-audit
+  canonical:
+  - dev
+  - cli
+  - fixture-audit
+  source: compatibility-alias
+- alias:
+  - dev
+  - inventory
+  canonical:
+  - dev
+  - cli
+  - inventory
+  source: compatibility-alias
+- alias:
+  - dev
+  - package-health
+  canonical:
+  - dev
+  - cli
+  - package-health
+  source: compatibility-alias
+- alias:
+  - dev
+  - parity
+  canonical:
+  - dev
+  - cli
+  - parity
   source: compatibility-alias
 - alias:
   - dev
@@ -108,6 +164,30 @@ alias_rewrites:
   - dev
   - cli
   - runtime-identity
+  source: compatibility-alias
+- alias:
+  - dev
+  - scripts-audit
+  canonical:
+  - dev
+  - cli
+  - scripts-audit
+  source: compatibility-alias
+- alias:
+  - dev
+  - snapshots-audit
+  canonical:
+  - dev
+  - cli
+  - snapshots-audit
+  source: compatibility-alias
+- alias:
+  - dev
+  - status
+  canonical:
+  - dev
+  - cli
+  - status
   source: compatibility-alias
 - alias:
   - doctor
@@ -221,11 +301,39 @@ builtins:
 - segments:
   - dev
   - cli
+  - crate-health
+- segments:
+  - dev
+  - cli
+  - docs
+- segments:
+  - dev
+  - cli
+  - docs-prune-plan
+- segments:
+  - dev
+  - cli
   - doctor
 - segments:
   - dev
   - cli
   - env
+- segments:
+  - dev
+  - cli
+  - fixture-audit
+- segments:
+  - dev
+  - cli
+  - inventory
+- segments:
+  - dev
+  - cli
+  - package-health
+- segments:
+  - dev
+  - cli
+  - parity
 - segments:
   - dev
   - cli
@@ -238,6 +346,18 @@ builtins:
   - dev
   - cli
   - runtime-identity
+- segments:
+  - dev
+  - cli
+  - scripts-audit
+- segments:
+  - dev
+  - cli
+  - snapshots-audit
+- segments:
+  - dev
+  - cli
+  - status
 - segments:
   - docs
 - segments:
@@ -412,6 +532,24 @@ route_sources:
   segments:
   - dev
   - cli
+  - crate-health
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - docs
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - docs-prune-plan
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
   - doctor
   source: built-in
 - owner: bijux-cli
@@ -419,6 +557,30 @@ route_sources:
   - dev
   - cli
   - env
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - fixture-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - inventory
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - package-health
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - parity
   source: built-in
 - owner: bijux-cli
   segments:
@@ -437,6 +599,24 @@ route_sources:
   - dev
   - cli
   - runtime-identity
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - scripts-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - snapshots-audit
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - status
   source: built-in
 - owner: bijux-cli
   segments:
