@@ -12,3 +12,4 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 ## Index
 - [Decision rules](decision-rules.md)
 - [Walk-through](walkthrough.md)
+- [ADR: CLI binary ownership](adr-cli-binary-ownership.md)
