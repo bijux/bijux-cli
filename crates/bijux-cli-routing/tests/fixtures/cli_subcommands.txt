@@ -3,5 +3,8 @@ cli paths
 cli self-test
 cli config get
 cli config set
+cli config unset
+cli config clear
+cli config reload
 cli plugins list
 cli plugins inspect

@@ -1,0 +1,6 @@
+{
+  "key": "alpha",
+  "removed": true,
+  "status": "deleted",
+  "updated": "<CONFIG_PATH>"
+}

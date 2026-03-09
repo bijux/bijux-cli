@@ -310,3 +310,175 @@ fn config_get_reports_error_for_unreadable_file() {
 
     fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).expect("restore");
 }
+
+#[test]
+fn config_unset_removes_existing_key_and_is_safe_for_missing_key() {
+    let temp = make_temp_dir("unset");
+    let path = temp.join("unset.env");
+    fs::write(&path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("seed");
+
+    let removed = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "unset".to_string(),
+        "alpha".to_string(),
+        "--config-path".to_string(),
+        path.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(removed.exit_code, 0);
+    let removed_payload = parse_json(&removed.stdout);
+    assert_eq!(removed_payload["removed"], true);
+
+    let missing = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "unset".to_string(),
+        "missing".to_string(),
+        "--config-path".to_string(),
+        path.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(missing.exit_code, 0);
+    let missing_payload = parse_json(&missing.stdout);
+    assert_eq!(missing_payload["removed"], false);
+}
+
+#[test]
+fn config_unset_rejects_malformed_key() {
+    let temp = make_temp_dir("unset-invalid");
+    let path = temp.join("unset.env");
+
+    let out = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "unset".to_string(),
+        "bad-key".to_string(),
+        "--config-path".to_string(),
+        path.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(out.exit_code, 2);
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+}
+
+#[test]
+fn config_clear_handles_non_empty_empty_and_missing_files() {
+    let temp = make_temp_dir("clear");
+    let non_empty = temp.join("non-empty.env");
+    fs::write(&non_empty, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("seed");
+
+    let cleared_non_empty = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "clear".to_string(),
+        "--config-path".to_string(),
+        non_empty.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(cleared_non_empty.exit_code, 0);
+    let payload = parse_json(&cleared_non_empty.stdout);
+    assert_eq!(payload["removed_keys"], 2);
+    assert_eq!(payload["removed_file"], true);
+    assert!(!non_empty.exists());
+
+    let missing = temp.join("missing.env");
+    let cleared_missing = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "clear".to_string(),
+        "--config-path".to_string(),
+        missing.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(cleared_missing.exit_code, 0);
+    let missing_payload = parse_json(&cleared_missing.stdout);
+    assert_eq!(missing_payload["removed_keys"], 0);
+    assert_eq!(missing_payload["removed_file"], false);
+}
+
+#[test]
+#[cfg(unix)]
+fn config_clear_reports_write_failure_for_read_only_dir() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp = make_temp_dir("clear-ro");
+    let dir = temp.join("readonly");
+    fs::create_dir_all(&dir).expect("mkdir");
+    let path = dir.join("clear.env");
+    fs::write(&path, "BIJUXCLI_ALPHA=1\n").expect("seed");
+    fs::set_permissions(&dir, fs::Permissions::from_mode(0o555)).expect("chmod");
+
+    let out = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "clear".to_string(),
+        "--config-path".to_string(),
+        path.display().to_string(),
+    ])
+    .expect("run_app");
+
+    assert_eq!(out.exit_code, 1);
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+
+    fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).expect("restore");
+}
+
+#[test]
+fn config_reload_success_missing_and_malformed_behavior() {
+    let temp = make_temp_dir("reload");
+    let good = temp.join("good.env");
+    let missing = temp.join("missing.env");
+    let malformed = temp.join("malformed.env");
+
+    fs::write(&good, "BIJUXCLI_ALPHA=1\n").expect("seed");
+    fs::write(&malformed, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("seed malformed");
+
+    let ok = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "reload".to_string(),
+        "--config-path".to_string(),
+        good.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(ok.exit_code, 0);
+    let ok_payload = parse_json(&ok.stdout);
+    assert_eq!(ok_payload["status"], "reloaded");
+    assert_eq!(ok_payload["entry_count"], 1);
+
+    let missing_out = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "reload".to_string(),
+        "--config-path".to_string(),
+        missing.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(missing_out.exit_code, 0);
+    let missing_payload = parse_json(&missing_out.stdout);
+    assert_eq!(missing_payload["entry_count"], 0);
+
+    let malformed_out = run_app(&[
+        "bijux".to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "reload".to_string(),
+        "--config-path".to_string(),
+        malformed.display().to_string(),
+    ])
+    .expect("run_app");
+    assert_eq!(malformed_out.exit_code, 1);
+    assert!(malformed_out.stdout.is_empty());
+    assert!(!malformed_out.stderr.is_empty());
+}
