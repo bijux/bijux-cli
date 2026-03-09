@@ -127,6 +127,8 @@ jobs:
           java-version: "17"
 
       - run: python -m pip install -U pip tox
+      - name: Validate cross-ecosystem package metadata
+        run: python scripts/check-package-metadata.py
       - run: tox -vv -e ${{ matrix.env }}
 
       # --- QUALITY ---
