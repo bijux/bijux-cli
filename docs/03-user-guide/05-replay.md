@@ -77,3 +77,24 @@ Replay mismatch example:
 - `docs/03-user-guide/06-diff.md`
 - `docs/02-getting-started/03-running-a-pipeline.md`
 - `docs/06-specification/07-replay-semantics.md`
+
+## Exact equivalence, bounded equivalence, and drift
+
+Replay outcomes should be interpreted in three classes:
+
+- Exact equivalence: status and contract-relevant outputs match with no classified divergence.
+- Bounded equivalence: outcomes match within declared backend/environment limits.
+- Drift: one or more contract-relevant outcomes diverge and require investigation.
+
+Bounded equivalence is acceptable only when bounds are explicit and approved for the operating context.
+
+## How to interpret replay mismatch
+
+Treat mismatch as evidence, not failure theater:
+
+1. Identify mismatch scope (status, node outcome, artifact identity, or environment marker).
+2. Check whether the scope is within approved bounded-equivalence rules.
+3. If not bounded, classify as drift and open diff analysis immediately.
+4. Decide disposition: fix code/config, update baseline, or reject change.
+
+A replay mismatch is useful when it narrows uncertainty and points to a specific divergence class.

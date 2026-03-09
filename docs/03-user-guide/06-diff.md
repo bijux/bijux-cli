@@ -97,3 +97,34 @@ graph LR
 - `docs/03-user-guide/07-inspect-and-debug.md`
 - `docs/06-specification/08-diff-semantics.md`
 - `docs/06-specification/01-dag-model.md`
+
+## Start from the operator questions
+
+Use diff in this order to answer the right question quickly:
+
+- `What changed in definition?` -> graph diff.
+- `What changed in execution behavior?` -> run diff.
+- `What changed in delivered outputs?` -> artifact diff.
+- `Does the change matter for release or reproducibility?` -> classification and policy decision.
+
+## Surface-specific examples
+
+Graph diff example:
+
+```bash
+bijux-dag diff graph --left ./pipelines/baseline.dag.json --right ./pipelines/candidate.dag.json
+```
+
+Run diff example:
+
+```bash
+bijux-dag diff run --left RUN_20260309_204 --right RUN_20260309_211
+```
+
+Artifact diff example:
+
+```bash
+bijux-dag diff artifact --left ART_orders_v1 --right ART_orders_v2
+```
+
+Interpret each result independently before rolling them into one release decision.
