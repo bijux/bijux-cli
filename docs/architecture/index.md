@@ -18,6 +18,8 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Config key/value parity coverage](config-key-value-parity.md)
 - [Config file and path behavior](config-file-path-behavior.md)
 - [Config root parity report](config-root-parity-report.md)
+- [Config get parity report](config-get-parity-report.md)
+- [Config get post-parity improvements](config-get-post-parity-improvements.md)
 - [Python package convergence report](python-package-convergence-report.md)
 - [Python package baseline](python-package-baseline.md)
 - [Python public API lifecycle](python-public-api-lifecycle.md)
