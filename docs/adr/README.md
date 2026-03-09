@@ -4,8 +4,8 @@ Audience: maintainers.
 Owner: platform documentation guild.
 Status: stable.
 
-This directory contains the 20 active, durable ADRs.
-Superseded and intermediate ADRs are archived under `docs/adr/archive/`.
+This directory contains the 20 active, standalone ADRs.
+Each ADR includes merged historical context directly in the file.
 
 ## Active ADR set (20)
 - `20260309-DOCUMENTATION-GOVERNANCE-AND-TRUTH-BOUNDARY.md`
