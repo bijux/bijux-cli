@@ -1,9 +1,0 @@
-{
-  "surface": "artifact_trace",
-  "assertions": {
-    "inspect_p95_ms_max": 120,
-    "hash_p95_ms_max": 90,
-    "trace_p95_ms_max": 160
-  },
-  "source": "artifacts/benchmarks/artifact_inspect_hash_trace.json"
-}

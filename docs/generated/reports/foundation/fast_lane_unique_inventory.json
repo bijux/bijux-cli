@@ -1,8 +1,0 @@
-{
-  "generated_from": "cargo test --workspace --exclude bijux-dev-dag --exclude bijux-dag-runtime",
-  "lane": "fast",
-  "unique_inventory": [
-    "crates/bijux-dag-app/tests/operator_surface_contracts.rs",
-    "crates/bijux-dag-core/tests/spec_behavior_contract.rs"
-  ]
-}
