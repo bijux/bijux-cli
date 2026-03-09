@@ -270,6 +270,14 @@ jobs:
           echo "Release payload:"
           ls -lh _release || true
 
+      - name: Generate provenance statement (hook)
+        if: ${{ vars.BIJUX_ENABLE_PROVENANCE == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/generate-provenance-statement.sh
+          scripts/generate-provenance-statement.sh "${{ needs.publish.outputs.tag }}" "_release"
+
       - name: Compute changelog anchor
         id: anchor
         shell: bash
@@ -298,6 +306,7 @@ jobs:
             _release/*.tar.gz
             _release/checksums-${{ needs.publish.outputs.tag }}.txt
             _release/artifact-manifest-${{ needs.publish.outputs.tag }}.txt
+            _release/provenance-*.json
             artifacts/dist/*
           fail_on_unmatched_files: false
           make_latest: true
