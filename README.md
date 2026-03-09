@@ -89,6 +89,41 @@ cargo run -p bijux-dag-cli -- dag diff runs/run-<baseline-id> runs/run-<candidat
 - User path: `cargo run -p bijux-dag-cli -- ...`
 - Maintainer path: `cargo run -p bijux-dev-dag -- ...` (repository guardrails, audits, and governance checks)
 
+## What bijux-dag guarantees
+
+- Deterministic identity derivation for graph/run/artifact under declared policy versions.
+- Replay outcomes are explicitly classified (`equivalent`, `drift`, `incomplete`), not implied.
+- Diff results are surface-scoped and semantic (`graph`, `run`, `artifact`), not plain text noise.
+- Artifact records preserve lineage links needed for inspect, replay, and drift analysis.
+- Backend support class boundaries are explicit (`stable`, `bounded`, `unsupported`).
+
+## What bijux-dag does not guarantee
+
+- Universal equivalence across all backends and environments.
+- Identical timing or resource profile for equivalent semantic runs.
+- Promotion safety when evidence is missing, unknown, or outside declared capability envelope.
+- Automatic trust of imported inputs without verification.
+
+## Boundary notes
+
+Portability is bounded: evidence can transfer, but guarantees depend on backend capabilities and policy compatibility. Replay is evidence-oriented classification, not a generic rerun command. Diff is semantic comparison of declared surfaces, not textual file diff.
+
+## Read next
+
+- Learn: [What is bijux-dag](docs/01-introduction/01-what-is-bijux-dag.md)
+- Use: [Running a pipeline](docs/02-getting-started/03-running-a-pipeline.md)
+- Inspect: [Inspect and debug](docs/03-user-guide/07-inspect-and-debug.md)
+- Verify: [Replay semantics](docs/06-specification/07-replay-semantics.md)
+- Extend: [Adapter development](docs/08-development/03-adapter-development.md)
+
 ## License
 
 Apache-2.0. See `LICENSE`.
+
+## Start here now
+
+```bash
+cargo run -p bijux-dag-cli -- dag validate examples/hello.dag.json
+cargo run -p bijux-dag-cli -- dag run examples/hello.dag.json --out runs/
+cargo run -p bijux-dag-cli -- dag inspect runs/run-<id>
+```
