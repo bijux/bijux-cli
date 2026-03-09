@@ -462,7 +462,8 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let inbound = collect_inbound_counts(&root, &markdown_files, &policy)?;
 
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
-    let standalone_allowlist: BTreeSet<String> = policy.standalone_allowlist.iter().cloned().collect();
+    let standalone_allowlist: BTreeSet<String> =
+        policy.standalone_allowlist.iter().cloned().collect();
 
     let mut metadata_errors = Vec::new();
     let mut bad_status = Vec::new();
@@ -474,7 +475,11 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
         let path = root.join(rel_path);
         let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
         let lines = content.lines().collect::<Vec<_>>();
-        let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
+        let head = lines
+            .iter()
+            .take(60)
+            .map(|line| line.to_ascii_lowercase())
+            .collect::<Vec<_>>();
 
         let metadata_required = required_exact.contains(rel_path)
             || policy
@@ -484,7 +489,10 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
         if metadata_required {
             let has_audience = head.iter().any(|line| line.starts_with("audience:"));
             let has_owner = head.iter().any(|line| line.starts_with("owner:"));
-            let status_line = head.iter().find(|line| line.starts_with("status:")).cloned();
+            let status_line = head
+                .iter()
+                .find(|line| line.starts_with("status:"))
+                .cloned();
             if !has_audience {
                 metadata_errors.push(format!("{rel_path}: missing `audience`"));
             }
@@ -494,16 +502,24 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
             match status_line {
                 None => metadata_errors.push(format!("{rel_path}: missing `status`")),
                 Some(line) => {
-                    let value = line.trim_start_matches("status:").trim().to_ascii_lowercase();
-                    if !matches!(value.as_str(), "stable" | "generated" | "historical" | "internal")
-                    {
+                    let value = line
+                        .trim_start_matches("status:")
+                        .trim()
+                        .to_ascii_lowercase();
+                    if !matches!(
+                        value.as_str(),
+                        "stable" | "generated" | "historical" | "internal"
+                    ) {
                         bad_status.push(format!("{rel_path}: invalid `status` value `{value}`"));
                     }
                 }
             }
         }
 
-        if let Some(title) = lines.iter().find_map(|line| line.strip_prefix("# ").map(str::trim)) {
+        if let Some(title) = lines
+            .iter()
+            .find_map(|line| line.strip_prefix("# ").map(str::trim))
+        {
             if !title.is_empty() {
                 title_map
                     .entry(title.to_string())
@@ -546,7 +562,11 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     violations.extend(bad_status);
     violations.extend(duplicate_titles);
     violations.extend(duplicate_topics);
-    violations.extend(orphan_docs.into_iter().map(|path| format!("orphan doc: {path}")));
+    violations.extend(
+        orphan_docs
+            .into_iter()
+            .map(|path| format!("orphan doc: {path}")),
+    );
     if violations.is_empty() {
         Ok(())
     } else {
@@ -562,7 +582,8 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
     let inbound = collect_inbound_counts(&root, &markdown_files, &policy)?;
 
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
-    let standalone_allowlist: BTreeSet<String> = policy.standalone_allowlist.iter().cloned().collect();
+    let standalone_allowlist: BTreeSet<String> =
+        policy.standalone_allowlist.iter().cloned().collect();
     let mut section_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut status_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut metadata_gaps = Vec::new();
@@ -587,8 +608,17 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         let status = head
             .iter()
             .find(|line| line.starts_with("status:"))
-            .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
-            .filter(|status| matches!(status.as_str(), "stable" | "generated" | "historical" | "internal"))
+            .map(|line| {
+                line.trim_start_matches("status:")
+                    .trim()
+                    .to_ascii_lowercase()
+            })
+            .filter(|status| {
+                matches!(
+                    status.as_str(),
+                    "stable" | "generated" | "historical" | "internal"
+                )
+            })
             .unwrap_or_else(|| "missing_or_invalid".to_string());
         *status_counts.entry(status).or_insert(0) += 1;
 
@@ -671,8 +701,11 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
             candidate_lines.push(format!("- `{rel_path}`"));
         }
     }
-    fs::write(consolidation_path, format!("{}\n", candidate_lines.join("\n")))
-        .map_err(|err| err.to_string())?;
+    fs::write(
+        consolidation_path,
+        format!("{}\n", candidate_lines.join("\n")),
+    )
+    .map_err(|err| err.to_string())?;
 
     Ok(())
 }
