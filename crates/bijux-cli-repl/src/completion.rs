@@ -1,0 +1,55 @@
+use crate::types::ReplSession;
+
+/// Provide command completion candidates for built-ins and plugin hooks.
+#[must_use]
+pub fn completion_candidates(session: &ReplSession, prefix: &str) -> Vec<String> {
+    let mut suggestions = Vec::new();
+
+    let builtins = [
+        "help",
+        "version",
+        "doctor",
+        "repl",
+        "completion",
+        "inspect",
+        "status",
+        "config",
+        "plugins",
+        "dev",
+        "history",
+    ];
+    for builtin in builtins {
+        if builtin.starts_with(prefix) {
+            suggestions.push(builtin.to_string());
+        }
+    }
+
+    for namespace in session.plugin_completion_hooks.keys() {
+        if namespace.starts_with(prefix) {
+            suggestions.push(namespace.clone());
+        }
+    }
+
+    for values in session.plugin_completion_hooks.values() {
+        for value in values {
+            if value.starts_with(prefix) {
+                suggestions.push(value.clone());
+            }
+        }
+    }
+
+    suggestions.sort();
+    suggestions.dedup();
+    suggestions
+}
+
+/// Register plugin completion hook for a namespace.
+pub fn register_plugin_completion_hook(
+    session: &mut ReplSession,
+    namespace: &str,
+    suggestions: Vec<String>,
+) {
+    session
+        .plugin_completion_hooks
+        .insert(namespace.to_string(), suggestions);
+}
