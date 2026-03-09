@@ -358,6 +358,7 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), Plugi
             }
         }
         PluginKind::Native => return Err(PluginError::UnsupportedKind(PluginKind::Native)),
+        _ => return Err(PluginError::UnsupportedKind(manifest.kind)),
     }
 
     Ok(())
@@ -644,6 +645,7 @@ fn state_rank(state: PluginLifecycleState) -> u8 {
         PluginLifecycleState::Discovered => 3,
         PluginLifecycleState::Incompatible => 4,
         PluginLifecycleState::Broken => 5,
+        _ => 6,
     }
 }
 

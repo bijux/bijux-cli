@@ -75,6 +75,7 @@ fn should_emit_color(cfg: EmitterConfig) -> bool {
         ColorMode::Always => true,
         ColorMode::Never => false,
         ColorMode::Auto => true,
+        _ => true,
     }
 }
 
@@ -106,6 +107,7 @@ pub fn render_value(value: &Value, cfg: EmitterConfig) -> Result<String, EmitErr
                 serde_json::to_string(value).map_err(EmitError::from)
             }
         }
+        _ => serde_json::to_string(value).map_err(EmitError::from),
     }
 }
 
