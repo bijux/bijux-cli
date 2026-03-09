@@ -14,6 +14,7 @@ PARITY_MATRIX = ROOT / "artifacts" / "parity" / "command_parity_matrix.json"
 PLUGIN_STATE = ROOT / "artifacts" / "status" / "plugin_state_report.json"
 DOCS_AUDIT = ROOT / "artifacts" / "status" / "docs_audit.json"
 TEST_AUDIT = ROOT / "artifacts" / "status" / "test_quality_audit.json"
+CRATE_BOUNDARY_METRICS = ROOT / "artifacts" / "status" / "crate_boundary_metrics.json"
 STATUS_DIR = ROOT / "artifacts" / "status"
 README = ROOT / "README.md"
 
@@ -91,6 +92,7 @@ def main() -> int:
     stats = parity_stats()
     docs_audit = read_json(DOCS_AUDIT)
     plugin_state = read_json(PLUGIN_STATE)
+    crate_metrics = read_json(CRATE_BOUNDARY_METRICS)
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -119,6 +121,10 @@ def main() -> int:
             failures.append(
                 f"tests-strong claim blocked: weak test count {weak_count} is above threshold {weak_threshold}"
             )
+
+    boundary_rules = crate_metrics.get("rules", {})
+    if not bool(boundary_rules.get("no_large_merge_until_parity_stronger", False)):
+        failures.append("crate merge freeze rule missing in crate boundary metrics artifact")
 
     # Evidence rule for README: promotional quality claims require artifact references.
     if has_claim(r"\b(98%\+ coverage|1,800\+ tests|feature complete|production ready)\b", readme):

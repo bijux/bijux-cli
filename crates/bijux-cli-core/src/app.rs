@@ -1008,9 +1008,12 @@ fn route_response(
             let root = workspace_root();
             let metrics =
                 read_json_if_exists(&root.join("artifacts/status/crate_boundary_metrics.json"));
+            let report =
+                read_json_if_exists(&root.join("artifacts/status/crate_boundary_report.json"));
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
             json!({
                 "crate_metrics": metrics,
+                "crate_report": report,
                 "public_api_counts": state.get("crates_public_api_counts").cloned().unwrap_or_else(|| json!([])),
                 "dependency_edges": state.get("crate_dependency_edges").cloned().unwrap_or_else(|| json!([])),
             })

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate crate boundary metrics and merge guidance artifact."""
+"""Generate crate boundary metrics and decision report artifacts."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts" / "status" / "crate_boundary_metrics.json"
+REPORT_OUT = ROOT / "artifacts" / "status" / "crate_boundary_report.json"
 WORKSPACE_TOML = ROOT / "Cargo.toml"
 
 
@@ -198,6 +199,65 @@ def boundary_decisions() -> list[dict[str, str]]:
     ]
 
 
+def crate_decisions() -> list[dict[str, str]]:
+    return [
+        {
+            "crate": "bijux-cli-contracts",
+            "status": "keep",
+            "review": "must stay separate",
+            "reason": "schemas and envelope law are durable contracts shared by all runtimes",
+        },
+        {
+            "crate": "bijux-cli-core",
+            "status": "keep",
+            "review": "must stay separate",
+            "reason": "execution law center; merging outward increases coupling risk",
+        },
+        {
+            "crate": "bijux-cli-routing",
+            "status": "watch",
+            "review": "paying rent with dedicated parser fixtures and namespace policy tests",
+            "reason": "high co-change with core but still isolated by routing test surface",
+        },
+        {
+            "crate": "bijux-cli-output",
+            "status": "watch",
+            "review": "paying rent with envelope and rendering parity checks",
+            "reason": "candidate only if output contracts become static and trivial",
+        },
+        {
+            "crate": "bijux-cli-install",
+            "status": "watch",
+            "review": "paying rent with path/install diagnostics and channel policy",
+            "reason": "keep independent while runtime identity and install parity remain active",
+        },
+        {
+            "crate": "bijux-cli-python",
+            "status": "keep",
+            "review": "must stay separate",
+            "reason": "bridge packaging and binding boundary is language-specific",
+        },
+        {
+            "crate": "bijux-cli-plugin",
+            "status": "keep",
+            "review": "must stay separate",
+            "reason": "plugin registry/lifecycle semantics need explicit boundary protection",
+        },
+        {
+            "crate": "bijux-cli-repl",
+            "status": "keep",
+            "review": "must stay separate",
+            "reason": "interactive session and transcript behavior are distinct runtime concerns",
+        },
+        {
+            "crate": "bijux-cli-bin",
+            "status": "candidate-to-merge-later",
+            "review": "thin executable wrapper currently acceptable",
+            "reason": "revisit only after parity and runtime identity reports converge",
+        },
+    ]
+
+
 def main() -> None:
     crates = workspace_crates()
     deps = crate_internal_deps(crates)
@@ -213,10 +273,16 @@ def main() -> None:
 
     public_api = {c.name: count_public_api(c.rel) for c in crates}
 
-    cross_core_routing = pair_change_frequency("crates/bijux-cli-core", "crates/bijux-cli-routing")
-    cross_plugin_repl = pair_change_frequency("crates/bijux-cli-plugin", "crates/bijux-cli-repl")
-    cross_install_core = pair_change_frequency("crates/bijux-cli-install", "crates/bijux-cli-core")
-    cross_output_contracts = pair_change_frequency("crates/bijux-cli-output", "crates/bijux-cli-contracts")
+    pairwise_change_frequency: list[dict[str, object]] = []
+    for i, left in enumerate(crates):
+        for right in crates[i + 1 :]:
+            shared = pair_change_frequency(left.rel, right.rel)
+            pairwise_change_frequency.append(
+                {"left": left.name, "right": right.name, "shared_commits": shared}
+            )
+    pairwise_change_frequency.sort(
+        key=lambda item: int(item.get("shared_commits", 0)), reverse=True
+    )
 
     crate_rows = []
     for c in sorted(crates, key=lambda x: x.name):
@@ -239,23 +305,42 @@ def main() -> None:
         "generator": "scripts/status/generate_crate_boundary_metrics.py",
         "metrics": {
             "per_crate": crate_rows,
-            "cross_crate_change_frequency": {
-                "core_with_routing": cross_core_routing,
-                "plugin_with_repl": cross_plugin_repl,
-                "install_with_core": cross_install_core,
-                "output_with_contracts": cross_output_contracts,
-            },
+            "cross_crate_change_frequency": pairwise_change_frequency,
         },
         "boundary_decisions": boundary_decisions(),
+        "crate_decisions": crate_decisions(),
         "rules": {
             "no_large_merge_until_parity_stronger": True,
             "rule_text": "Large crate merges are frozen until parity coverage and mismatch trend show sustained improvement.",
         },
     }
 
+    decision_summary = {
+        "keep": sum(1 for row in crate_decisions() if row["status"] == "keep"),
+        "watch": sum(1 for row in crate_decisions() if row["status"] == "watch"),
+        "candidate_to_merge_later": sum(
+            1 for row in crate_decisions() if row["status"] == "candidate-to-merge-later"
+        ),
+    }
+    report_summary = {
+        "generated_at": report["generated_at"],
+        "generator": report["generator"],
+        "evidence": {
+            "metrics_artifact": str(OUT.relative_to(ROOT)),
+            "top_cross_crate_pairs": pairwise_change_frequency[:10],
+        },
+        "crate_decision_summary": decision_summary,
+        "crate_decisions": crate_decisions(),
+        "boundary_decisions": boundary_decisions(),
+    }
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    REPORT_OUT.write_text(
+        json.dumps(report_summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(f"wrote {OUT.relative_to(ROOT)}")
+    print(f"wrote {REPORT_OUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

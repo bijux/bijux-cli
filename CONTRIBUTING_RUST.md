@@ -41,6 +41,7 @@ This guide defines engineering standards for the Rust workspace in `bijux-cli`.
 - Does the change preserve stdout/stderr routing rules?
 - Does the change preserve plugin namespace and lifecycle contracts?
 - Does the change include tests for new behavior?
+- Does the change avoid large crate merges while parity/runtime identity reports remain partial?
 
 ## Commit conventions
 - Use Conventional Commits.

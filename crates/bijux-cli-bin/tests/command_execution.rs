@@ -180,3 +180,11 @@ fn runtime_identity_reports_ambiguous_active_binary_selection() {
 
     fs::remove_dir_all(&temp).expect("cleanup temp");
 }
+
+#[test]
+fn crate_health_exposes_decision_report_payload() {
+    let stdout = run(&["dev", "cli", "crate-health"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert!(payload["crate_metrics"].is_object());
+    assert!(payload["crate_report"].is_object());
+}

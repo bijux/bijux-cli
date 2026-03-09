@@ -43,159 +43,391 @@
       "status": "keep"
     }
   ],
-  "generated_at": "2026-03-09T22:22:55.028280+00:00",
+  "crate_decisions": [
+    {
+      "crate": "bijux-cli-contracts",
+      "reason": "schemas and envelope law are durable contracts shared by all runtimes",
+      "review": "must stay separate",
+      "status": "keep"
+    },
+    {
+      "crate": "bijux-cli-core",
+      "reason": "execution law center; merging outward increases coupling risk",
+      "review": "must stay separate",
+      "status": "keep"
+    },
+    {
+      "crate": "bijux-cli-routing",
+      "reason": "high co-change with core but still isolated by routing test surface",
+      "review": "paying rent with dedicated parser fixtures and namespace policy tests",
+      "status": "watch"
+    },
+    {
+      "crate": "bijux-cli-output",
+      "reason": "candidate only if output contracts become static and trivial",
+      "review": "paying rent with envelope and rendering parity checks",
+      "status": "watch"
+    },
+    {
+      "crate": "bijux-cli-install",
+      "reason": "keep independent while runtime identity and install parity remain active",
+      "review": "paying rent with path/install diagnostics and channel policy",
+      "status": "watch"
+    },
+    {
+      "crate": "bijux-cli-python",
+      "reason": "bridge packaging and binding boundary is language-specific",
+      "review": "must stay separate",
+      "status": "keep"
+    },
+    {
+      "crate": "bijux-cli-plugin",
+      "reason": "plugin registry/lifecycle semantics need explicit boundary protection",
+      "review": "must stay separate",
+      "status": "keep"
+    },
+    {
+      "crate": "bijux-cli-repl",
+      "reason": "interactive session and transcript behavior are distinct runtime concerns",
+      "review": "must stay separate",
+      "status": "keep"
+    },
+    {
+      "crate": "bijux-cli-bin",
+      "reason": "revisit only after parity and runtime identity reports converge",
+      "review": "thin executable wrapper currently acceptable",
+      "status": "candidate-to-merge-later"
+    }
+  ],
+  "generated_at": "2026-03-09T23:33:50.655135+00:00",
   "generator": "scripts/status/generate_crate_boundary_metrics.py",
   "metrics": {
-    "cross_crate_change_frequency": {
-      "core_with_routing": 14,
-      "install_with_core": 4,
-      "output_with_contracts": 2,
-      "plugin_with_repl": 2
-    },
+    "cross_crate_change_frequency": [
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-routing",
+        "shared_commits": 20
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-core",
+        "shared_commits": 16
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-routing",
+        "shared_commits": 13
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-install",
+        "shared_commits": 7
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-contracts",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-contracts",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-install",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-routing",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-routing",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 5
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-output",
+        "shared_commits": 4
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-output",
+        "shared_commits": 4
+      },
+      {
+        "left": "bijux-cli-output",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 4
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-repl",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-bin",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-repl",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-core",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-output",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-repl",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-contracts",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-routing",
+        "right": "bijux-cli-output",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-routing",
+        "right": "bijux-cli-repl",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-routing",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-routing",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-output",
+        "right": "bijux-cli-repl",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-output",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-output",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-repl",
+        "right": "bijux-cli-plugin",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-repl",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-repl",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-plugin",
+        "right": "bijux-cli-python",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-plugin",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      },
+      {
+        "left": "bijux-cli-python",
+        "right": "bijux-cli-install",
+        "shared_commits": 3
+      }
+    ],
     "per_crate": [
       {
         "churn": {
-          "commit_count": 28,
-          "deletions": 454,
-          "files_changed_entries": 154,
-          "insertions": 6550
+          "commit_count": 37,
+          "deletions": 768,
+          "files_changed_entries": 218,
+          "insertions": 9993
         },
-        "compile_ok": false,
-        "compile_seconds": 0.316,
+        "compile_ok": true,
+        "compile_seconds": 0.83,
         "crate": "bijux-cli-bin",
         "dependency_fan_in": 0,
         "dependency_fan_out": 1,
         "public_api_count": 0,
         "test_build_ok": true,
-        "test_build_seconds": 0.086
+        "test_build_seconds": 2.426
       },
       {
         "churn": {
-          "commit_count": 14,
-          "deletions": 370,
-          "files_changed_entries": 55,
-          "insertions": 2386
+          "commit_count": 15,
+          "deletions": 428,
+          "files_changed_entries": 67,
+          "insertions": 2439
         },
         "compile_ok": true,
-        "compile_seconds": 0.068,
+        "compile_seconds": 0.066,
         "crate": "bijux-cli-contracts",
         "dependency_fan_in": 7,
         "dependency_fan_out": 0,
         "public_api_count": 70,
         "test_build_ok": true,
-        "test_build_seconds": 0.083
+        "test_build_seconds": 1.267
       },
       {
         "churn": {
-          "commit_count": 34,
-          "deletions": 249,
-          "files_changed_entries": 69,
-          "insertions": 3888
+          "commit_count": 45,
+          "deletions": 407,
+          "files_changed_entries": 92,
+          "insertions": 4797
         },
-        "compile_ok": false,
-        "compile_seconds": 0.305,
+        "compile_ok": true,
+        "compile_seconds": 0.085,
         "crate": "bijux-cli-core",
         "dependency_fan_in": 3,
         "dependency_fan_out": 5,
         "public_api_count": 26,
         "test_build_ok": true,
-        "test_build_seconds": 0.085
+        "test_build_seconds": 1.809
       },
       {
         "churn": {
-          "commit_count": 10,
-          "deletions": 540,
-          "files_changed_entries": 20,
-          "insertions": 1583
+          "commit_count": 13,
+          "deletions": 613,
+          "files_changed_entries": 28,
+          "insertions": 1649
         },
         "compile_ok": true,
-        "compile_seconds": 0.063,
+        "compile_seconds": 0.237,
         "crate": "bijux-cli-install",
         "dependency_fan_in": 2,
         "dependency_fan_out": 1,
         "public_api_count": 47,
         "test_build_ok": true,
-        "test_build_seconds": 0.067
+        "test_build_seconds": 0.565
       },
       {
         "churn": {
-          "commit_count": 6,
-          "deletions": 25,
-          "files_changed_entries": 26,
-          "insertions": 897
+          "commit_count": 7,
+          "deletions": 64,
+          "files_changed_entries": 31,
+          "insertions": 960
         },
         "compile_ok": true,
-        "compile_seconds": 0.068,
+        "compile_seconds": 0.212,
         "crate": "bijux-cli-output",
         "dependency_fan_in": 2,
         "dependency_fan_out": 1,
         "public_api_count": 11,
         "test_build_ok": true,
-        "test_build_seconds": 0.082
+        "test_build_seconds": 0.797
       },
       {
         "churn": {
-          "commit_count": 15,
-          "deletions": 839,
-          "files_changed_entries": 34,
-          "insertions": 2689
+          "commit_count": 16,
+          "deletions": 918,
+          "files_changed_entries": 46,
+          "insertions": 2751
         },
         "compile_ok": true,
-        "compile_seconds": 0.066,
+        "compile_seconds": 0.259,
         "crate": "bijux-cli-plugin",
         "dependency_fan_in": 1,
         "dependency_fan_out": 1,
         "public_api_count": 47,
         "test_build_ok": true,
-        "test_build_seconds": 0.067
+        "test_build_seconds": 1.23
       },
       {
         "churn": {
-          "commit_count": 7,
-          "deletions": 378,
-          "files_changed_entries": 16,
-          "insertions": 1050
+          "commit_count": 11,
+          "deletions": 407,
+          "files_changed_entries": 24,
+          "insertions": 1317
         },
-        "compile_ok": false,
-        "compile_seconds": 0.298,
+        "compile_ok": true,
+        "compile_seconds": 0.24,
         "crate": "bijux-cli-python",
         "dependency_fan_in": 0,
         "dependency_fan_out": 3,
         "public_api_count": 23,
         "test_build_ok": true,
-        "test_build_seconds": 0.08
+        "test_build_seconds": 0.96
       },
       {
         "churn": {
-          "commit_count": 11,
-          "deletions": 1105,
-          "files_changed_entries": 29,
-          "insertions": 2397
+          "commit_count": 12,
+          "deletions": 1187,
+          "files_changed_entries": 37,
+          "insertions": 2448
         },
-        "compile_ok": false,
-        "compile_seconds": 0.311,
+        "compile_ok": true,
+        "compile_seconds": 0.261,
         "crate": "bijux-cli-repl",
         "dependency_fan_in": 0,
         "dependency_fan_out": 4,
         "public_api_count": 36,
         "test_build_ok": true,
-        "test_build_seconds": 0.079
+        "test_build_seconds": 0.838
       },
       {
         "churn": {
-          "commit_count": 22,
-          "deletions": 34,
-          "files_changed_entries": 75,
-          "insertions": 1388
+          "commit_count": 28,
+          "deletions": 97,
+          "files_changed_entries": 99,
+          "insertions": 1576
         },
         "compile_ok": true,
-        "compile_seconds": 0.077,
+        "compile_seconds": 0.24,
         "crate": "bijux-cli-routing",
         "dependency_fan_in": 2,
         "dependency_fan_out": 1,
         "public_api_count": 11,
         "test_build_ok": true,
-        "test_build_seconds": 0.084
+        "test_build_seconds": 0.09
       }
     ]
   },

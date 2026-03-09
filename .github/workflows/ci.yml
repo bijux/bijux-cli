@@ -260,6 +260,7 @@ jobs:
 
       - name: Generate current Rust state artifact
         run: |
+          python3 scripts/status/generate_crate_boundary_metrics.py
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_dev_cli_inventory.py
           python3 scripts/status/generate_docs_audit.py
@@ -313,6 +314,17 @@ jobs:
         with:
           name: current-rust-state
           path: artifacts/status/current_rust_state.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload crate boundary artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: crate-boundary
+          path: |
+            artifacts/status/crate_boundary_metrics.json
+            artifacts/status/crate_boundary_report.json
           if-no-files-found: warn
           retention-days: 14
 
