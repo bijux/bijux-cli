@@ -9,6 +9,9 @@ use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core as _;
 use bijux_cli_output::{render_value, EmitterConfig};
+use bijux_cli_plugin::{
+    compatibility_warnings, list_plugins, plugin_origin_metadata, registry_path_from_plugins_dir,
+};
 use bijux_cli_python::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
     run_config_migrations, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
@@ -45,7 +48,13 @@ fn render_command_help(path: &[&str]) -> Result<String> {
     let target = find_command_mut(&mut cmd, path).ok_or_else(|| anyhow::anyhow!("unknown help path"))?;
     let mut out = Vec::new();
     target.write_long_help(&mut out)?;
-    Ok(String::from_utf8(out)?)
+    let mut rendered = String::from_utf8(out)?;
+    if matches!(path, ["inspect"] | ["cli", "inspect"] | ["cli", "plugins", "inspect"]) {
+        rendered.push_str(
+            "\nCompatibility note: inspect output includes plugin compatibility warnings when present.\n",
+        );
+    }
+    Ok(rendered)
 }
 
 fn find_command_mut<'a>(command: &'a mut clap::Command, path: &[&str]) -> Option<&'a mut clap::Command> {
@@ -79,6 +88,7 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
     let config = load_compatibility_config(&defaults.config_file)
         .unwrap_or_else(|_| CompatibilityConfig::default());
     let paths = discover_compatibility_paths(home.as_deref(), &PathOverrides::default(), &env_map(), &config)?;
+    let plugin_registry_path = registry_path_from_plugins_dir(&paths.plugins_dir);
 
     let payload = match normalized_path {
         [a, b] if a == "cli" && b == "version" => {
@@ -94,7 +104,12 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
             json!({"shells": ["bash", "zsh", "fish", "powershell"]})
         }
         [a, b] if a == "cli" && b == "inspect" => {
-            json!({"reserved_namespaces": registry.route_tree(), "builtins": registry.built_in_paths()})
+            json!({
+                "reserved_namespaces": registry.route_tree(),
+                "builtins": registry.built_in_paths(),
+                "plugin_origins": plugin_origin_metadata(&plugin_registry_path).unwrap_or_default(),
+                "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+            })
         }
         [a, b] if a == "cli" && b == "status" => {
             json!({"status": "ok", "runtime": "rust-foundation"})
@@ -117,10 +132,14 @@ fn route_response(normalized_path: &[String]) -> Result<Value> {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
-            json!({"plugins": [], "directory": paths.plugins_dir})
+            json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
-            json!({"plugins": [], "status": "loaded"})
+            json!({
+                "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
+                "status": "loaded",
+                "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
+            })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             json!({"routes": registry.built_in_paths()})

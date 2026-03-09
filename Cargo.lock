@@ -72,6 +72,7 @@ dependencies = [
  "bijux-cli-contracts",
  "bijux-cli-core",
  "bijux-cli-output",
+ "bijux-cli-plugin",
  "bijux-cli-python",
  "bijux-cli-routing",
  "clap",
@@ -139,7 +140,11 @@ name = "bijux-cli-repl"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-contracts",
+ "bijux-cli-core",
+ "bijux-cli-output",
  "bijux-cli-routing",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

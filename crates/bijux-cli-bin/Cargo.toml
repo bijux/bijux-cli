@@ -16,6 +16,7 @@ anyhow.workspace = true
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 bijux-cli-core = { path = "../bijux-cli-core" }
 bijux-cli-output = { path = "../bijux-cli-output" }
+bijux-cli-plugin = { path = "../bijux-cli-plugin" }
 bijux-cli-python = { path = "../bijux-cli-python" }
 bijux-cli-routing = { path = "../bijux-cli-routing" }
 clap = { version = "4.5.51", features = ["std"] }

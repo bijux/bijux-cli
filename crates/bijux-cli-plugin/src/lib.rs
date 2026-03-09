@@ -46,8 +46,24 @@ pub struct PluginRecord {
     pub state: PluginLifecycleState,
     /// Source artifact reference.
     pub source: String,
+    /// Plugin trust level.
+    pub trust_level: PluginTrustLevel,
     /// SHA-256 digest of raw manifest text.
     pub manifest_checksum_sha256: String,
+}
+
+/// Trust-level model for plugin provenance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PluginTrustLevel {
+    /// Official core-distributed plugin.
+    Core,
+    /// Verified plugin provenance.
+    Verified,
+    /// Community plugin.
+    Community,
+    /// Unknown provenance.
+    Unknown,
 }
 
 /// Durable plugin registry file model.
@@ -165,6 +181,8 @@ pub struct InstallPluginRequest {
     pub manifest_text: String,
     /// Provenance source string.
     pub source: String,
+    /// Assigned trust level.
+    pub trust_level: PluginTrustLevel,
 }
 
 /// Validate manifest and represent normalized validation output.
@@ -185,6 +203,17 @@ pub struct PluginDoctorReport {
     pub broken: Vec<String>,
     /// Namespaces in incompatible state.
     pub incompatible: Vec<String>,
+}
+
+/// Plugin origin metadata for route introspection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginOriginMetadata {
+    /// Namespace.
+    pub namespace: String,
+    /// Source reference.
+    pub source: String,
+    /// Trust level.
+    pub trust_level: PluginTrustLevel,
 }
 
 /// Build plugin marker chained from core state.
@@ -437,10 +466,12 @@ pub fn install_plugin(
 
     let namespace = validated.manifest.namespace.0.clone();
     let source = request.source;
+    let trust_level = request.trust_level;
     let record = PluginRecord {
         manifest: validated.manifest,
         state: PluginLifecycleState::Installed,
         source,
+        trust_level,
         manifest_checksum_sha256,
     };
 
@@ -525,6 +556,32 @@ pub fn inspect_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRec
         .get(namespace)
         .cloned()
         .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))
+}
+
+/// Return compatibility warnings for plugin surfaces.
+pub fn compatibility_warnings(
+    registry_path: &Path,
+    host_version: &str,
+) -> Result<Vec<String>, PluginError> {
+    let diagnostics = load_time_diagnostics(registry_path, host_version)?;
+    Ok(diagnostics
+        .into_iter()
+        .map(|diagnostic| format!("{}: {}", diagnostic.namespace, diagnostic.message))
+        .collect())
+}
+
+/// Build plugin-origin metadata from registry contents.
+pub fn plugin_origin_metadata(registry_path: &Path) -> Result<Vec<PluginOriginMetadata>, PluginError> {
+    let registry = load_registry(registry_path)?;
+    Ok(registry
+        .plugins
+        .into_iter()
+        .map(|(namespace, record)| PluginOriginMetadata {
+            namespace,
+            source: record.source,
+            trust_level: record.trust_level,
+        })
+        .collect())
 }
 
 /// List all plugins deterministically by namespace.
