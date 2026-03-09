@@ -105,6 +105,23 @@ fn history_file_supports_python_prompt_toolkit_layout() {
 }
 
 #[test]
+fn history_file_supports_cli_json_layout_for_repl_interop() {
+    let path = temp_history_path("cli-json-layout");
+    fs::write(
+        &path,
+        "[{\"command\":\"status\",\"timestamp\":1.0},{\"command\":\"plugins list\",\"timestamp\":2.0}]",
+    )
+    .expect("write history");
+
+    let (mut session, _) = startup_repl("default", None);
+    configure_history(&mut session, Some(path.clone()), true, 10);
+    load_history(&mut session).expect("load history");
+
+    assert_eq!(session.history, vec!["status", "plugins list"]);
+    let _ = fs::remove_file(path);
+}
+
+#[test]
 fn repl_line_tokenization_matches_cli_parser_expectations() {
     let argv = repl_argv_from_line("status --format json --no-pretty");
     let parsed = parse_intent(&argv).expect("repl argv should parse");

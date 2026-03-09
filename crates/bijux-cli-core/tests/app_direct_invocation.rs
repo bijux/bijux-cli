@@ -293,6 +293,8 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
     assert!(payload["reports"]["python_bridge_parity_coverage"].is_object());
     assert!(payload["reports"]["install_packaging_parity_coverage"].is_object());
     assert!(payload["reports"]["state_behavior_coverage"].is_object());
+    assert!(payload["reports"]["state_paths_report"].is_object());
+    assert!(payload["reports"]["state_corruption_health_report"].is_object());
     assert!(payload["reports"]["snapshot_coverage"].is_object());
     assert!(payload["reports"]["stream_coverage"].is_object());
     assert!(payload["reports"]["exit_code_coverage"].is_object());

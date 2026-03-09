@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::time::Instant;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
@@ -203,6 +204,28 @@ fn history_skips_malformed_entries_inside_json_array() {
 }
 
 #[test]
+fn history_malformed_array_with_nested_noise_keeps_only_object_entries() {
+    let temp = make_temp_dir("malformed-array-nested");
+    let history_path = temp.join("malformed-array-nested.json");
+    fs::write(
+        &history_path,
+        "[{\"command\":\"status\",\"timestamp\":1},[1,2],{\"not_command\":true},null,{\"command\":\"doctor\",\"timestamp\":2}]",
+    )
+    .expect("write");
+
+    let out = run_with_env(
+        &["history", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", history_path.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    let loaded = payload["entries"].as_array().expect("entries");
+    assert_eq!(loaded.len(), 3);
+    assert_eq!(loaded[0]["command"], "status");
+    assert_eq!(loaded[2]["command"], "doctor");
+}
+
+#[test]
 fn history_reads_repl_line_layout_for_cli_interop() {
     let temp = make_temp_dir("repl-interop");
     let history_path = temp.join("repl.history");
@@ -219,4 +242,26 @@ fn history_reads_repl_line_layout_for_cli_interop() {
     assert_eq!(loaded[0]["command"], "status");
     assert_eq!(loaded[1]["command"], "plugins list");
     assert_eq!(loaded[2]["command"], "history");
+}
+
+#[test]
+fn history_oversized_file_stays_within_budget() {
+    let temp = make_temp_dir("budget");
+    let history_path = temp.join("budget.json");
+    let entries: Vec<Value> = (0..10_000)
+        .map(|i| serde_json::json!({"command": format!("cmd-{i}"), "timestamp": i as f64}))
+        .collect();
+    fs::write(&history_path, serde_json::to_string(&entries).expect("json")).expect("write");
+
+    let start = Instant::now();
+    let out = run_with_env(
+        &["history", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_HISTORY_FILE", history_path.display().to_string())],
+    );
+    let elapsed = start.elapsed();
+    assert!(out.status.success());
+    assert!(
+        elapsed.as_millis() < 1500,
+        "oversized history budget exceeded: {elapsed:?}"
+    );
 }

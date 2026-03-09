@@ -192,3 +192,86 @@ fn state_doctor_reports_history_malformed_storage() {
     let issues = payload["doctor"]["issues"].as_array().expect("issues array");
     assert!(issues.iter().any(|item| item["area"] == "history"));
 }
+
+#[test]
+fn state_doctor_reports_config_corruption_and_partial_write_artifact() {
+    let temp = make_temp_dir("state-doctor-config-corrupt");
+    let config = temp.join("corrupt.env");
+    fs::write(&config, "BIJUXCLI_ALPHA=1\nBROKEN_LINE\n").expect("write malformed config");
+    fs::write(config.with_extension("tmp"), "BIJUXCLI_ALPHA=stale\n").expect("write stale tmp");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_CONFIG", config.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| item["area"] == "config"));
+    assert!(issues.iter().any(|item| item["message"] == "partial-write rollback artifact detected"));
+}
+
+#[test]
+fn state_doctor_reports_memory_wrong_type_entries() {
+    let temp = make_temp_dir("state-doctor-memory-wrong-type");
+    let home = temp.join("home");
+    let memory_file = home.join(".bijux").join(".memory.json");
+    fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
+    fs::write(&memory_file, "{\"alpha\":1,\"beta\":{\"v\":1}}").expect("seed memory");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("HOME", home.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert_eq!(payload["doctor"]["status"], "degraded");
+    let issues = payload["doctor"]["issues"].as_array().expect("issues array");
+    assert!(issues.iter().any(|item| item["area"] == "memory"));
+}
+
+#[test]
+fn state_doctor_recovers_partial_registry_and_cleans_stale_backup() {
+    let temp = make_temp_dir("state-doctor-registry-repair");
+    let plugins = temp.join("plugins");
+    fs::create_dir_all(&plugins).expect("mkdir plugins");
+    let registry = plugins.join("registry.json");
+    let backup = plugins.join("registry.bak");
+    fs::write(&registry, "{\"version\":\"v1\",").expect("write partial registry");
+    fs::write(&backup, "{}\n").expect("write stale backup");
+
+    let out = run_with_env(
+        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[("BIJUXCLI_PLUGINS_DIR", plugins.display().to_string())],
+    );
+    assert!(out.status.success());
+    let payload = parse_json(&out.stdout);
+    assert!(payload["doctor"]["repairs"].is_array());
+    assert!(!backup.exists(), "state doctor should clean stale backup");
+}
+
+#[test]
+fn state_doctor_json_and_text_contracts_are_stable() {
+    let json_out = run(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"]);
+    assert!(json_out.status.success());
+    let json_payload = parse_json(&json_out.stdout);
+    assert_eq!(json_payload["runtime"], "dev-cli");
+    assert!(json_payload["doctor"]["status"].is_string());
+    assert!(json_payload["doctor"]["issues"].is_array());
+    assert!(json_payload["doctor"]["repairs"].is_array());
+
+    let text_out = run(&["dev", "cli", "state-doctor", "--format", "text"]);
+    assert!(text_out.status.success());
+    let text = String::from_utf8(text_out.stdout).expect("text utf-8");
+    assert!(text.contains("\"runtime\": \"dev-cli\""));
+    assert!(text.contains("\"doctor\""));
+}
+
+#[test]
+fn state_doctor_failure_routes_output_to_stderr_only() {
+    let out = run(&["dev", "cli", "state-doctor", "--format", "nope"]);
+    assert_ne!(out.status.code(), Some(0));
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+}
