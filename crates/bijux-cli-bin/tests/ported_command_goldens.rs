@@ -47,13 +47,35 @@ fn assert_snapshot(args: &[&str], snapshot_path: &str) {
 
 #[test]
 fn ported_command_outputs_match_goldens() {
-    let cases: [(&[&str], &str); 14] = [
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let golden_config_path = format!("{home}/.bijux/golden-config.env");
+    let _ = std::fs::remove_file(&golden_config_path);
+
+    let set_args = [
+        "cli",
+        "config",
+        "set",
+        "golden_key=golden-value",
+        "--config-path",
+        golden_config_path.as_str(),
+    ];
+    assert_snapshot(&set_args, "tests/snapshots/ported/cli_config_set.json");
+
+    let get_args = [
+        "cli",
+        "config",
+        "get",
+        "golden_key",
+        "--config-path",
+        golden_config_path.as_str(),
+    ];
+    assert_snapshot(&get_args, "tests/snapshots/ported/cli_config_get.json");
+
+    let cases: [(&[&str], &str); 12] = [
         (&["status"], "tests/snapshots/ported/root_status.json"),
         (&["audit"], "tests/snapshots/ported/root_audit.json"),
         (&["docs"], "tests/snapshots/ported/root_docs.json"),
         (&["sleep", "0"], "tests/snapshots/ported/root_sleep.json"),
-        (&["cli", "config", "get"], "tests/snapshots/ported/cli_config_get.json"),
-        (&["cli", "config", "set"], "tests/snapshots/ported/cli_config_set.json"),
         (&["cli", "self-test"], "tests/snapshots/ported/cli_self_test.json"),
         (&["cli", "plugins", "list"], "tests/snapshots/ported/cli_plugins_list.json"),
         (

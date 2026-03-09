@@ -42,8 +42,7 @@ fn executes_cli_namespace_commands() {
     for args in [
         vec!["cli", "status"],
         vec!["cli", "paths"],
-        vec!["cli", "config", "get"],
-        vec!["cli", "config", "set"],
+        vec!["cli", "config", "set", "TEST_KEY=1"],
         vec!["cli", "self-test"],
         vec!["cli", "plugins", "list"],
         vec!["cli", "plugins", "inspect"],

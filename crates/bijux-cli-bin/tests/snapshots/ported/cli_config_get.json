@@ -1,5 +1,5 @@
 {
-  "BIJUXCLI_CONFIG": "<HOME>/.bijux/.env",
-  "BIJUXCLI_HISTORY_FILE": "<HOME>/.bijux/.history",
-  "BIJUXCLI_PLUGINS_DIR": "<HOME>/.bijux/.plugins"
+  "key": "golden_key",
+  "source_path": "<HOME>/.bijux/golden-config.env",
+  "value": "golden-value"
 }

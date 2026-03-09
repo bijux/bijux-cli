@@ -17,6 +17,8 @@ pub struct ParsedGlobalFlags {
     pub log_level: Option<LogLevel>,
     /// Quiet mode.
     pub quiet: bool,
+    /// Optional explicit config file path override.
+    pub config_path: Option<String>,
 }
 
 /// Intent model normalized from clap matches.
@@ -96,6 +98,7 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
         color_mode,
         log_level,
         quiet: matches.get_flag("quiet"),
+        config_path: matches.get_one::<String>("config-path").cloned(),
     })
 }
 
@@ -124,11 +127,13 @@ pub fn root_command() -> Command {
         .action(ArgAction::SetTrue)
         .overrides_with("pretty")
         .global(true);
+    let config_path_arg =
+        Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
 
     let config_group = Command::new("config")
         .subcommand_required(false)
-        .subcommand(Command::new("get"))
-        .subcommand(Command::new("set"));
+        .subcommand(Command::new("get").arg(Arg::new("key").num_args(1)))
+        .subcommand(Command::new("set").arg(Arg::new("pair").num_args(1)));
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
@@ -164,7 +169,15 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("contracts").hide(true));
 
     Command::new("bijux")
-        .args([format_arg, quiet_arg, log_level_arg, color_arg, pretty_arg, no_pretty_arg])
+        .args([
+            format_arg,
+            quiet_arg,
+            log_level_arg,
+            color_arg,
+            pretty_arg,
+            no_pretty_arg,
+            config_path_arg,
+        ])
         .subcommand_required(false)
         .allow_external_subcommands(true)
         .subcommand(cli_group)
@@ -240,6 +253,7 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
                     color_mode: None,
                     log_level: None,
                     quiet: false,
+                    config_path: None,
                 },
             });
         }

@@ -1,7 +1,9 @@
 //! Top-level application entrypoint and route execution.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
+use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
@@ -54,6 +56,169 @@ fn env_map() -> HashMap<String, String> {
         .collect()
 }
 
+fn normalize_config_key(raw: &str) -> Result<String> {
+    let key = raw.trim();
+    if key.is_empty() {
+        anyhow::bail!("Key cannot be empty");
+    }
+    if !key.is_ascii() {
+        anyhow::bail!("Non-ASCII characters are not allowed in keys or values.");
+    }
+    if key.contains('.') {
+        anyhow::bail!("Unknown config section in key: {key}");
+    }
+    let normalized = key.strip_prefix("BIJUXCLI_").unwrap_or(key).to_ascii_lowercase();
+    if !normalized.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        anyhow::bail!("Invalid key: only alphanumerics and underscore allowed.");
+    }
+    Ok(normalized)
+}
+
+fn decode_quoted_value(raw: &str) -> String {
+    let mut out = String::new();
+    let mut chars = raw.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch != '\\' {
+            out.push(ch);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => out.push('\n'),
+            Some('r') => out.push('\r'),
+            Some('t') => out.push('\t'),
+            Some('\\') => out.push('\\'),
+            Some('"') => out.push('"'),
+            Some('\'') => out.push('\''),
+            Some(other) => {
+                out.push('\\');
+                out.push(other);
+            }
+            None => out.push('\\'),
+        }
+    }
+    out
+}
+
+fn validate_config_value(value: &str) -> Result<()> {
+    if !value.is_ascii() {
+        anyhow::bail!("Non-ASCII characters are not allowed in keys or values.");
+    }
+    if value
+        .chars()
+        .any(|ch| matches!(ch, '\r' | '\n' | '\t' | '\u{000B}' | '\u{000C}'))
+    {
+        anyhow::bail!("Control characters are not allowed in config values.");
+    }
+    Ok(())
+}
+
+fn parse_set_pair(raw_pair: &str) -> Result<(String, String)> {
+    if !raw_pair.contains('=') {
+        anyhow::bail!("Invalid argument: KEY=VALUE required");
+    }
+    let (raw_key, raw_value) = raw_pair.split_once('=').expect("contains '=' checked");
+    let key = normalize_config_key(raw_key)?;
+    let mut value = raw_value.to_string();
+    if value.len() >= 2
+        && ((value.starts_with('"') && value.ends_with('"'))
+            || (value.starts_with('\'') && value.ends_with('\'')))
+    {
+        value = decode_quoted_value(&value[1..value.len() - 1]);
+    }
+    validate_config_value(&value)?;
+    Ok((key, value))
+}
+
+fn parse_compat_config_kv(path: &Path) -> Result<BTreeMap<String, String>> {
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let text = fs::read_to_string(path)?;
+    let mut out = BTreeMap::new();
+    for (index, raw_line) in text.lines().enumerate() {
+        let line_no = index + 1;
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
+            anyhow::bail!("Malformed line {line_no}: {raw_line}");
+        };
+        let normalized = normalize_config_key(raw_key)?;
+        let value = decode_quoted_value(raw_value.trim());
+        validate_config_value(&value)?;
+        out.insert(normalized, value);
+    }
+    Ok(out)
+}
+
+fn write_compat_config_kv(path: &Path, values: &BTreeMap<String, String>) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut rendered = String::new();
+    for (key, value) in values {
+        rendered.push_str(&format!("BIJUXCLI_{}={}\n", key.to_ascii_uppercase(), value));
+    }
+    let temp_path = path.with_extension("tmp");
+    let mut temp = fs::OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&temp_path)?;
+    temp.write_all(rendered.as_bytes())?;
+    temp.sync_all()?;
+    fs::rename(temp_path, path)?;
+    Ok(())
+}
+
+fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {
+    let mut extra_start = 1 + command_tokens.len();
+    if argv.len() < extra_start {
+        return Vec::new();
+    }
+    for (idx, token) in command_tokens.iter().enumerate() {
+        if argv.get(idx + 1).map(String::as_str) != Some(*token) {
+            extra_start = idx + 1;
+            break;
+        }
+    }
+    let extras = &argv[extra_start..];
+    let mut positional = Vec::new();
+    let mut i = 0;
+    while i < extras.len() {
+        let token = &extras[i];
+        if token == "--quiet" || token == "-q" || token == "--pretty" || token == "--no-pretty" {
+            i += 1;
+            continue;
+        }
+        if token == "--format"
+            || token == "-f"
+            || token == "--log-level"
+            || token == "--color"
+            || token == "--config-path"
+        {
+            i += 2;
+            continue;
+        }
+        if token.starts_with("--format=")
+            || token.starts_with("--log-level=")
+            || token.starts_with("--color=")
+            || token.starts_with("--config-path=")
+        {
+            i += 1;
+            continue;
+        }
+        if token.starts_with('-') {
+            i += 1;
+            continue;
+        }
+        positional.push(token.clone());
+        i += 1;
+    }
+    positional
+}
+
 fn render_command_help(path: &[&str]) -> Result<String> {
     let mut cmd = root_command();
     let target =
@@ -81,7 +246,11 @@ fn find_command_mut<'a>(
     }
 }
 
-fn route_response(normalized_path: &[String], argv: &[String]) -> Result<Value> {
+fn route_response(
+    normalized_path: &[String],
+    argv: &[String],
+    global_flags: &ParsedGlobalFlags,
+) -> Result<Value> {
     let mut registry = RouteRegistry::default();
     let _ = registry.register_plugin_namespace("community");
 
@@ -108,9 +277,13 @@ fn route_response(normalized_path: &[String], argv: &[String]) -> Result<Value> 
 
     let config = load_compatibility_config(&defaults.config_file)
         .unwrap_or_else(|_| CompatibilityConfig::default());
+    let mut overrides = PathOverrides::default();
+    if let Some(path) = &global_flags.config_path {
+        overrides.config_file = Some(path.into());
+    }
     let paths = discover_compatibility_paths(
         home.as_deref(),
-        &PathOverrides::default(),
+        &overrides,
         &env_map(),
         &config,
     )?;
@@ -208,11 +381,21 @@ fn route_response(normalized_path: &[String], argv: &[String]) -> Result<Value> 
             })
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
-            json!({
-                "BIJUXCLI_CONFIG": paths.config_file,
-                "BIJUXCLI_HISTORY_FILE": paths.history_file,
-                "BIJUXCLI_PLUGINS_DIR": paths.plugins_dir
-            })
+            let positional = command_positionals(argv, &["cli", "config", "get"]);
+            let Some(raw_key) = positional.first() else {
+                anyhow::bail!("Missing argument: KEY required");
+            };
+            let normalized_key = normalize_config_key(raw_key)?;
+            let env_key = format!("BIJUXCLI_{}", normalized_key.to_ascii_uppercase());
+            let value = if let Ok(value) = env::var(&env_key) {
+                value
+            } else {
+                let values = parse_compat_config_kv(&paths.config_file)?;
+                values.get(&normalized_key).cloned().ok_or_else(|| {
+                    anyhow::anyhow!("Config key not found: {raw_key}")
+                })?
+            };
+            json!({"value": value, "key": normalized_key, "source_path": paths.config_file})
         }
         [a] if a == "config" => {
             json!({
@@ -223,7 +406,15 @@ fn route_response(normalized_path: &[String], argv: &[String]) -> Result<Value> 
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             run_config_migrations(&paths.config_file, 1)?;
-            json!({"status": "ok", "updated": paths.config_file})
+            let positional = command_positionals(argv, &["cli", "config", "set"]);
+            let Some(raw_pair) = positional.first() else {
+                anyhow::bail!("Missing argument: KEY=VALUE required");
+            };
+            let (key, value) = parse_set_pair(raw_pair)?;
+            let mut values = parse_compat_config_kv(&paths.config_file)?;
+            values.insert(key.clone(), value.clone());
+            write_compat_config_kv(&paths.config_file, &values)?;
+            json!({"status": "updated", "key": key, "value": value, "updated": paths.config_file})
         }
         [a] if a == "history" => {
             json!({"entries": [], "count": 0})
@@ -368,8 +559,42 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 
     let is_unknown = !is_known_route(&intent.normalized_path);
 
-    let rendered =
-        render_value(&route_response(&intent.normalized_path, argv)?, emitter_config(&intent.global_flags))?;
+    let response = route_response(&intent.normalized_path, argv, &intent.global_flags);
+    let payload = match response {
+        Ok(value) => value,
+        Err(error) => {
+            let message = error.to_string();
+            let code = if message.contains("Missing argument")
+                || message.contains("Invalid argument")
+                || message.contains("Invalid key")
+                || message.contains("Unknown config section")
+                || message.contains("Config key not found")
+            {
+                2
+            } else if message.contains("Non-ASCII") || message.contains("Control characters") {
+                3
+            } else {
+                1
+            };
+            let rendered_error = render_value(
+                &json!({
+                    "status": "error",
+                    "code": code,
+                    "message": message,
+                    "command": intent.normalized_path.join(" "),
+                }),
+                emitter_config(&intent.global_flags),
+            )?;
+            let error_content = if rendered_error.ends_with('\n') {
+                rendered_error
+            } else {
+                format!("{rendered_error}\n")
+            };
+            return Ok(AppRunResult { exit_code: code, stdout: String::new(), stderr: error_content });
+        }
+    };
+
+    let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
     let content = if rendered.ends_with('\n') {
         rendered
     } else {
