@@ -17,4 +17,5 @@ Start with Getting Started if you want to install and run bijux-cli quickly. Use
 - Concepts: the guarantees, invariants, and mental models that govern behavior.
 - Guides: practical, step-by-step workflows for real usage.
 - Reference: canonical lists of commands, config schema, and exit codes.
+- Constitution: normative compatibility contracts for command identity, flags, output, errors, and deprecation.
 - Architecture: the documented decision rules and execution walk-through.
