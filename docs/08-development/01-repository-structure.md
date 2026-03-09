@@ -13,6 +13,12 @@ Top-level structure intent:
 - `examples/` or fixtures directories: deterministic samples and validation inputs.
 - CI and tooling manifests: build, test, and release automation entrypoints.
 
+Developer environment setup baseline:
+- install pinned Rust toolchain used by CI.
+- enable local `cargo` lockfile-aware workflows (`--locked`) for reproducibility checks.
+- verify required tooling before contribution (`fmt`, `clippy`, test toolchain).
+- keep local branch rebased to reduce cross-domain merge conflicts.
+
 Crate boundary expectations:
 - command-surface crates own CLI and operator interfaces.
 - runtime crates own scheduling, execution, and run lifecycle behavior.
@@ -46,6 +52,7 @@ Good ownership check:
 - Repository domains and expected ownership boundaries are explicit.
 - Contributors can place changes with lower risk of architecture drift.
 - Boundary crossing requires deliberate documentation and review clarity.
+- Includes minimum developer setup guidance tied to repository structure usage.
 
 ## Limitations
 - This guide does not list every file path in the repository.

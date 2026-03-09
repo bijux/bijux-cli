@@ -24,6 +24,13 @@ Fixture governance:
 - fixture changes must include rationale and expected behavior delta.
 - avoid oversized fixture trees that obscure intent.
 
+Fixture system guidance:
+- store fixtures with clear naming tied to behavior contract under test.
+- keep fixture payloads small but semantically representative.
+- annotate fixture ownership and intended test lanes.
+- version fixture schema assumptions when fixture format evolves.
+- delete orphan fixtures that no longer map to active tests.
+
 Failure triage rules:
 - classify failures as product regression, test defect, or environment instability.
 - flaky tests require immediate stabilization or quarantine with explicit tracking.
@@ -32,6 +39,14 @@ Failure triage rules:
 ## Examples
 ```bash
 cargo test --workspace --locked
+```
+
+```text
+Fixture review checklist:
+- fixture name maps to one behavior contract
+- fixture is used by at least one active test
+- fixture delta rationale recorded in PR
+- fixture remains deterministic across CI/local runs
 ```
 
 ```text
