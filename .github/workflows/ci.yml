@@ -261,6 +261,7 @@ jobs:
       - name: Generate current Rust state artifact
         run: |
           python3 scripts/status/generate_current_rust_state.py
+          python3 scripts/status/generate_dev_cli_inventory.py
 
       - name: Runtime unity gate
         run: |
@@ -285,6 +286,15 @@ jobs:
         with:
           name: current-rust-state
           path: artifacts/status/current_rust_state.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli inventory artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-inventory
+          path: artifacts/status/dev_cli_inventory.json
           if-no-files-found: warn
           retention-days: 14
 

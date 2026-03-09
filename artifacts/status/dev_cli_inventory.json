@@ -1,0 +1,833 @@
+{
+  "generated_at": "2026-03-09T22:38:23.386196+00:00",
+  "generator": "scripts/status/generate_dev_cli_inventory.py",
+  "maintainer_script_replacements": [
+    {
+      "from": "scripts/status/generate_current_rust_state.py",
+      "to": "bijux dev cli status"
+    },
+    {
+      "from": "scripts/status/generate_crate_boundary_metrics.py",
+      "to": "bijux dev cli crate-health"
+    },
+    {
+      "from": "scripts/parity/run_rust_python_parity.py",
+      "to": "bijux dev cli parity"
+    }
+  ],
+  "makefiles": [
+    {
+      "file": "makefiles/api.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "ALL_API_SCHEMAS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "ALL_API_SCHEMAS_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "API_ARTIFACTS_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "API_LINT_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "API_LOG_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "API_NODE_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "API_TEST_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "HYPOTHESIS_DB_API_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "OPENAPI_GENERATOR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "OPENAPI_SPEC_VALIDATOR"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PRANCE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "REDOCLY_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SCHEMATHESIS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SCHEMATHESIS_JUNIT_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SCHEMA_BUNDLE_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SHELL"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-install"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-lint"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-serve"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-serve-bg"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-stop"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "api-test"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "node_deps"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/build.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "BUILD_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PYPROJECT_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build-sdist"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build-tools"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "build-wheel"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/changelog.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TC_BASE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TC_ENSURE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TC_PYVER"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TOWNCRIER"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "changelog"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "changelog-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "changelog-preview"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "generate-fragment"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/citation.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CFFCONVERT_BIN"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CFFENV"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CFFENV_PY"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CITATION_BIB"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CITATION_DIR"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CITATION_ENDNOTE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CITATION_FILE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CITATION_RIS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-bibtex"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-clean-env"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-endnote"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-install"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-ris"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "citation-validate"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/dictionary.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "DICTIONARY_FILE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "DICTIONARY_TMP"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "dictionary"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "dictionary-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "dictionary-clean"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/docs.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "MKDOCS_BIN"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-deploy"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-hygiene"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-prep"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "docs-serve"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/hooks.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "GIT_HOOKS_DIR"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "LOCAL_HOOKS_DIR"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "install-git-hooks"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/lint.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CODESPELL"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "MYPY"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PYDOCSTYLE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "RADON"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "RUFF"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "fmt"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "fmt-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "lint"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "lint-artifacts"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "lint-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "lint-dir"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "lint-file"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/mutation.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "COSMIC_RAY"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "MUTMUT"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "mutation"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "mutation-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "mutation-cosmic"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "mutation-mutmut"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/publish.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "check-version"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "ensure-dists"
+        },
+        {
+          "classification": "keep",
+          "target": "publish"
+        },
+        {
+          "classification": "keep",
+          "target": "publish-test"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "twine"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "twine-check"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "twine-upload"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "twine-upload-test"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "verify-test-install"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/quality.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "DEPTRY"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "INTERROGATE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PYTHON"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "QUALITY_OK_MARKER"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "REUSE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "VULTURE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "interrogate-report"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "quality"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "quality-clean"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/sbom.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "GIT_DESCRIBE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "GIT_TAG_EXACT"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "GIT_TAG_LATEST"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PIP_AUDIT"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PKG_VERSION_FULL"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SBOM_DEV_FILE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SBOM_PROD_FILE"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SBOM_VERSION"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom-clean"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom-dev"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom-prod"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom-summary"
+        },
+        {
+          "classification": "keep",
+          "target": "sbom-validate"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/security.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "BANDIT_JSON"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "BANDIT_TXT"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PIPA_JSON"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PIPA_TXT"
+        },
+        {
+          "classification": "keep",
+          "target": "security"
+        },
+        {
+          "classification": "keep",
+          "target": "security-audit"
+        },
+        {
+          "classification": "keep",
+          "target": "security-bandit"
+        },
+        {
+          "classification": "keep",
+          "target": "security-clean"
+        }
+      ]
+    },
+    {
+      "file": "makefiles/test.mk",
+      "targets": [
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "BENCHMARK_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "BIJUX_BIN_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "CACHE_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "COVCFG_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "COV_HTML_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "COV_XML_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "HYPOTHESIS_DB_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PYTEST_BIN"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "PYTEST_INI_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "SRC_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_BENCHMARK_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_E2E_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_NIGHTLY_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_REGRESSION_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TEST_PATHS_UNIT_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "TMP_DIR_ABS"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-all"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-benchmark"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-clean"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-e2e"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-nightly"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-regression"
+        },
+        {
+          "classification": "wrap-with-dev-cli",
+          "target": "test-unit"
+        }
+      ]
+    }
+  ],
+  "policy": "new maintainer automation defaults to bijux dev cli commands",
+  "scripts": [
+    {
+      "classification": "delete",
+      "path": "scripts/__init__.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/capture_python_behavior.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/check-package-metadata.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/check-towncrier-fragment.sh"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/check_e2e_contract.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/__init__.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/__init__.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/api_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/base.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/citation_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/lint_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/quality_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/sbom_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/security_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/artifacts_pages/test_page.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/helpers.py"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/docs_builder/mkdocs_manager.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/generate-provenance-statement.sh"
+    },
+    {
+      "classification": "keep-external",
+      "path": "scripts/git-hooks/prepare-commit-msg"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/helper_comments.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/helper_pip_audit.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/parity/generate_binary_bridge_parity.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/parity/run_rust_python_parity.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/check_runtime_unity.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_crate_boundary_metrics.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_current_rust_state.py"
+    },
+    {
+      "classification": "move-to-dev-cli",
+      "path": "scripts/status/generate_dev_cli_inventory.py"
+    },
+    {
+      "classification": "wrap-with-dev-cli",
+      "path": "scripts/verify-install-channels.sh"
+    }
+  ]
+}
