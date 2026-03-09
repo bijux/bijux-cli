@@ -2,7 +2,6 @@
 //! Snapshot test for rendered command tree roots.
 
 use bijux_cli_contracts as _;
-use bijux_cli_core as _;
 use bijux_cli_routing::registry::RouteRegistry;
 use clap as _;
 use proptest as _;

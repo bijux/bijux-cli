@@ -2,7 +2,6 @@
 //! Registry conflict and route resolution tests.
 
 use bijux_cli_contracts as _;
-use bijux_cli_core as _;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
 use clap as _;
 use proptest as _;

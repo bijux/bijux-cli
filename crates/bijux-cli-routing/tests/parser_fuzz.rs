@@ -2,7 +2,6 @@
 //! Fuzz-style parser robustness checks.
 
 use bijux_cli_contracts as _;
-use bijux_cli_core as _;
 use bijux_cli_routing::parser::parse_intent;
 use clap as _;
 use proptest as _;

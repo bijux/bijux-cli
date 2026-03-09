@@ -7,7 +7,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_contracts as _;
 use bijux_cli_contracts::PluginLifecycleState;
-use bijux_cli_core as _;
 use bijux_cli_plugin::{
     compatibility_check, disable_plugin, enable_plugin, inspect_plugin, install_plugin,
     list_plugins, load_registry, plugin_doctor, registry_path_from_plugins_dir, uninstall_plugin,

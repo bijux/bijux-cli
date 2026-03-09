@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_contracts as _;
-use bijux_cli_core as _;
 use bijux_cli_plugin::{
     install_plugin, load_registry, InstallPluginRequest, PluginError, PluginTrustLevel,
 };
