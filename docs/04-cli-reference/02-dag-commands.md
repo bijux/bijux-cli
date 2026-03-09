@@ -69,3 +69,37 @@ reason: cycle detected in dependency graph
 - `docs/03-user-guide/01-authoring-dags.md`
 - `docs/06-specification/01-dag-model.md`
 - `docs/04-cli-reference/06-diff-commands.md`
+
+## Graph-oriented command coverage
+
+DAG command workflows should cover three intents:
+
+- Structural validation before execution.
+- Topology and metadata inspection for review/debugging.
+- Graph identity verification using canonical hash fields in machine output.
+
+## Validate and graph-identity hash workflows
+
+Validation workflow:
+
+```bash
+bijux-dag dag validate --dag ./pipelines/main.dag.json
+```
+
+Identity-hash workflow using inspect output:
+
+```bash
+bijux-dag dag inspect --dag ./pipelines/main.dag.json --output json
+```
+
+Expected JSON fields (example):
+
+```json
+{
+  "graph_id": "PIPELINE_MAIN",
+  "graph_hash": "sha256:5a6f...",
+  "status": "valid"
+}
+```
+
+Use `graph_hash` for reproducibility gates and definition-level comparisons across environments.

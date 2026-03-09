@@ -88,3 +88,22 @@ Reference navigation:
 - `docs/04-cli-reference/05-inspect-commands.md`
 - `docs/04-cli-reference/07-replay-commands.md`
 - `docs/04-cli-reference/06-diff-commands.md`
+
+## Command map by job to be done
+
+Choose command families by intent:
+
+- Author and validate workflow definitions: `dag`.
+- Execute and track operational history: `run`.
+- Inspect produced evidence: `inspect`, `artifact`.
+- Compare behavior across versions/environments: `diff`, `replay`.
+- Transfer workflow context across environments: `bundle`.
+
+## Stable and advanced command surfaces
+
+Documentation uses two practical tiers:
+
+- Stable operator surface: commands expected in routine day-to-day workflows.
+- Advanced diagnostic surface: commands or flags used for deeper forensics and automation.
+
+Start on stable surface for onboarding. Move to advanced surface when you need machine pipelines, deep drift analysis, or backend-specific diagnostics.
