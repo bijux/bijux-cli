@@ -6,6 +6,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
+import tempfile
 
 from bijux_cli_py import (
     check_embedded_binary_compatibility,
@@ -20,9 +21,13 @@ from bijux_cli_py import (
     install_path_helpers,
     migration_warnings,
     output_envelope_model,
+    path_ambiguity_detection_message,
     post_install_diagnostics,
     plugin_registry_inspection,
     run_cli,
+    side_by_side_install_report,
+    simulate_pip_uninstall_cleanup,
+    simulate_pip_upgrade_preserves_state,
     version,
 )
 
@@ -144,3 +149,38 @@ def test_post_install_diagnostics_and_binary_compatibility() -> None:
     assert "runtime_supported" in diagnostics
     assert "warnings" in diagnostics
     assert check_embedded_binary_compatibility(version())
+
+
+def test_pip_uninstall_cleanup_simulation() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        pkg = root / "bijux_cli_py"
+        entry = root / "bin" / "bijux"
+        pkg.mkdir(parents=True, exist_ok=True)
+        (pkg / "__init__.py").write_text("# stub", encoding="utf-8")
+        entry.parent.mkdir(parents=True, exist_ok=True)
+        entry.write_text("#!/bin/sh\n", encoding="utf-8")
+        report = simulate_pip_uninstall_cleanup(str(root))
+        assert report["site_package_removed"]
+        assert report["entrypoint_removed"]
+
+
+def test_pip_upgrade_preserves_state_simulation() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        home = Path(tmp)
+        bijux = home / ".bijux"
+        (bijux / ".plugins").mkdir(parents=True, exist_ok=True)
+        (bijux / ".env").write_text("A=B\n", encoding="utf-8")
+        (bijux / ".history").write_text("[]\n", encoding="utf-8")
+        report = simulate_pip_upgrade_preserves_state(str(home))
+        assert report["config_preserved"]
+        assert report["history_preserved"]
+        assert report["plugins_preserved"]
+
+
+def test_side_by_side_install_and_path_ambiguity_reporting() -> None:
+    report = side_by_side_install_report("/usr/local/bin/bijux", "/opt/homebrew/bin/bijux")
+    assert report.has_ambiguity
+    assert "Multiple bijux binaries" in report.message
+    message = path_ambiguity_detection_message(["/usr/local/bin/bijux", "/usr/local/bin/bijux"])
+    assert not message.has_ambiguity
