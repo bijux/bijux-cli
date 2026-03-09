@@ -30,7 +30,7 @@ fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
 
 #[test]
 fn help_snapshots_match_expected_output() {
-    let cases: [(&[&str], &str); 31] = [
+    let cases: [(&[&str], &str); 35] = [
         (&["--help"], include_str!("snapshots/help_root.txt")),
         (&["--color", "never", "--help"], include_str!("snapshots/help_root_no_color.txt")),
         (&["cli", "--help"], include_str!("snapshots/help_cli.txt")),
@@ -43,6 +43,13 @@ fn help_snapshots_match_expected_output() {
         (&["doctor", "--help"], include_str!("snapshots/help_doctor.txt")),
         (&["config", "--help"], include_str!("snapshots/help_config.txt")),
         (&["plugins", "--help"], include_str!("snapshots/help_plugins.txt")),
+        (
+            &["plugins", "reserved-names", "--help"],
+            include_str!("snapshots/help_plugins_reserved_names.txt"),
+        ),
+        (&["plugins", "where", "--help"], include_str!("snapshots/help_plugins_where.txt")),
+        (&["plugins", "explain", "--help"], include_str!("snapshots/help_plugins_explain.txt")),
+        (&["plugins", "schema", "--help"], include_str!("snapshots/help_plugins_schema.txt")),
         (&["repl", "--help"], include_str!("snapshots/help_repl.txt")),
         (&["completion", "--help"], include_str!("snapshots/help_completion.txt")),
         (&["inspect", "--help"], include_str!("snapshots/help_inspect.txt")),

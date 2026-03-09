@@ -309,6 +309,30 @@
     {
       "alias": [
         "plugins",
+        "check"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "check"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
+        "explain"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "explain"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
         "inspect"
       ],
       "canonical": [
@@ -327,6 +351,42 @@
         "cli",
         "plugins",
         "list"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
+        "reserved-names"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "reserved-names"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
+        "schema"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "schema"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
+        "where"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "where"
       ],
       "source": "compatibility-alias"
     },
@@ -459,6 +519,24 @@
       "segments": [
         "cli",
         "plugins",
+        "check"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
+        "explain"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
         "inspect"
       ],
       "source": "built-in"
@@ -469,6 +547,33 @@
         "cli",
         "plugins",
         "list"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
+        "reserved-names"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
+        "schema"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
+        "where"
       ],
       "source": "built-in"
     },
