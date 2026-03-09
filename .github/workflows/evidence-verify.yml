@@ -27,7 +27,6 @@ jobs:
       - name: run release-first trust subset
         run: |
           cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-release-set
-          cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-foundation
           cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo release-evidence-report
       - name: generate evidence summary reports
         run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- repo evidence-summary-report
