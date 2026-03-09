@@ -1,0 +1,10 @@
+cli
+dev
+status
+doctor
+version
+repl
+completion
+inspect
+config
+plugins

@@ -1,0 +1,62 @@
+[
+  {
+    "argv": ["bijux", "status"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "cli", "status"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "doctor"],
+    "expected_normalized": ["cli", "doctor"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "version"],
+    "expected_normalized": ["cli", "version"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "plugins", "list"],
+    "expected_normalized": ["cli", "plugins", "list"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "dev", "routes"],
+    "expected_normalized": ["dev", "cli", "routes"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "dev", "cli", "registry"],
+    "expected_normalized": ["dev", "cli", "registry"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "cli"],
+    "expected_normalized": ["cli"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "dev", "cli"],
+    "expected_normalized": ["dev", "cli"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "cli", "sttus"],
+    "expected_normalized": ["cli", "sttus"],
+    "routed": false
+  },
+  {
+    "argv": ["bijux", "--quiet", "--format", "json", "cli", "status"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  },
+  {
+    "argv": ["bijux", "cli", "status", "--quiet", "--format", "json"],
+    "expected_normalized": ["cli", "status"],
+    "routed": true
+  }
+]

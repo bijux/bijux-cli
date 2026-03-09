@@ -1,0 +1,16 @@
+status
+doctor
+version
+repl
+inspect
+completion
+atlas
+audit
+config
+dev
+docs
+help
+history
+memory
+plugins
+sleep
