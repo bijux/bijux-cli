@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -66,6 +67,24 @@ def readme_docs_crate_dupes(files: list[Path]) -> list[dict[str, object]]:
     return out
 
 
+def docs_duplicate_crate_readmes(files: list[Path]) -> list[dict[str, object]]:
+    crate_readmes = {
+        rel(p): read(p).strip().lower()[:400]
+        for p in ROOT.glob("crates/*/README.md")
+        if p.exists()
+    }
+    docs_files = [p for p in files if "docs" in p.parts]
+    duplicates: list[dict[str, object]] = []
+    for doc in docs_files:
+        text = read(doc).strip().lower()[:400]
+        if not text:
+            continue
+        for crate_readme, crate_text in crate_readmes.items():
+            if text == crate_text:
+                duplicates.append({"doc": rel(doc), "crate_readme": crate_readme})
+    return sorted(duplicates, key=lambda item: (item["doc"], item["crate_readme"]))
+
+
 def docs_vs_tests_overlap(files: list[Path]) -> list[dict[str, object]]:
     docs = [p for p in files if "docs" in p.parts]
     tests = [p for p in files if "tests" in p.parts and p.suffix == ".md"]
@@ -91,6 +110,80 @@ def docs_vs_tests_overlap(files: list[Path]) -> list[dict[str, object]]:
     return out[:40]
 
 
+def docs_duplicate_tests_or_snapshots(files: list[Path]) -> list[dict[str, object]]:
+    docs_files = [p for p in files if "docs" in p.parts]
+    out: list[dict[str, object]] = []
+    for doc in docs_files:
+        text = read(doc)
+        hits = []
+        if "tests/" in text:
+            hits.append("tests")
+        if "snapshots/" in text:
+            hits.append("snapshots")
+        if "include_str!(\"snapshots/" in text:
+            hits.append("snapshot-inline")
+        if hits:
+            out.append({"doc": rel(doc), "signals": sorted(set(hits))})
+    return sorted(out, key=lambda item: item["doc"])
+
+
+def docs_duplicate_schemas_or_generated_artifacts(files: list[Path]) -> list[dict[str, object]]:
+    docs_files = [p for p in files if "docs" in p.parts]
+    out: list[dict[str, object]] = []
+    for doc in docs_files:
+        text = read(doc)
+        signals = []
+        if "artifacts/" in text:
+            signals.append("generated-artifacts")
+        if "schema" in text.lower():
+            signals.append("schema-prose")
+        if "command_parity_matrix.json" in text or "current_rust_state.json" in text:
+            signals.append("status-reference")
+        if signals:
+            out.append({"doc": rel(doc), "signals": sorted(set(signals))})
+    return sorted(out, key=lambda item: item["doc"])
+
+
+def stable_generated_at() -> str:
+    source_date_epoch = os.getenv("SOURCE_DATE_EPOCH", "").strip()
+    if source_date_epoch.isdigit():
+        return datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+    return "1970-01-01T00:00:00+00:00"
+
+
+def classify_doc(path: str) -> str:
+    if path in {
+        "docs/NO_HYPE.md",
+        "docs/WHAT_STILL_NEEDS_WORK.md",
+        "docs/WHAT_WE_DO_NOT_DO.md",
+    }:
+        return "delete"
+    if path in {
+        "docs/guides/configuration.md",
+        "docs/guides/plugins.md",
+        "docs/getting-started/installation.md",
+        "docs/rust-config-parity.md",
+        "docs/architecture/known-remaining-parity-gaps.md",
+        "docs/architecture/next-five-command-priorities.md",
+    }:
+        return "merge"
+    if path.startswith("docs/architecture/") and "parity-report" in path:
+        return "replace-with-generated"
+    return "keep"
+
+
+def classification_report(files: list[Path]) -> dict[str, object]:
+    rows = []
+    counts: dict[str, int] = {"keep": 0, "merge": 0, "replace-with-generated": 0, "delete": 0}
+    for file in files:
+        path = rel(file)
+        decision = classify_doc(path)
+        counts[decision] = counts.get(decision, 0) + 1
+        rows.append({"path": path, "decision": decision})
+    rows.sort(key=lambda item: item["path"])
+    return {"counts": counts, "documents": rows}
+
+
 def generated_artifact_count() -> int:
     artifacts = ROOT / "artifacts"
     if not artifacts.exists():
@@ -103,17 +196,39 @@ def main() -> int:
     overlap = overlap_candidates(files)
     readme_dupes = readme_docs_crate_dupes(files)
     tests_overlap = docs_vs_tests_overlap(files)
+    crate_readme_dupes = docs_duplicate_crate_readmes(files)
+    test_snapshot_dupes = docs_duplicate_tests_or_snapshots(files)
+    schema_generated_dupes = docs_duplicate_schemas_or_generated_artifacts(files)
+    classification = classification_report(files)
 
     report = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_docs_audit.py",
         "markdown_count": len(files),
         "markdown_files": [rel(p) for p in files],
         "generated_artifact_file_count": generated_artifact_count(),
+        "docs_duplicate_crate_readmes": crate_readme_dupes,
+        "docs_duplicate_tests_or_snapshots": test_snapshot_dupes,
+        "docs_duplicate_schemas_or_generated_artifacts": schema_generated_dupes,
+        "documentation_decisions": classification,
+        "top_level_canonical_docs": {
+            "index": "docs/index.md",
+            "honest_status": "docs/HONEST_STATUS.md",
+            "stability_breakage": "docs/STABILITY_AND_BREAKAGE.md",
+            "contributor_engineering_rules": "docs/CONTRIBUTOR_ENGINEERING_RULES.md",
+        },
+        "merge_targets": {
+            "installation": "docs/guides/installation-unified.md",
+            "architecture": "docs/architecture/index.md",
+            "plugin": "docs/guides/plugin-unified.md",
+            "config": "docs/guides/config-unified.md",
+            "parity": "artifacts/parity/command_parity_matrix.json",
+        },
         "readme_docs_crate_duplicates": readme_dupes,
         "docs_heading_overlap_candidates": overlap,
         "docs_tests_overlap_candidates": tests_overlap,
         "target_long_form_docs_cap": 60,
+        "docs_rule": "docs explain law or change; generated artifacts hold volatile detail",
     }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
