@@ -1,0 +1,16 @@
+{
+  "name": "dev-cli-registry-diagnostics",
+  "generated_at": "2026-03-09",
+  "source": "bijux dev cli registry",
+  "checks": [
+    "reserved namespace visibility",
+    "plugin namespace ownership metadata",
+    "deterministic namespace ordering"
+  ],
+  "status": "covered-by-tests",
+  "covered_tests": [
+    "crates/bijux-cli-routing/tests/route_inspection_output.rs",
+    "crates/bijux-cli-routing/tests/registry_namespace_policy.rs",
+    "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs"
+  ]
+}
