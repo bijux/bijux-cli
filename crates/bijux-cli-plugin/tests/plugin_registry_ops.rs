@@ -11,7 +11,7 @@ use bijux_cli_core as _;
 use bijux_cli_plugin::{
     compatibility_check, disable_plugin, enable_plugin, inspect_plugin, install_plugin,
     list_plugins, load_registry, plugin_doctor, registry_path_from_plugins_dir, uninstall_plugin,
-    InstallPluginRequest,
+    InstallPluginRequest, PluginTrustLevel,
 };
 use semver as _;
 use serde as _;
@@ -56,6 +56,7 @@ fn install_enable_disable_inspect_list_and_uninstall_plugin() {
         InstallPluginRequest {
             manifest_text: manifest_text("community"),
             source: "local:/tmp/community".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
@@ -89,6 +90,7 @@ fn compatibility_and_doctor_are_reported() {
         InstallPluginRequest {
             manifest_text: manifest_text("inspector"),
             source: "local:/tmp/inspector".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )

@@ -11,7 +11,7 @@ use bijux_cli_core as _;
 use bijux_cli_plugin::{
     discover_plugin_manifests, disable_plugin, enable_plugin, install_plugin, load_time_diagnostics,
     plugin_load_order, refresh_discovery_cache, self_repair_registry, uninstall_plugin,
-    InstallPluginRequest, PluginDiscoveryCache, PluginError,
+    InstallPluginRequest, PluginDiscoveryCache, PluginError, PluginTrustLevel,
 };
 use semver as _;
 use serde as _;
@@ -56,6 +56,7 @@ fn detects_alias_conflicts_and_keeps_registry_consistent() {
         InstallPluginRequest {
             manifest_text: manifest_text("alpha", "shared-alias"),
             source: "local:/tmp/alpha".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
@@ -66,6 +67,7 @@ fn detects_alias_conflicts_and_keeps_registry_consistent() {
         InstallPluginRequest {
             manifest_text: manifest_text("beta", "shared-alias"),
             source: "local:/tmp/beta".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
@@ -83,6 +85,7 @@ fn computes_deterministic_load_order() {
         InstallPluginRequest {
             manifest_text: manifest_text("gamma", "gamma-alias"),
             source: "local:/tmp/gamma".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
@@ -92,6 +95,7 @@ fn computes_deterministic_load_order() {
         InstallPluginRequest {
             manifest_text: manifest_text("alpha", "alpha-alias"),
             source: "local:/tmp/alpha".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
@@ -132,6 +136,7 @@ fn reports_load_time_diagnostics_and_repairs_corrupt_registry() {
         InstallPluginRequest {
             manifest_text: manifest_text("delta", "delta-alias"),
             source: "local:/tmp/delta".to_string(),
+            trust_level: PluginTrustLevel::Community,
         },
         "0.1.0",
     )
