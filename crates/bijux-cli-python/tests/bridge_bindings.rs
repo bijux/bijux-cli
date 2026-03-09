@@ -9,8 +9,8 @@ use bijux_cli_contracts as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
 use bijux_cli_python::{
-    classify_failure, cli_status_binding_api, config_resolution_api, doctor_binding_api,
-    execution_facade_api, execution_outcome_api, plugins_list_binding_api,
+    classify_failure, cli_status_binding_api, command_tree_introspection_api, config_resolution_api,
+    doctor_binding_api, execution_facade_api, execution_outcome_api, plugins_list_binding_api,
     repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_binding_api,
     BridgeErrorKind, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH,
 };
@@ -181,4 +181,87 @@ fn validation_error_mapping_is_stable() {
 #[test]
 fn internal_error_mapping_is_stable() {
     assert_eq!(classify_failure(1, "runtime panic path"), BridgeErrorKind::Internal);
+}
+
+#[test]
+fn binary_and_bridge_use_same_command_registry_contract() {
+    let bridge_tree = parse_json(&command_tree_introspection_api());
+    let core_inspect = parse_json(
+        &run_app(&["bijux".to_string(), "inspect".to_string()]).expect("core inspect").stdout,
+    );
+    let builtins = core_inspect["builtins"].as_array().expect("builtins array");
+    let surface: Vec<String> = builtins
+        .iter()
+        .filter_map(|row| row.get("segments"))
+        .filter_map(|segments| segments.as_array())
+        .filter_map(|segments| {
+            let parts: Vec<&str> = segments.iter().filter_map(Value::as_str).collect();
+            if parts.is_empty() { None } else { Some(parts.join(" ")) }
+        })
+        .collect();
+
+    assert_eq!(bridge_tree["root"], "bijux");
+    assert!(bridge_tree["namespaces"].as_array().expect("namespaces").len() >= 5);
+    assert!(surface.iter().any(|item| item.starts_with("cli ")));
+    assert!(surface.iter().any(|item| item.starts_with("dev ")));
+}
+
+#[test]
+fn binary_and_bridge_use_same_exit_mapping_for_unknown_route() {
+    let argv = vec!["bijux".to_string(), "ghost".to_string(), "status".to_string()];
+    let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
+    let core = run_app(&argv).expect("core");
+    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+}
+
+#[test]
+fn binary_and_bridge_use_same_output_envelope_shape() {
+    let argv = vec!["bijux".to_string(), "status".to_string()];
+    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
+    let core = parse_json(&run_app(&argv).expect("core").stdout);
+    assert!(bridge.get("status").is_some());
+    assert_eq!(bridge.get("status"), core.get("status"));
+    assert_eq!(bridge.as_object().map(|o| o.len()), core.as_object().map(|o| o.len()));
+}
+
+#[test]
+fn binary_and_bridge_use_same_namespace_rejection_logic() {
+    let argv = vec![
+        "bijux".to_string(),
+        "cli".to_string(),
+        "plugins".to_string(),
+        "unknown-subcommand".to_string(),
+    ];
+    let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
+    let core = run_app(&argv).expect("core");
+    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(bridge["error_kind"], "UsageError");
+}
+
+#[test]
+fn binary_and_bridge_use_same_plugin_registry_logic_for_listing() {
+    let argv = vec![
+        "bijux".to_string(),
+        "cli".to_string(),
+        "plugins".to_string(),
+        "list".to_string(),
+    ];
+    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
+    let core = parse_json(&run_app(&argv).expect("core").stdout);
+    assert_eq!(bridge, core);
+}
+
+#[test]
+fn runtime_identity_matches_between_binary_and_bridge() {
+    let argv = vec![
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "runtime-identity".to_string(),
+    ];
+    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
+    let core = parse_json(&run_app(&argv).expect("core").stdout);
+    assert_eq!(bridge["canonical_user_binary"], core["canonical_user_binary"]);
+    assert_eq!(bridge["entrypoints"], core["entrypoints"]);
+    assert_eq!(bridge["diagnostics"], core["diagnostics"]);
 }
