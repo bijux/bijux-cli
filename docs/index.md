@@ -1,21 +1,38 @@
-# Bijux CLI Documentation
+# Docs Index
 
-## Purpose
-This documentation set explains how to use and extend bijux-cli with confidence. It exists to give experienced engineers new to bijux-cli a clear mental model, precise guarantees, and concrete guidance without forcing them to read the code first.
+High-value documents only. Everything else is supporting detail.
 
-## Scope
-These docs cover the CLI, its execution model, configuration and precedence rules, plugin lifecycle expectations, and the public contract between the CLI and the API. They do not attempt to mirror internal implementation details beyond what is needed to explain behavior and guarantees.
+## Current Status
+- [Honest status](HONEST_STATUS.md)
+- [Known gaps](KNOWN_GAPS.md)
+- [Stability and breakage](STABILITY_AND_BREAKAGE.md)
 
-## Audience
-This material is written for engineers who are comfortable with CLI tools and configuration-driven systems, but who are new to bijux-cli. It assumes you can read command-line examples and understand basic concepts like environment variables and configuration files.
+## Core Law
+- [Architecture index](architecture/index.md)
+- [Decision rules](architecture/decision-rules.md)
+- [Runtime identity law](architecture/runtime_identity_law.md)
+- [Constitution command tree](constitution/COMMAND_TREE.md)
 
-## How to Navigate
-Start with Getting Started if you want to install and run bijux-cli quickly. Use Concepts to understand the execution model and guarantees. Guides provide task-oriented instructions for common workflows, and Reference provides authoritative tables and lists for commands and configuration.
+## Usage
+- [Getting started](getting-started/index.md)
+- [Installation](getting-started/installation.md)
+- [Quickstart](getting-started/quickstart.md)
+- [Commands reference](reference/commands.md)
+- [Exit codes](reference/exit-codes.md)
 
-## Sections
-- Getting Started: a concise path from installation to your first successful commands.
-- Concepts: the guarantees, invariants, and mental models that govern behavior.
-- Guides: practical, step-by-step workflows for real usage.
-- Reference: canonical lists of commands, config schema, and exit codes.
-- Constitution: normative compatibility contracts for command identity, flags, output, errors, and deprecation.
-- Architecture: the documented decision rules and execution walk-through.
+## Consolidated Guides
+- [Unified compatibility guide](guides/compatibility-unified.md)
+- [Unified installation guide](guides/installation-unified.md)
+- [Unified plugin guide](guides/plugin-unified.md)
+- [Unified config guide](guides/config-unified.md)
+- [Unified REPL guide](guides/repl-unified.md)
+
+## Generated Evidence
+- `artifacts/status/current_rust_state.json`
+- `artifacts/status/dev_cli_inventory.json`
+- `artifacts/status/docs_audit.json`
+- `artifacts/parity/rust_python_parity_report.json`
+
+## Docs Rule
+Fewer docs, higher signal. Every long-form doc must explain law or explain change.
+Target cap for long-form markdown docs: **60**.
