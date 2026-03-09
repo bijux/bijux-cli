@@ -3,3 +3,4 @@ dev cli registry
 dev cli env
 dev cli doctor
 dev cli contracts
+dev cli runtime-identity

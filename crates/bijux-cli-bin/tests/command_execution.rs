@@ -83,6 +83,7 @@ fn executes_dev_cli_namespace_commands() {
         vec!["dev", "cli", "env"],
         vec!["dev", "cli", "doctor"],
         vec!["dev", "cli", "contracts"],
+        vec!["dev", "cli", "runtime-identity"],
     ] {
         let stdout = run(&args);
         assert!(stdout.contains('{'), "expected structured payload for {args:?}");

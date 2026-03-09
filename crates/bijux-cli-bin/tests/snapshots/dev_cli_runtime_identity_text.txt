@@ -1,0 +1,27 @@
+{
+  "active_binary": "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
+  "canonical_user_binary": "bijux",
+  "entrypoints": {
+    "binary": "crates/bijux-cli-bin/src/main.rs",
+    "core": "bijux_cli_core::app::run_app",
+    "python_bridge": "bijux_cli_python::bindings::execution_facade_api"
+  },
+  "package_channels": {
+    "canonical_crate_name": "bijux-cli",
+    "cargo": {
+      "canonical": "bijux-cli",
+      "compatibility": "bijux"
+    },
+    "pip": {
+      "canonical": "bijux-cli",
+      "compatibility": "bijux"
+    }
+  },
+  "path_binaries": [
+    "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
+    "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
+    "/Users/bijan/.local/bin/bijux",
+    "/Users/bijan/.local/bin/bijux"
+  ],
+  "runtime": "rust-foundation"
+}

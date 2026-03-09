@@ -30,7 +30,7 @@ fn run_help_with_env(args: &[&str], envs: &[(&str, &str)]) -> String {
 
 #[test]
 fn help_snapshots_match_expected_output() {
-    let cases: [(&[&str], &str); 30] = [
+    let cases: [(&[&str], &str); 31] = [
         (&["--help"], include_str!("snapshots/help_root.txt")),
         (&["--color", "never", "--help"], include_str!("snapshots/help_root_no_color.txt")),
         (&["cli", "--help"], include_str!("snapshots/help_cli.txt")),
@@ -77,6 +77,10 @@ fn help_snapshots_match_expected_output() {
         (
             &["dev", "cli", "contracts", "--help"],
             include_str!("snapshots/help_dev_cli_contracts.txt"),
+        ),
+        (
+            &["dev", "cli", "runtime-identity", "--help"],
+            include_str!("snapshots/help_dev_cli_runtime_identity.txt"),
         ),
         (&["status", "--format", "json", "--help"], include_str!("snapshots/help_status.txt")),
     ];

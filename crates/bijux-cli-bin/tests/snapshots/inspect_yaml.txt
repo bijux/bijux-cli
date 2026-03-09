@@ -7,6 +7,22 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - config
+  - clear
+  canonical:
+  - cli
+  - config
+  - clear
+  source: compatibility-alias
+- alias:
+  - config
+  - export
+  canonical:
+  - cli
+  - config
+  - export
+  source: compatibility-alias
+- alias:
+  - config
   - get
   canonical:
   - cli
@@ -15,11 +31,35 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - config
+  - load
+  canonical:
+  - cli
+  - config
+  - load
+  source: compatibility-alias
+- alias:
+  - config
+  - reload
+  canonical:
+  - cli
+  - config
+  - reload
+  source: compatibility-alias
+- alias:
+  - config
   - set
   canonical:
   - cli
   - config
   - set
+  source: compatibility-alias
+- alias:
+  - config
+  - unset
+  canonical:
+  - cli
+  - config
+  - unset
   source: compatibility-alias
 - alias:
   - dev
@@ -60,6 +100,14 @@ alias_rewrites:
   - dev
   - cli
   - routes
+  source: compatibility-alias
+- alias:
+  - dev
+  - runtime-identity
+  canonical:
+  - dev
+  - cli
+  - runtime-identity
   source: compatibility-alias
 - alias:
   - doctor
@@ -110,11 +158,31 @@ builtins:
 - segments:
   - cli
   - config
+  - clear
+- segments:
+  - cli
+  - config
+  - export
+- segments:
+  - cli
+  - config
   - get
 - segments:
   - cli
   - config
+  - load
+- segments:
+  - cli
+  - config
+  - reload
+- segments:
+  - cli
+  - config
   - set
+- segments:
+  - cli
+  - config
+  - unset
 - segments:
   - cli
   - doctor
@@ -166,6 +234,10 @@ builtins:
   - dev
   - cli
   - routes
+- segments:
+  - dev
+  - cli
+  - runtime-identity
 - segments:
   - docs
 - segments:
@@ -241,13 +313,43 @@ route_sources:
   segments:
   - cli
   - config
+  - clear
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - export
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
   - get
   source: built-in
 - owner: bijux-cli
   segments:
   - cli
   - config
+  - load
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - reload
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
   - set
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - unset
   source: built-in
 - owner: bijux-cli
   segments:
@@ -329,6 +431,12 @@ route_sources:
   - dev
   - cli
   - routes
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - runtime-identity
   source: built-in
 - owner: bijux-cli
   segments:

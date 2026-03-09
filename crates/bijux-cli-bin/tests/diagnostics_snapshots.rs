@@ -32,7 +32,7 @@ fn inspect_snapshots_match_json_yaml_and_text() {
 
 #[test]
 fn dev_diagnostics_text_snapshots_match() {
-    let cases: [(&[&str], &str); 5] = [
+    let cases: [(&[&str], &str); 6] = [
         (&["dev", "cli", "routes", "--format", "text"], include_str!("snapshots/dev_cli_routes_text.txt")),
         (&["dev", "cli", "registry", "--format", "text"], include_str!("snapshots/dev_cli_registry_text.txt")),
         (&["dev", "cli", "env", "--format", "text"], include_str!("snapshots/dev_cli_env_text.txt")),
@@ -40,6 +40,10 @@ fn dev_diagnostics_text_snapshots_match() {
         (
             &["dev", "cli", "contracts", "--format", "text"],
             include_str!("snapshots/dev_cli_contracts_text.txt"),
+        ),
+        (
+            &["dev", "cli", "runtime-identity", "--format", "text"],
+            include_str!("snapshots/dev_cli_runtime_identity_text.txt"),
         ),
     ];
 

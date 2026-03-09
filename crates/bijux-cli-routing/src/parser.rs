@@ -162,7 +162,8 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("registry"))
         .subcommand(Command::new("env"))
         .subcommand(Command::new("doctor"))
-        .subcommand(Command::new("contracts"));
+        .subcommand(Command::new("contracts"))
+        .subcommand(Command::new("runtime-identity"));
 
     let dev_group = Command::new("dev")
         .subcommand(dev_cli_group.clone())
@@ -171,7 +172,8 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("registry").hide(true))
         .subcommand(Command::new("env").hide(true))
         .subcommand(Command::new("doctor").hide(true))
-        .subcommand(Command::new("contracts").hide(true));
+        .subcommand(Command::new("contracts").hide(true))
+        .subcommand(Command::new("runtime-identity").hide(true));
 
     Command::new("bijux")
         .args([
@@ -250,7 +252,15 @@ fn normalize_path(path: &[String]) -> Vec<String> {
         }
         [a, b]
             if a == "dev"
-                && ["routes", "registry", "env", "doctor", "contracts"].contains(&b.as_str()) =>
+                && [
+                    "routes",
+                    "registry",
+                    "env",
+                    "doctor",
+                    "contracts",
+                    "runtime-identity",
+                ]
+                .contains(&b.as_str()) =>
         {
             vec!["dev".to_string(), "cli".to_string(), b.clone()]
         }

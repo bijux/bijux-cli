@@ -13,6 +13,30 @@
     {
       "alias": [
         "config",
+        "clear"
+      ],
+      "canonical": [
+        "cli",
+        "config",
+        "clear"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
+        "export"
+      ],
+      "canonical": [
+        "cli",
+        "config",
+        "export"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
         "get"
       ],
       "canonical": [
@@ -25,12 +49,48 @@
     {
       "alias": [
         "config",
+        "load"
+      ],
+      "canonical": [
+        "cli",
+        "config",
+        "load"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
+        "reload"
+      ],
+      "canonical": [
+        "cli",
+        "config",
+        "reload"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
         "set"
       ],
       "canonical": [
         "cli",
         "config",
         "set"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
+        "unset"
+      ],
+      "canonical": [
+        "cli",
+        "config",
+        "unset"
       ],
       "source": "compatibility-alias"
     },
@@ -91,6 +151,18 @@
         "dev",
         "cli",
         "routes"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "dev",
+        "runtime-identity"
+      ],
+      "canonical": [
+        "dev",
+        "cli",
+        "runtime-identity"
       ],
       "source": "compatibility-alias"
     },
@@ -180,6 +252,24 @@
       "segments": [
         "cli",
         "config",
+        "clear"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
+        "export"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
         "get"
       ],
       "source": "built-in"
@@ -189,7 +279,34 @@
       "segments": [
         "cli",
         "config",
+        "load"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
+        "reload"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
         "set"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
+        "unset"
       ],
       "source": "built-in"
     },
@@ -316,6 +433,15 @@
         "dev",
         "cli",
         "routes"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "runtime-identity"
       ],
       "source": "built-in"
     },

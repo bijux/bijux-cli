@@ -10,9 +10,10 @@ use std::time::Duration;
 use anyhow::Result;
 use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
-    default_compatibility_paths, discover_compatibility_paths, install_health_report,
-    load_compatibility_config, post_install_hint, CompatibilityConfig,
-    PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+    canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
+    discover_compatibility_paths, install_health_report, load_compatibility_config, pip_install_strategy,
+    post_install_hint, CompatibilityConfig, PackageChannel, PathOverrides, CANONICAL_EXECUTABLE,
+    ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
@@ -580,6 +581,40 @@ fn route_response(
                 "runtime_version": env!("CARGO_PKG_VERSION"),
             })
         }
+        [a, b, c] if a == "dev" && b == "cli" && c == "runtime-identity" => {
+            let install_report = install_health_report(
+                &env::var("PATH").unwrap_or_default(),
+                env::var("BIJUX_BIN").ok().as_deref(),
+                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
+                env!("CARGO_PKG_VERSION"),
+            );
+            let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
+            let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
+            let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
+            let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
+            json!({
+                "runtime": "rust-foundation",
+                "canonical_user_binary": CANONICAL_EXECUTABLE,
+                "active_binary": install_report.active_binary,
+                "path_binaries": install_report.path_binaries,
+                "entrypoints": {
+                    "binary": "crates/bijux-cli-bin/src/main.rs",
+                    "core": "bijux_cli_core::app::run_app",
+                    "python_bridge": "bijux_cli_python::bindings::execution_facade_api",
+                },
+                "package_channels": {
+                    "cargo": {
+                        "canonical": cargo_canonical.package_name,
+                        "compatibility": cargo_compat.package_name,
+                    },
+                    "pip": {
+                        "canonical": pip_canonical.package_name,
+                        "compatibility": pip_compat.package_name,
+                    },
+                    "canonical_crate_name": canonical_crate_name(),
+                },
+            })
+        }
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => {
             for _ in 0..200_u16 {
                 thread::sleep(Duration::from_millis(50));
@@ -648,7 +683,8 @@ fn is_known_route(path: &[String]) -> bool {
                     || c == "registry"
                     || c == "env"
                     || c == "doctor"
-                    || c == "contracts") =>
+                    || c == "contracts"
+                    || c == "runtime-identity") =>
         {
             true
         }
