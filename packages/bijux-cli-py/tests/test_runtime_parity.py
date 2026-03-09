@@ -4,15 +4,25 @@ import os
 import shutil
 import subprocess
 import sys
+import json
 from pathlib import Path
 
 from bijux_cli_py import (
+    check_embedded_binary_compatibility,
+    check_python_runtime_supported,
     command_tree_introspection,
     config_resolution_helpers,
+    deprecated_version_api,
+    execution_facade_with_status,
     execution_facade,
+    get_command_tree,
+    get_version,
     install_path_helpers,
+    migration_warnings,
     output_envelope_model,
+    post_install_diagnostics,
     plugin_registry_inspection,
+    run_cli,
     version,
 )
 
@@ -59,3 +69,78 @@ def test_python_facade_apis_are_exposed() -> None:
     assert "config_file" in config_resolution_helpers(str(Path.home()))
     assert "plugins_dir" in install_path_helpers(str(Path.home()))
     assert plugin_registry_inspection("/tmp/non-existing-registry.json")["version"] == "1"
+
+
+def test_help_output_parity_with_runtime() -> None:
+    runtime = _runtime_binary()
+    direct = subprocess.run([runtime, "--help"], capture_output=True, text=True, check=False)
+    wrapper = execution_facade(["--help"])
+    assert direct.returncode == 0
+    assert "Usage:" in wrapper
+    assert wrapper.strip() == direct.stdout.strip()
+
+
+def test_exit_code_and_stderr_parity_for_invalid_command() -> None:
+    runtime = _runtime_binary()
+    direct = subprocess.run([runtime, "unknown-subcommand"], capture_output=True, text=True, check=False)
+    wrapped = execution_facade_with_status(["unknown-subcommand"])
+    assert wrapped.exit_code == direct.returncode
+    assert isinstance(wrapped.stderr, str)
+
+
+def test_json_and_yaml_output_parity() -> None:
+    runtime = _runtime_binary()
+    direct_json = subprocess.run(
+        [runtime, "status", "--format", "json"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    wrapped_json = execution_facade(["status", "--format", "json"])
+    assert wrapped_json.strip() == direct_json.stdout.strip()
+    assert json.loads(wrapped_json)
+
+    direct_yaml = subprocess.run(
+        [runtime, "status", "--format", "yaml"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    wrapped_yaml = execution_facade(["status", "--format", "yaml"])
+    assert wrapped_yaml.strip() == direct_yaml.stdout.strip()
+    assert "status:" in wrapped_yaml
+
+
+def test_plugin_and_repl_startup_parity_smoke() -> None:
+    runtime = _runtime_binary()
+    direct_plugins = subprocess.run(
+        [runtime, "plugins", "list"], capture_output=True, text=True, check=False
+    )
+    wrapped_plugins = execution_facade(["plugins", "list"])
+    assert wrapped_plugins.strip() == direct_plugins.stdout.strip()
+
+    direct_repl = subprocess.run([runtime, "repl"], capture_output=True, text=True, check=False)
+    wrapped_repl = execution_facade(["repl"])
+    assert wrapped_repl.strip() == direct_repl.stdout.strip()
+
+
+def test_config_precedence_helpers_and_alias_apis() -> None:
+    paths = config_resolution_helpers(str(Path.home()))
+    assert paths["config_file"].endswith(".env")
+    assert get_version() == version()
+    assert "root" in get_command_tree()
+    assert isinstance(run_cli(["version"]), str)
+    assert deprecated_version_api() == version()
+
+
+def test_runtime_support_and_migration_warnings() -> None:
+    assert check_python_runtime_supported((3, 10))
+    assert not check_python_runtime_supported((3, 8))
+    assert migration_warnings(legacy_python_only=True)
+
+
+def test_post_install_diagnostics_and_binary_compatibility() -> None:
+    diagnostics = post_install_diagnostics()
+    assert "runtime_supported" in diagnostics
+    assert "warnings" in diagnostics
+    assert check_embedded_binary_compatibility(version())
