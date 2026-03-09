@@ -20,9 +20,8 @@ pub use completion::{
 };
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use metadata::{
-    canonical_crate_name, cargo_install_strategy, has_secondary_executable_conflict,
-    installer_marker, pip_install_strategy, publish_compatibility_package_alias, Ecosystem,
-    InstallStrategy, PackageChannel, CANONICAL_EXECUTABLE,
+    canonical_crate_name, cargo_install_strategy, pip_install_strategy, Ecosystem, InstallStrategy,
+    PackageChannel, CANONICAL_EXECUTABLE,
 };
 pub use paths::{
     detect_stale_wrapper_scripts, discover_path_binaries, initialize_first_run_state,
@@ -52,17 +51,6 @@ mod tests {
         let compatibility = pip_install_strategy(PackageChannel::Compatibility);
         assert_eq!(canonical.executable_name, CANONICAL_EXECUTABLE);
         assert_eq!(compatibility.executable_name, CANONICAL_EXECUTABLE);
-    }
-
-    #[test]
-    fn no_secondary_executable_conflicts_for_supported_strategies() {
-        let strategies = vec![
-            cargo_install_strategy(PackageChannel::Canonical),
-            cargo_install_strategy(PackageChannel::Compatibility),
-            pip_install_strategy(PackageChannel::Canonical),
-            pip_install_strategy(PackageChannel::Compatibility),
-        ];
-        assert!(!has_secondary_executable_conflict(&strategies));
     }
 
     #[test]

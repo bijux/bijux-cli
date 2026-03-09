@@ -103,7 +103,6 @@ dependencies = [
 name = "bijux-cli-install"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
  "tempfile",
  "thiserror",
 ]

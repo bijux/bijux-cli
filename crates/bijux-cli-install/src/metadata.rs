@@ -1,8 +1,6 @@
 #![forbid(unsafe_code)]
 //! Install metadata and package-channel strategy contracts.
 
-use bijux_cli_contracts::ContractMarker;
-
 /// Canonical executable name.
 pub const CANONICAL_EXECUTABLE: &str = "bijux";
 
@@ -35,22 +33,10 @@ pub struct InstallStrategy {
     pub executable_name: String,
 }
 
-/// Build installer marker.
-#[must_use]
-pub fn installer_marker() -> ContractMarker {
-    ContractMarker { namespace: "install".to_string() }
-}
-
 /// Decide canonical crate naming strategy.
 #[must_use]
 pub fn canonical_crate_name() -> &'static str {
     "bijux-cli"
-}
-
-/// Whether compatibility alias package should be published.
-#[must_use]
-pub fn publish_compatibility_package_alias() -> bool {
-    true
 }
 
 /// Build cargo install strategy for canonical or compatibility channel.
@@ -79,10 +65,4 @@ pub fn pip_install_strategy(channel: PackageChannel) -> InstallStrategy {
         package_name: package_name.to_string(),
         executable_name: CANONICAL_EXECUTABLE.to_string(),
     }
-}
-
-/// Validate that an install strategy does not produce conflicting executables.
-#[must_use]
-pub fn has_secondary_executable_conflict(strategies: &[InstallStrategy]) -> bool {
-    strategies.iter().any(|strategy| strategy.executable_name != CANONICAL_EXECUTABLE)
 }
