@@ -103,3 +103,19 @@ Expected JSON fields (example):
 ```
 
 Use `graph_hash` for reproducibility gates and definition-level comparisons across environments.
+
+## Output, failure, and JSON interpretation
+
+Treat `dag` command output as pre-execution contract evidence:
+
+- Human-readable output should state validity result and blocking reasons.
+- JSON output should expose stable keys used by automation (`status`, `graph_id`, `graph_hash`, and validation diagnostics when present).
+- Validation failures should be interpreted as definition blockers, not runtime incidents.
+
+Practical failure classes:
+
+- malformed DAG document (parse/shape failure)
+- semantic DAG invalidity (cycle, missing dependency, invalid node references)
+- input path/readability failure
+
+Automation rule: fail fast on non-zero validation and persist JSON diagnostics for review comments and CI artifacts.

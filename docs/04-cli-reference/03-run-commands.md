@@ -68,3 +68,37 @@ Run lifecycle command flow:
 - `docs/04-cli-reference/05-inspect-commands.md`
 - `docs/04-cli-reference/07-replay-commands.md`
 - `docs/03-user-guide/04-run-history.md`
+
+## Definitive run command usage model
+
+Use `run` commands as the authoritative path for creating and locating execution evidence:
+
+- create run: execute validated graph and record run identity.
+- list history: locate baseline, candidate, and failing runs.
+- select run ID: pass into inspect, replay, and diff flows.
+
+## Run history and run inspection examples
+
+```bash
+bijux-dag run --dag ./pipelines/main.dag.json
+bijux-dag run history --limit 10 --output json
+bijux-dag inspect run --run-id RUN_20260309_220 --output json
+```
+
+Expected outcome pattern:
+
+```text
+- new run record created with stable run_id
+- history includes new run in ordered index
+- inspect returns status and failure/success evidence for that run_id
+```
+
+## Run identity semantics in command workflows
+
+Commands depend on run identity as the stable selector for evidence retrieval:
+
+- history discovers candidate IDs.
+- inspect resolves one run ID to detailed evidence.
+- replay and diff compare behaviors anchored to specific run IDs.
+
+If run identity changes, treat it as new evidence, not an update-in-place of prior execution history.

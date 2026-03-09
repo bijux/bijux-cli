@@ -66,3 +66,34 @@ Artifact discovery flow:
 - `docs/04-cli-reference/06-diff-commands.md`
 - `docs/03-user-guide/03-artifacts.md`
 - `docs/06-specification/06-artifact-identity.md`
+
+## Definitive artifact command usage model
+
+Artifact commands are the evidence-surface for output integrity and provenance:
+
+- list artifacts for run scope
+- inspect artifact identity, lineage, and metadata
+- trace artifact ancestry/consumers through lineage fields and related inspect surfaces
+
+## Integrity-oriented inspect, hash, and trace workflow
+
+```bash
+bijux-dag artifact list --run-id RUN_20260309_220 --output json
+bijux-dag artifact inspect --artifact-id ART_20260309_902 --output json
+bijux-dag diff artifact --left ART_20260309_902 --right ART_20260309_944 --output json
+```
+
+Expected interpretation:
+
+- `artifact inspect` exposes artifact identity hash for integrity checks.
+- lineage fields provide trace context (producer node and run linkage).
+- `diff artifact` classifies whether compared identities are equivalent or drifted.
+
+## Metadata versus payload boundaries
+
+Command outputs typically report metadata and identity evidence, not full payload content:
+
+- metadata: IDs, hash, producer node, run linkage, lineage references.
+- payload: underlying artifact bytes/content, accessed through storage/runtime surfaces.
+
+Do not assume metadata equality implies semantic payload equality beyond documented identity rules.
