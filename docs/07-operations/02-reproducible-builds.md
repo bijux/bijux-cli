@@ -67,3 +67,26 @@ Reproducibility checklist:
 - `docs/07-operations/05-backend-support.md`
 - `docs/08-development/02-testing-strategy.md`
 - `docs/06-specification/07-replay-semantics.md`
+
+## Exact reproducibility inputs
+
+Track these inputs as part of reproducibility contract:
+
+- toolchain version,
+- dependency lockfile digest,
+- build image/base environment version,
+- deterministic environment variables affecting build/runtime.
+
+Any change to these inputs should trigger reproducibility re-validation.
+
+## How to interpret reproducible-build claims
+
+A reproducible-build claim means: under declared input set and environment envelope, build and validation outcomes are expected to classify equivalently. It is not a claim of universal equivalence across all hosts and backend families.
+
+## What can still drift
+
+Even with strong discipline, drift can still occur from:
+
+- kernel/host differences outside pinned image boundary,
+- external services or network-dependent steps,
+- backend capability differences not covered by build pinning.

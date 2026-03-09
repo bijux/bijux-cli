@@ -65,3 +65,14 @@ Security incident triage fields:
 - `docs/07-operations/05-backend-support.md`
 - `docs/06-specification/02-run-model.md`
 - `docs/06-specification/03-artifact-model.md`
+
+## Security posture statement
+
+bijux-dag security posture is evidence-preserving, least-privilege execution with explicit trust boundaries:
+
+- assume DAG inputs and imported bundles are untrusted until validated,
+- limit execution permissions to minimum required scope,
+- preserve run/artifact evidence integrity for audit and incident response,
+- separate policy decisions from runtime mechanics so security claims stay testable.
+
+This posture favors verifiable controls over broad security marketing claims.

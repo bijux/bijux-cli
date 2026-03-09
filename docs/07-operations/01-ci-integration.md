@@ -94,3 +94,19 @@ Expected CI summary fields:
 - `docs/07-operations/05-backend-support.md`
 - `docs/08-development/02-testing-strategy.md`
 - `docs/08-development/04-contributing.md`
+
+## Integrating bijux-dag into existing CI systems
+
+Adopt bijux-dag in incremental layers:
+
+1. add DAG validation to existing lint/validate jobs,
+2. add run/test evidence capture to existing test jobs,
+3. add replay/diff gates only for release-critical workflows.
+
+This avoids disruptive pipeline rewrites while still improving evidence quality.
+
+Cross-CI adaptation pattern:
+
+- map `validate`, `test`, `determinism`, `release-readiness` stages to native job primitives,
+- preserve artifact retention for failing lanes,
+- emit one normalized summary for gate decisions regardless of CI vendor.
