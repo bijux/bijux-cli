@@ -262,6 +262,7 @@ jobs:
         run: |
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_dev_cli_inventory.py
+          python3 scripts/status/generate_docs_audit.py
 
       - name: Runtime unity gate
         run: |
@@ -295,6 +296,15 @@ jobs:
         with:
           name: dev-cli-inventory
           path: artifacts/status/dev_cli_inventory.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload docs audit artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-audit
+          path: artifacts/status/docs_audit.json
           if-no-files-found: warn
           retention-days: 14
 

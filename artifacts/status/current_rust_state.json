@@ -133,6 +133,9 @@
     "crates/bijux-cli-repl/API_STABILITY.md",
     "crates/bijux-cli-repl/README.md",
     "crates/bijux-cli-routing/README.md",
+    "docs/HONEST_STATUS.md",
+    "docs/KNOWN_GAPS.md",
+    "docs/STABILITY_AND_BREAKAGE.md",
     "docs/architecture/adr-cli-binary-ownership.md",
     "docs/architecture/bin-main-branch-audit.md",
     "docs/architecture/config-crate-ownership.md",
@@ -232,6 +235,8 @@
     "docs/guides/api-usage.md",
     "docs/guides/atlas-local-routing.md",
     "docs/guides/cli-usage.md",
+    "docs/guides/compatibility-unified.md",
+    "docs/guides/config-unified.md",
     "docs/guides/configuration.md",
     "docs/guides/contributor-mental-model.md",
     "docs/guides/development.md",
@@ -244,6 +249,8 @@
     "docs/guides/install-macos.md",
     "docs/guides/install-method-parity.md",
     "docs/guides/install-windows.md",
+    "docs/guides/installation-unified.md",
+    "docs/guides/plugin-unified.md",
     "docs/guides/plugins.md",
     "docs/guides/python/internal-differences.md",
     "docs/guides/python/library-wrapper.md",
@@ -254,6 +261,7 @@
     "docs/guides/python/rust-engine-invocation.md",
     "docs/guides/python/virtualenv-installs.md",
     "docs/guides/release-checklist.md",
+    "docs/guides/repl-unified.md",
     "docs/guides/reproducible-releases.md",
     "docs/guides/uninstall-cargo.md",
     "docs/guides/uninstall-pip.md",
@@ -381,7 +389,7 @@
     "status",
     "version"
   ],
-  "generated_at": "2026-03-09T22:38:21.340179+00:00",
+  "generated_at": "2026-03-09T22:41:12.853215+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
@@ -1167,6 +1175,7 @@
     "scripts/status/generate_crate_boundary_metrics.py",
     "scripts/status/generate_current_rust_state.py",
     "scripts/status/generate_dev_cli_inventory.py",
+    "scripts/status/generate_docs_audit.py",
     "scripts/verify-install-channels.sh"
   ],
   "snapshot_covered_commands": [
