@@ -5,14 +5,16 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_contracts::{
-    CompatibilityRange, ContractMarker, Namespace, PluginKind, PluginLifecycleState,
-    PluginManifestV1,
+    CompatibilityRange, ContractMarker, Namespace, PluginCapability, PluginKind,
+    PluginLifecycleState, PluginManifestV1,
 };
 use bijux_cli_core::core_marker;
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 const REGISTRY_VERSION: &str = "1";
 
@@ -29,6 +31,12 @@ pub const RESERVED_NAMESPACES: &[&str] = &[
     "inspect",
 ];
 
+/// Reserved namespaces currently owned by bijux-cli core command graph.
+pub const CORE_NAMESPACES: &[&str] = &["cli", "dev"];
+
+/// Reserved namespaces for future official Bijux product mounts.
+pub const FUTURE_PRODUCT_NAMESPACES: &[&str] = &["atlas", "cloud", "ops", "security"];
+
 /// Runtime-facing plugin record persisted in registry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PluginRecord {
@@ -38,6 +46,8 @@ pub struct PluginRecord {
     pub state: PluginLifecycleState,
     /// Source artifact reference.
     pub source: String,
+    /// SHA-256 digest of raw manifest text.
+    pub manifest_checksum_sha256: String,
 }
 
 /// Durable plugin registry file model.
@@ -55,6 +65,37 @@ impl Default for PluginRegistry {
     }
 }
 
+/// Plugin discovery cache.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PluginDiscoveryCache {
+    /// Discovery root path.
+    pub root: PathBuf,
+    /// Last known manifests by namespace.
+    pub manifests: BTreeMap<String, PathBuf>,
+    /// Last update timestamp in unix millis.
+    pub last_updated_millis: u128,
+}
+
+/// Load ordering entry for diagnostics and deterministic execution.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginLoadEntry {
+    /// Namespace.
+    pub namespace: String,
+    /// Current state.
+    pub state: PluginLifecycleState,
+}
+
+/// Load diagnostics item for plugins that cannot be executed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginLoadDiagnostic {
+    /// Namespace.
+    pub namespace: String,
+    /// Severity for display and automation.
+    pub severity: String,
+    /// Human-readable message.
+    pub message: String,
+}
+
 /// Plugin manifest parsing/validation/registry errors.
 #[derive(Debug, thiserror::Error)]
 pub enum PluginError {
@@ -70,9 +111,18 @@ pub enum PluginError {
     /// Namespace is reserved.
     #[error("plugin namespace is reserved: {0}")]
     ReservedNamespace(String),
-    /// Alias duplication detected.
+    /// Namespace collides with core namespace.
+    #[error("plugin namespace collides with core namespace: {0}")]
+    CoreNamespaceConflict(String),
+    /// Namespace collides with future official product namespace.
+    #[error("plugin namespace collides with reserved product namespace: {0}")]
+    FutureNamespaceConflict(String),
+    /// Alias duplication detected in single manifest.
     #[error("plugin manifest contains duplicate alias: {0}")]
     DuplicateAlias(String),
+    /// Alias collides with an already installed plugin alias.
+    #[error("plugin alias conflicts with installed plugin: {0}")]
+    AliasConflict(String),
     /// Plugin compatibility does not include host version.
     #[error("plugin is incompatible with host version {host_version}")]
     IncompatibleVersion {
@@ -97,6 +147,9 @@ pub enum PluginError {
     /// Plugin not found by namespace.
     #[error("plugin not found: {0}")]
     PluginNotFound(String),
+    /// Delegated plugin execution denied due missing capability.
+    #[error("plugin is missing required capability: {0}")]
+    MissingCapability(String),
     /// I/O failure.
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -156,17 +209,13 @@ pub fn validate_manifest(
     validate_required_fields(&manifest)?;
     validate_namespace_format(&manifest.namespace)?;
     reject_reserved_namespace(&manifest.namespace, reserved_namespaces)?;
+    reject_core_namespace(&manifest.namespace)?;
+    reject_future_product_namespace(&manifest.namespace)?;
     validate_aliases(&manifest.aliases)?;
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
 
-    let state = if is_version_compatible(&manifest.compatibility, host_version)? {
-        PluginLifecycleState::Validated
-    } else {
-        PluginLifecycleState::Incompatible
-    };
-
-    Ok(ValidatedPlugin { manifest, state })
+    Ok(ValidatedPlugin { manifest, state: PluginLifecycleState::Validated })
 }
 
 fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginError> {
@@ -209,6 +258,20 @@ fn validate_namespace_format(namespace: &Namespace) -> Result<(), PluginError> {
 fn reject_reserved_namespace(namespace: &Namespace, reserved: &[&str]) -> Result<(), PluginError> {
     if reserved.iter().any(|value| *value == namespace.0) {
         return Err(PluginError::ReservedNamespace(namespace.0.clone()));
+    }
+    Ok(())
+}
+
+fn reject_core_namespace(namespace: &Namespace) -> Result<(), PluginError> {
+    if CORE_NAMESPACES.iter().any(|value| *value == namespace.0) {
+        return Err(PluginError::CoreNamespaceConflict(namespace.0.clone()));
+    }
+    Ok(())
+}
+
+fn reject_future_product_namespace(namespace: &Namespace) -> Result<(), PluginError> {
+    if FUTURE_PRODUCT_NAMESPACES.iter().any(|value| *value == namespace.0) {
+        return Err(PluginError::FutureNamespaceConflict(namespace.0.clone()));
     }
     Ok(())
 }
@@ -274,6 +337,11 @@ fn validate_entrypoint_and_kind(manifest: &PluginManifestV1) -> Result<(), Plugi
     Ok(())
 }
 
+fn checksum_sha256(input: &str) -> String {
+    let digest = Sha256::digest(input.as_bytes());
+    format!("{digest:x}")
+}
+
 /// Load plugin registry from disk.
 pub fn load_registry(path: &Path) -> Result<PluginRegistry, PluginError> {
     if !path.exists() {
@@ -313,14 +381,47 @@ pub fn save_registry(path: &Path, registry: &PluginRegistry) -> Result<(), Plugi
     Ok(())
 }
 
-/// Update plugin registry atomically.
+fn backup_registry(path: &Path) -> Result<Option<PathBuf>, PluginError> {
+    if !path.exists() {
+        return Ok(None);
+    }
+    let backup = path.with_extension("bak");
+    fs::copy(path, &backup)?;
+    Ok(Some(backup))
+}
+
+fn restore_registry(path: &Path, backup: Option<PathBuf>) -> Result<(), PluginError> {
+    if let Some(backup_path) = backup {
+        fs::rename(backup_path, path)?;
+    }
+    Ok(())
+}
+
+fn cleanup_backup(backup: Option<PathBuf>) {
+    if let Some(path) = backup {
+        let _ = fs::remove_file(path);
+    }
+}
+
+/// Update plugin registry atomically with rollback support.
 pub fn update_registry<F>(path: &Path, mutator: F) -> Result<PluginRegistry, PluginError>
 where
     F: FnOnce(&mut PluginRegistry) -> Result<(), PluginError>,
 {
+    let backup = backup_registry(path)?;
     let mut registry = load_registry(path)?;
-    mutator(&mut registry)?;
-    save_registry(path, &registry)?;
+
+    if let Err(error) = mutator(&mut registry) {
+        restore_registry(path, backup)?;
+        return Err(error);
+    }
+
+    if let Err(error) = save_registry(path, &registry) {
+        restore_registry(path, backup)?;
+        return Err(error);
+    }
+
+    cleanup_backup(backup);
     Ok(registry)
 }
 
@@ -330,6 +431,7 @@ pub fn install_plugin(
     request: InstallPluginRequest,
     host_version: &str,
 ) -> Result<PluginRecord, PluginError> {
+    let manifest_checksum_sha256 = checksum_sha256(&request.manifest_text);
     let manifest = parse_manifest_v1(&request.manifest_text)?;
     let validated = validate_manifest(manifest, host_version, RESERVED_NAMESPACES)?;
 
@@ -339,17 +441,39 @@ pub fn install_plugin(
         manifest: validated.manifest,
         state: PluginLifecycleState::Installed,
         source,
+        manifest_checksum_sha256,
     };
 
     update_registry(registry_path, |registry| {
         if registry.plugins.contains_key(&namespace) {
             return Err(PluginError::NamespaceConflict(namespace.clone()));
         }
+        ensure_aliases_do_not_conflict(registry, &record)?;
         registry.plugins.insert(namespace.clone(), record.clone());
         Ok(())
     })?;
 
     Ok(record)
+}
+
+fn ensure_aliases_do_not_conflict(
+    registry: &PluginRegistry,
+    candidate: &PluginRecord,
+) -> Result<(), PluginError> {
+    let mut existing_aliases = BTreeSet::new();
+    for plugin in registry.plugins.values() {
+        for alias in &plugin.manifest.aliases {
+            existing_aliases.insert(alias.to_ascii_lowercase());
+        }
+    }
+
+    for alias in &candidate.manifest.aliases {
+        if existing_aliases.contains(&alias.to_ascii_lowercase()) {
+            return Err(PluginError::AliasConflict(alias.clone()));
+        }
+    }
+
+    Ok(())
 }
 
 /// Remove plugin from registry.
@@ -381,8 +505,10 @@ fn set_plugin_state(
     let mut updated: Option<PluginRecord> = None;
 
     update_registry(registry_path, |registry| {
-        let plugin =
-            registry.plugins.get_mut(namespace).ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
+        let plugin = registry
+            .plugins
+            .get_mut(namespace)
+            .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
         plugin.state = state;
         updated = Some(plugin.clone());
         Ok(())
@@ -435,6 +561,166 @@ pub fn compatibility_check(
     is_version_compatible(&manifest.compatibility, host_version)
 }
 
+/// Return deterministic plugin load order contract.
+pub fn plugin_load_order(registry_path: &Path) -> Result<Vec<PluginLoadEntry>, PluginError> {
+    let registry = load_registry(registry_path)?;
+    let mut items: Vec<PluginLoadEntry> = registry
+        .plugins
+        .iter()
+        .map(|(namespace, record)| PluginLoadEntry {
+            namespace: namespace.clone(),
+            state: record.state,
+        })
+        .collect();
+
+    items.sort_by(|left, right| {
+        let left_rank = state_rank(left.state);
+        let right_rank = state_rank(right.state);
+        left_rank.cmp(&right_rank).then_with(|| left.namespace.cmp(&right.namespace))
+    });
+
+    Ok(items)
+}
+
+fn state_rank(state: PluginLifecycleState) -> u8 {
+    match state {
+        PluginLifecycleState::Enabled => 0,
+        PluginLifecycleState::Installed | PluginLifecycleState::Validated => 1,
+        PluginLifecycleState::Disabled => 2,
+        PluginLifecycleState::Discovered => 3,
+        PluginLifecycleState::Incompatible => 4,
+        PluginLifecycleState::Broken => 5,
+    }
+}
+
+/// Scan plugin directory tree for manifests at `<plugin-dir>/*/plugin.json`.
+pub fn discover_plugin_manifests(plugins_dir: &Path) -> Result<Vec<PathBuf>, PluginError> {
+    if !plugins_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut manifests = Vec::new();
+    for entry in fs::read_dir(plugins_dir)? {
+        let entry = entry?;
+        let plugin_dir = entry.path();
+        if !plugin_dir.is_dir() {
+            continue;
+        }
+
+        let manifest_path = plugin_dir.join("plugin.json");
+        if manifest_path.exists() {
+            manifests.push(manifest_path);
+        }
+    }
+    manifests.sort();
+    Ok(manifests)
+}
+
+/// Refresh discovery cache from plugin directory scan.
+pub fn refresh_discovery_cache(
+    cache: &mut PluginDiscoveryCache,
+    plugins_dir: &Path,
+) -> Result<(), PluginError> {
+    let discovered = discover_plugin_manifests(plugins_dir)?;
+    let mut manifests = BTreeMap::new();
+
+    for manifest_path in discovered {
+        let text = fs::read_to_string(&manifest_path)?;
+        let manifest = parse_manifest_v1(&text)?;
+        manifests.insert(manifest.namespace.0, manifest_path);
+    }
+
+    cache.root = plugins_dir.to_path_buf();
+    cache.manifests = manifests;
+    cache.last_updated_millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_millis());
+    Ok(())
+}
+
+/// Generate load-time diagnostics for broken or incompatible plugins.
+pub fn load_time_diagnostics(
+    registry_path: &Path,
+    host_version: &str,
+) -> Result<Vec<PluginLoadDiagnostic>, PluginError> {
+    let registry = load_registry(registry_path)?;
+    let mut diagnostics = Vec::new();
+
+    for (namespace, record) in &registry.plugins {
+        if record.state == PluginLifecycleState::Broken {
+            diagnostics.push(PluginLoadDiagnostic {
+                namespace: namespace.clone(),
+                severity: "error".to_string(),
+                message: "plugin is marked broken".to_string(),
+            });
+            continue;
+        }
+
+        if !is_version_compatible(&record.manifest.compatibility, host_version)? {
+            diagnostics.push(PluginLoadDiagnostic {
+                namespace: namespace.clone(),
+                severity: "warning".to_string(),
+                message: format!("plugin compatibility does not include host {host_version}"),
+            });
+        }
+
+        if record.manifest.kind == PluginKind::ExternalExec
+            && !Path::new(&record.manifest.entrypoint).exists()
+        {
+            diagnostics.push(PluginLoadDiagnostic {
+                namespace: namespace.clone(),
+                severity: "error".to_string(),
+                message: "external-exec entrypoint was not found".to_string(),
+            });
+        }
+    }
+
+    Ok(diagnostics)
+}
+
+/// Try to repair a corrupted registry by quarantining the old file and writing a fresh empty registry.
+pub fn self_repair_registry(path: &Path) -> Result<PluginRegistry, PluginError> {
+    match load_registry(path) {
+        Ok(registry) => Ok(registry),
+        Err(PluginError::RegistryCorrupted) => {
+            if path.exists() {
+                let timestamp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map_or(0, |duration| duration.as_secs());
+                let quarantine = path.with_extension(format!("corrupt-{timestamp}.json"));
+                fs::rename(path, quarantine)?;
+            }
+            let repaired = PluginRegistry::default();
+            save_registry(path, &repaired)?;
+            Ok(repaired)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// Execute delegated plugin contract after capability guard checks.
+pub fn execute_delegated_plugin(
+    manifest: &PluginManifestV1,
+    required_capability: &str,
+) -> Result<String, PluginError> {
+    if manifest.kind != PluginKind::Delegated && manifest.kind != PluginKind::Python {
+        return Err(PluginError::UnsupportedKind(manifest.kind));
+    }
+
+    if !manifest
+        .capabilities
+        .iter()
+        .any(|capability: &PluginCapability| capability.name == required_capability)
+    {
+        return Err(PluginError::MissingCapability(required_capability.to_string()));
+    }
+
+    Ok(format!(
+        "delegated:{}:{}",
+        manifest.namespace.0, manifest.entrypoint
+    ))
+}
+
 fn validate_version_req(host_version: &str) -> Result<(), PluginError> {
     let requirement = format!("={host_version}");
     VersionReq::parse(&requirement)
@@ -470,7 +756,7 @@ mod tests {
     }
 
     #[test]
-    fn validates_and_rejects_reserved_namespace() {
+    fn validates_and_rejects_reserved_core_and_future_namespaces() {
         let manifest = parse_manifest_v1(&sample_manifest("community")).expect("parse");
         let validated = validate_manifest(manifest, "0.1.0", RESERVED_NAMESPACES).expect("valid");
         assert_eq!(validated.state, PluginLifecycleState::Validated);
@@ -479,5 +765,10 @@ mod tests {
         let error = validate_manifest(reserved_manifest, "0.1.0", RESERVED_NAMESPACES)
             .expect_err("reserved namespace must fail");
         assert!(matches!(error, PluginError::ReservedNamespace(_)));
+
+        let future_manifest = parse_manifest_v1(&sample_manifest("atlas")).expect("parse");
+        let future_error = validate_manifest(future_manifest, "0.1.0", RESERVED_NAMESPACES)
+            .expect_err("future namespace must fail");
+        assert!(matches!(future_error, PluginError::FutureNamespaceConflict(_)));
     }
 }
