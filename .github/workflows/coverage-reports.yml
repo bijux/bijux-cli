@@ -13,6 +13,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.81
+      - name: install cargo-nextest
+        run: cargo install cargo-nextest --locked
       - name: install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
       - name: generate coverage and threshold reports

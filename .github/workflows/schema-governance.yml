@@ -18,7 +18,7 @@ jobs:
       - name: verify changelog is committed
         run: git diff --exit-code docs/reports/foundation/SCHEMA_CHANGELOG.md
       - name: schema governance contract tests
-        run: cargo test -p bijux-dev-dag --test schema_governance_contracts
+        run: cargo test -p bijux-dev-dag --test evidence_schema_contracts
       - name: upload schema report
         uses: actions/upload-artifact@v4
         with:

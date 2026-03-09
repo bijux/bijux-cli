@@ -14,7 +14,7 @@ jobs:
         with:
           toolchain: 1.81
       - name: verify evidence foundation
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-foundation
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-release-set
       - name: run battle-first trust subset
         run: |
           cargo run -p bijux-dev-dag --bin bijux-dev-dag -- verify evidence-battle

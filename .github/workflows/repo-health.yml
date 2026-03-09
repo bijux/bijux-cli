@@ -22,4 +22,4 @@ jobs:
       - name: verify generated planner hardening report is committed
         run: git diff --exit-code docs/reports/foundation/PLANNER_HARDENING_REPORT.md
       - name: run repo health contract tests
-        run: cargo test -p bijux-dev-dag --test repo_health_contracts
+        run: cargo test -p bijux-dev-dag --test file_size_guardrails

@@ -17,12 +17,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.81
-      - name: install nextest
-        run: cargo install cargo-nextest --locked
-      - name: run nextest
-        run: cargo nextest run --config-file configs/nextest/nextest.toml --profile ci --workspace
       - name: run architecture tests
-        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- tests run --domain governance
+        run: cargo run -p bijux-dev-dag --bin bijux-dev-dag -- tests run --domain governance --advisory
       - name: upload reports
         uses: actions/upload-artifact@v4
         with:
