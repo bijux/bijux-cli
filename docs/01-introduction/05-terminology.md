@@ -7,54 +7,69 @@ Define canonical terms used across all documentation and remove ambiguity.
 This glossary is the primary vocabulary source for user, architecture, specification, and operations documents.
 
 ## Explanation
+Use these definitions exactly in docs and reviews. If a term is not listed here, define it before using it as contract language.
+
 Graph
-- Canonical DAG definition object.
+- Canonical DAG definition object: nodes + dependency edges + semantic configuration.
+- Use "graph" for definition state, not for execution outcomes.
 
 Pipeline
-- Operational workflow view of a graph execution lifecycle.
-- In bijux-dag, pipeline behavior is grounded in graph semantics.
+- Operational view of executing a graph over time (run history, artifacts, comparisons).
+- Use when describing workflow operations, not schema structure.
 
 Node
-- Executable unit in a graph.
+- Executable unit inside a graph with defined dependencies and execution intent.
 
 Run
-- A concrete execution instance for a graph.
+- One concrete execution instance of one graph definition.
 
 Attempt
-- A single execution attempt within the lifecycle of a run.
-- A run may contain multiple attempts under retry/recovery behavior.
+- One execution try inside a run lifecycle when retry/recovery is enabled.
+- Default mental model: one run can contain one or more attempts.
 
 Artifact
-- Persisted output object from execution.
+- Persisted output object with identity and lineage links.
+- Preferred term for output data that is tracked and comparable.
 
 Output
-- General produced data.
-- In this docs set, "artifact" is the persistent tracked form of output.
+- Generic produced data.
+- Use only when persistence/identity tracking is irrelevant.
 
 Replay
-- Validation-oriented re-execution/comparison process.
+- Validation-oriented re-execution against baseline graph/run context.
 
 Diff
-- Structured classification of change between comparable entities.
+- Structured comparison classification across graph, run, or artifact scope.
 
 Inspect
-- Introspection surfaces for execution and output state.
+- Read-only introspection of run state, node outcomes, and artifacts.
 
 Determinism
-- Stability of behavior under equivalent defined inputs/conditions.
+- Stability of classified behavior under equivalent defined inputs and supported environment constraints.
+
+Portability
+- Ability to transfer workflow context and outputs across environments with explicit equivalence boundaries.
 
 Canonical distinction set:
 - Artifact vs output:
-  - Output is generic produced data.
-  - Artifact is persisted, identity-tracked output.
+  - output = generic produced bytes/data
+  - artifact = persisted, identity-tracked output unit
 
 - Run vs attempt:
-  - Run is the full execution instance.
-  - Attempt is one execution try inside a run lifecycle.
+  - run = full execution instance and evidence container
+  - attempt = one try within the run lifecycle
 
 - Graph vs pipeline:
-  - Graph is formal dependency definition.
-  - Pipeline is operational execution framing built from that graph.
+  - graph = formal dependency definition
+  - pipeline = operational execution framing built from graph runs over time
+
+- Replay vs diff:
+  - replay = produce candidate evidence through re-execution
+  - diff = classify divergence between baseline and candidate evidence
+
+Ambiguity policy:
+- Do not use "job", "step", or "result bundle" as aliases unless explicitly mapped to canonical terms.
+- Prefer canonical terms in headings, examples, and CLI explanations.
 
 ## Examples
 ```text
@@ -67,6 +82,7 @@ Example usage:
 ## Guarantees
 - Canonical term definitions here are normative for this docs tree.
 - Distinction sets remove common ambiguity points.
+- Each canonical term has one preferred meaning and usage boundary.
 
 ## Limitations
 - This glossary does not define schema fields or hashing algorithms.
@@ -74,6 +90,10 @@ Example usage:
 
 ## Related
 - `docs/01-introduction/04-core-concepts.md`
+- `docs/02-getting-started/04-understanding-runs.md`
+- `docs/03-user-guide/03-artifacts.md`
+- `docs/03-user-guide/05-replay.md`
+- `docs/03-user-guide/06-diff.md`
 - `docs/06-specification/04-graph-identity.md`
 - `docs/06-specification/05-run-identity.md`
 - `docs/06-specification/06-artifact-identity.md`
