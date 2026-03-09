@@ -1,22 +1,61 @@
 # Run Identity
 
 ## Purpose
-Define the reader-facing intent for this document.
+Define run identity derivation, uniqueness boundaries, and attribution guarantees.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+Run identity links execution evidence to one concrete attempt of graph execution.
 
 ## Explanation
-Primary explanation content goes here.
+Run identity definition:
+- run identity uniquely identifies a concrete run attempt.
+- run identity is distinct from graph identity; multiple runs may share one graph identity.
+
+Run identity input domains:
+- graph identity reference.
+- run creation context (timestamp/nonce/sequence as applicable).
+- execution mode and selected adapter context when declared identity-relevant.
+
+Uniqueness contract:
+- no two run attempts in the same identity namespace may share the same run identity.
+- retries create distinct run identities even when graph identity is unchanged.
+
+Attribution contract:
+- run identity is the parent link for node outcomes and artifacts.
+- inspect/replay/diff workflows consume run identity as primary execution key.
+
+Stability boundaries:
+- run identity generation must be deterministic with respect to its generation function and supplied inputs.
+- uniqueness mechanisms may include monotonic sequence or collision-resistant random domains.
 
 ## Examples
-Add executable and realistic examples.
+```text
+Repeated execution over same graph:
+graph_id = g_44a...
+run_1 = r_100...
+run_2 = r_101...
+Result: same graph identity, different run identities
+```
+
+```text
+Run-to-artifact linkage:
+run.id: r_101...
+artifact.id: a_712...
+artifact.run_id: r_101...
+```
 
 ## Guarantees
-State explicit guarantees only.
+- Run identity is unique per run attempt within identity namespace.
+- Run identity provides stable attribution anchor for run evidence.
+- Distinct run attempts are distinguishable even with identical DAG definitions.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- Run identity does not encode full artifact content.
+- Equality of run identity is not intended across independent identity namespaces.
+- This document does not define storage key layout details.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/06-specification/02-run-model.md`
+- `docs/06-specification/04-graph-identity.md`
+- `docs/06-specification/06-artifact-identity.md`
+- `docs/03-user-guide/04-run-history.md`
