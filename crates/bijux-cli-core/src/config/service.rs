@@ -33,7 +33,7 @@ impl ConfigPathProvider for StaticConfigPathProvider {
 }
 
 pub(crate) trait ConfigService {
-    fn list_paths(&self, history_path: &Path, plugins_path: &Path) -> Value;
+    fn list_entries(&self) -> Result<Value, ConfigError>;
     fn get_value(&self, raw_key: &str) -> Result<Value, ConfigError>;
     fn set_pair(&self, raw_pair: &str) -> Result<Value, ConfigError>;
 }
@@ -78,12 +78,9 @@ where
 }
 
 impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfigRepository> {
-    fn list_paths(&self, history_path: &Path, plugins_path: &Path) -> Value {
-        json!({
-            "BIJUXCLI_CONFIG": self.path_provider.config_path(),
-            "BIJUXCLI_HISTORY_FILE": history_path,
-            "BIJUXCLI_PLUGINS_DIR": plugins_path,
-        })
+    fn list_entries(&self) -> Result<Value, ConfigError> {
+        let values = self.load_map()?;
+        Ok(json!(values))
     }
 
     fn get_value(&self, raw_key: &str) -> Result<Value, ConfigError> {

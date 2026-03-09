@@ -71,7 +71,7 @@ pub(crate) fn execute_config_command(
     );
 
     let result = match normalized_path {
-        [a] if a == "config" => Some(service.list_paths(&paths.history_file, &paths.plugins_dir)),
+        [a] if a == "config" => Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?),
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             let positional = command_positionals(argv, &["cli", "config", "get"]);
             let raw_key = positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
