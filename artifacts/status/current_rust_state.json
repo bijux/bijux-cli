@@ -1,5 +1,74 @@
 {
-  "crate_dependency_edges": [],
+  "crate_dependency_edges": [
+    {
+      "from": "bijux-cli-bin",
+      "to": "bijux-cli-core"
+    },
+    {
+      "from": "bijux-cli-core",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-core",
+      "to": "bijux-cli-install"
+    },
+    {
+      "from": "bijux-cli-core",
+      "to": "bijux-cli-output"
+    },
+    {
+      "from": "bijux-cli-core",
+      "to": "bijux-cli-plugin"
+    },
+    {
+      "from": "bijux-cli-core",
+      "to": "bijux-cli-routing"
+    },
+    {
+      "from": "bijux-cli-install",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-output",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-plugin",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-python",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-python",
+      "to": "bijux-cli-core"
+    },
+    {
+      "from": "bijux-cli-python",
+      "to": "bijux-cli-install"
+    },
+    {
+      "from": "bijux-cli-repl",
+      "to": "bijux-cli-contracts"
+    },
+    {
+      "from": "bijux-cli-repl",
+      "to": "bijux-cli-core"
+    },
+    {
+      "from": "bijux-cli-repl",
+      "to": "bijux-cli-output"
+    },
+    {
+      "from": "bijux-cli-repl",
+      "to": "bijux-cli-routing"
+    },
+    {
+      "from": "bijux-cli-routing",
+      "to": "bijux-cli-contracts"
+    }
+  ],
   "crates_public_api_counts": [
     {
       "crate": "bijux-cli-bin",
@@ -309,7 +378,7 @@
     "status",
     "version"
   ],
-  "generated_at": "2026-03-09T22:19:56.980104+00:00",
+  "generated_at": "2026-03-09T22:20:49.461841+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
