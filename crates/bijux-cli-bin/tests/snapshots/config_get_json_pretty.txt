@@ -1,0 +1,5 @@
+{
+  "key": "alpha",
+  "source_path": "<CONFIG_PATH>",
+  "value": "1"
+}
