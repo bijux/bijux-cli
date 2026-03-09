@@ -29,6 +29,11 @@ Replay limitations:
 - environment/tooling drift can produce classified divergence even with unchanged graph.
 - replay does not guarantee identical timing/resource profile across environments.
 
+Replay non-goals:
+- replay is not a performance benchmark tool.
+- replay is not evidence of cross-backend equivalence without capability alignment.
+- replay success does not imply every external side effect is equivalent.
+
 When to replay:
 - post-upgrade verification
 - flaky behavior investigation

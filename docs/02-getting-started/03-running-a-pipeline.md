@@ -33,6 +33,11 @@ Operational sequence rule:
 - do not jump to replay/diff before confirming baseline run integrity.
 - first confirm run success or failure reason, then compare.
 
+Canonical reference boundaries:
+- this guide explains first-run operator flow.
+- canonical replay semantics live in `docs/03-user-guide/05-replay.md` and `docs/06-specification/07-replay-semantics.md`.
+- canonical diff semantics live in `docs/03-user-guide/06-diff.md` and `docs/06-specification/08-diff-semantics.md`.
+
 ## Examples
 ```bash
 # 1) Execute the pipeline

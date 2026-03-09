@@ -41,6 +41,11 @@ Quick run review checklist:
 4. inspect artifact references for missing or unexpected outputs.
 5. compare against prior run when behavior changed.
 
+Run non-goals in this guide:
+- this page does not define run hashing algorithm details.
+- this page does not define storage backend internals.
+- this page does not replace run-model contract language in specification docs.
+
 ## Examples
 ```bash
 # Inspect full run record

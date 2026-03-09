@@ -69,6 +69,12 @@ Ambiguity policy:
 - Do not use "job", "step", or "result bundle" as aliases unless explicitly mapped to canonical terms.
 - Prefer canonical terms in headings, examples, and CLI explanations.
 
+Preferred vs discouraged synonyms:
+- prefer `graph`; discourage `pipeline file` when referring to formal DAG definition.
+- prefer `run`; discourage `execution record` as primary term.
+- prefer `artifact`; discourage `output file` when identity and lineage are relevant.
+- prefer `replay classification`; discourage `rerun looked fine` as evidence statement.
+
 ## Examples
 ```text
 Example usage:
@@ -88,10 +94,7 @@ Example usage:
 
 ## Related
 - `docs/01-introduction/04-core-concepts.md`
-- `docs/02-getting-started/04-understanding-runs.md`
 - `docs/03-user-guide/03-artifacts.md`
 - `docs/03-user-guide/05-replay.md`
 - `docs/03-user-guide/06-diff.md`
 - `docs/06-specification/04-graph-identity.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/06-specification/06-artifact-identity.md`

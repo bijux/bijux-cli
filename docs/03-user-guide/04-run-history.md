@@ -33,6 +33,11 @@ Indexing expectations:
 - fast direct access by run ID.
 - preserved linkage to graph and artifact references.
 
+Canonical reference boundaries:
+- this guide is the practical run-history workflow.
+- canonical run semantics live in `docs/06-specification/02-run-model.md`.
+- canonical replay and diff semantics live in `docs/06-specification/07-replay-semantics.md` and `docs/06-specification/08-diff-semantics.md`.
+
 Practical usage pattern:
 1. identify the latest failing run
 2. pick a known-good baseline run

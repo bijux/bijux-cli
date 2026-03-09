@@ -30,6 +30,11 @@ Diff classification guidance:
 - suspicious change: unplanned and unexplained divergence
 - breaking change: contract-relevant mismatch
 
+Canonical reference boundaries:
+- this guide explains operator interpretation and workflow.
+- canonical diff contract vocabulary is in `docs/06-specification/08-diff-semantics.md`.
+- replay-to-diff relationship contract is in `docs/06-specification/07-replay-semantics.md`.
+
 Diff-driven diagnosis pattern:
 1. run graph diff first to separate definition drift from runtime drift.
 2. run run diff to localize behavioral differences.

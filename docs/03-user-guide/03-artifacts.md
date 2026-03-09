@@ -38,6 +38,10 @@ Storage structure (user-level view):
 - lineage links (`graph_id`, `run_id`, `node_id`, `artifact_id`)
 - index entry for lookup and diff comparison
 
+Artifact non-goals:
+- artifacts are not a universal snapshot of every side effect in external systems.
+- artifact identity is not a substitute for full provenance policy in cross-organization trust models.
+
 ## Examples
 ```bash
 # Inspect artifact details
@@ -84,7 +88,7 @@ Artifact review checklist:
 - Storage backend implementation details are out of scope.
 
 ## Related
-- `docs/03-user-guide/04-run-history.md`
+- `docs/01-introduction/05-terminology.md`
 - `docs/05-system-architecture/06-artifact-store.md`
 - `docs/06-specification/03-artifact-model.md`
 - `docs/06-specification/06-artifact-identity.md`
