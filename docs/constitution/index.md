@@ -24,4 +24,5 @@ It covers public behavior that must remain stable across implementation changes.
 - [Stdout/Stderr Rules](STDOUT_STDERR_RULES.md)
 - [REPL Parity](REPL_PARITY.md)
 - [Plugin Namespace Policy](PLUGIN_NAMESPACE_POLICY.md)
+- [Plugin Lifecycle](PLUGIN_LIFECYCLE.md)
 - [Deprecation Policy](DEPRECATION_POLICY.md)
