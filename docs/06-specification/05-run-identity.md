@@ -1,9 +1,7 @@
 # Run Identity
 
-## Purpose
 Define run identity derivation, uniqueness boundaries, and attribution guarantees.
 
-## Context
 Run identity links execution evidence to one concrete attempt of graph execution.
 
 ## Explanation

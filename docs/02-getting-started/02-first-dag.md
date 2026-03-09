@@ -1,9 +1,7 @@
 # First Dag
 
-## Purpose
 Guide a new user from empty workspace to a valid DAG with explicit execution order.
 
-## Context
 This is the first hands-on step after installation.
 
 ## Explanation

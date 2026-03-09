@@ -1,9 +1,7 @@
 # Cli Overview
 
-## Purpose
 Provide the command hierarchy, output conventions, and reference navigation model for bijux-dag CLI usage.
 
-## Context
 This page is the single entrypoint for command-family docs in this section.
 
 ## Explanation

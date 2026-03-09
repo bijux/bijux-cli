@@ -1,9 +1,7 @@
 # Repository Structure
 
-## Purpose
 Define the repository layout and ownership boundaries for maintainers.
 
-## Context
 A clear repository map reduces coupling, prevents misplaced changes, and supports predictable maintenance.
 
 ## Explanation

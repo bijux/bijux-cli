@@ -1,9 +1,7 @@
 # Artifact Identity
 
-## Purpose
 Define artifact identity derivation, hash classification rules, and lineage guarantees.
 
-## Context
 Artifact identity is the portable output identity surface for comparison and audit.
 
 ## Explanation

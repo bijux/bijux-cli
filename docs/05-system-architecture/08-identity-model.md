@@ -1,9 +1,7 @@
 # Identity Model
 
-## Purpose
 Explain identity internals for graph, run, and artifact entities, including hashing role.
 
-## Context
 Identity modeling is required for deterministic reasoning, replay validation, and diff attribution.
 
 ## Explanation

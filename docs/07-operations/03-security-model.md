@@ -1,9 +1,7 @@
 # Security Model
 
-## Purpose
 Define the operational security posture and risk model for running bijux-dag workloads.
 
-## Context
 Execution systems process commands and artifacts; security is therefore a first-class operational contract.
 
 ## Explanation

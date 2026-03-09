@@ -1,9 +1,7 @@
 # CI Integration
 
-## Purpose
 Define the contract for integrating bijux-dag execution and validation into CI pipelines.
 
-## Context
 CI is the operational control point for consistent DAG validation, deterministic execution checks, and release readiness.
 
 ## Explanation

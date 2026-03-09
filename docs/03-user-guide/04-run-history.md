@@ -1,9 +1,7 @@
 # Run History
 
-## Purpose
 Describe how run history should be used to track behavior over time and support replay/diff-driven diagnosis.
 
-## Context
 Run history is the operational bridge between one-off execution and long-term workflow reliability.
 
 ## Explanation

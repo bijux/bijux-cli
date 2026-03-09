@@ -1,9 +1,7 @@
 # DAG Model
 
-## Purpose
 Define the canonical DAG structure and validation contract used by bijux-dag.
 
-## Context
 DAG structure is the root contract for scheduling, execution, replay, and diff behavior.
 
 ## Explanation

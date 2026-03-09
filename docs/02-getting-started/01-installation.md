@@ -1,9 +1,7 @@
 # Installation
 
-## Purpose
 Provide reliable installation paths for bijux-dag and a quick verification flow.
 
-## Context
 This is the entrypoint for first-time setup before creating or running any DAG.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Run Directory
 
-## Purpose
 Describe run directory architecture and its role in execution evidence lifecycle.
 
-## Context
 Run directory design supports inspect, replay, and diff workflows across time.
 
 ## Explanation

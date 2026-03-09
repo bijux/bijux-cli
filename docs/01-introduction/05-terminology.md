@@ -1,9 +1,7 @@
 # Terminology
 
-## Purpose
 Define canonical terms used across all documentation and remove ambiguity.
 
-## Context
 This glossary is the primary vocabulary source for user, architecture, specification, and operations documents.
 
 ## Explanation

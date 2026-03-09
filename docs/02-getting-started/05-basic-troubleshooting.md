@@ -1,9 +1,7 @@
 # Basic Troubleshooting
 
-## Purpose
 Provide a minimal, high-signal troubleshooting path for setup and first-run failures.
 
-## Context
 This guide is for common failures encountered during first project execution.
 
 ## Explanation

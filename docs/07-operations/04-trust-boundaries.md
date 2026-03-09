@@ -1,9 +1,7 @@
 # Trust Boundaries
 
-## Purpose
 Define where trust assumptions begin and end across CLI, runtime, adapters, and storage.
 
-## Context
 Trust boundaries govern how evidence and execution claims are interpreted and enforced.
 
 ## Explanation

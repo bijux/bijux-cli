@@ -1,9 +1,7 @@
 # Diff Semantics
 
-## Purpose
 Define normative diff classification across graph, run, and artifact domains.
 
-## Context
 Diff semantics is the comparison contract used by validation, release decisions, and troubleshooting.
 
 ## Explanation

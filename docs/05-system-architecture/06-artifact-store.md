@@ -1,9 +1,7 @@
 # Artifact Store
 
-## Purpose
 Explain artifact store architecture and how outputs are persisted and retrieved.
 
-## Context
 Artifact store design underpins traceability, diffability, and reproducibility workflows.
 
 ## Explanation

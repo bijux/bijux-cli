@@ -1,9 +1,7 @@
 # Crate Architecture
 
-## Purpose
 Explain crate-level decomposition and ownership boundaries in the system.
 
-## Context
 Crate architecture is the structural map for maintainers and contributors.
 
 ## Explanation

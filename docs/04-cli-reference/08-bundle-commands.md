@@ -1,9 +1,7 @@
 # Bundle Commands
 
-## Purpose
 Document bundle export/import command usage for portability workflows.
 
-## Context
 Bundle commands package and transfer workflow context across environments.
 
 ## Explanation

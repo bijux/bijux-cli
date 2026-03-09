@@ -1,9 +1,7 @@
 # Adapters
 
-## Purpose
 Define the adapter model and its role in separating runtime semantics from execution backends.
 
-## Context
 Adapters are the architecture boundary between core runtime intent and environment-specific execution mechanisms.
 
 ## Explanation

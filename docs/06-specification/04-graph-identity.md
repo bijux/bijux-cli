@@ -1,9 +1,7 @@
 # Graph Identity
 
-## Purpose
 Define how graph identity is derived and which inputs are identity-relevant.
 
-## Context
 Graph identity anchors replay planning and drift detection at definition level.
 
 ## Explanation

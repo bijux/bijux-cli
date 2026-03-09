@@ -1,9 +1,7 @@
 # Inspect And Debug
 
-## Purpose
 Provide a practical debugging path using inspect outputs and failure-oriented triage.
 
-## Context
 Inspect is the first operational interface for understanding failed or unexpected runs.
 
 ## Explanation

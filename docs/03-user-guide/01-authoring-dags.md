@@ -1,9 +1,7 @@
 # Authoring Dags
 
-## Purpose
 Define practical authoring rules for clear, maintainable DAG definitions.
 
-## Context
 This is the canonical user-guide entry for writing DAG files beyond first-run tutorials.
 
 ## Explanation

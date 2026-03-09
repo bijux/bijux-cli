@@ -1,9 +1,7 @@
 # Inspect Commands
 
-## Purpose
 Document inspect command usage for run and artifact diagnostics.
 
-## Context
 Inspect commands are the first diagnostic step in troubleshooting workflows.
 
 ## Explanation

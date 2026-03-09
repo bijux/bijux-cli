@@ -1,9 +1,7 @@
 # Determinism
 
-## Purpose
 Define determinism architecture guarantees and boundaries for graph, run, and artifact behavior.
 
-## Context
 Determinism is the core architecture property that enables trustworthy replay and diff workflows.
 
 ## Explanation

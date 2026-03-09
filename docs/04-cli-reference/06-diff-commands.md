@@ -1,9 +1,7 @@
 # Diff Commands
 
-## Purpose
 Document command usage for graph, run, and artifact diff operations.
 
-## Context
 Diff commands are used to classify change and isolate causes of divergence.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Backend Support
 
-## Purpose
 Define backend capability expectations, support tiers, and portability boundaries.
 
-## Context
 Backend support directly affects determinism, replay guarantees, and operational portability.
 
 ## Explanation

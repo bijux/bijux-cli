@@ -1,9 +1,7 @@
 # Replay Semantics
 
-## Purpose
 Define normative replay behavior, validation outcomes, and bounded divergence handling.
 
-## Context
 Replay semantics determine whether a historical run can be re-executed and assessed consistently.
 
 ## Explanation

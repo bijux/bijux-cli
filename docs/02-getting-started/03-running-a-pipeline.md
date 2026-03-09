@@ -1,9 +1,7 @@
 # Running A Pipeline
 
-## Purpose
 Explain the default run workflow from execution to replay/diff diagnostics.
 
-## Context
 This document bridges beginner DAG authoring and operational debugging.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Run Commands
 
-## Purpose
 Document run command usage for execution and run-history workflows.
 
-## Context
 Run commands are the primary operator surface for starting workflows and reviewing results.
 
 ## Explanation

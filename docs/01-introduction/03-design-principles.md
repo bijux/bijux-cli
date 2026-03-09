@@ -1,9 +1,7 @@
 # Design Principles
 
-## Purpose
 Define the durable principles used to evaluate product and documentation decisions.
 
-## Context
 These principles apply across runtime behavior, interfaces, and docs.
 
 ## Explanation

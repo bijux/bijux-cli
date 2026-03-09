@@ -1,9 +1,7 @@
 # Adapter Development
 
-## Purpose
 Define the adapter implementation contract and development workflow for backend integrations.
 
-## Context
 Adapters bridge runtime intent to backend-specific execution systems and directly affect portability guarantees.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Run Model
 
-## Purpose
 Define the execution run lifecycle, state transitions, and run-level evidence contract.
 
-## Context
 Run behavior operationalizes DAG definitions into auditable execution outcomes.
 
 ## Explanation

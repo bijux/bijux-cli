@@ -1,9 +1,7 @@
 # Core Concepts
 
-## Purpose
 Provide a practical conceptual map for operating and understanding bijux-dag.
 
-## Context
 This document establishes the primary objects and relationships used throughout user guides, CLI reference, and specification docs.
 
 ## Explanation

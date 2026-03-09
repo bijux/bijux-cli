@@ -1,9 +1,7 @@
 # System Overview
 
-## Purpose
 Describe the high-level architecture of bijux-dag and how core subsystems interact.
 
-## Context
 This is the architecture entrypoint before subsystem-level details.
 
 ## Explanation

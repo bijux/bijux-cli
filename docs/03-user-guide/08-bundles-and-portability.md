@@ -1,9 +1,7 @@
 # Bundles And Portability
 
-## Purpose
 Explain bundle export/import workflows and portability boundaries with practical validation steps.
 
-## Context
 Bundles are the handoff mechanism for moving workflow context between environments.
 
 ## Explanation

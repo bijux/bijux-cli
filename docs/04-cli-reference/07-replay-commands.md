@@ -1,9 +1,7 @@
 # Replay Commands
 
-## Purpose
 Document replay command usage for validation and drift detection workflows.
 
-## Context
 Replay commands are typically used with run history, inspect, and diff commands.
 
 ## Explanation

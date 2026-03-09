@@ -1,9 +1,7 @@
 # Dependencies And Order
 
-## Purpose
 Explain how dependency edges determine execution order and operational behavior.
 
-## Context
 Dependency modeling is core to correctness and performance in DAG execution.
 
 ## Explanation

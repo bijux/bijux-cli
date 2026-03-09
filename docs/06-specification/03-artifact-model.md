@@ -1,9 +1,7 @@
 # Artifact Model
 
-## Purpose
 Define artifact entity semantics, lineage requirements, and portability constraints.
 
-## Context
 Artifacts are the durable output contract connecting execution, inspection, replay, and diff.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Reproducible Builds
 
-## Purpose
 Define how to produce deterministic build and test results across environments.
 
-## Context
 Reproducibility is required for trustworthy replay/diff outcomes and reliable release decisions.
 
 ## Explanation

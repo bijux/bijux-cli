@@ -1,9 +1,7 @@
 # Replay
 
-## Purpose
 Explain how to use replay to validate stability, detect drift, and verify fixes.
 
-## Context
 Replay is a core workflow for confidence, especially after dependency or environment changes.
 
 ## Explanation

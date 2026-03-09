@@ -1,9 +1,7 @@
 # Portability
 
-## Purpose
 Define portability architecture design, guarantees, and non-goals.
 
-## Context
 Portability determines how workflow context and outputs move across environments while preserving trust.
 
 ## Explanation

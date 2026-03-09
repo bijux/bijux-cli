@@ -1,9 +1,7 @@
 # Artifact Commands
 
-## Purpose
 Document artifact command usage for listing and inspecting output objects.
 
-## Context
 Artifact commands are used after run completion to inspect output integrity and lineage context.
 
 ## Explanation

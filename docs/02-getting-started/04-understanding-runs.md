@@ -1,9 +1,7 @@
 # Understanding Runs
 
-## Purpose
 Define the run model a beginner needs for confident execution analysis.
 
-## Context
 Run interpretation is required for troubleshooting, replay, and diff.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Mission
 
-## Purpose
 State the enduring mission of bijux-dag and the operational outcomes it targets.
 
-## Context
 The mission constrains product decisions, prioritization, and documentation scope.
 
 ## Explanation

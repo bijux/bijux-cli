@@ -1,9 +1,7 @@
 # Artifacts
 
-## Purpose
 Explain artifact behavior, storage expectations, identity, and lineage.
 
-## Context
 Artifacts are the persisted outputs users inspect, compare, and transport.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Scheduler
 
-## Purpose
 Explain scheduler design and how dependency constraints become executable order.
 
-## Context
 Scheduler behavior defines ordering guarantees and concurrency opportunities.
 
 ## Explanation

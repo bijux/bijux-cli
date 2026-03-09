@@ -1,9 +1,7 @@
 # Execution Engine
 
-## Purpose
 Describe how the execution engine runs nodes, handles outcomes, and coordinates with scheduling.
 
-## Context
 The execution engine is the runtime core that turns DAG plans into concrete run behavior.
 
 ## Explanation

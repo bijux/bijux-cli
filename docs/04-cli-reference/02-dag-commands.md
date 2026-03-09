@@ -1,9 +1,7 @@
 # Dag Commands
 
-## Purpose
 Document DAG command usage for graph validation, inspection, and definition-level operations.
 
-## Context
 DAG commands act on graph definitions, not on specific historical runs.
 
 ## Explanation

@@ -1,9 +1,7 @@
 # Testing Strategy
 
-## Purpose
 Define test lanes, fixture governance, and quality gates for maintainable correctness.
 
-## Context
 Testing is the executable trust boundary for contracts declared in specification and architecture docs.
 
 ## Explanation
