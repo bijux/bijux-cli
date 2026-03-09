@@ -15,8 +15,8 @@ pub use compatibility::{
     ENV_PLUGINS_PATH,
 };
 pub use completion::{
-    cargo_compatibility_note, completion_script, pip_compatibility_note, post_install_hint,
-    CompletionShell,
+    cargo_compatibility_note, completion_file_path, completion_script, detect_shell,
+    pip_compatibility_note, post_install_hint, CompletionShell,
 };
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use metadata::{
@@ -218,5 +218,120 @@ mod tests {
             .expect("set readonly");
         let result = initialize_first_run_state(&dir);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn default_paths_match_python_expectations() {
+        let home = std::path::PathBuf::from("/tmp/home");
+        let paths = default_compatibility_paths(&home);
+        assert_eq!(paths.config_file, home.join(".bijux/.env"));
+        assert_eq!(paths.history_file, home.join(".bijux/.history"));
+        assert_eq!(paths.plugins_dir, home.join(".bijux/.plugins"));
+    }
+
+    #[test]
+    fn linux_path_resolution_is_supported() {
+        let home = std::path::PathBuf::from("/home/bijan");
+        let resolved = discover_compatibility_paths(
+            Some(&home),
+            &PathOverrides::default(),
+            &std::collections::HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+        assert_eq!(resolved.config_file, home.join(".bijux/.env"));
+    }
+
+    #[test]
+    fn macos_path_resolution_is_supported() {
+        let home = std::path::PathBuf::from("/Users/bijan");
+        let resolved = discover_compatibility_paths(
+            Some(&home),
+            &PathOverrides::default(),
+            &std::collections::HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+        assert_eq!(resolved.history_file, home.join(".bijux/.history"));
+    }
+
+    #[test]
+    fn windows_path_resolution_is_supported() {
+        let home = std::path::PathBuf::from(r"C:\Users\bijan");
+        let mut env_map = std::collections::HashMap::new();
+        env_map.insert(
+            ENV_PLUGINS_PATH.to_string(),
+            r"C:\Users\bijan\.bijux\.plugins".to_string(),
+        );
+        let resolved = discover_compatibility_paths(
+            Some(&home),
+            &PathOverrides::default(),
+            &env_map,
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+        assert!(
+            resolved
+                .plugins_dir
+                .to_string_lossy()
+                .contains(r"C:\Users\bijan\.bijux\.plugins")
+        );
+    }
+
+    #[test]
+    fn home_override_behavior_is_supported() {
+        let home = std::path::PathBuf::from("/override/home");
+        let mut env_map = std::collections::HashMap::new();
+        env_map.insert(ENV_CONFIG_PATH.to_string(), "cfg/custom.env".to_string());
+        let resolved = discover_compatibility_paths(
+            Some(&home),
+            &PathOverrides::default(),
+            &env_map,
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+        assert_eq!(resolved.config_file, home.join("cfg/custom.env"));
+    }
+
+    #[test]
+    fn xdg_style_home_paths_are_supported() {
+        let home = std::path::PathBuf::from("/home/bijan/.local/share");
+        let resolved = discover_compatibility_paths(
+            Some(&home),
+            &PathOverrides::default(),
+            &std::collections::HashMap::new(),
+            &CompatibilityConfig::default(),
+        )
+        .expect("resolve");
+        assert_eq!(resolved.config_file, home.join(".bijux/.env"));
+    }
+
+    #[test]
+    fn completion_file_paths_are_generated() {
+        let home = std::path::PathBuf::from("/tmp/home");
+        assert!(completion_file_path(CompletionShell::Bash, &home).to_string_lossy().contains(".bash_completion.d"));
+        assert!(completion_file_path(CompletionShell::Zsh, &home).to_string_lossy().contains(".zsh"));
+        assert!(completion_file_path(CompletionShell::Fish, &home).to_string_lossy().contains(".config/fish/completions"));
+    }
+
+    #[test]
+    fn shell_detection_is_supported() {
+        assert_eq!(detect_shell(Some("/bin/bash")), Some(CompletionShell::Bash));
+        assert_eq!(detect_shell(Some("/bin/zsh")), Some(CompletionShell::Zsh));
+        assert_eq!(detect_shell(Some("/usr/bin/fish")), Some(CompletionShell::Fish));
+        assert_eq!(detect_shell(Some("powershell.exe")), Some(CompletionShell::PowerShell));
+    }
+
+    #[test]
+    fn compatibility_notes_cover_pip_and_cargo_users() {
+        assert!(pip_compatibility_note().contains("Pip installs"));
+        assert!(cargo_compatibility_note().contains("Cargo installs"));
+    }
+
+    #[test]
+    fn install_health_report_performance_is_within_sanity_budget() {
+        let started = std::time::Instant::now();
+        let _report = install_health_report("", None, None, "1.0.0");
+        assert!(started.elapsed() < std::time::Duration::from_millis(100));
     }
 }

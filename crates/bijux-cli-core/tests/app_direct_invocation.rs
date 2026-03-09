@@ -46,6 +46,10 @@ fn direct_core_invocation_doctor() {
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "healthy");
+    assert!(payload["install"]["has_path_shadowing"].is_boolean());
+    assert!(payload["install"]["has_duplicate_installs"].is_boolean());
+    assert!(payload["install"]["stale_wrapper_scripts"].is_array());
+    assert!(payload["install"]["legacy_installer_conflicts"].is_boolean());
 }
 
 #[test]
@@ -74,6 +78,8 @@ fn direct_core_invocation_cli_paths() {
     assert!(payload.get("config").is_some());
     assert!(payload.get("history").is_some());
     assert!(payload.get("plugins").is_some());
+    assert!(payload.get("path_binaries").is_some());
+    assert!(payload.get("post_install_hint").is_some());
 }
 
 #[test]
