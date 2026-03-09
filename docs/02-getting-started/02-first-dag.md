@@ -1,113 +1,73 @@
 # First Dag
 
-Guide a new user from empty workspace to a valid DAG with explicit execution order.
+Create a small but real graph that produces a visible artifact and has meaningful dependency behavior.
 
-This is the first hands-on step after installation.
+## Author the graph
 
-## Explanation
-Use a two-node DAG to make ordering explicit and easy to debug.
+Save this as `./examples/first-orders.dag.json`:
 
-Beginner walkthrough:
-1. Create a DAG file.
-2. Define two nodes.
-3. Make node B depend on node A.
-4. Run the DAG.
-5. Inspect run output.
-
-Beginner mental model:
-- A graph is a plan.
-- A run is one execution of that plan.
-- A dependency edge means "must run after".
-
-Quick start summary:
-- Author DAG
-- Run DAG
-- Inspect run
-- Replay if needed
-- Diff when behavior changes
-
-Field-level explanation for the first DAG:
-- `graph_id`: stable identifier for this graph definition example.
-- `nodes`: ordered list of node definitions (ordering in file is authoring order, not execution guarantee by itself).
-- `id`: unique node identifier within this graph.
-- `command`: shell command executed for the node.
-- `depends_on`: list of prerequisite node IDs that must complete first.
-
-Dependency explanation:
-- `transform` depends on `prepare`, so scheduler cannot run `transform` before `prepare` succeeds.
-- if `prepare` fails, `transform` will not execute in normal dependency-correct mode.
-
-Why this graph is valid:
-- node IDs are unique (`prepare`, `transform`).
-- dependency targets are resolvable (`transform` references existing node `prepare`).
-- dependency graph is acyclic.
-- each node has executable intent (`command`) and explicit dependency set.
-
-## Examples
 ```json
 {
-  "graph_id": "EXAMPLE_GRAPH_001",
+  "graph_id": "ORDERS_FIRST_GRAPH",
   "nodes": [
     {
-      "id": "prepare",
-      "command": "echo ok > out/input.txt",
+      "id": "extract_orders",
+      "command": "printf 'order_id,total\n1,19\n2,42\n' > out/orders_raw.csv",
       "depends_on": []
     },
     {
-      "id": "transform",
-      "command": "cat out/input.txt > out/result.txt",
-      "depends_on": ["prepare"]
+      "id": "summarize_orders",
+      "command": "tail -n +2 out/orders_raw.csv | awk -F, '{sum += $2} END {print sum}' > out/orders_total.txt",
+      "depends_on": ["extract_orders"]
     }
   ]
 }
 ```
 
-```mermaid
-graph LR
-  A[prepare] --> B[transform]
-```
+Inline field meaning:
+
+- `graph_id`: stable identity label for this definition.
+- `nodes`: executable units in this graph.
+- `id`: unique node key used by dependencies.
+- `command`: execution intent for the node.
+- `depends_on`: required predecessors.
+
+## Why this graph is valid
+
+- Node IDs are unique.
+- `summarize_orders` depends on an existing node (`extract_orders`).
+- Dependency topology is acyclic.
+- Each node has explicit executable intent.
+
+These map directly to DAG validation rules.
+
+## Run it and verify success
 
 ```bash
-# 1) Save the JSON as ./examples/first.dag.json
-# 2) Execute the graph
-bijux-dag run --dag ./examples/first.dag.json > run-output.txt
-
-# Example important output fields:
-# run_id: RUN_20260309_001
-# status: succeeded
-# graph_id: EXAMPLE_GRAPH_001
-
-# 3) Read run id from output, then inspect
-bijux-dag inspect run --run-id RUN_20260309_001
-
-# 4) Inspect produced artifacts (example command surface)
-bijux-dag inspect artifact --run-id RUN_20260309_001
+bijux-dag run --dag ./examples/first-orders.dag.json
 ```
+
+Expected success signals:
 
 ```text
-Expected artifact outcomes:
-- after node "prepare": out/input.txt exists
-- after node "transform": out/result.txt exists
+- run_id is returned (example: RUN_20260309_301)
+- terminal status is succeeded
+- artifact/output references include out/orders_raw.csv and out/orders_total.txt
 ```
 
-```text
-Execution graph behavior:
-- schedulable set at start: [prepare]
-- schedulable set after prepare success: [transform]
-- terminal state: succeeded (if both commands succeed)
+Follow-up checks:
+
+```bash
+bijux-dag inspect run --run-id RUN_20260309_301
+bijux-dag inspect artifact --run-id RUN_20260309_301
 ```
 
-## Guarantees
-- This tutorial uses explicit dependency ordering.
-- Example shape is intentionally minimal and readable.
-- The dependency chain produces deterministic ordering for this sample graph.
+Interpretation:
 
-## Limitations
-- Advanced backend/runtime options are out of scope.
-- Schema-level constraints are documented in specification docs.
+- inspect run should show both nodes as succeeded,
+- inspect artifact should show lineage from each output to producing node.
 
-## Related
-- `docs/02-getting-started/03-running-a-pipeline.md`
-- `docs/02-getting-started/04-understanding-runs.md`
-- `docs/03-user-guide/01-authoring-dags.md`
-- `docs/06-specification/01-dag-model.md`
+## Next reading
+
+- Full execution and evidence walkthrough: [Running A Pipeline](../02-getting-started/03-running-a-pipeline.md)
+- How run records are structured and interpreted: [Understanding Runs](../02-getting-started/04-understanding-runs.md)
