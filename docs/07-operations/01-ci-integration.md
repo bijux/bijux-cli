@@ -1,22 +1,67 @@
-# Ci Integration
+# CI Integration
 
 ## Purpose
-Define the reader-facing intent for this document.
+Define the contract for integrating bijux-dag execution and validation into CI pipelines.
 
 ## Context
-Explain where this topic sits in bijux-dag.
+CI is the operational control point for consistent DAG validation, deterministic execution checks, and release readiness.
 
 ## Explanation
-Primary explanation content goes here.
+CI pipeline baseline stages:
+1. environment setup and toolchain pinning.
+2. DAG/schema validation.
+3. deterministic test and replay/diff checks.
+4. quality gates and publishing decisions.
+
+Recommended CI job topology:
+- `validate`: static checks, DAG/schema validation, basic command surface verification.
+- `test`: unit/integration lanes and fixture-backed behavior checks.
+- `determinism`: selected replay/diff checks against known baselines.
+- `release-readiness`: strict gate for tagged builds.
+
+CI requirements:
+- pin language/runtime versions to reduce drift.
+- persist essential test/replay artifacts for post-failure diagnostics.
+- publish concise run summary with failure reason classification.
+
+Failure handling:
+- fail fast for schema/contract violations.
+- classify runtime failures separately from infrastructure failures.
+- retain enough context for deterministic reproduction.
 
 ## Examples
-Add executable and realistic examples.
+```yaml
+name: ci
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -p bijux-dev-dag -- docs validate
+      - run: cargo test --workspace --locked
+```
+
+```text
+Expected CI summary fields:
+- commit_sha
+- lane_statuses
+- replay_or_diff_gate
+- final_decision
+```
 
 ## Guarantees
-State explicit guarantees only.
+- CI integration contract defines a reproducible and auditable execution path.
+- Failure classes remain distinguishable for faster remediation.
+- Determinism checks can be enforced as explicit release gates.
 
 ## Limitations
-State explicit non-guarantees and boundaries.
+- This document does not mandate one CI vendor.
+- Lane composition may differ by repository size or release policy.
+- Network and host volatility can still cause infrastructure-level flakiness.
 
 ## Related
-- Add 2-5 direct related docs from this new structure.
+- `docs/07-operations/02-reproducible-builds.md`
+- `docs/07-operations/05-backend-support.md`
+- `docs/08-development/02-testing-strategy.md`
+- `docs/08-development/04-contributing.md`
