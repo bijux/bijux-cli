@@ -104,7 +104,7 @@ fn direct_core_invocation_history_root() {
     let out = run_app(&["bijux".to_string(), "history".to_string()]).expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
-    assert_eq!(payload["count"], 0);
+    assert!(payload["entries"].is_array());
 }
 
 #[test]

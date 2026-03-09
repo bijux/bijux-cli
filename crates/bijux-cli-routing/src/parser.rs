@@ -194,7 +194,12 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("repl"))
         .subcommand(Command::new("completion"))
         .subcommand(Command::new("inspect"))
-        .subcommand(Command::new("history"))
+        .subcommand(
+            Command::new("history")
+                .arg(Arg::new("limit").long("limit").short('l').num_args(1))
+                .arg(Arg::new("filter").long("filter").short('F').num_args(1))
+                .arg(Arg::new("sort").long("sort").num_args(1)),
+        )
 }
 
 fn extract_path(matches: &ArgMatches) -> Vec<String> {

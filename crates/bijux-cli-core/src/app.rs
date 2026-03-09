@@ -219,6 +219,61 @@ fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> 
     positional
 }
 
+fn history_entry_from_command(command: &str) -> Value {
+    json!({
+        "command": command,
+        "params": [],
+        "timestamp": 0.0,
+        "success": true,
+        "return_code": 0,
+        "duration_ms": 0.0,
+        "raw": {},
+    })
+}
+
+fn parse_history_entries(text: &str) -> Result<Vec<Value>> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    if let Ok(value) = serde_json::from_str::<Value>(trimmed) {
+        if let Some(items) = value.as_array() {
+            return Ok(items.iter().filter(|item| item.is_object()).cloned().collect());
+        }
+        anyhow::bail!("Unexpected history file format (not JSON array)");
+    }
+
+    // Compatibility fallback for line-oriented history files with partial corruption.
+    let mut out = Vec::new();
+    for raw_line in text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Ok(value) = serde_json::from_str::<Value>(line) {
+            if value.is_object() {
+                out.push(value);
+            }
+            continue;
+        }
+        out.push(history_entry_from_command(line));
+    }
+    Ok(out)
+}
+
+fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+    let text = fs::read_to_string(path)?;
+    let mut entries = parse_history_entries(&text)?;
+    if entries.len() > limit {
+        entries = entries.split_off(entries.len() - limit);
+    }
+    Ok(entries)
+}
+
 fn render_command_help(path: &[&str]) -> Result<String> {
     let mut cmd = root_command();
     let target =
@@ -417,7 +472,43 @@ fn route_response(
             json!({"status": "updated", "key": key, "value": value, "updated": paths.config_file})
         }
         [a] if a == "history" => {
-            json!({"entries": [], "count": 0})
+            let positional = command_positionals(argv, &["history"]);
+            let mut limit = 20_usize;
+            if let Some(idx) = argv.iter().position(|arg| arg == "--limit" || arg == "-l") {
+                if let Some(raw) = argv.get(idx + 1) {
+                    limit = raw.parse::<usize>().unwrap_or(20);
+                }
+            }
+            if let Some(raw) = positional.first().and_then(|token| token.strip_prefix("--limit=")) {
+                limit = raw.parse::<usize>().unwrap_or(20);
+            }
+            let mut entries = read_history_entries(&paths.history_file, limit)?;
+            if let Some(idx) = argv.iter().position(|arg| arg == "--filter" || arg == "-F") {
+                if let Some(needle) = argv.get(idx + 1) {
+                    entries.retain(|entry| {
+                        entry
+                            .get("command")
+                            .and_then(Value::as_str)
+                            .map(|command| command.contains(needle))
+                            .unwrap_or(false)
+                    });
+                }
+            }
+            if argv.iter().any(|arg| arg == "--sort")
+                && argv
+                    .iter()
+                    .position(|arg| arg == "--sort")
+                    .and_then(|idx| argv.get(idx + 1))
+                    .map(|value| value == "timestamp")
+                    .unwrap_or(false)
+            {
+                entries.sort_by(|a, b| {
+                    let left = a.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
+                    let right = b.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
+                    left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal)
+                });
+            }
+            json!({"entries": entries})
         }
         [a, b] if a == "cli" && b == "self-test" => {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
