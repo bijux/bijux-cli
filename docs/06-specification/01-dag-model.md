@@ -90,3 +90,25 @@ Validation result:
 - `docs/06-specification/04-graph-identity.md`
 - `docs/05-system-architecture/04-scheduler.md`
 - `docs/03-user-guide/01-authoring-dags.md`
+
+## Contract form: invariants and graph-identity relevance
+
+Invariant set:
+
+- every dependency edge endpoint MUST resolve to a declared node,
+- topological ordering MUST exist for a valid DAG,
+- canonical semantic representation MUST be derivable.
+
+Graph-identity relevant fields include node semantics and dependency topology. Graph-identity irrelevant fields include formatting and explicitly non-semantic annotations.
+
+## Normalized and invalid examples
+
+Normalized example (identity-preserving):
+
+- reorder node declarations without changing dependency semantics.
+- expected result: same canonical form and same graph identity.
+
+Invalid example (identity generation blocked):
+
+- node `train` depends on unknown node `prepare_data`.
+- expected result: validation failure `INVALID-DAG-UNKNOWN-DEPENDENCY`; graph identity MUST NOT be emitted.

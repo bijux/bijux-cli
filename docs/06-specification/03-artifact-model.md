@@ -78,3 +78,23 @@ source artifact hash == target artifact hash
 - `docs/06-specification/06-artifact-identity.md`
 - `docs/06-specification/08-diff-semantics.md`
 - `docs/05-system-architecture/06-artifact-store.md`
+
+## Payload, metadata, and lineage field boundaries
+
+Field classes:
+
+- payload fields: canonical output bytes/content representation.
+- metadata fields: artifact ID, hash, kind, timestamps, storage reference.
+- lineage fields: producing run ID, producing node ID, ancestry references.
+
+These classes MUST remain distinguishable so identity and provenance checks are auditable.
+
+## Corruption and invalid-state handling
+
+Additional invalid/corrupt states:
+
+- metadata exists but referenced payload missing,
+- payload exists but hash mismatch against stored identity,
+- lineage references unknown run/node records.
+
+Corrupt artifacts MUST be classified as non-trustworthy evidence for replay/diff until repaired or regenerated.

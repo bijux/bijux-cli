@@ -88,3 +88,33 @@ node_result.test.artifacts = [a_12b..., a_712...]
 - `docs/06-specification/03-artifact-model.md`
 - `docs/06-specification/05-run-identity.md`
 - `docs/03-user-guide/04-run-history.md`
+
+## Run classes and evidence interpretation
+
+Run classes that MUST be distinguishable:
+
+- successful run,
+- failed run,
+- canceled run,
+- replayed run,
+- imported run.
+
+Replayed and imported runs are valid run records but have distinct provenance class and should not be silently merged with original native runs.
+
+## Authoritative versus derived run data
+
+Authoritative fields:
+
+- run identity,
+- graph identity reference,
+- terminal status,
+- node terminal outcomes,
+- artifact linkage references.
+
+Derived fields:
+
+- summarized dashboards,
+- trend aggregates,
+- cached labels for convenience.
+
+Contract rule: derived fields may be regenerated; authoritative fields define run truth.
