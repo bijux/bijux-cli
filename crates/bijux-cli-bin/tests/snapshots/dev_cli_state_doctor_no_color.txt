@@ -1,7 +1,18 @@
 {
   "doctor": {
-    "issues": [],
-    "status": "healthy"
+    "issues": [
+      {
+        "area": "memory",
+        "keys": [
+          "int_test_key"
+        ],
+        "message": "memory entries with wrong-type values detected",
+        "path": "/Users/bijan/.bijux/.memory.json",
+        "severity": "warning"
+      }
+    ],
+    "repairs": [],
+    "status": "degraded"
   },
   "runtime": "dev-cli"
 }
