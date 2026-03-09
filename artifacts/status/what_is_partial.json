@@ -1,0 +1,583 @@
+{
+  "generated_at": "2026-03-09T23:05:45.088173+00:00",
+  "generator": "scripts/status/generate_truth_milestone_status.py",
+  "items": [
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "audit",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli completion",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config clear",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config export",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config get",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config load",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config reload",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config set",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config unset",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli doctor",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli inspect",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli paths",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins inspect",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins list",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli repl",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli self-test",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli status",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli version",
+      "confidence": 0.35,
+      "group": "cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "completion",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config",
+      "confidence": 0.7,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config clear",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config export",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config get",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config load",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config reload",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config set",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config unset",
+      "confidence": 0.35,
+      "group": "config",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli contracts",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli crate-health",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli docs",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli docs-prune-plan",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli doctor",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli env",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli fixture-audit",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli inventory",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli package-health",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli parity",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli registry",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli routes",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli runtime-identity",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli scripts-audit",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli snapshots-audit",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli status",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev contracts",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev crate-health",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev docs",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev docs-prune-plan",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev doctor",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev env",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev fixture-audit",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev inventory",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev package-health",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev parity",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev registry",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev routes",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev runtime-identity",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev scripts-audit",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev snapshots-audit",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev status",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "docs",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "doctor",
+      "confidence": 0.7,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "history",
+      "confidence": 0.7,
+      "group": "history",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "inspect",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory",
+      "confidence": 0.35,
+      "group": "memory",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory list",
+      "confidence": 0.35,
+      "group": "memory",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins inspect",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins list",
+      "confidence": 0.7,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "repl",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "sleep",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "status",
+      "confidence": 0.7,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "version",
+      "confidence": 0.7,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    }
+  ],
+  "source": {
+    "command_matrix": "artifacts/parity/command_parity_matrix.json",
+    "current_state": "artifacts/status/current_rust_state.json",
+    "plugin_state": "artifacts/status/plugin_state_report.json"
+  },
+  "summary": {
+    "count": 71,
+    "scope": "commands marked partial in parity matrix"
+  }
+}

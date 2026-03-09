@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-03-09T23:05:45.088173+00:00",
+  "generator": "scripts/status/generate_truth_milestone_status.py",
+  "items": [
+    {
+      "blocker": "",
+      "command": "plugins check",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "parity-council",
+      "reason": "Rust emits normalized diagnostics while Python emits plugin-loader stderr traces."
+    }
+  ],
+  "source": {
+    "command_matrix": "artifacts/parity/command_parity_matrix.json",
+    "current_state": "artifacts/status/current_rust_state.json",
+    "plugin_state": "artifacts/status/plugin_state_report.json"
+  },
+  "summary": {
+    "count": 1,
+    "scope": "commands marked intentionally-different in parity matrix"
+  }
+}

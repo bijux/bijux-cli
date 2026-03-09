@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-03-09T23:05:45.088173+00:00",
+  "generator": "scripts/status/generate_truth_milestone_status.py",
+  "items": [
+    {
+      "area": "runtime-channels",
+      "evidence": ".github/workflows/ci.yml",
+      "item": "homebrew smoke test",
+      "reason": "formula publishing is not enabled yet"
+    },
+    {
+      "area": "plugin-lifecycle",
+      "evidence": "artifacts/status/plugin_state_report.json",
+      "item": "full scaffold/install/uninstall parity",
+      "reason": "plugin command coverage is still partial in current report"
+    },
+    {
+      "area": "parity",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "item": "global complete parity claim",
+      "reason": "command parity matrix still contains partial and missing commands"
+    },
+    {
+      "area": "runtime-identity",
+      "evidence": "artifacts/status/current_rust_state.json",
+      "item": "canonical runtime identity",
+      "reason": "runtime identity is not fully converged"
+    },
+    {
+      "area": "plugin",
+      "evidence": "artifacts/status/plugin_state_report.json",
+      "item": "scaffold command parity against Python templates",
+      "reason": "explicit plugin gap still open"
+    },
+    {
+      "area": "plugin",
+      "evidence": "artifacts/status/plugin_state_report.json",
+      "item": "full CLI lifecycle command parity for install/uninstall/enable/disable",
+      "reason": "explicit plugin gap still open"
+    },
+    {
+      "area": "plugin",
+      "evidence": "artifacts/status/plugin_state_report.json",
+      "item": "end-to-end CLI plugin diagnostics parity for all failure classes",
+      "reason": "explicit plugin gap still open"
+    }
+  ],
+  "source": {
+    "command_matrix": "artifacts/parity/command_parity_matrix.json",
+    "current_state": "artifacts/status/current_rust_state.json",
+    "plugin_state": "artifacts/status/plugin_state_report.json"
+  },
+  "summary": {
+    "count": 7,
+    "scope": "known intentionally deferred work"
+  }
+}
