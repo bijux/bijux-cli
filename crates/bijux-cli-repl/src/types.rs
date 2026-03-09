@@ -118,6 +118,9 @@ pub enum ReplError {
     /// Kernel failed.
     #[error("kernel execution failed")]
     Kernel(bijux_cli_core::kernel::KernelError),
+    /// Core app execution failed.
+    #[error("core execution failed: {0}")]
+    Core(String),
     /// Output encoding failed.
     #[error(transparent)]
     Emit(#[from] bijux_cli_output::EmitError),

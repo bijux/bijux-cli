@@ -1,37 +1,11 @@
-use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
-
 use bijux_cli_contracts::{
-    CommandPath, ErrorEnvelopeV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
-    PrettyMode,
+    ColorMode, LogLevel, OutputFormat, PrettyMode,
 };
-use bijux_cli_core::kernel::{
-    DiagnosticsHook, Handler, LifecycleHook, SyncHandler, assemble_context, build_intent_from_argv,
-    execute_pipeline,
-};
-use bijux_cli_output::{EmitterConfig, OutputStream as EmitStream, emit_error, emit_success};
-use bijux_cli_routing::parser::{parse_intent, root_command};
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use serde_json::json;
+use bijux_cli_core::app::run_app;
+use bijux_cli_routing::parser::root_command;
 
 use crate::history::push_history;
 use crate::types::{META_PREFIX, ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplStream};
-
-struct ReplHandler;
-
-impl SyncHandler for ReplHandler {
-    fn execute(
-        &self,
-        ctx: &bijux_cli_core::kernel::ExecutionContext,
-    ) -> Result<serde_json::Value, ErrorEnvelopeV1> {
-        Ok(json!({
-            "status": "ok",
-            "route": ctx.intent.command_path.join(" "),
-            "repl": true,
-            "trace": ctx.trace_mode,
-        }))
-    }
-}
 
 fn parse_shell_tokens(input: &str) -> Vec<String> {
     shlex::split(input)
@@ -119,67 +93,63 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
     }
 }
 
-fn emit_with_policy(
-    session: &ReplSession,
-    emission: bijux_cli_core::kernel::Emission,
-) -> Result<Option<ReplFrame>, ReplError> {
-    let config = EmitterConfig {
-        format: session.policy.output_format,
-        pretty: session.policy.pretty_mode == PrettyMode::Pretty,
-        color: session.policy.color_mode,
-        log_level: session.policy.log_level,
-        quiet: session.policy.quiet,
-        no_color: true,
-    };
+fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> Vec<String> {
+    let mut argv = vec!["bijux".to_string()];
 
-    let value = emission.payload;
-    if emission.stream == bijux_cli_core::kernel::OutputStream::Stdout {
-        let envelope = serde_json::from_value(value).unwrap_or_else(|_| OutputEnvelopeV1 {
-            status: "ok".to_string(),
-            data: json!({"repl": true}),
-            meta: OutputEnvelopeMetaV1 {
-                version: "v1".to_string(),
-                command: CommandPath {
-                    segments: vec![Namespace("repl".to_string())],
-                },
-                timestamp: "1970-01-01T00:00:00Z".to_string(),
-            },
-        });
+    argv.push("--format".to_string());
+    argv.push(
+        match session.policy.output_format {
+            OutputFormat::Json => "json",
+            OutputFormat::Yaml => "yaml",
+            OutputFormat::Text => "text",
+            _ => "json",
+        }
+        .to_string(),
+    );
 
-        return Ok(emit_success(&envelope, config)?.map(|rendered| ReplFrame {
-            stream: match rendered.stream {
-                EmitStream::Stdout => ReplStream::Stdout,
-                EmitStream::Stderr => ReplStream::Stderr,
-            },
-            content: rendered.content,
-        }));
+    argv.push(
+        match session.policy.pretty_mode {
+            PrettyMode::Pretty => "--pretty",
+            PrettyMode::Compact => "--no-pretty",
+            _ => "--pretty",
+        }
+        .to_string(),
+    );
+
+    if session.policy.quiet {
+        argv.push("--quiet".to_string());
     }
 
-    let envelope = serde_json::from_value(value).unwrap_or_else(|_| ErrorEnvelopeV1 {
-        status: "error".to_string(),
-        error: bijux_cli_contracts::ErrorPayloadV1 {
-            code: "repl_error".to_string(),
-            message: "REPL emission parsing failed".to_string(),
-            category: "internal".to_string(),
-            details: None,
-        },
-        meta: OutputEnvelopeMetaV1 {
-            version: "v1".to_string(),
-            command: CommandPath {
-                segments: vec![Namespace("repl".to_string())],
-            },
-            timestamp: "1970-01-01T00:00:00Z".to_string(),
-        },
-    });
+    argv.push("--color".to_string());
+    argv.push(
+        match session.policy.color_mode {
+            ColorMode::Auto => "auto",
+            ColorMode::Always => "always",
+            ColorMode::Never => "never",
+            _ => "never",
+        }
+        .to_string(),
+    );
 
-    let rendered = emit_error(&envelope, config)?;
-    Ok(Some(ReplFrame {
-        stream: match rendered.stream {
-            EmitStream::Stdout => ReplStream::Stdout,
-            EmitStream::Stderr => ReplStream::Stderr,
+    argv.push("--log-level".to_string());
+    argv.push(
+        if session.trace_mode {
+            "trace".to_string()
+        } else {
+            match session.policy.log_level {
+                LogLevel::Trace => "trace",
+                LogLevel::Debug => "debug",
+                LogLevel::Info => "info",
+                LogLevel::Warning => "warning",
+                LogLevel::Error => "error",
+                _ => "info",
+            }
+            .to_string()
         },
-        content: rendered.content,
-    }))
+    );
+
+    argv.extend_from_slice(&line_argv[1..]);
+    argv
 }
 
 /// Execute one REPL input event with interrupt/EOF-safe behavior.
@@ -227,55 +197,29 @@ pub fn execute_repl_input(session: &mut ReplSession, input: ReplInput) -> Result
 
             let argv = repl_argv_from_line(&final_line);
 
-            let parsed = match parse_intent(&argv) {
-                Ok(value) => value,
-                Err(error) => {
-                    session.last_error = Some(error.to_string());
-                    return Err(ReplError::Parser(error));
-                }
-            };
-            let mut registry = RouteRegistry::default();
-            let _ = registry.register_plugin_namespace("community");
-            let target = match registry.resolve(&parsed.normalized_path) {
-                Ok(value) => value,
-                Err(error) => {
-                    session.last_error = Some(error.to_string());
-                    return Err(ReplError::Route(error));
-                }
-            };
-
-            let intent = build_intent_from_argv(&argv);
-            let context = assemble_context(
-                intent,
-                session.policy.clone(),
-                None,
-                Arc::new(AtomicBool::new(false)),
-                session.trace_mode,
-            );
-
-            let handler = match target {
-                RouteTarget::BuiltIn | RouteTarget::Plugin(_) => Handler::Sync(Box::new(ReplHandler)),
-            };
-
-            let diagnostics: Vec<Arc<dyn DiagnosticsHook>> = Vec::new();
-            let lifecycle: Vec<Arc<dyn LifecycleHook>> = Vec::new();
-            let result = execute_pipeline(&context, &handler, &diagnostics, &lifecycle)
-                .map_err(|error| {
-                    session.last_error = Some(format!("{error:?}"));
-                    ReplError::Kernel(error)
-                })?;
+            let effective_argv = apply_session_policy_to_argv(session, &argv);
+            let result = run_app(&effective_argv).map_err(|error| {
+                session.last_error = Some(error.to_string());
+                ReplError::Core(error.to_string())
+            })?;
 
             session.commands_executed += 1;
-            session.last_exit_code = result.exit_code as i32;
+            session.last_exit_code = result.exit_code;
 
-            let frame = match result.emission {
-                Some(emission) => emit_with_policy(session, emission)?,
-                None => None,
+            let frame = if !result.stdout.is_empty() {
+                Some(ReplFrame {
+                    stream: ReplStream::Stdout,
+                    content: result.stdout,
+                })
+            } else if !result.stderr.is_empty() {
+                session.last_error = Some(result.stderr.clone());
+                Some(ReplFrame {
+                    stream: ReplStream::Stderr,
+                    content: result.stderr,
+                })
+            } else {
+                None
             };
-
-            if let Some(trace) = result.trace {
-                session.last_error = Some(format!("trace:{}", trace.invocation_id));
-            }
 
             Ok(ReplEvent::Continue(frame))
         }
