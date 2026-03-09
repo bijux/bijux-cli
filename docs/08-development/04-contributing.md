@@ -28,6 +28,7 @@ Review gates:
 - clarity: names, file locations, and docs are understandable long-term.
 - safety: sensitive operations and trust boundaries are respected.
 - maintainability: no avoidable duplication, coupling, or stale scaffolding.
+- reader-outcome check: reviewer can state what the reader should understand and confirm the doc achieves it.
 
 Final quality pass guidance:
 - keep prose concise while preserving contract precision.
@@ -39,7 +40,7 @@ Final quality pass guidance:
 - prefer direct mechanics over abstract policy language.
 
 Documentation contribution standards:
-- docs must use required section template.
+- docs should use the structure that best teaches the topic; fixed template symmetry is not required.
 - claims must distinguish guarantees vs limitations.
 - terminology must align with introduction/specification vocabulary.
 - avoid governance noise in user-facing guides.

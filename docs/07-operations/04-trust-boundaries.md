@@ -28,6 +28,17 @@ Trust-boundary recommendations:
 - require operator approval for privileged cross-zone operations.
 - treat unknown trust states as blocking until resolved.
 
+Safe assumptions vs unsafe assumptions:
+- safe: validated DAG input + stable capability descriptor + explicit replay/diff evidence.
+- unsafe: imported bundle trusted without verification.
+- unsafe: unknown classification interpreted as equivalent.
+- unsafe: backend capability gaps ignored during portability decisions.
+
+If you cross this boundary, re-verify:
+- DAG source changed -> rerun validation and baseline replay.
+- backend/adapter changed -> rerun replay and diff before release decisions.
+- imported bundle from external source -> verify integrity and lineage before execution.
+
 ## Examples
 ```text
 Boundary crossing example:

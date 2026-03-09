@@ -33,6 +33,16 @@ Failure handling:
 - classify runtime failures separately from infrastructure failures.
 - retain enough context for deterministic reproduction.
 
+What CI is expected to prove:
+- command and contract surfaces remain healthy for covered lanes.
+- selected replay/diff checks remain classification-consistent.
+- release gating policy is applied consistently.
+
+What CI cannot prove by itself:
+- universal backend equivalence outside tested capability envelope.
+- absence of environment-specific failures outside covered matrix.
+- correctness of external systems not represented in test evidence.
+
 ## Examples
 ```yaml
 name: ci
