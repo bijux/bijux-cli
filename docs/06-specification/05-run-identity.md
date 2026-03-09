@@ -1,110 +1,100 @@
-# Run Identity
+# Run Identity Specification
 
-Define run identity derivation, uniqueness boundaries, and attribution guarantees.
+Run identity is the identifier of one concrete execution attempt. It exists so history, inspect, replay, and artifact lineage can refer to a specific attempt even when multiple attempts use the same graph identity.
 
-Run identity links execution evidence to one concrete attempt of graph execution.
+## Contract surface
 
-## Explanation
-Run identity definition:
-- run identity uniquely identifies a concrete run attempt.
-- run identity is distinct from graph identity; multiple runs may share one graph identity.
+This specification defines:
+- run identity inputs and exclusions,
+- uniqueness and attribution rules,
+- relationship to graph identity and ancestry,
+- invalid states.
 
-Run identity input domains:
-- graph identity reference.
-- run creation context (timestamp/nonce/sequence as applicable).
-- execution mode and selected adapter context when declared identity-relevant.
+This specification does not define storage key naming or UI formatting.
 
-Formal run-identity rules:
-- RULE-RID-001: each run attempt MUST map to one unique run identity.
-- RULE-RID-002: repeated attempts MUST NOT reuse run identity.
-- RULE-RID-003: run identity generation MUST be deterministic with respect to declared inputs.
-- RULE-RID-004: run identity MUST be linkable to graph identity and node outcomes.
+## Normative requirements
 
-Uniqueness contract:
-- no two run attempts in the same identity namespace may share the same run identity.
-- retries create distinct run identities even when graph identity is unchanged.
+### Identity inputs
 
-Attribution contract:
-- run identity is the parent link for node outcomes and artifacts.
-- inspect/replay/diff workflows consume run identity as primary execution key.
-
-Stability boundaries:
-- run identity generation must be deterministic with respect to its generation function and supplied inputs.
-- uniqueness mechanisms may include monotonic sequence or collision-resistant random domains.
-
-Invalid state definitions:
-- INVALID-RID-DUPLICATE: same run identity assigned to distinct run attempts.
-- INVALID-RID-MISSING-GRAPH-LINK: run identity exists but graph reference missing.
-- INVALID-RID-NONDETERMINISTIC-GENERATION: same declared inputs produce divergent run identities.
-
-Edge cases:
-- retry after transient failure is valid and must allocate a new run identity.
-- same graph, same environment, different invocation time remains distinct run identity by attempt.
-
-## Examples
-```text
-Repeated execution over same graph:
-graph_id = g_44a...
-run_1 = r_100...
-run_2 = r_101...
-Result: same graph identity, different run identities
-```
-
-```text
-Run-to-artifact linkage:
-run.id: r_101...
-artifact.id: a_712...
-artifact.run_id: r_101...
-```
-
-## Guarantees
-- Run identity is unique per run attempt within identity namespace.
-- Run identity provides stable attribution anchor for run evidence.
-- Distinct run attempts are distinguishable even with identical DAG definitions.
-
-## Limitations
-- Run identity does not encode full artifact content.
-- Equality of run identity is not intended across independent identity namespaces.
-- This document does not define storage key layout details.
-
-## Related
-- `docs/06-specification/02-run-model.md`
-- `docs/06-specification/04-graph-identity.md`
-- `docs/06-specification/06-artifact-identity.md`
-- `docs/03-user-guide/04-run-history.md`
-
-## Identity inputs and exclusions
-
-Identity inputs (normative):
-
+Run identity MUST be derived from:
 - graph identity reference,
-- run-attempt uniqueness input (sequence/nonce/time slot within namespace),
-- identity policy version.
+- run-attempt uniqueness input inside namespace,
+- run identity policy version.
 
-Identity exclusions (normative):
+Run identity MAY include additional declared semantic execution selectors if policy marks them identity-relevant.
 
-- human-readable labels,
-- non-semantic annotations,
-- post-hoc derived analytics fields.
+Run identity MUST NOT be derived from:
+- display labels,
+- post-hoc analytics,
+- non-semantic annotations.
 
-## What changes run identity and what does not
+### Core rules
 
-Changes run identity:
+- `RULE-RID-001`: each run attempt MUST have exactly one run identity.
+- `RULE-RID-002`: distinct run attempts MUST NOT share run identity in one namespace.
+- `RULE-RID-003`: identity derivation MUST be deterministic for the declared input tuple.
+- `RULE-RID-004`: run identity MUST remain linkable to graph identity and run ancestry metadata.
 
-- new execution attempt over same graph,
-- change in identity namespace or uniqueness input,
-- identity-policy version change without compatibility mapping.
+## What changes run identity
 
-Does not change run identity:
+Changes that MUST change run identity:
+- new execution attempt,
+- change in namespace or uniqueness input,
+- incompatible run identity policy version change.
 
-- rendering format changes of the same run record,
-- addition of derived dashboard summaries,
+Changes that MUST NOT change run identity:
+- rendering format changes,
+- added derived summary fields,
 - non-semantic annotation edits.
 
 ## Relationship to graph identity and ancestry
 
-Run identity is a child of graph identity in attribution terms:
+- Many runs MAY share one graph identity.
+- Run identity identifies attempt-level evidence.
+- Ancestry fields classify relationship classes such as original, replayed, and imported.
+- Ancestry links MUST NOT collapse distinct run identities into one logical attempt.
 
-- one graph identity can parent many run identities,
-- run ancestry links distinguish original, replayed, and imported provenance classes,
-- ancestry links MUST NOT collapse distinct run identities into one logical attempt.
+## Invalid states
+
+- `INVALID-RID-DUPLICATE`: two distinct attempts share one run identity.
+- `INVALID-RID-MISSING-GRAPH-LINK`: run identity exists without graph identity link.
+- `INVALID-RID-NONDETERMINISTIC-DERIVATION`: same declared inputs produce different run identities.
+
+Implementations MUST reject invalid run identity records.
+
+## Worked examples
+
+Example: same graph, new attempt.
+
+```text
+graph_id: g_44a...
+run #1: r_100...
+run #2: r_101...
+Result: valid (same graph identity, distinct run identities)
+```
+
+Example: metadata-only change.
+
+```text
+Before: run r_101... label="nightly"
+After : run r_101... label="nightly-main"
+Result: run identity unchanged
+```
+
+## Guarantees
+
+- Run identity is unique per attempt within namespace.
+- Run identity gives stable attempt-level reference for evidence and lineage.
+- Distinct attempts remain distinguishable even with identical graph identity.
+
+## Non-guarantees
+
+- Run identity does not imply artifact content equivalence.
+- Run identity does not imply equal wall-clock behavior.
+- Run identity equality across different namespaces is not guaranteed.
+
+## Next reading
+
+- [Run model contract](docs/06-specification/02-run-model.md)
+- [Graph identity contract](docs/06-specification/04-graph-identity.md)
+- [Artifact identity contract](docs/06-specification/06-artifact-identity.md)

@@ -1,104 +1,87 @@
-# Artifact Identity
+# Artifact Identity Specification
 
-Define artifact identity derivation, hash classification rules, and lineage guarantees.
+Artifact identity is the identifier of canonical artifact content under a declared policy. It exists so systems can compare output equivalence while keeping provenance and lineage as separate evidence.
 
-Artifact identity is the portable output identity surface for comparison and audit.
+## Contract surface
 
-## Explanation
-Artifact identity definition:
-- artifact identity is a deterministic token derived from canonical artifact content and identity context.
+This specification defines:
+- artifact identity inputs and exclusions,
+- provenance and lineage interaction,
+- invalid and incomplete comparison states,
+- cross-policy compatibility behavior.
 
-Identity input domains:
-- canonical artifact bytes (or canonical structured representation).
-- artifact kind/type.
-- optional scoped namespace inputs when required by compatibility policy.
+This specification does not define transport format details or storage backend design.
 
-Formal artifact-identity rules:
-- RULE-AID-001: equivalent canonical artifact content MUST yield equal artifact identity.
-- RULE-AID-002: canonical content drift MUST yield artifact identity drift.
-- RULE-AID-003: artifact identity MUST remain lineage-attributable to producing run and node.
-- RULE-AID-004: identity comparisons MUST consider policy version compatibility.
+## Normative requirements
 
-Lineage binding:
-- artifact identity must be associated with producing `run_id` and `node_id`.
-- lineage binding enables contextual interpretation without mutating artifact hash value.
+### Identity inputs
 
-Classification rules:
-- equal artifact identity implies canonical content equivalence under same identity policy version.
-- non-equal identity implies content or identity-input divergence.
-- unknown/unclassified states must be surfaced explicitly when identity inputs are incomplete.
+Artifact identity MUST be derived from:
+- canonical artifact payload representation,
+- artifact-kind canonicalization policy,
+- artifact identity policy version.
 
-Algorithm governance:
-- hashing algorithm family must be explicitly versioned.
-- algorithm migration requires compatibility strategy and documentation.
+Artifact identity MUST NOT be derived from:
+- storage path unless explicitly declared semantic,
+- display metadata,
+- transport-container metadata outside canonical payload.
 
-Invalid state definitions:
-- INVALID-AID-MISSING-CANONICAL-CONTENT: identity computation input unavailable.
-- INVALID-AID-POLICY-MISMATCH: compared artifacts use incompatible identity policy versions without mapping.
-- INVALID-AID-MISSING-LINEAGE-BINDING: artifact cannot be attributed to run/node context.
+### Core rules
 
-Edge cases:
-- equivalent content with different file paths can remain identity-equivalent when path is non-semantic.
-- structured artifact identity requires deterministic canonical serialization before hashing.
+- `RULE-AID-001`: equal canonical payload under same policy MUST yield equal artifact identity.
+- `RULE-AID-002`: canonical payload drift MUST yield different artifact identity.
+- `RULE-AID-003`: artifact records MUST keep lineage links to producing run and node.
+- `RULE-AID-004`: cross-policy comparisons MUST be explicit; incompatible policies cannot be silently treated as equivalent.
 
-Compatibility notes:
-- policy-version transitions require explicit compatibility classification (`equivalent`, `drift`, or `unknown`).
+## Identity and lineage interaction
 
-## Examples
+Artifact identity answers content equivalence. Lineage answers production context.
+
+Equal identity with different lineage is valid and expected in replay/import scenarios.
+
+## Invalid and incomplete states
+
+- `INVALID-AID-MISSING-CANONICAL-PAYLOAD`: canonical payload unavailable for identity derivation.
+- `INVALID-AID-UNKNOWN-POLICY`: policy missing or unsupported.
+- `INVALID-AID-MISSING-LINEAGE`: record lacks required producing run/node linkage.
+- `INCOMPLETE-AID-COMPARISON`: one side missing required payload or policy to classify equivalence.
+
+Implementations MUST reject invalid records and MUST classify incomplete comparisons explicitly.
+
+## Worked examples
+
+Example: identical payload, different provenance.
+
 ```text
-Equivalent artifact content:
-source hash: sha256:2f67...
-target hash: sha256:2f67...
-artifact identity: equal
+artifact A id: a_2f67...
+artifact B id: a_2f67...
+A lineage: run r_101 / node transform
+B lineage: run r_188 / node transform
+Result: content-equivalent artifacts with different lineage significance
 ```
 
+Example: payload drift.
+
 ```text
-Different canonical content:
-source hash: sha256:2f67...
-target hash: sha256:8ad1...
-artifact identity: drift
+baseline artifact id : a_2f67...
+candidate artifact id: a_8ad1...
+Result: artifact drift
 ```
 
 ## Guarantees
-- Artifact identity is deterministic for equivalent canonical artifact content.
-- Identity drift is explicit and machine-comparable.
-- Artifact identity remains lineage-attributable via run and node links.
 
-## Limitations
-- Equal identity does not guarantee equivalent external side effects.
-- Identity depends on canonicalization correctness for each artifact kind.
-- This document does not mandate one universal storage backend.
+- Artifact identity is deterministic for canonical payload under fixed policy.
+- Identity drift is explicit for canonical payload drift.
+- Lineage linkage is preserved as separate evidence.
 
-## Related
-- `docs/06-specification/03-artifact-model.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/06-specification/08-diff-semantics.md`
-- `docs/03-user-guide/03-artifacts.md`
+## Non-guarantees
 
-## Identity inputs and exclusions
+- Equal artifact identity does not prove equal external side effects.
+- Equal artifact identity does not imply same producer run.
+- Artifact identity alone is insufficient for full incident attribution.
 
-Identity inputs (normative):
+## Next reading
 
-- canonical artifact content representation,
-- artifact kind canonicalization policy,
-- identity policy version.
-
-Identity exclusions (normative):
-
-- storage path when path is not declared semantic,
-- display labels and UI metadata,
-- transport container metadata not part of canonical content.
-
-## Provenance-sensitive comparison examples
-
-Identical content, different provenance:
-
-- artifact A and B share hash `sha256:2f67...`,
-- artifact A produced by `run r_101/node transform`,
-- artifact B produced by `run r_188/node transform`.
-
-Interpretation: content-equivalent artifacts can still have different lineage significance for audit/debug flows.
-
-## Interaction between identity and lineage
-
-Artifact identity answers content-equivalence. Lineage answers production context. Both are required for trustworthy replay/diff interpretation and incident attribution.
+- [Artifact model contract](docs/06-specification/03-artifact-model.md)
+- [Run identity contract](docs/06-specification/05-run-identity.md)
+- [Diff semantics contract](docs/06-specification/08-diff-semantics.md)

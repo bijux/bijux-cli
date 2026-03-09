@@ -1,102 +1,108 @@
-# Graph Identity
+# Graph Identity Specification
 
-Define how graph identity is derived and which inputs are identity-relevant.
+Graph identity is the stable identifier of DAG semantics. It exists so replay planning, drift detection, and history navigation can compare *definitions* without mixing in run-attempt noise.
 
-Graph identity anchors replay planning and drift detection at definition level.
+## Contract surface
 
-## Explanation
-Graph identity definition:
-- graph identity is a deterministic digest of canonical graph semantics.
-- identity domain is definition-level and independent of one specific run attempt.
+This specification defines:
+- identity-relevant DAG inputs,
+- canonicalization and hashing requirements,
+- invalid states,
+- compatibility requirements when canonicalization policy changes.
 
-Identity-relevant inputs:
-- normalized node definitions and dependency structure.
-- semantic execution configuration declared as definition-level contract inputs.
+This specification does not define CLI rendering or storage engine layout.
 
-Identity-irrelevant inputs:
-- formatting-only changes.
-- comments and non-semantic annotation fields.
-- ordering noise normalized by canonicalization rules.
+## Normative requirements
 
-Graph identity derivation pipeline:
-1. parse graph definition.
-2. canonicalize semantically relevant structure.
-3. serialize canonical form deterministically.
-4. hash canonical bytes with configured algorithm family.
-5. emit stable graph identity token.
+### Identity inputs
 
-Formal graph-identity rules:
-- RULE-GID-001: equivalent canonical graph semantics MUST yield equal graph identity.
-- RULE-GID-002: semantic graph changes MUST yield graph identity drift.
-- RULE-GID-003: non-semantic formatting differences MUST NOT change identity.
-- RULE-GID-004: identity emission MUST be tied to canonicalization/hash policy version.
+Graph identity MUST be computed from canonical semantic DAG content only. Identity-relevant fields are:
+- node set,
+- dependency edges,
+- node execution semantics,
+- semantic graph-level options declared identity-relevant by policy.
 
-Versioning and compatibility:
-- identity algorithm family and canonicalization rules are versioned.
-- compatibility windows must preserve comparability guarantees or provide explicit migration mapping.
+Identity-excluded fields are:
+- comments,
+- whitespace,
+- non-semantic annotation fields,
+- declaration order when order is not semantic.
 
-Invalid state definitions:
-- INVALID-GID-CANONICALIZATION-FAILURE: canonical semantic form cannot be produced.
-- INVALID-GID-HASH-POLICY-UNKNOWN: hashing policy version unavailable.
-- INVALID-GID-AMBIGUOUS-SEMANTIC-INPUT: semantic relevance cannot be resolved.
+### Derivation algorithm
 
-Edge cases:
-- node declaration reordering with unchanged semantics is identity-equivalent.
-- comment and whitespace changes are identity-irrelevant.
-- dependency edge changes are identity-relevant and must produce drift.
+A conforming implementation MUST:
+1. parse the DAG definition,
+2. produce a canonical semantic representation,
+3. serialize canonical representation deterministically,
+4. hash serialized bytes with an explicit identity policy version,
+5. emit graph identity with policy version reference.
 
-## Examples
-```text
-No-op formatting change:
-- graph hash before: g_44a...
-- graph hash after : g_44a...
-Result: same graph identity
-```
+### Core rules
 
-```text
-Dependency change (A no longer depends on B):
-- graph hash before: g_44a...
-- graph hash after : g_981...
-Result: graph identity drift detected
-```
+- `RULE-GID-001`: semantic-equivalent canonical DAG content MUST yield equal graph identity.
+- `RULE-GID-002`: any semantic DAG change MUST yield different graph identity.
+- `RULE-GID-003`: identity-excluded field changes MUST NOT change graph identity.
+- `RULE-GID-004`: identity values MUST be interpreted with the policy version that produced them.
 
-## Guarantees
-- Equivalent graph semantics produce identical graph identity values.
-- Semantic definition changes produce identity drift.
-- Identity derivation is deterministic under fixed algorithm/canonicalization version.
+## Invalid states
 
-## Limitations
-- Graph identity does not encode runtime environment state.
-- Identity equality does not imply success/failure equivalence for every execution context.
-- This document does not define cryptographic library implementation details.
+- `INVALID-GID-CANONICALIZATION-FAILURE`: canonical semantic form cannot be produced.
+- `INVALID-GID-UNKNOWN-POLICY`: identity policy version is missing or unsupported.
+- `INVALID-GID-AMBIGUOUS-SEMANTICS`: parser cannot resolve semantic meaning deterministically.
 
-## Related
-- `docs/06-specification/01-dag-model.md`
-- `docs/06-specification/05-run-identity.md`
-- `docs/06-specification/07-replay-semantics.md`
-- `docs/05-system-architecture/08-identity-model.md`
-
-## Sharpened identity algorithm contract
-
-Algorithm contract obligations:
-
-1. canonicalize semantic DAG structure,
-2. serialize canonical form deterministically,
-3. hash with declared policy version,
-4. emit identity token carrying policy provenance.
-
-Any failure in steps 1-3 MUST prevent identity emission.
+Implementations MUST reject identity emission for invalid states.
 
 ## Identity-preserving and identity-changing edits
 
 Identity-preserving edits:
-
-- whitespace/comment changes,
-- declaration order changes with unchanged semantic topology,
-- non-semantic annotation updates.
+- comment-only update,
+- whitespace or formatting-only change,
+- declaration reordering that does not alter semantic topology.
 
 Identity-changing edits:
+- add/remove dependency edge,
+- modify node execution semantics,
+- modify semantic graph option included in identity policy.
 
-- node command/semantic configuration changes,
-- dependency edge additions/removals,
-- semantic metadata changes marked identity-relevant.
+## Canonicalization policy evolution
+
+When canonicalization rules change:
+- policy version MUST change,
+- cross-version comparisons MUST be treated as incompatible unless an explicit compatibility mapping is defined,
+- tooling MUST report incompatibility explicitly, not as `equivalent`.
+
+## Worked examples
+
+Example: identity preserved by formatting change.
+
+```text
+Before: same nodes/edges, compact formatting
+After : same nodes/edges, expanded formatting and comments
+Result: same graph identity (g_44a...)
+```
+
+Example: identity changed by semantic edit.
+
+```text
+Before: node transform depends on validate
+After : dependency removed
+Result: different graph identity (g_44a... -> g_981...)
+```
+
+## Guarantees
+
+- Graph identity is deterministic under a fixed canonicalization policy.
+- Graph identity changes when semantic DAG content changes.
+- Identity-excluded edits do not cause identity drift.
+
+## Non-guarantees
+
+- Equal graph identity does not guarantee equal runtime outcome in all environments.
+- Graph identity does not encode run-attempt data.
+- Graph identity does not prove artifact equivalence by itself.
+
+## Next reading
+
+- [DAG model contract](docs/06-specification/01-dag-model.md)
+- [Run identity contract](docs/06-specification/05-run-identity.md)
+- [Replay semantics contract](docs/06-specification/07-replay-semantics.md)
