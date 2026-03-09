@@ -96,6 +96,29 @@ fn rel_to_root(path: &Path, root: &Path) -> String {
     path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
+fn detect_install_source(active_binary: Option<&str>) -> &'static str {
+    let Some(path) = active_binary else {
+        return "unknown";
+    };
+    if path.contains(".cargo") {
+        "cargo"
+    } else if path.contains("site-packages") || path.contains("venv") || path.contains(".venv") {
+        "pip"
+    } else if path.contains("pipx") {
+        "pipx"
+    } else if path.contains("homebrew") || path.contains("/brew/") {
+        "homebrew"
+    } else {
+        "unknown"
+    }
+}
+
+fn is_canonical_active_path(active_binary: Option<&str>) -> bool {
+    active_binary
+        .map(|path| path.ends_with(&format!("/{CANONICAL_EXECUTABLE}")) || path == CANONICAL_EXECUTABLE)
+        .unwrap_or(false)
+}
+
 fn classify_script(path: &str) -> &'static str {
     if path.starts_with("scripts/status/") || path.starts_with("scripts/parity/") {
         return "move-to-dev-cli";
@@ -1085,15 +1108,35 @@ fn route_response(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
+            let install_source = detect_install_source(install_report.active_binary.as_deref());
+            let is_shadowed = install_report.has_path_shadowing;
+            let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
+            let is_canonical_path = is_canonical_active_path(install_report.active_binary.as_deref());
             let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
             let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
             let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
             json!({
                 "runtime": "rust-foundation",
+                "schema": "runtime-identity-v1",
+                "public_runtime_binary_names": [CANONICAL_EXECUTABLE],
+                "secondary_public_runtime_binary_names": [],
                 "canonical_user_binary": CANONICAL_EXECUTABLE,
                 "active_binary": install_report.active_binary,
+                "install_source": install_source,
+                "active_path_is_canonical_name": is_canonical_path,
+                "active_path_is_shadowed": is_shadowed,
+                "active_binary_selection_is_ambiguous": is_ambiguous_active_binary,
                 "path_binaries": install_report.path_binaries,
+                "diagnostics": {
+                    "duplicate_install_detected": install_report.has_duplicate_installs,
+                    "mixed_pip_cargo_install_detected": install_report.has_duplicate_installs,
+                    "path_shadowing_detected": install_report.has_path_shadowing,
+                    "stale_wrapper_detected": !install_report.stale_wrapper_scripts.is_empty(),
+                    "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
+                    "mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
+                    "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
+                },
                 "entrypoints": {
                     "binary": "crates/bijux-cli-bin/src/main.rs",
                     "core": "bijux_cli_core::app::run_app",
@@ -1110,6 +1153,14 @@ fn route_response(
                     },
                     "canonical_crate_name": canonical_crate_name(),
                 },
+                "text_summary": [
+                    format!("canonical user binary: {CANONICAL_EXECUTABLE}"),
+                    format!("active executable: {}", install_report.active_binary.clone().unwrap_or_else(|| "not-found".to_string())),
+                    format!("install source: {install_source}"),
+                    format!("path shadowing: {}", if install_report.has_path_shadowing { "detected" } else { "not-detected" }),
+                    format!("duplicate installs: {}", if install_report.has_duplicate_installs { "detected" } else { "not-detected" }),
+                    format!("stale wrappers: {}", if install_report.stale_wrapper_scripts.is_empty() { "not-detected" } else { "detected" }),
+                ],
             })
         }
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => {

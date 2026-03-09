@@ -1,11 +1,24 @@
 {
   "active_binary": "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
+  "active_binary_selection_is_ambiguous": true,
+  "active_path_is_canonical_name": true,
+  "active_path_is_shadowed": true,
   "canonical_user_binary": "bijux",
+  "diagnostics": {
+    "duplicate_install_detected": false,
+    "legacy_installer_conflicts": [],
+    "mismatched_wheel_binary_versions": false,
+    "mixed_pip_cargo_install_detected": false,
+    "path_shadowing_detected": true,
+    "stale_wrapper_detected": false,
+    "stale_wrapper_scripts": []
+  },
   "entrypoints": {
     "binary": "crates/bijux-cli-bin/src/main.rs",
     "core": "bijux_cli_core::app::run_app",
     "python_bridge": "bijux_cli_python::bindings::execution_facade_api"
   },
+  "install_source": "unknown",
   "package_channels": {
     "canonical_crate_name": "bijux-cli",
     "cargo": {
@@ -21,5 +34,18 @@
     "/Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
     "/Users/bijan/.local/bin/bijux"
   ],
-  "runtime": "rust-foundation"
+  "public_runtime_binary_names": [
+    "bijux"
+  ],
+  "runtime": "rust-foundation",
+  "schema": "runtime-identity-v1",
+  "secondary_public_runtime_binary_names": [],
+  "text_summary": [
+    "canonical user binary: bijux",
+    "active executable: /Library/Frameworks/Python.framework/Versions/3.11/bin/bijux",
+    "install source: unknown",
+    "path shadowing: detected",
+    "duplicate installs: not-detected",
+    "stale wrappers: not-detected"
+  ]
 }

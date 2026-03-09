@@ -283,6 +283,33 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
 }
 
 #[test]
+fn direct_core_invocation_runtime_identity_exposes_runtime_diagnostics() {
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "runtime-identity".to_string(),
+    ])
+    .expect("run_app should succeed");
+    assert_eq!(out.exit_code, 0);
+    let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
+    assert_eq!(payload["canonical_user_binary"], "bijux");
+    assert!(payload["public_runtime_binary_names"].is_array());
+    assert!(payload["secondary_public_runtime_binary_names"].is_array());
+    assert!(payload["active_binary"].is_null() || payload["active_binary"].is_string());
+    assert!(payload["install_source"].is_string());
+    assert!(payload["active_path_is_canonical_name"].is_boolean());
+    assert!(payload["active_path_is_shadowed"].is_boolean());
+    assert!(payload["active_binary_selection_is_ambiguous"].is_boolean());
+    assert!(payload["diagnostics"]["duplicate_install_detected"].is_boolean());
+    assert!(payload["diagnostics"]["mixed_pip_cargo_install_detected"].is_boolean());
+    assert!(payload["diagnostics"]["path_shadowing_detected"].is_boolean());
+    assert!(payload["diagnostics"]["stale_wrapper_detected"].is_boolean());
+    assert!(payload["diagnostics"]["stale_wrapper_scripts"].is_array());
+    assert!(payload["text_summary"].is_array());
+}
+
+#[test]
 fn direct_core_invocation_inspect_failure_normalizes_usage_error() {
     let out = run_app(&[
         "bijux".to_string(),
