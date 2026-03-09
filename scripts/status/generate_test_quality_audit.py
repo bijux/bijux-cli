@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate test inventory and quality classification artifact."""
+"""Generate test inventory and quality classification artifacts."""
 
 from __future__ import annotations
 
@@ -11,11 +11,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts" / "status" / "test_quality_audit.json"
+WEAKEST_OUT = ROOT / "artifacts" / "status" / "top_20_weakest_tests.json"
+MISSING_FAILURE_OUT = ROOT / "artifacts" / "status" / "top_20_missing_failure_cases.json"
+MISSING_PARITY_OUT = ROOT / "artifacts" / "status" / "top_20_missing_parity_cases.json"
 
 CATEGORY_PATTERNS = [
     ("parity", ["parity", "python"]),
     ("snapshot", ["snapshot", "snapshots"]),
-    ("performance", ["benchmark", "performance", "latency"]),
+    ("perf", ["benchmark", "performance", "latency"]),
     ("resilience", ["malformed", "corrupt", "failure", "rollback", "missing"]),
     ("property", ["property", "proptest", "hypothesis"]),
     ("regression", ["regression", "golden", "compatibility"]),
@@ -35,8 +38,8 @@ def classify(path: Path, text: str) -> str:
     for category, patterns in CATEGORY_PATTERNS:
         if any(p in lower for p in patterns):
             return category
-    if any(x in lower for x in ["assert!(", "assert_eq!("]) and "error" not in lower and "fail" not in lower:
-        return "filler"
+    if shallow_score(text) >= 4:
+        return "weak"
     return "regression"
 
 
@@ -134,8 +137,8 @@ def collect_missing_scenarios(files: list[Path]) -> dict[str, list[str]]:
             missing_packaging.append(scenario)
 
     return {
-        "top_20_missing_failure_scenarios": missing_failure[:20],
-        "top_20_missing_parity_scenarios": missing_parity[:20],
+        "top_20_missing_failure_cases": missing_failure[:20],
+        "top_20_missing_parity_cases": missing_parity[:20],
         "top_20_missing_packaging_scenarios": missing_packaging[:20],
     }
 
@@ -173,6 +176,15 @@ def main() -> int:
         "tests": rows,
         "top_20_weakest_tests": weakest,
         **missing,
+        "quality_rules": [
+            "new commands require at least one failure-path test",
+            "stateful commands require at least one corruption or rollback test",
+            "parser changes require malformed-input coverage",
+            "plugin changes require namespace or rollback coverage",
+            "output changes require snapshot or diff coverage",
+            "install changes require ambiguity or path-failure coverage",
+            "no vanity test growth",
+        ],
         "flaky_tests": {
             "label": "flaky",
             "policy": "flaky tests must be explicitly tagged in ci metadata and tracked as debt",
@@ -182,7 +194,49 @@ def main() -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    WEAKEST_OUT.write_text(
+        json.dumps(
+            {
+                "generated_at": report["generated_at"],
+                "generator": report["generator"],
+                "tests": weakest,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    MISSING_FAILURE_OUT.write_text(
+        json.dumps(
+            {
+                "generated_at": report["generated_at"],
+                "generator": report["generator"],
+                "cases": missing["top_20_missing_failure_cases"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    MISSING_PARITY_OUT.write_text(
+        json.dumps(
+            {
+                "generated_at": report["generated_at"],
+                "generator": report["generator"],
+                "cases": missing["top_20_missing_parity_cases"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(f"wrote {OUT.relative_to(ROOT)}")
+    print(f"wrote {WEAKEST_OUT.relative_to(ROOT)}")
+    print(f"wrote {MISSING_FAILURE_OUT.relative_to(ROOT)}")
+    print(f"wrote {MISSING_PARITY_OUT.relative_to(ROOT)}")
     return 0
 
 

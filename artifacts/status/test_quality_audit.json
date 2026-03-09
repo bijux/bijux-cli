@@ -1,20 +1,30 @@
 {
   "category_counts": {
-    "parity": 26,
-    "performance": 1,
+    "parity": 27,
+    "perf": 1,
     "property": 9,
-    "regression": 7,
+    "regression": 6,
     "resilience": 5,
-    "snapshot": 8
+    "snapshot": 8,
+    "weak": 1
   },
   "flaky_tests": {
     "label": "flaky",
     "policy": "flaky tests must be explicitly tagged in ci metadata and tracked as debt",
     "tagging_source": "artifacts/status/flaky_tests.json"
   },
-  "generated_at": "2026-03-09T23:06:38.782727+00:00",
+  "generated_at": "2026-03-09T23:38:15.906619+00:00",
   "generator": "scripts/status/generate_test_quality_audit.py",
-  "test_file_count": 56,
+  "quality_rules": [
+    "new commands require at least one failure-path test",
+    "stateful commands require at least one corruption or rollback test",
+    "parser changes require malformed-input coverage",
+    "plugin changes require namespace or rollback coverage",
+    "output changes require snapshot or diff coverage",
+    "install changes require ambiguity or path-failure coverage",
+    "no vanity test growth"
+  ],
+  "test_file_count": 57,
   "tests": [
     {
       "assert_count": 34,
@@ -26,7 +36,7 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 15,
+      "assert_count": 21,
       "category": "regression",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -206,7 +216,7 @@
       "shallow_score": 4
     },
     {
-      "assert_count": 91,
+      "assert_count": 132,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -225,7 +235,7 @@
     },
     {
       "assert_count": 8,
-      "category": "regression",
+      "category": "weak",
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": false,
@@ -234,7 +244,7 @@
     },
     {
       "assert_count": 2,
-      "category": "performance",
+      "category": "perf",
       "has_exit_assertion": true,
       "has_failure_terms": false,
       "has_output_assertion": false,
@@ -386,7 +396,7 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 19,
+      "assert_count": 33,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -401,6 +411,15 @@
       "has_failure_terms": true,
       "has_output_assertion": false,
       "path": "crates/bijux-cli-python/tests/config_compatibility.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 3,
+      "category": "parity",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
       "shallow_score": 2
     },
     {
@@ -521,7 +540,7 @@
       "shallow_score": 2
     }
   ],
-  "top_20_missing_failure_scenarios": [],
+  "top_20_missing_failure_cases": [],
   "top_20_missing_packaging_scenarios": [
     "pipx invocation parity",
     "multi-path binary shadowing",
@@ -529,7 +548,7 @@
     "release note evidence gate",
     "homebrew channel parity placeholder"
   ],
-  "top_20_missing_parity_scenarios": [],
+  "top_20_missing_parity_cases": [],
   "top_20_weakest_tests": [
     {
       "assert_count": 2,
@@ -587,7 +606,7 @@
     },
     {
       "assert_count": 2,
-      "category": "performance",
+      "category": "perf",
       "has_exit_assertion": true,
       "has_failure_terms": false,
       "has_output_assertion": false,
@@ -614,7 +633,7 @@
     },
     {
       "assert_count": 8,
-      "category": "regression",
+      "category": "weak",
       "has_exit_assertion": false,
       "has_failure_terms": false,
       "has_output_assertion": false,
@@ -638,6 +657,15 @@
       "has_output_assertion": false,
       "path": "crates/bijux-cli-contracts/tests/config_domain_types.rs",
       "shallow_score": 4
+    },
+    {
+      "assert_count": 3,
+      "category": "parity",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
+      "shallow_score": 2
     },
     {
       "assert_count": 4,
@@ -700,15 +728,6 @@
       "has_failure_terms": true,
       "has_output_assertion": false,
       "path": "crates/bijux-cli-routing/tests/registry_namespace_policy.rs",
-      "shallow_score": 2
-    },
-    {
-      "assert_count": 6,
-      "category": "parity",
-      "has_exit_assertion": false,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-python/tests/config_compatibility.rs",
       "shallow_score": 2
     }
   ]

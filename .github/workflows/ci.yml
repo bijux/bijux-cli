@@ -291,6 +291,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_release_truth_gates.py --enforce
 
+      - name: Test quality policy gate
+        run: |
+          python3 scripts/status/enforce_test_quality_gates.py
+
       - name: Maintainer automation policy gate
         run: |
           python3 scripts/status/enforce_dev_cli_automation_policy.py
@@ -351,7 +355,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-quality-audit
-          path: artifacts/status/test_quality_audit.json
+          path: |
+            artifacts/status/test_quality_audit.json
+            artifacts/status/top_20_weakest_tests.json
+            artifacts/status/top_20_missing_failure_cases.json
+            artifacts/status/top_20_missing_parity_cases.json
           if-no-files-found: warn
           retention-days: 14
 

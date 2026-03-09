@@ -3,13 +3,13 @@
 This document tracks cleanup and missing-scenario priorities from generated audit data.
 
 ## Top 20 Weakest Tests
-Source: `artifacts/status/test_quality_audit.json` → `top_20_weakest_tests`.
+Source: `artifacts/status/top_20_weakest_tests.json`.
 
-## Top 20 Missing Failure Scenarios
-Source: `artifacts/status/test_quality_audit.json` → `top_20_missing_failure_scenarios`.
+## Top 20 Missing Failure Cases
+Source: `artifacts/status/top_20_missing_failure_cases.json`.
 
-## Top 20 Missing Parity Scenarios
-Source: `artifacts/status/test_quality_audit.json` → `top_20_missing_parity_scenarios`.
+## Top 20 Missing Parity Cases
+Source: `artifacts/status/top_20_missing_parity_cases.json`.
 
 ## Top 20 Missing Packaging Scenarios
 Source: `artifacts/status/test_quality_audit.json` → `top_20_missing_packaging_scenarios`.
