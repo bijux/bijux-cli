@@ -701,10 +701,13 @@ fn collect_markdown_files_filtered(
     collect_markdown_files(docs_root, &mut paths)?;
     let mut rel_paths = paths
         .into_iter()
-        .map(|path| path.strip_prefix(root).map_err(|err| err.to_string()))
+        .map(|path| {
+            path.strip_prefix(root)
+                .map(|rel| rel.to_string_lossy().replace('\\', "/"))
+                .map_err(|err| err.to_string())
+        })
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
-        .map(|path| path.to_string_lossy().replace('\\', "/"))
         .filter(|path| !is_excluded(path, policy))
         .collect::<Vec<_>>();
     rel_paths.sort();
