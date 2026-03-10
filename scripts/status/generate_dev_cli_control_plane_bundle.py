@@ -18,6 +18,7 @@ COMMANDS = [
     "dev cli state-audit",
     "dev cli package-health",
     "dev cli script-audit",
+    "dev cli rustdoc audit",
     "dev cli docs-audit",
     "dev cli crate-health",
 ]

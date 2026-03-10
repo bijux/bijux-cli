@@ -406,6 +406,7 @@ jobs:
           python3 scripts/status/generate_plugin_migration_reports.py
           python3 scripts/status/generate_maintainer_control_plane_reports.py
           python3 scripts/status/generate_dev_cli_script_migration_reports.py
+          python3 scripts/status/generate_dev_cli_rustdoc_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -746,6 +747,10 @@ jobs:
       - name: Dev cli ownership policy gate
         run: |
           python3 scripts/status/enforce_dev_cli_ownership_policy.py
+
+      - name: Rustdoc primary docs policy gate
+        run: |
+          python3 scripts/status/enforce_rustdoc_primary_docs_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1244,6 +1249,18 @@ jobs:
             artifacts/status/dev_cli_scripts_diff_report.json
             artifacts/status/dev_cli_script_value_ranking.json
             artifacts/status/dev_cli_task_runner_inventory.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli rustdoc reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-rustdoc-reports
+          path: |
+            artifacts/status/rustdoc_audit_report.json
+            artifacts/status/rustdoc_public_api_coverage_report.json
+            artifacts/status/rustdoc_audit_report.txt
           if-no-files-found: warn
           retention-days: 14
 
