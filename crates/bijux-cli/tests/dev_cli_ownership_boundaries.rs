@@ -5,7 +5,7 @@
 fn core_adapter_is_runtime_query_only_and_delegates_dispatch() {
     let source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/features/developer/runtime_adapter.rs"
+        "/src/interface/cli/handlers/developer_runtime.rs"
     ))
     .expect("read dev cli adapter source");
 
