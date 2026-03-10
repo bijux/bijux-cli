@@ -265,6 +265,7 @@ jobs:
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_test_quality_audit.py
           python3 scripts/status/generate_test_domain_value_reports.py
+          python3 scripts/status/generate_deep_test_quality_reports.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_truth_milestone_status.py
@@ -502,6 +503,10 @@ jobs:
       - name: Test-first domain gate
         run: |
           python3 scripts/status/enforce_test_first_domain_gates.py --enforce
+
+      - name: Deep test-first feature gate
+        run: |
+          python3 scripts/status/enforce_deep_test_first_feature_gates.py --enforce
 
       - name: Config source consistency gate
         run: |
@@ -761,6 +766,10 @@ jobs:
             artifacts/status/missing_flag_abuse_cases.json
             artifacts/status/missing_deterministic_proof_cases.json
             artifacts/status/test_first_domains_contract.json
+            artifacts/status/deep_tests_by_value_report.json
+            artifacts/status/deep_missing_behavior_cases_report.json
+            artifacts/status/deep_weak_tests_replacement_report.json
+            artifacts/status/deep_test_first_domains_contract.json
           if-no-files-found: warn
           retention-days: 14
 
