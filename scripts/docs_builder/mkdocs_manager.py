@@ -23,7 +23,6 @@ from typing import Callable
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.docs_builder.artifacts_pages.api_page import APIArtifactPage
-from scripts.docs_builder.artifacts_pages.citation_page import CitationArtifactPage
 from scripts.docs_builder.artifacts_pages.lint_page import LintArtifactPage
 from scripts.docs_builder.artifacts_pages.quality_page import QualityArtifactPage
 from scripts.docs_builder.artifacts_pages.sbom_page import SBOMArtifactPage
@@ -184,7 +183,6 @@ def _build_nav() -> None:
         ("Security Artifacts", "artifacts/security.md"),
         ("API Artifacts", "artifacts/api.md"),
         ("SBOM Artifacts", "artifacts/sbom.md"),
-        ("Citation Artifacts", "artifacts/citation.md"),
     ]
     landing = [
         PAGE_META_NO_EDIT,
@@ -219,7 +217,6 @@ def main() -> None:
     SecurityArtifactPage().build()
     APIArtifactPage().build()
     SBOMArtifactPage().build()
-    CitationArtifactPage().build()
     _build_nav()
 
 

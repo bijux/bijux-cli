@@ -4,7 +4,6 @@
     "scripts/docs_builder/artifacts_pages/__init__.py",
     "scripts/docs_builder/artifacts_pages/api_page.py",
     "scripts/docs_builder/artifacts_pages/base.py",
-    "scripts/docs_builder/artifacts_pages/citation_page.py",
     "scripts/docs_builder/artifacts_pages/compatibility_page.py",
     "scripts/docs_builder/artifacts_pages/diagnostics_page.py",
     "scripts/docs_builder/artifacts_pages/index_page.py",
