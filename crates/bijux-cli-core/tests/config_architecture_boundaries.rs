@@ -3,7 +3,6 @@
 
 use anyhow as _;
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_routing as _;
 use bijux_cli_routing as _;
 use clap as _;

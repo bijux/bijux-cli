@@ -6,7 +6,6 @@ use bijux_cli_core::app::run_app;
 use bijux_cli_core::kernel::{
     map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
 };
-use bijux_cli_install as _;
 use bijux_cli_routing as _;
 use bijux_cli_routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use clap as _;

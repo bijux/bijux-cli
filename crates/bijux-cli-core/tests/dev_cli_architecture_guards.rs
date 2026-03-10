@@ -6,7 +6,6 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let runtime_crates = [
         "crates/bijux-cli-routing/src",
-        "crates/bijux-cli-install/src",
         "crates/bijux-cli-python/src",
     ];
 
