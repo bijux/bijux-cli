@@ -1,0 +1,36 @@
+{
+  "commands": [
+    {
+      "command": "history",
+      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    },
+    {
+      "command": "history clear",
+      "evidence": "crates/bijux-cli-bin/tests/history_command_matrix.rs",
+      "status": "complete",
+      "status_model": [
+        "complete",
+        "partial",
+        "shim",
+        "missing"
+      ]
+    }
+  ],
+  "generated_at": "2026-03-10T04:48:51.677339+00:00",
+  "generator": "scripts/status/generate_history_surface_reports.py",
+  "scope": "todo 321 history command coverage",
+  "summary": {
+    "complete": 2,
+    "missing": 0,
+    "partial": 0,
+    "shim": 0,
+    "total": 2
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "evidence": "history_malformed_and_mixed_valid_invalid_tolerance_and_duplicates",
+      "name": "line-layout malformed and mixed records",
+      "status": "complete"
+    },
+    {
+      "evidence": "history_clear_with_unwritable_parent_fails_stably",
+      "name": "unwritable parent directory on clear",
+      "status": "complete"
+    }
+  ],
+  "generated_at": "2026-03-10T04:48:51.677339+00:00",
+  "generator": "scripts/status/generate_history_surface_reports.py",
+  "scope": "todo 339 history corruption matrix"
+}
