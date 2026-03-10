@@ -407,6 +407,8 @@ jobs:
           python3 scripts/status/generate_maintainer_control_plane_reports.py
           python3 scripts/status/generate_dev_cli_script_migration_reports.py
           python3 scripts/status/generate_dev_cli_rustdoc_reports.py
+          python3 scripts/status/generate_dev_cli_release_reports.py
+          python3 scripts/status/generate_dev_cli_release_truth_bundle.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -751,6 +753,18 @@ jobs:
       - name: Rustdoc primary docs policy gate
         run: |
           python3 scripts/status/enforce_rustdoc_primary_docs_policy.py
+
+      - name: Dev cli release truth bundle freshness gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_release_bundle_freshness.py
+
+      - name: Dev cli release blocker threshold gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_release_blocker_threshold.py
+
+      - name: Dev cli release truth policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_release_truth_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1261,6 +1275,30 @@ jobs:
             artifacts/status/rustdoc_audit_report.json
             artifacts/status/rustdoc_public_api_coverage_report.json
             artifacts/status/rustdoc_audit_report.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli release truth bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-release-truth-bundle
+          path: |
+            artifacts/status/dev_cli_release_truth_bundle.json
+            artifacts/status/dev_cli_release_status_report.json
+            artifacts/status/dev_cli_release_evidence_report.json
+            artifacts/status/dev_cli_release_readiness_report.json
+            artifacts/status/dev_cli_release_diff_report.json
+            artifacts/status/dev_cli_release_gaps_report.json
+            artifacts/status/dev_cli_release_changelog_burden_report.json
+            artifacts/status/dev_cli_release_changelog_migration_report.json
+            artifacts/status/dev_cli_release_summary_report.json
+            artifacts/status/dev_cli_release_manifest_report.json
+            artifacts/status/dev_cli_release_notes_report.json
+            artifacts/status/dev_cli_release_behavior_changes_report.json
+            artifacts/status/dev_cli_release_intentional_differences_report.json
+            artifacts/status/dev_cli_release_unresolved_gaps_report.json
+            artifacts/status/dev_cli_release_compatibility_leftovers_report.json
           if-no-files-found: warn
           retention-days: 14
 
