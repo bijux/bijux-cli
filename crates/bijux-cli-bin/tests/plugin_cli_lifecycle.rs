@@ -112,6 +112,9 @@ fn rust_scaffold_install_list_inspect_uninstall_flow() {
         &plugins_dir,
     );
 
+    let check = run_ok_json(&["cli", "plugins", "check", "rustflow"], &plugins_dir);
+    assert_eq!(check["status"], "healthy");
+
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
         |item| item["manifest"]["namespace"] == "rustflow"
@@ -119,6 +122,83 @@ fn rust_scaffold_install_list_inspect_uninstall_flow() {
 
     let uninstall = run_ok_json(&["cli", "plugins", "uninstall", "rustflow"], &plugins_dir);
     assert_eq!(uninstall["status"], "uninstalled");
+}
+
+#[test]
+fn python_scaffold_broken_manifest_fails_install() {
+    let root = tmp_dir("python-scaffold-broken");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("python_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "brokenpy",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    fs::write(manifest_file(&scaffold_dir), "{broken-json").expect("corrupt manifest");
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(out.status.code(), Some(1));
+}
+
+#[test]
+fn rust_scaffold_broken_manifest_fails_install() {
+    let root = tmp_dir("rust-scaffold-broken");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("rust_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "rust",
+            "brokenrust",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    fs::write(
+        manifest_file(&scaffold_dir),
+        r#"{
+  "name": "brokenrust",
+  "version": "0.1.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {"min_inclusive":"9.9.9", "max_exclusive": null},
+  "namespace": "brokenrust",
+  "kind": "delegated",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}"#,
+    )
+    .expect("write incompatible manifest");
+    let out = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    assert_eq!(out.status.code(), Some(1));
 }
 
 #[test]
@@ -268,6 +348,162 @@ fn uninstall_failure_preserves_existing_registry_entries() {
     assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
         |item| item["manifest"]["namespace"] == "keepplug"
     ));
+}
+
+#[test]
+fn plugin_uninstall_followed_by_reinstall_succeeds() {
+    let root = tmp_dir("reinstall-flow");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("reinstall_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "reinstallplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    let manifest = manifest_file(&scaffold_dir);
+    run_ok_json(
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+    run_ok_json(&["cli", "plugins", "uninstall", "reinstallplug"], &plugins_dir);
+    let reinstall = run_ok_json(
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+    assert_eq!(reinstall["status"], "installed");
+}
+
+#[test]
+fn plugin_disable_rejects_check_and_enable_restores_check() {
+    let root = tmp_dir("disable-enable-flow");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let scaffold_dir = root.join("disable_enable_plugin");
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "scaffold",
+            "python",
+            "toggleplug",
+            "--path",
+            scaffold_dir.to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+    run_ok_json(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+        ],
+        &plugins_dir,
+    );
+
+    let disabled = run_ok_json(&["cli", "plugins", "disable", "toggleplug"], &plugins_dir);
+    assert_eq!(disabled["status"], "disabled");
+    let rejected = run(&["cli", "plugins", "check", "toggleplug"], &plugins_dir);
+    assert_eq!(rejected.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("disabled"));
+    assert!(rejected.stdout.is_empty());
+
+    let enabled = run_ok_json(&["cli", "plugins", "enable", "toggleplug"], &plugins_dir);
+    assert_eq!(enabled["status"], "enabled");
+    let recovered = run_ok_json(&["cli", "plugins", "check", "toggleplug"], &plugins_dir);
+    assert_eq!(recovered["status"], "healthy");
+}
+
+#[test]
+fn plugin_help_rendering_and_output_envelope_shape_are_stable() {
+    let root = tmp_dir("help-envelope");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let help = run(&["help", "cli", "plugins"], &plugins_dir);
+    assert!(help.status.success());
+    let text = String::from_utf8(help.stdout).expect("utf-8");
+    assert!(text.contains("enable"));
+    assert!(text.contains("disable"));
+
+    let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
+    assert!(listed.get("plugins").is_some());
+    assert!(listed.get("directory").is_some());
+}
+
+#[test]
+fn plugin_install_failure_writes_stderr_and_nonzero_exit() {
+    let root = tmp_dir("stderr-exit");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let invalid_manifest = root.join("invalid.json");
+    fs::write(&invalid_manifest, "{broken").expect("write invalid");
+    let out = run(
+        &["cli", "plugins", "install", invalid_manifest.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
+}
+
+#[test]
+fn plugin_check_missing_argument_maps_to_usage_exit_code() {
+    let root = tmp_dir("check-missing-arg");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let out = run(&["cli", "plugins", "check"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(2));
+}
+
+#[test]
+#[cfg(unix)]
+fn external_exec_plugin_with_non_executable_entrypoint_fails_check() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp_dir("external-exec-perm");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+    let entrypoint = root.join("runner.sh");
+    fs::write(&entrypoint, "#!/bin/sh\necho ok\n").expect("write entrypoint");
+    fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o644))
+        .expect("set non executable perms");
+
+    let manifest = root.join("external.json");
+    fs::write(
+        &manifest,
+        format!(
+            r#"{{
+  "name": "external",
+  "version": "0.1.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
+  "namespace": "externalplug",
+  "kind": "external-exec",
+  "aliases": [],
+  "entrypoint": "{}",
+  "capabilities": []
+}}"#,
+            entrypoint.to_string_lossy()
+        ),
+    )
+    .expect("write external manifest");
+
+    run_ok_json(
+        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
+        &plugins_dir,
+    );
+    let check = run(&["cli", "plugins", "check", "externalplug"], &plugins_dir);
+    assert_eq!(check.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&check.stderr).contains("not executable"));
 }
 
 #[test]
