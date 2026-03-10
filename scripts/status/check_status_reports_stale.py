@@ -20,6 +20,10 @@ def main() -> int:
     if migration.returncode != 0:
         print(migration.stderr.strip() or migration.stdout.strip())
         return migration.returncode
+    inventory = run(["python3", "scripts/status/generate_command_surface_inventory.py"])
+    if inventory.returncode != 0:
+        print(inventory.stderr.strip() or inventory.stdout.strip())
+        return inventory.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     changed = [
@@ -30,6 +34,10 @@ def main() -> int:
             or line.strip().startswith("artifacts/status/command_migration_")
             or line.strip() == "artifacts/status/command_migration_matrix.json"
             or line.strip() == "artifacts/status/command_migration_matrix.txt"
+            or line.strip() == "artifacts/status/documented_python_commands_not_proven_in_rust.json"
+            or line.strip() == "artifacts/status/public_python_paths_still_reachable.json"
+            or line.strip() == "artifacts/status/legacy_alias_paths_still_accepted.json"
+            or line.strip() == "artifacts/status/compatibility_shims_still_active.json"
         )
     ]
     if changed:

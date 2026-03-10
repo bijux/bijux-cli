@@ -118,6 +118,28 @@ def main() -> int:
     if not migration_ok:
         failures.append("command migration matrix generation is not deterministic")
 
+    inventory_gen = ["python3", "scripts/status/generate_command_surface_inventory.py"]
+    i1 = run(inventory_gen, env=fixed_env)
+    inventory_file = STATUS / "public_python_paths_still_reachable.json"
+    inventory_hash1 = (
+        stable_json_digest(inventory_file) if i1.returncode == 0 and inventory_file.exists() else ""
+    )
+    i2 = run(inventory_gen, env=fixed_env)
+    inventory_hash2 = (
+        stable_json_digest(inventory_file) if i2.returncode == 0 and inventory_file.exists() else ""
+    )
+    inventory_ok = i1.returncode == 0 and i2.returncode == 0 and inventory_hash1 == inventory_hash2
+    checks.append(
+        {
+            "name": "command_surface_inventory_generation",
+            "ok": inventory_ok,
+            "details": "public_python_paths_still_reachable.json hash is stable across repeated generation",
+            "hashes": [inventory_hash1, inventory_hash2],
+        }
+    )
+    if not inventory_ok:
+        failures.append("command surface inventory generation is not deterministic")
+
     STATUS.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

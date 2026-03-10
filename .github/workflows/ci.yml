@@ -342,6 +342,7 @@ jobs:
       - name: Command migration matrix artifact
         run: |
           python3 scripts/status/generate_command_migration_matrix.py
+          python3 scripts/status/generate_command_surface_inventory.py
 
       - name: Command parity regression gate
         run: |
@@ -559,6 +560,10 @@ jobs:
             artifacts/status/command_migration_rust_partial.json
             artifacts/status/command_migration_python_only.json
             artifacts/status/command_migration_intentional_differences.json
+            artifacts/status/documented_python_commands_not_proven_in_rust.json
+            artifacts/status/public_python_paths_still_reachable.json
+            artifacts/status/legacy_alias_paths_still_accepted.json
+            artifacts/status/compatibility_shims_still_active.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -604,6 +609,10 @@ jobs:
             artifacts/status/command_migration_rust_partial.json
             artifacts/status/command_migration_python_only.json
             artifacts/status/command_migration_intentional_differences.json
+            artifacts/status/documented_python_commands_not_proven_in_rust.json
+            artifacts/status/public_python_paths_still_reachable.json
+            artifacts/status/legacy_alias_paths_still_accepted.json
+            artifacts/status/compatibility_shims_still_active.json
             artifacts/status/repl_only_behaviors.json
             artifacts/status/parser_abuse_report.json
             artifacts/status/namespace_abuse_report.json
