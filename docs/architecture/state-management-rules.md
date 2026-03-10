@@ -17,4 +17,4 @@ This document freezes the state-management law for `config`, `history`, `memory`
 - `crates/bijux-cli-bin/tests/memory_parity.rs`
 - `crates/bijux-cli-bin/tests/diagnostics_parity.rs`
 - `crates/bijux-cli-bin/tests/diagnostics_snapshots.rs`
-- `scripts/status/generate_state_parity_reports.py`
+- `bijux dev cli state-audit --format json`

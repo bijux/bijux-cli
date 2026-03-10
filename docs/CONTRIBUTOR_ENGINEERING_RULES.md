@@ -13,6 +13,7 @@ This document defines contributor and reviewer rules that keep milestone claims 
 7. Use `bijux dev cli status --format json` as first check before milestone claims.
 8. Do not add a public API without a consumer or an explicit reason documented in status artifacts.
 9. Treat `bijux dev cli` as the default maintainer cockpit for automation and diagnostics.
+10. Prefer `bijux dev cli` commands over new one-off scripts; any new `scripts/*` file requires a checked-in justification entry in `.github/script_additions_allowlist.txt`.
 
 ## Required Evidence
 - `artifacts/parity/command_parity_matrix.json`
