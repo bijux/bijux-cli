@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![recursion_limit = "512"]
 //! Maintainer control-plane modules for `bijux dev cli ...` workflows.
 //!
 //! This crate is intentionally focused on maintainer-facing report assembly and
