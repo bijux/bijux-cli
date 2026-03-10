@@ -27,5 +27,5 @@ fn python_bridge_invokes_same_core_entrypoint_as_binary() {
 
     assert!(bindings.contains("use bijux_cli_core::app::{run_app, AppRunResult};"));
     assert!(bindings.contains("match run_app(argv)"));
-    assert!(bin_main.contains("run_app(&argv)"));
+    assert!(bin_main.contains("run_cli_from_env()"));
 }
