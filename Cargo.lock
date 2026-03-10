@@ -150,6 +150,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bijux-dev-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
