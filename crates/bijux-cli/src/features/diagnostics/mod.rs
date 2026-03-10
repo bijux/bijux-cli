@@ -4,6 +4,7 @@
 pub(crate) mod cli_command;
 mod parity_status;
 pub(crate) mod root_command;
+pub(crate) mod state_paths;
 mod state_diagnostics;
 
 pub use parity_status::{parity_status_query, ParityStatusQuery};

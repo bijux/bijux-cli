@@ -14,7 +14,7 @@ use crate::features::plugins::{
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
     FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
-use crate::infrastructure::state_paths::ResolvedStatePaths;
+use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
 
 pub(crate) fn try_handle(

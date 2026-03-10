@@ -3,7 +3,7 @@
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::infrastructure::state_paths::ResolvedStatePaths;
+use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::infrastructure::state_store::{read_memory_map, write_memory_map};
 use crate::shared::argv::command_positionals;
 

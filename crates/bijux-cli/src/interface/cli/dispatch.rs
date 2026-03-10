@@ -17,7 +17,7 @@ use crate::features::{
     developer as developer_feature, history as history_feature, memory as memory_feature,
     plugins as plugins_feature,
 };
-use crate::infrastructure::state_paths::resolve_state_paths;
+use crate::features::diagnostics::state_paths::resolve_state_paths;
 use crate::interface::cli::help::render_command_help;
 use crate::shared::output::{render_value, EmitterConfig};
 

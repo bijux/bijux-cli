@@ -22,7 +22,7 @@ use crate::features::install::{
     query::runtime_identity_query, PackageChannel,
 };
 use crate::features::plugins::{list_plugins, load_time_diagnostics, FUTURE_PRODUCT_NAMESPACES};
-use crate::infrastructure::state_paths::{
+use crate::features::diagnostics::state_paths::{
     env_map, state_diagnostics, state_path_status_value, ResolvedStatePaths,
 };
 use crate::routing::inventory::{registry_inventory, route_inventory};

@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use super::state_store::{read_history_entries, read_memory_map};
+use crate::infrastructure::state_store::{read_history_entries, read_memory_map};
 use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
-use crate::features::diagnostics::StatePathStatus;
+use super::StatePathStatus;
 use crate::features::install::{
     default_compatibility_paths, discover_compatibility_paths, load_compatibility_config,
     CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,

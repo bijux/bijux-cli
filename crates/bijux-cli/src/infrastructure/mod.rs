@@ -5,5 +5,4 @@ pub mod env;
 pub mod fs_store;
 pub mod process;
 pub mod serde_json_codec;
-pub mod state_paths;
 pub mod state_store;
