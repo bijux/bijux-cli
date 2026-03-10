@@ -39,6 +39,9 @@ STATUS_FILES = [
     STATUS_DIR / "memory_closure_report.json",
     STATUS_DIR / "diagnostics_closure_report.json",
     STATUS_DIR / "repl_shared_law_closure_report.json",
+    STATUS_DIR / "cross_surface_consistency_artifact.json",
+    STATUS_DIR / "cross_surface_drift_artifact.json",
+    STATUS_DIR / "cross_surface_consistency_contract.json",
 ]
 
 
@@ -115,6 +118,8 @@ def main() -> int:
     parity_dashboard = read_json(PARITY_DIR / "parity_dashboard.json")
     command_family_closure = read_json(STATUS_DIR / "command_family_closure_report.json")
     partial_area_acceptance = read_json(STATUS_DIR / "command_family_partial_area_acceptance.json")
+    cross_surface_consistency = read_json(STATUS_DIR / "cross_surface_consistency_artifact.json")
+    cross_surface_drift = read_json(STATUS_DIR / "cross_surface_drift_artifact.json")
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -187,6 +192,20 @@ def main() -> int:
                     "release review blocked: partial areas require explicit acceptance: "
                     + ", ".join(missing_acceptance)
                 )
+
+    if not cross_surface_consistency or not cross_surface_drift:
+        failures.append("release review blocked: missing cross-surface consistency evidence")
+    else:
+        covered_drift = [
+            item
+            for item in cross_surface_drift.get("drift_items", [])
+            if isinstance(item, dict) and str(item.get("coverage_class", "partial")) == "covered"
+        ]
+        if covered_drift:
+            failures.append(
+                "release review blocked: covered cross-surface drift exists for "
+                + ", ".join(str(item.get("todo", "?")) for item in covered_drift)
+            )
 
     # Evidence rule for README: promotional quality claims require artifact references.
     if has_claim(r"\b(98%\+ coverage|1,800\+ tests|feature complete|production ready)\b", readme):

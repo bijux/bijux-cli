@@ -1525,6 +1525,15 @@ fn route_response(
                 root.join("artifacts/status/command_family_closure_report.txt"),
             )
             .unwrap_or_default();
+            let cross_surface_consistency_artifact = read_json_if_exists(
+                &root.join("artifacts/status/cross_surface_consistency_artifact.json"),
+            );
+            let cross_surface_drift_artifact = read_json_if_exists(
+                &root.join("artifacts/status/cross_surface_drift_artifact.json"),
+            );
+            let cross_surface_consistency_contract = read_json_if_exists(
+                &root.join("artifacts/status/cross_surface_consistency_contract.json"),
+            );
             let command_surface_consistency_summary = read_json_if_exists(
                 &root.join("artifacts/status/command_surface_consistency_summary.json"),
             );
@@ -1594,6 +1603,9 @@ fn route_response(
                     "command_family_closure_report": command_family_closure_report,
                     "command_family_closure_report_text": command_family_closure_report_text,
                     "command_family_partial_area_acceptance": command_family_partial_area_acceptance,
+                    "cross_surface_consistency_artifact": cross_surface_consistency_artifact,
+                    "cross_surface_drift_artifact": cross_surface_drift_artifact,
+                    "cross_surface_consistency_contract": cross_surface_consistency_contract,
                     "command_surface_consistency_summary": command_surface_consistency_summary,
                 },
                 "command_migration": {

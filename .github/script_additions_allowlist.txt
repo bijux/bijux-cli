@@ -51,3 +51,5 @@ scripts/status/enforce_command_surface_consistency_gate.py # enforce CI failure 
 scripts/status/warn_uncovered_command_surface_scope.py # emit CI warning when command-surface scope introduces uncovered consistency checks
 scripts/status/generate_compatibility_debt_trend_report.py # generate compatibility debt trend artifact from shim/alias baseline and delta reports
 scripts/status/generate_command_family_closure_reports.py # generate six command-family closure reports plus combined closure and explicit partial-area acceptance artifact
+scripts/status/generate_cross_surface_consistency_law_reports.py # generate TODO 141-160 cross-surface consistency artifact, drift artifact, and contract freeze report
+scripts/status/enforce_cross_surface_consistency_law.py # enforce fail-on-covered-drift and warn-on-partial-drift policy for cross-surface consistency TODO 141-160

@@ -72,6 +72,9 @@ def main() -> None:
     deterministic_generation = STATUS / "deterministic_generation_report.json"
     release_build_consistency = STATUS / "release_build_consistency_report.json"
     release_artifact_manifest = STATUS / "release_artifact_manifest.json"
+    cross_surface_consistency = STATUS / "cross_surface_consistency_artifact.json"
+    cross_surface_drift = STATUS / "cross_surface_drift_artifact.json"
+    cross_surface_contract = STATUS / "cross_surface_consistency_contract.json"
     known_gaps = ROOT / "docs" / "KNOWN_GAPS.md"
 
     release_evidence_paths = [
@@ -87,6 +90,9 @@ def main() -> None:
         deterministic_generation,
         release_build_consistency,
         release_artifact_manifest,
+        cross_surface_consistency,
+        cross_surface_drift,
+        cross_surface_contract,
         known_gaps,
     ]
 

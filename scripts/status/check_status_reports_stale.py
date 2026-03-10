@@ -54,6 +54,12 @@ def main() -> int:
     if command_family_closure.returncode != 0:
         print(command_family_closure.stderr.strip() or command_family_closure.stdout.strip())
         return command_family_closure.returncode
+    cross_surface_consistency = run(
+        ["python3", "scripts/status/generate_cross_surface_consistency_law_reports.py"]
+    )
+    if cross_surface_consistency.returncode != 0:
+        print(cross_surface_consistency.stderr.strip() or cross_surface_consistency.stdout.strip())
+        return cross_surface_consistency.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     parity_diff = run(["git", "diff", "--name-only", "--", "artifacts/parity"])
@@ -112,6 +118,9 @@ def main() -> int:
             or line.strip() == "artifacts/status/command_family_closure_report.json"
             or line.strip() == "artifacts/status/command_family_closure_report.txt"
             or line.strip() == "artifacts/status/command_family_partial_area_acceptance.json"
+            or line.strip() == "artifacts/status/cross_surface_consistency_artifact.json"
+            or line.strip() == "artifacts/status/cross_surface_drift_artifact.json"
+            or line.strip() == "artifacts/status/cross_surface_consistency_contract.json"
         )
     ]
     if changed:
