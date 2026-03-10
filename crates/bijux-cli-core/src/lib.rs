@@ -7,4 +7,5 @@ mod argv;
 mod config;
 pub mod kernel;
 pub mod output;
+pub mod plugin;
 pub mod query;

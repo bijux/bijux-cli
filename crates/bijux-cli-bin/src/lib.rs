@@ -6,6 +6,7 @@ mod diagnostics;
 mod execution;
 mod history;
 mod output;
+pub mod plugin;
 mod reference;
 mod session;
 mod types;

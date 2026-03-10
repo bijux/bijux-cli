@@ -5,9 +5,9 @@ use std::collections::BTreeSet;
 use bijux_cli_routing::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
 use semver::Version;
 
-use crate::constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
-use crate::errors::PluginError;
-use crate::models::ValidatedPlugin;
+use super::constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
+use super::errors::PluginError;
+use super::models::ValidatedPlugin;
 
 /// Parse `PluginManifestV1` from JSON text.
 pub fn parse_manifest_v1(text: &str) -> Result<PluginManifestV1, PluginError> {

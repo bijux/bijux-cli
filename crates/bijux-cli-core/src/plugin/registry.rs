@@ -7,10 +7,10 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
-use crate::constants::REGISTRY_VERSION;
-use crate::errors::PluginError;
-use crate::manifest::{is_version_compatible, parse_manifest_v1, validate_manifest};
-use crate::models::{
+use super::constants::REGISTRY_VERSION;
+use super::errors::PluginError;
+use super::manifest::{is_version_compatible, parse_manifest_v1, validate_manifest};
+use super::models::{
     InstallPluginRequest, PluginDoctorReport, PluginLoadEntry, PluginOriginMetadata, PluginRecord,
     PluginRegistry,
 };

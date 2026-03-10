@@ -8,7 +8,6 @@ use std::process::Command;
 use anyhow as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
-use bijux_cli_plugin as _;
 use bijux_cli_routing as _;
 use bijux_cli_routing as _;
 use bijux_dev_cli as _;
@@ -77,16 +76,10 @@ fn enforces_internal_crate_boundaries() {
         ),
         (
             "bijux-cli-core",
-            BTreeSet::from([
-                "bijux-dev-cli",
-                "bijux-cli-install",
-                "bijux-cli-plugin",
-                "bijux-cli-routing",
-            ]),
+            BTreeSet::from(["bijux-dev-cli", "bijux-cli-install", "bijux-cli-routing"]),
         ),
         ("bijux-cli-evidence", BTreeSet::new()),
         ("bijux-cli-install", BTreeSet::new()),
-        ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-routing"])),
         (
             "bijux-cli-python",
             BTreeSet::from(["bijux-cli-core", "bijux-cli-install", "bijux-cli-routing"]),

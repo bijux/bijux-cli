@@ -6,10 +6,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_routing::PluginKind;
 
-use crate::errors::PluginError;
-use crate::manifest::is_version_compatible;
-use crate::models::PluginLoadDiagnostic;
-use crate::registry::{load_registry, save_registry};
+use super::errors::PluginError;
+use super::manifest::is_version_compatible;
+use super::models::PluginLoadDiagnostic;
+use super::registry::{load_registry, save_registry};
 
 /// Generate load-time diagnostics for broken or incompatible plugins.
 pub fn load_time_diagnostics(
@@ -64,7 +64,7 @@ pub fn compatibility_warnings(
 }
 
 /// Try to repair a corrupted registry by quarantining the old file and writing a fresh empty registry.
-pub fn self_repair_registry(path: &Path) -> Result<crate::models::PluginRegistry, PluginError> {
+pub fn self_repair_registry(path: &Path) -> Result<super::models::PluginRegistry, PluginError> {
     match load_registry(path) {
         Ok(registry) => Ok(registry),
         Err(PluginError::RegistryCorrupted) => {
@@ -75,7 +75,7 @@ pub fn self_repair_registry(path: &Path) -> Result<crate::models::PluginRegistry
                 let quarantine = path.with_extension(format!("corrupt-{timestamp}.json"));
                 fs::rename(path, quarantine)?;
             }
-            let repaired = crate::models::PluginRegistry::default();
+            let repaired = super::models::PluginRegistry::default();
             save_registry(path, &repaired)?;
             Ok(repaired)
         }

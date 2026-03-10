@@ -15,7 +15,7 @@ use bijux_cli_install::{
     CompatibilityPaths, InstallHealthReport, PackageChannel, PathOverrides, ENV_CONFIG_PATH,
     ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
-use bijux_cli_plugin::{
+use crate::plugin::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
@@ -182,8 +182,8 @@ fn scaffold_plugin_layout(
     }
     // Shared validation step: generated manifest must pass plugin parser.
     let manifest_text = fs::read_to_string(&manifest_path)?;
-    let manifest = bijux_cli_plugin::parse_manifest_v1(&manifest_text)?;
-    let _ = bijux_cli_plugin::validate_manifest(
+    let manifest = crate::plugin::parse_manifest_v1(&manifest_text)?;
+    let _ = crate::plugin::validate_manifest(
         manifest,
         env!("CARGO_PKG_VERSION"),
         RESERVED_NAMESPACES,
@@ -407,7 +407,7 @@ fn state_diagnostics(paths: &ResolvedStatePaths) -> Value {
         }
     }
 
-    if bijux_cli_plugin::self_repair_registry(&paths.plugin_registry_file).is_ok() {
+    if crate::plugin::self_repair_registry(&paths.plugin_registry_file).is_ok() {
         if let Ok(true) = prune_registry_backup(&paths.plugin_registry_file) {
             repairs.push(json!({
                 "area": "plugins",
@@ -968,7 +968,7 @@ fn route_response(
             })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
-            let repaired = bijux_cli_plugin::self_repair_registry(&plugin_registry_path).is_ok();
+            let repaired = crate::plugin::self_repair_registry(&plugin_registry_path).is_ok();
             let report = plugin_doctor(&plugin_registry_path)?;
             json!({
                 "status": "ok",

@@ -5,9 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::errors::PluginError;
-use crate::manifest::parse_manifest_v1;
-use crate::models::PluginDiscoveryCache;
+use super::errors::PluginError;
+use super::manifest::parse_manifest_v1;
+use super::models::PluginDiscoveryCache;
 
 /// Scan plugin directory tree for manifests at `<plugin-dir>/*/plugin.json`.
 pub fn discover_plugin_manifests(plugins_dir: &Path) -> Result<Vec<PathBuf>, PluginError> {

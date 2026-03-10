@@ -84,13 +84,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bijux-cli-install",
- "bijux-cli-plugin",
  "bijux-cli-routing",
  "bijux-dev-cli",
  "clap",
  "futures",
+ "semver",
+ "serde",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "thiserror",
 ]
 
@@ -107,18 +109,6 @@ name = "bijux-cli-install"
 version = "0.1.0"
 dependencies = [
  "tempfile",
- "thiserror",
-]
-
-[[package]]
-name = "bijux-cli-plugin"
-version = "0.1.0"
-dependencies = [
- "bijux-cli-routing",
- "semver",
- "serde",
- "serde_json",
- "sha2",
  "thiserror",
 ]
 

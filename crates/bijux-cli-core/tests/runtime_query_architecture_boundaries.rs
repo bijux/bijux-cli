@@ -30,7 +30,6 @@ fn runtime_crates_do_not_import_dev_cli_crate() {
     let runtime_crates = [
         "crates/bijux-cli-routing/src",
         "crates/bijux-cli-install/src",
-        "crates/bijux-cli-plugin/src",
         "crates/bijux-cli-python/src",
     ];
 
