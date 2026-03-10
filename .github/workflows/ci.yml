@@ -278,6 +278,7 @@ jobs:
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
           python3 scripts/status/generate_packaging_ambiguity_reports.py
+          python3 scripts/status/generate_performance_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -337,6 +338,10 @@ jobs:
       - name: Test quality policy gate
         run: |
           python3 scripts/status/enforce_test_quality_gates.py
+
+      - name: Performance regression gate
+        run: |
+          python3 scripts/status/enforce_performance_regression_gates.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -548,6 +553,10 @@ jobs:
             artifacts/status/package_health_report.txt
             artifacts/status/install_health_report.json
             artifacts/status/remaining_install_ambiguities.json
+            artifacts/status/performance_report.json
+            artifacts/status/performance_report.txt
+            artifacts/status/performance_regression_budget.json
+            artifacts/status/performance_benchmark_policy.json
           if-no-files-found: warn
           retention-days: 14
 
