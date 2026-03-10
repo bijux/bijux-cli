@@ -187,7 +187,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
     * Added docs style/coverage: `pydocstyle`, `interrogate`.
     * Added code health: `vulture`, `deptry`, `radon`, `codespell`, `reuse`.
     * Added security: `bandit`, `pip-audit`.
-    * Added mutation testing: `mutmut`, `cosmic-ray`.
+    * Added mutation testing: `mutmut`.
 
 * **SBOM**
 

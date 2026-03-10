@@ -15,7 +15,6 @@ Centralizing these configurations ensures:
 | File                              | Tool / Purpose                                                     |
 |-----------------------------------|--------------------------------------------------------------------|
 | **`bijux.dic`**                   | PyCharm / Codespell — custom dictionary for project-specific terms |
-| **`cosmic-ray.toml`**             | Cosmic Ray — mutation testing configuration                        |
 | **`coveragerc.ini`**              | Coverage.py — coverage measurement rules                           |
 | **`mypy.ini`**                    | Mypy — strict static type checking                                 |
 | **`ruff.toml`**                   | Ruff — linting, formatting, and isort rules                        |

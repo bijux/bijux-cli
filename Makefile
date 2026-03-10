@@ -22,7 +22,6 @@ include makefiles/cargo-rs.mk
 include makefiles/dictionary.mk
 include makefiles/docs.mk
 include makefiles/lint.mk
-include makefiles/mutation.mk
 include makefiles/quality.mk
 include makefiles/sbom.mk
 include makefiles/security.mk

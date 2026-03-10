@@ -116,7 +116,6 @@ dev = [
   "twine>=6.1.0,<7.0",
 
   "mutmut>=3.0",
-  "cosmic-ray>=4.0.0",
 ]
 
 [project.scripts]

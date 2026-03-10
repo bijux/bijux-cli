@@ -76,7 +76,6 @@ make lint test docs api
 | `make docs`     | Build MkDocs (strict)                                                       |
 | `make build`    | Build sdist + wheel                                                         |
 | `make sbom`     | CycloneDX SBOM → `artifacts/sbom.json`                                      |
-| `make mutation` | Mutation testing (Cosmic Ray + Mutmut)                                      |
 
 **Handy helpers**
 
