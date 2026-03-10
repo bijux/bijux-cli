@@ -162,7 +162,10 @@ pub fn execute_repl_input(
                 content: "Interrupted\n".to_string(),
             }))
         }
-        ReplInput::Eof => Ok(ReplEvent::Exit(None)),
+        ReplInput::Eof => {
+            session.pending_multiline = None;
+            Ok(ReplEvent::Exit(None))
+        }
         ReplInput::Line(line) => {
             let trimmed = line.trim();
             if trimmed.is_empty() {
