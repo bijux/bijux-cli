@@ -13,6 +13,7 @@ pub mod env;
 pub mod package_health;
 pub mod parity;
 pub mod registry;
+pub mod release;
 pub mod reporting;
 pub mod route_audit;
 pub mod routes;

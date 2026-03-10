@@ -56,4 +56,12 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         source.contains("dev_rustdoc::build_audit_report"),
         "rustdoc command namespace must delegate to bijux-dev-cli rustdoc module"
     );
+    assert!(
+        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"release\""),
+        "missing delegated release command namespace"
+    );
+    assert!(
+        source.contains("dev_release::build_status_report"),
+        "release command namespace must delegate to bijux-dev-cli release module"
+    );
 }

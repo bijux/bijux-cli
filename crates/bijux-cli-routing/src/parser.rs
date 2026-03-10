@@ -230,6 +230,23 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("workspace-coverage-proof"))
                 .subcommand(Command::new("python-link-proof")),
         )
+        .subcommand(
+            Command::new("release")
+                .subcommand(Command::new("status"))
+                .subcommand(Command::new("evidence"))
+                .subcommand(Command::new("readiness"))
+                .subcommand(Command::new("diff"))
+                .subcommand(Command::new("gaps"))
+                .subcommand(Command::new("changelog-burden"))
+                .subcommand(Command::new("migrate-changelog"))
+                .subcommand(Command::new("summary"))
+                .subcommand(Command::new("manifest"))
+                .subcommand(Command::new("notes"))
+                .subcommand(Command::new("behavior-changes"))
+                .subcommand(Command::new("intentional-differences"))
+                .subcommand(Command::new("unresolved-gaps"))
+                .subcommand(Command::new("compatibility-leftovers")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

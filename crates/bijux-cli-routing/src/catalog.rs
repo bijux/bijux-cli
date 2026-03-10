@@ -23,6 +23,7 @@ const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
 const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "scripts",
     "rustdoc",
+    "release",
     "inventory",
     "routes",
     "registry",
@@ -59,6 +60,22 @@ const DEV_CLI_RUSTDOC_SUBCOMMANDS: &[&str] = &[
     "build-proof",
     "workspace-coverage-proof",
     "python-link-proof",
+];
+const DEV_CLI_RELEASE_SUBCOMMANDS: &[&str] = &[
+    "status",
+    "evidence",
+    "readiness",
+    "diff",
+    "gaps",
+    "changelog-burden",
+    "migrate-changelog",
+    "summary",
+    "manifest",
+    "notes",
+    "behavior-changes",
+    "intentional-differences",
+    "unresolved-gaps",
+    "compatibility-leftovers",
 ];
 const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "remaining",
@@ -176,6 +193,14 @@ pub fn is_known_route(path: &[String]) -> bool {
                 && b == "cli"
                 && c == "rustdoc"
                 && contains(DEV_CLI_RUSTDOC_SUBCOMMANDS, d) =>
+        {
+            true
+        }
+        [a, b, c, d]
+            if a == "dev"
+                && b == "cli"
+                && c == "release"
+                && contains(DEV_CLI_RELEASE_SUBCOMMANDS, d) =>
         {
             true
         }

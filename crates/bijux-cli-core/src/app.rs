@@ -32,9 +32,10 @@ use bijux_dev_cli::{
     contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     package_health as dev_package_health, parity as dev_parity, registry as dev_registry,
-    route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
-    rustdoc as dev_rustdoc, script_audit as dev_script_audit, scripts as dev_scripts,
-    state_audit as dev_state_audit, status as dev_status, ReportContext,
+    release as dev_release, route_audit as dev_route_audit, routes as dev_routes,
+    runtime_identity as dev_runtime_identity, rustdoc as dev_rustdoc,
+    script_audit as dev_script_audit, scripts as dev_scripts, state_audit as dev_state_audit,
+    status as dev_status, ReportContext,
 };
 use serde_json::{json, Value};
 
@@ -505,6 +506,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1245,6 +1250,52 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "python-link-proof" => {
             dev_rustdoc::build_python_link_proof_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "status" => {
+            dev_release::build_status_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "evidence" => {
+            dev_release::build_evidence_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "readiness" => {
+            dev_release::build_readiness_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "diff" => {
+            dev_release::build_diff_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "gaps" => {
+            dev_release::build_gaps_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "changelog-burden" => {
+            dev_release::build_changelog_burden_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "migrate-changelog" => {
+            dev_release::build_changelog_migration_report()
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "summary" => {
+            dev_release::build_summary_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "manifest" => {
+            dev_release::build_manifest_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "notes" => {
+            dev_release::build_notes_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "behavior-changes" => {
+            dev_release::build_behavior_changes_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "release" && d == "intentional-differences" =>
+        {
+            dev_release::build_intentional_differences_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "release" && d == "unresolved-gaps" => {
+            dev_release::build_unresolved_gaps_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "release" && d == "compatibility-leftovers" =>
+        {
+            dev_release::build_compatibility_leftovers_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())
