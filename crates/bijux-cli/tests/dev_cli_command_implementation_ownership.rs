@@ -3,8 +3,9 @@
 
 #[test]
 fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/app.rs"))
-        .expect("read core app source");
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cli/commands/dev_cli.rs"))
+            .expect("read dev cli command source");
 
     let expected_delegates = [
         ("routes", "dev_routes::build_report"),

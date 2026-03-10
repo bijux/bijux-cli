@@ -3,8 +3,9 @@
 
 #[test]
 fn core_app_routes_and_registry_delegate_to_dev_cli() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/app.rs"))
-        .expect("read core app source");
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cli/commands/dev_cli.rs"))
+            .expect("read dev cli command source");
 
     assert!(
         source.contains("dev_routes::build_report"),
@@ -34,8 +35,9 @@ fn core_app_routes_and_registry_delegate_to_dev_cli() {
 
 #[test]
 fn core_app_env_contracts_parity_status_delegate_to_dev_cli() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/app.rs"))
-        .expect("read core app source");
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cli/commands/dev_cli.rs"))
+            .expect("read dev cli command source");
 
     assert!(
         source.contains("dev_env::build_report"),

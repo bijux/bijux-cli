@@ -23,8 +23,9 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
 
 #[test]
 fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/app.rs"))
-        .expect("read core app source");
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cli/commands/dev_cli.rs"))
+            .expect("read dev cli command source");
     let delegated = [
         "dev_control_plane::build_snapshots_audit_report",
         "dev_control_plane::build_fixture_audit_report",
