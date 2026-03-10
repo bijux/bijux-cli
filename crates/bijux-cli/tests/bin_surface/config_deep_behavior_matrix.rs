@@ -23,6 +23,14 @@ fn run(args: &[&str]) -> Output {
 fn run_json(args: &[&str]) -> Value {
     let out = run(args);
     assert_eq!(out.status.code(), Some(0), "expected success for {args:?}");
+    assert!(
+        out.stderr.is_empty(),
+        "successful command must keep stderr empty: {args:?}"
+    );
+    assert!(
+        !out.stdout.is_empty(),
+        "successful command must emit stdout payload: {args:?}"
+    );
     serde_json::from_slice(&out.stdout).expect("stdout should be valid json")
 }
 

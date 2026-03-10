@@ -39,6 +39,15 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
     cmd.output().expect("binary should execute")
 }
 
+fn assert_success_machine(out: &Output, context: &str) {
+    assert_eq!(out.status.code(), Some(0), "{context} should succeed");
+    assert!(out.stderr.is_empty(), "{context} should keep stderr empty");
+    assert!(
+        !out.stdout.is_empty(),
+        "{context} should emit stdout payload"
+    );
+}
+
 fn python_cli() -> String {
     if let Ok(path) = std::env::var("BIJUX_REFERENCE_CLI") {
         if !path.trim().is_empty() {
@@ -178,7 +187,7 @@ fn config_export_writes_file_and_handles_missing_path_argument() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_eq!(out.status.code(), Some(0));
+    assert_success_machine(&out, "config export");
     let exported = fs::read_to_string(&export_file).expect("exported file");
     assert_eq!(exported, "BIJUXCLI_ALPHA=1\n");
 
@@ -213,7 +222,7 @@ fn config_load_valid_malformed_duplicate_and_unreadable_cases() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_eq!(ok.status.code(), Some(0));
+    assert_success_machine(&ok, "config load valid source");
     let loaded = fs::read_to_string(&active).expect("active after load");
     assert_eq!(loaded, "BIJUXCLI_ALPHA=1\n");
 
@@ -226,7 +235,7 @@ fn config_load_valid_malformed_duplicate_and_unreadable_cases() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_eq!(duplicate.status.code(), Some(0));
+    assert_success_machine(&duplicate, "config load duplicate source");
     let duplicate_loaded = fs::read_to_string(&active).expect("active after duplicate load");
     assert_eq!(duplicate_loaded, "BIJUXCLI_ALPHA=2\n");
 
@@ -288,7 +297,7 @@ fn config_load_missing_file_and_path_traversal_style_path_handling() {
         .current_dir(&nested)
         .output()
         .expect("run traversal");
-    assert_eq!(traversal.status.code(), Some(0));
+    assert_success_machine(&traversal, "config load traversal-style source path");
     let loaded = fs::read_to_string(&active).expect("active after traversal load");
     assert_eq!(loaded, "BIJUXCLI_DELTA=4\n");
 
@@ -300,8 +309,13 @@ fn config_load_missing_file_and_path_traversal_style_path_handling() {
         "--config-path",
         active.to_str().expect("utf-8"),
     ]);
-    assert_eq!(missing.status.code(), Some(0));
-    assert!(missing.stderr.is_empty());
+    assert_success_machine(&missing, "config load missing source fallback");
+    let loaded_after_missing =
+        fs::read_to_string(&active).expect("active after missing source load");
+    assert_eq!(
+        loaded_after_missing, "",
+        "missing source load should normalize active config to an empty managed file"
+    );
 }
 
 #[test]
@@ -349,8 +363,8 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
     );
 
     assert_eq!(py_export.status.code(), rs_export.status.code());
-    assert!(py_export.stderr.is_empty());
-    assert!(rs_export.stderr.is_empty());
+    assert_success_machine(&py_export, "python config export");
+    assert_success_machine(&rs_export, "rust config export");
 
     let py_load = run_python(
         &[
@@ -383,6 +397,6 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
     );
 
     assert_eq!(py_load.status.code(), rs_load.status.code());
-    assert!(py_load.stderr.is_empty());
-    assert!(rs_load.stderr.is_empty());
+    assert_success_machine(&py_load, "python config load");
+    assert_success_machine(&rs_load, "rust config load");
 }
