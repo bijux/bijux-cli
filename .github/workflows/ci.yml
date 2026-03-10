@@ -273,6 +273,7 @@ jobs:
           python3 scripts/status/generate_status_reports.py
           python3 scripts/status/generate_repl_behavior_reports.py
           python3 scripts/status/generate_parser_abuse_report.py
+          python3 scripts/status/generate_parser_fuzz_hardening_reports.py
           python3 scripts/status/generate_namespace_reservation_reports.py
           python3 scripts/status/generate_reserved_namespace_test_matrix.py
           python3 scripts/status/generate_plugin_lifecycle_test_matrix.py
@@ -550,6 +551,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_diagnostics_trust_gate.py
 
+      - name: Parser fuzz regression gate
+        run: |
+          python3 scripts/status/enforce_parser_fuzz_regression_gate.py
+
       - name: Deterministic generation gate
         run: |
           python3 scripts/status/check_deterministic_generation.py
@@ -775,6 +780,18 @@ jobs:
             artifacts/status/diagnostics_minimalism_artifact.json
             artifacts/status/diagnostics_trust_schema_drift_artifact.json
             artifacts/status/diagnostics_trust_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload parser fuzz hardening artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: parser-fuzz-hardening
+          path: |
+            artifacts/status/parser_crash_triage_artifact.json
+            artifacts/status/parser_fuzz_regression_artifact.json
+            artifacts/status/parser_fuzz_campaign_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
