@@ -119,6 +119,14 @@ def parse_dev_cli_implementations() -> dict[str, str]:
         "dev cli contracts": "dev_contracts::build_report",
         "dev cli parity": "dev_parity::build_report",
         "dev cli status": "dev_status::build_report",
+        "dev cli runtime-identity": "dev_runtime_identity::build_report",
+        "dev cli package-health": "dev_package_health::build_report",
+        "dev cli state-audit": "dev_state_audit::build_report",
+        "dev cli state-doctor": "dev_state_audit::build_doctor_report",
+        "dev cli script-audit": "dev_script_audit::build_report",
+        "dev cli docs-audit": "dev_docs_audit::build_report",
+        "dev cli crate-health": "dev_crate_health::build_report",
+        "dev cli inventory": "dev_script_audit::build_inventory_report",
     }
     for command, marker in delegated.items():
         if command in implementations and marker in source:
@@ -284,11 +292,38 @@ def main() -> int:
             "generated_at": generated_at,
             "generator": generator,
             "scope": "maintainer inventory command ownership",
+            "maintainer_inventory_commands": [
+                "dev cli inventory",
+                "dev cli script-audit",
+                "dev cli docs-audit",
+                "dev cli crate-health",
+                "dev cli package-health",
+                "dev cli runtime-identity",
+                "dev cli state-audit",
+                "dev cli state-doctor",
+            ],
             "owned_by_bijux_dev_cli": [
                 row["command"] for row in dev_rows if str(row["current_owner"]).startswith("bijux-dev-cli")
             ],
             "not_yet_owned_by_bijux_dev_cli": [
                 row["command"] for row in dev_rows if not str(row["current_owner"]).startswith("bijux-dev-cli")
+            ],
+            "owned_maintainer_inventory_commands": [
+                cmd
+                for cmd in [
+                    "dev cli inventory",
+                    "dev cli script-audit",
+                    "dev cli docs-audit",
+                    "dev cli crate-health",
+                    "dev cli package-health",
+                    "dev cli runtime-identity",
+                    "dev cli state-audit",
+                    "dev cli state-doctor",
+                ]
+                if cmd
+                in {
+                    row["command"] for row in dev_rows if str(row["current_owner"]).startswith("bijux-dev-cli")
+                }
             ],
         },
     )

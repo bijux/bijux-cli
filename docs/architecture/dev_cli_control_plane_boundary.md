@@ -45,6 +45,13 @@ These files represent the frozen baseline for extraction. Extraction work must r
 - `dev cli state-doctor` report assembly is owned by `bijux-dev-cli`.
 - `bijux-cli-core` provides low-level state and install diagnostics inputs only.
 
+## Script Docs Crate Health Ownership Freeze
+
+- `dev cli inventory` and `dev cli script-audit` inventory assembly are owned by `bijux-dev-cli`.
+- `dev cli docs-audit` report assembly is owned by `bijux-dev-cli`.
+- `dev cli crate-health` report assembly is owned by `bijux-dev-cli`.
+- `bijux-cli-core` delegates these report surfaces and does not shape their presentation payloads.
+
 ## Operational Notes
 
 - `bijux-cli-bin` remains the canonical entrypoint and dispatch host.
