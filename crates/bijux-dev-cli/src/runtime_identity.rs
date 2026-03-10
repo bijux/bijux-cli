@@ -109,7 +109,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
             "legacy_installer_conflicts": input.install_report.legacy_installer_conflicts,
         },
         "entrypoints": {
-            "binary": "crates/bijux-cli-bin/src/main.rs",
+            "binary": "crates/bijux-cli-core/src/bin/bijux-rs.rs",
             "core": "bijux_cli_core::app::run_app",
             "python_bridge": "bijux_cli_python::bindings::execution_facade_api",
         },

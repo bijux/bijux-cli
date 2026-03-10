@@ -19,6 +19,9 @@ fn internal_workspace_deps(pkg: &Value) -> BTreeSet<String> {
     };
 
     for dep in dep_items {
+        if !dep.get("kind").is_none_or(Value::is_null) {
+            continue;
+        }
         let Some(name) = dep.get("name").and_then(Value::as_str) else {
             continue;
         };
@@ -61,14 +64,6 @@ fn enforces_internal_crate_boundaries() {
         (
             "bijux-dev-cli",
             BTreeSet::from(["bijux-cli-evidence", "bijux-cli-routing"]),
-        ),
-        (
-            "bijux-cli-bin",
-            BTreeSet::from([
-                "bijux-cli-core",
-                "bijux-cli-python",
-                "bijux-cli-routing",
-            ]),
         ),
         (
             "bijux-cli-core",

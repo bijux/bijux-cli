@@ -17,8 +17,8 @@ fn read(path: &str) -> String {
 #[test]
 fn bin_entrypoint_stays_free_of_config_business_logic() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let main_rs = root.join("crates/bijux-cli-bin/src/main.rs");
-    let text = read(main_rs.to_str().expect("utf-8 path"));
+    let bin_rs = root.join("crates/bijux-cli-core/src/bin/bijux-rs.rs");
+    let text = read(bin_rs.to_str().expect("utf-8 path"));
 
     assert!(!text.contains("cli config get"));
     assert!(!text.contains("cli config set"));

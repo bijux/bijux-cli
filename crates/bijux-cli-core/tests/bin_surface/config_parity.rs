@@ -16,7 +16,7 @@ use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
-    let path = std::env::temp_dir().join(format!("bijux-cli-bin-{name}-{nanos}"));
+    let path = std::env::temp_dir().join(format!("bijux-cli-core-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }

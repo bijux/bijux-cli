@@ -130,7 +130,7 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
         .filter_map(|row| row["crate"].as_str())
         .map(ToString::to_string)
         .collect();
-    for expected in ["bijux-cli-core", "bijux-cli-routing", "bijux-cli-bin"] {
+    for expected in ["bijux-cli-core", "bijux-cli-routing", "bijux-cli-python"] {
         assert!(crates.contains(expected), "crate-health missing {expected}");
     }
 

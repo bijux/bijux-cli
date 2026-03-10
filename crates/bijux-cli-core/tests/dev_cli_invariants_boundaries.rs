@@ -15,9 +15,9 @@ fn dev_cli_dispatch_remains_core_only_and_bin_stays_thin() {
         .expect("read core app source");
     let bin_source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../bijux-cli-bin/src/main.rs"
+        "/src/bin/bijux-rs.rs"
     ))
-    .expect("read bin main source");
+    .expect("read core bin source");
 
     assert!(core_source.contains("if a == \"dev\" && b == \"cli\""));
     assert!(!bin_source.contains("dev cli"), "bin must not own dev cli dispatch");
