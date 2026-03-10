@@ -87,5 +87,11 @@ Release claims require:
 `artifacts/status/release_truth_report.json`.
 Migration guidance must be generated from artifacts, not hand-curated prose.
 
+## Compatibility Shim Freeze
+Compatibility shims and aliases require generated inventory with justification and removal plans:
+`artifacts/status/compatibility_shim_inventory.json` and
+`artifacts/status/compatibility_alias_inventory.json`.
+Permanent compatibility shims are rejected by policy gate unless evidence explicitly justifies them.
+
 ## Truth Before Polish Freeze
 Truth-reporting and parity evidence gates are frozen as release requirements before polish-only work.

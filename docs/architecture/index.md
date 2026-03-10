@@ -42,6 +42,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Install ambiguity law](install-ambiguity-law.md)
 - [Performance budget law](performance-budget-law.md)
 - [Release evidence law](release-evidence-law.md)
+- [Compatibility shim policy law](compatibility-shim-policy-law.md)
 - [Script automation reduction milestone](script-automation-reduction-milestone.md)
 - [Parity release candidate rule](parity_release_candidate_rule.md)
 - [Python package convergence report](python-package-convergence-report.md)
