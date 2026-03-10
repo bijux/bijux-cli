@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,7 +32,17 @@ def extract_array(text: str, const_name: str) -> list[str]:
 
 
 def main() -> int:
-    generated_at = datetime.now(timezone.utc).isoformat()
+    source_date_epoch = subprocess.run(
+        ["sh", "-lc", "printf %s \"${SOURCE_DATE_EPOCH:-}\""],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if source_date_epoch.isdigit():
+        generated_at = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+    else:
+        generated_at = "1970-01-01T00:00:00+00:00"
     routing_text = ROUTING_TEST.read_text(encoding="utf-8")
     plugin_text = PLUGIN_TEST.read_text(encoding="utf-8")
     cli_text = CLI_TEST.read_text(encoding="utf-8")

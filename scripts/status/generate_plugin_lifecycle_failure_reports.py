@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,8 +12,17 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+def stable_generated_at() -> str:
+    source_date_epoch = subprocess.run(
+        ["sh", "-lc", "printf %s \"${SOURCE_DATE_EPOCH:-}\""],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if source_date_epoch.isdigit():
+        return datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+    return "1970-01-01T00:00:00+00:00"
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -21,7 +31,7 @@ def write_json(path: Path, payload: dict) -> None:
 
 
 def main() -> None:
-    generated_at = now_iso()
+    generated_at = stable_generated_at()
 
     failure_report = {
         "generated_at": generated_at,

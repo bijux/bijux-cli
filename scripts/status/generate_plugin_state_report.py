@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,9 +12,22 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts" / "status" / "plugin_state_report.json"
 
 
+def stable_generated_at() -> str:
+    source_date_epoch = subprocess.run(
+        ["sh", "-lc", "printf %s \"${SOURCE_DATE_EPOCH:-}\""],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if source_date_epoch.isdigit():
+        return datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+    return "1970-01-01T00:00:00+00:00"
+
+
 def main() -> int:
     report = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": stable_generated_at(),
         "generator": "scripts/status/generate_plugin_state_report.py",
         "plugin_commands": {
             "complete": [
