@@ -38,7 +38,10 @@ fn schema_snapshots_are_deterministic_and_match_expected_files() {
         let second_schema = builder();
         let first = render(&first_schema);
         let second = render(&second_schema);
-        assert_eq!(first, second, "schema generation must be repeated-run deterministic: {path}");
+        assert_eq!(
+            first, second,
+            "schema generation must be repeated-run deterministic: {path}"
+        );
 
         let expected = std::fs::read_to_string(path).expect("snapshot file should exist");
         assert_eq!(first, expected, "schema drift for {path}");

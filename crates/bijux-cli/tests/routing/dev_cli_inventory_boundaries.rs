@@ -3,8 +3,9 @@
 
 #[test]
 fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/routing/mod.rs"))
-        .expect("read routing module source");
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/routing/mod.rs"))
+            .expect("read routing module source");
 
     assert!(
         !source.contains("pub mod reports;"),

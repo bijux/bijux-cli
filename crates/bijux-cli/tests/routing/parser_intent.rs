@@ -62,6 +62,12 @@ fn conflicting_output_and_pretty_flags_normalize_deterministically() {
     let right = parse_intent(&two).expect("parse should succeed");
     assert_eq!(left.command_path, right.command_path);
     assert_eq!(left.normalized_path, right.normalized_path);
-    assert_eq!(left.global_flags.output_format, right.global_flags.output_format);
-    assert_eq!(left.global_flags.pretty_mode, right.global_flags.pretty_mode);
+    assert_eq!(
+        left.global_flags.output_format,
+        right.global_flags.output_format
+    );
+    assert_eq!(
+        left.global_flags.pretty_mode,
+        right.global_flags.pretty_mode
+    );
 }
