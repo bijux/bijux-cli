@@ -40,11 +40,11 @@ use serde_json::{json, Value};
 
 use crate::argv::command_positionals;
 use crate::cli::commands::help::render_command_help;
+use crate::cli::commands::{history as history_commands, memory as memory_commands};
 use crate::cli::context::{
-    collect_files, command_has_flag, command_option_value, env_map, read_history_entries,
-    read_json_if_exists, read_memory_map, rel_to_root, resolve_state_paths, scaffold_plugin_layout,
-    state_diagnostics, state_path_status_value, workspace_root, write_history_entries,
-    write_memory_map,
+    collect_files, command_has_flag, command_option_value, env_map, read_json_if_exists,
+    rel_to_root, resolve_state_paths, scaffold_plugin_layout, state_diagnostics,
+    state_path_status_value, workspace_root,
 };
 use crate::config::execute_config_command;
 use crate::config::storage::{ConfigRepository, FileConfigRepository};
@@ -174,6 +174,12 @@ fn route_response(
     if let Some(payload) = execute_config_command(normalized_path, argv, &compatibility_paths)? {
         return Ok(payload);
     }
+    if let Some(payload) = history_commands::try_handle(normalized_path, argv, &paths)? {
+        return Ok(payload);
+    }
+    if let Some(payload) = memory_commands::try_handle(normalized_path, argv, &paths)? {
+        return Ok(payload);
+    }
 
     let payload = match normalized_path {
         [a, b] if a == "cli" && b == "version" => {
@@ -297,98 +303,6 @@ fn route_response(
                 "path_binaries": install_report.path_binaries,
                 "post_install_hint": hint
             })
-        }
-        [a] if a == "history" => {
-            let positional = command_positionals(argv, &["history"]);
-            let mut limit = 20_usize;
-            if let Some(idx) = argv.iter().position(|arg| arg == "--limit" || arg == "-l") {
-                if let Some(raw) = argv.get(idx + 1) {
-                    limit = raw.parse::<usize>().unwrap_or(20);
-                }
-            }
-            if let Some(raw) = positional.first().and_then(|token| token.strip_prefix("--limit=")) {
-                limit = raw.parse::<usize>().unwrap_or(20);
-            }
-            let mut entries = read_history_entries(&paths.history_file, limit)?;
-            if let Some(idx) = argv.iter().position(|arg| arg == "--filter" || arg == "-F") {
-                if let Some(needle) = argv.get(idx + 1) {
-                    entries.retain(|entry| {
-                        entry
-                            .get("command")
-                            .and_then(Value::as_str)
-                            .map(|command| command.contains(needle))
-                            .unwrap_or(false)
-                    });
-                }
-            }
-            if argv.iter().any(|arg| arg == "--sort")
-                && argv
-                    .iter()
-                    .position(|arg| arg == "--sort")
-                    .and_then(|idx| argv.get(idx + 1))
-                    .map(|value| value == "timestamp")
-                    .unwrap_or(false)
-            {
-                entries.sort_by(|a, b| {
-                    let left = a.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
-                    let right = b.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0);
-                    left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal)
-                });
-            }
-            json!({"entries": entries})
-        }
-        [a, b] if a == "history" && b == "clear" => {
-            let removed = read_history_entries(&paths.history_file, usize::MAX)
-                .map(|entries| entries.len())
-                .unwrap_or(0);
-            write_history_entries(&paths.history_file, &[])?;
-            json!({"status": "cleared", "removed_entries": removed, "file": paths.history_file})
-        }
-        [a] if a == "memory" => {
-            let memory = read_memory_map(&paths.memory_file)?;
-            json!({"status": "ok", "count": memory.len(), "message": "Memory command executed"})
-        }
-        [a, b] if a == "memory" && b == "list" => {
-            let memory = read_memory_map(&paths.memory_file)?;
-            let mut keys: Vec<String> = memory.keys().cloned().collect();
-            keys.sort_unstable();
-            json!({"status": "ok", "keys": keys, "count": keys.len()})
-        }
-        [a, b] if a == "memory" && b == "get" => {
-            let key = command_positionals(argv, &["memory", "get"])
-                .first()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY required"))?;
-            let memory = read_memory_map(&paths.memory_file)?;
-            json!({"status": "ok", "key": key, "value": memory.get(&key).cloned()})
-        }
-        [a, b] if a == "memory" && b == "set" => {
-            let raw_pair = command_positionals(argv, &["memory", "set"])
-                .first()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY=VALUE required"))?;
-            let (key, value) = raw_pair
-                .split_once('=')
-                .ok_or_else(|| anyhow::anyhow!("Invalid argument: expected KEY=VALUE"))?;
-            let mut memory = read_memory_map(&paths.memory_file)?;
-            memory.insert(key.trim().to_string(), Value::String(value.trim().to_string()));
-            write_memory_map(&paths.memory_file, &memory)?;
-            json!({"status": "updated", "key": key.trim(), "value": value.trim(), "file": paths.memory_file})
-        }
-        [a, b] if a == "memory" && b == "delete" => {
-            let key = command_positionals(argv, &["memory", "delete"])
-                .first()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY required"))?;
-            let mut memory = read_memory_map(&paths.memory_file)?;
-            let existed = memory.remove(&key).is_some();
-            write_memory_map(&paths.memory_file, &memory)?;
-            json!({"status": "deleted", "key": key, "removed": existed, "file": paths.memory_file})
-        }
-        [a, b] if a == "memory" && b == "clear" => {
-            let removed = read_memory_map(&paths.memory_file)?.len();
-            write_memory_map(&paths.memory_file, &serde_json::Map::new())?;
-            json!({"status": "cleared", "removed_keys": removed, "file": paths.memory_file})
         }
         [a] if a == "plugins" => {
             let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
