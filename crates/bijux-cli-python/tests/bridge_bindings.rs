@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_install as _;
 use bijux_cli_python::{
     classify_failure, cli_status_binding_api, command_tree_introspection_api,
     config_resolution_api, doctor_binding_api, execution_facade_api, execution_outcome_api,

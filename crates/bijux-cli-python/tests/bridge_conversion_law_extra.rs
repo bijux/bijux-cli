@@ -2,7 +2,6 @@
 //! Python bridge conversion and exception mapping coverage for TODOs 281-295.
 
 use bijux_cli_core as _;
-use bijux_cli_install as _;
 use bijux_cli_python::{
     classify_failure, command_tree_introspection_api, execution_facade_api, execution_outcome_api,
     plugin_registry_inspection_api, python_exception_tag, BridgeErrorKind,

@@ -2,7 +2,6 @@
 //! Python bridge execution law coverage for TODOs 261-275.
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_install as _;
 use bijux_cli_python::{
     classify_failure, execution_facade_api, execution_outcome_api, BridgeErrorKind,
 };
