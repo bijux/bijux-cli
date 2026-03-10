@@ -67,3 +67,13 @@ These files represent the frozen baseline for extraction. Extraction work must r
 - Dispatch ownership evidence must be generated at:
   - `artifacts/status/dev_cli_dispatch_ownership_report.json`
   - `artifacts/status/bin_entrypoint_responsibility_diff.json`
+
+## Runtime Query Interface Freeze
+
+- Runtime crates expose read-only structured query interfaces for maintainer reports:
+  - `bijux-cli-routing`: route and registry inventory, contracts schema inventory.
+  - `bijux-cli-install`: runtime identity diagnostics query.
+  - `bijux-cli-core`: state diagnostics and parity/status artifact availability query.
+- Query interfaces are data-only and must not render text or assemble maintainer dashboards.
+- Runtime crates other than `bijux-cli-core` must not import `bijux-dev-cli`.
+- The query interface layer is the bridge between runtime data and maintainer report assembly.
