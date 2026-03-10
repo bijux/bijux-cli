@@ -82,9 +82,12 @@ name = "bijux-cli-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bijux-cli-python",
+ "bijux-cli-routing",
  "bijux-dev-cli",
  "clap",
  "futures",
+ "libc",
  "proptest",
  "schemars",
  "semver",
