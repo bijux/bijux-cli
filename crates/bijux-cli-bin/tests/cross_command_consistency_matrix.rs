@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python::execution_outcome_api;
+use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli_repl::{execute_repl_line, startup_repl};
 use libc as _;
 use serde_json::Value;
@@ -254,4 +254,122 @@ fn binary_and_direct_core_agree_on_same_command_results() {
     assert_eq!(core.exit_code, bin.status.code().unwrap_or(-1));
     assert_eq!(core.stdout, String::from_utf8_lossy(&bin.stdout));
     assert_eq!(core.stderr, String::from_utf8_lossy(&bin.stderr));
+}
+
+#[test]
+fn plugin_command_help_integrates_into_root_help_tree_deterministically() {
+    let root_help_a = run_bin(&["--help"]);
+    let root_help_b = run_bin(&["--help"]);
+    assert_eq!(root_help_a.status.code(), Some(0));
+    assert_eq!(root_help_a.stdout, root_help_b.stdout);
+    let text = String::from_utf8(root_help_a.stdout).expect("utf-8");
+    assert!(text.contains("plugins"), "root help should include plugin command group");
+
+    let plugin_help = run_bin(&["plugins", "--help"]);
+    assert_eq!(plugin_help.status.code(), Some(0));
+    let plugin_text = String::from_utf8(plugin_help.stdout).expect("utf-8");
+    assert!(plugin_text.contains("list"));
+    assert!(plugin_text.contains("inspect"));
+}
+
+#[test]
+fn command_tree_export_is_identical_across_binary_and_bridge() {
+    let bin = run_bin(&["inspect", "--format", "json", "--no-pretty"]);
+    assert_eq!(bin.status.code(), Some(0));
+    let bin_payload = parse_json(&bin.stdout);
+    let bridge_outcome = bridge_outcome(&["inspect", "--format", "json", "--no-pretty"]);
+    let bridge_payload = parse_json(bridge_outcome["stdout"].as_str().unwrap_or_default().as_bytes());
+    assert_eq!(bin_payload, bridge_payload);
+
+    let tree = parse_json(command_tree_introspection_api().as_bytes());
+    assert_eq!(tree["root"], "bijux");
+    assert!(tree["namespaces"].is_array());
+}
+
+#[test]
+fn route_ownership_is_stable_across_repeated_runs() {
+    let first = parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let second = parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    assert_eq!(first["routes"], second["routes"]);
+    assert_eq!(first["aliases"], second["aliases"]);
+}
+
+#[test]
+fn command_metadata_is_stable_across_repeated_runs() {
+    let first = parse_json(&run_bin(&["inspect", "--format", "json", "--no-pretty"]).stdout);
+    let second = parse_json(&run_bin(&["inspect", "--format", "json", "--no-pretty"]).stdout);
+    assert_eq!(first["commands"], second["commands"]);
+    assert_eq!(first["builtins"], second["builtins"]);
+}
+
+#[test]
+fn diagnostics_payloads_do_not_drift_across_surfaces() {
+    let bin = parse_json(&run_bin(&["doctor", "--format", "json", "--no-pretty"]).stdout);
+    let bridge = bridge_outcome(&["doctor", "--format", "json", "--no-pretty"]);
+    let bridge_payload = parse_json(bridge["stdout"].as_str().unwrap_or_default().as_bytes());
+    assert_eq!(bin, bridge_payload);
+}
+
+#[test]
+fn output_envelopes_do_not_drift_across_surfaces() {
+    let bin = run_bin(&["unknown-command"]);
+    let core = run_app(&["bijux".to_string(), "unknown-command".to_string()]).expect("core run");
+    let bridge = bridge_outcome(&["unknown-command"]);
+
+    let bin_error = parse_json(&bin.stderr);
+    let core_error = parse_json(core.stderr.as_bytes());
+    let bridge_error = parse_json(bridge["stderr"].as_str().unwrap_or_default().as_bytes());
+
+    let mut bin_keys = bin_error
+        .as_object()
+        .expect("bin error")
+        .keys()
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut core_keys = core_error
+        .as_object()
+        .expect("core error")
+        .keys()
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut bridge_keys = bridge_error
+        .as_object()
+        .expect("bridge error")
+        .keys()
+        .cloned()
+        .collect::<Vec<_>>();
+    bin_keys.sort();
+    core_keys.sort();
+    bridge_keys.sort();
+    assert_eq!(bin_keys, core_keys);
+    assert_eq!(bin_keys, bridge_keys);
+}
+
+#[test]
+fn exit_code_classes_do_not_drift_across_surfaces() {
+    let success_bin = run_bin(&["status", "--format", "json", "--no-pretty"]);
+    let success_core = run_app(&[
+        "bijux".to_string(),
+        "status".to_string(),
+        "--format".to_string(),
+        "json".to_string(),
+        "--no-pretty".to_string(),
+    ])
+    .expect("core success");
+    let success_bridge = bridge_outcome(&["status", "--format", "json", "--no-pretty"]);
+    assert_eq!(success_bin.status.code().unwrap_or(-1), success_core.exit_code);
+    assert_eq!(
+        success_bin.status.code().unwrap_or(-1),
+        success_bridge["exit_code"].as_i64().unwrap_or(-1) as i32
+    );
+
+    let usage_bin = run_bin(&["unknown-command"]);
+    let usage_core =
+        run_app(&["bijux".to_string(), "unknown-command".to_string()]).expect("core usage");
+    let usage_bridge = bridge_outcome(&["unknown-command"]);
+    assert_eq!(usage_bin.status.code().unwrap_or(-1), usage_core.exit_code);
+    assert_eq!(
+        usage_bin.status.code().unwrap_or(-1),
+        usage_bridge["exit_code"].as_i64().unwrap_or(-1) as i32
+    );
 }
