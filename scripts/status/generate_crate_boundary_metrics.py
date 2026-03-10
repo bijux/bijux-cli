@@ -155,34 +155,46 @@ def pair_change_frequency(a_rel: str, b_rel: str, max_commits: int = 200) -> int
 def boundary_decisions() -> list[dict[str, str]]:
     return [
         {
-            "boundary": "bijux-cli core <-> routing module",
-            "status": "keep",
-            "decision": "keep as module boundary inside bijux-cli",
-            "reason": "routing law is shared core runtime behavior and now lives under src/routing",
+            "boundary": "core <-> routing",
+            "status": "watch",
+            "decision": "keep separate for now",
+            "reason": "high co-change expected during parity closure; separation still useful for parser test focus",
         },
         {
-            "boundary": "bijux-cli core <-> install module",
+            "boundary": "core <-> output",
             "status": "watch",
-            "decision": "keep as module boundary inside bijux-cli",
+            "decision": "keep separate for now",
+            "reason": "output formatting contracts remain reusable and test-scoped",
+        },
+        {
+            "boundary": "core <-> install",
+            "status": "watch",
+            "decision": "keep separate for now",
             "reason": "install concerns include path and packaging diagnostics outside core execution law",
         },
         {
-            "boundary": "bijux-cli <-> bijux-dev-cli",
+            "boundary": "core <-> contracts",
             "status": "keep",
             "decision": "must stay separate",
-            "reason": "maintainer control-plane report assembly must not leak into runtime crates",
+            "reason": "machine contracts must remain independent from execution engine",
         },
         {
-            "boundary": "bijux-cli <-> bijux-cli-python",
+            "boundary": "core <-> python",
             "status": "keep",
             "decision": "must stay separate",
             "reason": "bridge packaging/runtime integration is language-boundary specific",
         },
         {
-            "boundary": "bijux-dev-cli <-> bijux-cli-evidence",
+            "boundary": "core <-> plugin",
             "status": "keep",
             "decision": "must stay separate",
-            "reason": "evidence contracts stay reusable and independent from command presentation logic",
+            "reason": "plugin lifecycle and registry law should not be merged into base execution core",
+        },
+        {
+            "boundary": "core <-> repl",
+            "status": "keep",
+            "decision": "must stay separate",
+            "reason": "interactive session model and transcript behavior are distinct runtime surfaces",
         },
     ]
 
