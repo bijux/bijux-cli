@@ -12,7 +12,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], env: &[(&str, &str)]) -> std::process::Output {
@@ -50,13 +53,23 @@ fn success_machine_output_keeps_stderr_empty() {
 fn failure_output_routes_to_stderr_and_not_stdout() {
     let out = run_with(&["cli", "unknown-command"]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty(), "stdout should be empty for failure envelopes");
-    assert!(!out.stderr.is_empty(), "stderr should contain failure envelope");
+    assert!(
+        out.stdout.is_empty(),
+        "stdout should be empty for failure envelopes"
+    );
+    assert!(
+        !out.stderr.is_empty(),
+        "stderr should contain failure envelope"
+    );
 }
 
 #[test]
 fn bin_and_core_outputs_match_for_same_argv() {
-    let argv = vec!["bijux-rs".to_string(), "cli".to_string(), "status".to_string()];
+    let argv = vec![
+        "bijux-rs".to_string(),
+        "cli".to_string(),
+        "status".to_string(),
+    ];
     let core = bijux_cli::app::run_app(&argv).expect("core run_app should succeed");
 
     let out = run_with(&["cli", "status"]);
@@ -85,7 +98,10 @@ fn color_mode_executes_through_binary() {
 
 #[test]
 fn no_color_env_executes_through_binary() {
-    let out = run_with_env(&["--color", "always", "cli", "status"], &[("NO_COLOR", "1")]);
+    let out = run_with_env(
+        &["--color", "always", "cli", "status"],
+        &[("NO_COLOR", "1")],
+    );
     assert!(out.status.success());
     let payload: serde_json::Value =
         serde_json::from_slice(&out.stdout).expect("stdout should be valid json");
@@ -108,7 +124,10 @@ fn pretty_json_executes_through_binary() {
     let out = run_with(&["--format", "json", "--pretty", "cli", "status"]);
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).expect("stdout should be utf-8");
-    assert!(text.lines().count() > 2, "pretty output should be multiline json");
+    assert!(
+        text.lines().count() > 2,
+        "pretty output should be multiline json"
+    );
 }
 
 #[test]
@@ -133,7 +152,10 @@ fn help_fast_path_timing_regression_guard() {
     let out = run_with(&["--help"]);
     let elapsed = start.elapsed();
     assert!(out.status.success());
-    assert!(elapsed < Duration::from_secs(2), "help fast-path regressed: {elapsed:?}");
+    assert!(
+        elapsed < Duration::from_secs(2),
+        "help fast-path regressed: {elapsed:?}"
+    );
 }
 
 #[test]
@@ -142,7 +164,10 @@ fn version_fast_path_timing_regression_guard() {
     let out = run_with(&["version"]);
     let elapsed = start.elapsed();
     assert!(out.status.success());
-    assert!(elapsed < Duration::from_secs(2), "version fast-path regressed: {elapsed:?}");
+    assert!(
+        elapsed < Duration::from_secs(2),
+        "version fast-path regressed: {elapsed:?}"
+    );
 }
 
 #[cfg(unix)]
