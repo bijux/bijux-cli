@@ -10,6 +10,7 @@ pub mod control_plane;
 pub mod crate_health;
 pub mod docs_audit;
 pub mod env;
+pub mod evidence;
 pub mod package_health;
 pub mod parity;
 pub mod registry;

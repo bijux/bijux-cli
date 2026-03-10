@@ -95,6 +95,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bijux-cli-evidence"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bijux-cli-install"
 version = "0.1.0"
 dependencies = [
@@ -155,6 +163,7 @@ name = "bijux-dev-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bijux-cli-evidence",
  "bijux-cli-install",
  "bijux-cli-routing",
  "serde",

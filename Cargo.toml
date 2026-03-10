@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/bijux-cli-evidence",
   "crates/bijux-dev-cli",
   "crates/bijux-cli-bin",
   "crates/bijux-cli-core",
