@@ -118,4 +118,7 @@ scripts/status/enforce_plugin_state_corruption_campaign_gate.py # enforce CI fai
 scripts/status/generate_state_race_campaign_reports.py # generate concurrent state-race campaign, outcome-classification, reproducer-retention, regression, and frozen contract artifacts for TODOs 161-180
 scripts/status/enforce_state_race_campaign_gate.py # enforce CI failure when concurrent state-race artifacts drift or frozen race contract is not satisfied
 scripts/status/generate_adversarial_fs_process_reports.py # generate adversarial filesystem/process matrix, evidence artifact, and frozen hardening contract for TODOs 181-200
+scripts/status/generate_dev_cli_evidence_reports.py # generate dev-cli evidence namespace reports used by CI integrity gates and release truth exports
+scripts/status/generate_evidence_integrity_reports.py # generate evidence coverage/orphan/claim-without-evidence plus config ownership truth artifacts
+scripts/status/enforce_evidence_integrity_gate.py # enforce evidence integrity and release evidence-id reference correctness in CI
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen

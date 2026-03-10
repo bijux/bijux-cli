@@ -409,9 +409,12 @@ jobs:
           python3 scripts/status/generate_dev_cli_rustdoc_reports.py
           python3 scripts/status/generate_dev_cli_release_reports.py
           python3 scripts/status/generate_dev_cli_release_truth_bundle.py
+          python3 scripts/status/generate_dev_cli_evidence_reports.py
+          python3 scripts/status/generate_evidence_integrity_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
+          python3 scripts/status/enforce_evidence_integrity_gate.py
 
       - name: Warn on new script files without justification
         shell: bash
@@ -1299,6 +1302,18 @@ jobs:
             artifacts/status/dev_cli_release_intentional_differences_report.json
             artifacts/status/dev_cli_release_unresolved_gaps_report.json
             artifacts/status/dev_cli_release_compatibility_leftovers_report.json
+            artifacts/status/dev_cli_evidence_list_report.json
+            artifacts/status/dev_cli_evidence_audit_report.json
+            artifacts/status/dev_cli_evidence_stale_report.json
+            artifacts/status/dev_cli_evidence_matrix_report.json
+            artifacts/status/dev_cli_evidence_website_export_report.json
+            artifacts/status/dev_cli_evidence_ci_export_report.json
+            artifacts/status/dev_cli_evidence_release_export_report.json
+            artifacts/status/dev_cli_evidence_command_map_report.json
+            artifacts/status/dev_cli_evidence_parity_map_report.json
+            artifacts/status/evidence_coverage_report.json
+            artifacts/status/orphan_evidence_report.json
+            artifacts/status/claim_without_evidence_report.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -1701,6 +1716,16 @@ jobs:
             artifacts/status/config_source_parity_artifact.json
             artifacts/status/config_source_drift_artifact.json
             artifacts/status/config_source_precedence_contract.json
+            artifacts/status/config_owners_by_layer_report.json
+            artifacts/status/config_file_schema_owners_report.json
+            artifacts/status/config_python_compatibility_shims_report.json
+            artifacts/status/config_rust_sources_report.json
+            artifacts/status/config_precedence_proofs_report.json
+            artifacts/status/config_mutation_rollback_proofs_report.json
+            artifacts/status/config_corruption_evidence_report.json
+            artifacts/status/config_owner_drift_report.json
+            artifacts/status/config_evidence_link_report.json
+            artifacts/status/config_ownership_truth.json
             artifacts/status/history_command_coverage_report.json
             artifacts/status/history_command_matrix_artifact.json
             artifacts/status/history_corruption_matrix_artifact.json
