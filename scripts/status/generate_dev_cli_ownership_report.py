@@ -24,6 +24,7 @@ COMMAND_ROWS = [
     {"command": "dev cli state-doctor", "group": "runtime", "visible": True},
     {"command": "dev cli plugin-health", "group": "runtime", "visible": True},
     {"command": "dev cli docs-audit", "group": "audit", "visible": True},
+    {"command": "dev cli scripts", "group": "audit", "visible": True},
     {"command": "dev cli script-audit", "group": "audit", "visible": True},
     {"command": "dev cli crate-health", "group": "audit", "visible": True},
     {"command": "dev cli snapshots-audit", "group": "audit", "visible": True},

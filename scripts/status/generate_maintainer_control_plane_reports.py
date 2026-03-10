@@ -24,11 +24,11 @@ REQUIRED_COMMANDS = [
 ]
 
 REPLACEMENTS = {
-    "scripts/verify-install-channels.sh": "bijux dev cli package-health --format json --no-pretty",
-    "scripts/check-package-metadata.py": "bijux dev cli package-health --format json --no-pretty",
-    "scripts/check_e2e_contract.py": "bijux dev cli parity --format json --no-pretty",
-    "scripts/check-towncrier-fragment.sh": "bijux dev cli docs-audit --format json --no-pretty",
-    "scripts/helper_comments.py": "bijux dev cli docs-audit --format json --no-pretty",
+    "scripts/check-package-metadata.py": "bijux dev cli scripts package-metadata --format json --no-pretty",
+    "scripts/check_e2e_contract.py": "bijux dev cli scripts e2e-contract --format json --no-pretty",
+    "scripts/helper_pip_audit.py": "bijux dev cli scripts pip-audit --format json --no-pretty",
+    "scripts/capture_python_behavior.py": "bijux dev cli scripts capture-python-behavior --format json --no-pretty",
+    "scripts/generate-provenance-statement.sh": "bijux dev cli scripts provenance-statement --tag <tag> --output-dir <dir> --format json --no-pretty",
 }
 
 

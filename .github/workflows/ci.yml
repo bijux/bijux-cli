@@ -128,7 +128,14 @@ jobs:
 
       - run: python -m pip install -U pip tox
       - name: Validate cross-ecosystem package metadata
-        run: python scripts/check-package-metadata.py
+        run: |
+          cargo run -q -p bijux-cli-bin -- dev cli scripts package-metadata --format json --no-pretty > /tmp/package-metadata.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("/tmp/package-metadata.json").read_text(encoding="utf-8"))
+          raise SystemExit(0 if payload.get("status") == "pass" else 1)
+          PY
       - run: tox -vv -e ${{ matrix.env }}
 
       # --- QUALITY ---
@@ -398,6 +405,7 @@ jobs:
           python3 scripts/status/generate_state_audit_reports.py
           python3 scripts/status/generate_plugin_migration_reports.py
           python3 scripts/status/generate_maintainer_control_plane_reports.py
+          python3 scripts/status/generate_dev_cli_script_migration_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -420,6 +428,31 @@ jobs:
           for path in "${added[@]}"; do
             if ! grep -Eq "^[[:space:]]*${path//\//\\/}[[:space:]]*#" "$allowlist"; then
               echo "NEW SCRIPT WARNING: add justification to $allowlist for $path"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Fail on new root-level scripts without exemption
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE_SHA" ]; then
+            BASE_SHA="$(git rev-list --max-count=1 HEAD~1)"
+          fi
+          mapfile -t added < <(git diff --name-status "$BASE_SHA"...HEAD -- . | awk '$1=="A"{print $2}' | grep -E '^[^/]+\.(sh|py)$' || true)
+          if [ "${#added[@]}" -eq 0 ]; then
+            echo "No new root-level scripts added."
+            exit 0
+          fi
+          allowlist=".github/root_script_additions_allowlist.txt"
+          missing=0
+          for path in "${added[@]}"; do
+            if ! grep -Eq "^[[:space:]]*${path//\//\\/}[[:space:]]*#" "$allowlist"; then
+              echo "NEW ROOT SCRIPT WARNING: add justification to $allowlist for $path"
               missing=1
             fi
           done
@@ -1197,6 +1230,20 @@ jobs:
           path: |
             artifacts/status/dev_cli_ownership_report.json
             artifacts/status/dev_cli_ownership_report.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli script migration reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-script-migration
+          path: |
+            artifacts/status/dev_cli_scripts_remaining_report.json
+            artifacts/status/dev_cli_scripts_migrated_report.json
+            artifacts/status/dev_cli_scripts_diff_report.json
+            artifacts/status/dev_cli_script_value_ranking.json
+            artifacts/status/dev_cli_task_runner_inventory.json
           if-no-files-found: warn
           retention-days: 14
 
