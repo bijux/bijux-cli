@@ -297,11 +297,15 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --text > artifacts/status/plugin_health_report.txt
+          cargo run -q -p bijux-cli-bin -- cli plugins doctor --format json --no-pretty > artifacts/status/plugin_doctor_runtime_sample.json
+          cargo run -q -p bijux-cli-bin -- cli plugins explain cli --format json --no-pretty > artifacts/status/plugin_explain_runtime_sample.json
+          cargo run -q -p bijux-cli-bin -- cli plugins where --format json --no-pretty > artifacts/status/plugin_where_runtime_sample.json
           cargo run -q -p bijux-cli-bin -- dev cli crate-health --json --no-pretty > artifacts/status/duplication_hotspots.json
           cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --json --no-pretty > artifacts/status/state_doctor_report.json
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
           python3 scripts/status/generate_state_audit_reports.py
+          python3 scripts/status/generate_plugin_migration_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
 
@@ -415,6 +419,10 @@ jobs:
       - name: Plugin scaffold policy gate
         run: |
           python3 scripts/status/enforce_plugin_scaffold_policy.py
+
+      - name: Plugin migration policy gate
+        run: |
+          python3 scripts/status/enforce_plugin_migration_policy.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -650,6 +658,18 @@ jobs:
             artifacts/status/reserved_namespace_inventory.json
             artifacts/status/plugin_lifecycle_failure_injection_report.json
             artifacts/status/plugin_rollback_proof_report.json
+            artifacts/status/plugin_doctor_runtime_sample.json
+            artifacts/status/plugin_explain_runtime_sample.json
+            artifacts/status/plugin_where_runtime_sample.json
+            artifacts/status/plugin_lifecycle_ownership_report.json
+            artifacts/status/plugin_scaffold_efficiency_report.json
+            artifacts/status/plugin_scaffold_lifecycle_proof_report.json
+            artifacts/status/plugin_namespace_abuse_proof_report.json
+            artifacts/status/plugin_doctor_clarity_report.json
+            artifacts/status/plugin_explain_clarity_report.json
+            artifacts/status/plugin_where_ownership_report.json
+            artifacts/status/plugin_command_set_status.json
+            artifacts/status/plugin_migration_report.json
             artifacts/status/config_corruption_matrix.json
             artifacts/status/config_rollback_proof.json
             artifacts/status/history_corruption_matrix.json

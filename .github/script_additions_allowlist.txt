@@ -18,3 +18,5 @@ scripts/status/enforce_install_neutrality_gate.py # enforce install ambiguity ha
 scripts/parity/generate_command_law_reports.py # generate command-level precedence/flags/stream/exit/help/machine-output reports and consolidated parity dashboard
 scripts/parity/enforce_parity_dashboard_gate.py # enforce parity dashboard completeness and command-law report presence for release evidence
 scripts/status/generate_state_audit_reports.py # generate unified state behavior/corruption/rollback/path-resolution/doctor-snapshot artifacts and machine audit payload
+scripts/status/generate_plugin_migration_reports.py # generate unified plugin migration ownership/scaffold/proof/clarity artifacts and consolidated plugin migration report
+scripts/status/enforce_plugin_migration_policy.py # enforce plugin migration evidence completeness, rollback proofs, and strict frozen-law clarity contracts

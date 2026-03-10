@@ -1424,6 +1424,32 @@ fn route_response(
             let bridge_duplicate_law = read_json_if_exists(
                 &root.join("artifacts/status/bridge_duplicate_law_report.json"),
             );
+            let plugin_lifecycle_ownership = read_json_if_exists(
+                &root.join("artifacts/status/plugin_lifecycle_ownership_report.json"),
+            );
+            let plugin_scaffold_efficiency = read_json_if_exists(
+                &root.join("artifacts/status/plugin_scaffold_efficiency_report.json"),
+            );
+            let plugin_scaffold_lifecycle_proof = read_json_if_exists(
+                &root.join("artifacts/status/plugin_scaffold_lifecycle_proof_report.json"),
+            );
+            let plugin_namespace_abuse_proof = read_json_if_exists(
+                &root.join("artifacts/status/plugin_namespace_abuse_proof_report.json"),
+            );
+            let plugin_doctor_clarity = read_json_if_exists(
+                &root.join("artifacts/status/plugin_doctor_clarity_report.json"),
+            );
+            let plugin_explain_clarity = read_json_if_exists(
+                &root.join("artifacts/status/plugin_explain_clarity_report.json"),
+            );
+            let plugin_where_ownership = read_json_if_exists(
+                &root.join("artifacts/status/plugin_where_ownership_report.json"),
+            );
+            let plugin_command_set_status = read_json_if_exists(
+                &root.join("artifacts/status/plugin_command_set_status.json"),
+            );
+            let plugin_migration_report =
+                read_json_if_exists(&root.join("artifacts/status/plugin_migration_report.json"));
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1453,6 +1479,15 @@ fn route_response(
                     "intentional_differences": intentional_differences,
                     "unowned_scripts": unowned_scripts,
                     "repl_only_behaviors": repl_only_behaviors,
+                    "plugin_lifecycle_ownership_report": plugin_lifecycle_ownership,
+                    "plugin_scaffold_efficiency_report": plugin_scaffold_efficiency,
+                    "plugin_scaffold_lifecycle_proof_report": plugin_scaffold_lifecycle_proof,
+                    "plugin_namespace_abuse_proof_report": plugin_namespace_abuse_proof,
+                    "plugin_doctor_clarity_report": plugin_doctor_clarity,
+                    "plugin_explain_clarity_report": plugin_explain_clarity,
+                    "plugin_where_ownership_report": plugin_where_ownership,
+                    "plugin_command_set_status": plugin_command_set_status,
+                    "plugin_migration_report": plugin_migration_report,
                 },
                 "command_migration": {
                     "matrix": migration_matrix,

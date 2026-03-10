@@ -357,6 +357,15 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
     assert!(payload["reports"]["known_parity_gaps"].is_object());
     assert!(payload["reports"]["intentional_differences"].is_object());
     assert!(payload["reports"]["unowned_scripts"].is_object());
+    assert!(payload["reports"]["plugin_lifecycle_ownership_report"].is_object());
+    assert!(payload["reports"]["plugin_scaffold_efficiency_report"].is_object());
+    assert!(payload["reports"]["plugin_scaffold_lifecycle_proof_report"].is_object());
+    assert!(payload["reports"]["plugin_namespace_abuse_proof_report"].is_object());
+    assert!(payload["reports"]["plugin_doctor_clarity_report"].is_object());
+    assert!(payload["reports"]["plugin_explain_clarity_report"].is_object());
+    assert!(payload["reports"]["plugin_where_ownership_report"].is_object());
+    assert!(payload["reports"]["plugin_command_set_status"].is_object());
+    assert!(payload["reports"]["plugin_migration_report"].is_object());
 }
 
 #[test]
