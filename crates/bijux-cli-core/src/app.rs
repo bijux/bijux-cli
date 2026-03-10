@@ -1249,11 +1249,21 @@ fn route_response(
             let report =
                 read_json_if_exists(&root.join("artifacts/status/crate_boundary_report.json"));
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
+            let public_api_by_crate =
+                read_json_if_exists(&root.join("artifacts/status/public_api_by_crate.json"));
+            let internal_only_candidates = read_json_if_exists(
+                &root.join("artifacts/status/internal_only_candidates_by_crate.json"),
+            );
+            let cross_crate_api_usage =
+                read_json_if_exists(&root.join("artifacts/status/cross_crate_api_usage.json"));
             json!({
                 "crate_metrics": metrics,
                 "crate_report": report,
                 "public_api_counts": state.get("crates_public_api_counts").cloned().unwrap_or_else(|| json!([])),
                 "dependency_edges": state.get("crate_dependency_edges").cloned().unwrap_or_else(|| json!([])),
+                "public_api_by_crate": public_api_by_crate,
+                "internal_only_candidates_by_crate": internal_only_candidates,
+                "cross_crate_api_usage": cross_crate_api_usage,
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
