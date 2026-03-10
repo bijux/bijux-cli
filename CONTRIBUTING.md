@@ -262,13 +262,13 @@ This section defines engineering standards for the Rust workspace in `bijux-cli`
 ### Workspace layout
 - `crates/bijux-cli-contracts`: shared durable contracts
 - `crates/bijux-cli`: execution kernel primitives
-- `crates/bijux-cli-routing`: command graph and resolution
+- `crates/bijux-cli/src/routing`: command graph and resolution
 - `crates/bijux-cli-output`: output encoders and envelopes
 - `crates/bijux-cli-repl`: interactive shell orchestration
 - `crates/bijux-cli-plugin`: plugin lifecycle boundaries
 - `crates/bijux-cli-python`: Python compatibility bridge
 - `crates/bijux-cli::install`: install/update flow boundaries
-- `crates/bijux-cli`: binary entrypoint and core runtime
+- `crates/bijux-cli/src/bin`: binary entrypoint and core runtime
 
 ### Non-negotiable rules
 - `unsafe` is forbidden workspace-wide.

@@ -1,7 +1,7 @@
 # Parser Parity Audit
 
 Date: 2026-03-09
-Scope: `crates/bijux-cli-routing/src/parser.rs` versus current Python CLI documentation and command inventory.
+Scope: `crates/bijux-cli/src/routing/parser.rs` versus current Python CLI documentation and command inventory.
 
 ## Findings
 

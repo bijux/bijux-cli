@@ -2,8 +2,8 @@
 
 Date: 2026-03-10
 Inputs:
-- `crates/bijux-cli-routing/tests/fixtures/python_documented_commands.txt`
-- `crates/bijux-cli-routing/tests/fixtures/rust_routed_root_commands.txt`
+- `crates/bijux-cli/tests/routing/fixtures/python_documented_commands.txt`
+- `crates/bijux-cli/tests/routing/fixtures/rust_routed_root_commands.txt`
 
 ## Summary
 - Python documented root commands: 16

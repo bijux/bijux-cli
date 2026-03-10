@@ -37,7 +37,7 @@ Scope: tasks 261-280 (first memory baseline).
 - `crates/bijux-cli/tests/snapshots/memory_list_text.txt`
 - `crates/bijux-cli/tests/snapshots/memory_list_yaml.txt`
 - `crates/bijux-cli/tests/app_direct_invocation.rs` memory cases
-- `crates/bijux-cli-routing/tests/serde_roundtrip.rs` memory contract roundtrips
+- `crates/bijux-cli/tests/routing/serde_roundtrip.rs` memory contract roundtrips
 
 ## Status for 261-280
 

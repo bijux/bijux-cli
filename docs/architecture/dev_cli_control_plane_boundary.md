@@ -5,7 +5,7 @@
 ## Boundary Rules
 
 1. `bijux-dev-cli` owns maintainer automation and maintainer-facing report assembly.
-2. Runtime crates (`bijux-cli`, `bijux-cli-routing`, `bijux-cli::install`, `bijux-cli-plugin`, `bijux-cli-output`) own runtime law and structured-data services.
+2. Runtime crates (`bijux-cli`, `bijux-cli::install`, `bijux-cli-plugin`, `bijux-cli-output`) own runtime law and structured-data services.
 3. Runtime crates must not own maintainer workflow orchestration or maintainer-facing dashboard formatting.
 4. `bijux dev cli ...` is the canonical maintainer command surface.
 5. `bijux` remains the only canonical executable.
@@ -26,7 +26,7 @@ These files represent the frozen baseline for extraction. Extraction work must r
 
 - `dev cli routes` presentation assembly is owned by `bijux-dev-cli`.
 - `dev cli registry` presentation assembly is owned by `bijux-dev-cli`.
-- `bijux-cli-routing` exposes read-only query data for route and registry inventory.
+- `bijux-cli` exposes read-only query data for route and registry inventory.
 - `bijux-cli` delegates these maintainer presentations to `bijux-dev-cli`.
 
 ## Env Contracts Parity Status Ownership Freeze
@@ -62,8 +62,8 @@ These files represent the frozen baseline for extraction. Extraction work must r
 
 - `bijux-cli` owns process entrypoint concerns only: argv decoding, `run_app()` invocation, stream writes, and process exit code.
 - `bijux-cli` does not implement maintainer workflow routing branches or maintainer payload formatting.
-- `bijux-cli-routing` owns command identity, normalization, and route resolution only.
-- `bijux-cli-routing` does not own maintainer report assembly or maintainer dashboard formatting.
+- `bijux-cli` owns command identity, normalization, and route resolution only.
+- `bijux-cli` does not own maintainer report assembly or maintainer dashboard formatting.
 - Dispatch ownership evidence must be generated at:
   - `artifacts/status/dev_cli_dispatch_ownership_report.json`
   - `artifacts/status/bin_entrypoint_responsibility_diff.json`
@@ -71,7 +71,7 @@ These files represent the frozen baseline for extraction. Extraction work must r
 ## Runtime Query Interface Freeze
 
 - Runtime crates expose read-only structured query interfaces for maintainer reports:
-  - `bijux-cli-routing`: route and registry inventory, contracts schema inventory.
+  - `bijux-cli`: route and registry inventory, contracts schema inventory.
   - `bijux-cli::install`: runtime identity diagnostics query.
   - `bijux-cli`: state diagnostics and parity/status artifact availability query.
 - Query interfaces are data-only and must not render text or assemble maintainer dashboards.

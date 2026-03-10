@@ -3,7 +3,7 @@
 Scope: tasks `401-420`.
 
 Evidence:
-- `crates/bijux-cli-routing/tests/parser_abuse.rs`
+- `crates/bijux-cli/tests/routing/parser_abuse.rs`
 - `artifacts/status/parser_abuse_report.json`
 
 Law:
