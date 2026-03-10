@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate cli-subcommand coverage/matrix artifacts and freeze cli command law domain."""
+"""Generate cli-subcommand closure evidence artifacts."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "cli_subcommands.txt"
 TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "cli_command_matrix.rs"
+BIN_TESTS_DIR = ROOT / "crates" / "bijux-cli-bin" / "tests"
 
 REQUIRED_TESTS = {
     223: "parity_cli_status_paths_and_self_test_against_current_behavior",
@@ -32,6 +33,23 @@ REQUIRED_TESTS = {
     239: "cli_command_matrix_artifact_smoke_uses_supported_commands",
 }
 
+CLI_USER_VALUE = {
+    "cli status": 100,
+    "cli paths": 95,
+    "cli self-test": 90,
+    "cli config get": 88,
+    "cli config set": 86,
+    "cli config list": 84,
+    "cli config unset": 80,
+    "cli config clear": 78,
+    "cli plugins list": 96,
+    "cli plugins inspect": 94,
+    "cli plugins install": 92,
+    "cli plugins uninstall": 92,
+    "cli plugins check": 90,
+    "cli plugins doctor": 88,
+}
+
 
 def write_json(name: str, payload: dict) -> None:
     STATUS.mkdir(parents=True, exist_ok=True)
@@ -45,24 +63,61 @@ def read_cli_commands() -> list[str]:
 
 
 def command_status(command: str, source: str) -> str:
-    if f'"{command}"' in source:
+    quoted = ", ".join([f'"{part}"' for part in command.split()])
+    if quoted in source or f'"{command}"' in source:
         return "complete"
     return "partial"
 
 
+def command_coverage_evidence(command: str, test_sources: dict[Path, str]) -> list[str]:
+    parts = command.split()
+    quoted = ", ".join([f'"{part}"' for part in parts])
+    evidence: list[str] = []
+    for path, source in test_sources.items():
+        if quoted in source or f'"{command}"' in source:
+            evidence.append(str(path.relative_to(ROOT)))
+    return evidence
+
+
+def user_value(command: str) -> int:
+    return CLI_USER_VALUE.get(command, 70)
+
+
+def required_coverage_checks(source: str) -> dict[str, bool]:
+    checks = {
+        "parity": f"fn {REQUIRED_TESTS[223]}(" in source
+        and f"fn {REQUIRED_TESTS[226]}(" in source
+        and f"fn {REQUIRED_TESTS[228]}(" in source,
+        "machine_output": f"fn {REQUIRED_TESTS[233]}(" in source,
+        "help_and_error_snapshots": f"fn {REQUIRED_TESTS[230]}(" in source
+        and f"fn {REQUIRED_TESTS[231]}(" in source,
+    }
+    checks["all_required"] = all(checks.values())
+    return checks
+
+
 def main() -> int:
     test_source = TEST_FILE.read_text(encoding="utf-8")
+    test_sources = {
+        path: path.read_text(encoding="utf-8")
+        for path in sorted(BIN_TESTS_DIR.glob("*.rs"))
+    }
     commands = read_cli_commands()
 
     rows = [
-        {
-            "command": command,
-            "status": command_status(command, test_source),
-            "status_model": ["complete", "partial", "shim", "missing"],
-            "evidence": "crates/bijux-cli-bin/tests/cli_command_matrix.rs",
-        }
+        (
+            lambda evidence: {
+                "command": command,
+                "status": "complete" if evidence else command_status(command, test_source),
+                "status_model": ["complete", "partial", "shim", "missing"],
+                "evidence": evidence[0] if evidence else "crates/bijux-cli-bin/tests/cli_command_matrix.rs",
+                "evidence_links": evidence,
+                "user_value": user_value(command),
+            }
+        )(command_coverage_evidence(command, test_sources))
         for command in commands
     ]
+    rows.sort(key=lambda row: (-int(row["user_value"]), row["command"]))
 
     todo_rows = [
         {
@@ -75,6 +130,7 @@ def main() -> int:
     ]
 
     generated_at = datetime.now(timezone.utc).isoformat()
+    coverage = required_coverage_checks(test_source)
 
     write_json(
         "cli_command_coverage_report.json",
@@ -118,6 +174,60 @@ def main() -> int:
                 "artifacts/status/cli_command_coverage_report.json",
                 "artifacts/status/cli_command_matrix_artifact.json",
             ],
+        },
+    )
+
+    remaining = [row for row in rows if row["status"] != "complete"]
+    write_json(
+        "cli_command_remaining_inventory.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_cli_command_surface_reports.py",
+            "scope": "remaining cli subcommands not proven complete in rust",
+            "remaining_commands": remaining,
+            "count": len(remaining),
+        },
+    )
+
+    ranked_remaining = sorted(remaining, key=lambda row: (-int(row["user_value"]), row["command"]))
+    write_json(
+        "cli_command_value_ranking.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_cli_command_surface_reports.py",
+            "scope": "cli subcommand user-value ranking for closure execution",
+            "ranked_remaining_commands": ranked_remaining,
+            "count": len(ranked_remaining),
+        },
+    )
+
+    write_json(
+        "cli_command_completion_report.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_cli_command_surface_reports.py",
+            "scope": "cli command closure execution",
+            "remaining_count": len(ranked_remaining),
+            "coverage_checks": coverage,
+            "closure_status": "green" if len(ranked_remaining) == 0 and coverage["all_required"] else "open",
+            "closure_reason": (
+                "all cli subcommands are complete and closure checks are proven"
+                if len(ranked_remaining) == 0 and coverage["all_required"]
+                else "cli subcommand closure still has open items"
+            ),
+            "top_targets": ranked_remaining[:2],
+        },
+    )
+
+    write_json(
+        "cli_command_closure_set.json",
+        {
+            "generated_at": generated_at,
+            "generator": "scripts/status/generate_cli_command_surface_reports.py",
+            "scope": "tracked cli command closure set",
+            "tracked_commands": [row["command"] for row in rows],
+            "coverage_checks": coverage,
+            "status": "frozen",
         },
     )
 
