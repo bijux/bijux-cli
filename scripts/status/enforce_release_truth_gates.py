@@ -45,6 +45,10 @@ STATUS_FILES = [
     STATUS_DIR / "simplification_deletion_artifact.json",
     STATUS_DIR / "candidate_merge_later_report.json",
     STATUS_DIR / "candidate_keep_separate_report.json",
+    STATUS_DIR / "release_evidence_bundle.json",
+    STATUS_DIR / "release_status_manifest.json",
+    STATUS_DIR / "release_truth_report.json",
+    STATUS_DIR / "release_truth_report.txt",
 ]
 
 
@@ -123,6 +127,10 @@ def main() -> int:
     partial_area_acceptance = read_json(STATUS_DIR / "command_family_partial_area_acceptance.json")
     cross_surface_consistency = read_json(STATUS_DIR / "cross_surface_consistency_artifact.json")
     cross_surface_drift = read_json(STATUS_DIR / "cross_surface_drift_artifact.json")
+    release_bundle = read_json(STATUS_DIR / "release_evidence_bundle.json")
+    release_manifest = read_json(STATUS_DIR / "release_status_manifest.json")
+    release_truth = read_json(STATUS_DIR / "release_truth_report.json")
+    compatibility_debt = read_json(STATUS_DIR / "compatibility_debt_trend_report.json")
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -163,6 +171,25 @@ def main() -> int:
         if weak_count > weak_threshold:
             failures.append(
                 f"tests-strong claim blocked: weak test count {weak_count} is above threshold {weak_threshold}"
+            )
+
+    # Explicit claim laws from release truth requirements.
+    if has_claim(r"equal\s+to\s+v?0\.2\.0", claims_text):
+        failures.append("equal-to-v0.2.0 claim blocked: explicit parity-equivalence claims are not allowed")
+
+    if has_claim(r"better\s+than\s+v?0\.2\.0", claims_text):
+        failures.append("better-than-v0.2.0 claim blocked: superiority claims are not allowed")
+
+    if has_claim(r"migration\s+complete", claims_text):
+        trend_points = compatibility_debt.get("trend_points", [])
+        unresolved = compatibility_debt.get("open_debt", [])
+        if not isinstance(trend_points, list) or len(trend_points) == 0:
+            failures.append(
+                "migration-complete claim blocked: compatibility debt trend evidence is missing"
+            )
+        if isinstance(unresolved, list) and unresolved:
+            failures.append(
+                "migration-complete claim blocked: compatibility debt report still has open debt"
             )
 
     boundary_rules = crate_metrics.get("rules", {})
@@ -209,6 +236,14 @@ def main() -> int:
                 "release review blocked: covered cross-surface drift exists for "
                 + ", ".join(str(item.get("todo", "?")) for item in covered_drift)
             )
+
+    if not release_bundle or not release_manifest or not release_truth:
+        failures.append("release review blocked: missing release truth bundle artifacts")
+    else:
+        if str(release_manifest.get("status", "blocked")) != "ready":
+            failures.append("release review blocked: release status manifest is not ready")
+        if str(release_truth.get("status", "blocked")) != str(release_manifest.get("status", "blocked")):
+            failures.append("release review blocked: release truth status disagrees with release manifest")
 
     # Evidence rule for README: promotional quality claims require artifact references.
     if has_claim(r"\b(98%\+ coverage|1,800\+ tests|feature complete|production ready)\b", readme):
