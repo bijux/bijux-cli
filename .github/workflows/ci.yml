@@ -290,6 +290,7 @@ jobs:
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
           python3 scripts/status/generate_install_neutrality_reports.py
+          python3 scripts/status/generate_install_runtime_identity_reports.py
           python3 scripts/status/generate_packaging_ambiguity_reports.py
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
@@ -409,6 +410,10 @@ jobs:
       - name: Install neutrality gate
         run: |
           python3 scripts/status/enforce_install_neutrality_gate.py
+
+      - name: Install runtime identity gate
+        run: |
+          python3 scripts/status/enforce_install_runtime_identity_gate.py
 
       - name: Binary-vs-bridge parity artifact
         run: |
@@ -911,6 +916,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Upload install runtime identity artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-runtime-identity
+          path: |
+            artifacts/status/install_runtime_identity_artifact.json
+            artifacts/status/install_ambiguity_artifact.json
+            artifacts/status/package_health_artifact.json
+            artifacts/status/install_runtime_identity_drift_artifact.json
+            artifacts/status/install_runtime_identity_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload binary-vs-python-bridge parity report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -1096,6 +1115,11 @@ jobs:
             artifacts/status/ambiguous_runtime_diagnostics.json
             artifacts/status/install_neutrality_report.json
             artifacts/status/active_runtime_report.json
+            artifacts/status/install_runtime_identity_artifact.json
+            artifacts/status/install_ambiguity_artifact.json
+            artifacts/status/package_health_artifact.json
+            artifacts/status/install_runtime_identity_drift_artifact.json
+            artifacts/status/install_runtime_identity_contract.json
             artifacts/status/packaging_ambiguity_report.json
             artifacts/status/install_state_assumptions_report.json
             artifacts/status/package_health_report.json
