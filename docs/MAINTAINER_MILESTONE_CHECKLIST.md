@@ -22,3 +22,9 @@ Use this checklist for every milestone claim.
 ## Planning Discipline
 Next backlog must come from generated status data only:
 - `artifacts/status/next_200_todos.json`
+
+## Release Discipline
+Before release claims:
+- Review `artifacts/status/release_evidence_bundle.json`
+- Review `artifacts/status/release_status_manifest.json`
+- Review `artifacts/status/release_truth_report.txt`

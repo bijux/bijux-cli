@@ -80,5 +80,12 @@ Each major command area requires a parity report before non-parity improvements 
 ## Public Claim Rule
 Any public claim in README must be evidence-backed by repository artifacts or generated reports.
 
+## Release Evidence Freeze
+Release claims require:
+`artifacts/status/release_evidence_bundle.json`,
+`artifacts/status/release_status_manifest.json`, and
+`artifacts/status/release_truth_report.json`.
+Migration guidance must be generated from artifacts, not hand-curated prose.
+
 ## Truth Before Polish Freeze
 Truth-reporting and parity evidence gates are frozen as release requirements before polish-only work.
