@@ -1,0 +1,174 @@
+#![forbid(unsafe_code)]
+//! Packaging and install ambiguity hardening coverage.
+
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
+
+use bijux_cli_core as _;
+use libc as _;
+use serde_json::Value;
+
+fn tmp_dir(name: &str) -> PathBuf {
+    let dir = env::temp_dir().join(format!("bijux-install-ambiguity-{}-{}", name, std::process::id()));
+    let _ = fs::remove_dir_all(&dir);
+    fs::create_dir_all(&dir).expect("mkdir temp");
+    dir
+}
+
+fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output {
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
+    cmd.args(args);
+    for (k, v) in envs {
+        cmd.env(k, v);
+    }
+    cmd.output().expect("run")
+}
+
+fn run_identity(envs: &[(&str, String)]) -> Value {
+    let out = run_with_env(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
+    assert_eq!(out.status.code(), Some(0));
+    serde_json::from_slice(&out.stdout).expect("json")
+}
+
+#[test]
+fn pip_binary_shadowed_by_cargo_binary_is_reported() {
+    let root = tmp_dir("pip-shadowed-by-cargo");
+    let pip = root.join("site-packages-bin");
+    let cargo = root.join(".cargo/bin");
+    fs::create_dir_all(&pip).expect("mkdir pip");
+    fs::create_dir_all(&cargo).expect("mkdir cargo");
+    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
+    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
+
+    let path = env::join_paths([&pip, &cargo]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[("PATH", path)]);
+    assert_eq!(payload["active_path_is_shadowed"], true);
+    assert_eq!(payload["diagnostics"]["path_shadowing_detected"], true);
+    assert_eq!(payload["diagnostics"]["mixed_pip_cargo_install_detected"], true);
+    assert!(payload["active_binary"].as_str().expect("active").contains("site-packages-bin"));
+}
+
+#[test]
+fn cargo_binary_shadowed_by_pip_binary_is_reported() {
+    let root = tmp_dir("cargo-shadowed-by-pip");
+    let cargo = root.join(".cargo/bin");
+    let pip = root.join("site-packages-bin");
+    fs::create_dir_all(&cargo).expect("mkdir cargo");
+    fs::create_dir_all(&pip).expect("mkdir pip");
+    fs::write(cargo.join("bijux"), "#!/bin/sh\n").expect("write cargo binary");
+    fs::write(pip.join("bijux"), "#!/bin/sh\n").expect("write pip binary");
+
+    let path = env::join_paths([&cargo, &pip]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[("PATH", path)]);
+    assert_eq!(payload["active_path_is_shadowed"], true);
+    assert_eq!(payload["diagnostics"]["path_shadowing_detected"], true);
+    assert_eq!(payload["diagnostics"]["mixed_pip_cargo_install_detected"], true);
+    assert!(payload["active_binary"].as_str().expect("active").contains(".cargo/bin"));
+}
+
+#[test]
+fn stale_wrapper_and_deleted_cached_runtime_are_detected() {
+    let root = tmp_dir("stale-wrapper");
+    let wrappers = root.join("wrappers");
+    fs::create_dir_all(&wrappers).expect("mkdir wrappers");
+    fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n").expect("write wrapper");
+
+    let deleted_runtime = root.join("deleted-bijux");
+    let path = env::join_paths([&wrappers]).expect("join path").to_string_lossy().to_string();
+    let payload = run_identity(&[
+        ("PATH", path),
+        ("BIJUX_BIN", deleted_runtime.display().to_string()),
+    ]);
+
+    assert_eq!(payload["diagnostics"]["stale_wrapper_detected"], true);
+    assert_eq!(payload["diagnostics"]["active_binary_missing"], true);
+}
+
+#[test]
+fn mismatched_wheel_and_binary_versions_are_reported() {
+    let payload = run_identity(&[("BIJUX_WHEEL_VERSION", "0.0.1".to_string())]);
+    assert_eq!(payload["diagnostics"]["mismatched_wheel_binary_versions"], true);
+    assert_eq!(payload["diagnostics"]["active_binary_mismatch_detected"], true);
+}
+
+#[test]
+fn missing_python_runtime_support_is_reported_while_rust_binary_is_active() {
+    let root = tmp_dir("missing-python-runtime");
+    let bin = root.join("bin");
+    fs::create_dir_all(&bin).expect("mkdir bin");
+    fs::write(bin.join("bijux"), "#!/bin/sh\n").expect("write binary");
+    let path = env::join_paths([&bin]).expect("join").to_string_lossy().to_string();
+
+    let payload = run_identity(&[
+        ("PATH", path),
+        ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
+    ]);
+    assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
+    assert!(payload["active_binary"].as_str().expect("active").contains("/bin/bijux"));
+}
+
+#[test]
+#[cfg(unix)]
+fn broken_symlink_active_binary_is_detected() {
+    use std::os::unix::fs::symlink;
+
+    let root = tmp_dir("broken-symlink");
+    let broken = root.join("bijux-link");
+    symlink(root.join("missing-target"), &broken).expect("create symlink");
+
+    let payload = run_identity(&[("BIJUX_BIN", broken.display().to_string())]);
+    assert_eq!(payload["diagnostics"]["active_binary_missing"], true);
+    assert_eq!(payload["diagnostics"]["broken_symlink_active_binary"], true);
+}
+
+#[test]
+fn state_audit_reports_read_only_config_dir_shape() {
+    let root = tmp_dir("read-only-config-shape");
+    let blocker = root.join("not-a-directory");
+    fs::write(&blocker, "block").expect("write blocker");
+    let config_path = blocker.join("state.env");
+    let out = run_with_env(
+        &[
+            "dev",
+            "cli",
+            "state-audit",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            config_path.to_str().expect("utf-8"),
+        ],
+        &[],
+    );
+
+    assert_eq!(out.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    assert_eq!(payload["paths"]["config"]["writable"], false);
+}
+
+#[test]
+fn package_health_and_runtime_identity_cover_ambiguous_install_state() {
+    let root = tmp_dir("package-health-ambiguous");
+    let first = root.join("first");
+    let second = root.join("second-site-packages");
+    fs::create_dir_all(&first).expect("mkdir first");
+    fs::create_dir_all(&second).expect("mkdir second");
+    fs::write(first.join("bijux"), "#!/bin/sh\n").expect("write first");
+    fs::write(second.join("bijux"), "#!/bin/sh\n").expect("write second");
+
+    let path = env::join_paths([&first, &second]).expect("join").to_string_lossy().to_string();
+
+    let runtime = run_identity(&[("PATH", path.clone())]);
+    assert_eq!(runtime["active_binary_selection_is_ambiguous"], true);
+
+    let package = run_with_env(
+        &["dev", "cli", "package-health", "--format", "json", "--no-pretty"],
+        &[("PATH", path)],
+    );
+    assert_eq!(package.status.code(), Some(0));
+    let payload: Value = serde_json::from_slice(&package.stdout).expect("json");
+    assert!(payload["install_state_assumptions"].is_array());
+    assert!(payload["install_state_assumption_help"].is_string());
+}

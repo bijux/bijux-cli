@@ -360,6 +360,20 @@ mod tests {
     }
 
     #[test]
+    fn completion_target_write_fails_when_parent_is_not_directory() {
+        let temp = TempDir::new().expect("tempdir");
+        let blocker = temp.path().join("not-a-directory");
+        std::fs::write(&blocker, b"blocker").expect("write blocker");
+        let target = blocker.join("completions").join("bijux");
+        let parent = target.parent().expect("parent");
+
+        let mkdir = std::fs::create_dir_all(parent);
+        assert!(mkdir.is_err());
+        let write = std::fs::write(&target, completion_script(CompletionShell::Bash));
+        assert!(write.is_err());
+    }
+
+    #[test]
     fn compatibility_notes_cover_pip_and_cargo_users() {
         assert!(cargo_compatibility_note().contains("Cargo installs"));
     }

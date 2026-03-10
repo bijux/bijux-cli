@@ -1532,6 +1532,17 @@ fn route_response(
             let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
             let is_canonical_path =
                 is_canonical_active_path(install_report.active_binary.as_deref());
+            let active_binary_missing = install_report
+                .active_binary
+                .as_deref()
+                .is_some_and(|path| !Path::new(path).exists());
+            let broken_symlink_active_binary = install_report.active_binary.as_deref().is_some_and(
+                |path| {
+                    let p = Path::new(path);
+                    fs::symlink_metadata(p).map(|meta| meta.file_type().is_symlink()).unwrap_or(false)
+                        && fs::metadata(p).is_err()
+                },
+            );
             let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
             let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
@@ -1556,6 +1567,8 @@ fn route_response(
                     "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
                     "mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
                     "active_binary_mismatch_detected": install_report.has_mismatched_wheel_binary_versions,
+                    "active_binary_missing": active_binary_missing,
+                    "broken_symlink_active_binary": broken_symlink_active_binary,
                     "python_bridge_supported": python_bridge_supported,
                     "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
                 },
