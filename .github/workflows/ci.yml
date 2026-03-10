@@ -278,6 +278,7 @@ jobs:
           python3 scripts/status/generate_config_fuzz_hardening_reports.py
           python3 scripts/status/generate_config_corruption_campaign_reports.py
           python3 scripts/status/generate_plugin_state_corruption_campaign_reports.py
+          python3 scripts/status/generate_state_race_campaign_reports.py
           python3 scripts/status/generate_plugin_manifest_scaffold_fuzz_reports.py
           python3 scripts/status/generate_output_bridge_fuzz_reports.py
           python3 scripts/status/generate_state_corruption_harness_reports.py
@@ -577,6 +578,10 @@ jobs:
       - name: Plugin-state corruption campaign gate
         run: |
           python3 scripts/status/enforce_plugin_state_corruption_campaign_gate.py
+
+      - name: State race campaign gate
+        run: |
+          python3 scripts/status/enforce_state_race_campaign_gate.py
 
       - name: Plugin manifest-scaffold fuzz gate
         run: |
@@ -887,6 +892,20 @@ jobs:
             artifacts/status/plugin_state_corruption_regression_artifact.json
             artifacts/status/plugin_state_corruption_severity_classification.json
             artifacts/status/plugin_state_corruption_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload state race campaign artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-race-campaign
+          path: |
+            artifacts/status/state_race_campaign_artifact.json
+            artifacts/status/state_race_outcome_classification_artifact.json
+            artifacts/status/state_race_reproducer_retention_artifact.json
+            artifacts/status/state_race_regression_artifact.json
+            artifacts/status/state_race_contract.json
           if-no-files-found: warn
           retention-days: 14
 
