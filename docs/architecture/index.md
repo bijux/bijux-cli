@@ -38,6 +38,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Test quality priorities](test-quality-priorities.md)
 - [State management rules](state-management-rules.md)
 - [History and memory resilience law](history-memory-resilience-law.md)
+- [REPL recovery law](repl-recovery-law.md)
 - [Script automation reduction milestone](script-automation-reduction-milestone.md)
 - [Parity release candidate rule](parity_release_candidate_rule.md)
 - [Python package convergence report](python-package-convergence-report.md)

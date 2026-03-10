@@ -50,6 +50,11 @@ History and memory resilience claims require:
 `artifacts/status/memory_corruption_matrix.json`, and
 `artifacts/status/state_resilience_summary.json`.
 
+## REPL Recovery Freeze
+REPL resilience claims require:
+`artifacts/status/repl_hostile_session_report.json` and
+`artifacts/status/repl_recovery_behavior_report.json`.
+
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
 
