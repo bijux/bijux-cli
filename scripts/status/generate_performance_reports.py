@@ -102,7 +102,7 @@ def main() -> None:
             "rendering": rendering_benchmarks,
         },
         "evidence_tests": [
-            "crates/bijux-cli-bin/tests/performance_realism_hardening.rs",
+            "crates/bijux-cli-core/tests/bin_surface/performance_realism_hardening.rs",
             "crates/bijux-cli-output/tests/output_rendering_performance.rs",
             "crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs",
         ],

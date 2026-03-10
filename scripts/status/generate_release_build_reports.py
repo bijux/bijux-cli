@@ -51,7 +51,7 @@ def file_info(path: Path) -> dict[str, Any]:
 
 
 def cargo_tree_top() -> list[dict[str, Any]]:
-    proc = run(["cargo", "tree", "-p", "bijux-cli-bin", "-e", "normal", "--prefix", "none"])
+    proc = run(["cargo", "tree", "-p", "bijux-cli-core", "-e", "normal", "--prefix", "none"])
     if proc.returncode != 0:
         return []
     counter: Counter[str] = Counter()

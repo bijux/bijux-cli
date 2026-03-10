@@ -250,7 +250,7 @@ def crate_decisions() -> list[dict[str, str]]:
             "reason": "interactive session and transcript behavior are distinct runtime concerns",
         },
         {
-            "crate": "bijux-cli-bin",
+            "crate": "bijux-cli-core",
             "status": "candidate-to-merge-later",
             "review": "thin executable wrapper currently acceptable",
             "reason": "revisit only after parity and runtime identity reports converge",

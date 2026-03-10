@@ -202,7 +202,7 @@ def parity_assertions() -> dict[str, object]:
 
 
 def parse_snapshot_coverage() -> list[str]:
-    snap_root = ROOT / "crates" / "bijux-cli-bin" / "tests" / "snapshots"
+    snap_root = ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots"
     cmds: set[str] = set()
     if not snap_root.exists():
         return []
@@ -388,7 +388,7 @@ def runtime_identity_rules() -> dict[str, object]:
     forbidden_public_runtime_names = {"bijux-rs", "bijux-cli-rs", "bijux-cli-py"}
     forbidden_present = sorted(name for name in python_entrypoints if name in forbidden_public_runtime_names)
 
-    cargo_bin = parse_toml(ROOT / "crates" / "bijux-cli-bin" / "Cargo.toml")
+    cargo_bin = parse_toml(ROOT / "crates" / "bijux-cli-core" / "Cargo.toml")
     cargo_bins = [row.get("name", "") for row in cargo_bin.get("bin", []) if isinstance(row, dict)]
 
     return {
