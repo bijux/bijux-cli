@@ -2,7 +2,7 @@
   "actions": [
     {
       "action": "deleted first weak test file",
-      "evidence": "crates/bijux-cli-bin/tests/ported_command_goldens.rs",
+      "evidence": "crates/bijux-cli/tests/bin_surface/ported_command_goldens.rs",
       "status": "done",
       "todo": 392
     },
@@ -19,6 +19,6 @@
       "todo": 394
     }
   ],
-  "generated_at": "2026-03-10T12:09:20.254080+00:00",
+  "generated_at": "2026-03-10T19:19:28.243642+00:00",
   "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py"
 }

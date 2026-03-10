@@ -2,170 +2,529 @@
   "crates": {
     "bijux-cli": [
       {
-        "defined_at": "crates/bijux-cli/src/kernel.rs:298",
+        "defined_at": "crates/bijux-cli/src/entrypoint.rs:13",
         "reason": "no cross-crate consumer detected",
-        "symbol": "map_error_category_to_exit"
-      }
-    ],
-    "bijux-cli-install": [
-      {
-        "defined_at": "crates/bijux-cli-install/src/completion.rs:21",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "completion_script"
+        "symbol": "run_cli_from_env"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/completion.rs:46",
+        "defined_at": "crates/bijux-cli/src/install/completion.rs:39",
         "reason": "no cross-crate consumer detected",
-        "symbol": "completion_file_path"
+        "symbol": "post_install_hint"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/completion.rs:61",
+        "defined_at": "crates/bijux-cli/src/install/diagnostics.rs:38",
         "reason": "no cross-crate consumer detected",
-        "symbol": "detect_shell"
+        "symbol": "install_health_report"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/paths.rs:19",
+        "defined_at": "crates/bijux-cli/src/install/io.rs:14",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "atomic_write_text"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/install/metadata.rs:38",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "canonical_crate_name"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/install/metadata.rs:44",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "cargo_install_strategy"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/install/metadata.rs:58",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "pip_install_strategy"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/install/paths.rs:19",
         "reason": "no cross-crate consumer detected",
         "symbol": "discover_path_binaries"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/paths.rs:29",
+        "defined_at": "crates/bijux-cli/src/install/paths.rs:29",
         "reason": "no cross-crate consumer detected",
         "symbol": "resolve_active_binary"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/paths.rs:38",
+        "defined_at": "crates/bijux-cli/src/install/paths.rs:38",
         "reason": "no cross-crate consumer detected",
         "symbol": "detect_stale_wrapper_scripts"
       },
       {
-        "defined_at": "crates/bijux-cli-install/src/paths.rs:59",
+        "defined_at": "crates/bijux-cli/src/install/paths.rs:49",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "legacy_installer_conflicts"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/install/paths.rs:59",
         "reason": "no cross-crate consumer detected",
         "symbol": "initialize_first_run_state"
-      }
-    ],
-    "bijux-cli-output": [
+      },
       {
-        "defined_at": "crates/bijux-cli-output/src/lib.rs:123",
+        "defined_at": "crates/bijux-cli/src/install/query.rs:32",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "runtime_identity_query"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/kernel.rs:161",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "build_intent_from_argv"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/kernel.rs:203",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "resolve_policy"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/kernel.rs:298",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "map_error_category_to_exit"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/output.rs:98",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "render_value"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/output.rs:115",
         "reason": "no cross-crate consumer detected",
         "symbol": "emit_success"
       },
       {
-        "defined_at": "crates/bijux-cli-output/src/lib.rs:139",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "machine_safe_error_payload"
-      },
-      {
-        "defined_at": "crates/bijux-cli-output/src/lib.rs:149",
+        "defined_at": "crates/bijux-cli/src/output.rs:133",
         "reason": "no cross-crate consumer detected",
         "symbol": "emit_error"
       },
       {
-        "defined_at": "crates/bijux-cli-output/src/lib.rs:167",
+        "defined_at": "crates/bijux-cli/src/plugin/constants.rs:20",
         "reason": "no cross-crate consumer detected",
-        "symbol": "format_debug_log"
-      }
-    ],
-    "bijux-cli-plugin": [
+        "symbol": "is_reserved_namespace"
+      },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/discovery.rs:13",
+        "defined_at": "crates/bijux-cli/src/plugin/diagnostics.rs:15",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "load_time_diagnostics"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/diagnostics.rs:55",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "compatibility_warnings"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/diagnostics.rs:67",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "self_repair_registry"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/diagnostics.rs:87",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "prune_registry_backup"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/discovery.rs:13",
         "reason": "no cross-crate consumer detected",
         "symbol": "discover_plugin_manifests"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/discovery.rs:36",
+        "defined_at": "crates/bijux-cli/src/plugin/discovery.rs:36",
         "reason": "no cross-crate consumer detected",
         "symbol": "refresh_discovery_cache"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/registry.rs:24",
+        "defined_at": "crates/bijux-cli/src/plugin/discovery.rs:58",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "registry_path_from_plugins_dir"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/manifest.rs:13",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "parse_manifest_v1"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/manifest.rs:18",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "validate_manifest"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/mod.rs:37",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "install_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:24",
         "reason": "no cross-crate consumer detected",
         "symbol": "load_registry"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/registry.rs:39",
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:39",
         "reason": "no cross-crate consumer detected",
         "symbol": "save_registry"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/registry.rs:82",
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:82",
         "reason": "no cross-crate consumer detected",
         "symbol": "update_registry"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/registry.rs:255",
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:124",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "install_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:158",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "uninstall_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:194",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "enable_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:199",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "disable_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:204",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "inspect_plugin"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:214",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "plugin_origin_metadata"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:230",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "list_plugins"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:236",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "plugin_doctor"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:255",
         "reason": "no cross-crate consumer detected",
         "symbol": "compatibility_check"
       },
       {
-        "defined_at": "crates/bijux-cli-plugin/src/registry.rs:265",
+        "defined_at": "crates/bijux-cli/src/plugin/registry.rs:265",
         "reason": "no cross-crate consumer detected",
         "symbol": "plugin_load_order"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/query.rs:70",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "state_diagnostics_query"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/query.rs:86",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "parity_status_query"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/completion.rs:5",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "completion_candidates"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/completion.rs:67",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "register_plugin_completion_hook"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/diagnostics.rs:10",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "inspect_last_error"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/diagnostics.rs:16",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "session_diagnostics_dump"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/diagnostics.rs:32",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "estimated_session_memory_bytes"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/diagnostics.rs:46",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "benchmark_startup_latency"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/diagnostics.rs:58",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "check_repl_budgets"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/execution.rs:34",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "repl_argv_from_line"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/execution.rs:149",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "execute_repl_input"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/execution.rs:223",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "execute_repl_line"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/history.rs:47",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "configure_history"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/history.rs:59",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "load_history"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/history.rs:86",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "flush_history"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/history.rs:115",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "replay_history_command"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/reference.rs:5",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "render_repl_command_reference"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/session.rs:10",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "startup_repl"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/session.rs:51",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "startup_repl_with_diagnostics"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/repl/session.rs:66",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "shutdown_repl"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:142",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "cli_root_aliases"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:148",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "cli_config_subcommands"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:154",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "cli_plugins_subcommands"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:160",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "dev_cli_subcommands"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:166",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "normalize_command_path"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:184",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "is_known_route"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/catalog.rs:267",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "repl_reference_commands"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/command.rs:31",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "normalize"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/command.rs:83",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "to_command_string"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/envelope.rs:47",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "success"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/execution.rs:111",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "empty"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/execution.rs:143",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "baseline"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/contracts/plugin.rs:32",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "supports_host"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/inventory.rs:25",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "route_inventory"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/inventory.rs:46",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "registry_inventory"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/parser.rs:115",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "root_command"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/parser.rs:398",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "parse_intent"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/query.rs:15",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "contracts_schema_query"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:219",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "register_plugin_namespace"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:238",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "resolve"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:263",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "suggest_namespace"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:284",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "route_tree"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:309",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "render_command_tree"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:329",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "built_in_paths"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/registry.rs:340",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "alias_rewrites"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/schema.rs:10",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "output_envelope_v1_schema"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/schema.rs:16",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "error_envelope_v1_schema"
+      },
+      {
+        "defined_at": "crates/bijux-cli/src/routing/schema.rs:22",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "plugin_manifest_v1_schema"
       }
     ],
     "bijux-cli-python": [
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:20",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:21",
         "reason": "no cross-crate consumer detected",
         "symbol": "python_bridge_marker"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:26",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:27",
         "reason": "no cross-crate consumer detected",
         "symbol": "command_tree_introspection_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:50",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:67",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "execution_facade_api"
+      },
+      {
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:82",
         "reason": "no cross-crate consumer detected",
         "symbol": "execution_outcome_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:70",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:102",
         "reason": "no cross-crate consumer detected",
         "symbol": "version_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:75",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:107",
         "reason": "no cross-crate consumer detected",
         "symbol": "doctor_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:80",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:112",
         "reason": "no cross-crate consumer detected",
         "symbol": "status_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:85",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:117",
         "reason": "no cross-crate consumer detected",
         "symbol": "cli_status_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:90",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:122",
         "reason": "no cross-crate consumer detected",
         "symbol": "plugins_list_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:100",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:132",
         "reason": "no cross-crate consumer detected",
         "symbol": "repl_bootstrap_binding_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:106",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:138",
         "reason": "no cross-crate consumer detected",
         "symbol": "schema_export_helpers_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:114",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:146",
         "reason": "no cross-crate consumer detected",
         "symbol": "config_resolution_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:131",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:163",
         "reason": "no cross-crate consumer detected",
         "symbol": "install_path_helpers_api"
       },
       {
-        "defined_at": "crates/bijux-cli-python/src/bindings.rs:142",
+        "defined_at": "crates/bijux-cli-python/src/bindings.rs:174",
         "reason": "no cross-crate consumer detected",
         "symbol": "plugin_registry_inspection_api"
       },
@@ -184,131 +543,7 @@
         "reason": "no cross-crate consumer detected",
         "symbol": "python_exception_tag"
       }
-    ],
-    "bijux-cli-repl": [
-      {
-        "defined_at": "crates/bijux-cli-repl/src/completion.rs:5",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "completion_candidates"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/completion.rs:50",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "register_plugin_completion_hook"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/diagnostics.rs:10",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "inspect_last_error"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/diagnostics.rs:16",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "session_diagnostics_dump"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/diagnostics.rs:32",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "estimated_session_memory_bytes"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/diagnostics.rs:46",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "benchmark_startup_latency"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/diagnostics.rs:58",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "check_repl_budgets"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:35",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "repl_argv_from_line"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:152",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "execute_repl_input"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:226",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "execute_repl_line"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/history.rs:47",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "configure_history"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/history.rs:59",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "load_history"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/history.rs:86",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "flush_history"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/history.rs:115",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "replay_history_command"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/reference.rs:5",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "render_repl_command_reference"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/session.rs:10",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "startup_repl"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/session.rs:51",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "startup_repl_with_diagnostics"
-      },
-      {
-        "defined_at": "crates/bijux-cli-repl/src/session.rs:66",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "shutdown_repl"
-      }
-    ],
-    "bijux-cli-routing": [
-      {
-        "defined_at": "crates/bijux-cli-routing/src/catalog.rs:79",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "cli_root_aliases"
-      },
-      {
-        "defined_at": "crates/bijux-cli-routing/src/catalog.rs:85",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "cli_config_subcommands"
-      },
-      {
-        "defined_at": "crates/bijux-cli-routing/src/catalog.rs:91",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "cli_plugins_subcommands"
-      },
-      {
-        "defined_at": "crates/bijux-cli-routing/src/catalog.rs:103",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "normalize_command_path"
-      },
-      {
-        "defined_at": "crates/bijux-cli-routing/src/registry.rs:255",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "suggest_namespace"
-      },
-      {
-        "defined_at": "crates/bijux-cli-routing/src/registry.rs:303",
-        "reason": "no cross-crate consumer detected",
-        "symbol": "render_command_tree"
-      }
     ]
   },
-  "generated_at": "2026-03-10T03:36:02.508491+00:00"
+  "generated_at": "2026-03-10T19:19:23.899057+00:00"
 }

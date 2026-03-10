@@ -11,7 +11,7 @@
     "plugin": "complete",
     "repl": "complete"
   },
-  "generated_at": "2026-03-10T12:09:20.254080+00:00",
+  "generated_at": "2026-03-10T19:19:28.243642+00:00",
   "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
   "scope": "deep-layer test coverage",
   "status": "complete",
@@ -30,64 +30,64 @@
   ],
   "top_10_weakest": [
     {
-      "assert_count": 1,
+      "assert_count": 0,
       "category_hit_count": 0,
-      "domain": "diagnostics",
-      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
-    },
-    {
-      "assert_count": 1,
-      "category_hit_count": 1,
       "domain": "command",
-      "path": "crates/bijux-cli-routing/tests/command_tree_snapshot.rs"
+      "path": "crates/bijux-cli/tests/routing.rs"
     },
     {
-      "assert_count": 1,
-      "category_hit_count": 1,
-      "domain": "plugin",
-      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
-    },
-    {
-      "assert_count": 1,
-      "category_hit_count": 1,
-      "domain": "command",
-      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
-    },
-    {
-      "assert_count": 1,
-      "category_hit_count": 1,
+      "assert_count": 0,
+      "category_hit_count": 0,
       "domain": "config",
-      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+      "path": "crates/bijux-cli/tests/routing.rs"
     },
     {
-      "assert_count": 1,
-      "category_hit_count": 2,
-      "domain": "plugin",
-      "path": "crates/bijux-cli-plugin/tests/official_namespace_registry.rs"
-    },
-    {
-      "assert_count": 1,
-      "category_hit_count": 4,
+      "assert_count": 0,
+      "category_hit_count": 1,
       "domain": "flag",
-      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+      "path": "crates/bijux-cli/tests/routing.rs"
     },
     {
-      "assert_count": 2,
-      "category_hit_count": 0,
+      "assert_count": 0,
+      "category_hit_count": 2,
       "domain": "bridge",
-      "path": "crates/bijux-cli/tests/architecture_boundaries.rs"
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
     },
     {
-      "assert_count": 2,
-      "category_hit_count": 0,
+      "assert_count": 0,
+      "category_hit_count": 2,
+      "domain": "diagnostics",
+      "path": "crates/bijux-cli/tests/routing.rs"
+    },
+    {
+      "assert_count": 0,
+      "category_hit_count": 3,
+      "domain": "flag",
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
+    },
+    {
+      "assert_count": 0,
+      "category_hit_count": 3,
+      "domain": "determinism",
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
+    },
+    {
+      "assert_count": 0,
+      "category_hit_count": 3,
       "domain": "config",
-      "path": "crates/bijux-cli-routing/tests/flag_normalization_property.rs"
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
     },
     {
-      "assert_count": 2,
-      "category_hit_count": 1,
-      "domain": "plugin",
-      "path": "crates/bijux-cli/tests/architecture_boundaries.rs"
+      "assert_count": 0,
+      "category_hit_count": 3,
+      "domain": "memory",
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
+    },
+    {
+      "assert_count": 0,
+      "category_hit_count": 3,
+      "domain": "diagnostics",
+      "path": "crates/bijux-cli/tests/bin_surface.rs"
     }
   ]
 }

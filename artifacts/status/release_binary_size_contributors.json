@@ -1,7 +1,6 @@
 {
   "disabled_default_features": [
     "clap in bijux-cli",
-    "clap in bijux-cli-routing",
     "pyo3 in bijux-cli-python"
   ],
   "generated_at": "1970-01-01T00:00:00+00:00",
@@ -21,19 +20,15 @@
       "hits": 6
     },
     {
-      "crate": "syn",
-      "hits": 5
-    },
-    {
       "crate": "serde",
       "hits": 5
     },
     {
-      "crate": "serde_json",
+      "crate": "syn",
       "hits": 5
     },
     {
-      "crate": "thiserror",
+      "crate": "serde_json",
       "hits": 4
     },
     {
@@ -49,11 +44,15 @@
       "hits": 3
     },
     {
-      "crate": "unicode-ident",
+      "crate": "anyhow",
       "hits": 2
     },
     {
       "crate": "serde_core",
+      "hits": 2
+    },
+    {
+      "crate": "unicode-ident",
       "hits": 2
     },
     {
@@ -62,22 +61,6 @@
     },
     {
       "crate": "memchr",
-      "hits": 2
-    },
-    {
-      "crate": "semver",
-      "hits": 2
-    },
-    {
-      "crate": "generic-array",
-      "hits": 2
-    },
-    {
-      "crate": "typenum",
-      "hits": 2
-    },
-    {
-      "crate": "clap",
       "hits": 2
     },
     {
@@ -90,6 +73,22 @@
     },
     {
       "crate": "futures-channel",
+      "hits": 2
+    },
+    {
+      "crate": "futures-util",
+      "hits": 2
+    },
+    {
+      "crate": "futures-io",
+      "hits": 2
+    },
+    {
+      "crate": "generic-array",
+      "hits": 2
+    },
+    {
+      "crate": "typenum",
       "hits": 2
     }
   ]

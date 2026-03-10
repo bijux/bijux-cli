@@ -4,32 +4,12 @@
   "workspace_licenses": [
     {
       "license": "Apache-2.0",
-      "name": "bijux-cli-bin",
-      "version": "0.1.0"
-    },
-    {
-      "license": "Apache-2.0",
-      "name": "bijux-cli-contracts",
-      "version": "0.1.0"
-    },
-    {
-      "license": "Apache-2.0",
       "name": "bijux-cli",
       "version": "0.1.0"
     },
     {
       "license": "Apache-2.0",
-      "name": "bijux-cli-install",
-      "version": "0.1.0"
-    },
-    {
-      "license": "Apache-2.0",
-      "name": "bijux-cli-output",
-      "version": "0.1.0"
-    },
-    {
-      "license": "Apache-2.0",
-      "name": "bijux-cli-plugin",
+      "name": "bijux-cli-evidence",
       "version": "0.1.0"
     },
     {
@@ -39,12 +19,7 @@
     },
     {
       "license": "Apache-2.0",
-      "name": "bijux-cli-repl",
-      "version": "0.1.0"
-    },
-    {
-      "license": "Apache-2.0",
-      "name": "bijux-cli-routing",
+      "name": "bijux-dev-cli",
       "version": "0.1.0"
     }
   ]
