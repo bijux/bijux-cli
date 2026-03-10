@@ -1306,6 +1306,22 @@ fn route_response(
             let status_report = read_json_if_exists(&root.join("artifacts/status/status.json"));
             let root_commands =
                 read_json_if_exists(&root.join("artifacts/status/status_root_commands.json"));
+            let root_command_remaining_inventory = read_json_if_exists(
+                &root.join("artifacts/status/root_command_remaining_inventory.json"),
+            );
+            let root_command_impact_ranking = read_json_if_exists(
+                &root.join("artifacts/status/root_command_impact_ranking.json"),
+            );
+            let root_command_completion_report = read_json_if_exists(
+                &root.join("artifacts/status/root_command_completion_report.json"),
+            );
+            let root_command_closure_set = read_json_if_exists(
+                &root.join("artifacts/status/root_command_closure_set.json"),
+            );
+            let root_command_completion_report_text = fs::read_to_string(
+                root.join("artifacts/status/root_command_completion_report.txt"),
+            )
+            .unwrap_or_default();
             let cli_subcommands =
                 read_json_if_exists(&root.join("artifacts/status/status_cli_subcommands.json"));
             let dev_cli_subcommands =
@@ -1456,6 +1472,11 @@ fn route_response(
                 "status_report": status_report,
                 "reports": {
                     "root_commands": root_commands,
+                    "root_command_remaining_inventory": root_command_remaining_inventory,
+                    "root_command_impact_ranking": root_command_impact_ranking,
+                    "root_command_completion_report": root_command_completion_report,
+                    "root_command_closure_set": root_command_closure_set,
+                    "root_command_completion_report_text": root_command_completion_report_text,
                     "cli_subcommands": cli_subcommands,
                     "dev_cli_subcommands": dev_cli_subcommands,
                     "plugin_commands": plugin_commands,

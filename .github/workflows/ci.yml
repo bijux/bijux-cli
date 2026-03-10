@@ -816,6 +816,11 @@ jobs:
             artifacts/status/root_command_coverage_report.json
             artifacts/status/root_command_matrix_artifact.json
             artifacts/status/root_command_surface_domain_contract.json
+            artifacts/status/root_command_remaining_inventory.json
+            artifacts/status/root_command_impact_ranking.json
+            artifacts/status/root_command_completion_report.json
+            artifacts/status/root_command_completion_report.txt
+            artifacts/status/root_command_closure_set.json
             artifacts/status/cli_command_coverage_report.json
             artifacts/status/cli_command_matrix_artifact.json
             artifacts/status/cli_command_surface_domain_contract.json
