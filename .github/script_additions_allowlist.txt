@@ -38,3 +38,4 @@ scripts/status/enforce_test_first_domain_gates.py # enforce test_type tagging pl
 scripts/status/generate_root_command_surface_reports.py # generate root command coverage/matrix artifacts and frozen root command surface domain contract for explicit command law
 scripts/status/generate_cli_command_surface_reports.py # generate cli subcommand coverage/matrix artifacts and frozen cli command surface contract from canonical subcommand fixture + matrix tests
 scripts/status/generate_dev_cli_command_surface_reports.py # generate dev cli command coverage/matrix artifacts and frozen maintainer control-surface contract from canonical fixture + matrix tests
+scripts/status/generate_config_read_surface_reports.py # generate config read matrix artifacts and frozen deterministic config-read domain contract from explicit config_read_matrix tests
