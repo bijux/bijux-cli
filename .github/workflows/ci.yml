@@ -262,6 +262,7 @@ jobs:
         run: |
           python3 scripts/status/generate_crate_boundary_metrics.py
           python3 scripts/status/generate_public_api_reports.py
+          python3 scripts/status/generate_duplication_hotspots.py
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_dev_cli_inventory.py
           python3 scripts/status/generate_docs_audit.py
@@ -337,6 +338,7 @@ jobs:
             artifacts/status/public_api_by_crate.json
             artifacts/status/internal_only_candidates_by_crate.json
             artifacts/status/cross_crate_api_usage.json
+            artifacts/status/duplication_hotspots.json
           if-no-files-found: warn
           retention-days: 14
 

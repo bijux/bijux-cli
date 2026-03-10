@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-03-10T00:15:56.009808+00:00",
+  "generated_at": "2026-03-10T00:21:11.710713+00:00",
   "items": [
     {
       "crate": "bijux-cli-core",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-core/src/app.rs:35",
+      "defined_at": "crates/bijux-cli-core/src/app.rs:38",
       "kind": "struct",
       "symbol": "AppRunResult"
     },
@@ -177,7 +177,7 @@
       "cross_crate_users": [
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-core/src/app.rs:1586",
+      "defined_at": "crates/bijux-cli-core/src/app.rs:1464",
       "kind": "fn",
       "symbol": "run_app"
     },
@@ -807,6 +807,16 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:18",
+      "kind": "fn",
+      "symbol": "is_reserved_namespace"
+    },
+    {
+      "crate": "bijux-cli-plugin",
+      "cross_crate_user_count": 1,
+      "cross_crate_users": [
+        "bijux-cli-core"
+      ],
       "defined_at": "crates/bijux-cli-plugin/src/registry.rs:230",
       "kind": "fn",
       "symbol": "list_plugins"
@@ -1065,7 +1075,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/execution.rs:150",
+      "defined_at": "crates/bijux-cli-repl/src/execution.rs:161",
       "kind": "fn",
       "symbol": "execute_repl_input"
     },
@@ -1073,7 +1083,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/execution.rs:221",
+      "defined_at": "crates/bijux-cli-repl/src/execution.rs:232",
       "kind": "fn",
       "symbol": "execute_repl_line"
     },
@@ -1113,7 +1123,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/reference.rs:3",
+      "defined_at": "crates/bijux-cli-repl/src/reference.rs:5",
       "kind": "fn",
       "symbol": "render_repl_command_reference"
     },
@@ -1121,7 +1131,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/execution.rs:17",
+      "defined_at": "crates/bijux-cli-repl/src/execution.rs:35",
       "kind": "fn",
       "symbol": "repl_argv_from_line"
     },
@@ -1171,7 +1181,7 @@
       "cross_crate_users": [
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:37",
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:38",
       "kind": "enum",
       "symbol": "ParseError"
     },
@@ -1181,7 +1191,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:9",
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:10",
       "kind": "struct",
       "symbol": "ParsedGlobalFlags"
     },
@@ -1189,7 +1199,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:26",
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:27",
       "kind": "struct",
       "symbol": "ParsedIntent"
     },
@@ -1249,7 +1259,25 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:337",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:67",
+      "kind": "fn",
+      "symbol": "is_known_route"
+    },
+    {
+      "crate": "bijux-cli-routing",
+      "cross_crate_user_count": 0,
+      "cross_crate_users": [],
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:49",
+      "kind": "fn",
+      "symbol": "normalize_command_path"
+    },
+    {
+      "crate": "bijux-cli-routing",
+      "cross_crate_user_count": 1,
+      "cross_crate_users": [
+        "bijux-cli-core"
+      ],
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:274",
       "kind": "fn",
       "symbol": "parse_intent"
     },
@@ -1273,6 +1301,16 @@
     },
     {
       "crate": "bijux-cli-routing",
+      "cross_crate_user_count": 1,
+      "cross_crate_users": [
+        "bijux-cli-repl"
+      ],
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:90",
+      "kind": "fn",
+      "symbol": "repl_reference_commands"
+    },
+    {
+      "crate": "bijux-cli-routing",
       "cross_crate_user_count": 2,
       "cross_crate_users": [
         "bijux-cli-core",
@@ -1289,7 +1327,7 @@
         "bijux-cli-core",
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:107",
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:108",
       "kind": "fn",
       "symbol": "root_command"
     },

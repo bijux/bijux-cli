@@ -80,7 +80,7 @@
     },
     {
       "crate": "bijux-cli-install",
-      "public_api_count": 44
+      "public_api_count": 43
     },
     {
       "crate": "bijux-cli-output",
@@ -100,7 +100,7 @@
     },
     {
       "crate": "bijux-cli-routing",
-      "public_api_count": 10
+      "public_api_count": 14
     }
   ],
   "docs_files": [
@@ -435,7 +435,7 @@
     "status",
     "version"
   ],
-  "generated_at": "2026-03-10T00:13:38.330734+00:00",
+  "generated_at": "2026-03-10T00:21:40.178226+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
@@ -456,7 +456,7 @@
     {
       "assumption": "env::var_os(\"HOME\").map(std::path::PathBuf::from)",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 56
+      "line": 59
     },
     {
       "assumption": "envs.insert(\"HOME\".to_string(), temp.display().to_string());",
@@ -1302,6 +1302,7 @@
     "scripts/status/generate_current_rust_state.py",
     "scripts/status/generate_dev_cli_inventory.py",
     "scripts/status/generate_docs_audit.py",
+    "scripts/status/generate_duplication_hotspots.py",
     "scripts/status/generate_flaky_test_labels.py",
     "scripts/status/generate_plugin_state_report.py",
     "scripts/status/generate_public_api_reports.py",

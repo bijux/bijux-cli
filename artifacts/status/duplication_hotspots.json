@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-10T00:21:11.673830+00:00",
+  "hotspots": [
+    {
+      "canonical_source": "crates/bijux-cli-routing/src/catalog.rs",
+      "description": "command name and alias lists defined in multiple crates",
+      "evidence": [
+        "crates/bijux-cli-routing/src/parser.rs:6:use crate::catalog::normalize_command_path;",
+        "crates/bijux-cli-routing/src/parser.rs:295:    let normalized_path = normalize_command_path(&command_path);",
+        "crates/bijux-cli-core/src/app.rs:27:use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;",
+        "crates/bijux-cli-routing/src/catalog.rs:6:const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[",
+        "crates/bijux-cli-routing/src/catalog.rs:19:const DEV_CLI_SUBCOMMANDS: &[&str] = &[",
+        "crates/bijux-cli-routing/src/catalog.rs:49:pub fn normalize_command_path(path: &[String]) -> Vec<String> {",
+        "crates/bijux-cli-routing/src/catalog.rs:55:        [a, b] if a == \"plugins\" && contains(CLI_PLUGINS_SUBCOMMANDS, b) => {",
+        "crates/bijux-cli-routing/src/catalog.rs:58:        [a, b] if a == \"dev\" && contains(DEV_CLI_SUBCOMMANDS, b) => {",
+        "crates/bijux-cli-routing/src/catalog.rs:67:pub fn is_known_route(path: &[String]) -> bool {",
+        "crates/bijux-cli-routing/src/catalog.rs:79:        [a, b, c] if a == \"cli\" && b == \"plugins\" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => {",
+        "crates/bijux-cli-routing/src/catalog.rs:82:        [a, b, c] if a == \"dev\" && b == \"cli\" && contains(DEV_CLI_SUBCOMMANDS, c) => true,"
+      ],
+      "name": "command-name-lists"
+    },
+    {
+      "canonical_source": "crates/bijux-cli-core/src/kernel.rs",
+      "description": "usage/internal exit classification logic",
+      "evidence": [
+        "crates/bijux-cli-python/src/bindings.rs:62:            \"error_kind\": python_exception_tag(classify_failure(result.exit_code, &result.stderr)),",
+        "crates/bijux-cli-core/src/kernel.rs:288:        HandlerOutcome::Error(err) => map_error_category_to_exit(&err.error.category),",
+        "crates/bijux-cli-core/src/kernel.rs:294:pub fn map_error_category_to_exit(category: &str) -> ExitCode {",
+        "crates/bijux-cli-python/src/conversions.rs:20:pub fn classify_failure(exit_code: i32, stderr: &str) -> BridgeErrorKind {"
+      ],
+      "name": "exit-code-mapping"
+    },
+    {
+      "canonical_source": "crates/bijux-cli-routing/src/parser.rs",
+      "description": "string<->enum output format conversion branches",
+      "evidence": [
+        "crates/bijux-cli-routing/src/parser.rs:50:fn parse_output_format(raw: Option<&String>) -> Result<Option<OutputFormat>, ParseError> {",
+        "crates/bijux-cli-routing/src/parser.rs:52:        \"json\" => Ok(OutputFormat::Json),",
+        "crates/bijux-cli-routing/src/parser.rs:84:    let output_format = parse_output_format(matches.get_one::<String>(\"format\"))?;",
+        "crates/bijux-cli-output/src/lib.rs:48:            format: OutputFormat::Json,",
+        "crates/bijux-cli-output/src/lib.rs:108:        OutputFormat::Json => render_json(value, cfg.pretty),",
+        "crates/bijux-cli-repl/src/execution.rs:15:fn output_format_from_name(name: &str) -> Option<OutputFormat> {",
+        "crates/bijux-cli-repl/src/execution.rs:17:        \"json\" => Some(OutputFormat::Json),",
+        "crates/bijux-cli-repl/src/execution.rs:24:fn output_format_name(format: OutputFormat) -> &'static str {",
+        "crates/bijux-cli-repl/src/execution.rs:26:        OutputFormat::Json => \"json\",",
+        "crates/bijux-cli-repl/src/execution.rs:86:                    session.policy.output_format = output_format_from_name(value)",
+        "crates/bijux-cli-repl/src/execution.rs:115:    argv.push(output_format_name(session.policy.output_format).to_string());",
+        "crates/bijux-cli-repl/src/session.rs:12:        output_format: Some(OutputFormat::Json),"
+      ],
+      "name": "output-format-mapping"
+    },
+    {
+      "canonical_source": "crates/bijux-cli-core/src/argv.rs",
+      "description": "command positional and option extraction helpers",
+      "evidence": [
+        "crates/bijux-cli-core/src/argv.rs:20:pub(crate) fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<String> {",
+        "crates/bijux-cli-core/src/argv.rs:59:pub(crate) fn command_option_value(",
+        "crates/bijux-cli-core/src/app.rs:240:fn command_option_value(argv: &[String], name: &str) -> Option<String> {",
+        "crates/bijux-cli-core/src/app.rs:734:            let positional = command_positionals(argv, &[\"history\"]);",
+        "crates/bijux-cli-core/src/app.rs:796:            let plugin = command_positionals(argv, &[\"cli\", \"plugins\", \"check\"])",
+        "crates/bijux-cli-core/src/app.rs:803:            let positional = command_positionals(argv, &[\"cli\", \"plugins\", \"scaffold\"]);",
+        "crates/bijux-cli-core/src/app.rs:810:            let target = command_option_value(argv, \"--path\")",
+        "crates/bijux-cli-core/src/app.rs:823:            let manifest_arg = command_positionals(argv, &[\"cli\", \"plugins\", \"install\"])",
+        "crates/bijux-cli-core/src/app.rs:829:            let source = command_option_value(argv, \"--source\").unwrap_or_else(|| manifest_arg.clone());",
+        "crates/bijux-cli-core/src/app.rs:830:            let trust_level = match command_option_value(argv, \"--trust\")",
+        "crates/bijux-cli-core/src/app.rs:850:            let namespace = command_positionals(argv, &[\"cli\", \"plugins\", \"uninstall\"])",
+        "crates/bijux-cli-core/src/app.rs:901:            let plugin = command_positionals(argv, &[\"cli\", \"plugins\", \"explain\"]).first().cloned();",
+        "crates/bijux-cli-core/src/config/mod.rs:34:            let positional = command_positionals(argv, &[\"cli\", \"config\", \"get\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:40:            let positional = command_positionals(argv, &[\"cli\", \"config\", \"set\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:47:            let positional = command_positionals(argv, &[\"cli\", \"config\", \"unset\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:53:            let _ = command_positionals(argv, &[\"cli\", \"config\", \"clear\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:57:            let _ = command_positionals(argv, &[\"cli\", \"config\", \"reload\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:61:            let positional = command_positionals(argv, &[\"cli\", \"config\", \"export\"]);",
+        "crates/bijux-cli-core/src/config/mod.rs:63:            let format = command_option_value(argv, &[\"cli\", \"config\", \"export\"], \"--format\")",
+        "crates/bijux-cli-core/src/config/mod.rs:72:            let positional = command_positionals(argv, &[\"cli\", \"config\", \"load\"]);"
+      ],
+      "name": "argv-positionals-and-options"
+    },
+    {
+      "canonical_source": "crates/bijux-cli-plugin/src/constants.rs",
+      "description": "reserved namespace checks for plugin lifecycle",
+      "evidence": [
+        "crates/bijux-cli-plugin/src/errors.rs:21:    ReservedNamespace(String),",
+        "crates/bijux-cli-core/src/app.rs:274:    if is_reserved_namespace(namespace, &[]) {",
+        "crates/bijux-cli-plugin/src/manifest.rs:71:    if is_reserved_namespace(&namespace.0, reserved) {",
+        "crates/bijux-cli-plugin/src/manifest.rs:72:        return Err(PluginError::ReservedNamespace(namespace.0.clone()));",
+        "crates/bijux-cli-plugin/src/constants.rs:18:pub fn is_reserved_namespace(namespace: &str, additional: &[&str]) -> bool {"
+      ],
+      "name": "plugin-namespace-reservation"
+    }
+  ],
+  "scope": "duplication hotspots across rust workspace command law"
+}

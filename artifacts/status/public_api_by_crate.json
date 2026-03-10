@@ -37,7 +37,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "struct",
-          "line": 35,
+          "line": 38,
           "name": "AppRunResult",
           "path": "crates/bijux-cli-core/src/app.rs"
         },
@@ -48,7 +48,7 @@
             "bijux-cli-repl"
           ],
           "kind": "fn",
-          "line": 1586,
+          "line": 1464,
           "name": "run_app",
           "path": "crates/bijux-cli-core/src/app.rs"
         },
@@ -833,6 +833,17 @@
             "bijux-cli-core"
           ],
           "kind": "fn",
+          "line": 18,
+          "name": "is_reserved_namespace",
+          "path": "crates/bijux-cli-plugin/src/constants.rs"
+        },
+        {
+          "classification": "necessary",
+          "cross_crate_user_count": 1,
+          "cross_crate_users": [
+            "bijux-cli-core"
+          ],
+          "kind": "fn",
           "line": 15,
           "name": "load_time_diagnostics",
           "path": "crates/bijux-cli-plugin/src/diagnostics.rs"
@@ -1145,7 +1156,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "fn",
-          "line": 17,
+          "line": 35,
           "name": "repl_argv_from_line",
           "path": "crates/bijux-cli-repl/src/execution.rs"
         },
@@ -1154,7 +1165,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "fn",
-          "line": 150,
+          "line": 161,
           "name": "execute_repl_input",
           "path": "crates/bijux-cli-repl/src/execution.rs"
         },
@@ -1163,7 +1174,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "fn",
-          "line": 221,
+          "line": 232,
           "name": "execute_repl_line",
           "path": "crates/bijux-cli-repl/src/execution.rs"
         },
@@ -1208,7 +1219,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "fn",
-          "line": 3,
+          "line": 5,
           "name": "render_repl_command_reference",
           "path": "crates/bijux-cli-repl/src/reference.rs"
         },
@@ -1341,6 +1352,15 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "fn",
+          "line": 49,
+          "name": "normalize_command_path",
+          "path": "crates/bijux-cli-routing/src/catalog.rs"
+        },
+        {
+          "classification": "convenience",
+          "cross_crate_user_count": 0,
+          "cross_crate_users": [],
+          "kind": "fn",
           "line": 233,
           "name": "suggest_namespace",
           "path": "crates/bijux-cli-routing/src/registry.rs"
@@ -1362,8 +1382,30 @@
           "cross_crate_users": [
             "bijux-cli-core"
           ],
+          "kind": "fn",
+          "line": 67,
+          "name": "is_known_route",
+          "path": "crates/bijux-cli-routing/src/catalog.rs"
+        },
+        {
+          "classification": "necessary",
+          "cross_crate_user_count": 1,
+          "cross_crate_users": [
+            "bijux-cli-repl"
+          ],
+          "kind": "fn",
+          "line": 90,
+          "name": "repl_reference_commands",
+          "path": "crates/bijux-cli-routing/src/catalog.rs"
+        },
+        {
+          "classification": "necessary",
+          "cross_crate_user_count": 1,
+          "cross_crate_users": [
+            "bijux-cli-core"
+          ],
           "kind": "struct",
-          "line": 9,
+          "line": 10,
           "name": "ParsedGlobalFlags",
           "path": "crates/bijux-cli-routing/src/parser.rs"
         },
@@ -1372,7 +1414,7 @@
           "cross_crate_user_count": 0,
           "cross_crate_users": [],
           "kind": "struct",
-          "line": 26,
+          "line": 27,
           "name": "ParsedIntent",
           "path": "crates/bijux-cli-routing/src/parser.rs"
         },
@@ -1383,7 +1425,7 @@
             "bijux-cli-repl"
           ],
           "kind": "enum",
-          "line": 37,
+          "line": 38,
           "name": "ParseError",
           "path": "crates/bijux-cli-routing/src/parser.rs"
         },
@@ -1395,7 +1437,7 @@
             "bijux-cli-repl"
           ],
           "kind": "fn",
-          "line": 107,
+          "line": 108,
           "name": "root_command",
           "path": "crates/bijux-cli-routing/src/parser.rs"
         },
@@ -1406,7 +1448,7 @@
             "bijux-cli-core"
           ],
           "kind": "fn",
-          "line": 337,
+          "line": 274,
           "name": "parse_intent",
           "path": "crates/bijux-cli-routing/src/parser.rs"
         },
@@ -1502,5 +1544,5 @@
       ]
     }
   },
-  "generated_at": "2026-03-10T00:15:56.009808+00:00"
+  "generated_at": "2026-03-10T00:21:11.710713+00:00"
 }

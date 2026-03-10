@@ -200,17 +200,17 @@
         "symbol": "check_repl_budgets"
       },
       {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:17",
+        "defined_at": "crates/bijux-cli-repl/src/execution.rs:35",
         "reason": "no cross-crate consumer detected",
         "symbol": "repl_argv_from_line"
       },
       {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:150",
+        "defined_at": "crates/bijux-cli-repl/src/execution.rs:161",
         "reason": "no cross-crate consumer detected",
         "symbol": "execute_repl_input"
       },
       {
-        "defined_at": "crates/bijux-cli-repl/src/execution.rs:221",
+        "defined_at": "crates/bijux-cli-repl/src/execution.rs:232",
         "reason": "no cross-crate consumer detected",
         "symbol": "execute_repl_line"
       },
@@ -235,7 +235,7 @@
         "symbol": "replay_history_command"
       },
       {
-        "defined_at": "crates/bijux-cli-repl/src/reference.rs:3",
+        "defined_at": "crates/bijux-cli-repl/src/reference.rs:5",
         "reason": "no cross-crate consumer detected",
         "symbol": "render_repl_command_reference"
       },
@@ -257,6 +257,11 @@
     ],
     "bijux-cli-routing": [
       {
+        "defined_at": "crates/bijux-cli-routing/src/catalog.rs:49",
+        "reason": "no cross-crate consumer detected",
+        "symbol": "normalize_command_path"
+      },
+      {
         "defined_at": "crates/bijux-cli-routing/src/registry.rs:233",
         "reason": "no cross-crate consumer detected",
         "symbol": "suggest_namespace"
@@ -268,5 +273,5 @@
       }
     ]
   },
-  "generated_at": "2026-03-10T00:15:56.009808+00:00"
+  "generated_at": "2026-03-10T00:21:11.710713+00:00"
 }
