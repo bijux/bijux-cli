@@ -46,6 +46,18 @@ fn core_app_env_contracts_parity_status_delegate_to_dev_cli() {
         "core app must delegate dev cli status to bijux-dev-cli"
     );
     assert!(
+        source.contains("dev_script_audit::build_report"),
+        "core app must delegate dev cli script-audit to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_docs_audit::build_report"),
+        "core app must delegate dev cli docs-audit to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_crate_health::build_report"),
+        "core app must delegate dev cli crate-health to bijux-dev-cli"
+    );
+    assert!(
         source.contains("dev_runtime_identity::build_report"),
         "core app must delegate dev cli runtime-identity to bijux-dev-cli"
     );
@@ -72,5 +84,17 @@ fn core_app_env_contracts_parity_status_delegate_to_dev_cli() {
     assert!(
         !source.contains("active_path_is_canonical_name"),
         "core app must not assemble runtime identity payload fields directly"
+    );
+    assert!(
+        !source.contains("docs_audit\": docs_audit"),
+        "core app must not assemble docs-audit presentation payload directly"
+    );
+    assert!(
+        !source.contains("crate_metrics\": metrics"),
+        "core app must not assemble crate-health presentation payload directly"
+    );
+    assert!(
+        !source.contains("remaining_script_only_behaviors"),
+        "core app must not assemble script-audit presentation payload directly"
     );
 }
