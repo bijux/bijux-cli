@@ -15,7 +15,10 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let dir = std::env::temp_dir().join(format!("bijux-scaffold-fuzz-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("mkdir");
     dir
@@ -31,7 +34,11 @@ fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
 
 fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
     let out = run(args, plugins_dir);
-    assert!(out.status.success(), "stderr={}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     serde_json::from_slice(&out.stdout).expect("json")
 }
 
@@ -41,7 +48,11 @@ fn fuzz_scaffold_option_parsing_and_template_expansion_inputs_are_stable() {
     let plugins = root.join("plugins");
     fs::create_dir_all(&plugins).expect("plugins dir");
 
-    let cases = [("python", "alpha-fuzz"), ("rust", "beta-fuzz"), ("python", "gamma-fuzz")];
+    let cases = [
+        ("python", "alpha-fuzz"),
+        ("rust", "beta-fuzz"),
+        ("python", "gamma-fuzz"),
+    ];
 
     for (kind, namespace) in cases {
         let target = root.join(format!("{namespace}-{kind}"));
@@ -159,7 +170,10 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
             "cli",
             "plugins",
             "install",
-            scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8"),
+            scaffold_dir
+                .join("plugin.manifest.json")
+                .to_str()
+                .expect("utf-8"),
         ],
         &plugins,
     );
@@ -187,8 +201,15 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
 }"#,
     )
     .expect("write manifest");
-    let install_ext =
-        run(&["cli", "plugins", "install", ext_manifest.to_str().expect("utf-8")], &plugins);
+    let install_ext = run(
+        &[
+            "cli",
+            "plugins",
+            "install",
+            ext_manifest.to_str().expect("utf-8"),
+        ],
+        &plugins,
+    );
     assert_eq!(install_ext.status.code(), Some(0));
 
     let check = run(&["cli", "plugins", "check", "extcheck"], &plugins);

@@ -34,8 +34,11 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let base =
-        std::env::temp_dir().join(format!("bijux-plugin-minimal-{}-{}", name, std::process::id()));
+    let base = std::env::temp_dir().join(format!(
+        "bijux-plugin-minimal-{}-{}",
+        name,
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(&base).expect("mkdir temp");
     base
@@ -73,7 +76,12 @@ fn expected_snapshot(path: &str) -> BTreeSet<String> {
         "rust" => include_str!("../snapshots/plugin_scaffold_rust_minimal_files.txt"),
         _ => panic!("unknown snapshot"),
     };
-    content.lines().map(str::trim).filter(|line| !line.is_empty()).map(str::to_string).collect()
+    content
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 #[test]
@@ -109,7 +117,12 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         }
 
         run_ok_json(
-            &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
+            &[
+                "cli",
+                "plugins",
+                "install",
+                manifest_file(&scaffold_dir).to_str().expect("utf-8"),
+            ],
             &plugins_dir,
         );
 
