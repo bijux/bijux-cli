@@ -19,7 +19,7 @@ use bijux_cli_install::{
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
     compatibility_warnings, install_plugin as install_plugin_manifest, is_reserved_namespace,
-    list_plugins,
+    list_plugins, disable_plugin, enable_plugin, inspect_plugin,
     load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
     registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest, PluginTrustLevel,
     CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
@@ -796,8 +796,26 @@ fn route_response(
             let plugin = command_positionals(argv, &["cli", "plugins", "check"])
                 .first()
                 .cloned()
-                .unwrap_or_else(|| "unknown".to_string());
-            json!({"plugin": plugin, "status": "healthy"})
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
+            let record = inspect_plugin(&plugin_registry_path, &plugin)?;
+            if matches!(record.state, bijux_cli_contracts::PluginLifecycleState::Disabled) {
+                anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
+            }
+            if matches!(record.manifest.kind, bijux_cli_contracts::PluginKind::ExternalExec) {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let path = PathBuf::from(&record.manifest.entrypoint);
+                    if !path.exists() {
+                        anyhow::bail!("Invalid argument: plugin entrypoint was not found");
+                    }
+                    let mode = fs::metadata(&path)?.permissions().mode();
+                    if mode & 0o111 == 0 {
+                        anyhow::bail!("Invalid argument: plugin entrypoint is not executable");
+                    }
+                }
+            }
+            json!({"plugin": plugin, "status": "healthy", "state": format!("{:?}", record.state)})
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
             let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
@@ -855,6 +873,30 @@ fn route_response(
             json!({
                 "status": "uninstalled",
                 "namespace": namespace,
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "enable" => {
+            let namespace = command_positionals(argv, &["cli", "plugins", "enable"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+            let record = enable_plugin(&plugin_registry_path, &namespace)?;
+            json!({
+                "status": "enabled",
+                "namespace": namespace,
+                "state": format!("{:?}", record.state),
+            })
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "disable" => {
+            let namespace = command_positionals(argv, &["cli", "plugins", "disable"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("plugin namespace is required"))?;
+            let record = disable_plugin(&plugin_registry_path, &namespace)?;
+            json!({
+                "status": "disabled",
+                "namespace": namespace,
+                "state": format!("{:?}", record.state),
             })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
@@ -1346,6 +1388,17 @@ fn route_response(
                 "docs_audit": docs_audit,
                 "docs": docs_files,
                 "docs_count": docs_files.len(),
+            })
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "plugin-health" => {
+            let root = workspace_root();
+            let machine =
+                read_json_if_exists(&root.join("artifacts/status/plugin_health_report.json"));
+            let text = fs::read_to_string(root.join("artifacts/status/plugin_health_report.txt"))
+                .unwrap_or_default();
+            json!({
+                "machine_report": machine,
+                "text_report": text,
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
