@@ -13,7 +13,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 BASELINE = ROOT / "scripts" / "status" / "compatibility_baseline.json"
-REGISTRY = ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs"
+REGISTRY = ROOT / "crates" / "bijux-cli" / "src" / "routing" / "registry.rs"
 
 
 def stable_generated_at() -> str:

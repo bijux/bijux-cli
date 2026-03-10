@@ -12,7 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-DEV_FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "dev_cli_subcommands.txt"
+DEV_FIXTURE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fixtures" / "dev_cli_subcommands.txt"
 CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 
 MAINTAINER_DIAGNOSTIC_COMMANDS = {
@@ -36,8 +36,8 @@ MAINTAINER_DIAGNOSTIC_COMMANDS = {
 RUNTIME_OWNED_BEHAVIORS = [
     {
         "behavior": "command routing and normalization",
-        "owner": "bijux-cli-routing",
-        "evidence": "crates/bijux-cli-routing/src/catalog.rs",
+        "owner": "bijux-cli",
+        "evidence": "crates/bijux-cli/src/routing/catalog.rs",
     },
     {
         "behavior": "runtime command execution kernel",
@@ -106,7 +106,7 @@ def parse_dev_cli_implementations() -> dict[str, str]:
 
     for command in ["dev cli route-audit"]:
         if command in implementations:
-            implementations[command] = "bijux-cli + bijux-cli-routing"
+            implementations[command] = "bijux-cli::routing + bijux-cli"
 
     for command in ["dev cli runtime-identity", "dev cli package-health", "dev cli state-audit", "dev cli state-doctor"]:
         if command in implementations:
@@ -129,6 +129,15 @@ def parse_dev_cli_implementations() -> dict[str, str]:
         "dev cli inventory": "dev_script_audit::build_inventory_report",
     }
     for command, marker in delegated.items():
+        if command in implementations and marker in source:
+            implementations[command] = "bijux-dev-cli + runtime-data-providers"
+
+    delegated_query_path = {
+        "dev cli routes": "dev_routes::build_report_from_query",
+        "dev cli registry": "dev_registry::build_report_from_query",
+        "dev cli route-audit": "dev_route_audit::build_report_from_query",
+    }
+    for command, marker in delegated_query_path.items():
         if command in implementations and marker in source:
             implementations[command] = "bijux-dev-cli + runtime-data-providers"
 
@@ -199,7 +208,7 @@ def main() -> int:
             "leaks_through_runtime": not implementation.startswith("bijux-dev-cli"),
             "exposed_through_binary": True,
             "evidence": [
-                "crates/bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt",
+                "crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt",
                 "crates/bijux-cli/src/app.rs",
             ],
         }

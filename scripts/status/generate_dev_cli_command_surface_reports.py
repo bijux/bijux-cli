@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "dev_cli_subcommands.txt"
+FIXTURE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fixtures" / "dev_cli_subcommands.txt"
 TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "dev_cli_command_matrix.rs"
 BIN_TESTS_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface"
 
@@ -177,7 +177,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "dev cli commands are the maintainer control surface and must keep parity, diagnostics, and deterministic output law.",
             "evidence": [
-                "crates/bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt",
+                "crates/bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt",
                 "crates/bijux-cli/tests/bin_surface/dev_cli_command_matrix.rs",
                 "artifacts/status/dev_cli_command_coverage_report.json",
                 "artifacts/status/dev_cli_command_matrix_artifact.json",

@@ -68,7 +68,7 @@ def main() -> int:
         "evidence": [
             "crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs",
             "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
-            "crates/bijux-cli-routing/tests/route_law_consistency.rs",
+            "crates/bijux-cli/tests/routing/route_law_consistency.rs",
             "docs/constitution/official_product_namespace_registry.json",
             "docs/constitution/product_mount_metadata_contract.json",
         ],

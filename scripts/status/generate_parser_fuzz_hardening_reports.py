@@ -12,11 +12,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-ROUTING_TEST_FILE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "parser_fuzz_targets.rs"
+ROUTING_TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "parser_fuzz_targets.rs"
 BIN_TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "parser_invalid_utf8_argv.rs"
-REGRESSION_FILE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "parser_fuzz_regressions.rs"
-CORPUS_DIR = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fuzz" / "parser_interesting_inputs"
-MINIMIZED_DIR = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fuzz" / "parser_minimized_cases"
+REGRESSION_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "parser_fuzz_regressions.rs"
+CORPUS_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fuzz" / "parser_interesting_inputs"
+MINIMIZED_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fuzz" / "parser_minimized_cases"
 
 REQUIRED_TESTS = {
     1: (ROUTING_TEST_FILE, "fuzz_root_argv_parsing_does_not_panic"),
@@ -93,7 +93,9 @@ def main() -> int:
         if path.is_file()
     )
 
-    regression_run = run_test(["cargo", "test", "-p", "bijux-cli-routing", "--test", "parser_fuzz_regressions"])
+    regression_run = run_test(
+        ["cargo", "test", "-p", "bijux-cli", "--test", "routing", "parser_fuzz_regressions::"]
+    )
 
     missing_todos = [row["todo"] for row in coverage_rows if row["status"] != "covered"]
 

@@ -12,12 +12,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-ROUTE_TARGETS = ROOT / "crates" / "bijux-cli-routing" / "tests" / "route_fuzz_targets.rs"
-ROUTE_REGRESSION = ROOT / "crates" / "bijux-cli-routing" / "tests" / "route_fuzz_regressions.rs"
+ROUTE_TARGETS = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "route_fuzz_targets.rs"
+ROUTE_REGRESSION = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "route_fuzz_regressions.rs"
 REGISTRY_TARGETS = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "registry_fuzz_targets.rs"
 REGISTRY_REGRESSION = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "registry_fuzz_regressions.rs"
 
-ROUTE_MIN_DIR = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fuzz" / "route_minimized_cases"
+ROUTE_MIN_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fuzz" / "route_minimized_cases"
 REGISTRY_MIN_DIR = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "fuzz" / "registry_minimized_cases"
 
 REQUIRED_TESTS = {
@@ -86,7 +86,9 @@ def main() -> int:
     route_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in ROUTE_MIN_DIR.glob("*.txt"))
     registry_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in REGISTRY_MIN_DIR.glob("*.json"))
 
-    route_replay = run_test(["cargo", "test", "-p", "bijux-cli-routing", "--test", "route_fuzz_regressions"])
+    route_replay = run_test(
+        ["cargo", "test", "-p", "bijux-cli", "--test", "routing", "route_fuzz_regressions::"]
+    )
     registry_replay = run_test(["cargo", "test", "-p", "bijux-cli-plugin", "--test", "registry_fuzz_regressions"])
 
     missing_todos = [row["todo"] for row in coverage_rows if row["status"] != "covered"]

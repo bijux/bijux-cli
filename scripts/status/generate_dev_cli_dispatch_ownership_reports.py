@@ -24,8 +24,8 @@ def main() -> int:
 
     main_rs = _read(REPO_ROOT / "crates" / "bijux-cli" / "src" / "bin" / "bijux-rs.rs")
     core_app = _read(REPO_ROOT / "crates" / "bijux-cli" / "src" / "app.rs")
-    parser_rs = _read(REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "parser.rs")
-    registry_rs = _read(REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs")
+    parser_rs = _read(REPO_ROOT / "crates" / "bijux-cli" / "src" / "routing" / "parser.rs")
+    registry_rs = _read(REPO_ROOT / "crates" / "bijux-cli" / "src" / "routing" / "registry.rs")
 
     dev_cli_dispatch_arm_count = _count(core_app, 'a == "dev" && b == "cli"')
     core_dev_cli_builder_call_count = sum(
@@ -90,7 +90,7 @@ def main() -> int:
             "dev_cli_literal_mentions": _count(main_rs, "dev cli"),
             "core_run_app_calls": _count(main_rs, "bijux_cli::app::run_app"),
             "direct_dispatch_match_mentions": _count(main_rs, "match normalized_path"),
-            "parser_dependency_mentions": _count(main_rs, "bijux_cli_routing::parser"),
+            "parser_dependency_mentions": _count(main_rs, "bijux_cli::routing::parser"),
         },
         "routing_identity_checks": {
             "parser_build_report_mentions": _count(parser_rs, "build_report("),

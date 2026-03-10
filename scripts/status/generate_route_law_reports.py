@@ -13,8 +13,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 PARITY = ROOT / "artifacts" / "parity"
-REGISTRY = ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs"
-PARSER = ROOT / "crates" / "bijux-cli-routing" / "src" / "parser.rs"
+REGISTRY = ROOT / "crates" / "bijux-cli" / "src" / "routing" / "registry.rs"
+PARSER = ROOT / "crates" / "bijux-cli" / "src" / "routing" / "parser.rs"
 BASELINE = ROOT / "scripts" / "status" / "route_special_cases_baseline.json"
 
 

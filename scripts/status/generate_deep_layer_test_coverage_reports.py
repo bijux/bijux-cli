@@ -12,12 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 TEST_ROOTS = [
     ROOT / "crates" / "bijux-cli" / "tests",
-    ROOT / "crates" / "bijux-cli-repl" / "tests",
     ROOT / "crates" / "bijux-cli-python" / "tests",
-    ROOT / "crates" / "bijux-cli-plugin" / "tests",
-    ROOT / "crates" / "bijux-cli-routing" / "tests",
-    ROOT / "crates" / "bijux-cli-contracts" / "tests",
-    ROOT / "crates" / "bijux-cli" / "tests",
+    ROOT / "crates" / "bijux-dev-cli" / "tests",
 ]
 
 CATEGORY_RULES: dict[str, dict[str, list[str]]] = {

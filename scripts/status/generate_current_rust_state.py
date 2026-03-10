@@ -62,7 +62,7 @@ def extract_quoted_list_block(source: str, marker: str) -> list[str]:
 
 
 def parse_rust_routed_commands() -> dict[str, list[str]]:
-    registry = read_text(ROOT / "crates/bijux-cli-routing/src/registry.rs")
+    registry = read_text(ROOT / "crates/bijux-cli/src/routing/registry.rs")
     built_ins = extract_quoted_list_block(registry, "let built_ins")
     aliases_block = registry.split("let aliases =", 1)[1] if "let aliases =" in registry else ""
     alias_pairs = re.findall(r'\("([^"]+)"\.to_string\(\),\s*"([^"]+)"\.to_string\(\)\)', aliases_block)
@@ -405,7 +405,7 @@ def runtime_identity_rules() -> dict[str, object]:
 
 
 def plugin_reserved_namespaces() -> list[str]:
-    registry = read_text(ROOT / "crates/bijux-cli-routing/src/registry.rs")
+    registry = read_text(ROOT / "crates/bijux-cli/src/routing/registry.rs")
     idx = registry.find("let reserved")
     if idx < 0:
         return []

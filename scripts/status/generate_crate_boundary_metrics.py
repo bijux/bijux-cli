@@ -155,46 +155,34 @@ def pair_change_frequency(a_rel: str, b_rel: str, max_commits: int = 200) -> int
 def boundary_decisions() -> list[dict[str, str]]:
     return [
         {
-            "boundary": "core <-> routing",
-            "status": "watch",
-            "decision": "keep separate for now",
-            "reason": "high co-change expected during parity closure; separation still useful for parser test focus",
+            "boundary": "bijux-cli core <-> routing module",
+            "status": "keep",
+            "decision": "keep as module boundary inside bijux-cli",
+            "reason": "routing law is shared core runtime behavior and now lives under src/routing",
         },
         {
-            "boundary": "core <-> output",
+            "boundary": "bijux-cli core <-> install module",
             "status": "watch",
-            "decision": "keep separate for now",
-            "reason": "output formatting contracts remain reusable and test-scoped",
-        },
-        {
-            "boundary": "core <-> install",
-            "status": "watch",
-            "decision": "keep separate for now",
+            "decision": "keep as module boundary inside bijux-cli",
             "reason": "install concerns include path and packaging diagnostics outside core execution law",
         },
         {
-            "boundary": "core <-> contracts",
+            "boundary": "bijux-cli <-> bijux-dev-cli",
             "status": "keep",
             "decision": "must stay separate",
-            "reason": "machine contracts must remain independent from execution engine",
+            "reason": "maintainer control-plane report assembly must not leak into runtime crates",
         },
         {
-            "boundary": "core <-> python",
+            "boundary": "bijux-cli <-> bijux-cli-python",
             "status": "keep",
             "decision": "must stay separate",
             "reason": "bridge packaging/runtime integration is language-boundary specific",
         },
         {
-            "boundary": "core <-> plugin",
+            "boundary": "bijux-dev-cli <-> bijux-cli-evidence",
             "status": "keep",
             "decision": "must stay separate",
-            "reason": "plugin lifecycle and registry law should not be merged into base execution core",
-        },
-        {
-            "boundary": "core <-> repl",
-            "status": "keep",
-            "decision": "must stay separate",
-            "reason": "interactive session model and transcript behavior are distinct runtime surfaces",
+            "reason": "evidence contracts stay reusable and independent from command presentation logic",
         },
     ]
 
@@ -202,58 +190,28 @@ def boundary_decisions() -> list[dict[str, str]]:
 def crate_decisions() -> list[dict[str, str]]:
     return [
         {
-            "crate": "bijux-cli-contracts",
-            "status": "keep",
-            "review": "must stay separate",
-            "reason": "schemas and envelope law are durable contracts shared by all runtimes",
-        },
-        {
             "crate": "bijux-cli",
             "status": "keep",
             "review": "must stay separate",
-            "reason": "execution law center; merging outward increases coupling risk",
+            "reason": "runtime command execution and routing law are now co-located in one crate",
         },
         {
-            "crate": "bijux-cli-routing",
+            "crate": "bijux-dev-cli",
             "status": "watch",
-            "review": "paying rent with dedicated parser fixtures and namespace policy tests",
-            "reason": "high co-change with core but still isolated by routing test surface",
-        },
-        {
-            "crate": "bijux-cli-output",
-            "status": "watch",
-            "review": "paying rent with envelope and rendering parity checks",
-            "reason": "candidate only if output contracts become static and trivial",
-        },
-        {
-            "crate": "bijux-cli::install",
-            "status": "watch",
-            "review": "paying rent with path/install diagnostics and channel policy",
-            "reason": "keep independent while runtime identity and install parity remain active",
+            "review": "paying rent with dedicated control-plane reports and ownership tests",
+            "reason": "should remain independent while delegating from core through query interfaces",
         },
         {
             "crate": "bijux-cli-python",
-            "status": "keep",
-            "review": "must stay separate",
-            "reason": "bridge packaging and binding boundary is language-specific",
+            "status": "watch",
+            "review": "paying rent with bridge parity and conversion law tests",
+            "reason": "language boundary remains useful while python bridge is maintained",
         },
         {
-            "crate": "bijux-cli-plugin",
+            "crate": "bijux-cli-evidence",
             "status": "keep",
             "review": "must stay separate",
-            "reason": "plugin registry/lifecycle semantics need explicit boundary protection",
-        },
-        {
-            "crate": "bijux-cli-repl",
-            "status": "keep",
-            "review": "must stay separate",
-            "reason": "interactive session and transcript behavior are distinct runtime concerns",
-        },
-        {
-            "crate": "bijux-cli",
-            "status": "candidate-to-merge-later",
-            "review": "thin executable wrapper currently acceptable",
-            "reason": "revisit only after parity and runtime identity reports converge",
+            "reason": "evidence IDs and helpers should stay reusable across tooling surfaces",
         },
     ]
 

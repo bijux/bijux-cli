@@ -11,8 +11,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 STATUS_DIR = REPO_ROOT / "artifacts" / "status"
 
 QUERY_FILES = {
-    "routing_inventory": REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "inventory.rs",
-    "routing_contracts_query": REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "query.rs",
+    "routing_inventory": REPO_ROOT / "crates" / "bijux-cli" / "src" / "routing" / "inventory.rs",
+    "routing_contracts_query": REPO_ROOT / "crates" / "bijux-cli" / "src" / "routing" / "query.rs",
     "install_runtime_identity_query": REPO_ROOT
     / "crates"
     / "bijux-cli"

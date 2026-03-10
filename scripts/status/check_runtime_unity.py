@@ -101,8 +101,8 @@ def check_package_metadata_points_to_bijux() -> tuple[bool, str]:
 
 
 def check_runtime_identity_command_visible() -> tuple[bool, str]:
-    parser = read_text(ROOT / "crates" / "bijux-cli-routing" / "src" / "parser.rs")
-    registry = read_text(ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs")
+    parser = read_text(ROOT / "crates" / "bijux-cli" / "src" / "routing" / "parser.rs")
+    registry = read_text(ROOT / "crates" / "bijux-cli" / "src" / "routing" / "registry.rs")
     core = read_text(ROOT / "crates" / "bijux-cli" / "src" / "app.rs")
     ok = all(
         token in parser + registry + core

@@ -9,13 +9,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-ROUTING_REPORTS = ROOT / "crates" / "bijux-cli-routing" / "src" / "reports.rs"
+ROUTING_MODULE = ROOT / "crates" / "bijux-cli" / "src" / "routing" / "mod.rs"
 CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 DEV_ROUTES = ROOT / "crates" / "bijux-dev-cli" / "src" / "routes.rs"
 DEV_REGISTRY = ROOT / "crates" / "bijux-dev-cli" / "src" / "registry.rs"
 
 
 def has_token(path: Path, token: str) -> bool:
+    if not path.exists():
+        return False
     return token in path.read_text(encoding="utf-8")
 
 
@@ -26,19 +28,19 @@ def main() -> int:
     before = {
         "core_owned_routes_registry_presentation": has_token(CORE_APP, "routes_report(&registry)")
         or has_token(CORE_APP, "registry_report(&registry)"),
-        "routing_owned_routes_registry_presentation": has_token(ROUTING_REPORTS, "pub fn routes_report")
-        or has_token(ROUTING_REPORTS, "pub fn registry_report"),
+        "routing_owned_routes_registry_presentation": has_token(ROUTING_MODULE, "pub fn routes_report")
+        or has_token(ROUTING_MODULE, "pub fn registry_report"),
     }
     after = {
-        "core_delegates_routes_to_dev_cli": has_token(CORE_APP, "dev_routes::build_report"),
-        "core_delegates_registry_to_dev_cli": has_token(CORE_APP, "dev_registry::build_report"),
-        "dev_cli_owns_routes_presentation": has_token(DEV_ROUTES, "pub fn build_report"),
-        "dev_cli_owns_registry_presentation": has_token(DEV_REGISTRY, "pub fn build_report"),
+        "core_delegates_routes_to_dev_cli": has_token(CORE_APP, "dev_routes::build_report_from_query"),
+        "core_delegates_registry_to_dev_cli": has_token(CORE_APP, "dev_registry::build_report_from_query"),
+        "dev_cli_owns_routes_presentation": has_token(DEV_ROUTES, "pub fn build_report_from_query"),
+        "dev_cli_owns_registry_presentation": has_token(DEV_REGISTRY, "pub fn build_report_from_query"),
         "routing_exposes_read_only_route_inventory": has_token(
-            ROOT / "crates" / "bijux-cli-routing" / "src" / "inventory.rs", "pub fn route_inventory"
+            ROOT / "crates" / "bijux-cli" / "src" / "routing" / "inventory.rs", "pub fn route_inventory"
         ),
         "routing_exposes_read_only_registry_inventory": has_token(
-            ROOT / "crates" / "bijux-cli-routing" / "src" / "inventory.rs", "pub fn registry_inventory"
+            ROOT / "crates" / "bijux-cli" / "src" / "routing" / "inventory.rs", "pub fn registry_inventory"
         ),
     }
 

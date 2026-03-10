@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "dev_cli_subcommands.txt"
+FIXTURE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fixtures" / "dev_cli_subcommands.txt"
 CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 BIN_MAIN = ROOT / "crates" / "bijux-cli" / "src" / "bin" / "bijux-rs.rs"
 

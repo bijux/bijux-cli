@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "cli_subcommands.txt"
+FIXTURE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fixtures" / "cli_subcommands.txt"
 TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "cli_command_matrix.rs"
 BIN_TESTS_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface"
 
@@ -169,7 +169,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "cli subcommands are covered by explicit parity, stream, formatting, malformed-input, and determinism tests.",
             "evidence": [
-                "crates/bijux-cli-routing/tests/fixtures/cli_subcommands.txt",
+                "crates/bijux-cli/tests/routing/fixtures/cli_subcommands.txt",
                 "crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs",
                 "artifacts/status/cli_command_coverage_report.json",
                 "artifacts/status/cli_command_matrix_artifact.json",

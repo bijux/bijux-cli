@@ -120,7 +120,6 @@ def main() -> int:
         ],
         "disabled_default_features": [
             "clap in bijux-cli",
-            "clap in bijux-cli-routing",
             "pyo3 in bijux-cli-python",
         ],
     }

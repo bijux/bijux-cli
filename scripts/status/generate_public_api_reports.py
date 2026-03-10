@@ -16,7 +16,6 @@ TARGET_CRATES = {
     "bijux-cli",
     "bijux-cli-plugin",
     "bijux-cli-repl",
-    "bijux-cli-routing",
     "bijux-cli-output",
     "bijux-cli-python",
 }

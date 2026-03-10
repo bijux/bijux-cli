@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "artifacts" / "status" / "parser_abuse_report.json"
-TEST_FILE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "parser_abuse.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "parser_abuse.rs"
 
 
 def main() -> int:
@@ -41,7 +41,7 @@ def main() -> int:
             {
                 "todo": int(todo),
                 "status": "complete" if test_name in text else "missing",
-                "evidence_test": f"crates/bijux-cli-routing/tests/parser_abuse.rs::{test_name}",
+                "evidence_test": f"crates/bijux-cli/tests/routing/parser_abuse.rs::{test_name}",
             }
         )
 

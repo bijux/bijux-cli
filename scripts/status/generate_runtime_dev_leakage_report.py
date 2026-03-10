@@ -12,10 +12,8 @@ STATUS_DIR = REPO_ROOT / "artifacts" / "status"
 
 RUNTIME_CRATE_SRCS = {
     "bijux-cli": REPO_ROOT / "crates" / "bijux-cli" / "src",
-    "bijux-cli-routing": REPO_ROOT / "crates" / "bijux-cli-routing" / "src",
-    "bijux-cli-output": REPO_ROOT / "crates" / "bijux-cli-output" / "src",
+    "bijux-cli::routing": REPO_ROOT / "crates" / "bijux-cli" / "src" / "routing",
     "bijux-cli::install": REPO_ROOT / "crates" / "bijux-cli" / "src" / "install",
-    "bijux-cli-plugin": REPO_ROOT / "crates" / "bijux-cli-plugin" / "src",
     "bijux-cli-python": REPO_ROOT / "crates" / "bijux-cli-python" / "src",
 }
 
@@ -41,7 +39,7 @@ def main() -> int:
             bijux_dev_cli_imports = 0
             dev_cli_literals = 0
         # routing owns command identity; command literals are expected.
-        if crate == "bijux-cli-routing":
+        if crate == "bijux-cli::routing":
             dev_cli_literals = 0
         leakage_score = (
             bijux_dev_cli_imports + dev_cli_literals + route_audit_assembly + report_builder_calls

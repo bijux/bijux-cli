@@ -11,7 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS_DIR = ROOT / "artifacts" / "status"
-ROUTING_FIXTURES = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures"
+ROUTING_FIXTURES = ROOT / "crates" / "bijux-cli" / "tests" / "routing" / "fixtures"
 
 
 def stable_generated_at() -> str:
@@ -106,7 +106,7 @@ def main() -> int:
         "documented_python_commands_not_proven_in_rust.json",
         {
             "generated_at": generated_at,
-            "source": "crates/bijux-cli-routing/tests/fixtures/python_documented_commands.txt",
+            "source": "crates/bijux-cli/tests/routing/fixtures/python_documented_commands.txt",
             "commands": documented_not_proven,
             "count": len(documented_not_proven),
         },
