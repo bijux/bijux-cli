@@ -3,10 +3,11 @@
 
 use std::collections::HashMap;
 use std::fs;
+use std::hash::BuildHasher;
 use std::path::Path;
 
-use bijux_cli_routing::ContractMarker;
 use bijux_cli_core::app::{run_app, AppRunResult};
+use bijux_cli_routing::ContractMarker;
 use serde_json::{json, Value};
 
 use crate::compatibility::{
@@ -145,7 +146,7 @@ pub fn schema_export_helpers_api() -> String {
 pub fn config_resolution_api(
     home_dir: Option<&Path>,
     cli_overrides: &PathOverrides,
-    env_map: &HashMap<String, String>,
+    env_map: &HashMap<String, String, impl BuildHasher>,
     file_config: &CompatibilityConfig,
 ) -> Result<String, CompatibilityError> {
     let resolved = discover_compatibility_paths(home_dir, cli_overrides, env_map, file_config)?;

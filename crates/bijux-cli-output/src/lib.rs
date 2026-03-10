@@ -69,9 +69,7 @@ fn should_emit_color(cfg: EmitterConfig) -> bool {
     }
 
     match cfg.color {
-        ColorMode::Always => true,
         ColorMode::Never => false,
-        ColorMode::Auto => true,
         _ => true,
     }
 }
@@ -102,7 +100,6 @@ fn render_json(value: &Value, pretty: bool) -> Result<String, EmitError> {
 /// Render arbitrary value in configured format.
 pub fn render_value(value: &Value, cfg: EmitterConfig) -> Result<String, EmitError> {
     match cfg.format {
-        OutputFormat::Json => render_json(value, cfg.pretty),
         OutputFormat::Yaml => serde_yaml::to_string(value).map_err(EmitError::from),
         OutputFormat::Text => {
             if let Some(text) = value.as_str() {

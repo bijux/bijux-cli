@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 //! Compatibility config and path behavior shared by rust and python entrypoints.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
+use std::hash::BuildHasher;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
@@ -77,7 +78,7 @@ pub enum CompatibilityError {
 pub fn discover_compatibility_paths(
     home_dir: Option<&Path>,
     cli_overrides: &PathOverrides,
-    env_map: &HashMap<String, String>,
+    env_map: &std::collections::HashMap<String, String, impl BuildHasher>,
     file_config: &CompatibilityConfig,
 ) -> Result<CompatibilityPaths, CompatibilityError> {
     let home = home_dir.ok_or(CompatibilityError::MissingHome)?;

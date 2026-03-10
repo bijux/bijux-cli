@@ -4,8 +4,8 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::NamespaceMetadata;
 use crate::registry::RouteRegistry;
+use crate::NamespaceMetadata;
 
 /// Built-in command route entry exposed by route diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

@@ -40,4 +40,4 @@ pub use marker::ContractMarker;
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1,
 };
-pub use product_mount::{OFFICIAL_PRODUCT_NAMESPACES, ProductMountMetadata};
+pub use product_mount::{ProductMountMetadata, OFFICIAL_PRODUCT_NAMESPACES};

@@ -12,9 +12,9 @@ use serde_json::Value;
 use std::io::{self, IsTerminal, Read};
 use std::path::PathBuf;
 
+use crate::argv::{command_option_value, command_positionals};
 use service::{ConfigService, DefaultConfigService, StaticConfigPathProvider};
 use storage::FileConfigRepository;
-use crate::argv::{command_option_value, command_positionals};
 
 pub(crate) fn execute_config_command(
     normalized_path: &[String],

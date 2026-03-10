@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! Mutable installation state helpers.
 
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
@@ -14,7 +15,6 @@ pub fn acquire_state_lock(lock_path: &Path) -> Result<StateLockGuard, Compatibil
 
     match fs::OpenOptions::new().create_new(true).write(true).open(lock_path) {
         Ok(mut file) => {
-            use std::io::Write as _;
             file.write_all(b"bijux-cli lock\n")?;
             file.sync_all()?;
             Ok(StateLockGuard { path: lock_path.to_path_buf() })
@@ -46,7 +46,6 @@ pub fn ensure_history_file(path: &Path) -> Result<(), CompatibilityError> {
 
     if !path.exists() {
         let mut file = fs::OpenOptions::new().create_new(true).write(true).open(path)?;
-        use std::io::Write as _;
         file.write_all(b"[]\n")?;
         file.sync_all()?;
     }

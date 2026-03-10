@@ -12,7 +12,7 @@ pub enum CompletionShell {
     Zsh,
     /// Fish shell completion.
     Fish,
-    /// PowerShell completion.
+    /// `PowerShell` completion.
     PowerShell,
 }
 

@@ -41,6 +41,7 @@ pub struct RouteRegistry {
 }
 
 impl Default for RouteRegistry {
+    #[allow(clippy::too_many_lines)]
     fn default() -> Self {
         let built_ins = BTreeSet::from([
             "status".to_string(),
@@ -180,7 +181,7 @@ impl Default for RouteRegistry {
             "completion".to_string(),
             "inspect".to_string(),
         ]);
-        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(|ns| ns.to_string()));
+        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(std::string::ToString::to_string));
 
         Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
     }
@@ -263,9 +264,7 @@ impl RouteRegistry {
             universe.insert(reserved.clone());
         }
 
-        universe
-            .into_iter()
-            .max_by_key(|candidate| similarity_score(&query, candidate))
+        universe.into_iter().max_by_key(|candidate| similarity_score(&query, candidate))
     }
 
     /// Build route-tree introspection payload.

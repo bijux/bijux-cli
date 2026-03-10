@@ -145,10 +145,7 @@ mod tests {
             None,
             "1.0.0",
         );
-        assert!(report
-            .active_binary
-            .as_deref()
-            .is_some_and(|value| value.contains("/bin/bijux")));
+        assert!(report.active_binary.as_deref().is_some_and(|value| value.contains("/bin/bijux")));
     }
 
     #[test]
@@ -233,16 +230,9 @@ mod tests {
 
     #[test]
     fn windows_path_override_preserves_whitespace_without_truncation() {
-        let report = install_health_report(
-            "",
-            Some(r"  C:\Program Files\Bijux\bijux.exe  "),
-            None,
-            "1.0.0",
-        );
-        assert_eq!(
-            report.active_binary.as_deref(),
-            Some(r"  C:\Program Files\Bijux\bijux.exe  ")
-        );
+        let report =
+            install_health_report("", Some(r"  C:\Program Files\Bijux\bijux.exe  "), None, "1.0.0");
+        assert_eq!(report.active_binary.as_deref(), Some(r"  C:\Program Files\Bijux\bijux.exe  "));
     }
 
     #[test]

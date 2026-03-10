@@ -2,8 +2,8 @@
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
-use crate::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use crate::catalog::normalize_command_path;
+use crate::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 /// Parsed and normalized global options.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -111,6 +111,7 @@ fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, 
 
 /// Build the root clap command for `bijux`.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn root_command() -> Command {
     let format_arg =
         Arg::new("format").long("format").short('f').num_args(1).global(true).value_name("FORMAT");
@@ -306,23 +307,20 @@ fn extract_path(matches: &ArgMatches) -> Vec<String> {
 
 /// Parse argv and normalize global flags + command path.
 pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
-    let matches = match root_command().try_get_matches_from(argv) {
-        Ok(value) => value,
-        Err(_) => {
-            // Keep parser deterministic for routing tests by returning empty intent on clap usage failures.
-            return Ok(ParsedIntent {
-                command_path: Vec::new(),
-                normalized_path: Vec::new(),
-                global_flags: ParsedGlobalFlags {
-                    output_format: None,
-                    pretty_mode: None,
-                    color_mode: None,
-                    log_level: None,
-                    quiet: false,
-                    config_path: None,
-                },
-            });
-        }
+    let Ok(matches) = root_command().try_get_matches_from(argv) else {
+        // Keep parser deterministic for routing tests by returning empty intent on clap usage failures.
+        return Ok(ParsedIntent {
+            command_path: Vec::new(),
+            normalized_path: Vec::new(),
+            global_flags: ParsedGlobalFlags {
+                output_format: None,
+                pretty_mode: None,
+                color_mode: None,
+                log_level: None,
+                quiet: false,
+                config_path: None,
+            },
+        });
     };
 
     let command_path = extract_path(&matches);

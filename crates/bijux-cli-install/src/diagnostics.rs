@@ -11,6 +11,7 @@ use crate::paths::{
 
 /// Installation diagnostics report used by `bijux cli paths` and `bijux cli doctor`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct InstallHealthReport {
     /// Active binary used for invocation.
     pub active_binary: Option<String>,
@@ -50,9 +51,8 @@ pub fn install_health_report(
     let has_mismatched_wheel_binary_versions =
         wheel_version.is_some_and(|version| version != runtime_version);
     let legacy_installer_conflicts = legacy_installer_conflicts(path_value);
-    let active_binary_missing = active_binary
-        .as_deref()
-        .is_some_and(|path| !Path::new(path).exists());
+    let active_binary_missing =
+        active_binary.as_deref().is_some_and(|path| !Path::new(path).exists());
     let broken_symlink_active_binary = active_binary.as_deref().is_some_and(|path| {
         let p = Path::new(path);
         fs::symlink_metadata(p).map(|meta| meta.file_type().is_symlink()).unwrap_or(false)

@@ -16,11 +16,8 @@ pub fn atomic_write_text(path: &Path, content: &str) -> Result<(), Compatibility
 
     let temporary = path.with_extension("tmp");
     {
-        let mut file = fs::OpenOptions::new()
-            .create(true)
-            .truncate(true)
-            .write(true)
-            .open(&temporary)?;
+        let mut file =
+            fs::OpenOptions::new().create(true).truncate(true).write(true).open(&temporary)?;
         file.write_all(content.as_bytes())?;
         file.sync_all()?;
     }
@@ -28,4 +25,3 @@ pub fn atomic_write_text(path: &Path, content: &str) -> Result<(), Compatibility
     fs::rename(temporary, path)?;
     Ok(())
 }
-

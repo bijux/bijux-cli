@@ -81,7 +81,7 @@ impl CommandPath {
     /// Join path segments as a single command string.
     #[must_use]
     pub fn to_command_string(&self) -> String {
-        self.segments.iter().map(|segment| segment.as_str()).collect::<Vec<_>>().join(" ")
+        self.segments.iter().map(Namespace::as_str).collect::<Vec<_>>().join(" ")
     }
 }
 

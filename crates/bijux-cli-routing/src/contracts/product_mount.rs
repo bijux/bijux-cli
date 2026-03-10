@@ -17,4 +17,3 @@ pub struct ProductMountMetadata {
     /// Control-plane executable used by `bijux dev <namespace>`.
     pub control_binary: String,
 }
-

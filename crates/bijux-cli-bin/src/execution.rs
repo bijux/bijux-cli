@@ -1,6 +1,6 @@
-use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core::app::run_app;
 use bijux_cli_routing::parser::root_command;
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 use crate::history::push_history;
 use crate::types::{

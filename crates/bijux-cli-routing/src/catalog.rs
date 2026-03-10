@@ -120,20 +120,24 @@ pub fn is_known_route(path: &[String]) -> bool {
     match path {
         [a, b]
             if a == "cli"
-                && (contains(CLI_ROOT_ALIASES, b) || b == "status" || b == "paths" || b == "self-test") =>
+                && (contains(CLI_ROOT_ALIASES, b)
+                    || b == "status"
+                    || b == "paths"
+                    || b == "self-test") =>
         {
             true
         }
         [a, b, c] if a == "cli" && b == "config" && contains(CLI_CONFIG_SUBCOMMANDS, c) => true,
         [a] if a == "config" || a == "history" || a == "memory" || a == "plugins" => true,
         [a, b] if a == "history" && b == "clear" => true,
-        [a, b] if a == "memory" && (b == "list" || b == "get" || b == "set" || b == "delete" || b == "clear") => true,
-        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" || a == "atlas" => {
+        [a, b]
+            if a == "memory"
+                && (b == "list" || b == "get" || b == "set" || b == "delete" || b == "clear") =>
+        {
             true
         }
-        [a, b, c] if a == "cli" && b == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => {
-            true
-        }
+        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" || a == "atlas" => true,
+        [a, b, c] if a == "cli" && b == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => true,
         [a, b, c] if a == "dev" && b == "cli" && contains(DEV_CLI_SUBCOMMANDS, c) => true,
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => true,
         _ => false,

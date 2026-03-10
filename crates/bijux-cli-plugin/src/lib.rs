@@ -11,7 +11,9 @@ mod registry;
 
 use std::path::Path;
 
-pub use constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES};
+pub use constants::{
+    is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
+};
 pub use diagnostics::{
     compatibility_warnings, load_time_diagnostics, prune_registry_backup, self_repair_registry,
 };

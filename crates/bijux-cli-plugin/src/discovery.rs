@@ -18,12 +18,12 @@ pub fn discover_plugin_manifests(plugins_dir: &Path) -> Result<Vec<PathBuf>, Plu
     let mut manifests = Vec::new();
     for entry in fs::read_dir(plugins_dir)? {
         let entry = entry?;
-        let plugin_dir = entry.path();
-        if !plugin_dir.is_dir() {
+        let candidate_dir = entry.path();
+        if !candidate_dir.is_dir() {
             continue;
         }
 
-        let manifest_path = plugin_dir.join("plugin.json");
+        let manifest_path = candidate_dir.join("plugin.json");
         if manifest_path.exists() {
             manifests.push(manifest_path);
         }

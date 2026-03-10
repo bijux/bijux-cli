@@ -66,24 +66,19 @@ impl PluginCapability {
 }
 
 /// Stable plugin kind declaration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub enum PluginKind {
     /// Future in-process plugin ABI.
     Native,
     /// Delegated plugin loaded through host contract bridge.
+    #[default]
     Delegated,
     /// Python delegated plugin runtime.
     Python,
     /// External executable plugin.
     ExternalExec,
-}
-
-impl Default for PluginKind {
-    fn default() -> Self {
-        Self::Delegated
-    }
 }
 
 /// Stable plugin lifecycle state in registry and diagnostics.

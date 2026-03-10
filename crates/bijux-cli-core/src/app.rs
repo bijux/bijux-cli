@@ -8,10 +8,8 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::Result;
-use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
-    atomic_write_text,
-    canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
+    atomic_write_text, canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config,
     pip_install_strategy, post_install_hint, CompatibilityConfig, CompatibilityPaths,
     PackageChannel, PathOverrides, CANONICAL_EXECUTABLE, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
@@ -27,8 +25,9 @@ use bijux_cli_plugin::{
 };
 use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
-use bijux_cli_routing::reports::{registry_report, route_audit_report, routes_report};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli_routing::reports::{registry_report, route_audit_report, routes_report};
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use serde_json::{json, Value};
 
 use crate::argv::command_positionals;
@@ -630,13 +629,12 @@ fn route_response(
     let _ = registry.register_plugin_namespace("community");
 
     let target = match normalized_path {
-        [a]
-            if a == "config"
-                || a == "history"
-                || a == "memory"
-                || a == "plugins"
-                || a == "dev"
-                || a == "atlas" =>
+        [a] if a == "config"
+            || a == "history"
+            || a == "memory"
+            || a == "plugins"
+            || a == "dev"
+            || a == "atlas" =>
         {
             RouteTarget::BuiltIn
         }
@@ -907,9 +905,8 @@ fn route_response(
         }
         [a, b] if a == "plugins" && b == "info" => {
             let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
-            let warnings =
-                compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                    .unwrap_or_default();
+            let warnings = compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                .unwrap_or_default();
             json!({
                 "status": "ok",
                 "plugins": plugins,
@@ -958,9 +955,8 @@ fn route_response(
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "info" => {
             let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
-            let warnings =
-                compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                    .unwrap_or_default();
+            let warnings = compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                .unwrap_or_default();
             json!({
                 "status": "ok",
                 "plugins": plugins,
@@ -1315,9 +1311,8 @@ fn route_response(
             let root_command_completion_report = read_json_if_exists(
                 &root.join("artifacts/status/root_command_completion_report.json"),
             );
-            let root_command_closure_set = read_json_if_exists(
-                &root.join("artifacts/status/root_command_closure_set.json"),
-            );
+            let root_command_closure_set =
+                read_json_if_exists(&root.join("artifacts/status/root_command_closure_set.json"));
             let root_command_completion_report_text = fs::read_to_string(
                 root.join("artifacts/status/root_command_completion_report.txt"),
             )
@@ -1428,16 +1423,14 @@ fn route_response(
             .unwrap_or_default();
             let repl_only_behaviors =
                 read_json_if_exists(&root.join("artifacts/status/repl_only_behaviors.json"));
-            let next_phase =
-                read_json_if_exists(&root.join("artifacts/status/next_phase.json"));
-            let next_phase_text =
-                fs::read_to_string(root.join("artifacts/status/next_phase.txt")).unwrap_or_default();
+            let next_phase = read_json_if_exists(&root.join("artifacts/status/next_phase.json"));
+            let next_phase_text = fs::read_to_string(root.join("artifacts/status/next_phase.txt"))
+                .unwrap_or_default();
             let next_phase_minimalism =
                 read_json_if_exists(&root.join("artifacts/status/next_phase_minimalism.json"));
-            let next_phase_minimalism_text = fs::read_to_string(
-                root.join("artifacts/status/next_phase_minimalism.txt"),
-            )
-            .unwrap_or_default();
+            let next_phase_minimalism_text =
+                fs::read_to_string(root.join("artifacts/status/next_phase_minimalism.txt"))
+                    .unwrap_or_default();
             let migration_matrix =
                 read_json_if_exists(&root.join("artifacts/status/command_migration_matrix.json"));
             let migration_rust_partial = read_json_if_exists(
@@ -1449,10 +1442,9 @@ fn route_response(
             let migration_intentional = read_json_if_exists(
                 &root.join("artifacts/status/command_migration_intentional_differences.json"),
             );
-            let migration_text = fs::read_to_string(
-                root.join("artifacts/status/command_migration_matrix.txt"),
-            )
-            .unwrap_or_default();
+            let migration_text =
+                fs::read_to_string(root.join("artifacts/status/command_migration_matrix.txt"))
+                    .unwrap_or_default();
             let documented_not_proven = read_json_if_exists(
                 &root.join("artifacts/status/documented_python_commands_not_proven_in_rust.json"),
             );
@@ -1496,9 +1488,8 @@ fn route_response(
             let plugin_where_ownership = read_json_if_exists(
                 &root.join("artifacts/status/plugin_where_ownership_report.json"),
             );
-            let plugin_command_set_status = read_json_if_exists(
-                &root.join("artifacts/status/plugin_command_set_status.json"),
-            );
+            let plugin_command_set_status =
+                read_json_if_exists(&root.join("artifacts/status/plugin_command_set_status.json"));
             let plugin_migration_report =
                 read_json_if_exists(&root.join("artifacts/status/plugin_migration_report.json"));
             let config_closure_report =
@@ -1509,9 +1500,8 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/status/history_closure_report.json"));
             let memory_closure_report =
                 read_json_if_exists(&root.join("artifacts/status/memory_closure_report.json"));
-            let diagnostics_closure_report = read_json_if_exists(
-                &root.join("artifacts/status/diagnostics_closure_report.json"),
-            );
+            let diagnostics_closure_report =
+                read_json_if_exists(&root.join("artifacts/status/diagnostics_closure_report.json"));
             let repl_shared_law_closure_report = read_json_if_exists(
                 &root.join("artifacts/status/repl_shared_law_closure_report.json"),
             );
@@ -1521,10 +1511,9 @@ fn route_response(
             let command_family_partial_area_acceptance = read_json_if_exists(
                 &root.join("artifacts/status/command_family_partial_area_acceptance.json"),
             );
-            let command_family_closure_report_text = fs::read_to_string(
-                root.join("artifacts/status/command_family_closure_report.txt"),
-            )
-            .unwrap_or_default();
+            let command_family_closure_report_text =
+                fs::read_to_string(root.join("artifacts/status/command_family_closure_report.txt"))
+                    .unwrap_or_default();
             let cross_surface_consistency_artifact = read_json_if_exists(
                 &root.join("artifacts/status/cross_surface_consistency_artifact.json"),
             );
@@ -1540,9 +1529,8 @@ fn route_response(
             let public_api_inventory_report = read_json_if_exists(
                 &root.join("artifacts/status/public_api_inventory_report.json"),
             );
-            let crate_complexity_report = read_json_if_exists(
-                &root.join("artifacts/status/crate_complexity_report.json"),
-            );
+            let crate_complexity_report =
+                read_json_if_exists(&root.join("artifacts/status/crate_complexity_report.json"));
             let candidate_merge_later_report = read_json_if_exists(
                 &root.join("artifacts/status/candidate_merge_later_report.json"),
             );
