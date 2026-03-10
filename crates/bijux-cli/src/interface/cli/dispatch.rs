@@ -11,16 +11,14 @@ use anyhow::Result;
 use bijux_dev_cli::dispatch::owns_path as owns_dev_cli_path;
 use serde_json::{json, Value};
 
-use crate::interface::cli::help::render_command_help;
-use crate::cli::commands::{
-    cli as cli_commands, root as root_commands,
-};
+use crate::cli::commands::{cli as cli_commands, root as root_commands};
 use crate::cli::context::resolve_state_paths;
+use crate::features::config::execute_config_command;
 use crate::features::{
     developer as developer_feature, history as history_feature, memory as memory_feature,
     plugins as plugins_feature,
 };
-use crate::features::config::execute_config_command;
+use crate::interface::cli::help::render_command_help;
 use crate::output::{render_value, EmitterConfig};
 
 /// In-memory process output and exit result produced by the core app runner.
@@ -115,7 +113,9 @@ fn route_response(
     {
         return Ok(payload);
     }
-    if let Some(payload) = developer_feature::command::try_handle(normalized_path, &plugin_registry_path)? {
+    if let Some(payload) =
+        developer_feature::command::try_handle(normalized_path, &plugin_registry_path)?
+    {
         return Ok(payload);
     }
     if let Some(payload) = developer_feature::runtime_adapter::try_handle(
