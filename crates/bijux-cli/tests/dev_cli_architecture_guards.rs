@@ -22,7 +22,7 @@ fn runtime_crates_do_not_import_bijux_dev_cli() {
 fn core_dev_cli_routes_delegate_to_dev_cli_module_helpers() {
     let adapter_source = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/interface/cli/handlers/developer_runtime.rs"
+        "/src/features/developer/runtime_query_adapter.rs"
     ))
     .expect("read dev cli command source");
     let dispatch_source = std::fs::read_to_string(concat!(
