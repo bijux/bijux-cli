@@ -25,3 +25,4 @@ scripts/status/enforce_maintainer_control_plane_policy.py # enforce maintainer c
 scripts/status/generate_reserved_namespace_test_matrix.py # generate plugin namespace-law todo matrix artifact proving reserved namespace rejection test coverage
 scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecycle todo matrix artifact proving end-to-end lifecycle integration test coverage
 scripts/status/generate_plugin_failure_rollback_test_matrix.py # generate plugin failure/rollback todo matrix artifact proving failure injection and rollback coverage
+scripts/status/generate_plugin_discovery_determinism_reports.py # generate plugin discovery determinism report and frozen ordering law artifacts for TODOs 61-80
