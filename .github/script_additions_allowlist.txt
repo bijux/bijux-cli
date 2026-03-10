@@ -57,6 +57,8 @@ scripts/status/generate_history_deep_behavior_reports.py # generate history sema
 scripts/status/enforce_history_deep_behavior_gate.py # enforce CI failure when history deep behavior artifacts or coverage regress
 scripts/status/generate_memory_deep_behavior_reports.py # generate memory semantic, determinism, corruption, diagnostics consistency, failure class, path behavior, and drift artifacts
 scripts/status/enforce_memory_deep_behavior_gate.py # enforce CI failure when memory deep behavior artifacts or coverage regress
+scripts/status/generate_diagnostics_deep_behavior_reports.py # generate diagnostics consistency, doctor determinism, schema drift, source-of-truth, findings-order, contract, and drift artifacts
+scripts/status/enforce_diagnostics_deep_behavior_gate.py # enforce CI failure when diagnostics deep behavior artifacts or coverage regress
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

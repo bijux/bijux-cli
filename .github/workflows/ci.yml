@@ -299,6 +299,7 @@ jobs:
           python3 scripts/status/generate_config_deep_behavior_reports.py
           python3 scripts/status/generate_history_deep_behavior_reports.py
           python3 scripts/status/generate_memory_deep_behavior_reports.py
+          python3 scripts/status/generate_diagnostics_deep_behavior_reports.py
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
@@ -472,6 +473,10 @@ jobs:
       - name: Memory deep behavior gate
         run: |
           python3 scripts/status/enforce_memory_deep_behavior_gate.py --enforce
+
+      - name: Diagnostics deep behavior gate
+        run: |
+          python3 scripts/status/enforce_diagnostics_deep_behavior_gate.py --enforce
 
       - name: Deterministic generation gate
         run: |
@@ -660,6 +665,22 @@ jobs:
             artifacts/status/memory_failure_class_artifact.json
             artifacts/status/memory_path_behavior_artifact.json
             artifacts/status/memory_deep_behavior_drift_artifact.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload diagnostics deep behavior artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-deep-behavior
+          path: |
+            artifacts/status/diagnostics_consistency_artifact.json
+            artifacts/status/doctor_determinism_artifact.json
+            artifacts/status/diagnostics_schema_drift_artifact.json
+            artifacts/status/diagnostics_source_of_truth_artifact.json
+            artifacts/status/findings_order_artifact.json
+            artifacts/status/diagnostics_contract_artifact.json
+            artifacts/status/diagnostics_deep_behavior_drift_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
