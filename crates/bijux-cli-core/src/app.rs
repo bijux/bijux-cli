@@ -1242,6 +1242,25 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/parity/commands_python_only.json"));
             let coverage =
                 read_json_if_exists(&root.join("artifacts/parity/parity_coverage_matrix.json"));
+            let precedence_report =
+                read_json_if_exists(&root.join("artifacts/parity/command_precedence_report.json"));
+            let flag_norm_report = read_json_if_exists(
+                &root.join("artifacts/parity/command_flag_normalization_report.json"),
+            );
+            let stream_report =
+                read_json_if_exists(&root.join("artifacts/parity/command_stream_report.json"));
+            let exit_code_report =
+                read_json_if_exists(&root.join("artifacts/parity/command_exit_code_report.json"));
+            let help_diff_report =
+                read_json_if_exists(&root.join("artifacts/parity/command_help_diff_report.json"));
+            let machine_output_report = read_json_if_exists(
+                &root.join("artifacts/parity/command_machine_output_diff_report.json"),
+            );
+            let parity_dashboard =
+                read_json_if_exists(&root.join("artifacts/parity/parity_dashboard.json"));
+            let parity_dashboard_text =
+                fs::read_to_string(root.join("artifacts/parity/parity_dashboard.txt"))
+                    .unwrap_or_default();
             let config_parity =
                 read_json_if_exists(&root.join("artifacts/parity/config_parity_report.json"));
             let history_parity =
@@ -1263,6 +1282,14 @@ fn route_response(
                 "commands_using_compatibility_shims": commands_using_compatibility_shims,
                 "commands_python_only": commands_python_only,
                 "coverage": coverage,
+                "precedence_report": precedence_report,
+                "flag_normalization_report": flag_norm_report,
+                "stream_report": stream_report,
+                "exit_code_report": exit_code_report,
+                "help_diff_report": help_diff_report,
+                "machine_output_diff_report": machine_output_report,
+                "parity_dashboard": parity_dashboard,
+                "parity_dashboard_text": parity_dashboard_text,
                 "repl_cli_output_diff": repl_cli_output_diff,
                 "state_parity": {
                     "config": config_parity,

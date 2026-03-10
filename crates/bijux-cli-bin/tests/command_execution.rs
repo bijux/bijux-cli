@@ -226,3 +226,11 @@ fn dev_cli_status_surfaces_next_phase_priorities() {
     assert!(payload["next_phase_summary_text"].is_string());
     assert!(payload["command_migration"].is_object());
 }
+
+#[test]
+fn dev_cli_parity_surfaces_dashboard_artifact() {
+    let stdout = run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]);
+    let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert!(payload["parity_dashboard"].is_object());
+    assert!(payload["parity_dashboard_text"].is_string());
+}
