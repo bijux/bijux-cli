@@ -21,8 +21,8 @@ fn repo_root() -> PathBuf {
 }
 
 fn run_binary(argv: &[&str]) -> (i32, String, String) {
-    let mut cmd = Command::new("cargo");
-    cmd.current_dir(repo_root()).args(["run", "-q", "-p", "bijux-cli-bin", "--"]).args(argv);
+    let mut cmd = Command::new(resolve_bijux_binary());
+    cmd.current_dir(repo_root()).args(argv);
     let out = cmd.output().expect("run binary through cargo");
     let code = out.status.code().unwrap_or(1);
     (
@@ -30,6 +30,26 @@ fn run_binary(argv: &[&str]) -> (i32, String, String) {
         String::from_utf8_lossy(&out.stdout).into_owned(),
         String::from_utf8_lossy(&out.stderr).into_owned(),
     )
+}
+
+fn resolve_bijux_binary() -> PathBuf {
+    let root = repo_root();
+    let target_root = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target"));
+    let bin_path =
+        target_root.join("debug").join(format!("bijux-rs{}", std::env::consts::EXE_SUFFIX));
+    if bin_path.exists() {
+        return bin_path;
+    }
+
+    let status = Command::new("cargo")
+        .current_dir(&root)
+        .args(["build", "-q", "-p", "bijux-cli-bin"])
+        .status()
+        .expect("build bijux-rs binary");
+    assert!(status.success(), "failed to build bijux-rs binary");
+    bin_path
 }
 
 fn run_bridge(argv: &[&str]) -> (i32, String, String) {
