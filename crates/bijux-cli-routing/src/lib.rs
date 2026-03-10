@@ -3,6 +3,7 @@
 
 pub mod catalog;
 pub mod parser;
+pub mod reports;
 pub mod registry;
 
 #[cfg(test)]

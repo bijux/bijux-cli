@@ -26,6 +26,7 @@ use bijux_cli_plugin::{
 };
 use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use bijux_cli_routing::reports::{registry_report, route_audit_report, routes_report};
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use serde_json::{json, Value};
 
@@ -1035,88 +1036,14 @@ fn route_response(
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
-            let routes: Vec<Value> = registry
-                .built_in_paths()
-                .into_iter()
-                .map(|path| {
-                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "segments": segments,
-                        "owner": "bijux-cli",
-                        "source": "built-in",
-                    })
-                })
-                .collect();
-            let aliases: Vec<Value> = registry
-                .alias_rewrites()
-                .into_iter()
-                .map(|(alias, canonical)| {
-                    let alias_segments: Vec<String> =
-                        alias.segments.into_iter().map(|s| s.0).collect();
-                    let canonical_segments: Vec<String> =
-                        canonical.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "alias": alias_segments,
-                        "canonical": canonical_segments,
-                        "source": "compatibility-alias",
-                    })
-                })
-                .collect();
-            json!({
-                "routes": routes,
-                "aliases": aliases,
-            })
+            serde_json::to_value(routes_report(&registry))?
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "route-audit" => {
-            let routes: Vec<Value> = registry
-                .built_in_paths()
-                .into_iter()
-                .map(|path| {
-                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "segments": segments,
-                        "owner": "bijux-cli",
-                        "source": "built-in",
-                    })
-                })
-                .collect();
-            let aliases: Vec<Value> = registry
-                .alias_rewrites()
-                .into_iter()
-                .map(|(alias, canonical)| {
-                    let alias_segments: Vec<String> =
-                        alias.segments.into_iter().map(|s| s.0).collect();
-                    let canonical_segments: Vec<String> =
-                        canonical.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "alias": alias_segments,
-                        "canonical": canonical_segments,
-                        "source": "compatibility-alias",
-                    })
-                })
-                .collect();
-            json!({
-                "routes": routes,
-                "aliases": aliases,
-                "summary": {
-                    "route_count": routes.len(),
-                    "alias_count": aliases.len(),
-                },
-            })
+            serde_json::to_value(route_audit_report(&registry))?
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => dev_cli_inventory_payload(),
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
-            let registry_rows = registry.route_tree();
-            let mut ownership: std::collections::BTreeMap<String, Vec<String>> =
-                std::collections::BTreeMap::new();
-            for row in &registry_rows {
-                ownership.entry(row.owner.clone()).or_default().push(row.name.0.clone());
-            }
-            json!({
-                "registry": registry_rows,
-                "ownership": ownership,
-                "precedence": ["reserved", "plugin"],
-            })
+            serde_json::to_value(registry_report(&registry))?
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "parity" => {
             let root = workspace_root();
