@@ -45,7 +45,7 @@ fn all_command_groups_build_expected_top_level_keys() {
         .get("status_report")
         .is_some());
     assert!(runtime_identity::build_report(runtime_identity::RuntimeIdentityInput {
-        install_report: bijux_cli_install::InstallHealthReport {
+        install_report: runtime_identity::InstallHealthReport {
             active_binary: None,
             path_binaries: vec![],
             has_path_shadowing: false,

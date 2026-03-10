@@ -1,7 +1,33 @@
 //! Maintainer runtime identity report assembly.
 
-use bijux_cli_install::{InstallHealthReport, CANONICAL_EXECUTABLE};
 use serde_json::{json, Value};
+
+/// Canonical executable name.
+pub const CANONICAL_EXECUTABLE: &str = "bijux";
+
+/// Install diagnostics report used by runtime identity assembly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct InstallHealthReport {
+    /// Active binary used for invocation.
+    pub active_binary: Option<String>,
+    /// All discovered binaries named `bijux` in PATH order.
+    pub path_binaries: Vec<String>,
+    /// Whether multiple binaries are discovered in PATH order.
+    pub has_path_shadowing: bool,
+    /// Whether installs appear to exist across multiple ecosystems.
+    pub has_duplicate_installs: bool,
+    /// Wrapper scripts that no longer point to an existing runtime.
+    pub stale_wrapper_scripts: Vec<String>,
+    /// Whether wheel and runtime binary versions differ.
+    pub has_mismatched_wheel_binary_versions: bool,
+    /// Legacy installer wrappers that could shadow canonical runtime.
+    pub legacy_installer_conflicts: Vec<String>,
+    /// Whether configured active binary path is missing from disk.
+    pub active_binary_missing: bool,
+    /// Whether configured active binary path is a broken symlink.
+    pub broken_symlink_active_binary: bool,
+}
 
 fn detect_install_source(active_binary: Option<&str>) -> &'static str {
     let Some(path) = active_binary else {
@@ -113,7 +139,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
 #[cfg(test)]
 mod tests {
     use super::{build_report, RuntimeIdentityInput};
-    use bijux_cli_install::InstallHealthReport;
+    use super::InstallHealthReport;
 
     #[test]
     fn runtime_identity_report_shape_is_stable() {

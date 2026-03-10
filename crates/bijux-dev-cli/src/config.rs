@@ -18,7 +18,7 @@ fn ownership_report(workspace_root: &Path) -> Value {
     if payload == json!({}) {
         json!({
             "owners": {
-                "rust": ["crates/bijux-cli-core", "crates/bijux-cli-install"],
+                "rust": ["crates/bijux-cli-core"],
                 "python": ["crates/bijux-cli-python"]
             },
             "schemas": [],
