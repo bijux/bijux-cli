@@ -1333,7 +1333,9 @@ jobs:
             artifacts/status/dev_cli_evidence_command_map_report.json
             artifacts/status/dev_cli_evidence_parity_map_report.json
             artifacts/status/evidence_coverage_report.json
+            artifacts/status/evidence_integrity_artifact.json
             artifacts/status/orphan_evidence_report.json
+            artifacts/status/orphan_evidence_artifact.json
             artifacts/status/claim_without_evidence_report.json
             artifacts/status/python_sovereignty_audit_report.json
             artifacts/status/python_desovereignization_report.json

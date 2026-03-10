@@ -40,8 +40,41 @@ def main() -> int:
         {"records": evidence_audit.get("coverage_report", []), "source": "dev cli evidence audit"},
     )
     write(
+        "evidence_integrity_artifact.json",
+        {
+            "generator": "scripts/status/generate_evidence_integrity_reports.py",
+            "scope": "evidence integrity",
+            "checks": {
+                "invalid_ids": evidence_audit.get("invalid_ids", []),
+                "missing_artifact_links": evidence_audit.get("missing_artifact_links", []),
+                "orphan_report": evidence_audit.get("orphan_report", []),
+                "claims_without_evidence_report": evidence_audit.get("claims_without_evidence_report", []),
+            },
+            "status": (
+                "complete"
+                if (
+                    not evidence_audit.get("invalid_ids", [])
+                    and not evidence_audit.get("missing_artifact_links", [])
+                    and not evidence_audit.get("orphan_report", [])
+                    and not evidence_audit.get("claims_without_evidence_report", [])
+                )
+                else "partial"
+            ),
+        },
+    )
+    write(
         "orphan_evidence_report.json",
         {"records": evidence_audit.get("orphan_report", []), "source": "dev cli evidence audit"},
+    )
+    write(
+        "orphan_evidence_artifact.json",
+        {
+            "generator": "scripts/status/generate_evidence_integrity_reports.py",
+            "scope": "orphan evidence",
+            "records": evidence_audit.get("orphan_report", []),
+            "count": len(evidence_audit.get("orphan_report", [])),
+            "status": "clean" if not evidence_audit.get("orphan_report", []) else "drift",
+        },
     )
     write(
         "claim_without_evidence_report.json",
