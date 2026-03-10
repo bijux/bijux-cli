@@ -10,11 +10,14 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
 REQUIRED = [
+    "dev_cli_status_report.json",
     "dev_cli_dashboard_report.json",
     "dev_cli_quickcheck_report.json",
     "dev_cli_truth_report.json",
     "dev_cli_blockers_report.json",
     "dev_cli_next_report.json",
+    "dev_cli_summary_surface_artifact.json",
+    "dev_cli_summary_surface_drift_artifact.json",
 ]
 
 
@@ -35,6 +38,17 @@ def main() -> int:
 
     if not (STATUS / "dev_cli_cockpit_text_heads.json").exists():
         failures.append("missing cockpit text heads snapshot artifact")
+
+    summary = STATUS / "dev_cli_summary_surface_artifact.json"
+    if summary.exists():
+        payload = read_json(summary)
+        if payload.get("status") != "complete":
+            failures.append("dev cli summary surface artifact is not complete")
+    drift = STATUS / "dev_cli_summary_surface_drift_artifact.json"
+    if drift.exists():
+        payload = read_json(drift)
+        if payload.get("status") != "clean" or int(payload.get("drift_count", 1)) != 0:
+            failures.append("dev cli summary surface drift detected")
 
     if failures:
         print("DEV CLI COCKPIT GATE FAILED")

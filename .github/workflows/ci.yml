@@ -1315,7 +1315,10 @@ jobs:
             artifacts/status/dev_cli_truth_report.json
             artifacts/status/dev_cli_blockers_report.json
             artifacts/status/dev_cli_next_report.json
+            artifacts/status/dev_cli_status_report.json
             artifacts/status/dev_cli_cockpit_text_heads.json
+            artifacts/status/dev_cli_summary_surface_artifact.json
+            artifacts/status/dev_cli_summary_surface_drift_artifact.json
             artifacts/status/dev_cli_invariants_artifact.json
             artifacts/status/dev_cli_invariants_drift_artifact.json
             artifacts/status/dev_cli_evidence_list_report.json
