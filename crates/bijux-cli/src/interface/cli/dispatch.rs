@@ -2,9 +2,9 @@
 
 use std::env;
 
+use crate::features::developer::runtime_query_adapter;
 use crate::interface::cli::handlers::{
-    cli as cli_handlers, config as config_handlers, developer as developer_handlers,
-    developer_runtime as developer_runtime_handlers, history as history_handlers,
+    cli as cli_handlers, config as config_handlers, history as history_handlers,
     memory as memory_handlers, plugins as plugins_handlers, root as root_handlers,
 };
 use crate::interface::cli::parser::{parse_intent, root_command, ParsedGlobalFlags};
@@ -54,7 +54,6 @@ fn route_response(
             || a == "history"
             || a == "memory"
             || a == "plugins"
-            || a == "dev"
             || a == "atlas" =>
         {
             RouteTarget::BuiltIn
@@ -108,10 +107,7 @@ fn route_response(
     {
         return Ok(payload);
     }
-    if let Some(payload) = developer_handlers::try_handle(normalized_path, &plugin_registry_path)? {
-        return Ok(payload);
-    }
-    if let Some(payload) = developer_runtime_handlers::try_handle(
+    if let Some(payload) = runtime_query_adapter::try_handle(
         normalized_path,
         argv,
         &registry,
