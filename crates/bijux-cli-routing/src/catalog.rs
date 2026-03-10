@@ -42,6 +42,25 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "state-audit",
     "state-doctor",
 ];
+const DEV_LEGACY_ALIASES: &[&str] = &[
+    "inventory",
+    "routes",
+    "registry",
+    "parity",
+    "docs-audit",
+    "plugin-health",
+    "status",
+    "scripts-audit",
+    "script-audit",
+    "crate-health",
+    "package-health",
+    "route-audit",
+    "doctor",
+    "runtime-identity",
+    "docs-prune-plan",
+    "state-audit",
+    "state-doctor",
+];
 
 fn contains(values: &[&str], value: &str) -> bool {
     values.contains(&value)
@@ -58,7 +77,7 @@ pub fn normalize_command_path(path: &[String]) -> Vec<String> {
         [a, b] if a == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, b) => {
             vec!["cli".to_string(), "plugins".to_string(), b.clone()]
         }
-        [a, b] if a == "dev" && contains(DEV_CLI_SUBCOMMANDS, b) => {
+        [a, b] if a == "dev" && contains(DEV_LEGACY_ALIASES, b) => {
             vec!["dev".to_string(), "cli".to_string(), b.clone()]
         }
         _ => path.to_vec(),
