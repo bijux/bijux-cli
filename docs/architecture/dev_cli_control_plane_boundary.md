@@ -77,3 +77,10 @@ These files represent the frozen baseline for extraction. Extraction work must r
 - Query interfaces are data-only and must not render text or assemble maintainer dashboards.
 - Runtime crates other than `bijux-cli-core` must not import `bijux-dev-cli`.
 - The query interface layer is the bridge between runtime data and maintainer report assembly.
+
+## Runtime Dev Leakage Rule
+
+- Runtime crates are audited for maintainer-workflow leakage at:
+  - `artifacts/status/runtime_dev_leakage_report.json`
+- The expected steady state is zero leakage score across runtime crates.
+- Any remaining leakage must be explicitly justified and tracked before release.

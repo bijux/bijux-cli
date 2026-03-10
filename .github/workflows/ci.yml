@@ -335,6 +335,7 @@ jobs:
           python3 scripts/status/generate_dev_cli_diagnostics_source_map.py
           python3 scripts/status/generate_dev_cli_dispatch_ownership_reports.py
           python3 scripts/status/generate_dev_cli_interface_bridge_report.py
+          python3 scripts/status/generate_runtime_dev_leakage_report.py
           python3 scripts/status/generate_config_read_surface_reports.py
           python3 scripts/status/generate_config_mutation_surface_reports.py
           python3 scripts/status/generate_config_source_surface_reports.py
@@ -693,6 +694,10 @@ jobs:
       - name: Dev cli interface bridge policy gate
         run: |
           python3 scripts/status/enforce_dev_cli_interface_bridge_policy.py
+
+      - name: Runtime dev leakage policy gate
+        run: |
+          python3 scripts/status/enforce_runtime_dev_leakage_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1148,6 +1153,15 @@ jobs:
         with:
           name: dev-cli-interface-bridge
           path: artifacts/status/dev_cli_interface_bridge_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload runtime dev leakage report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-dev-leakage
+          path: artifacts/status/runtime_dev_leakage_report.json
           if-no-files-found: warn
           retention-days: 14
 
