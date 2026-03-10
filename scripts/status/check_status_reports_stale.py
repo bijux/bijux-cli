@@ -51,6 +51,8 @@ def main() -> int:
             or line.strip().startswith("artifacts/status/command_migration_")
             or line.strip() == "artifacts/status/command_migration_matrix.json"
             or line.strip() == "artifacts/status/command_migration_matrix.txt"
+            or line.strip() == "artifacts/status/command_migration_repl_paths.json"
+            or line.strip() == "artifacts/status/command_migration_python_bridge_entrypoints.json"
             or line.strip() == "artifacts/status/documented_python_commands_not_proven_in_rust.json"
             or line.strip() == "artifacts/status/public_python_paths_still_reachable.json"
             or line.strip() == "artifacts/status/legacy_alias_paths_still_accepted.json"
