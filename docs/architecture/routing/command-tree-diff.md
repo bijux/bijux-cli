@@ -1,15 +1,15 @@
 # Rust vs Python Command Tree Diff
 
-Date: 2026-03-09
+Date: 2026-03-10
 Inputs:
 - `crates/bijux-cli-routing/tests/fixtures/python_documented_commands.txt`
 - `crates/bijux-cli-routing/tests/fixtures/rust_routed_root_commands.txt`
 
 ## Summary
 - Python documented root commands: 16
-- Rust routed root commands: 12
-- Overlap: 11
-- Python-only: 5
+- Rust routed root commands: 13
+- Overlap: 12
+- Python-only: 4
 - Rust-only: 1
 
 ## Overlap
@@ -17,6 +17,7 @@ Inputs:
 - `config`
 - `dev`
 - `doctor`
+- `atlas`
 - `inspect`
 - `history`
 - `memory`
@@ -26,7 +27,6 @@ Inputs:
 - `version`
 
 ## Python-only (not yet routed as Rust root command)
-- `atlas`
 - `audit`
 - `docs`
 - `help`

@@ -2,14 +2,11 @@
 //! Output emitter behavior tests.
 
 use bijux_cli_contracts::{
-    ColorMode, CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
+    ColorMode, CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };
 use bijux_cli_core as _;
-use bijux_cli_output::{
-    emit_error, emit_success, format_debug_log, machine_safe_error_payload, EmitterConfig,
-    OutputStream,
-};
+use bijux_cli_output::{emit_error, emit_success, EmitterConfig, OutputStream};
 use serde as _;
 use serde_json::json;
 use serde_yaml as _;
@@ -125,22 +122,9 @@ fn emits_error_on_stderr_with_color_policy_and_machine_payload() {
     .expect("plain error emit should succeed");
     assert!(!plain.content.contains("\u{001b}[31m"));
 
-    let machine = machine_safe_error_payload(&envelope.error);
-    assert_eq!(machine["code"], json!("invalid_format"));
-    assert_eq!(machine["category"], json!("usage"));
-}
-
-#[test]
-fn formats_debug_log_only_for_debug_levels() {
-    let none = format_debug_log(
-        "dispatch",
-        EmitterConfig { log_level: LogLevel::Info, ..EmitterConfig::default() },
-    );
-    assert!(none.is_none());
-
-    let yes = format_debug_log(
-        "dispatch",
-        EmitterConfig { log_level: LogLevel::Debug, ..EmitterConfig::default() },
-    );
-    assert_eq!(yes.as_deref(), Some("DEBUG dispatch"));
+    let machine: serde_json::Value =
+        serde_json::from_str(&emit_error(&envelope, EmitterConfig::default()).expect("ok").content)
+            .expect("machine json");
+    assert_eq!(machine["error"]["code"], json!("invalid_format"));
+    assert_eq!(machine["error"]["category"], json!("usage"));
 }

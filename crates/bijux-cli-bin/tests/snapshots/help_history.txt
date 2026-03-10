@@ -1,13 +1,17 @@
-Usage: bijux-rs history [OPTIONS]
+Usage: bijux-rs history [OPTIONS] [COMMAND]
+
+Commands:
+  clear  
+  help   Print this message or the help of the given subcommand(s)
 
 Options:
   -f, --format <FORMAT>     
   -l, --limit <limit>       
-  -F, --filter <filter>     
   -q, --quiet               
+  -F, --filter <filter>     
       --log-level <LEVEL>   
-      --sort <sort>         
       --color <MODE>        
+      --sort <sort>         
       --pretty              
       --no-pretty           
       --config-path <PATH>  

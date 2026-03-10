@@ -1091,19 +1091,6 @@ fn route_response(
         [a, b, c] if a == "cli" && b == "plugins" && c == "doctor" => {
             let repaired = bijux_cli_plugin::self_repair_registry(&plugin_registry_path).is_ok();
             let report = plugin_doctor(&plugin_registry_path)?;
-            let diagnostics =
-                load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
-                    .unwrap_or_default();
-            let diagnostics_json: Vec<Value> = diagnostics
-                .into_iter()
-                .map(|diag| {
-                    json!({
-                        "namespace": diag.namespace,
-                        "severity": diag.severity,
-                        "message": diag.message,
-                    })
-                })
-                .collect();
             json!({
                 "status": "ok",
                 "doctor": {
@@ -1111,7 +1098,6 @@ fn route_response(
                     "broken": report.broken,
                     "incompatible": report.incompatible,
                 },
-                "diagnostics": diagnostics_json,
                 "self_repair_attempted": true,
                 "self_repair_success": repaired,
             })
@@ -1525,16 +1511,6 @@ fn route_response(
                 "current_rust_state": state,
                 "parity": parity,
                 "inventory": dev_cli_inventory_payload(),
-            })
-        }
-        [a, b, c] if a == "dev" && b == "cli" && c == "scripts-audit" => {
-            let inventory = dev_cli_inventory_payload();
-            json!({
-                "scripts": inventory.get("scripts").cloned().unwrap_or_else(|| json!([])),
-                "summary": inventory.get("summary").cloned().unwrap_or_else(|| json!({})),
-                "remaining_script_only_behaviors": inventory.get("remaining_script_only_behaviors").cloned().unwrap_or_else(|| json!([])),
-                "remaining_task_runner_only_behaviors": inventory.get("remaining_task_runner_only_behaviors").cloned().unwrap_or_else(|| json!([])),
-                "replacement_rule": inventory.get("rule").cloned().unwrap_or_else(|| json!("")),
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "script-audit" => {

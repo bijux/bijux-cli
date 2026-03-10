@@ -1,6 +1,7 @@
 Usage: bijux-rs config [OPTIONS] [COMMAND]
 
 Commands:
+  list    
   get     
   set     
   unset   

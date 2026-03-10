@@ -128,7 +128,6 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "docs-audit"], "docs_audit"),
         (vec!["dev", "cli", "plugin-health"], "machine_report"),
         (vec!["dev", "cli", "status"], "current_rust_state"),
-        (vec!["dev", "cli", "scripts-audit"], "scripts"),
         (vec!["dev", "cli", "script-audit"], "scripts"),
         (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
         (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),

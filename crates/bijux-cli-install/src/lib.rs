@@ -15,9 +15,7 @@ pub use compatibility::{
     CompatibilityError, CompatibilityPaths, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
     ENV_PLUGINS_PATH,
 };
-pub use completion::{
-    completion_file_path, completion_script, detect_shell, post_install_hint, CompletionShell,
-};
+pub use completion::{post_install_hint, CompletionShell};
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use io::atomic_write_text;
 pub use metadata::{
@@ -36,6 +34,7 @@ pub use state::{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::completion::{completion_file_path, completion_script, detect_shell};
     use tempfile::TempDir;
 
     #[test]

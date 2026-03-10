@@ -2,8 +2,11 @@ Usage: bijux-rs plugins [OPTIONS] [COMMAND]
 
 Commands:
   list            
+  info            
   inspect         
   check           
+  enable          
+  disable         
   install         
   uninstall       
   scaffold        

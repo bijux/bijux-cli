@@ -1,10 +1,8 @@
 #![forbid(unsafe_code)]
 //! Output encoding and envelope rendering surfaces.
 
-use bijux_cli_contracts::{
-    ColorMode, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, OutputEnvelopeV1, OutputFormat,
-};
-use serde_json::{json, Value};
+use bijux_cli_contracts::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
+use serde_json::Value;
 
 /// Output stream target for emitters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,17 +132,6 @@ pub fn emit_success(
     Ok(Some(RenderedOutput { stream: OutputStream::Stdout, content }))
 }
 
-/// Build machine-safe error payload preserving stable fields.
-#[must_use]
-pub fn machine_safe_error_payload(payload: &ErrorPayloadV1) -> Value {
-    json!({
-        "code": payload.code,
-        "message": payload.message,
-        "category": payload.category,
-        "details": payload.details,
-    })
-}
-
 /// Render error envelope to stderr (never suppressed by quiet mode).
 pub fn emit_error(
     envelope: &ErrorEnvelopeV1,
@@ -160,15 +147,6 @@ pub fn emit_error(
         _ => with_trailing_newline(render_value(&value, cfg)?),
     };
     Ok(RenderedOutput { stream: OutputStream::Stderr, content: with_trailing_newline(content) })
-}
-
-/// Format debug log line when debug/trace logging is enabled.
-#[must_use]
-pub fn format_debug_log(message: &str, cfg: EmitterConfig) -> Option<String> {
-    match cfg.log_level {
-        LogLevel::Trace | LogLevel::Debug => Some(format!("DEBUG {message}")),
-        _ => None,
-    }
 }
 
 #[cfg(test)]
