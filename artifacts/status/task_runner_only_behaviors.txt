@@ -1,0 +1,12 @@
+publish
+publish-test
+sbom
+sbom-clean
+sbom-dev
+sbom-prod
+sbom-summary
+sbom-validate
+security
+security-audit
+security-bandit
+security-clean

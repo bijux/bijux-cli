@@ -1,0 +1,17 @@
+{
+  "remaining_task_runner_only_behaviors": [
+    "publish",
+    "publish-test",
+    "sbom",
+    "sbom-clean",
+    "sbom-dev",
+    "sbom-prod",
+    "sbom-summary",
+    "sbom-validate",
+    "security",
+    "security-audit",
+    "security-bandit",
+    "security-clean"
+  ],
+  "replacement_rule": "new maintainer automation defaults to bijux dev cli commands"
+}
