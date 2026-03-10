@@ -2,6 +2,8 @@
 //! Plugin registration and lifecycle boundaries.
 
 mod constants;
+/// CLI command handlers for plugin lifecycle flows.
+pub(crate) mod command;
 mod diagnostics;
 mod discovery;
 mod errors;

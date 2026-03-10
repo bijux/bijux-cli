@@ -5,6 +5,8 @@
 pub mod config;
 /// Installation compatibility and state management behavior.
 pub mod install;
+/// Developer command behavior and runtime-query integration.
+pub mod developer;
 /// History state management and command behavior.
 pub mod history;
 /// Memory state management and command behavior.

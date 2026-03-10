@@ -13,11 +13,13 @@ use serde_json::{json, Value};
 
 use crate::interface::cli::help::render_command_help;
 use crate::cli::commands::{
-    cli as cli_commands, dev as dev_commands, dev_cli as dev_cli_commands,
-    plugins as plugins_commands, root as root_commands,
+    cli as cli_commands, root as root_commands,
 };
 use crate::cli::context::resolve_state_paths;
-use crate::features::{history as history_feature, memory as memory_feature};
+use crate::features::{
+    developer as developer_feature, history as history_feature, memory as memory_feature,
+    plugins as plugins_feature,
+};
 use crate::features::config::execute_config_command;
 use crate::output::{render_value, EmitterConfig};
 
@@ -109,14 +111,14 @@ fn route_response(
         return Ok(payload);
     }
     if let Some(payload) =
-        plugins_commands::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
+        plugins_feature::command::try_handle(normalized_path, argv, &paths, &plugin_registry_path)?
     {
         return Ok(payload);
     }
-    if let Some(payload) = dev_commands::try_handle(normalized_path, &plugin_registry_path)? {
+    if let Some(payload) = developer_feature::command::try_handle(normalized_path, &plugin_registry_path)? {
         return Ok(payload);
     }
-    if let Some(payload) = dev_cli_commands::try_handle(
+    if let Some(payload) = developer_feature::runtime_adapter::try_handle(
         normalized_path,
         argv,
         &registry,
