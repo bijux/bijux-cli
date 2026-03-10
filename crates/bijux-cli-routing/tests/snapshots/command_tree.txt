@@ -1,7 +1,9 @@
+atlas
 audit
 cli
 completion
 config
+dag
 dev
 docs
 doctor

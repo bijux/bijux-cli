@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 //! Runtime identity unity tests across binary and Python bridge entrypoints.
 
-use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
@@ -9,7 +8,6 @@ use bijux_cli_python as _;
 use serde_json as _;
 use std::fs;
 use std::path::PathBuf;
-use thiserror as _;
 
 fn workspace_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

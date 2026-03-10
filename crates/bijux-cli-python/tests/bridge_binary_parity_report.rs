@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 //! Generate and enforce parity artifact for binary vs python-bridge execution.
 
-use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
@@ -11,7 +10,6 @@ use std::process::Command;
 
 use bijux_cli_python::execution_outcome_api;
 use serde_json::{json, Value};
-use thiserror as _;
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

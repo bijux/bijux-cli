@@ -1,5 +1,6 @@
 //! Routing registry, conflict handling, and introspection APIs.
 
+use std::cmp::max;
 use std::collections::{BTreeMap, BTreeSet};
 
 use bijux_cli_contracts::{CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES};
@@ -248,10 +249,9 @@ impl RouteRegistry {
             universe.insert(reserved.clone());
         }
 
-        universe.into_iter().max_by_key(|candidate| {
-            let left = strsim::jaro_winkler(&query, candidate);
-            (left * 1000.0) as i32
-        })
+        universe
+            .into_iter()
+            .max_by_key(|candidate| similarity_score(&query, candidate))
     }
 
     /// Build route-tree introspection payload.
@@ -326,6 +326,42 @@ impl RouteRegistry {
             })
             .collect()
     }
+}
+
+fn similarity_score(left: &str, right: &str) -> usize {
+    let prefix = common_prefix_len(left, right);
+    // Bias toward shared prefix and low edit distance while keeping deterministic ordering.
+    let distance = levenshtein_distance(left, right);
+    let normalized = max(left.chars().count(), right.chars().count());
+    (prefix * 1000) + normalized.saturating_sub(distance)
+}
+
+fn common_prefix_len(left: &str, right: &str) -> usize {
+    left.chars().zip(right.chars()).take_while(|(a, b)| a == b).count()
+}
+
+fn levenshtein_distance(left: &str, right: &str) -> usize {
+    let l: Vec<char> = left.chars().collect();
+    let r: Vec<char> = right.chars().collect();
+    if l.is_empty() {
+        return r.len();
+    }
+    if r.is_empty() {
+        return l.len();
+    }
+
+    let mut prev: Vec<usize> = (0..=r.len()).collect();
+    let mut curr = vec![0; r.len() + 1];
+
+    for (i, lc) in l.iter().enumerate() {
+        curr[0] = i + 1;
+        for (j, rc) in r.iter().enumerate() {
+            let cost = usize::from(lc != rc);
+            curr[j + 1] = (prev[j + 1] + 1).min(curr[j] + 1).min(prev[j] + cost);
+        }
+        prev.clone_from(&curr);
+    }
+    prev[r.len()]
 }
 
 fn normalize_namespace(input: &str) -> String {

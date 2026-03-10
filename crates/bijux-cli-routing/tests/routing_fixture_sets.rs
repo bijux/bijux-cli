@@ -10,7 +10,6 @@ use proptest as _;
 use serde as _;
 use serde::Deserialize;
 use serde_json as _;
-use strsim as _;
 use thiserror as _;
 
 #[derive(Debug, Deserialize)]

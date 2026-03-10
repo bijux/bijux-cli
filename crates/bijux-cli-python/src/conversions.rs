@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Conversion and error-classification helpers for Python bridge APIs.
 
-use anyhow::Error as AnyError;
+use std::fmt::Display;
 use bijux_cli_contracts::ExitCode;
 
 /// Coarse error categories surfaced to Python callers.
@@ -36,7 +36,7 @@ pub fn classify_failure(exit_code: i32, stderr: &str) -> BridgeErrorKind {
 
 /// Classify core app construction/runtime errors.
 #[must_use]
-pub fn classify_core_error(error: &AnyError) -> BridgeErrorKind {
+pub fn classify_core_error(error: &impl Display) -> BridgeErrorKind {
     let msg = error.to_string().to_ascii_lowercase();
     if msg.contains("unknown") || msg.contains("invalid") || msg.contains("usage") {
         return BridgeErrorKind::Usage;

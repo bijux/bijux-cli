@@ -9,7 +9,6 @@ use proptest as _;
 use serde as _;
 use serde_json as _;
 use std::sync::{Arc, Barrier, Mutex};
-use strsim as _;
 use thiserror as _;
 
 #[test]

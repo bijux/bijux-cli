@@ -6,7 +6,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
@@ -17,7 +16,6 @@ use bijux_cli_python::{
     ENV_CONFIG_PATH, ENV_HISTORY_PATH,
 };
 use serde_json as _;
-use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
     let nanos =

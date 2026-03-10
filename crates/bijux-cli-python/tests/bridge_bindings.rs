@@ -4,7 +4,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use anyhow as _;
 use bijux_cli_contracts as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
@@ -15,7 +14,6 @@ use bijux_cli_python::{
     BridgeErrorKind, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH,
 };
 use serde_json::Value;
-use thiserror as _;
 
 fn parse_json(text: &str) -> Value {
     serde_json::from_str(text).expect("valid json")

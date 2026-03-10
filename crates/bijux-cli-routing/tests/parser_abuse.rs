@@ -9,7 +9,6 @@ use clap as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
-use strsim as _;
 use thiserror as _;
 
 fn lcg(seed: &mut u64) -> u64 {

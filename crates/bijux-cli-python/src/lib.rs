@@ -1,8 +1,6 @@
 #![forbid(unsafe_code)]
 //! Python compatibility bridge surfaces.
 
-use thiserror as _;
-
 mod bindings;
 mod compatibility;
 mod conversions;
