@@ -2,10 +2,12 @@
 //! Concurrent config and state race coverage.
 
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::sync::Arc;
 use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
 use bijux_cli_python as _;
@@ -19,10 +21,27 @@ use libc as _;
 use serde_json::Value;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-state-race-{name}-{}", std::process::id()));
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let path =
+        std::env::temp_dir().join(format!("bijux-state-race-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
+}
+
+fn run_bin(args: &[&str]) -> io::Result<Output> {
+    let mut last_err: Option<io::Error> = None;
+    for _ in 0..3 {
+        match Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output() {
+            Ok(output) => return Ok(output),
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                last_err = Some(err);
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    Err(last_err.unwrap_or_else(|| io::Error::new(io::ErrorKind::NotFound, "binary not found")))
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -69,9 +88,7 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
         jobs.push(thread::spawn(move || {
             for i in 0..80 {
                 let value = format!("alpha={i}");
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "set", &value, "--config-path", cfg.as_str()])
-                    .output()
+                let out = run_bin(&["cli", "config", "set", &value, "--config-path", cfg.as_str()])
                     .expect("set alpha");
                 assert_known_status(&out, "set alpha");
             }
@@ -82,9 +99,7 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
         jobs.push(thread::spawn(move || {
             for i in 0..80 {
                 let value = format!("beta={i}");
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "set", &value, "--config-path", cfg.as_str()])
-                    .output()
+                let out = run_bin(&["cli", "config", "set", &value, "--config-path", cfg.as_str()])
                     .expect("set beta");
                 assert_known_status(&out, "set beta");
             }
@@ -94,10 +109,17 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
         let cfg = Arc::clone(&cfg);
         jobs.push(thread::spawn(move || {
             for _ in 0..80 {
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("list");
+                let out = run_bin(&[
+                    "cli",
+                    "config",
+                    "list",
+                    "--format",
+                    "json",
+                    "--no-pretty",
+                    "--config-path",
+                    cfg.as_str(),
+                ])
+                .expect("list");
                 assert_known_status(&out, "list concurrent");
             }
         }));
@@ -106,10 +128,17 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
         let cfg = Arc::clone(&cfg);
         jobs.push(thread::spawn(move || {
             for _ in 0..40 {
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "clear", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("clear");
+                let out = run_bin(&[
+                    "cli",
+                    "config",
+                    "clear",
+                    "--format",
+                    "json",
+                    "--no-pretty",
+                    "--config-path",
+                    cfg.as_str(),
+                ])
+                .expect("clear");
                 assert_known_status(&out, "clear concurrent");
             }
         }));
@@ -122,9 +151,16 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
     let body = fs::read_to_string(&config).expect("read final config");
     assert!(body.lines().all(|line| line.starts_with("BIJUXCLI_") && line.contains('=')));
 
-    let final_list = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-        .output()
+    let final_list = run_bin(&[
+        "cli",
+        "config",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        cfg.as_str(),
+    ])
         .expect("final list");
     assert_known_status(&final_list, "final list");
 }
@@ -148,10 +184,9 @@ fn concurrent_config_export_load_and_read_paths_stay_non_corrupt() {
         thread::spawn(move || {
             for i in 0..50 {
                 fs::write(src.as_str(), format!("BIJUXCLI_ALPHA={i}\n")).expect("rewrite source");
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "load", src.as_str(), "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("load");
+                let out =
+                    run_bin(&["cli", "config", "load", src.as_str(), "--config-path", cfg.as_str()])
+                        .expect("load");
                 assert_known_status(&out, "load concurrent");
             }
         })
@@ -162,10 +197,18 @@ fn concurrent_config_export_load_and_read_paths_stay_non_corrupt() {
         let exp = Arc::clone(&exp);
         thread::spawn(move || {
             for _ in 0..50 {
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "export", exp.as_str(), "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("export");
+                let out = run_bin(&[
+                    "cli",
+                    "config",
+                    "export",
+                    exp.as_str(),
+                    "--format",
+                    "json",
+                    "--no-pretty",
+                    "--config-path",
+                    cfg.as_str(),
+                ])
+                .expect("export");
                 assert_known_status(&out, "export concurrent");
             }
         })
@@ -175,10 +218,18 @@ fn concurrent_config_export_load_and_read_paths_stay_non_corrupt() {
         let cfg = Arc::clone(&cfg);
         thread::spawn(move || {
             for _ in 0..50 {
-                let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-                    .args(["cli", "config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-                    .output()
-                    .expect("get");
+                let out = run_bin(&[
+                    "cli",
+                    "config",
+                    "get",
+                    "alpha",
+                    "--format",
+                    "json",
+                    "--no-pretty",
+                    "--config-path",
+                    cfg.as_str(),
+                ])
+                .expect("get");
                 assert_known_status(&out, "get concurrent");
             }
         })
@@ -188,10 +239,17 @@ fn concurrent_config_export_load_and_read_paths_stay_non_corrupt() {
     exporter.join().expect("join exporter");
     reader.join().expect("join reader");
 
-    let final_list = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", cfg.as_str()])
-        .output()
-        .expect("final list");
+    let final_list = run_bin(&[
+        "cli",
+        "config",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        cfg.as_str(),
+    ])
+    .expect("final list");
     assert_known_status(&final_list, "final list");
 }
 
