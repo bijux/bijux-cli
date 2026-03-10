@@ -17,6 +17,7 @@ pub mod parity;
 pub mod python;
 pub mod registry;
 pub mod release;
+pub mod repo;
 pub mod reporting;
 pub mod route_audit;
 pub mod routes;

@@ -88,4 +88,12 @@ fn every_dev_cli_subcommand_maps_to_dev_cli_delegate() {
         source.contains("dev_python::build_sovereignty_audit_report"),
         "python command namespace must delegate to bijux-dev-cli python module"
     );
+    assert!(
+        source.contains("[a, b, c, d] if a == \"dev\" && b == \"cli\" && c == \"repo\""),
+        "missing delegated repo command namespace"
+    );
+    assert!(
+        source.contains("dev_repo::build_health_report"),
+        "repo command namespace must delegate to bijux-dev-cli repo module"
+    );
 }

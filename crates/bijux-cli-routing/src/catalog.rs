@@ -27,6 +27,7 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "evidence",
     "config",
     "python",
+    "repo",
     "inventory",
     "routes",
     "registry",
@@ -96,6 +97,7 @@ const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
 const DEV_CLI_PYTHON_SUBCOMMANDS: &[&str] =
     &["bridge-status", "surface-status", "sovereignty-audit", "drift", "packaging"];
+const DEV_CLI_REPO_SUBCOMMANDS: &[&str] = &["health", "drift", "inventories", "generated", "stale"];
 const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "remaining",
     "migrated",
@@ -244,6 +246,11 @@ pub fn is_known_route(path: &[String]) -> bool {
                 && b == "cli"
                 && c == "python"
                 && contains(DEV_CLI_PYTHON_SUBCOMMANDS, d) =>
+        {
+            true
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "repo" && contains(DEV_CLI_REPO_SUBCOMMANDS, d) =>
         {
             true
         }

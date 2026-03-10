@@ -32,7 +32,7 @@ use bijux_dev_cli::{
     config as dev_config, contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
-    python as dev_python, registry as dev_registry, release as dev_release,
+    python as dev_python, registry as dev_registry, release as dev_release, repo as dev_repo,
     route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
     rustdoc as dev_rustdoc, script_audit as dev_script_audit, scripts as dev_scripts,
     state_audit as dev_state_audit, status as dev_status, ReportContext,
@@ -522,6 +522,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "python" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1376,6 +1380,21 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "python" && d == "packaging" => {
             dev_python::build_packaging_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "health" => {
+            dev_repo::build_health_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "drift" => {
+            dev_repo::build_drift_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "inventories" => {
+            dev_repo::build_inventories_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "generated" => {
+            dev_repo::build_generated_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "stale" => {
+            dev_repo::build_stale_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

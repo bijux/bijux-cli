@@ -277,6 +277,14 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("drift"))
                 .subcommand(Command::new("packaging")),
         )
+        .subcommand(
+            Command::new("repo")
+                .subcommand(Command::new("health"))
+                .subcommand(Command::new("drift"))
+                .subcommand(Command::new("inventories"))
+                .subcommand(Command::new("generated"))
+                .subcommand(Command::new("stale")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

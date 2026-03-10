@@ -4,6 +4,7 @@ dev cli release
 dev cli evidence
 dev cli config
 dev cli python
+dev cli repo
 dev cli inventory
 dev cli routes
 dev cli route-audit
