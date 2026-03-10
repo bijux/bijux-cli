@@ -3,3 +3,5 @@
 
 /// Configuration domain logic and command behavior.
 pub mod config;
+/// Installation compatibility and state management behavior.
+pub mod install;
