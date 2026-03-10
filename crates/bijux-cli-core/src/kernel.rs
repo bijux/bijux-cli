@@ -246,6 +246,7 @@ pub fn resolve_policy(intent: &ExecutionIntent, inputs: &PolicyInputs) -> Execut
 
 /// Assemble execution context.
 #[must_use]
+#[allow(dead_code)]
 pub(crate) fn assemble_context(
     intent: ExecutionIntent,
     policy: ExecutionPolicy,
@@ -256,6 +257,7 @@ pub(crate) fn assemble_context(
     ExecutionContext { intent, policy, timeout, cancelled, trace_mode }
 }
 
+#[allow(dead_code)]
 fn success_meta(ctx: &ExecutionContext) -> OutputEnvelopeMetaV1 {
     OutputEnvelopeMetaV1 {
         version: "v1".to_string(),
@@ -266,6 +268,7 @@ fn success_meta(ctx: &ExecutionContext) -> OutputEnvelopeMetaV1 {
     }
 }
 
+#[allow(dead_code)]
 fn map_outcome_to_emission(outcome: HandlerOutcome, quiet: bool) -> Option<Emission> {
     if quiet {
         return None;
@@ -282,6 +285,7 @@ fn map_outcome_to_emission(outcome: HandlerOutcome, quiet: bool) -> Option<Emiss
     }
 }
 
+#[allow(dead_code)]
 fn map_outcome_to_exit(outcome: &HandlerOutcome) -> ExitCode {
     match outcome {
         HandlerOutcome::Success(_) => ExitCode::Success,
@@ -299,6 +303,7 @@ pub fn map_error_category_to_exit(category: &str) -> ExitCode {
     }
 }
 
+#[allow(dead_code)]
 fn is_fast_path(intent: &ExecutionIntent) -> bool {
     matches!(
         intent.command_path.as_slice(),
@@ -307,6 +312,7 @@ fn is_fast_path(intent: &ExecutionIntent) -> bool {
 }
 
 /// Execute unified sync/async handler pipeline with lifecycle and diagnostics hooks.
+#[allow(dead_code)]
 pub(crate) fn execute_pipeline(
     ctx: &ExecutionContext,
     handler: &Handler,
