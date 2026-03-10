@@ -283,6 +283,7 @@ jobs:
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
+          python3 scripts/status/generate_cleanup_reports.py
           python3 scripts/status/generate_product_mount_readiness_reports.py
           python3 scripts/status/generate_plugin_scaffold_reports.py
           python3 scripts/status/generate_compatibility_shim_reports.py
@@ -668,6 +669,10 @@ jobs:
             artifacts/status/plugin_scaffold_non_behavioral_files.json
             artifacts/status/plugin_scaffold_file_justification.json
             artifacts/status/plugin_scaffold_minimalism_summary.txt
+            artifacts/status/docs_unreferenced_candidates.json
+            artifacts/status/stale_snapshot_candidates.json
+            artifacts/status/dead_generated_artifact_candidates.json
+            artifacts/status/cleanup_report.json
           if-no-files-found: warn
           retention-days: 14
 

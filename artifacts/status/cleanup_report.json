@@ -1,0 +1,34 @@
+{
+  "deleted": {
+    "dead_generated_artifacts": [
+      "artifacts/python-behavior/golden/config/capture-summary.json",
+      "artifacts/python-behavior/golden/config/config_clear.json",
+      "artifacts/python-behavior/golden/config/config_export_json.json"
+    ],
+    "docs": [
+      "docs/architecture/newly-ported-command-parity.md",
+      "docs/architecture/next-five-command-priorities.md",
+      "docs/architecture/safe-improvements-after-parity.md"
+    ],
+    "snapshot_artifacts": [
+      "artifacts/python-behavior/golden/config/config_get_sample.json",
+      "artifacts/python-behavior/golden/config/config_set_sample.json",
+      "artifacts/python-behavior/golden/config/config_unset_sample.json"
+    ]
+  },
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_cleanup_reports.py",
+  "policies": {
+    "artifact_retention": "docs/architecture/artifact-retention-policy.md",
+    "document_retention": "docs/architecture/document-retention-policy.md",
+    "snapshot_retention": "docs/architecture/snapshot-retention-policy.md"
+  },
+  "rules": [
+    "reject keep-just-in-case for stale prose",
+    "reject keep-just-in-case for stale snapshots",
+    "reject keep-just-in-case for dead generated artifacts",
+    "cleanup is ongoing release-by-release work"
+  ],
+  "scope": "761-780 cleanup and retention hardening",
+  "status": "complete"
+}

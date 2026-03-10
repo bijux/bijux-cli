@@ -1,0 +1,13 @@
+{
+  "criteria": [
+    "not linked by README, command reference, or contributor flow",
+    "historical progress reporting rather than durable law"
+  ],
+  "deleted": [
+    "docs/architecture/newly-ported-command-parity.md",
+    "docs/architecture/next-five-command-priorities.md",
+    "docs/architecture/safe-improvements-after-parity.md"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_cleanup_reports.py"
+}

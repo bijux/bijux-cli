@@ -1,0 +1,13 @@
+{
+  "criteria": [
+    "legacy python-behavior captures no longer tied to live rust command snapshots",
+    "not consumed by CI upload, release evidence, or tests"
+  ],
+  "deleted": [
+    "artifacts/python-behavior/golden/config/config_get_sample.json",
+    "artifacts/python-behavior/golden/config/config_set_sample.json",
+    "artifacts/python-behavior/golden/config/config_unset_sample.json"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_cleanup_reports.py"
+}

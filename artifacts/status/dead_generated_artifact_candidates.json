@@ -1,0 +1,13 @@
+{
+  "criteria": [
+    "runtime lock and temp files in artifact tree are not evidence artifacts",
+    "legacy python behavior captures not consumed by CI upload, release evidence, or status reports"
+  ],
+  "deleted": [
+    "artifacts/python-behavior/golden/config/capture-summary.json",
+    "artifacts/python-behavior/golden/config/config_clear.json",
+    "artifacts/python-behavior/golden/config/config_export_json.json"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_cleanup_reports.py"
+}

@@ -6,3 +6,4 @@ scripts/status/generate_product_mount_readiness_reports.py # produce product-mou
 scripts/status/generate_release_build_reports.py # generate release/debug size, dependency/license inventory, reproducibility assumptions, and release artifact manifest
 scripts/status/check_deterministic_generation.py # verify schema, command-tree, and parity artifact generation remain deterministic
 scripts/status/check_release_build_consistency.py # run repeated release builds and report binary hash consistency
+scripts/status/generate_cleanup_reports.py # produce cleanup evidence and retention-policy artifacts for stale docs/snapshots/generated files
