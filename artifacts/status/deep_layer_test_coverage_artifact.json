@@ -1,0 +1,93 @@
+{
+  "domains": {
+    "bridge": "complete",
+    "command": "complete",
+    "config": "complete",
+    "determinism": "complete",
+    "diagnostics": "complete",
+    "flag": "complete",
+    "history": "complete",
+    "memory": "complete",
+    "plugin": "complete",
+    "repl": "complete"
+  },
+  "generated_at": "2026-03-10T12:08:14.399932+00:00",
+  "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
+  "scope": "deep-layer test coverage",
+  "status": "complete",
+  "tasks": [
+    381,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    388,
+    389,
+    390,
+    399
+  ],
+  "top_10_weakest": [
+    {
+      "assert_count": 1,
+      "category_hit_count": 0,
+      "domain": "diagnostics",
+      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 1,
+      "domain": "command",
+      "path": "crates/bijux-cli-routing/tests/command_tree_snapshot.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 1,
+      "domain": "plugin",
+      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 1,
+      "domain": "command",
+      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 1,
+      "domain": "config",
+      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 2,
+      "domain": "plugin",
+      "path": "crates/bijux-cli-plugin/tests/official_namespace_registry.rs"
+    },
+    {
+      "assert_count": 1,
+      "category_hit_count": 4,
+      "domain": "flag",
+      "path": "crates/bijux-cli-routing/tests/parser_fuzz.rs"
+    },
+    {
+      "assert_count": 2,
+      "category_hit_count": 0,
+      "domain": "bridge",
+      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs"
+    },
+    {
+      "assert_count": 2,
+      "category_hit_count": 0,
+      "domain": "config",
+      "path": "crates/bijux-cli-routing/tests/flag_normalization_property.rs"
+    },
+    {
+      "assert_count": 2,
+      "category_hit_count": 1,
+      "domain": "plugin",
+      "path": "crates/bijux-cli-core/tests/architecture_boundaries.rs"
+    }
+  ]
+}

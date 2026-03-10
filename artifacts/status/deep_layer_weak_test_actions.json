@@ -1,0 +1,24 @@
+{
+  "actions": [
+    {
+      "action": "deleted first weak test file",
+      "evidence": "crates/bijux-cli-bin/tests/ported_command_goldens.rs",
+      "status": "done",
+      "todo": 392
+    },
+    {
+      "action": "rewrote weak snapshot coverage into repeated-run determinism proof",
+      "evidence": "crates/bijux-cli-contracts/tests/schema_snapshots.rs",
+      "status": "done",
+      "todo": 393
+    },
+    {
+      "action": "added failure-path deserialization proof for invalid payloads",
+      "evidence": "crates/bijux-cli-contracts/tests/serde_roundtrip.rs",
+      "status": "done",
+      "todo": 394
+    }
+  ],
+  "generated_at": "2026-03-10T12:08:14.399932+00:00",
+  "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py"
+}
