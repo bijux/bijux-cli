@@ -37,3 +37,4 @@ scripts/status/generate_test_domain_value_reports.py # generate plugin/flag/dete
 scripts/status/enforce_test_first_domain_gates.py # enforce test_type tagging plus plugin failure-path, flag precedence/conflict, and determinism repeated-run proof gates on changed tests
 scripts/status/generate_root_command_surface_reports.py # generate root command coverage/matrix artifacts and frozen root command surface domain contract for explicit command law
 scripts/status/generate_cli_command_surface_reports.py # generate cli subcommand coverage/matrix artifacts and frozen cli command surface contract from canonical subcommand fixture + matrix tests
+scripts/status/generate_dev_cli_command_surface_reports.py # generate dev cli command coverage/matrix artifacts and frozen maintainer control-surface contract from canonical fixture + matrix tests
