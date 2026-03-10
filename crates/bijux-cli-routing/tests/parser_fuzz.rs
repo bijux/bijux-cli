@@ -16,7 +16,7 @@ fn parser_handles_diverse_argv_inputs_without_panics() {
         vec!["bijux"],
         vec!["bijux", "status"],
         vec!["bijux", "cli", "status"],
-        vec!["bijux", "dev", "routes"],
+        vec!["bijux", "dev", "cli", "routes"],
         vec!["bijux", "--quiet", "plugins", "inspect"],
         vec!["bijux", "plugins", "list", "--format", "yaml"],
         vec!["bijux", "--color", "always", "--log-level", "trace", "doctor"],

@@ -31,8 +31,8 @@ fn parses_root_and_nested_paths_with_global_flags() {
 }
 
 #[test]
-fn normalizes_dev_cli_alias_forms() {
-    let argv = vec!["bijux".to_string(), "dev".to_string(), "routes".to_string()];
+fn parses_canonical_dev_cli_forms_without_alias_dependency() {
+    let argv = vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "routes".to_string()];
     let intent = parse_intent(&argv).expect("parse should succeed");
     assert_eq!(intent.normalized_path, vec!["dev", "cli", "routes"]);
 }

@@ -2,6 +2,7 @@
 //! Adversarial parser and routing hardening tests.
 
 use bijux_cli_contracts as _;
+use bijux_cli_routing::catalog::dev_cli_subcommands;
 use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
 use clap as _;
@@ -25,7 +26,7 @@ fn pick<'a>(values: &'a [&'a str], seed: &mut u64) -> &'a str {
 fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
     let roots = ["status", "audit", "docs", "doctor", "version", "history", "memory"];
     let cli_sub = ["status", "paths", "self-test", "config", "plugins"];
-    let dev_sub = ["routes", "registry", "parity", "state-audit", "runtime-identity"];
+    let dev_sub = dev_cli_subcommands();
     let plugin_sub = ["list", "inspect", "check", "install", "uninstall", "doctor"];
     let junk = ["--unknown", "--format", "???", "", "###", "--log-level", "noise", "--color"];
 
@@ -168,8 +169,8 @@ fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
     assert!(matches!(resolved, RouteTarget::Plugin(ns) if ns == "community"));
 
     let dev_registry = registry
-        .resolve(&["dev".to_string(), "registry".to_string()])
-        .expect("hidden alias route must remain builtin");
+        .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
+        .expect("canonical dev cli registry route must remain builtin");
     assert!(matches!(dev_registry, RouteTarget::BuiltIn));
 }
 

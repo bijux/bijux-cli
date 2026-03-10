@@ -222,10 +222,8 @@ pub fn root_command() -> Command {
     let dev_group = Command::new("dev")
         .subcommand(dev_cli_group.clone())
         // Legacy path support normalized later to `dev cli ...`.
-        .subcommand(Command::new("routes").hide(true))
         .subcommand(Command::new("route-audit").hide(true))
         .subcommand(Command::new("inventory").hide(true))
-        .subcommand(Command::new("registry").hide(true))
         .subcommand(Command::new("parity").hide(true))
         .subcommand(Command::new("docs-audit").hide(true))
         .subcommand(Command::new("plugin-health").hide(true))

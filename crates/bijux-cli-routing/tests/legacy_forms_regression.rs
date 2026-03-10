@@ -31,10 +31,10 @@ fn legacy_plugins_list_maps_to_cli_plugins_list() {
 }
 
 #[test]
-fn legacy_dev_routes_maps_to_dev_cli_routes() {
+fn removed_legacy_dev_routes_does_not_normalize_anymore() {
     let argv = vec!["bijux".to_string(), "dev".to_string(), "routes".to_string()];
     let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.normalized_path, vec!["dev", "cli", "routes"]);
+    assert!(intent.normalized_path.is_empty());
 }
 
 #[test]

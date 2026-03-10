@@ -44,8 +44,6 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
 ];
 const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
-    "routes",
-    "registry",
     "parity",
     "docs-audit",
     "plugin-health",
@@ -64,6 +62,30 @@ const DEV_LEGACY_ALIASES: &[&str] = &[
 
 fn contains(values: &[&str], value: &str) -> bool {
     values.contains(&value)
+}
+
+/// Canonical CLI root aliases supported by route normalization.
+#[must_use]
+pub fn cli_root_aliases() -> &'static [&'static str] {
+    CLI_ROOT_ALIASES
+}
+
+/// Canonical `cli config` subcommands supported by route normalization.
+#[must_use]
+pub fn cli_config_subcommands() -> &'static [&'static str] {
+    CLI_CONFIG_SUBCOMMANDS
+}
+
+/// Canonical `cli plugins` subcommands supported by route normalization.
+#[must_use]
+pub fn cli_plugins_subcommands() -> &'static [&'static str] {
+    CLI_PLUGINS_SUBCOMMANDS
+}
+
+/// Canonical `dev cli` subcommands supported by route normalization.
+#[must_use]
+pub fn dev_cli_subcommands() -> &'static [&'static str] {
+    DEV_CLI_SUBCOMMANDS
 }
 
 /// Normalize path aliases into canonical command paths.

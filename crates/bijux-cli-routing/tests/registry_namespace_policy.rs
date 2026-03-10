@@ -45,8 +45,8 @@ fn hidden_alias_paths_remain_builtin_when_namespace_resembles_alias_tail() {
     registry.register_plugin_namespace("registry").expect("namespace is allowed");
 
     let resolved = registry
-        .resolve(&["dev".to_string(), "registry".to_string()])
-        .expect("dev registry alias path must stay builtin");
+        .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
+        .expect("canonical dev cli registry path must stay builtin");
     assert!(matches!(resolved, bijux_cli_routing::registry::RouteTarget::BuiltIn));
 }
 

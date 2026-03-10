@@ -40,7 +40,7 @@
     "routed": true
   },
   {
-    "argv": ["bijux", "dev", "routes"],
+    "argv": ["bijux", "dev", "cli", "routes"],
     "expected_normalized": ["dev", "cli", "routes"],
     "routed": true
   },
