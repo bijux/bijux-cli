@@ -8,13 +8,13 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bijux-cli-routing = { path = "../bijux-cli-routing" }
+bijux-cli-routing = { path = "../bijux-cli-routing", version = "0.1.0" }
 serde_json.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-core = { path = "../bijux-cli-core", version = "0.1.0" }
 serde = { workspace = true, features = ["derive"] }
 
 [lints]

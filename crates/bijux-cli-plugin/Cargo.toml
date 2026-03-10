@@ -8,7 +8,7 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bijux-cli-routing = { path = "../bijux-cli-routing" }
+bijux-cli-routing = { path = "../bijux-cli-routing", version = "0.1.0" }
 semver = { version = "1.0.27", default-features = false, features = ["std"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
