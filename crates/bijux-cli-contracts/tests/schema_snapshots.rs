@@ -8,23 +8,33 @@ use proptest as _;
 use semver as _;
 use serde as _;
 
-fn assert_snapshot(schema: schemars::schema::RootSchema, path: &str) {
-    let rendered = serde_json::to_string_pretty(&schema).expect("schema should serialize");
-    let expected = std::fs::read_to_string(path).expect("snapshot file should exist");
-    assert_eq!(rendered, expected, "schema drift for {path}");
+fn render(schema: schemars::schema::RootSchema) -> String {
+    serde_json::to_string_pretty(&schema).expect("schema should serialize")
 }
 
 #[test]
-fn output_schema_matches_snapshot() {
-    assert_snapshot(output_envelope_v1_schema(), "tests/snapshots/output_envelope_v1.schema.json");
-}
+fn schema_snapshots_are_deterministic_and_match_expected_files() {
+    let cases = [
+        (
+            output_envelope_v1_schema as fn() -> schemars::schema::RootSchema,
+            "tests/snapshots/output_envelope_v1.schema.json",
+        ),
+        (
+            error_envelope_v1_schema as fn() -> schemars::schema::RootSchema,
+            "tests/snapshots/error_envelope_v1.schema.json",
+        ),
+        (
+            plugin_manifest_v1_schema as fn() -> schemars::schema::RootSchema,
+            "tests/snapshots/plugin_manifest_v1.schema.json",
+        ),
+    ];
 
-#[test]
-fn error_schema_matches_snapshot() {
-    assert_snapshot(error_envelope_v1_schema(), "tests/snapshots/error_envelope_v1.schema.json");
-}
+    for (builder, path) in cases {
+        let first = render(builder());
+        let second = render(builder());
+        assert_eq!(first, second, "schema generation must be repeated-run deterministic: {path}");
 
-#[test]
-fn plugin_schema_matches_snapshot() {
-    assert_snapshot(plugin_manifest_v1_schema(), "tests/snapshots/plugin_manifest_v1.schema.json");
+        let expected = std::fs::read_to_string(path).expect("snapshot file should exist");
+        assert_eq!(first, expected, "schema drift for {path}");
+    }
 }

@@ -163,3 +163,49 @@ fn roundtrip_for_all_contract_types() {
     roundtrip(&memory_list);
     roundtrip(&inspect_report);
 }
+
+#[test]
+fn contract_deserialization_rejects_invalid_payload_shapes() {
+    let bad_output = json!({
+        "status": "ok",
+        "data": {"healthy": true}
+    });
+    let output_err = serde_json::from_value::<OutputEnvelopeV1>(bad_output).expect_err("missing meta must fail");
+    assert!(output_err.to_string().contains("meta"));
+
+    let bad_error = json!({
+        "status": "error",
+        "error": {
+            "code": 17,
+            "message": "bad",
+            "category": "usage"
+        },
+        "meta": {
+            "version": "v1",
+            "command": {"segments": ["cli", "status"]},
+            "timestamp": "2026-03-09T00:00:00Z"
+        }
+    });
+    let err_envelope = serde_json::from_value::<ErrorEnvelopeV1>(bad_error).expect_err("wrong code type must fail");
+    let err_text = err_envelope.to_string();
+    assert!(err_text.contains("invalid type") || err_text.contains("code"));
+
+    let bad_manifest = json!({
+        "name": "sample",
+        "version": "1.2.3",
+        "schema_version": "1",
+        "manifest_version": "1",
+        "compatibility": {
+            "min_inclusive": "1.0.0",
+            "max_exclusive": "2.0.0"
+        },
+        "namespace": "sample",
+        "kind": "not-a-real-kind",
+        "aliases": [],
+        "entrypoint": "sample_plugin:main",
+        "capabilities": []
+    });
+    let manifest_err =
+        serde_json::from_value::<PluginManifestV1>(bad_manifest).expect_err("unknown plugin kind must fail");
+    assert!(manifest_err.to_string().contains("kind"));
+}
