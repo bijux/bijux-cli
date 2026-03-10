@@ -1,0 +1,5 @@
+{
+  "args": ["cli", "config", "list", "--format", "json", "--no-pretty", "--config-path", "<CONFIG_PATH>"],
+  "config_text": "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA",
+  "source_text": "BIJUXCLI_SRC=1\n"
+}
