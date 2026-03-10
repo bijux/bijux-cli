@@ -42,6 +42,10 @@ mod tests {
     fn cargo_channels_resolve_to_same_canonical_executable() {
         let canonical = cargo_install_strategy(PackageChannel::Canonical);
         let compatibility = cargo_install_strategy(PackageChannel::Compatibility);
+        assert_eq!(canonical.ecosystem, Ecosystem::Cargo);
+        assert_eq!(compatibility.ecosystem, Ecosystem::Cargo);
+        assert_eq!(canonical.package_name, "bijux-cli");
+        assert_eq!(compatibility.package_name, "bijux");
         assert_eq!(canonical.executable_name, CANONICAL_EXECUTABLE);
         assert_eq!(compatibility.executable_name, CANONICAL_EXECUTABLE);
     }
@@ -50,6 +54,10 @@ mod tests {
     fn pip_channels_resolve_to_same_canonical_executable() {
         let canonical = pip_install_strategy(PackageChannel::Canonical);
         let compatibility = pip_install_strategy(PackageChannel::Compatibility);
+        assert_eq!(canonical.ecosystem, Ecosystem::Pip);
+        assert_eq!(compatibility.ecosystem, Ecosystem::Pip);
+        assert_eq!(canonical.package_name, "bijux-cli");
+        assert_eq!(compatibility.package_name, "bijux");
         assert_eq!(canonical.executable_name, CANONICAL_EXECUTABLE);
         assert_eq!(compatibility.executable_name, CANONICAL_EXECUTABLE);
     }
@@ -67,6 +75,7 @@ mod tests {
         let discovered = discover_path_binaries(path_value.to_str().expect("utf-8 path"));
         assert_eq!(discovered.len(), 2);
         assert!(discovered[0].contains("first"));
+        assert!(discovered[1].contains("second"));
     }
 
     #[test]
@@ -86,8 +95,10 @@ mod tests {
             Some("1.0.0"),
             "1.0.1",
         );
+        assert!(report.has_path_shadowing);
         assert!(report.has_duplicate_installs);
         assert!(report.has_mismatched_wheel_binary_versions);
+        assert_eq!(report.path_binaries.len(), 2);
     }
 
     #[test]
@@ -357,15 +368,19 @@ mod tests {
     #[test]
     fn completion_file_paths_are_generated() {
         let home = std::path::PathBuf::from("/tmp/home");
-        assert!(completion_file_path(CompletionShell::Bash, &home)
+        let bash = completion_file_path(CompletionShell::Bash, &home);
+        let zsh = completion_file_path(CompletionShell::Zsh, &home);
+        let fish = completion_file_path(CompletionShell::Fish, &home);
+        let powershell = completion_file_path(CompletionShell::PowerShell, &home);
+        assert!(bash.to_string_lossy().contains(".bash_completion.d"));
+        assert!(bash.to_string_lossy().ends_with("/bijux"));
+        assert!(zsh.to_string_lossy().contains(".zsh"));
+        assert!(zsh.to_string_lossy().ends_with("/_bijux"));
+        assert!(fish.to_string_lossy().contains(".config/fish/completions"));
+        assert!(fish.to_string_lossy().ends_with("/bijux.fish"));
+        assert!(powershell
             .to_string_lossy()
-            .contains(".bash_completion.d"));
-        assert!(completion_file_path(CompletionShell::Zsh, &home)
-            .to_string_lossy()
-            .contains(".zsh"));
-        assert!(completion_file_path(CompletionShell::Fish, &home)
-            .to_string_lossy()
-            .contains(".config/fish/completions"));
+            .contains("Microsoft.PowerShell_profile.ps1"));
     }
 
     #[test]
@@ -399,14 +414,26 @@ mod tests {
 
     #[test]
     fn compatibility_notes_cover_pip_and_cargo_users() {
-        let note = "Cargo installs are canonical for Rust runtime updates. Ensure your PATH resolves to the intended `bijux` binary when pip and cargo are both installed.";
-        assert!(note.contains("Cargo installs"));
+        let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
+        let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
+        let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
+        let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
+        assert_eq!(cargo_canonical.package_name, pip_canonical.package_name);
+        assert_eq!(cargo_compat.package_name, pip_compat.package_name);
+        assert_eq!(
+            cargo_canonical.executable_name,
+            pip_canonical.executable_name
+        );
+        assert_eq!(cargo_compat.executable_name, pip_compat.executable_name);
     }
 
     #[test]
     fn install_health_report_performance_is_within_sanity_budget() {
         let started = std::time::Instant::now();
-        let _report = install_health_report("", None, None, "1.0.0");
+        let report = install_health_report("", None, None, "1.0.0");
         assert!(started.elapsed() < std::time::Duration::from_millis(100));
+        assert!(!report.has_path_shadowing);
+        assert!(report.path_binaries.is_empty());
+        assert!(report.active_binary.is_none());
     }
 }

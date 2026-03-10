@@ -101,10 +101,14 @@ mod tests {
         let lock_path = temp.join("state.lock");
 
         let guard = acquire_state_lock(&lock_path).expect("first lock");
+        assert!(lock_path.exists(), "lock file should be created");
+        let content = fs::read_to_string(&lock_path).expect("lock content");
+        assert!(content.contains("bijux-cli lock"));
         let err = acquire_state_lock(&lock_path).expect_err("second lock should fail");
         assert!(matches!(err, CompatibilityError::LockHeld(_)));
 
         drop(guard);
+        assert!(!lock_path.exists(), "lock file should be removed on drop");
 
         let _guard2 = acquire_state_lock(&lock_path).expect("lock should be reusable after drop");
     }
