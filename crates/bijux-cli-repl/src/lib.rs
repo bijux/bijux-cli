@@ -17,7 +17,7 @@ pub use diagnostics::{
 pub use execution::{execute_repl_input, execute_repl_line, repl_argv_from_line};
 pub use history::{configure_history, flush_history, load_history, replay_history_command};
 pub use reference::render_repl_command_reference;
-pub use session::{repl_marker, shutdown_repl, startup_repl, startup_repl_with_diagnostics};
+pub use session::{shutdown_repl, startup_repl, startup_repl_with_diagnostics};
 pub use types::{
     ReplError, ReplEvent, ReplFrame, ReplInput, ReplSession, ReplShutdownContract,
     ReplStartupContract, ReplStream, REPL_MEMORY_BUDGET_BYTES, REPL_STARTUP_LATENCY_BUDGET_MS,

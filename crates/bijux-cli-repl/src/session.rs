@@ -1,20 +1,9 @@
 use std::collections::BTreeMap;
 
-use bijux_cli_contracts::{
-    ColorMode, ContractMarker, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
-};
+use bijux_cli_contracts::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
-use bijux_cli_routing::route_marker;
 
 use crate::types::{ReplSession, ReplShutdownContract, ReplStartupContract};
-
-/// Build REPL marker chained from routing state.
-#[must_use]
-pub fn repl_marker() -> ContractMarker {
-    let mut marker = route_marker();
-    marker.namespace = format!("{}:repl", marker.namespace);
-    marker
-}
 
 /// Startup REPL session using the same policy precedence and routing registry as CLI.
 #[must_use]

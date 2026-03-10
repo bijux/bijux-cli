@@ -41,12 +41,6 @@ pub fn post_install_hint(binary_path: &str) -> String {
     )
 }
 
-/// Return compatibility note text for pip users.
-#[must_use]
-pub fn pip_compatibility_note() -> &'static str {
-    "Pip installs should expose the same `bijux` binary behavior as cargo builds. Run `bijux version` and `bijux cli doctor` after upgrades."
-}
-
 /// Return compatibility note text for cargo users.
 #[must_use]
 pub fn cargo_compatibility_note() -> &'static str {

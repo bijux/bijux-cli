@@ -5,14 +5,11 @@ mod constants;
 mod diagnostics;
 mod discovery;
 mod errors;
-mod execution;
 mod manifest;
 mod models;
 mod registry;
 
 use std::path::Path;
-
-use bijux_cli_contracts::ContractMarker;
 
 pub use constants::{CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES};
 pub use diagnostics::{
@@ -22,7 +19,6 @@ pub use discovery::{
     discover_plugin_manifests, refresh_discovery_cache, registry_path_from_plugins_dir,
 };
 pub use errors::PluginError;
-pub use execution::execute_delegated_plugin;
 pub use manifest::{parse_manifest_v1, validate_manifest};
 pub use models::{
     InstallPluginRequest, PluginDiscoveryCache, PluginDoctorReport, PluginLoadDiagnostic,
@@ -34,12 +30,6 @@ pub use registry::{
     install_plugin as install_plugin_with_reserved, list_plugins, load_registry, plugin_doctor,
     plugin_load_order, plugin_origin_metadata, save_registry, uninstall_plugin, update_registry,
 };
-
-/// Build plugin marker chained from core state.
-#[must_use]
-pub fn plugin_marker() -> ContractMarker {
-    ContractMarker { namespace: "core:plugin".to_string() }
-}
 
 /// Install plugin into registry from manifest text.
 pub fn install_plugin(

@@ -8,9 +8,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use bijux_cli_contracts::{
-    ColorMode, CommandPath, ConfigSource, DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1,
-    ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags, InvocationEvent, InvocationTrace,
-    LogLevel, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PrettyMode,
+    ColorMode, CommandPath, DiagnosticRecord, ErrorEnvelopeV1, ExecutionPolicy, ExitCode,
+    GlobalFlags, InvocationEvent, InvocationTrace, LogLevel, Namespace, OutputEnvelopeMetaV1,
+    OutputEnvelopeV1, OutputFormat, PrettyMode,
 };
 use serde_json::{json, Value};
 
@@ -266,36 +266,6 @@ fn success_meta(ctx: &ExecutionContext) -> OutputEnvelopeMetaV1 {
     }
 }
 
-fn error_envelope(
-    ctx: &ExecutionContext,
-    code: &str,
-    message: &str,
-    category: &str,
-) -> ErrorEnvelopeV1 {
-    // PARITY-PARTIAL: error details source mapping is coarse and should be aligned with
-    // final command/runtime error normalization rules.
-    ErrorEnvelopeV1 {
-        status: "error".to_string(),
-        error: ErrorPayloadV1 {
-            code: code.to_string(),
-            message: message.to_string(),
-            category: category.to_string(),
-            details: Some(ErrorDetailsV1 {
-                failure: Some(code.to_string()),
-                context: BTreeMap::from([(
-                    "source".to_string(),
-                    json!(match category {
-                        "usage" => ConfigSource::Flags,
-                        "validation" => ConfigSource::Env,
-                        _ => ConfigSource::Defaults,
-                    }),
-                )]),
-            }),
-        },
-        meta: success_meta(ctx),
-    }
-}
-
 fn map_outcome_to_emission(outcome: HandlerOutcome, quiet: bool) -> Option<Emission> {
     if quiet {
         return None;
@@ -474,16 +444,4 @@ pub fn execute_pipeline(
             None
         },
     })
-}
-
-/// Build a usage validation error outcome.
-#[must_use]
-pub fn usage_error(ctx: &ExecutionContext, message: &str) -> HandlerOutcome {
-    HandlerOutcome::Error(error_envelope(ctx, "usage_error", message, "usage"))
-}
-
-/// Build an internal failure outcome.
-#[must_use]
-pub fn internal_error(ctx: &ExecutionContext, message: &str) -> HandlerOutcome {
-    HandlerOutcome::Error(error_envelope(ctx, "internal_error", message, "internal"))
 }

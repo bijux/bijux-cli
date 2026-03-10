@@ -3,12 +3,11 @@
 
 use anyhow as _;
 use bijux_cli_contracts::{
-    ColorMode, ExecutionPolicy, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
+    ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
 };
 use bijux_cli_core::app::run_app;
 use bijux_cli_core::kernel::{
-    build_intent_from_argv, internal_error, map_error_category_to_exit, resolve_policy,
-    usage_error, ExecutionContext, ExecutionIntent, HandlerOutcome, PolicyInputs,
+    map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
 };
 use bijux_cli_install as _;
 use bijux_cli_output as _;
@@ -17,9 +16,6 @@ use bijux_cli_routing as _;
 use clap as _;
 use futures as _;
 use serde_json::Value;
-use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
-use std::time::Duration;
 
 fn baseline_flags() -> GlobalFlags {
     GlobalFlags {
@@ -498,28 +494,4 @@ fn error_normalization_internal_plugin_usage_validation() {
     assert_eq!(map_error_category_to_exit("plugin"), bijux_cli_contracts::ExitCode::Error);
     assert_eq!(map_error_category_to_exit("usage"), bijux_cli_contracts::ExitCode::Usage);
     assert_eq!(map_error_category_to_exit("validation"), bijux_cli_contracts::ExitCode::Usage);
-}
-
-#[test]
-fn usage_and_internal_outcomes_carry_expected_categories() {
-    let ctx = ExecutionContext {
-        intent: build_intent_from_argv(&["bijux".to_string(), "status".to_string()]),
-        policy: ExecutionPolicy::baseline(),
-        timeout: Some(Duration::from_secs(1)),
-        cancelled: Arc::new(AtomicBool::new(false)),
-        trace_mode: false,
-    };
-
-    let usage = usage_error(&ctx, "bad usage");
-    let internal = internal_error(&ctx, "internal fault");
-
-    match usage {
-        HandlerOutcome::Error(error) => assert_eq!(error.error.category, "usage"),
-        HandlerOutcome::Success(_) => panic!("usage should emit error"),
-    }
-
-    match internal {
-        HandlerOutcome::Error(error) => assert_eq!(error.error.category, "internal"),
-        HandlerOutcome::Success(_) => panic!("internal should emit error"),
-    }
 }

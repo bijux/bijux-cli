@@ -16,7 +16,7 @@ pub use compatibility::{
 };
 pub use completion::{
     cargo_compatibility_note, completion_file_path, completion_script, detect_shell,
-    pip_compatibility_note, post_install_hint, CompletionShell,
+    post_install_hint, CompletionShell,
 };
 pub use diagnostics::{install_health_report, InstallHealthReport};
 pub use metadata::{
@@ -327,7 +327,6 @@ mod tests {
 
     #[test]
     fn compatibility_notes_cover_pip_and_cargo_users() {
-        assert!(pip_compatibility_note().contains("Pip installs"));
         assert!(cargo_compatibility_note().contains("Cargo installs"));
     }
 

@@ -177,11 +177,6 @@ pub fn to_json(marker: &ContractMarker) -> Result<String, serde_json::Error> {
     serde_json::to_string(marker)
 }
 
-/// Backward-compatible YAML rendering helper for marker types.
-pub fn to_yaml(marker: &ContractMarker) -> Result<String, serde_yaml::Error> {
-    serde_yaml::to_string(marker)
-}
-
 #[cfg(test)]
 use bijux_cli_core as _;
 #[cfg(test)]
