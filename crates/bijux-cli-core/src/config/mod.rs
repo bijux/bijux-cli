@@ -7,7 +7,7 @@ pub(crate) mod storage;
 pub(crate) mod validation;
 
 use anyhow::{anyhow, Result};
-use bijux_cli_install::CompatibilityPaths;
+use crate::install::CompatibilityPaths;
 use serde_json::Value;
 use std::io::{self, IsTerminal, Read};
 use std::path::PathBuf;

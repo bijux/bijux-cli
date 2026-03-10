@@ -12,7 +12,6 @@ anyhow.workspace = true
 futures = "0.3.31"
 bijux-cli-routing = { path = "../bijux-cli-routing", version = "0.1.0" }
 bijux-dev-cli = { path = "../bijux-dev-cli", version = "0.1.0" }
-bijux-cli-install = { path = "../bijux-cli-install", version = "0.1.0" }
 clap = { version = "4.5.51", features = ["std"] }
 semver = { version = "1.0.27", default-features = false, features = ["std"] }
 serde.workspace = true
@@ -26,3 +25,4 @@ thiserror.workspace = true
 workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true

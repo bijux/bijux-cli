@@ -6,6 +6,7 @@ pub mod app;
 mod argv;
 mod config;
 pub mod entrypoint;
+pub mod install;
 pub mod kernel;
 pub mod output;
 pub mod plugin;

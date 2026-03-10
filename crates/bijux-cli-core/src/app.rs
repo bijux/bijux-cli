@@ -8,7 +8,7 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::Result;
-use bijux_cli_install::{
+use crate::install::{
     atomic_write_text, canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config,
     pip_install_strategy, post_install_hint, query::runtime_identity_query, CompatibilityConfig,
@@ -1464,7 +1464,18 @@ fn route_response(
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
             let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
             dev_runtime_identity::build_report(dev_runtime_identity::RuntimeIdentityInput {
-                install_report,
+                install_report: dev_runtime_identity::InstallHealthReport {
+                    active_binary: install_report.active_binary,
+                    path_binaries: install_report.path_binaries,
+                    has_path_shadowing: install_report.has_path_shadowing,
+                    has_duplicate_installs: install_report.has_duplicate_installs,
+                    stale_wrapper_scripts: install_report.stale_wrapper_scripts,
+                    has_mismatched_wheel_binary_versions: install_report
+                        .has_mismatched_wheel_binary_versions,
+                    legacy_installer_conflicts: install_report.legacy_installer_conflicts,
+                    active_binary_missing: install_report.active_binary_missing,
+                    broken_symlink_active_binary: install_report.broken_symlink_active_binary,
+                },
                 python_bridge_supported,
                 cargo_canonical_package: cargo_canonical.package_name,
                 cargo_compat_package: cargo_compat.package_name,

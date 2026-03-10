@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use bijux_cli_install::run_config_migrations;
+use crate::install::run_config_migrations;
 use serde_json::{json, Value};
 
 use super::error::ConfigError;
