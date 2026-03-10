@@ -44,7 +44,7 @@ def main() -> int:
             failures.append(f"missing required artifact: {item.relative_to(ROOT)}")
 
     core_storage = read(ROOT / "crates/bijux-cli-core/src/config/storage.rs")
-    install_compat = read(ROOT / "crates/bijux-cli-install/src/compatibility.rs")
+    install_compat = read(ROOT / "crates/bijux-cli-core/src/install/compatibility.rs")
     repl_history = read(ROOT / "crates/bijux-cli-repl/src/history.rs")
     core_app = read(ROOT / "crates/bijux-cli-core/src/app.rs")
 

@@ -14,7 +14,7 @@ RUNTIME_CRATE_SRCS = {
     "bijux-cli-core": REPO_ROOT / "crates" / "bijux-cli-core" / "src",
     "bijux-cli-routing": REPO_ROOT / "crates" / "bijux-cli-routing" / "src",
     "bijux-cli-output": REPO_ROOT / "crates" / "bijux-cli-output" / "src",
-    "bijux-cli-install": REPO_ROOT / "crates" / "bijux-cli-install" / "src",
+    "bijux-cli-core::install": REPO_ROOT / "crates" / "bijux-cli-core" / "src" / "install",
     "bijux-cli-plugin": REPO_ROOT / "crates" / "bijux-cli-plugin" / "src",
     "bijux-cli-python": REPO_ROOT / "crates" / "bijux-cli-python" / "src",
 }

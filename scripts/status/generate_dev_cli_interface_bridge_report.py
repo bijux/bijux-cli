@@ -15,8 +15,9 @@ QUERY_FILES = {
     "routing_contracts_query": REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "query.rs",
     "install_runtime_identity_query": REPO_ROOT
     / "crates"
-    / "bijux-cli-install"
+    / "bijux-cli-core"
     / "src"
+    / "install"
     / "query.rs",
     "core_state_parity_query": REPO_ROOT / "crates" / "bijux-cli-core" / "src" / "query.rs",
 }
@@ -62,4 +63,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

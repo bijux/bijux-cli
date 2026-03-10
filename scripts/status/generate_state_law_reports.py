@@ -107,7 +107,7 @@ def main() -> None:
             },
             {
                 "name": "compatibility config writes are atomic",
-                "evidence": "crates/bijux-cli-install/src/compatibility.rs uses atomic_write_text",
+                "evidence": "crates/bijux-cli-core/src/install/compatibility.rs uses atomic_write_text",
             },
             {
                 "name": "plugin registry writes use temp+rename",
@@ -148,7 +148,7 @@ def main() -> None:
         "generator": "scripts/status/generate_state_law_reports.py",
         "canonical_services": [
             "crates/bijux-cli-core/src/app.rs::resolve_state_paths",
-            "crates/bijux-cli-install/src/io.rs::atomic_write_text",
+            "crates/bijux-cli-core/src/install/io.rs::atomic_write_text",
         ],
         "hotspots": [
             "crates/bijux-cli-core/src/app.rs",

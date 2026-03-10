@@ -23,9 +23,9 @@ def main() -> int:
                 "command": "dev cli runtime-identity",
                 "presentation_owner": "bijux-dev-cli",
                 "runtime_data_sources": [
-                    "bijux-cli-install::install_health_report",
-                    "bijux-cli-install::cargo_install_strategy",
-                    "bijux-cli-install::pip_install_strategy",
+                    "bijux-cli-core::install::install_health_report",
+                    "bijux-cli-core::install::cargo_install_strategy",
+                    "bijux-cli-core::install::pip_install_strategy",
                 ],
             },
             {

@@ -56,8 +56,8 @@ RUNTIME_OWNED_BEHAVIORS = [
     },
     {
         "behavior": "install and runtime identity primitives",
-        "owner": "bijux-cli-install",
-        "evidence": "crates/bijux-cli-install/src",
+        "owner": "bijux-cli-core::install",
+        "evidence": "crates/bijux-cli-core/src/install",
     },
     {
         "behavior": "output envelope and rendering",
@@ -110,7 +110,7 @@ def parse_dev_cli_implementations() -> dict[str, str]:
 
     for command in ["dev cli runtime-identity", "dev cli package-health", "dev cli state-audit", "dev cli state-doctor"]:
         if command in implementations:
-            implementations[command] = "bijux-cli-core + bijux-cli-install + bijux-cli-plugin"
+            implementations[command] = "bijux-cli-core + bijux-cli-core::install + bijux-cli-plugin"
 
     delegated = {
         "dev cli routes": "dev_routes::build_report",

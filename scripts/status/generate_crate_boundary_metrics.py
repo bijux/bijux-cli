@@ -226,7 +226,7 @@ def crate_decisions() -> list[dict[str, str]]:
             "reason": "candidate only if output contracts become static and trivial",
         },
         {
-            "crate": "bijux-cli-install",
+            "crate": "bijux-cli-core::install",
             "status": "watch",
             "review": "paying rent with path/install diagnostics and channel policy",
             "reason": "keep independent while runtime identity and install parity remain active",
