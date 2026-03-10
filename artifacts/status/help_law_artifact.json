@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-03-10T11:56:00.204136+00:00",
+  "generator": "scripts/status/generate_help_tree_law_reports.py",
+  "scope": "help law",
+  "status": "complete",
+  "tasks": [
+    341,
+    342,
+    343,
+    344,
+    345,
+    346,
+    347,
+    348,
+    349,
+    350,
+    351,
+    352,
+    353,
+    354,
+    355,
+    356
+  ],
+  "todo_coverage": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "root_help_lists_commands_in_stable_order",
+      "todo": 341
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "cli_help_lists_subcommands_in_stable_order",
+      "todo": 342
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_help_lists_subcommands_in_stable_order",
+      "todo": 343
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "plugin_installed_help_keeps_builtin_order_stable",
+      "todo": 344
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "no_color_root_help_and_grouped_help_are_stable",
+      "todo": 345
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "no_color_root_help_and_grouped_help_are_stable",
+      "todo": 346
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
+      "todo": 347
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "unknown_command_suggestions_are_deterministic_and_namespace_scoped",
+      "todo": 348
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "hidden_aliases_do_not_appear_as_canonical_help_entries",
+      "todo": 349
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export",
+      "todo": 350
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "inspect_metadata_agrees_with_help_names_and_command_tree_export",
+      "todo": 351
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "binary_and_bridge_help_trees_are_identical_for_covered_commands",
+      "todo": 352
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
+      "todo": 353
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "help_under_broken_plugin_registry_and_corrupted_state_is_stable_and_useful",
+      "todo": 354
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/help_tree_law_extra.rs",
+      "status": "covered",
+      "test": "command_tree_is_stable_across_repeated_plugin_discovery_runs",
+      "todo": 355
+    }
+  ]
+}
