@@ -273,6 +273,7 @@ jobs:
           python3 scripts/status/generate_namespace_reservation_reports.py
           python3 scripts/status/generate_plugin_lifecycle_failure_reports.py
           python3 scripts/status/generate_config_corruption_reports.py
+          python3 scripts/status/generate_state_resilience_reports.py
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
@@ -530,6 +531,11 @@ jobs:
             artifacts/status/plugin_rollback_proof_report.json
             artifacts/status/config_corruption_matrix.json
             artifacts/status/config_rollback_proof.json
+            artifacts/status/history_corruption_matrix.json
+            artifacts/status/memory_corruption_matrix.json
+            artifacts/status/state_resilience_summary.json
+            artifacts/status/state_recovery_guidance.json
+            artifacts/status/state_recovery_guidance.txt
             artifacts/status/install_source_diagnostics.json
             artifacts/status/ambiguous_runtime_diagnostics.json
             artifacts/status/install_health_report.json
