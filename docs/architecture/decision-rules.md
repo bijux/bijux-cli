@@ -37,6 +37,9 @@ Every release candidate must include command-level parity matrix and diff artifa
 
 ## Plugin V1 Freeze
 Plugin v1 behavior is frozen before introducing new plugin command complexity beyond parity-backed scope.
+Write-path hardening evidence must remain green:
+`artifacts/status/plugin_lifecycle_failure_injection_report.json` and
+`artifacts/status/plugin_rollback_proof_report.json`.
 
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.

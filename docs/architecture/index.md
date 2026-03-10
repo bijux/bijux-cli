@@ -31,6 +31,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Runtime identity law](runtime_identity_law.md)
 - [Parser abuse hardening](parser-abuse-hardening.md)
 - [Namespace reservation law](namespace-reservation-law.md)
+- [Plugin write-path hardening law](plugin-write-path-hardening-law.md)
 - [Test policy](test-policy.md)
 - [Test review checklist](test-review-checklist.md)
 - [Test quality priorities](test-quality-priorities.md)
