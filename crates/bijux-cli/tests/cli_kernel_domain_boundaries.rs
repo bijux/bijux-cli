@@ -34,7 +34,10 @@ fn domain_modules_do_not_depend_on_cli_or_kernel_layers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let domain_roots = [
         "features/config",
+        "features/developer",
+        "features/history",
         "features/install",
+        "features/memory",
         "features/plugins",
         "features/diagnostics",
         "routing",
