@@ -49,8 +49,7 @@ fn state_path_status(path: &Path) -> StatePathStatus {
         writable: if path.exists() {
             fs::OpenOptions::new().append(true).open(path).is_ok()
         } else {
-            path.parent()
-                .is_some_and(|parent| fs::create_dir_all(parent).is_ok())
+            path.parent().is_some_and(|parent| fs::create_dir_all(parent).is_ok())
         },
     }
 }

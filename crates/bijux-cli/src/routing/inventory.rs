@@ -33,16 +33,8 @@ pub fn route_inventory(registry: &RouteRegistry) -> RouteInventory {
         .into_iter()
         .map(|(alias, canonical)| {
             (
-                alias
-                    .segments
-                    .into_iter()
-                    .map(|segment| segment.0)
-                    .collect(),
-                canonical
-                    .segments
-                    .into_iter()
-                    .map(|segment| segment.0)
-                    .collect(),
+                alias.segments.into_iter().map(|segment| segment.0).collect(),
+                canonical.segments.into_iter().map(|segment| segment.0).collect(),
             )
         })
         .collect();
@@ -52,7 +44,5 @@ pub fn route_inventory(registry: &RouteRegistry) -> RouteInventory {
 /// Query raw namespace registry metadata.
 #[must_use]
 pub fn registry_inventory(registry: &RouteRegistry) -> RegistryInventory {
-    RegistryInventory {
-        namespaces: registry.route_tree(),
-    }
+    RegistryInventory { namespaces: registry.route_tree() }
 }

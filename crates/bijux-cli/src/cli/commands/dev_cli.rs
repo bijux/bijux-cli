@@ -38,10 +38,7 @@ struct RuntimeQueryAdapter<'a> {
 impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     fn route_inventory(&self) -> RouteInventoryQuery {
         let inventory = route_inventory(self.registry);
-        RouteInventoryQuery {
-            routes: inventory.routes,
-            aliases: inventory.aliases,
-        }
+        RouteInventoryQuery { routes: inventory.routes, aliases: inventory.aliases }
     }
 
     fn registry_inventory(&self) -> Vec<dev_registry::NamespaceInventoryRow> {
@@ -65,10 +62,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     }
 
     fn product_namespaces(&self) -> Vec<String> {
-        FUTURE_PRODUCT_NAMESPACES
-            .iter()
-            .map(|value| (*value).to_string())
-            .collect()
+        FUTURE_PRODUCT_NAMESPACES.iter().map(|value| (*value).to_string()).collect()
     }
 
     fn env_map(&self) -> BTreeMap<String, String> {
@@ -94,10 +88,8 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             load_time_diagnostics(self.plugin_registry_path, env!("CARGO_PKG_VERSION"))
                 .unwrap_or_default();
         let repository = FileConfigRepository;
-        let config_issues = repository
-            .load(&self.paths.config_file)
-            .err()
-            .map_or_else(Vec::new, |err| {
+        let config_issues =
+            repository.load(&self.paths.config_file).err().map_or_else(Vec::new, |err| {
                 vec![json!({"category":"config", "message": err.to_string()})]
             });
         let path_issues = if install_report.has_path_shadowing
@@ -122,11 +114,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
             })
             .collect();
 
-        DoctorReportInput {
-            config_issues,
-            path_issues,
-            plugin_issues,
-        }
+        DoctorReportInput { config_issues, path_issues, plugin_issues }
     }
 
     fn state_audit_input(&self) -> StateAuditInput {
@@ -154,10 +142,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
 
     fn contracts_schema_input(&self) -> ContractsSchemaInput {
         let query = contracts_schema_query();
-        ContractsSchemaInput {
-            schema_ids: query.schema_ids,
-            schema_version: query.schema_version,
-        }
+        ContractsSchemaInput { schema_ids: query.schema_ids, schema_version: query.schema_version }
     }
 
     fn runtime_identity_input(&self) -> dev_runtime_identity::RuntimeIdentityInput {
@@ -207,10 +192,6 @@ pub(crate) fn try_handle(
     paths: &ResolvedStatePaths,
     plugin_registry_path: &Path,
 ) -> Result<Option<Value>> {
-    let runtime = RuntimeQueryAdapter {
-        registry,
-        paths,
-        plugin_registry_path,
-    };
+    let runtime = RuntimeQueryAdapter { registry, paths, plugin_registry_path };
     dev_dispatch::try_handle(normalized_path, argv, &runtime)
 }

@@ -174,11 +174,7 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     }
 
     if let Some(help) = try_render_clap_help(argv) {
-        return Ok(AppRunResult {
-            exit_code: 0,
-            stdout: help,
-            stderr: String::new(),
-        });
+        return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
     }
 
     let intent = parse_intent(argv)?;
@@ -236,31 +232,15 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     };
 
     let rendered = render_value(&payload, emitter_config(&intent.global_flags))?;
-    let content = if rendered.ends_with('\n') {
-        rendered
-    } else {
-        format!("{rendered}\n")
-    };
+    let content = if rendered.ends_with('\n') { rendered } else { format!("{rendered}\n") };
 
     if is_unknown {
-        return Ok(AppRunResult {
-            exit_code: 2,
-            stdout: String::new(),
-            stderr: content,
-        });
+        return Ok(AppRunResult { exit_code: 2, stdout: String::new(), stderr: content });
     }
 
     if intent.global_flags.quiet {
-        return Ok(AppRunResult {
-            exit_code: 0,
-            stdout: String::new(),
-            stderr: String::new(),
-        });
+        return Ok(AppRunResult { exit_code: 0, stdout: String::new(), stderr: String::new() });
     }
 
-    Ok(AppRunResult {
-        exit_code: 0,
-        stdout: content,
-        stderr: String::new(),
-    })
+    Ok(AppRunResult { exit_code: 0, stdout: content, stderr: String::new() })
 }

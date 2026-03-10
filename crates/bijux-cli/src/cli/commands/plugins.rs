@@ -66,10 +66,11 @@ pub(crate) fn try_handle(
             "compatibility_warnings": compatibility_warnings(plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
         }))),
         [a, b, c] if a == "cli" && b == "plugins" && c == "check" => {
-            let plugin = command_positionals(argv, &["cli", "plugins", "check"])
-                .first()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
+            let plugin =
+                command_positionals(argv, &["cli", "plugins", "check"])
+                    .first()
+                    .cloned()
+                    .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
             let record = inspect_plugin(plugin_registry_path, &plugin)?;
             let _ = validate_manifest(
                 record.manifest.clone(),
@@ -79,10 +80,7 @@ pub(crate) fn try_handle(
             if matches!(record.state, crate::routing::PluginLifecycleState::Disabled) {
                 anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
             }
-            if matches!(
-                record.manifest.kind,
-                crate::routing::PluginKind::ExternalExec
-            ) {
+            if matches!(record.manifest.kind, crate::routing::PluginKind::ExternalExec) {
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
@@ -102,21 +100,13 @@ pub(crate) fn try_handle(
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "scaffold" => {
             let positional = command_positionals(argv, &["cli", "plugins", "scaffold"]);
-            let kind = positional
-                .first()
-                .cloned()
-                .unwrap_or_else(|| "python".to_string());
-            let namespace = positional
-                .get(1)
-                .cloned()
-                .unwrap_or_else(|| "sample-plugin".to_string());
+            let kind = positional.first().cloned().unwrap_or_else(|| "python".to_string());
+            let namespace =
+                positional.get(1).cloned().unwrap_or_else(|| "sample-plugin".to_string());
             let force = command_has_flag(argv, "--force");
-            let target = command_option_value(argv, "--path")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| {
-                    env::current_dir()
-                        .unwrap_or_else(|_| PathBuf::from("."))
-                        .join(&namespace)
+            let target =
+                command_option_value(argv, "--path").map(PathBuf::from).unwrap_or_else(|| {
+                    env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(&namespace)
                 });
             let manifest = scaffold_plugin_layout(&target, &kind, &namespace, force)?;
             Ok(Some(json!({
@@ -147,11 +137,7 @@ pub(crate) fn try_handle(
             };
             let installed = install_plugin_manifest(
                 plugin_registry_path,
-                InstallPluginRequest {
-                    manifest_text,
-                    source,
-                    trust_level,
-                },
+                InstallPluginRequest { manifest_text, source, trust_level },
                 env!("CARGO_PKG_VERSION"),
             )?;
             Ok(Some(json!({
@@ -218,9 +204,7 @@ pub(crate) fn try_handle(
             "registry_file": plugin_registry_path,
         }))),
         [a, b, c] if a == "cli" && b == "plugins" && c == "explain" => {
-            let plugin = command_positionals(argv, &["cli", "plugins", "explain"])
-                .first()
-                .cloned();
+            let plugin = command_positionals(argv, &["cli", "plugins", "explain"]).first().cloned();
             let diagnostics =
                 load_time_diagnostics(plugin_registry_path, env!("CARGO_PKG_VERSION"))
                     .unwrap_or_default();

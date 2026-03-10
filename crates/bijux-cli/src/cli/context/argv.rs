@@ -7,10 +7,7 @@ pub(crate) fn command_option_value(argv: &[String], name: &str) -> Option<String
     if let Some(found) = argv.iter().find(|arg| arg.starts_with(&prefixed)) {
         return Some(found[prefixed.len()..].to_string());
     }
-    argv.iter()
-        .position(|arg| arg == name)
-        .and_then(|idx| argv.get(idx + 1))
-        .cloned()
+    argv.iter().position(|arg| arg == name).and_then(|idx| argv.get(idx + 1)).cloned()
 }
 
 /// Return true when the flag token is present in argv.
