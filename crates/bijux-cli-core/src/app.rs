@@ -978,7 +978,7 @@ fn route_response(
                 load_time_diagnostics(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
                     .unwrap_or_default();
             let report = plugin_doctor(&plugin_registry_path).ok();
-            let filtered: Vec<Value> = diagnostics
+            let mut filtered: Vec<Value> = diagnostics
                 .into_iter()
                 .filter(|d| plugin.as_ref().is_none_or(|wanted| d.namespace == *wanted))
                 .map(|diag| {
@@ -989,6 +989,15 @@ fn route_response(
                     })
                 })
                 .collect();
+            if let Some(requested) = &plugin {
+                if is_reserved_namespace(requested, &[]) {
+                    filtered.push(json!({
+                        "namespace": requested,
+                        "severity": "error",
+                        "message": format!("namespace is reserved: {requested}"),
+                    }));
+                }
+            }
             let summary = report
                 .map(|value| {
                     json!({

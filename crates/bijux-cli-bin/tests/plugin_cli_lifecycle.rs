@@ -518,3 +518,45 @@ fn plugin_doctor_self_repairs_corrupt_registry_file() {
     assert_eq!(doctor["self_repair_attempted"], true);
     assert_eq!(doctor["self_repair_success"], true);
 }
+
+#[test]
+fn reserved_namespace_rejections_emit_clear_machine_readable_errors() {
+    let root = tmp_dir("reserved-machine-errors");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let out = run(&["cli", "plugins", "scaffold", "python", "cli"], &plugins_dir);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+
+    let payload: Value = serde_json::from_slice(&out.stderr).expect("stderr json");
+    assert_eq!(payload["status"], "error");
+    assert_eq!(payload["code"], 1);
+    assert_eq!(payload["command"], "cli plugins scaffold");
+    assert!(payload["message"]
+        .as_str()
+        .expect("message")
+        .contains("plugin namespace is reserved: cli"));
+}
+
+#[test]
+fn reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces() {
+    let root = tmp_dir("reserved-output-stability");
+    let plugins_dir = root.join("plugins");
+    fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
+
+    let names = run_ok_json(&["cli", "plugins", "reserved-names"], &plugins_dir);
+    let reserved = names["reserved_namespaces"].as_array().expect("reserved array");
+    assert!(reserved.iter().any(|item| item == "cli"));
+    assert!(reserved.iter().any(|item| item == "dev"));
+    assert!(reserved.iter().any(|item| item == "help"));
+    assert!(reserved.iter().any(|item| item == "version"));
+    assert!(reserved.iter().any(|item| item == "doctor"));
+
+    let explain = run_ok_json(&["cli", "plugins", "explain", "cli"], &plugins_dir);
+    assert_eq!(explain["plugin"], "cli");
+    let diagnostics = explain["diagnostics"].as_array().expect("diagnostics");
+    assert!(diagnostics
+        .iter()
+        .any(|row| row["message"] == "namespace is reserved: cli"));
+}
