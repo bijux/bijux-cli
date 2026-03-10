@@ -1,6 +1,7 @@
 //! Top-level application entrypoint and route execution.
 
 use std::env;
+use std::process::Command;
 
 use crate::features::developer::runtime_query_adapter;
 use crate::interface::cli::handlers::{
@@ -9,6 +10,7 @@ use crate::interface::cli::handlers::{
 };
 use crate::interface::cli::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
+use crate::routing::known_bijux_tool;
 use crate::routing::registry::{RouteRegistry, RouteTarget};
 use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use anyhow::Result;
@@ -145,6 +147,62 @@ fn try_render_clap_help(argv: &[String]) -> Option<String> {
     }
 }
 
+fn delegate_to_external_binary(
+    binary: &str,
+    package_name: &str,
+    command_surface: &str,
+    forwarded_args: &[String],
+) -> AppRunResult {
+    match Command::new(binary).args(forwarded_args).output() {
+        Ok(output) => AppRunResult {
+            exit_code: output.status.code().unwrap_or(1),
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        },
+        Err(error) => {
+            let message = format!(
+                "failed to run `{command_surface}` via `{binary}`: {error}\ninstall with `cargo install {package_name}` or `pip install {package_name}`\n"
+            );
+            AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
+        }
+    }
+}
+
+fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunResult> {
+    let first = argv.get(1)?;
+
+    if let Some(tool) = known_bijux_tool(first) {
+        if tool.namespace == "atlas" && argv.len() == 2 {
+            return None;
+        }
+        let command_surface = format!("bijux {}", tool.namespace);
+        return Some(delegate_to_external_binary(
+            tool.runtime_binary,
+            tool.runtime_package,
+            &command_surface,
+            &argv[2..],
+        ));
+    }
+
+    if first == "dev" {
+        let tool_namespace = argv.get(2)?;
+        if tool_namespace == "cli" {
+            return None;
+        }
+        if let Some(tool) = known_bijux_tool(tool_namespace) {
+            let command_surface = format!("bijux dev {}", tool.namespace);
+            return Some(delegate_to_external_binary(
+                tool.control_binary,
+                tool.control_package,
+                &command_surface,
+                &argv[3..],
+            ));
+        }
+    }
+
+    None
+}
+
 /// Execute the CLI for provided argv and return output streams and exit code.
 pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
     if argv.len() == 1 {
@@ -166,6 +224,10 @@ pub fn run_app(argv: &[String]) -> Result<AppRunResult> {
 
     if let Some(help) = try_render_clap_help(argv) {
         return Ok(AppRunResult { exit_code: 0, stdout: help, stderr: String::new() });
+    }
+
+    if let Some(delegated) = try_delegate_known_bijux_tool(argv) {
+        return Ok(delegated);
     }
 
     let intent = parse_intent(argv)?;

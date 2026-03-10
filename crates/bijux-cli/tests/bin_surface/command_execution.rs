@@ -217,6 +217,38 @@ fn executes_dev_cli_namespace_commands() {
 }
 
 #[test]
+fn known_runtime_tool_surface_returns_install_hint_when_binary_is_missing() {
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(["rag", "status"])
+        .env("PATH", "")
+        .output()
+        .expect("binary should execute");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty(), "delegation failure must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
+    assert!(stderr.contains("bijux rag"));
+    assert!(stderr.contains("bijux-rag"));
+    assert!(stderr.contains("cargo install bijux-rag"));
+}
+
+#[test]
+fn known_dev_tool_surface_returns_install_hint_when_binary_is_missing() {
+    let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(["dev", "rag", "status"])
+        .env("PATH", "")
+        .output()
+        .expect("binary should execute");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty(), "delegation failure must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
+    assert!(stderr.contains("bijux dev rag"));
+    assert!(stderr.contains("bijux-dev-rag"));
+    assert!(stderr.contains("cargo install bijux-dev-rag"));
+}
+
+#[test]
 fn unsupported_config_set_input_returns_usage_error() {
     let output = run_raw(&["cli", "config", "set", "INVALID_PAIR"]);
     assert_eq!(output.status.code(), Some(2));
