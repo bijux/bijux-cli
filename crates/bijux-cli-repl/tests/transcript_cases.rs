@@ -292,11 +292,44 @@ fn completion_covers_grouped_cli_dev_and_partial_tokens() {
 #[test]
 fn reserved_namespace_collision_diagnostics_are_reported_in_session() {
     let (mut session, _) = startup_repl("default", None);
-    let frame =
-        execute_repl_line(&mut session, "cli unknown-subcommand").expect("command should execute");
+    let temp = std::env::temp_dir().join("bijux-repl-reserved-namespace");
+    let frame = execute_repl_line(
+        &mut session,
+        &format!(
+            "cli plugins scaffold python cli --path {}",
+            temp.display()
+        ),
+    )
+    .expect("command should execute");
     let failure = frame.expect("expected diagnostics frame");
     assert_eq!(failure.stream, bijux_cli_repl::ReplStream::Stderr);
-    assert!(failure.content.contains("Usage: bijux"));
+    assert!(failure.content.contains("reserved"));
+}
+
+#[test]
+fn repl_does_not_define_separate_semantics_for_common_commands() {
+    let (mut session, _) = startup_repl("default", None);
+    let commands = ["status", "doctor", "history"];
+
+    for command in commands {
+        let repl = execute_repl_line(&mut session, command).expect("repl command").expect("frame");
+        let repl_json: serde_json::Value = serde_json::from_str(&repl.content).expect("repl json");
+
+        let cli = run_app(&[
+            "bijux".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+            "--pretty".to_string(),
+            "--color".to_string(),
+            "never".to_string(),
+            "--log-level".to_string(),
+            "info".to_string(),
+            command.to_string(),
+        ])
+        .expect("cli run");
+        let cli_json: serde_json::Value = serde_json::from_str(&cli.stdout).expect("cli json");
+        assert_eq!(repl_json, cli_json, "semantic mismatch for command: {command}");
+    }
 }
 
 #[test]

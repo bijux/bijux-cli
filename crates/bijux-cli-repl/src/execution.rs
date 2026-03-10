@@ -94,15 +94,6 @@ fn handle_meta_command(session: &mut ReplSession, line: &str) -> Result<ReplEven
                 content: "ok\n".to_string(),
             })))
         }
-        "plugin" if tokens.len() >= 2 && tokens[1] == "reload" => {
-            if !session.plugin_reload_safe {
-                return Err(ReplError::PluginReloadUnsafe);
-            }
-            Ok(ReplEvent::Continue(Some(ReplFrame {
-                stream: ReplStream::Stdout,
-                content: "plugins reloaded\n".to_string(),
-            })))
-        }
         "exit" | "quit" => Ok(ReplEvent::Exit(None)),
         _ => Err(ReplError::InvalidMetaCommand(line.to_string())),
     }

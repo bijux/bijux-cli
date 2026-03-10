@@ -38,7 +38,6 @@ pub fn startup_repl(profile: &str, prompt: Option<&str>) -> (ReplSession, ReplSt
         pending_multiline: None,
         last_error: None,
         plugin_completion_hooks: BTreeMap::new(),
-        plugin_reload_safe: false,
     };
 
     let startup =

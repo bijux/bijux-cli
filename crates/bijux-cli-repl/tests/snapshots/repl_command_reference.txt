@@ -6,5 +6,4 @@ version
 :set trace on|off
 :set quiet on|off
 :set format json|yaml|text
-:plugin reload
 :exit

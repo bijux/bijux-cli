@@ -62,8 +62,6 @@ pub struct ReplSession {
     pub last_error: Option<String>,
     /// Plugin completion hooks by namespace.
     pub plugin_completion_hooks: BTreeMap<String, Vec<String>>,
-    /// Whether plugin reload command is allowed.
-    pub plugin_reload_safe: bool,
 }
 
 /// REPL emission stream.
@@ -136,7 +134,4 @@ pub enum ReplError {
     /// History replay index was invalid.
     #[error("history index out of bounds: {0}")]
     HistoryIndexOutOfBounds(usize),
-    /// Plugin reload is blocked by safety policy.
-    #[error("plugin reload is disabled by safety policy")]
-    PluginReloadUnsafe,
 }

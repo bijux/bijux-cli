@@ -99,7 +99,6 @@ pub fn repl_reference_commands() -> &'static [&'static str] {
         ":set trace on|off",
         ":set quiet on|off",
         ":set format json|yaml|text",
-        ":plugin reload",
         ":exit",
     ]
 }
