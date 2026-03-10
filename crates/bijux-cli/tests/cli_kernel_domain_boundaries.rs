@@ -97,3 +97,36 @@ fn cli_layer_does_not_depend_on_kernel_layer() {
 
     assert!(offenders.is_empty(), "cli layer must not import kernel layer: {offenders:?}");
 }
+
+#[test]
+fn feature_modules_do_not_depend_on_interface_layer() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/features");
+    let mut offenders = Vec::new();
+
+    for file in rs_files_under(&root) {
+        let source = fs::read_to_string(&file).expect("read source");
+        if source.contains("crate::interface::") {
+            offenders.push(file.display().to_string());
+        }
+    }
+
+    assert!(offenders.is_empty(), "feature modules must not import interface layer: {offenders:?}");
+}
+
+#[test]
+fn infrastructure_layer_does_not_depend_on_feature_layer() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/infrastructure");
+    let mut offenders = Vec::new();
+
+    for file in rs_files_under(&root) {
+        let source = fs::read_to_string(&file).expect("read source");
+        if source.contains("crate::features::") {
+            offenders.push(file.display().to_string());
+        }
+    }
+
+    assert!(
+        offenders.is_empty(),
+        "infrastructure adapters must not import feature modules: {offenders:?}"
+    );
+}
