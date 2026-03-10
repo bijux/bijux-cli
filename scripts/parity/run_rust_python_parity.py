@@ -127,7 +127,7 @@ def main() -> int:
         capture = captures[key]
         argv = capture["argv"]
         started = time.perf_counter()
-        proc = run_cmd(["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *argv[1:]])
+        proc = run_cmd(["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *argv[1:]])
         elapsed_ms = (time.perf_counter() - started) * 1000.0
 
         py_stdout = capture.get("stdout", "")
@@ -158,7 +158,7 @@ def main() -> int:
         )
 
     crate_checks = [
-        ("bin", ["cargo", "test", "-q", "-p", "bijux-cli-bin"]),
+        ("core-binary-surface", ["cargo", "test", "-q", "-p", "bijux-cli-core", "--test", "bin_surface"]),
         ("core", ["cargo", "test", "-q", "-p", "bijux-cli-core"]),
         ("output", ["cargo", "test", "-q", "-p", "bijux-cli-output", "--test", "python_parity"]),
         ("plugin", ["cargo", "test", "-q", "-p", "bijux-cli-plugin", "--test", "plugin_parity_read_paths"]),

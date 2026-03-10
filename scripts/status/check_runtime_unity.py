@@ -53,7 +53,7 @@ def check_python_bridge_has_no_separate_output_semantics() -> tuple[bool, str]:
 
 
 def check_bin_crate_logic_boundary() -> tuple[bool, str]:
-    main_rs = read_text(ROOT / "crates" / "bijux-cli-bin" / "src" / "main.rs")
+    main_rs = read_text(ROOT / "crates" / "bijux-cli-core" / "src" / "bin" / "bijux-rs.rs")
     core_rs = read_text(ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs")
     ok = (
         "bijux_cli_core::app::run_app" in main_rs

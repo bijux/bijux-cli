@@ -66,13 +66,13 @@ lint quality security api docs: | bootstrap
 .NOTPARALLEL:
 
 dev-cli-status:
-	@cargo run -q -p bijux-cli-bin -- dev cli status --text
+	@cargo run -q -p bijux-cli-core -- dev cli status --text
 
 dev-cli-crate-health:
-	@cargo run -q -p bijux-cli-bin -- dev cli crate-health --text
+	@cargo run -q -p bijux-cli-core -- dev cli crate-health --text
 
 dev-cli-parity:
-	@cargo run -q -p bijux-cli-bin -- dev cli parity --text
+	@cargo run -q -p bijux-cli-core -- dev cli parity --text
 
 # Utilities
 define run_tool
