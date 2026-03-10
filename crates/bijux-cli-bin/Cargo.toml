@@ -19,8 +19,8 @@ path = "src/lib.rs"
 bijux-cli-core = { path = "../bijux-cli-core", version = "0.1.0" }
 bijux-cli-routing = { path = "../bijux-cli-routing", version = "0.1.0" }
 bijux-cli-install = { path = "../bijux-cli-install", version = "0.1.0" }
-bijux-cli-output = { path = "../bijux-cli-output", version = "0.1.0" }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 shlex = "1.3.0"
 thiserror = { workspace = true }
 

@@ -3,6 +3,17 @@ use std::path::PathBuf;
 
 use bijux_cli_routing::ExecutionPolicy;
 
+/// Output encoding failure surfaced during REPL emission.
+#[derive(Debug, thiserror::Error)]
+pub enum EmitError {
+    /// JSON serialization failed.
+    #[error("json serialization failed: {0}")]
+    Json(#[from] serde_json::Error),
+    /// YAML serialization failed.
+    #[error("yaml serialization failed: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+}
+
 /// REPL startup latency budget in milliseconds.
 pub const REPL_STARTUP_LATENCY_BUDGET_MS: u128 = 50;
 /// REPL memory budget in bytes.
@@ -121,7 +132,7 @@ pub enum ReplError {
     Core(String),
     /// Output encoding failed.
     #[error(transparent)]
-    Emit(#[from] bijux_cli_output::EmitError),
+    Emit(#[from] EmitError),
     /// History serialization failed.
     #[error(transparent)]
     Json(#[from] serde_json::Error),

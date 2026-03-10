@@ -7,7 +7,6 @@ use std::process::ExitCode;
 
 use bijux_cli_core::kernel::map_error_category_to_exit;
 use bijux_cli_install as _;
-use bijux_cli_output as _;
 use bijux_cli_repl as _;
 use bijux_cli_routing as _;
 use serde_json as _;

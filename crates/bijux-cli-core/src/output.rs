@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Output encoding and envelope rendering surfaces.
+//! Output encoding and envelope rendering surfaces for core app execution.
 
 use bijux_cli_routing::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
 use serde_json::Value;
@@ -68,10 +68,7 @@ fn should_emit_color(cfg: EmitterConfig) -> bool {
         return false;
     }
 
-    match cfg.color {
-        ColorMode::Never => false,
-        _ => true,
-    }
+    !matches!(cfg.color, ColorMode::Never)
 }
 
 fn colorize_error(s: &str, cfg: EmitterConfig) -> String {
@@ -126,7 +123,10 @@ pub fn emit_success(
     let value = serde_json::to_value(envelope)?;
     let content = with_trailing_newline(render_value(&value, cfg)?);
 
-    Ok(Some(RenderedOutput { stream: OutputStream::Stdout, content }))
+    Ok(Some(RenderedOutput {
+        stream: OutputStream::Stdout,
+        content,
+    }))
 }
 
 /// Render error envelope to stderr (never suppressed by quiet mode).
@@ -143,10 +143,8 @@ pub fn emit_error(
         }
         _ => with_trailing_newline(render_value(&value, cfg)?),
     };
-    Ok(RenderedOutput { stream: OutputStream::Stderr, content: with_trailing_newline(content) })
+    Ok(RenderedOutput {
+        stream: OutputStream::Stderr,
+        content: with_trailing_newline(content),
+    })
 }
-
-#[cfg(test)]
-use bijux_cli_core as _;
-#[cfg(test)]
-use serde as _;

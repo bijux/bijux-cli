@@ -5,7 +5,6 @@ members = [
   "crates/bijux-cli-bin",
   "crates/bijux-cli-core",
   "crates/bijux-cli-routing",
-  "crates/bijux-cli-output",
   "crates/bijux-cli-plugin",
   "crates/bijux-cli-python",
   "crates/bijux-cli-install",

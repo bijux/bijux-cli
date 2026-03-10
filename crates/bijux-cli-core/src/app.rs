@@ -15,7 +15,6 @@ use bijux_cli_install::{
     CompatibilityPaths, InstallHealthReport, PackageChannel, PathOverrides, ENV_CONFIG_PATH,
     ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
-use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
@@ -43,6 +42,7 @@ use serde_json::{json, Value};
 use crate::argv::command_positionals;
 use crate::config::execute_config_command;
 use crate::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::output::{render_value, EmitterConfig};
 use crate::query::state_diagnostics_query;
 
 /// In-memory process output and exit result produced by the core app runner.

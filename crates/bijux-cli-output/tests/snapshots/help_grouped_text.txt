@@ -1,5 +1,0 @@
-Usage: bijux-rs cli [OPTIONS] [COMMAND]
-
-Commands:
-  status
-  paths
