@@ -70,6 +70,26 @@ def main() -> int:
     files = inventory.get("state_files", []) if isinstance(inventory, dict) else []
     if len(files) < 4:
         failures.append("state inventory has fewer than four files, likely incomplete")
+    complexity = read_json(STATUS / "state_complexity_report.json")
+    if not complexity.get("hotspots"):
+        failures.append("state complexity report is missing hotspots")
+    if complexity.get("summary", {}).get("mutation_matches", 0) <= 0:
+        failures.append("state complexity report has zero mutation matches")
+
+    unified_payload = read_json(STATUS / "unified_state_audit_payload.json")
+    for key in (
+        "behavior_report",
+        "corruption_report",
+        "rollback_report",
+        "path_resolution_report",
+        "doctor_snapshots",
+    ):
+        if key not in unified_payload:
+            failures.append(f"unified state audit payload missing key: {key}")
+
+    doctor_snapshots = read_json(STATUS / "unified_state_doctor_snapshots.json")
+    if len(doctor_snapshots.get("snapshots", [])) < 2:
+        failures.append("state doctor snapshot set is incomplete")
 
     for failure in failures:
         print(f"STATE LAW FAILURE: {failure}")
