@@ -6,7 +6,7 @@ use std::path::Path;
 use anyhow::Result;
 use serde_json::{json, Value};
 
-use crate::features::install::atomic_write_text;
+use crate::infrastructure::fs_store::atomic_write_text;
 
 fn history_entry_from_command(command: &str) -> Value {
     json!({

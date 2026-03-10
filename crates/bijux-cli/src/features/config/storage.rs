@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-use crate::features::install::atomic_write_text;
+use crate::infrastructure::fs_store::atomic_write_text;
 
 use super::error::ConfigError;
 use super::serialization::{decode_quoted_value, render_env};
@@ -46,8 +46,7 @@ impl ConfigRepository for FileConfigRepository {
 
     fn save(&self, path: &Path, values: &BTreeMap<String, String>) -> Result<(), ConfigError> {
         let rendered = render_env(values);
-        atomic_write_text(path, &rendered)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+        atomic_write_text(path, &rendered).map_err(|err| ConfigError::persistence(err.to_string()))?;
         Ok(())
     }
 
