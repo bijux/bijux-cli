@@ -61,6 +61,13 @@ Install-neutrality claims require:
 `artifacts/status/install_state_assumptions_report.json`, and
 `artifacts/status/package_health_report.json`.
 
+## Performance Budget Freeze
+Performance claims require:
+`artifacts/status/performance_report.json`,
+`artifacts/status/performance_regression_budget.json`, and
+`artifacts/status/performance_benchmark_policy.json`.
+Only critical-path command regressions are release-gated.
+
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
 
