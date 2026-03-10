@@ -1,0 +1,12 @@
+{
+  "name": "meta",
+  "version": "1.0.0",
+  "schema_version": "1",
+  "manifest_version": "1",
+  "compatibility": {"min_inclusive":"0.1.0","max_exclusive":"2.0.0"},
+  "namespace": "meta",
+  "kind": "delegated",
+  "aliases": ["dupe", "DUPE"],
+  "entrypoint": "meta.plugin:run",
+  "capabilities": [{"name":"exec","version":"1"}]
+}

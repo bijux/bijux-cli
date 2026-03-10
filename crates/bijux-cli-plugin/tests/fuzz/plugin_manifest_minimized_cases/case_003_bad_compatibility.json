@@ -1,0 +1,12 @@
+{
+  "name": "compat",
+  "version": "1.0.0",
+  "schema_version": "1",
+  "manifest_version": "1",
+  "compatibility": {"min_inclusive":"not-semver","max_exclusive":"2.0.0"},
+  "namespace": "compat",
+  "kind": "delegated",
+  "aliases": [],
+  "entrypoint": "compat.plugin:run",
+  "capabilities": [{"name":"exec","version":"1"}]
+}

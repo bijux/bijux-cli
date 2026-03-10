@@ -1,0 +1,8 @@
+cli
+plugins
+scaffold
+rust
+replayrs
+--path
+{ROOT}/replayrs
+--force
