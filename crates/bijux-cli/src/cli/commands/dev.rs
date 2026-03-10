@@ -7,7 +7,10 @@ use serde_json::{json, Value};
 
 use crate::plugin::{list_plugins, FUTURE_PRODUCT_NAMESPACES};
 
-pub(crate) fn try_handle(normalized_path: &[String], plugin_registry_path: &Path) -> Result<Option<Value>> {
+pub(crate) fn try_handle(
+    normalized_path: &[String],
+    plugin_registry_path: &Path,
+) -> Result<Option<Value>> {
     match normalized_path {
         [a] if a == "dev" => Ok(Some(json!({
             "status": "ok",

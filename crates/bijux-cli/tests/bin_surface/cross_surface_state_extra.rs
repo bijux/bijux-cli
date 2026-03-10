@@ -15,7 +15,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -61,11 +64,23 @@ fn config_mutations_are_visible_across_binary_bridge_and_repl_reads() {
     fs::write(&config, "BIJUXCLI_SHARED_KEY=seed\n").expect("seed config");
     let config_text = config.to_string_lossy().to_string();
 
-    let set_bin =
-        run(&["cli", "config", "set", "shared_key=from-binary", "--config-path", &config_text]);
+    let set_bin = run(&[
+        "cli",
+        "config",
+        "set",
+        "shared_key=from-binary",
+        "--config-path",
+        &config_text,
+    ]);
     assert_eq!(set_bin.status.code(), Some(0));
-    let read_bridge =
-        bridge_json(&["cli", "config", "get", "shared_key", "--config-path", &config_text]);
+    let read_bridge = bridge_json(&[
+        "cli",
+        "config",
+        "get",
+        "shared_key",
+        "--config-path",
+        &config_text,
+    ]);
     assert_eq!(read_bridge["value"], "from-binary");
 
     let read_bin = run(&[
@@ -85,7 +100,13 @@ fn config_mutations_are_visible_across_binary_bridge_and_repl_reads() {
 
 #[test]
 fn plugins_history_memory_and_paths_views_are_consistent_across_binary_and_bridge() {
-    let plugins_bin = json_stdout(&run(&["plugins", "list", "--format", "json", "--no-pretty"]));
+    let plugins_bin = json_stdout(&run(&[
+        "plugins",
+        "list",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]));
     let plugins_bridge = bridge_json(&["plugins", "list", "--format", "json", "--no-pretty"]);
     assert_eq!(plugins_bin["plugins"], plugins_bridge["plugins"]);
 
@@ -97,12 +118,30 @@ fn plugins_history_memory_and_paths_views_are_consistent_across_binary_and_bridg
     let memory_bridge = bridge_json(&["memory", "--format", "json", "--no-pretty"]);
     assert_eq!(memory_bin, memory_bridge);
 
-    let runtime_bin =
-        json_stdout(&run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]));
-    let runtime_bridge =
-        bridge_json(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]);
-    assert_eq!(runtime_bin["active_binary"], runtime_bridge["active_binary"]);
-    assert_eq!(runtime_bin["path_binaries"], runtime_bridge["path_binaries"]);
+    let runtime_bin = json_stdout(&run(&[
+        "dev",
+        "cli",
+        "runtime-identity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]));
+    let runtime_bridge = bridge_json(&[
+        "dev",
+        "cli",
+        "runtime-identity",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    assert_eq!(
+        runtime_bin["active_binary"],
+        runtime_bridge["active_binary"]
+    );
+    assert_eq!(
+        runtime_bin["path_binaries"],
+        runtime_bridge["path_binaries"]
+    );
 
     let paths_bin = json_stdout(&run(&["cli", "paths", "--format", "json", "--no-pretty"]));
     let paths_bridge = bridge_json(&["cli", "paths", "--format", "json", "--no-pretty"]);
@@ -171,7 +210,14 @@ fn doctor_and_state_doctor_agree_on_corruption_classes_across_config_plugins_his
         ],
     );
     let state_doctor = run_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+        &[
+            "dev",
+            "cli",
+            "state-doctor",
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &[
             ("BIJUXCLI_CONFIG", &config_s),
             ("BIJUXCLI_PLUGINS_DIR", &plugins_s),
@@ -187,8 +233,10 @@ fn doctor_and_state_doctor_agree_on_corruption_classes_across_config_plugins_his
 
     assert!(doctor_json["install"].is_object());
     let issues = state_json["doctor"]["issues"].as_array().expect("issues");
-    let areas =
-        issues.iter().filter_map(|row| row.get("area").and_then(Value::as_str)).collect::<Vec<_>>();
+    let areas = issues
+        .iter()
+        .filter_map(|row| row.get("area").and_then(Value::as_str))
+        .collect::<Vec<_>>();
     assert!(areas.iter().any(|v| *v == "config"));
     assert!(areas.iter().any(|v| *v == "plugins"));
     assert!(areas.iter().any(|v| *v == "history"));

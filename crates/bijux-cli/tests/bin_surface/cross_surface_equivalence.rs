@@ -6,9 +6,9 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli::app::{run_app, AppRunResult};
+use bijux_cli::repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput, ReplStream};
 use bijux_cli_python as _;
 use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
-use bijux_cli::repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput, ReplStream};
 use libc as _;
 use libc as _;
 use serde_json::Value;
@@ -16,7 +16,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run_binary(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_core_cmd(args: &[&str]) -> AppRunResult {
@@ -118,36 +121,72 @@ fn binary_vs_direct_core_config_get_result_matches() {
 fn binary_vs_python_bridge_version_result_matches() {
     let bin = run_binary(&["version"]);
     let bridge = bridge_outcome(&["version"]);
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
 }
 
 #[test]
 fn binary_vs_python_bridge_status_result_matches() {
     let bin = run_binary(&["status"]);
     let bridge = bridge_outcome(&["status"]);
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
 }
 
 #[test]
 fn binary_vs_python_bridge_doctor_result_matches() {
     let bin = run_binary(&["doctor"]);
     let bridge = bridge_outcome(&["doctor"]);
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
 }
 
 #[test]
 fn binary_vs_python_bridge_plugins_list_result_matches() {
     let bin = run_binary(&["plugins", "list"]);
     let bridge = bridge_outcome(&["plugins", "list"]);
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
 }
 
 #[test]
@@ -160,9 +199,18 @@ fn binary_vs_python_bridge_config_get_result_matches() {
     let bin = run_binary(&["--config-path", &config_text, "config", "get", "sample_key"]);
     let bridge = bridge_outcome(&["--config-path", &config_text, "config", "get", "sample_key"]);
 
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
 
     let _ = fs::remove_dir_all(root);
 }
@@ -208,13 +256,25 @@ fn binary_vs_python_bridge_namespace_rejection_behavior_matches() {
     let plugin_path = root.join("plugin-out");
     let path_text = plugin_path.to_string_lossy().to_string();
 
-    let bin = run_binary(&["cli", "plugins", "scaffold", "python", "cli", "--path", &path_text]);
-    let bridge =
-        bridge_outcome(&["cli", "plugins", "scaffold", "python", "cli", "--path", &path_text]);
+    let bin = run_binary(&[
+        "cli", "plugins", "scaffold", "python", "cli", "--path", &path_text,
+    ]);
+    let bridge = bridge_outcome(&[
+        "cli", "plugins", "scaffold", "python", "cli", "--path", &path_text,
+    ]);
 
-    assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
-    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));
-    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stderr));
+    assert_eq!(
+        bridge["exit_code"].as_i64(),
+        Some(i64::from(bin.status.code().unwrap_or(-1)))
+    );
+    assert_eq!(
+        bridge["stdout"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stdout)
+    );
+    assert_eq!(
+        bridge["stderr"].as_str().unwrap_or_default(),
+        String::from_utf8_lossy(&bin.stderr)
+    );
     assert!(String::from_utf8_lossy(&bin.stderr).contains("plugin namespace is reserved: cli"));
 
     let _ = fs::remove_dir_all(root);
@@ -255,15 +315,27 @@ fn binary_vs_python_bridge_stdout_stderr_discipline_matches() {
     assert!(success_bin.status.success());
     assert!(!success_bin.stdout.is_empty());
     assert!(success_bin.stderr.is_empty());
-    assert!(!success_bridge["stdout"].as_str().unwrap_or_default().is_empty());
-    assert!(success_bridge["stderr"].as_str().unwrap_or_default().is_empty());
+    assert!(!success_bridge["stdout"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
+    assert!(success_bridge["stderr"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
 
     let fail_bin = run_binary(&["unknown-command"]);
     let fail_bridge = bridge_outcome(&["unknown-command"]);
     assert!(fail_bin.stdout.is_empty());
     assert!(!fail_bin.stderr.is_empty());
-    assert!(fail_bridge["stdout"].as_str().unwrap_or_default().is_empty());
-    assert!(!fail_bridge["stderr"].as_str().unwrap_or_default().is_empty());
+    assert!(fail_bridge["stdout"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
+    assert!(!fail_bridge["stderr"]
+        .as_str()
+        .unwrap_or_default()
+        .is_empty());
 }
 
 #[test]

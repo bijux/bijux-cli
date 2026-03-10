@@ -21,7 +21,10 @@ fn run(args: &[&str]) -> String {
 }
 
 fn run_raw(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], key: &str, value: &str) -> String {
@@ -65,7 +68,10 @@ fn executes_root_commands() {
         let payload: serde_json::Value =
             serde_json::from_str(&stdout).expect("root command must emit valid json");
         if args == vec!["config"] {
-            assert!(payload.is_object(), "config root should return object payload");
+            assert!(
+                payload.is_object(),
+                "config root should return object payload"
+            );
             continue;
         }
         assert!(
@@ -116,7 +122,9 @@ fn cli_doctor_reports_install_diagnostics() {
     assert!(install.get("has_duplicate_installs").is_some());
     assert!(install.get("stale_wrapper_scripts").is_some());
     assert!(install.get("legacy_installer_conflicts").is_some());
-    assert!(install.get("has_mismatched_wheel_binary_versions").is_some());
+    assert!(install
+        .get("has_mismatched_wheel_binary_versions")
+        .is_some());
 }
 
 #[test]
@@ -132,36 +140,76 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "plugin-health"], "machine_report"),
         (vec!["dev", "cli", "status"], "current_rust_state"),
         (vec!["dev", "cli", "script-audit"], "scripts"),
-        (vec!["dev", "cli", "scripts", "remaining"], "remaining_root_scripts"),
+        (
+            vec!["dev", "cli", "scripts", "remaining"],
+            "remaining_root_scripts",
+        ),
         (vec!["dev", "cli", "scripts", "migrated"], "migrated"),
         (vec!["dev", "cli", "scripts", "diff"], "remaining"),
         (vec!["dev", "cli", "scripts", "audit"], "migrated"),
         (vec!["dev", "cli", "scripts", "package-metadata"], "status"),
         (vec!["dev", "cli", "scripts", "e2e-contract"], "status"),
         (vec!["dev", "cli", "scripts", "pip-audit"], "status"),
-        (vec!["dev", "cli", "scripts", "capture-python-behavior"], "status"),
+        (
+            vec!["dev", "cli", "scripts", "capture-python-behavior"],
+            "status",
+        ),
         (vec!["dev", "cli", "rustdoc", "audit"], "coverage"),
         (vec!["dev", "cli", "rustdoc", "coverage"], "coverage"),
-        (vec!["dev", "cli", "rustdoc", "broken-links"], "broken_links"),
-        (vec!["dev", "cli", "rustdoc", "public-api"], "missing_public_docs"),
+        (
+            vec!["dev", "cli", "rustdoc", "broken-links"],
+            "broken_links",
+        ),
+        (
+            vec!["dev", "cli", "rustdoc", "public-api"],
+            "missing_public_docs",
+        ),
         (vec!["dev", "cli", "rustdoc", "examples"], "example_sources"),
-        (vec!["dev", "cli", "release", "status"], "release_status_manifest"),
+        (
+            vec!["dev", "cli", "release", "status"],
+            "release_status_manifest",
+        ),
         (vec!["dev", "cli", "release", "evidence"], "bundle"),
         (vec!["dev", "cli", "release", "readiness"], "release_ready"),
         (vec!["dev", "cli", "release", "diff"], "done"),
         (vec!["dev", "cli", "release", "gaps"], "missing_evidence"),
-        (vec!["dev", "cli", "release", "behavior-changes"], "commands"),
-        (vec!["dev", "cli", "release", "intentional-differences"], "items"),
+        (
+            vec!["dev", "cli", "release", "behavior-changes"],
+            "commands",
+        ),
+        (
+            vec!["dev", "cli", "release", "intentional-differences"],
+            "items",
+        ),
         (vec!["dev", "cli", "release", "unresolved-gaps"], "items"),
-        (vec!["dev", "cli", "release", "compatibility-leftovers"], "series"),
+        (
+            vec!["dev", "cli", "release", "compatibility-leftovers"],
+            "series",
+        ),
         (vec!["dev", "cli", "evidence", "list"], "records"),
-        (vec!["dev", "cli", "evidence", "show", "--id", "EVIDENCE-1001-RELEASE-TRUTH"], "found"),
+        (
+            vec![
+                "dev",
+                "cli",
+                "evidence",
+                "show",
+                "--id",
+                "EVIDENCE-1001-RELEASE-TRUTH",
+            ],
+            "found",
+        ),
         (vec!["dev", "cli", "evidence", "audit"], "status"),
         (vec!["dev", "cli", "evidence", "stale"], "stale"),
         (vec!["dev", "cli", "evidence", "matrix"], "status_matrix"),
-        (vec!["dev", "cli", "evidence", "website-export"], "website_export"),
+        (
+            vec!["dev", "cli", "evidence", "website-export"],
+            "website_export",
+        ),
         (vec!["dev", "cli", "evidence", "ci-export"], "ci_export"),
-        (vec!["dev", "cli", "evidence", "release-export"], "release_export"),
+        (
+            vec!["dev", "cli", "evidence", "release-export"],
+            "release_export",
+        ),
         (vec!["dev", "cli", "evidence", "command-map"], "command_map"),
         (vec!["dev", "cli", "evidence", "parity-map"], "parity_map"),
         (vec!["dev", "cli", "config", "rust-owner"], "rust_owner"),
@@ -170,15 +218,33 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "config", "drift"], "drift"),
         (vec!["dev", "cli", "config", "shape"], "schemas"),
         (vec!["dev", "cli", "config", "evidence-map"], "evidence_ids"),
-        (vec!["dev", "cli", "python", "bridge-status"], "bridge_status"),
-        (vec!["dev", "cli", "python", "surface-status"], "surface_status"),
-        (vec!["dev", "cli", "python", "sovereignty-audit"], "python_sovereignty_audit"),
+        (
+            vec!["dev", "cli", "python", "bridge-status"],
+            "bridge_status",
+        ),
+        (
+            vec!["dev", "cli", "python", "surface-status"],
+            "surface_status",
+        ),
+        (
+            vec!["dev", "cli", "python", "sovereignty-audit"],
+            "python_sovereignty_audit",
+        ),
         (vec!["dev", "cli", "python", "drift"], "drift"),
         (vec!["dev", "cli", "python", "packaging"], "packaging"),
         (vec!["dev", "cli", "repo", "health"], "repo_health"),
-        (vec!["dev", "cli", "repo", "drift"], "dead_scripts_references"),
-        (vec!["dev", "cli", "repo", "inventories"], "stale_inventories"),
-        (vec!["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
+        (
+            vec!["dev", "cli", "repo", "drift"],
+            "dead_scripts_references",
+        ),
+        (
+            vec!["dev", "cli", "repo", "inventories"],
+            "stale_inventories",
+        ),
+        (
+            vec!["dev", "cli", "repo", "generated"],
+            "stale_generated_artifacts",
+        ),
         (vec!["dev", "cli", "repo", "stale"], "stale_snapshots"),
         (vec!["dev", "cli", "dashboard"], "dashboard"),
         (vec!["dev", "cli", "quickcheck"], "quickcheck"),
@@ -188,7 +254,10 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "snapshots-audit"], "snapshots"),
         (vec!["dev", "cli", "fixture-audit"], "parity_fixtures"),
         (vec!["dev", "cli", "crate-health"], "crate_metrics"),
-        (vec!["dev", "cli", "package-health"], "install_state_assumptions"),
+        (
+            vec!["dev", "cli", "package-health"],
+            "install_state_assumptions",
+        ),
         (vec!["dev", "cli", "env"], "source_precedence"),
         (vec!["dev", "cli", "doctor"], "issues"),
         (vec!["dev", "cli", "contracts"], "contracts"),
@@ -217,7 +286,10 @@ fn unsupported_config_set_input_returns_usage_error() {
     let output = run_raw(&["cli", "config", "set", "INVALID_PAIR"]);
     assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
-    assert!(stderr.contains("Invalid argument"), "unexpected stderr: {stderr}");
+    assert!(
+        stderr.contains("Invalid argument"),
+        "unexpected stderr: {stderr}"
+    );
 }
 
 #[test]
@@ -248,8 +320,11 @@ fn runtime_identity_reports_ambiguous_active_binary_selection() {
 
 #[test]
 fn runtime_identity_reports_python_bridge_support_diagnostic() {
-    let stdout =
-        run_with_env(&["dev", "cli", "runtime-identity"], "BIJUX_PYTHON_BRIDGE_SUPPORTED", "0");
+    let stdout = run_with_env(
+        &["dev", "cli", "runtime-identity"],
+        "BIJUX_PYTHON_BRIDGE_SUPPORTED",
+        "0",
+    );
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
 }
@@ -282,7 +357,10 @@ fn scripts_provenance_statement_generates_output_file() {
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
     let file = payload["file"].as_str().expect("file path");
-    assert!(std::path::Path::new(file).exists(), "provenance file should exist");
+    assert!(
+        std::path::Path::new(file).exists(),
+        "provenance file should exist"
+    );
     fs::remove_dir_all(&temp).expect("cleanup temp");
 }
 
@@ -292,9 +370,18 @@ fn dev_cli_status_is_deterministic_across_repeated_runs() {
     let second = run(&["dev", "cli", "status", "--format", "json", "--no-pretty"]);
     let first_payload: serde_json::Value = serde_json::from_str(&first).expect("valid json");
     let second_payload: serde_json::Value = serde_json::from_str(&second).expect("valid json");
-    assert_eq!(first_payload["next_phase_priorities"], second_payload["next_phase_priorities"]);
-    assert_eq!(first_payload["next_phase_summary_text"], second_payload["next_phase_summary_text"]);
-    assert_eq!(first_payload["command_migration"], second_payload["command_migration"]);
+    assert_eq!(
+        first_payload["next_phase_priorities"],
+        second_payload["next_phase_priorities"]
+    );
+    assert_eq!(
+        first_payload["next_phase_summary_text"],
+        second_payload["next_phase_summary_text"]
+    );
+    assert_eq!(
+        first_payload["command_migration"],
+        second_payload["command_migration"]
+    );
 }
 
 #[test]

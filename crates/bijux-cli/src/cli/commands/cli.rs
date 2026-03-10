@@ -92,12 +92,14 @@ pub(crate) fn try_handle(
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
-            let hint = install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
-                || {
+            let hint = install_report
+                .active_binary
+                .as_deref()
+                .map(post_install_hint)
+                .unwrap_or_else(|| {
                     "Run `bijux version` and `bijux cli doctor` to verify your environment."
                         .to_string()
-                },
-            );
+                });
             Some(json!({
                 "config": paths.config_file,
                 "history": paths.history_file,

@@ -13,7 +13,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -26,8 +29,10 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("bijux-precedence-matrix-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-precedence-matrix-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -60,8 +65,18 @@ fn cli_flags_override_env_values() {
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
     let out = run_with_env(
-        &["cli", "config", "get", "alpha", "--config-path", config.to_str().expect("utf-8")],
-        &[("BIJUXCLI_ALPHA", "env"), ("BIJUXCLI_CONFIG", "/should/not/win")],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--config-path",
+            config.to_str().expect("utf-8"),
+        ],
+        &[
+            ("BIJUXCLI_ALPHA", "env"),
+            ("BIJUXCLI_CONFIG", "/should/not/win"),
+        ],
     );
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
@@ -76,7 +91,14 @@ fn env_values_override_config_file_values() {
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
     let out = run_with_env(
-        &["cli", "config", "get", "alpha", "--config-path", config.to_str().expect("utf-8")],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--config-path",
+            config.to_str().expect("utf-8"),
+        ],
         &[("BIJUXCLI_ALPHA", "env")],
     );
     assert_eq!(out.status.code(), Some(0));
@@ -90,8 +112,14 @@ fn config_file_values_override_defaults() {
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
-    let out =
-        run(&["cli", "config", "get", "alpha", "--config-path", config.to_str().expect("utf-8")]);
+    let out = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--config-path",
+        config.to_str().expect("utf-8"),
+    ]);
     assert_eq!(out.status.code(), Some(0));
     let payload: Value = serde_json::from_slice(&out.stdout).expect("stdout json");
     assert_eq!(payload["value"], "config");
@@ -114,7 +142,14 @@ fn explicit_config_path_overrides_default_config_path() {
     fs::write(&path_b, "BIJUXCLI_ALPHA=from_b\n").expect("write b");
 
     let out = run_with_env(
-        &["cli", "config", "get", "alpha", "--config-path", path_b.to_str().expect("utf-8")],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--config-path",
+            path_b.to_str().expect("utf-8"),
+        ],
         &[("BIJUXCLI_CONFIG", path_a.to_str().expect("utf-8"))],
     );
     assert_eq!(out.status.code(), Some(0));
@@ -131,7 +166,14 @@ fn explicit_config_path_overrides_env_config_path() {
     fs::write(&arg_path, "BIJUXCLI_ALPHA=from_arg_path\n").expect("write arg path");
 
     let out = run_with_env(
-        &["cli", "config", "get", "alpha", "--config-path", arg_path.to_str().expect("utf-8")],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--config-path",
+            arg_path.to_str().expect("utf-8"),
+        ],
         &[("BIJUXCLI_CONFIG", env_path.to_str().expect("utf-8"))],
     );
     assert_eq!(out.status.code(), Some(0));
@@ -160,7 +202,14 @@ fn quiet_mode_does_not_change_command_success_semantics() {
 #[test]
 fn trace_mode_does_not_change_command_result_semantics() {
     let base = run(&["inspect", "--format", "json", "--no-pretty"]);
-    let traced = run(&["--log-level", "trace", "inspect", "--format", "json", "--no-pretty"]);
+    let traced = run(&[
+        "--log-level",
+        "trace",
+        "inspect",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(base.status.code(), Some(0));
     assert_eq!(traced.status.code(), Some(0));
     assert_eq!(base.stdout, traced.stdout);
@@ -202,8 +251,24 @@ fn color_affects_only_text_rendering() {
 
 #[test]
 fn json_mode_ignores_color_settings_functionally() {
-    let always = run(&["--color", "always", "--format", "json", "--no-pretty", "cli", "status"]);
-    let never = run(&["--color", "never", "--format", "json", "--no-pretty", "cli", "status"]);
+    let always = run(&[
+        "--color",
+        "always",
+        "--format",
+        "json",
+        "--no-pretty",
+        "cli",
+        "status",
+    ]);
+    let never = run(&[
+        "--color",
+        "never",
+        "--format",
+        "json",
+        "--no-pretty",
+        "cli",
+        "status",
+    ]);
     assert_eq!(always.status.code(), Some(0));
     assert_eq!(never.status.code(), Some(0));
     assert_eq!(always.stdout, never.stdout);
@@ -233,7 +298,14 @@ fn help_fast_path_honors_safe_output_policy() {
 #[test]
 fn version_fast_path_is_stable_under_irrelevant_flags() {
     let base = run(&["version", "--format", "json", "--no-pretty"]);
-    let variant = run(&["--color", "always", "version", "--format", "json", "--no-pretty"]);
+    let variant = run(&[
+        "--color",
+        "always",
+        "version",
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(base.status.code(), Some(0));
     assert_eq!(variant.status.code(), Some(0));
     assert_eq!(base.stdout, variant.stdout);

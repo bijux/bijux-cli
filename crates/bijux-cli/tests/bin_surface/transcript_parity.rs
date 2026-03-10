@@ -26,11 +26,17 @@ fn transcript_regression_matches_expected_flow() {
     let (mut session, _) = startup_repl("default", None);
 
     let events = vec![
-        execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
-            .expect("set format"),
+        execute_repl_input(
+            &mut session,
+            ReplInput::Line(":set format json".to_string()),
+        )
+        .expect("set format"),
         execute_repl_input(&mut session, ReplInput::Line("status".to_string())).expect("status"),
-        execute_repl_input(&mut session, ReplInput::Line("community inspect".to_string()))
-            .expect("plugin route"),
+        execute_repl_input(
+            &mut session,
+            ReplInput::Line("community inspect".to_string()),
+        )
+        .expect("plugin route"),
     ];
 
     assert!(matches!(events[0], ReplEvent::Continue(Some(_))));
@@ -64,8 +70,11 @@ fn interrupt_during_plugin_execution_is_safe() {
 #[test]
 fn malformed_input_sets_last_error_and_continues_session() {
     let (mut session, _) = startup_repl("default", None);
-    let err = execute_repl_input(&mut session, ReplInput::Line(":unknown-command".to_string()))
-        .expect_err("invalid meta command should fail");
+    let err = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":unknown-command".to_string()),
+    )
+    .expect_err("invalid meta command should fail");
     assert!(err.to_string().contains("invalid repl command"));
     assert!(inspect_last_error(&session).is_some());
 }
@@ -74,8 +83,11 @@ fn malformed_input_sets_last_error_and_continues_session() {
 fn large_history_files_load_with_cap() {
     let path = temp_history_path("large-history");
     let large: Vec<String> = (0..5_000).map(|i| format!("status {i}")).collect();
-    fs::write(&path, format!("{}\n", serde_json::to_string(&large).expect("serialize")))
-        .expect("write history");
+    fs::write(
+        &path,
+        format!("{}\n", serde_json::to_string(&large).expect("serialize")),
+    )
+    .expect("write history");
 
     let (mut session, _) = startup_repl("default", None);
     configure_history(&mut session, Some(path.clone()), true, 128);
@@ -92,7 +104,10 @@ fn completion_rendering_and_history_replay_work() {
     register_plugin_completion_hook(
         &mut session,
         "community",
-        vec!["community status".to_string(), "community inspect".to_string()],
+        vec![
+            "community status".to_string(),
+            "community inspect".to_string(),
+        ],
     );
     let suggestions = completion_candidates(&session, "community");
     assert!(suggestions.iter().any(|s| s == "community"));

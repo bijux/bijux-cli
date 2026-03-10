@@ -62,8 +62,11 @@ fn transcript_case_quiet_mode() {
 #[test]
 fn transcript_case_json_mode() {
     let (mut session, _) = startup_repl("default", None);
-    let _ = execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
-        .expect("json mode");
+    let _ = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":set format json".to_string()),
+    )
+    .expect("json mode");
     let frame = execute_repl_line(&mut session, "status").expect("json line");
     assert!(frame.expect("frame").content.trim_start().starts_with('{'));
 }
@@ -71,8 +74,11 @@ fn transcript_case_json_mode() {
 #[test]
 fn transcript_case_yaml_mode() {
     let (mut session, _) = startup_repl("default", None);
-    let _ = execute_repl_input(&mut session, ReplInput::Line(":set format yaml".to_string()))
-        .expect("yaml mode");
+    let _ = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":set format yaml".to_string()),
+    )
+    .expect("yaml mode");
     let frame = execute_repl_line(&mut session, "status").expect("yaml line");
     assert!(frame.expect("frame").content.contains("status:"));
 }
@@ -100,7 +106,10 @@ fn history_file_supports_python_prompt_toolkit_layout() {
     configure_history(&mut session, Some(path.clone()), true, 10);
     load_history(&mut session).expect("load history");
 
-    assert_eq!(session.history, vec!["status", "doctor", "community inspect"]);
+    assert_eq!(
+        session.history,
+        vec!["status", "doctor", "community inspect"]
+    );
     let _ = fs::remove_file(path);
 }
 
@@ -136,7 +145,10 @@ fn repl_line_tokenization_matches_cli_parser_expectations() {
     .expect("expected argv should parse");
 
     assert_eq!(parsed.normalized_path, expected.normalized_path);
-    assert_eq!(parsed.global_flags.output_format, expected.global_flags.output_format);
+    assert_eq!(
+        parsed.global_flags.output_format,
+        expected.global_flags.output_format
+    );
 }
 
 #[test]
@@ -155,7 +167,10 @@ fn completion_includes_plugin_namespace_candidates() {
     register_plugin_completion_hook(
         &mut session,
         "community",
-        vec!["community inspect".to_string(), "community status".to_string()],
+        vec![
+            "community inspect".to_string(),
+            "community status".to_string(),
+        ],
     );
     let values = completion_candidates(&session, "community");
     assert!(values.iter().any(|s| s == "community"));
@@ -179,8 +194,10 @@ fn malformed_history_recovers_without_crashing() {
 #[test]
 fn large_history_load_stays_within_sanity_budget() {
     let path = temp_history_path("perf");
-    let lines =
-        (0..20_000).map(|idx| format!("status --item {idx}")).collect::<Vec<_>>().join("\n");
+    let lines = (0..20_000)
+        .map(|idx| format!("status --item {idx}"))
+        .collect::<Vec<_>>()
+        .join("\n");
     fs::write(&path, format!("{lines}\n")).expect("write history");
 
     let (mut session, _) = startup_repl("default", None);
@@ -206,8 +223,13 @@ fn startup_works_without_config_or_plugin_registry() {
 #[test]
 fn transcript_cases_cover_status_doctor_plugins_config_get_and_history() {
     let (mut session, _) = startup_repl("default", None);
-    let commands =
-        ["status", "doctor", "plugins list", "cli config get repl_missing_key", "history"];
+    let commands = [
+        "status",
+        "doctor",
+        "plugins list",
+        "cli config get repl_missing_key",
+        "history",
+    ];
 
     for command in commands {
         let frame = execute_repl_line(&mut session, command).expect("command should execute");
@@ -225,14 +247,20 @@ fn transcript_case_command_failure_recovery_and_syntax_errors() {
     assert!(failed_frame.content.contains("Usage: bijux"));
 
     let recovered = execute_repl_line(&mut session, "status").expect("session should recover");
-    assert!(recovered.expect("status frame").content.contains("\"status\""));
+    assert!(recovered
+        .expect("status frame")
+        .content
+        .contains("\"status\""));
 }
 
 #[test]
 fn transcript_case_nested_help_inside_repl() {
     let (mut session, _) = startup_repl("default", None);
-    let event = execute_repl_input(&mut session, ReplInput::Line(":help cli status".to_string()))
-        .expect("nested help should execute");
+    let event = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":help cli status".to_string()),
+    )
+    .expect("nested help should execute");
     match event {
         ReplEvent::Continue(Some(frame)) => {
             assert!(frame.content.contains("Usage:"));
@@ -246,20 +274,36 @@ fn transcript_case_nested_help_inside_repl() {
 fn transcript_case_switching_output_formats_in_session() {
     let (mut session, _) = startup_repl("default", None);
 
-    let _ = execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
-        .expect("json mode");
+    let _ = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":set format json".to_string()),
+    )
+    .expect("json mode");
     let json_frame = execute_repl_line(&mut session, "status").expect("json status");
-    assert!(json_frame.expect("json frame").content.trim_start().starts_with('{'));
+    assert!(json_frame
+        .expect("json frame")
+        .content
+        .trim_start()
+        .starts_with('{'));
 
-    let _ = execute_repl_input(&mut session, ReplInput::Line(":set format yaml".to_string()))
-        .expect("yaml mode");
+    let _ = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":set format yaml".to_string()),
+    )
+    .expect("yaml mode");
     let yaml_frame = execute_repl_line(&mut session, "status").expect("yaml status");
     assert!(yaml_frame.expect("yaml frame").content.contains("status:"));
 
-    let _ = execute_repl_input(&mut session, ReplInput::Line(":set format text".to_string()))
-        .expect("text mode");
+    let _ = execute_repl_input(
+        &mut session,
+        ReplInput::Line(":set format text".to_string()),
+    )
+    .expect("text mode");
     let text_frame = execute_repl_line(&mut session, "status").expect("text status");
-    assert!(text_frame.expect("text frame").content.contains("\"status\""));
+    assert!(text_frame
+        .expect("text frame")
+        .content
+        .contains("\"status\""));
 }
 
 #[test]
@@ -309,7 +353,9 @@ fn repl_does_not_define_separate_semantics_for_common_commands() {
     let commands = ["status", "doctor", "history"];
 
     for command in commands {
-        let repl = execute_repl_line(&mut session, command).expect("repl command").expect("frame");
+        let repl = execute_repl_line(&mut session, command)
+            .expect("repl command")
+            .expect("frame");
         let repl_json: serde_json::Value = serde_json::from_str(&repl.content).expect("repl json");
 
         let cli = run_app(&[
@@ -325,7 +371,10 @@ fn repl_does_not_define_separate_semantics_for_common_commands() {
         ])
         .expect("cli run");
         let cli_json: serde_json::Value = serde_json::from_str(&cli.stdout).expect("cli json");
-        assert_eq!(repl_json, cli_json, "semantic mismatch for command: {command}");
+        assert_eq!(
+            repl_json, cli_json,
+            "semantic mismatch for command: {command}"
+        );
     }
 }
 
@@ -335,7 +384,14 @@ fn repl_startup_latency_stays_within_loaded_registry_budget() {
     let (_session, _startup, diagnostics) = startup_repl_with_diagnostics(
         "default",
         None,
-        &["community", "atlas", "memory", "history", "plugins", "doctor"],
+        &[
+            "community",
+            "atlas",
+            "memory",
+            "history",
+            "plugins",
+            "doctor",
+        ],
     );
     let elapsed = start.elapsed();
     assert_eq!(diagnostics.len(), 6);
@@ -345,7 +401,9 @@ fn repl_startup_latency_stays_within_loaded_registry_budget() {
 #[test]
 fn repl_output_parity_with_non_interactive_cli_for_status() {
     let (mut session, _) = startup_repl("default", None);
-    let repl = execute_repl_line(&mut session, "status").expect("repl status").expect("repl frame");
+    let repl = execute_repl_line(&mut session, "status")
+        .expect("repl status")
+        .expect("repl frame");
     assert_eq!(repl.stream, bijux_cli::repl::ReplStream::Stdout);
     let repl_value: serde_json::Value = serde_json::from_str(&repl.content).expect("repl json");
 
