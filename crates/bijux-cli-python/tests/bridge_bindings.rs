@@ -263,3 +263,44 @@ fn runtime_identity_matches_between_binary_and_bridge() {
     assert_eq!(bridge["entrypoints"], core["entrypoints"]);
     assert_eq!(bridge["diagnostics"], core["diagnostics"]);
 }
+
+#[test]
+fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() {
+    let root = std::env::temp_dir().join(format!("bijux-bridge-config-precedence-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).expect("create temp root");
+    let config = root.join("config.env");
+    std::fs::write(&config, "sample_key=file\n").expect("write config");
+
+    let argv = vec![
+        "bijux".to_string(),
+        "--config-path".to_string(),
+        config.to_string_lossy().to_string(),
+        "cli".to_string(),
+        "config".to_string(),
+        "get".to_string(),
+        "sample_key".to_string(),
+    ];
+
+    let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge"));
+    let core = run_app(&argv).expect("core");
+    assert_eq!(bridge["exit_code"].as_i64().unwrap_or(-1), i64::from(core.exit_code));
+    assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), core.stdout);
+    assert_eq!(bridge["stderr"].as_str().unwrap_or_default(), core.stderr);
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn diagnostics_payloads_match_between_binary_and_bridge() {
+    let argv = vec![
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "doctor".to_string(),
+    ];
+    let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
+    let core = parse_json(&run_app(&argv).expect("core").stdout);
+    assert_eq!(bridge["issues"], core["issues"]);
+    assert_eq!(bridge["checks"], core["checks"]);
+}
