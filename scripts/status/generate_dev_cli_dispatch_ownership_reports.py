@@ -22,7 +22,7 @@ def _count(text: str, token: str) -> int:
 def main() -> int:
     STATUS_DIR.mkdir(parents=True, exist_ok=True)
 
-    main_rs = _read(REPO_ROOT / "crates" / "bijux-cli-bin" / "src" / "main.rs")
+    main_rs = _read(REPO_ROOT / "crates" / "bijux-cli-core" / "src" / "bin" / "bijux-rs.rs")
     core_app = _read(REPO_ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs")
     parser_rs = _read(REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "parser.rs")
     registry_rs = _read(REPO_ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs")
@@ -53,9 +53,9 @@ def main() -> int:
         "status": "ok",
         "dispatch_chain": [
             {
-                "crate": "bijux-cli-bin",
+                "crate": "bijux-cli-core",
                 "role": "entrypoint-only",
-                "evidence": "src/main.rs delegates to bijux_cli_core::app::run_app",
+                "evidence": "src/bin/bijux-rs.rs delegates to bijux_cli_core::app::run_app",
             },
             {
                 "crate": "bijux-cli-core",
@@ -85,7 +85,7 @@ def main() -> int:
         "scope": "bin responsibility diff",
         "status": "ok",
         "current": {
-            "file": "crates/bijux-cli-bin/src/main.rs",
+            "file": "crates/bijux-cli-core/src/bin/bijux-rs.rs",
             "line_count": len(main_rs.splitlines()),
             "dev_cli_literal_mentions": _count(main_rs, "dev cli"),
             "core_run_app_calls": _count(main_rs, "bijux_cli_core::app::run_app"),
@@ -114,4 +114,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

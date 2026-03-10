@@ -13,7 +13,7 @@ STATUS = ROOT / "artifacts" / "status"
 
 def run(command: list[str], fmt: str) -> str:
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *command, "--format", fmt, "--no-pretty" if fmt == "json" else ""],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *command, "--format", fmt, "--no-pretty" if fmt == "json" else ""],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -26,7 +26,7 @@ def run(command: list[str], fmt: str) -> str:
 
 def run_json(command: list[str]) -> dict:
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *command, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *command, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -49,7 +49,7 @@ def main() -> int:
     )
 
     audit_text = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", "dev", "cli", "rustdoc", "audit", "--format", "text"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", "dev", "cli", "rustdoc", "audit", "--format", "text"],
         cwd=ROOT,
         capture_output=True,
         text=True,

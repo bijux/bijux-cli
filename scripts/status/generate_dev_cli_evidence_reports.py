@@ -25,7 +25,7 @@ REPORTS = {
 
 def run_json(args: list[str]) -> dict:
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         capture_output=True,
         text=True,

@@ -11,12 +11,12 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "dev_cli_subcommands.txt"
 CORE_APP = ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs"
-BIN_MAIN = ROOT / "crates" / "bijux-cli-bin" / "src" / "main.rs"
+BIN_MAIN = ROOT / "crates" / "bijux-cli-core" / "src" / "bin" / "bijux-rs.rs"
 
 
 def run(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
         cwd=ROOT,
         capture_output=True,
         text=True,

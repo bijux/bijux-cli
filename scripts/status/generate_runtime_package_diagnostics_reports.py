@@ -18,7 +18,7 @@ def run_json(args: list[str], env: dict[str, str] | None = None) -> dict:
     if env:
         merged.update(env)
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         capture_output=True,
         text=True,

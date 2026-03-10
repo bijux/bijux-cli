@@ -20,7 +20,7 @@ VALID_MIGRATION_STATUSES = {
 
 def run_json(args: list[str]) -> dict:
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -31,7 +31,7 @@ def run_json(args: list[str]) -> dict:
 
 def run_text(args: list[str]) -> str:
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "text"],
+        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "text"],
         cwd=ROOT,
         check=True,
         capture_output=True,
