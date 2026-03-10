@@ -10,10 +10,10 @@
     ],
     "exit_code": 0,
     "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/randomized_state_corruption_harness.rs (target/debug/deps/randomized_state_corruption_harness-e0c41d53734215a5)\n",
-    "stdout": "\nrunning 1 test\ntest randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s\n\n"
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/randomized_state_corruption_harness.rs (target/debug/deps/randomized_state_corruption_harness-e0c41d53734215a5)\n",
+    "stdout": "\nrunning 1 test\ntest randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s\n\n"
   },
-  "generated_at": "2026-03-10T12:39:56.913651+00:00",
+  "generated_at": "2026-03-10T12:40:31.475035+00:00",
   "generator": "scripts/status/generate_state_corruption_harness_reports.py",
   "missing_todos": [],
   "policy": "randomized state corruption harness is shared test utility and release hardening evidence",
