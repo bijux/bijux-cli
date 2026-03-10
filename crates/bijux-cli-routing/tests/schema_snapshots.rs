@@ -1,12 +1,16 @@
 #![forbid(unsafe_code)]
+
 //! Schema snapshot tests to detect accidental drift.
 
-use bijux_cli_contracts::schema::{
+use bijux_cli_routing::schema::{
     error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema,
 };
 use proptest as _;
-use semver as _;
 use serde as _;
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn render(schema: schemars::schema::RootSchema) -> String {
     serde_json::to_string_pretty(&schema).expect("schema should serialize")

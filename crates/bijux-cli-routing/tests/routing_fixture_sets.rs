@@ -3,20 +3,22 @@
 
 use std::fs;
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use clap as _;
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
 use serde_json as _;
-use thiserror as _;
 
 #[derive(Debug, Deserialize)]
 struct SuggestCase {
     input: String,
     expected: String,
 }
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn read_lines(path: &str) -> Vec<Vec<String>> {
     fs::read_to_string(path)

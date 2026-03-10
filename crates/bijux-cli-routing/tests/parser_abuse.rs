@@ -1,14 +1,16 @@
 #![forbid(unsafe_code)]
 //! Adversarial parser and routing hardening tests.
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_routing::catalog::dev_cli_subcommands;
 use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
-use clap as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
+use clap as _;
+use schemars as _;
+use semver as _;
 use thiserror as _;
 
 fn lcg(seed: &mut u64) -> u64 {
@@ -108,13 +110,13 @@ fn parser_repeated_conflicting_flags_and_order_abuse_stay_deterministic() {
     .expect("parse");
     assert_eq!(one.normalized_path, vec!["cli", "status"]);
     assert_eq!(two.normalized_path, vec!["cli", "status"]);
-    assert_eq!(one.global_flags.output_format, Some(bijux_cli_contracts::OutputFormat::Json));
+    assert_eq!(one.global_flags.output_format, Some(bijux_cli_routing::OutputFormat::Json));
     assert!(matches!(
         two.global_flags.output_format,
-        Some(bijux_cli_contracts::OutputFormat::Json | bijux_cli_contracts::OutputFormat::Text)
+        Some(bijux_cli_routing::OutputFormat::Json | bijux_cli_routing::OutputFormat::Text)
     ));
-    assert_eq!(one.global_flags.pretty_mode, Some(bijux_cli_contracts::PrettyMode::Pretty));
-    assert_eq!(two.global_flags.pretty_mode, Some(bijux_cli_contracts::PrettyMode::Pretty));
+    assert_eq!(one.global_flags.pretty_mode, Some(bijux_cli_routing::PrettyMode::Pretty));
+    assert_eq!(two.global_flags.pretty_mode, Some(bijux_cli_routing::PrettyMode::Pretty));
 }
 
 #[test]

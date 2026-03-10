@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use bijux_cli_contracts::NamespaceMetadata;
+use crate::NamespaceMetadata;
 use crate::registry::RouteRegistry;
 
 /// Built-in command route entry exposed by route diagnostics.

@@ -2,12 +2,15 @@
 //! Fuzz-style parser robustness checks.
 //! test_type: flag-precedence-conflict
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;
-use clap as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
+
+use clap as _;
+use schemars as _;
+use semver as _;
 use thiserror as _;
 
 #[test]

@@ -3,15 +3,13 @@
 
 use std::fs;
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use clap as _;
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
 use serde_json as _;
-use thiserror as _;
 
 #[derive(Debug, Deserialize)]
 struct ParseCase {
@@ -19,6 +17,10 @@ struct ParseCase {
     expected_normalized: Vec<String>,
     routed: bool,
 }
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn load_cases() -> Vec<ParseCase> {
     let text =
@@ -75,7 +77,7 @@ fn parser_conflicting_pretty_flags_are_normalized_deterministically() {
         "status".to_string(),
     ];
     let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli_contracts::PrettyMode::Compact));
+    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli_routing::PrettyMode::Compact));
 }
 
 #[test]

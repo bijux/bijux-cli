@@ -2,16 +2,18 @@
 //! Route fuzz regression suite replaying minimized route-fuzz cases.
 //! test_type: route-fuzz-regression
 
-use bijux_cli_contracts as _;
-use clap as _;
+use bijux_cli_routing as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
-use thiserror as _;
 use std::fs;
 use std::path::Path;
 
 use bijux_cli_routing::registry::RouteRegistry;
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn load_cases(dir: &Path) -> Vec<Vec<String>> {
     let mut files: Vec<_> = fs::read_dir(dir)

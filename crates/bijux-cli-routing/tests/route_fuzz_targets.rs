@@ -2,13 +2,15 @@
 //! Route and route-registry fuzz targets for deterministic behavior and crash resistance.
 //! test_type: route-fuzz
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
 use bijux_cli_routing::reports::{registry_report, routes_report};
-use clap as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
+use clap as _;
+use schemars as _;
+use semver as _;
 use thiserror as _;
 
 fn shuffled(values: &[&str], seed: u64) -> Vec<String> {

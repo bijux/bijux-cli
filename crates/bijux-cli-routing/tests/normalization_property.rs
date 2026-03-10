@@ -1,12 +1,11 @@
 #![forbid(unsafe_code)]
+
 //! Property tests for namespace and command-path normalization.
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV1,
 };
 use proptest::prelude::*;
-use schemars as _;
-use semver as _;
 use serde as _;
 use serde_json as _;
 
@@ -35,6 +34,11 @@ proptest! {
         prop_assert_eq!(path, reparsed);
     }
 }
+
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 #[test]
 fn compatibility_range_supports_host_versions() {

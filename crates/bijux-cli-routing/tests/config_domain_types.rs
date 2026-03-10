@@ -1,17 +1,21 @@
 #![forbid(unsafe_code)]
+
 //! Config domain contract invariants.
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     ConfigClearResult, ConfigCommandResult, ConfigEntry, ConfigErrorKind, ConfigExportFormat,
     ConfigKey, ConfigLoadResult, ConfigMutation, ConfigPathSet, ConfigReadSource,
     ConfigReloadResult, ConfigSnapshot, ConfigValidationError, ConfigValue, ConfigWriteResult,
     ResolvedConfigValue,
 };
 use proptest as _;
-use schemars as _;
-use semver as _;
 use serde as _;
 use serde_json as _;
+
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 #[test]
 fn config_key_normalization_and_validation() {

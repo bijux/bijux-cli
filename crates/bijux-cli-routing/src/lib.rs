@@ -1,10 +1,12 @@
 #![forbid(unsafe_code)]
-//! Routing graph and namespace resolution surfaces.
+//! Command-surface contracts plus routing graph and namespace resolution.
 
 pub mod catalog;
+pub mod contracts;
 pub mod parser;
-pub mod reports;
 pub mod registry;
+pub mod reports;
+pub mod schema;
 
 #[cfg(test)]
 use proptest as _;
@@ -13,3 +15,16 @@ use proptest as _;
 use serde as _;
 #[cfg(test)]
 use serde_json as _;
+
+pub use contracts::{
+    AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigClearResult,
+    ConfigCommandResult, ConfigConflictError, ConfigEntry, ConfigErrorKind, ConfigExportFormat,
+    ConfigKey, ConfigLoadResult, ConfigMutation, ConfigParseError, ConfigPathSet,
+    ConfigPersistenceError, ConfigReadSource, ConfigReloadResult, ConfigSnapshot, ConfigSource,
+    ConfigValidationError, ConfigValue, ConfigWriteResult, ContractMarker, DiagnosticRecord,
+    ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags,
+    InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList, MemorySummary,
+    Namespace, NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
+    PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
+    ProductMountMetadata, ResolvedConfigValue, RouteSourceMetadata, OFFICIAL_PRODUCT_NAMESPACES,
+};

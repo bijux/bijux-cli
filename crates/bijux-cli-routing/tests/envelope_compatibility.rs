@@ -1,16 +1,19 @@
 #![forbid(unsafe_code)]
+
 //! Backward/forward compatibility tests for envelope contracts.
 
 use std::collections::BTreeMap;
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use proptest as _;
-use schemars as _;
-use semver as _;
 use serde as _;
 use serde_json::json;
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn meta() -> OutputEnvelopeMetaV1 {
     OutputEnvelopeMetaV1 {

@@ -2,7 +2,7 @@
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 
-use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use crate::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use crate::catalog::normalize_command_path;
 
 /// Parsed and normalized global options.

@@ -1,9 +1,10 @@
 #![forbid(unsafe_code)]
+
 //! Ensures contract models serialize and deserialize without loss.
 
 use std::collections::BTreeMap;
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource,
     DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode,
     GlobalFlags, InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList,
@@ -12,11 +13,13 @@ use bijux_cli_contracts::{
     RouteSourceMetadata,
 };
 use proptest as _;
-use schemars as _;
-use semver as _;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
+use clap as _;
+use schemars as _;
+use semver as _;
+use thiserror as _;
 
 fn roundtrip<T>(value: &T)
 where

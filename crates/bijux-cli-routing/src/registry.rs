@@ -3,7 +3,7 @@
 use std::cmp::max;
 use std::collections::{BTreeMap, BTreeSet};
 
-use bijux_cli_contracts::{CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES};
+use crate::{CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES};
 
 /// Route target categories.
 #[derive(Debug, Clone, PartialEq, Eq)]
