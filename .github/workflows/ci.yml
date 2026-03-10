@@ -277,6 +277,7 @@ jobs:
           python3 scripts/status/generate_repl_recovery_reports.py
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
+          python3 scripts/status/generate_packaging_ambiguity_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -541,6 +542,10 @@ jobs:
             artifacts/status/repl_recovery_behavior_report.json
             artifacts/status/install_source_diagnostics.json
             artifacts/status/ambiguous_runtime_diagnostics.json
+            artifacts/status/packaging_ambiguity_report.json
+            artifacts/status/install_state_assumptions_report.json
+            artifacts/status/package_health_report.json
+            artifacts/status/package_health_report.txt
             artifacts/status/install_health_report.json
             artifacts/status/remaining_install_ambiguities.json
           if-no-files-found: warn
