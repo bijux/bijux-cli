@@ -329,6 +329,7 @@ jobs:
           python3 scripts/status/generate_root_command_surface_reports.py
           python3 scripts/status/generate_cli_command_surface_reports.py
           python3 scripts/status/generate_dev_cli_command_surface_reports.py
+          python3 scripts/status/generate_dev_cli_boundary_reports.py
           python3 scripts/status/generate_config_read_surface_reports.py
           python3 scripts/status/generate_config_mutation_surface_reports.py
           python3 scripts/status/generate_config_source_surface_reports.py
@@ -675,6 +676,10 @@ jobs:
       - name: Maintainer automation policy gate
         run: |
           python3 scripts/status/enforce_dev_cli_automation_policy.py
+
+      - name: Dev cli boundary policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_boundary_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1070,6 +1075,18 @@ jobs:
         with:
           name: dev-cli-inventory
           path: artifacts/status/dev_cli_inventory.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli boundary artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-boundary
+          path: |
+            artifacts/status/dev_cli_owned_behaviors_inventory.json
+            artifacts/status/runtime_owned_behaviors_inventory.json
+            artifacts/status/misplaced_dev_behaviors_report.json
           if-no-files-found: warn
           retention-days: 14
 
