@@ -50,6 +50,10 @@ def main() -> int:
     if parity_law.returncode != 0:
         print(parity_law.stderr.strip() or parity_law.stdout.strip())
         return parity_law.returncode
+    command_family_closure = run(["python3", "scripts/status/generate_command_family_closure_reports.py"])
+    if command_family_closure.returncode != 0:
+        print(command_family_closure.stderr.strip() or command_family_closure.stdout.strip())
+        return command_family_closure.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     parity_diff = run(["git", "diff", "--name-only", "--", "artifacts/parity"])
@@ -99,6 +103,15 @@ def main() -> int:
             or line.strip() == "artifacts/status/live_compatibility_aliases.json"
             or line.strip() == "artifacts/status/compatibility_debt_trend_report.json"
             or line.strip() == "artifacts/status/compatibility_debt_trend_report.txt"
+            or line.strip() == "artifacts/status/config_closure_report.json"
+            or line.strip() == "artifacts/status/plugins_closure_report.json"
+            or line.strip() == "artifacts/status/history_closure_report.json"
+            or line.strip() == "artifacts/status/memory_closure_report.json"
+            or line.strip() == "artifacts/status/diagnostics_closure_report.json"
+            or line.strip() == "artifacts/status/repl_shared_law_closure_report.json"
+            or line.strip() == "artifacts/status/command_family_closure_report.json"
+            or line.strip() == "artifacts/status/command_family_closure_report.txt"
+            or line.strip() == "artifacts/status/command_family_partial_area_acceptance.json"
         )
     ]
     if changed:

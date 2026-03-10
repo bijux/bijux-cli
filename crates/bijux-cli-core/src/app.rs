@@ -1501,6 +1501,30 @@ fn route_response(
             );
             let plugin_migration_report =
                 read_json_if_exists(&root.join("artifacts/status/plugin_migration_report.json"));
+            let config_closure_report =
+                read_json_if_exists(&root.join("artifacts/status/config_closure_report.json"));
+            let plugins_closure_report =
+                read_json_if_exists(&root.join("artifacts/status/plugins_closure_report.json"));
+            let history_closure_report =
+                read_json_if_exists(&root.join("artifacts/status/history_closure_report.json"));
+            let memory_closure_report =
+                read_json_if_exists(&root.join("artifacts/status/memory_closure_report.json"));
+            let diagnostics_closure_report = read_json_if_exists(
+                &root.join("artifacts/status/diagnostics_closure_report.json"),
+            );
+            let repl_shared_law_closure_report = read_json_if_exists(
+                &root.join("artifacts/status/repl_shared_law_closure_report.json"),
+            );
+            let command_family_closure_report = read_json_if_exists(
+                &root.join("artifacts/status/command_family_closure_report.json"),
+            );
+            let command_family_partial_area_acceptance = read_json_if_exists(
+                &root.join("artifacts/status/command_family_partial_area_acceptance.json"),
+            );
+            let command_family_closure_report_text = fs::read_to_string(
+                root.join("artifacts/status/command_family_closure_report.txt"),
+            )
+            .unwrap_or_default();
             let command_surface_consistency_summary = read_json_if_exists(
                 &root.join("artifacts/status/command_surface_consistency_summary.json"),
             );
@@ -1561,6 +1585,15 @@ fn route_response(
                     "plugin_where_ownership_report": plugin_where_ownership,
                     "plugin_command_set_status": plugin_command_set_status,
                     "plugin_migration_report": plugin_migration_report,
+                    "config_closure_report": config_closure_report,
+                    "plugins_closure_report": plugins_closure_report,
+                    "history_closure_report": history_closure_report,
+                    "memory_closure_report": memory_closure_report,
+                    "diagnostics_closure_report": diagnostics_closure_report,
+                    "repl_shared_law_closure_report": repl_shared_law_closure_report,
+                    "command_family_closure_report": command_family_closure_report,
+                    "command_family_closure_report_text": command_family_closure_report_text,
+                    "command_family_partial_area_acceptance": command_family_partial_area_acceptance,
                     "command_surface_consistency_summary": command_surface_consistency_summary,
                 },
                 "command_migration": {
