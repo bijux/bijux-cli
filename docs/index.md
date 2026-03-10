@@ -6,6 +6,7 @@ High-value documents only. Everything else is supporting detail.
 - [Honest status](HONEST_STATUS.md)
 - [Known gaps](KNOWN_GAPS.md)
 - [What we won't claim](WHAT_WE_WONT_CLAIM.md)
+- [Plugin runtime law](PLUGIN_RUNTIME_LAW.md)
 - [Stability and breakage](STABILITY_AND_BREAKAGE.md)
 - [Contributor engineering rules](CONTRIBUTOR_ENGINEERING_RULES.md)
 - [Maintainer milestone checklist](MAINTAINER_MILESTONE_CHECKLIST.md)
