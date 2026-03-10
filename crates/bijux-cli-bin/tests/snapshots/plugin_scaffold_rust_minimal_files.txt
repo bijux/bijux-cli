@@ -1,0 +1,2 @@
+plugin.manifest.json
+src/lib.rs
