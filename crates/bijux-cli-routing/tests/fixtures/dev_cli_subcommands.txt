@@ -5,6 +5,11 @@ dev cli evidence
 dev cli config
 dev cli python
 dev cli repo
+dev cli dashboard
+dev cli quickcheck
+dev cli truth
+dev cli blockers
+dev cli next
 dev cli inventory
 dev cli routes
 dev cli route-audit

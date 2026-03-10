@@ -285,6 +285,11 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("generated"))
                 .subcommand(Command::new("stale")),
         )
+        .subcommand(Command::new("dashboard"))
+        .subcommand(Command::new("quickcheck"))
+        .subcommand(Command::new("truth"))
+        .subcommand(Command::new("blockers"))
+        .subcommand(Command::new("next"))
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

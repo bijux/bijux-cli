@@ -29,10 +29,11 @@ use bijux_cli_routing::query::contracts_schema_query;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
-    config as dev_config, contracts as dev_contracts, control_plane as dev_control_plane,
-    crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
-    evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
-    python as dev_python, registry as dev_registry, release as dev_release, repo as dev_repo,
+    cockpit as dev_cockpit, config as dev_config, contracts as dev_contracts,
+    control_plane as dev_control_plane, crate_health as dev_crate_health,
+    docs_audit as dev_docs_audit, env as dev_env, evidence as dev_evidence,
+    package_health as dev_package_health, parity as dev_parity, python as dev_python,
+    registry as dev_registry, release as dev_release, repo as dev_repo,
     route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
     rustdoc as dev_rustdoc, script_audit as dev_script_audit, scripts as dev_scripts,
     state_audit as dev_state_audit, status as dev_status, ReportContext,
@@ -527,6 +528,17 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" => {
             let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c]
+            if a == "dev"
+                && b == "cli"
+                && (c == "dashboard"
+                    || c == "quickcheck"
+                    || c == "truth"
+                    || c == "blockers"
+                    || c == "next") =>
+        {
             RouteTarget::BuiltIn
         }
         _ => registry.resolve(normalized_path)?,
@@ -1395,6 +1407,21 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "repo" && d == "stale" => {
             dev_repo::build_stale_report(&workspace_root())
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "dashboard" => {
+            dev_cockpit::build_dashboard_report(&workspace_root())
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "quickcheck" => {
+            dev_cockpit::build_quickcheck_report(&workspace_root())
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "truth" => {
+            dev_cockpit::build_truth_report(&workspace_root())
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "blockers" => {
+            dev_cockpit::build_blockers_report(&workspace_root())
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "next" => {
+            dev_cockpit::build_next_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

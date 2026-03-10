@@ -5,9 +5,9 @@ use std::path::Path;
 
 use bijux_cli_routing::registry::RouteRegistry;
 use bijux_dev_cli::{
-    config, contracts, control_plane, crate_health, docs_audit, env, package_health, parity,
-    python, registry, repo, route_audit, routes, runtime_identity, script_audit, state_audit,
-    status, ReportContext,
+    cockpit, config, contracts, control_plane, crate_health, docs_audit, env, package_health,
+    parity, python, registry, repo, route_audit, routes, runtime_identity, script_audit,
+    state_audit, status, ReportContext,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -39,6 +39,7 @@ fn all_command_groups_build_expected_top_level_keys() {
         .get("python_sovereignty_audit")
         .is_some());
     assert!(repo::build_health_report(&root).get("repo_health").is_some());
+    assert!(cockpit::build_dashboard_report(&root).get("dashboard").is_some());
     assert!(parity::build_report(&root).get("command_matrix").is_some());
     assert!(status::build_report(&root, script_audit::build_inventory_report(&root))
         .get("status_report")

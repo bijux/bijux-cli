@@ -101,6 +101,16 @@ pub enum DevCliCommand {
     ListProducts,
     /// `bijux dev cli list-plugins`
     ListPlugins,
+    /// `bijux dev cli dashboard`
+    Dashboard,
+    /// `bijux dev cli quickcheck`
+    Quickcheck,
+    /// `bijux dev cli truth`
+    Truth,
+    /// `bijux dev cli blockers`
+    Blockers,
+    /// `bijux dev cli next`
+    Next,
 }
 
 impl DevCliCommand {
@@ -140,6 +150,11 @@ impl DevCliCommand {
             Self::Di => "dev cli di",
             Self::ListProducts => "dev cli list-products",
             Self::ListPlugins => "dev cli list-plugins",
+            Self::Dashboard => "dev cli dashboard",
+            Self::Quickcheck => "dev cli quickcheck",
+            Self::Truth => "dev cli truth",
+            Self::Blockers => "dev cli blockers",
+            Self::Next => "dev cli next",
         }
     }
 
@@ -147,7 +162,14 @@ impl DevCliCommand {
     #[must_use]
     pub const fn group(self) -> DevCliCommandGroup {
         match self {
-            Self::Status | Self::Parity | Self::Doctor => DevCliCommandGroup::Dashboard,
+            Self::Status
+            | Self::Parity
+            | Self::Doctor
+            | Self::Dashboard
+            | Self::Quickcheck
+            | Self::Truth
+            | Self::Blockers
+            | Self::Next => DevCliCommandGroup::Dashboard,
             Self::Routes | Self::Registry | Self::RouteAudit => DevCliCommandGroup::Routing,
             Self::Env
             | Self::Contracts
@@ -322,6 +344,36 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
         },
         DevCliCommandMetadata {
             command: DevCliCommand::Doctor,
+            group: DevCliCommandGroup::Dashboard,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Dashboard,
+            group: DevCliCommandGroup::Dashboard,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Quickcheck,
+            group: DevCliCommandGroup::Dashboard,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Truth,
+            group: DevCliCommandGroup::Dashboard,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Blockers,
+            group: DevCliCommandGroup::Dashboard,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Next,
             group: DevCliCommandGroup::Dashboard,
             visible: true,
             owner: "bijux-dev-cli",
