@@ -40,4 +40,7 @@ pub use marker::ContractMarker;
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1,
 };
-pub use product_mount::{ProductMountMetadata, OFFICIAL_PRODUCT_NAMESPACES};
+pub use product_mount::{
+    known_bijux_tool, KnownBijuxTool, ProductMountMetadata, KNOWN_BIJUX_TOOLS,
+    KNOWN_BIJUX_TOOL_NAMESPACES, OFFICIAL_PRODUCT_NAMESPACES,
+};

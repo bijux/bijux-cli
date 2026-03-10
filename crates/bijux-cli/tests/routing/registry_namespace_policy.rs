@@ -2,7 +2,7 @@
 //! Registry precedence and namespace-policy tests.
 
 use bijux_cli::routing::registry::{RouteError, RouteRegistry};
-use bijux_cli::routing::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::routing::{KNOWN_BIJUX_TOOLS, OFFICIAL_PRODUCT_NAMESPACES};
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -32,6 +32,16 @@ fn official_reserved_namespaces_take_precedence() {
             "expected reserved rejection for official namespace {ns}"
         );
     }
+}
+
+#[test]
+fn known_bijux_tool_registry_matches_expected_namespaces() {
+    let expected = ["agent", "atlas", "dag", "dna", "gnss", "rag", "rar", "vex"];
+    let official: Vec<&str> = OFFICIAL_PRODUCT_NAMESPACES.to_vec();
+    let known: Vec<&str> = KNOWN_BIJUX_TOOLS.iter().map(|tool| tool.namespace).collect();
+
+    assert_eq!(official, expected);
+    assert_eq!(known, expected);
 }
 
 #[test]

@@ -1,17 +1,23 @@
 {
   "ownership": {
     "bijux-cli": [
+      "agent",
       "atlas",
       "cli",
       "completion",
       "dag",
       "dev",
+      "dna",
       "doctor",
+      "gnss",
       "help",
       "inspect",
       "plugins",
+      "rag",
+      "rar",
       "repl",
-      "version"
+      "version",
+      "vex"
     ],
     "plugin": [
       "community"
@@ -22,6 +28,11 @@
     "plugin"
   ],
   "registry": [
+    {
+      "name": "agent",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
     {
       "name": "atlas",
       "owner": "bijux-cli",
@@ -53,7 +64,17 @@
       "reserved": true
     },
     {
+      "name": "dna",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
       "name": "doctor",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "gnss",
       "owner": "bijux-cli",
       "reserved": true
     },
@@ -73,12 +94,27 @@
       "reserved": true
     },
     {
+      "name": "rag",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "rar",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
       "name": "repl",
       "owner": "bijux-cli",
       "reserved": true
     },
     {
       "name": "version",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "vex",
       "owner": "bijux-cli",
       "reserved": true
     }

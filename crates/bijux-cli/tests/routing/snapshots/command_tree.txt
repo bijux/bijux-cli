@@ -1,3 +1,4 @@
+agent
 atlas
 audit
 cli
@@ -5,14 +6,19 @@ completion
 config
 dag
 dev
+dna
 docs
 doctor
+gnss
 help
 history
 inspect
 memory
 plugins
+rag
+rar
 repl
 sleep
 status
 version
+vex
