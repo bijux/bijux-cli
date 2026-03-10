@@ -16,6 +16,8 @@ bijux-cli-core = { path = "../bijux-cli-core" }
 
 [dev-dependencies]
 bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-python = { path = "../bijux-cli-python" }
+bijux-cli-repl = { path = "../bijux-cli-repl" }
 serde_json.workspace = true
 libc = "0.2.177"
 
