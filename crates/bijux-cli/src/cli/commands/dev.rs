@@ -33,7 +33,7 @@ pub(crate) fn try_handle(
         }))),
         [a, b] if a == "dev" && b == "list-plugins" => Ok(Some(json!({
             "status": "ok",
-            "plugins": list_plugins(plugin_registry_path).unwrap_or_default(),
+            "plugins": list_plugins(plugin_registry_path)?,
         }))),
         _ => Ok(None),
     }
