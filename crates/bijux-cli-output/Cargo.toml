@@ -8,7 +8,7 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-routing = { path = "../bijux-cli-routing" }
 serde_json.workspace = true
 serde_yaml.workspace = true
 thiserror.workspace = true

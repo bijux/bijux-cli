@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Runtime identity unity tests across binary and Python bridge entrypoints.
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_python as _;

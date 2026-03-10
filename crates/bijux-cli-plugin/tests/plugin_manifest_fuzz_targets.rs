@@ -2,7 +2,7 @@
 //! Plugin manifest fuzz targets for parsing and validation boundaries.
 //! test_type: plugin-manifest-fuzz
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_plugin::{parse_manifest_v1, validate_manifest, PluginError};
 use semver as _;
 use serde as _;

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use bijux_cli_contracts::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
+use bijux_cli_routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core::kernel::{build_intent_from_argv, resolve_policy, PolicyInputs};
 
 use crate::types::{ReplSession, ReplShutdownContract, ReplStartupContract};

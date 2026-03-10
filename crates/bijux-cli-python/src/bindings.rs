@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_contracts::ContractMarker;
+use bijux_cli_routing::ContractMarker;
 use bijux_cli_core::app::{run_app, AppRunResult};
 use serde_json::{json, Value};
 

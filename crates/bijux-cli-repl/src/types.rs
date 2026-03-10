@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use bijux_cli_contracts::ExecutionPolicy;
+use bijux_cli_routing::ExecutionPolicy;
 
 /// REPL startup latency budget in milliseconds.
 pub const REPL_STARTUP_LATENCY_BUDGET_MS: u128 = 50;

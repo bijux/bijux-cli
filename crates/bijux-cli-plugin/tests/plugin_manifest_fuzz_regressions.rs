@@ -5,7 +5,7 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_plugin::{parse_manifest_v1, validate_manifest};
 use semver as _;
 use serde as _;

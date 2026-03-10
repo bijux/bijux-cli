@@ -2,7 +2,7 @@
 //! Registry fuzz regression suite replaying minimized registry-fuzz cases.
 //! test_type: registry-fuzz-regression
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use std::fs;
 use std::path::Path;
 

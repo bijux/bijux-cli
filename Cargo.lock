@@ -76,22 +76,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "bijux-cli-contracts"
-version = "0.1.0"
-dependencies = [
- "proptest",
- "schemars",
- "semver",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "bijux-cli-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bijux-cli-contracts",
  "bijux-cli-install",
  "bijux-cli-output",
  "bijux-cli-plugin",
@@ -113,8 +101,8 @@ dependencies = [
 name = "bijux-cli-output"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
  "bijux-cli-core",
+ "bijux-cli-routing",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -125,7 +113,7 @@ dependencies = [
 name = "bijux-cli-plugin"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
+ "bijux-cli-routing",
  "semver",
  "serde",
  "serde_json",
@@ -137,9 +125,9 @@ dependencies = [
 name = "bijux-cli-python"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
  "bijux-cli-core",
  "bijux-cli-install",
+ "bijux-cli-routing",
  "pyo3",
  "serde_json",
 ]
@@ -148,7 +136,6 @@ dependencies = [
 name = "bijux-cli-repl"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
  "bijux-cli-core",
  "bijux-cli-install",
  "bijux-cli-output",
@@ -162,9 +149,10 @@ dependencies = [
 name = "bijux-cli-routing"
 version = "0.1.0"
 dependencies = [
- "bijux-cli-contracts",
  "clap",
  "proptest",
+ "schemars",
+ "semver",
  "serde",
  "serde_json",
  "thiserror",

@@ -3,7 +3,7 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     ColorMode, CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };

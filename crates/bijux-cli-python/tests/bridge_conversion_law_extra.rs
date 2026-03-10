@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Python bridge conversion and exception mapping coverage for TODOs 281-295.
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_python::{

@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use bijux_cli_contracts::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_plugin as _;
 use semver as _;
 use serde::Deserialize;

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow as _;
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
 use bijux_cli_output as _;

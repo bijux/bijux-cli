@@ -7,7 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_plugin::{
     discover_plugin_manifests, install_plugin, load_registry, refresh_discovery_cache,
     InstallPluginRequest, PluginDiscoveryCache, PluginError, PluginTrustLevel,

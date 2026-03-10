@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     ColorMode, CommandPath, DiagnosticRecord, ErrorEnvelopeV1, ExecutionPolicy, ExitCode,
     GlobalFlags, InvocationEvent, InvocationTrace, LogLevel, Namespace, OutputEnvelopeMetaV1,
     OutputEnvelopeV1, OutputFormat, PrettyMode,

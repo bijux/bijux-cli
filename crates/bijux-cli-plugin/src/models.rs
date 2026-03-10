@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use bijux_cli_contracts::{PluginLifecycleState, PluginManifestV1};
+use bijux_cli_routing::{PluginLifecycleState, PluginManifestV1};
 use serde::{Deserialize, Serialize};
 
 /// Runtime-facing plugin record persisted in registry.

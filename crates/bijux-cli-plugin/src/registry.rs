@@ -136,7 +136,7 @@ pub fn install_plugin(
     let trust_level = request.trust_level;
     let record = PluginRecord {
         manifest: validated.manifest,
-        state: bijux_cli_contracts::PluginLifecycleState::Installed,
+        state: bijux_cli_routing::PluginLifecycleState::Installed,
         source,
         trust_level,
         manifest_checksum_sha256,
@@ -168,7 +168,7 @@ pub fn uninstall_plugin(registry_path: &Path, namespace: &str) -> Result<(), Plu
 fn set_plugin_state(
     registry_path: &Path,
     namespace: &str,
-    state: bijux_cli_contracts::PluginLifecycleState,
+    state: bijux_cli_routing::PluginLifecycleState,
 ) -> Result<PluginRecord, PluginError> {
     let mut updated: Option<PluginRecord> = None;
 
@@ -177,8 +177,8 @@ fn set_plugin_state(
             .plugins
             .get_mut(namespace)
             .ok_or_else(|| PluginError::PluginNotFound(namespace.to_string()))?;
-        if state == bijux_cli_contracts::PluginLifecycleState::Enabled
-            && plugin.state == bijux_cli_contracts::PluginLifecycleState::Broken
+        if state == bijux_cli_routing::PluginLifecycleState::Enabled
+            && plugin.state == bijux_cli_routing::PluginLifecycleState::Broken
         {
             return Err(PluginError::InvalidField("cannot enable broken plugin".to_string()));
         }
@@ -192,12 +192,12 @@ fn set_plugin_state(
 
 /// Enable installed plugin.
 pub fn enable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, bijux_cli_contracts::PluginLifecycleState::Enabled)
+    set_plugin_state(registry_path, namespace, bijux_cli_routing::PluginLifecycleState::Enabled)
 }
 
 /// Disable installed plugin.
 pub fn disable_plugin(registry_path: &Path, namespace: &str) -> Result<PluginRecord, PluginError> {
-    set_plugin_state(registry_path, namespace, bijux_cli_contracts::PluginLifecycleState::Disabled)
+    set_plugin_state(registry_path, namespace, bijux_cli_routing::PluginLifecycleState::Disabled)
 }
 
 /// Inspect plugin by namespace.
@@ -240,10 +240,10 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
     let mut incompatible = Vec::new();
 
     for (namespace, plugin) in &registry.plugins {
-        if plugin.state == bijux_cli_contracts::PluginLifecycleState::Broken {
+        if plugin.state == bijux_cli_routing::PluginLifecycleState::Broken {
             broken.push(namespace.clone());
         }
-        if plugin.state == bijux_cli_contracts::PluginLifecycleState::Incompatible {
+        if plugin.state == bijux_cli_routing::PluginLifecycleState::Incompatible {
             incompatible.push(namespace.clone());
         }
     }
@@ -253,7 +253,7 @@ pub fn plugin_doctor(registry_path: &Path) -> Result<PluginDoctorReport, PluginE
 
 /// Check plugin compatibility against host version without mutating registry.
 pub fn compatibility_check(
-    manifest: &bijux_cli_contracts::PluginManifestV1,
+    manifest: &bijux_cli_routing::PluginManifestV1,
     host_version: &str,
 ) -> Result<bool, PluginError> {
     let _ = semver::VersionReq::parse(&format!("={host_version}"))
@@ -282,15 +282,15 @@ pub fn plugin_load_order(registry_path: &Path) -> Result<Vec<PluginLoadEntry>, P
     Ok(items)
 }
 
-fn state_rank(state: bijux_cli_contracts::PluginLifecycleState) -> u8 {
+fn state_rank(state: bijux_cli_routing::PluginLifecycleState) -> u8 {
     match state {
-        bijux_cli_contracts::PluginLifecycleState::Enabled => 0,
-        bijux_cli_contracts::PluginLifecycleState::Installed
-        | bijux_cli_contracts::PluginLifecycleState::Validated => 1,
-        bijux_cli_contracts::PluginLifecycleState::Disabled => 2,
-        bijux_cli_contracts::PluginLifecycleState::Discovered => 3,
-        bijux_cli_contracts::PluginLifecycleState::Incompatible => 4,
-        bijux_cli_contracts::PluginLifecycleState::Broken => 5,
+        bijux_cli_routing::PluginLifecycleState::Enabled => 0,
+        bijux_cli_routing::PluginLifecycleState::Installed
+        | bijux_cli_routing::PluginLifecycleState::Validated => 1,
+        bijux_cli_routing::PluginLifecycleState::Disabled => 2,
+        bijux_cli_routing::PluginLifecycleState::Discovered => 3,
+        bijux_cli_routing::PluginLifecycleState::Incompatible => 4,
+        bijux_cli_routing::PluginLifecycleState::Broken => 5,
         _ => 6,
     }
 }

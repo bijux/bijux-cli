@@ -2,7 +2,7 @@
 //! Direct core invocation and parity-oriented policy tests.
 
 use anyhow as _;
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
 };
 use bijux_cli_core::app::run_app;
@@ -561,8 +561,8 @@ fn quiet_mode_suppresses_streams_not_exit_semantics() {
 
 #[test]
 fn error_normalization_internal_plugin_usage_validation() {
-    assert_eq!(map_error_category_to_exit("internal"), bijux_cli_contracts::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli_contracts::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("usage"), bijux_cli_contracts::ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("validation"), bijux_cli_contracts::ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("internal"), bijux_cli_routing::ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli_routing::ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("usage"), bijux_cli_routing::ExitCode::Usage);
+    assert_eq!(map_error_category_to_exit("validation"), bijux_cli_routing::ExitCode::Usage);
 }

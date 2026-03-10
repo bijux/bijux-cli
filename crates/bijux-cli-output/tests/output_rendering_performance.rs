@@ -4,7 +4,7 @@
 use std::time::{Duration, Instant};
 
 use bijux_cli_core as _;
-use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat};
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat};
 use bijux_cli_output::{render_value, EmitterConfig};
 use serde as _;
 use serde_json::json;

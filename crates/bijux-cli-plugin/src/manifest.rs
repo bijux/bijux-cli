@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use bijux_cli_contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
+use bijux_cli_routing::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
 use semver::Version;
 
 use crate::constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
@@ -29,7 +29,7 @@ pub fn validate_manifest(
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
 
-    Ok(ValidatedPlugin { manifest, state: bijux_cli_contracts::PluginLifecycleState::Validated })
+    Ok(ValidatedPlugin { manifest, state: bijux_cli_routing::PluginLifecycleState::Validated })
 }
 
 fn validate_required_fields(manifest: &PluginManifestV1) -> Result<(), PluginError> {

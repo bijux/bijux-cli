@@ -8,7 +8,7 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::Result;
-use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_install::{
     atomic_write_text,
     canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
@@ -987,10 +987,10 @@ fn route_response(
                 env!("CARGO_PKG_VERSION"),
                 RESERVED_NAMESPACES,
             )?;
-            if matches!(record.state, bijux_cli_contracts::PluginLifecycleState::Disabled) {
+            if matches!(record.state, bijux_cli_routing::PluginLifecycleState::Disabled) {
                 anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
             }
-            if matches!(record.manifest.kind, bijux_cli_contracts::PluginKind::ExternalExec) {
+            if matches!(record.manifest.kind, bijux_cli_routing::PluginKind::ExternalExec) {
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;

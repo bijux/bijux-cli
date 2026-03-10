@@ -10,11 +10,10 @@ rust-version.workspace = true
 [dependencies]
 anyhow.workspace = true
 futures = "0.3.31"
-bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-routing = { path = "../bijux-cli-routing" }
 bijux-cli-install = { path = "../bijux-cli-install" }
 bijux-cli-output = { path = "../bijux-cli-output" }
 bijux-cli-plugin = { path = "../bijux-cli-plugin" }
-bijux-cli-routing = { path = "../bijux-cli-routing" }
 clap = { version = "4.5.51", features = ["std"] }
 serde_json.workspace = true
 

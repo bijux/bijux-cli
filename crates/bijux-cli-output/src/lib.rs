@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Output encoding and envelope rendering surfaces.
 
-use bijux_cli_contracts::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
+use bijux_cli_routing::{ColorMode, ErrorEnvelopeV1, LogLevel, OutputEnvelopeV1, OutputFormat};
 use serde_json::Value;
 
 /// Output stream target for emitters.

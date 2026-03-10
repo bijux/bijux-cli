@@ -1,4 +1,4 @@
-use bijux_cli_contracts::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_cli_core::app::run_app;
 use bijux_cli_routing::parser::root_command;
 

@@ -2,7 +2,7 @@
 //! Conversion and error-classification helpers for Python bridge APIs.
 
 use std::fmt::Display;
-use bijux_cli_contracts::ExitCode;
+use bijux_cli_routing::ExitCode;
 
 /// Coarse error categories surfaced to Python callers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

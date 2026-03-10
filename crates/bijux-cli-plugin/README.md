@@ -3,5 +3,5 @@
 Plugin discovery, registration, and lifecycle coordination.
 
 ## Boundary
-- Depends on `bijux-cli-core` and `bijux-cli-contracts`.
+- Depends on `bijux-cli-core` and `bijux-cli-routing`.
 - Must not directly render output payloads.

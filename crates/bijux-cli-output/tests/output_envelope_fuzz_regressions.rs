@@ -5,7 +5,7 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_output as _;
 use serde as _;
@@ -26,8 +26,8 @@ fn minimized_output_cases_replay_with_stable_parse_behavior() {
 
     for path in files {
         let sample = fs::read_to_string(&path).expect("read sample");
-        let a = serde_json::from_str::<bijux_cli_contracts::OutputEnvelopeV1>(&sample);
-        let b = serde_json::from_str::<bijux_cli_contracts::OutputEnvelopeV1>(&sample);
+        let a = serde_json::from_str::<bijux_cli_routing::OutputEnvelopeV1>(&sample);
+        let b = serde_json::from_str::<bijux_cli_routing::OutputEnvelopeV1>(&sample);
         assert_eq!(a.is_ok(), b.is_ok(), "determinism for {}", path.display());
     }
 }

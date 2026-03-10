@@ -2,7 +2,7 @@
 //! Architecture boundaries specific to config layering.
 
 use anyhow as _;
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;

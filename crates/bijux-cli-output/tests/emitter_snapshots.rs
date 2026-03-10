@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Snapshot tests for emitter outputs.
 
-use bijux_cli_contracts::{
+use bijux_cli_routing::{
     ColorMode, CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };

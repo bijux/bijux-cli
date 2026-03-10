@@ -13,7 +13,7 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 bijux-cli-core = { path = "../bijux-cli-core" }
-bijux-cli-contracts = { path = "../bijux-cli-contracts" }
+bijux-cli-routing = { path = "../bijux-cli-routing" }
 bijux-cli-install = { path = "../bijux-cli-install" }
 pyo3 = { version = "0.23.5", optional = true, default-features = false, features = ["extension-module"] }
 serde_json = { workspace = true }

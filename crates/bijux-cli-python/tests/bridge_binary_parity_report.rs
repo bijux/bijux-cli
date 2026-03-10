@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! Generate and enforce parity artifact for binary vs python-bridge execution.
 
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use std::fs;

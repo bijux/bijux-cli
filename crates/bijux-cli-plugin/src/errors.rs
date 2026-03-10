@@ -2,7 +2,7 @@
 
 use std::io;
 
-use bijux_cli_contracts::PluginKind;
+use bijux_cli_routing::PluginKind;
 
 /// Plugin manifest parsing/validation/registry errors.
 #[derive(Debug, thiserror::Error)]
