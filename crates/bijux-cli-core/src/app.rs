@@ -12,8 +12,7 @@ use bijux_cli_install::{
     atomic_write_text, canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config,
     pip_install_strategy, post_install_hint, CompatibilityConfig, CompatibilityPaths,
-    PackageChannel, PathOverrides, CANONICAL_EXECUTABLE, ENV_CONFIG_PATH, ENV_HISTORY_PATH,
-    ENV_PLUGINS_PATH,
+    PackageChannel, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
@@ -29,8 +28,10 @@ use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use bijux_cli_routing::reports::route_audit_report;
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
-    contracts as dev_contracts, env as dev_env, parity as dev_parity, registry as dev_registry,
-    routes as dev_routes, status as dev_status, ReportContext,
+    contracts as dev_contracts, env as dev_env, package_health as dev_package_health,
+    parity as dev_parity, registry as dev_registry, routes as dev_routes,
+    runtime_identity as dev_runtime_identity, state_audit as dev_state_audit, status as dev_status,
+    ReportContext,
 };
 use serde_json::{json, Value};
 
@@ -103,31 +104,6 @@ fn collect_files(base: &Path) -> Vec<std::path::PathBuf> {
 
 fn rel_to_root(path: &Path, root: &Path) -> String {
     path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
-}
-
-fn detect_install_source(active_binary: Option<&str>) -> &'static str {
-    let Some(path) = active_binary else {
-        return "unknown";
-    };
-    if path.contains(".cargo") {
-        "cargo"
-    } else if path.contains("pipx") {
-        "pipx"
-    } else if path.contains("site-packages") || path.contains("venv") || path.contains(".venv") {
-        "pip"
-    } else if path.contains("homebrew") || path.contains("/brew/") {
-        "homebrew"
-    } else {
-        "unknown"
-    }
-}
-
-fn is_canonical_active_path(active_binary: Option<&str>) -> bool {
-    active_binary
-        .map(|path| {
-            path.ends_with(&format!("/{CANONICAL_EXECUTABLE}")) || path == CANONICAL_EXECUTABLE
-        })
-        .unwrap_or(false)
 }
 
 fn classify_script(path: &str) -> &'static str {
@@ -1289,19 +1265,7 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "package-health" => {
             let root = workspace_root();
             let state = read_json_if_exists(&root.join("artifacts/status/current_rust_state.json"));
-            let assumptions = vec![
-                "config/history/plugins state defaults under HOME/.bijux unless explicit overrides are set",
-                "XDG-style HOME locations are treated as regular HOME roots for compatibility paths",
-                "PATH order decides active bijux binary and all ambiguity diagnostics derive from that order",
-                "completion files are generated under shell-specific directories derived from HOME",
-                "state bootstrap must create missing directories and report explicit errors for unwritable roots",
-            ];
-            json!({
-                "package_entrypoints": state.get("package_entrypoints").cloned().unwrap_or_else(|| json!([])),
-                "runtime_identity_rules": state.get("runtime_identity_rules").cloned().unwrap_or_else(|| json!({})),
-                "install_state_assumptions": assumptions,
-                "install_state_assumption_help": "Use `bijux dev cli package-health --format json` to audit install-state assumptions and entrypoint contracts.",
-            })
+            dev_package_health::build_report(state)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "env" => dev_env::build_report(
             env_map().into_iter().collect(),
@@ -1383,23 +1347,19 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-audit" => {
             let corruption = state_diagnostics(&paths);
-            json!({
-                "paths": {
-                    "config": state_path_status(&paths.config_file),
-                    "history": state_path_status(&paths.history_file),
-                    "plugins_registry": state_path_status(&plugin_registry_path),
-                    "memory": state_path_status(&paths.memory_file),
+            dev_state_audit::build_report(
+                dev_state_audit::StatePathStatusInput {
+                    config: state_path_status(&paths.config_file),
+                    history: state_path_status(&paths.history_file),
+                    plugins_registry: state_path_status(&plugin_registry_path),
+                    memory: state_path_status(&paths.memory_file),
                 },
-                "corruption_health": corruption,
-                "runtime": "dev-cli",
-            })
+                corruption,
+            )
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-doctor" => {
             let diagnosis = state_diagnostics(&paths);
-            json!({
-                "runtime": "dev-cli",
-                "doctor": diagnosis,
-            })
+            dev_state_audit::build_doctor_report(diagnosis)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             let root = workspace_root();
@@ -1440,65 +1400,18 @@ fn route_response(
                 env::var("BIJUX_PYTHON_BRIDGE_SUPPORTED"),
                 Ok(value) if matches!(value.as_str(), "0" | "false" | "FALSE")
             );
-            let install_source = detect_install_source(install_report.active_binary.as_deref());
-            let is_shadowed = install_report.has_path_shadowing;
-            let is_ambiguous_active_binary = install_report.path_binaries.len() > 1;
-            let is_canonical_path =
-                is_canonical_active_path(install_report.active_binary.as_deref());
             let cargo_canonical = cargo_install_strategy(PackageChannel::Canonical);
             let cargo_compat = cargo_install_strategy(PackageChannel::Compatibility);
             let pip_canonical = pip_install_strategy(PackageChannel::Canonical);
             let pip_compat = pip_install_strategy(PackageChannel::Compatibility);
-            json!({
-                "runtime": "rust-foundation",
-                "schema": "runtime-identity-v1",
-                "public_runtime_binary_names": [CANONICAL_EXECUTABLE],
-                "secondary_public_runtime_binary_names": [],
-                "canonical_user_binary": CANONICAL_EXECUTABLE,
-                "active_binary": install_report.active_binary,
-                "install_source": install_source,
-                "active_path_is_canonical_name": is_canonical_path,
-                "active_path_is_shadowed": is_shadowed,
-                "active_binary_selection_is_ambiguous": is_ambiguous_active_binary,
-                "path_binaries": install_report.path_binaries,
-                "diagnostics": {
-                    "duplicate_install_detected": install_report.has_duplicate_installs,
-                    "mixed_pip_cargo_install_detected": install_report.has_duplicate_installs,
-                    "path_shadowing_detected": install_report.has_path_shadowing,
-                    "stale_wrapper_detected": !install_report.stale_wrapper_scripts.is_empty(),
-                    "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
-                    "mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
-                    "active_binary_mismatch_detected": install_report.has_mismatched_wheel_binary_versions,
-                    "active_binary_missing": install_report.active_binary_missing,
-                    "broken_symlink_active_binary": install_report.broken_symlink_active_binary,
-                    "python_bridge_supported": python_bridge_supported,
-                    "legacy_installer_conflicts": install_report.legacy_installer_conflicts,
-                },
-                "entrypoints": {
-                    "binary": "crates/bijux-cli-bin/src/main.rs",
-                    "core": "bijux_cli_core::app::run_app",
-                    "python_bridge": "bijux_cli_python::bindings::execution_facade_api",
-                },
-                "package_channels": {
-                    "cargo": {
-                        "canonical": cargo_canonical.package_name,
-                        "compatibility": cargo_compat.package_name,
-                    },
-                    "pip": {
-                        "canonical": pip_canonical.package_name,
-                        "compatibility": pip_compat.package_name,
-                    },
-                    "canonical_crate_name": canonical_crate_name(),
-                },
-                "text_summary": [
-                    format!("canonical user binary: {CANONICAL_EXECUTABLE}"),
-                    format!("active executable: {}", install_report.active_binary.clone().unwrap_or_else(|| "not-found".to_string())),
-                    format!("install source: {install_source}"),
-                    format!("path shadowing: {}", if install_report.has_path_shadowing { "detected" } else { "not-detected" }),
-                    format!("duplicate installs: {}", if install_report.has_duplicate_installs { "detected" } else { "not-detected" }),
-                    format!("stale wrappers: {}", if install_report.stale_wrapper_scripts.is_empty() { "not-detected" } else { "detected" }),
-                    format!("python bridge support: {}", if python_bridge_supported { "available" } else { "missing" }),
-                ],
+            dev_runtime_identity::build_report(dev_runtime_identity::RuntimeIdentityInput {
+                install_report,
+                python_bridge_supported,
+                cargo_canonical_package: cargo_canonical.package_name,
+                cargo_compat_package: cargo_compat.package_name,
+                pip_canonical_package: pip_canonical.package_name,
+                pip_compat_package: pip_compat.package_name,
+                canonical_crate_name: canonical_crate_name().to_string(),
             })
         }
         [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => {

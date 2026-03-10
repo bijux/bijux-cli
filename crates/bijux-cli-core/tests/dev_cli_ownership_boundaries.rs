@@ -46,11 +46,31 @@ fn core_app_env_contracts_parity_status_delegate_to_dev_cli() {
         "core app must delegate dev cli status to bijux-dev-cli"
     );
     assert!(
+        source.contains("dev_runtime_identity::build_report"),
+        "core app must delegate dev cli runtime-identity to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_package_health::build_report"),
+        "core app must delegate dev cli package-health to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_state_audit::build_report"),
+        "core app must delegate dev cli state-audit to bijux-dev-cli"
+    );
+    assert!(
+        source.contains("dev_state_audit::build_doctor_report"),
+        "core app must delegate dev cli state-doctor to bijux-dev-cli"
+    );
+    assert!(
         !source.contains("artifacts/parity/command_parity_matrix.json"),
         "core app must not assemble dev cli parity artifact payloads directly"
     );
     assert!(
         !source.contains("status_dev_cli_subcommands.json"),
         "core app must not assemble dev cli status report payloads directly"
+    );
+    assert!(
+        !source.contains("active_path_is_canonical_name"),
+        "core app must not assemble runtime identity payload fields directly"
     );
 }
