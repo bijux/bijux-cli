@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use bijux_cli as _;
 use bijux_cli_python as _;
@@ -27,7 +28,13 @@ fn run_stdout(args: &[&str]) -> String {
 }
 
 fn snapshot_home() -> PathBuf {
-    let home = std::env::temp_dir().join("bijux-cli-diagnostics-snapshots-home");
+    static SNAPSHOT_HOME_COUNTER: AtomicU64 = AtomicU64::new(0);
+    let unique = SNAPSHOT_HOME_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let home = std::env::temp_dir().join(format!(
+        "bijux-cli-diagnostics-snapshots-home-{}-{}",
+        std::process::id(),
+        unique
+    ));
     let state_dir = home.join(".bijux");
     fs::create_dir_all(&state_dir).expect("create snapshot home state dir");
     fs::write(state_dir.join(".env"), "BIJUXCLI_ALPHA=1\n").expect("seed config");
