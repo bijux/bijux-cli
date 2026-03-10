@@ -25,7 +25,9 @@ use crate::features::install::{
     canonical_crate_name, cargo_install_strategy, install_health_report, pip_install_strategy,
     query::runtime_identity_query, PackageChannel,
 };
-use crate::features::plugins::{list_plugins, load_time_diagnostics, FUTURE_PRODUCT_NAMESPACES};
+use crate::features::plugins::{
+    list_plugins, load_time_diagnostics, KNOWN_BIJUX_PROJECT_NAMESPACES,
+};
 use crate::routing::inventory::{registry_inventory, route_inventory};
 use crate::routing::query::contracts_schema_query;
 use crate::routing::registry::RouteRegistry;
@@ -63,7 +65,7 @@ impl RuntimeQueryProvider for RuntimeQueryAdapter<'_> {
     }
 
     fn product_namespaces(&self) -> Vec<String> {
-        FUTURE_PRODUCT_NAMESPACES.iter().map(|value| (*value).to_string()).collect()
+        KNOWN_BIJUX_PROJECT_NAMESPACES.iter().map(|value| (*value).to_string()).collect()
     }
 
     fn env_map(&self) -> BTreeMap<String, String> {

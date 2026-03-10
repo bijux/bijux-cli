@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use crate::routing::{CompatibilityRange, Namespace, PluginKind, PluginManifestV1};
 use semver::Version;
 
-use super::constants::{is_reserved_namespace, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES};
+use super::constants::{is_reserved_namespace, CORE_NAMESPACES, KNOWN_BIJUX_PROJECT_NAMESPACES};
 use super::errors::PluginError;
 use super::models::ValidatedPlugin;
 
@@ -24,7 +24,7 @@ pub fn validate_manifest(
     validate_namespace_format(&manifest.namespace)?;
     reject_reserved_namespace(&manifest.namespace, reserved_namespaces)?;
     reject_core_namespace(&manifest.namespace)?;
-    reject_future_product_namespace(&manifest.namespace)?;
+    reject_known_bijux_project_namespace(&manifest.namespace)?;
     validate_aliases(&manifest.aliases)?;
     validate_compatibility(&manifest.compatibility, host_version)?;
     validate_entrypoint_and_kind(&manifest)?;
@@ -81,8 +81,8 @@ fn reject_core_namespace(namespace: &Namespace) -> Result<(), PluginError> {
     Ok(())
 }
 
-fn reject_future_product_namespace(namespace: &Namespace) -> Result<(), PluginError> {
-    if FUTURE_PRODUCT_NAMESPACES.iter().any(|value| *value == namespace.0) {
+fn reject_known_bijux_project_namespace(namespace: &Namespace) -> Result<(), PluginError> {
+    if KNOWN_BIJUX_PROJECT_NAMESPACES.iter().any(|value| *value == namespace.0) {
         return Err(PluginError::FutureNamespaceConflict(namespace.0.clone()));
     }
     Ok(())

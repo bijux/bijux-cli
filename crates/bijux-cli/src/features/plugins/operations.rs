@@ -12,7 +12,7 @@ use crate::features::plugins::{
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, scaffold::scaffold_plugin_layout, self_repair_registry,
     uninstall_plugin, validate_manifest, InstallPluginRequest, PluginTrustLevel, CORE_NAMESPACES,
-    FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
+    KNOWN_BIJUX_PROJECT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use crate::routing::{PluginKind, PluginLifecycleState};
 
@@ -176,7 +176,7 @@ pub(crate) fn reserved_namespaces_report() -> Value {
     json!({
         "reserved_namespaces": RESERVED_NAMESPACES,
         "core_namespaces": CORE_NAMESPACES,
-        "future_product_namespaces": FUTURE_PRODUCT_NAMESPACES,
+        "known_bijux_projects": KNOWN_BIJUX_PROJECT_NAMESPACES,
     })
 }
 
