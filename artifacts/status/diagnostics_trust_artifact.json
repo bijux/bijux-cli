@@ -1,0 +1,103 @@
+{
+  "generated_at": "2026-03-10T12:02:36.260037+00:00",
+  "generator": "scripts/status/generate_diagnostics_trust_reports.py",
+  "scope": "diagnostics trust",
+  "status": "complete",
+  "tasks": [
+    361,
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    374,
+    375
+  ],
+  "todo_coverage": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable",
+      "todo": 361
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable",
+      "todo": 362
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth",
+      "todo": 363
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth",
+      "todo": 364
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth",
+      "todo": 365
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth",
+      "todo": 366
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth",
+      "todo": 367
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases",
+      "todo": 368
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases",
+      "todo": 369
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_problem_cases",
+      "todo": 370
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "diagnostics_do_not_invent_unsupported_remediation_steps",
+      "todo": 371
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "diagnostics_text_is_boring_and_json_is_machine_friendly",
+      "todo": 372
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "diagnostics_text_is_boring_and_json_is_machine_friendly",
+      "todo": 373
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/diagnostics_trust_law_extra.rs",
+      "status": "covered",
+      "test": "diagnostics_runs_are_deterministic_for_covered_commands",
+      "todo": 374
+    }
+  ]
+}
