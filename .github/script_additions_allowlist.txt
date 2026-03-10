@@ -78,6 +78,9 @@ scripts/status/enforce_python_bridge_execution_gate.py # enforce CI failure when
 scripts/status/warn_python_bridge_command_law_scope.py # emit CI warning when python bridge appears to add command-law logic outside the shared core route law
 scripts/status/generate_python_bridge_conversion_reports.py # generate python-bridge conversion, exception-mapping, envelope-integrity, drift, and frozen conversion contract artifacts
 scripts/status/enforce_python_bridge_conversion_gate.py # enforce CI failure when covered python-bridge conversion behavior drifts
+scripts/status/generate_cross_surface_state_reports.py # generate cross-surface state consistency, drift, and frozen contract artifacts for binary/bridge/repl/state-doctor coverage
+scripts/status/enforce_cross_surface_state_gate.py # enforce CI failure when covered cross-surface state behavior drifts
+scripts/status/warn_uncovered_cross_surface_state_scope.py # emit CI warning when cross-surface state coverage remains partial for new stateful behavior
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests
