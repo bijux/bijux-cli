@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T12:52:06.006517+00:00",
+  "generated_at": "2026-03-10T12:52:34.755471+00:00",
   "generator": "scripts/status/generate_state_race_campaign_reports.py",
   "minimized_cases": [
     "crates/bijux-cli-bin/tests/fuzz/state_race_minimized_cases/read_write_mix.json",

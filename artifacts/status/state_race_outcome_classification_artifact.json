@@ -10,7 +10,7 @@
       "post-race readers still parse and return structured outputs"
     ]
   },
-  "generated_at": "2026-03-10T12:52:06.006517+00:00",
+  "generated_at": "2026-03-10T12:52:34.755471+00:00",
   "generator": "scripts/status/generate_state_race_campaign_reports.py",
   "scope": "race outcome classification",
   "status": "complete",

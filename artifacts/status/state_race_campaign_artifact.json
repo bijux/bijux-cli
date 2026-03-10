@@ -10,10 +10,10 @@
     ],
     "exit_code": 0,
     "ok": true,
-    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/state_race_campaigns.rs (target/debug/deps/state_race_campaigns-97b30b4bfafd835c)\n",
-    "stdout": "\nrunning 4 tests\ntest concurrent_history_plugin_registry_and_memory_reads_remain_stable ... ok\ntest deterministic_final_state_is_stable_when_policy_uses_same_target_value ... ok\ntest concurrent_config_export_load_and_read_paths_stay_non_corrupt ... ok\ntest concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.79s\n\n"
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/state_race_campaigns.rs (target/debug/deps/state_race_campaigns-97b30b4bfafd835c)\n",
+    "stdout": "\nrunning 4 tests\ntest concurrent_history_plugin_registry_and_memory_reads_remain_stable ... ok\ntest deterministic_final_state_is_stable_when_policy_uses_same_target_value ... ok\ntest concurrent_config_export_load_and_read_paths_stay_non_corrupt ... ok\ntest concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.48s\n\n"
   },
-  "generated_at": "2026-03-10T12:52:06.006517+00:00",
+  "generated_at": "2026-03-10T12:52:34.755471+00:00",
   "generator": "scripts/status/generate_state_race_campaign_reports.py",
   "scope": "concurrent state race campaigns",
   "status": "complete",
