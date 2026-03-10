@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-03-10T00:08:41.154449+00:00",
+  "generator": "scripts/status/generate_truth_milestone_status.py",
+  "items": [
+    {
+      "area": "parity-confidence",
+      "commands": [
+        "audit",
+        "cli completion",
+        "cli config clear",
+        "cli config export",
+        "cli config get",
+        "cli config load",
+        "cli config reload",
+        "cli config set",
+        "cli config unset",
+        "cli doctor",
+        "cli inspect",
+        "cli paths",
+        "cli plugins check",
+        "cli plugins explain",
+        "cli plugins inspect",
+        "cli plugins list",
+        "cli plugins reserved-names",
+        "cli plugins schema",
+        "cli plugins where",
+        "cli repl",
+        "cli self-test",
+        "cli status",
+        "cli version",
+        "completion",
+        "config clear",
+        "config export",
+        "config get",
+        "config load",
+        "config reload",
+        "config set",
+        "config unset",
+        "dev cli contracts",
+        "dev cli crate-health",
+        "dev cli docs",
+        "dev cli docs-prune-plan",
+        "dev cli doctor",
+        "dev cli env",
+        "dev cli fixture-audit",
+        "dev cli inventory",
+        "dev cli package-health"
+      ],
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "item": "low-confidence partial parity coverage",
+      "reason": "partial rows still exist with low confidence scores"
+    },
+    {
+      "area": "runtime-law",
+      "evidence": "artifacts/status/current_rust_state.json",
+      "item": "runtime law assertions unresolved",
+      "reason": "runtime parity assertions report violations"
+    },
+    {
+      "area": "plugin-lifecycle",
+      "commands": [
+        "plugins scaffold",
+        "plugins install",
+        "plugins uninstall",
+        "plugins enable",
+        "plugins disable"
+      ],
+      "evidence": "artifacts/status/plugin_state_report.json",
+      "item": "plugin lifecycle coverage not fully proven",
+      "reason": "plugin commands still marked partial"
+    }
+  ],
+  "source": {
+    "command_matrix": "artifacts/parity/command_parity_matrix.json",
+    "current_state": "artifacts/status/current_rust_state.json",
+    "plugin_state": "artifacts/status/plugin_state_report.json"
+  },
+  "summary": {
+    "count": 3,
+    "scope": "areas that still lack release-grade proof"
+  }
+}

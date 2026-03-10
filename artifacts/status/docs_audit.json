@@ -23,6 +23,19 @@
       ]
     },
     {
+      "doc": "docs/MAINTAINER_MILESTONE_CHECKLIST.md",
+      "signals": [
+        "generated-artifacts"
+      ]
+    },
+    {
+      "doc": "docs/WHAT_WE_WONT_CLAIM.md",
+      "signals": [
+        "generated-artifacts",
+        "status-reference"
+      ]
+    },
+    {
       "doc": "docs/architecture/config-get-post-parity-improvements.md",
       "signals": [
         "schema-prose"
@@ -1609,7 +1622,7 @@
   "documentation_decisions": {
     "counts": {
       "delete": 0,
-      "keep": 185,
+      "keep": 187,
       "merge": 6,
       "replace-with-generated": 14
     },
@@ -1744,7 +1757,15 @@
       },
       {
         "decision": "keep",
+        "path": "docs/MAINTAINER_MILESTONE_CHECKLIST.md"
+      },
+      {
+        "decision": "keep",
         "path": "docs/STABILITY_AND_BREAKAGE.md"
+      },
+      {
+        "decision": "keep",
+        "path": "docs/WHAT_WE_WONT_CLAIM.md"
       },
       {
         "decision": "keep",
@@ -2436,10 +2457,10 @@
       }
     ]
   },
-  "generated_artifact_file_count": 105,
+  "generated_artifact_file_count": 108,
   "generated_at": "1970-01-01T00:00:00+00:00",
   "generator": "scripts/status/generate_docs_audit.py",
-  "markdown_count": 205,
+  "markdown_count": 207,
   "markdown_files": [
     "CHANGELOG.md",
     "CODE_OF_CONDUCT.md",
@@ -2473,7 +2494,9 @@
     "docs/CONTRIBUTOR_ENGINEERING_RULES.md",
     "docs/HONEST_STATUS.md",
     "docs/KNOWN_GAPS.md",
+    "docs/MAINTAINER_MILESTONE_CHECKLIST.md",
     "docs/STABILITY_AND_BREAKAGE.md",
+    "docs/WHAT_WE_WONT_CLAIM.md",
     "docs/architecture/adr-cli-binary-ownership.md",
     "docs/architecture/bin-main-branch-audit.md",
     "docs/architecture/config-crate-ownership.md",
