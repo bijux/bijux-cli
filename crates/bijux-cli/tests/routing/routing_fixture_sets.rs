@@ -3,8 +3,7 @@
 
 use std::fs;
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli::routing::registry::{RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
@@ -33,7 +32,7 @@ fn read_lines(path: &str) -> Vec<Vec<String>> {
 #[test]
 fn all_cli_subcommand_fixtures_resolve() {
     let registry = RouteRegistry::default();
-    for path in read_lines("tests/fixtures/cli_subcommands.txt") {
+    for path in read_lines("tests/routing/fixtures/cli_subcommands.txt") {
         let resolved = registry.resolve(&path).expect("cli fixture should resolve");
         assert!(matches!(resolved, RouteTarget::BuiltIn));
     }
@@ -42,7 +41,7 @@ fn all_cli_subcommand_fixtures_resolve() {
 #[test]
 fn all_dev_cli_subcommand_fixtures_resolve() {
     let registry = RouteRegistry::default();
-    for path in read_lines("tests/fixtures/dev_cli_subcommands.txt") {
+    for path in read_lines("tests/routing/fixtures/dev_cli_subcommands.txt") {
         let resolved = registry.resolve(&path).expect("dev cli fixture should resolve");
         assert!(matches!(resolved, RouteTarget::BuiltIn));
     }
@@ -53,7 +52,7 @@ fn plugin_namespace_fixture_commands_resolve_after_registration() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("community").expect("plugin namespace should register");
 
-    for path in read_lines("tests/fixtures/plugin_namespace_commands.txt") {
+    for path in read_lines("tests/routing/fixtures/plugin_namespace_commands.txt") {
         let resolved = registry.resolve(&path).expect("plugin fixture should resolve");
         assert!(matches!(resolved, RouteTarget::Plugin(ns) if ns == "community"));
     }
@@ -61,7 +60,7 @@ fn plugin_namespace_fixture_commands_resolve_after_registration() {
 
 #[test]
 fn invalid_command_suggestions_match_fixtures() {
-    let text = fs::read_to_string("tests/fixtures/invalid_command_suggestions.json")
+    let text = fs::read_to_string("tests/routing/fixtures/invalid_command_suggestions.json")
         .expect("fixture should exist");
     let cases: Vec<SuggestCase> = serde_json::from_str(&text).expect("fixture json should parse");
 

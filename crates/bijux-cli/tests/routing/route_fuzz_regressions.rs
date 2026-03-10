@@ -2,14 +2,13 @@
 //! Route fuzz regression suite replaying minimized route-fuzz cases.
 //! `test_type`: route-fuzz-regression
 
-use bijux_cli_routing as _;
 use proptest as _;
 use serde as _;
 use serde_json as _;
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_routing::registry::RouteRegistry;
+use bijux_cli::routing::registry::RouteRegistry;
 use clap as _;
 use schemars as _;
 use semver as _;
@@ -39,7 +38,7 @@ fn load_cases(dir: &Path) -> Vec<Vec<String>> {
 
 #[test]
 fn minimized_route_cases_do_not_crash_and_are_deterministic() {
-    let cases = load_cases(Path::new("tests/fuzz/route_minimized_cases"));
+    let cases = load_cases(Path::new("tests/routing/fuzz/route_minimized_cases"));
     assert!(!cases.is_empty(), "minimized route cases must be retained");
 
     for namespaces in cases {

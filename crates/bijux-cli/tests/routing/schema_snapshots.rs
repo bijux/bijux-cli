@@ -2,7 +2,7 @@
 
 //! Schema snapshot tests to detect accidental drift.
 
-use bijux_cli_routing::schema::{
+use bijux_cli::routing::schema::{
     error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema,
 };
 use clap as _;
@@ -21,15 +21,15 @@ fn schema_snapshots_are_deterministic_and_match_expected_files() {
     let cases = [
         (
             output_envelope_v1_schema as fn() -> schemars::schema::RootSchema,
-            "tests/snapshots/output_envelope_v1.schema.json",
+            "tests/routing/snapshots/output_envelope_v1.schema.json",
         ),
         (
             error_envelope_v1_schema as fn() -> schemars::schema::RootSchema,
-            "tests/snapshots/error_envelope_v1.schema.json",
+            "tests/routing/snapshots/error_envelope_v1.schema.json",
         ),
         (
             plugin_manifest_v1_schema as fn() -> schemars::schema::RootSchema,
-            "tests/snapshots/plugin_manifest_v1.schema.json",
+            "tests/routing/snapshots/plugin_manifest_v1.schema.json",
         ),
     ];
 

@@ -1,8 +1,7 @@
 #![forbid(unsafe_code)]
 //! Snapshot test for rendered command tree roots.
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::registry::RouteRegistry;
+use bijux_cli::routing::registry::RouteRegistry;
 use proptest as _;
 use serde as _;
 use serde_json as _;

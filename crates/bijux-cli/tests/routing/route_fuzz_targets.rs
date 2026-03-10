@@ -2,9 +2,8 @@
 //! Route and route-registry fuzz targets for deterministic behavior and crash resistance.
 //! test_type: route-fuzz
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::inventory::{registry_inventory, route_inventory};
-use bijux_cli_routing::registry::{RouteError, RouteRegistry};
+use bijux_cli::routing::inventory::{registry_inventory, route_inventory};
+use bijux_cli::routing::registry::{RouteError, RouteRegistry};
 use clap as _;
 use proptest as _;
 use schemars as _;

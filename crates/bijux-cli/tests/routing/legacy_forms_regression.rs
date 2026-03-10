@@ -1,10 +1,9 @@
 #![forbid(unsafe_code)]
 //! Regression tests for legacy Python command forms.
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::catalog::normalize_command_path;
-use bijux_cli_routing::parser::parse_intent;
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli::routing::catalog::normalize_command_path;
+use bijux_cli::routing::parser::parse_intent;
+use bijux_cli::routing::registry::{RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -60,7 +59,7 @@ fn removed_dev_alias_paths_resolve_as_unknown_and_canonical_path_still_resolves(
 
     let legacy = vec!["dev".to_string(), "docs".to_string()];
     let legacy_err = registry.resolve(&legacy).expect_err("legacy alias should be unknown");
-    assert!(matches!(legacy_err, bijux_cli_routing::registry::RouteError::Unknown(_)));
+    assert!(matches!(legacy_err, bijux_cli::routing::registry::RouteError::Unknown(_)));
 
     let canonical = vec!["dev".to_string(), "cli".to_string(), "docs".to_string()];
     let canonical_target = registry.resolve(&canonical).expect("canonical route should resolve");
@@ -81,7 +80,7 @@ fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
 
     for path in removed {
         let err = registry.resolve(&path).expect_err("removed alias should resolve as unknown");
-        assert!(matches!(err, bijux_cli_routing::registry::RouteError::Unknown(_)));
+        assert!(matches!(err, bijux_cli::routing::registry::RouteError::Unknown(_)));
     }
 
     let canonical_paths = [

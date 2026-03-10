@@ -5,9 +5,8 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::parser::parse_intent;
-use bijux_cli_routing::registry::RouteRegistry;
+use bijux_cli::routing::parser::parse_intent;
+use bijux_cli::routing::registry::RouteRegistry;
 use clap as _;
 use proptest as _;
 use schemars as _;
@@ -31,7 +30,7 @@ fn read_case_file(path: &Path) -> Vec<Vec<String>> {
 
 #[test]
 fn minimized_parser_cases_do_not_crash_and_are_deterministic() {
-    let dir = Path::new("tests/fuzz/parser_minimized_cases");
+    let dir = Path::new("tests/routing/fuzz/parser_minimized_cases");
     let mut files = fs::read_dir(dir)
         .expect("minimized case directory must exist")
         .flatten()
@@ -64,7 +63,7 @@ fn minimized_parser_cases_do_not_crash_and_are_deterministic() {
 
 #[test]
 fn interesting_corpus_cases_do_not_crash_or_corrupt_route_resolution() {
-    let dir = Path::new("tests/fuzz/parser_interesting_inputs");
+    let dir = Path::new("tests/routing/fuzz/parser_interesting_inputs");
     let mut files = fs::read_dir(dir)
         .expect("interesting corpus directory must exist")
         .flatten()

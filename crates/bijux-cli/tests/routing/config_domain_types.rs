@@ -2,7 +2,7 @@
 
 //! Config domain contract invariants.
 
-use bijux_cli_routing::{
+use bijux_cli::routing::{
     ConfigClearResult, ConfigCommandResult, ConfigEntry, ConfigErrorKind, ConfigExportFormat,
     ConfigKey, ConfigLoadResult, ConfigMutation, ConfigPathSet, ConfigReadSource,
     ConfigReloadResult, ConfigSnapshot, ConfigValidationError, ConfigValue, ConfigWriteResult,

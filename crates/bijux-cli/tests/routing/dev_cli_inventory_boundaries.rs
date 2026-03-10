@@ -3,19 +3,19 @@
 
 #[test]
 fn routing_keeps_only_query_interfaces_for_dev_cli_views() {
-    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/lib.rs"))
-        .expect("read routing lib source");
+    let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/routing/mod.rs"))
+        .expect("read routing module source");
 
     assert!(
         !source.contains("pub mod reports;"),
-        "routing crate must not expose maintainer report assembly modules"
+        "routing module must not expose maintainer report assembly modules"
     );
     assert!(
         source.contains("pub mod inventory;"),
-        "routing crate must keep read-only inventory query module"
+        "routing module must keep read-only inventory query module"
     );
     assert!(
         source.contains("pub mod query;"),
-        "routing crate must keep read-only contracts query module"
+        "routing module must keep read-only contracts query module"
     );
 }

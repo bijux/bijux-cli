@@ -1,8 +1,7 @@
 #![forbid(unsafe_code)]
 //! Property tests for global-flag placement normalization.
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::parser::parse_intent;
+use bijux_cli::routing::parser::parse_intent;
 use clap as _;
 use proptest::prelude::*;
 use schemars as _;

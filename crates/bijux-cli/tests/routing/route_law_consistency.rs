@@ -1,10 +1,9 @@
 #![forbid(unsafe_code)]
 //! Route-law consistency checks across root, cli/dev cli, and plugin dispatch.
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::catalog::normalize_command_path;
-use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
+use bijux_cli::routing::catalog::normalize_command_path;
+use bijux_cli::routing::registry::{RouteError, RouteRegistry, RouteTarget};
+use bijux_cli::routing::OFFICIAL_PRODUCT_NAMESPACES;
 use proptest as _;
 use serde as _;
 use serde_json as _;

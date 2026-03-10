@@ -3,9 +3,8 @@
 
 use std::fs;
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::parser::parse_intent;
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli::routing::parser::parse_intent;
+use bijux_cli::routing::registry::{RouteRegistry, RouteTarget};
 use proptest as _;
 use serde as _;
 use serde::Deserialize;
@@ -24,7 +23,7 @@ use thiserror as _;
 
 fn load_cases() -> Vec<ParseCase> {
     let text =
-        fs::read_to_string("tests/fixtures/parse_cases.json").expect("fixture file should load");
+        fs::read_to_string("tests/routing/fixtures/parse_cases.json").expect("fixture file should load");
     serde_json::from_str(&text).expect("fixture json should parse")
 }
 
@@ -77,7 +76,7 @@ fn parser_conflicting_pretty_flags_are_normalized_deterministically() {
         "status".to_string(),
     ];
     let intent = parse_intent(&argv).expect("parse should succeed");
-    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli_routing::PrettyMode::Compact));
+    assert_eq!(intent.global_flags.pretty_mode, Some(bijux_cli::routing::PrettyMode::Compact));
 }
 
 #[test]

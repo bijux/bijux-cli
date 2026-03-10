@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli_routing::{
+use bijux_cli::routing::{
     AliasRewrite, ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource,
     DiagnosticRecord, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode,
     GlobalFlags, InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList,
