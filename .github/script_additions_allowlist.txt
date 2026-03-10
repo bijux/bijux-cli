@@ -135,4 +135,6 @@ scripts/status/generate_runtime_package_diagnostics_reports.py # generate runtim
 scripts/status/enforce_runtime_package_diagnostics_gate.py # enforce runtime/package diagnostics gate and fail CI on diagnostics drift
 scripts/status/generate_dev_cli_state_diagnostics_reports.py # generate state-audit/state-doctor/corrupted-state truth artifacts and drift report for state diagnostics hardening
 scripts/status/enforce_dev_cli_state_diagnostics_gate.py # enforce state diagnostics gate and fail CI on state-audit/state-doctor drift
+scripts/status/generate_dev_cli_route_registry_env_contracts_reports.py # generate routes/registry/env/contracts truth and drift artifacts for low-level control-plane diagnostics
+scripts/status/enforce_dev_cli_route_registry_env_contracts_gate.py # enforce routes/registry/env/contracts gate and fail CI on source-truth drift
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
