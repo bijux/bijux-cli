@@ -1,0 +1,8 @@
+Plugin Runtime Health
+status: degraded
+complete commands: 7
+partial commands: 5
+plugin parity rows complete: 0/0
+remaining gaps: 3
+
+Use `bijux dev cli plugin-health --format json` for machine-readable details.

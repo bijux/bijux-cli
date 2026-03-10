@@ -1,17 +1,13 @@
 {
-  "beyond_python": [
-    "reserved namespace diagnostics surface",
-    "plugin registry origin metadata",
-    "transaction rollback assertions for install/uninstall failures",
-    "explicit plugin schema command"
-  ],
-  "frozen_law": "plugin v1 contract is frozen before expanding command cleverness",
-  "generated_at": "2026-03-10T00:29:12.373184+00:00",
-  "generator": "scripts/status/generate_plugin_state_report.py",
+  "generated_at": "2026-03-10T00:29:12.398875+00:00",
   "overlap_parity_tests": [
     "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
     "crates/bijux-cli-bin/tests/plugin_command_parity.rs"
   ],
+  "parity": {
+    "complete_rows": 0,
+    "plugin_rows": 0
+  },
   "plugin_commands": {
     "complete": [
       "plugins list",
@@ -22,6 +18,7 @@
       "plugins explain",
       "plugins schema"
     ],
+    "complete_count": 7,
     "partial": [
       "plugins scaffold",
       "plugins install",
@@ -29,11 +26,13 @@
       "plugins enable",
       "plugins disable"
     ],
-    "python_only": []
+    "partial_count": 5
   },
   "remaining_gaps": [
     "scaffold command parity against Python templates",
     "full CLI lifecycle command parity for install/uninstall/enable/disable",
     "end-to-end CLI plugin diagnostics parity for all failure classes"
-  ]
+  ],
+  "schema": "plugin-health-report-v1",
+  "status": "degraded"
 }
