@@ -72,3 +72,28 @@ fn removed_dev_alias_paths_resolve_as_unknown_and_canonical_path_still_resolves(
     let canonical_target = registry.resolve(&canonical).expect("canonical route should resolve");
     assert_eq!(canonical_target, RouteTarget::BuiltIn);
 }
+
+#[test]
+fn removed_dev_aliases_for_atlas_di_and_list_products_are_unknown() {
+    let registry = RouteRegistry::default();
+    let removed = [
+        vec!["dev".to_string(), "atlas".to_string()],
+        vec!["dev".to_string(), "di".to_string()],
+        vec!["dev".to_string(), "list-products".to_string()],
+    ];
+
+    for path in removed {
+        let err = registry.resolve(&path).expect_err("removed alias should resolve as unknown");
+        assert!(matches!(err, bijux_cli_routing::registry::RouteError::Unknown(_)));
+    }
+
+    let canonical_paths = [
+        vec!["dev".to_string(), "cli".to_string(), "atlas".to_string()],
+        vec!["dev".to_string(), "cli".to_string(), "di".to_string()],
+        vec!["dev".to_string(), "cli".to_string(), "list-products".to_string()],
+    ];
+    for path in canonical_paths {
+        let target = registry.resolve(&path).expect("canonical route should resolve");
+        assert_eq!(target, RouteTarget::BuiltIn);
+    }
+}

@@ -171,9 +171,6 @@ impl Default for RouteRegistry {
             ("dev docs-prune-plan".to_string(), "dev cli docs-prune-plan".to_string()),
             ("dev state-audit".to_string(), "dev cli state-audit".to_string()),
             ("dev state-doctor".to_string(), "dev cli state-doctor".to_string()),
-            ("dev atlas".to_string(), "dev cli atlas".to_string()),
-            ("dev di".to_string(), "dev cli di".to_string()),
-            ("dev list-products".to_string(), "dev cli list-products".to_string()),
             ("dev list-plugins".to_string(), "dev cli list-plugins".to_string()),
         ]);
 
