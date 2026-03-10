@@ -23,6 +23,14 @@ fn run(args: &[&str]) -> Output {
 fn run_ok_json(args: &[&str]) -> Value {
     let out = run(args);
     assert!(out.status.success(), "command failed: {args:?}");
+    assert!(
+        out.stderr.is_empty(),
+        "successful command must keep stderr empty: {args:?}"
+    );
+    assert!(
+        !out.stdout.is_empty(),
+        "successful command must emit stdout payload: {args:?}"
+    );
     serde_json::from_slice(&out.stdout).expect("valid json")
 }
 
@@ -113,17 +121,63 @@ fn config_truncation_duplicate_keys_line_endings_whitespace_and_null_byte_fail_c
         null_bytes.to_str().expect("utf-8"),
     ]);
 
-    let exits = [
-        a.status.code(),
-        b.status.code(),
+    for (label, out) in [
+        ("truncated_key", &a),
+        ("truncated_value", &b),
+        ("duplicate_keys", &c),
+        ("bad_line_endings", &d),
+        ("whitespace_abuse", &e),
+        ("null_bytes", &f),
+    ] {
+        assert!(
+            matches!(out.status.code(), Some(0) | Some(1) | Some(2) | Some(3)),
+            "{label} should normalize into known exit classes"
+        );
+        if out.status.success() {
+            assert!(
+                out.stderr.is_empty(),
+                "{label} success should not write stderr"
+            );
+            assert!(
+                !out.stdout.is_empty(),
+                "{label} success should emit stdout payload"
+            );
+        } else {
+            assert!(
+                out.stdout.is_empty(),
+                "{label} failure should not write stdout"
+            );
+            assert!(
+                !out.stderr.is_empty(),
+                "{label} failure should emit stderr diagnostics"
+            );
+        }
+    }
+
+    assert_eq!(
         c.status.code(),
-        d.status.code(),
-        e.status.code(),
+        Some(0),
+        "duplicate keys must resolve to last value deterministically"
+    );
+    let f_repeat = run(&[
+        "cli",
+        "config",
+        "reload",
+        "--config-path",
+        null_bytes.to_str().expect("utf-8"),
+    ]);
+    assert_eq!(
         f.status.code(),
-    ];
+        f_repeat.status.code(),
+        "null-byte handling should be deterministic across repeated runs"
+    );
+    assert_eq!(f.stdout, f_repeat.stdout, "null-byte stdout should be deterministic");
+    assert_eq!(f.stderr, f_repeat.stderr, "null-byte stderr should be deterministic");
     assert!(
-        exits.iter().any(|code| *code == Some(1)),
-        "at least one corruption shape must fail"
+        [a.status.code(), d.status.code(), e.status.code()]
+            .into_iter()
+            .any(|code| code != Some(0)),
+        "at least one malformed-shape variant should be rejected"
     );
 }
 
@@ -331,4 +385,9 @@ fn invalid_utf8_config_file_is_reported_cleanly() {
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     assert!(!out.stderr.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
+    assert!(
+        stderr.to_ascii_lowercase().contains("utf"),
+        "stderr should explain utf-8 issue"
+    );
 }

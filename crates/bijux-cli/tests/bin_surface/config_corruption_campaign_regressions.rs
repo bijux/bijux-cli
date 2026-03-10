@@ -51,16 +51,65 @@ fn run_case(case_file: &Path) {
         }
     }
 
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(&expanded)
-        .output()
-        .expect("run case");
+    let run_once = || {
+        Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+            .args(&expanded)
+            .output()
+            .expect("run case")
+    };
 
-    assert!(
-        matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
-        "case {} crashed with status {:?}",
-        case_file.display(),
-        out.status.code()
+    let first = run_once();
+    let second = run_once();
+
+    for out in [&first, &second] {
+        assert!(
+            matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
+            "case {} crashed with status {:?}",
+            case_file.display(),
+            out.status.code()
+        );
+        if out.status.success() {
+            assert!(
+                out.stderr.is_empty(),
+                "successful case must keep stderr empty: {}",
+                case_file.display()
+            );
+            assert!(
+                !out.stdout.is_empty(),
+                "successful case must emit stdout: {}",
+                case_file.display()
+            );
+        } else {
+            assert!(
+                out.stdout.is_empty(),
+                "failed case must keep stdout empty: {}",
+                case_file.display()
+            );
+            assert!(
+                !out.stderr.is_empty(),
+                "failed case must emit stderr: {}",
+                case_file.display()
+            );
+        }
+    }
+
+    assert_eq!(
+        first.status.code(),
+        second.status.code(),
+        "exit code drift in {}",
+        case_file.display()
+    );
+    assert_eq!(
+        first.stdout,
+        second.stdout,
+        "stdout drift in {}",
+        case_file.display()
+    );
+    assert_eq!(
+        first.stderr,
+        second.stderr,
+        "stderr drift in {}",
+        case_file.display()
     );
 }
 
