@@ -28,6 +28,10 @@ def main() -> int:
     if bridge_dup.returncode != 0:
         print(bridge_dup.stderr.strip() or bridge_dup.stdout.strip())
         return bridge_dup.returncode
+    install_neutrality = run(["python3", "scripts/status/generate_install_neutrality_reports.py"])
+    if install_neutrality.returncode != 0:
+        print(install_neutrality.stderr.strip() or install_neutrality.stdout.strip())
+        return install_neutrality.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     changed = [
@@ -43,6 +47,8 @@ def main() -> int:
             or line.strip() == "artifacts/status/legacy_alias_paths_still_accepted.json"
             or line.strip() == "artifacts/status/compatibility_shims_still_active.json"
             or line.strip() == "artifacts/status/bridge_duplicate_law_report.json"
+            or line.strip() == "artifacts/status/install_neutrality_report.json"
+            or line.strip() == "artifacts/status/active_runtime_report.json"
         )
     ]
     if changed:

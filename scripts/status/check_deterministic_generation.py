@@ -162,6 +162,30 @@ def main() -> int:
     if not bridge_ok:
         failures.append("bridge duplicate-law report generation is not deterministic")
 
+    install_neutrality_gen = ["python3", "scripts/status/generate_install_neutrality_reports.py"]
+    n1 = run(install_neutrality_gen, env=fixed_env)
+    neutrality_file = STATUS / "install_neutrality_report.json"
+    neutrality_hash1 = (
+        stable_json_digest(neutrality_file) if n1.returncode == 0 and neutrality_file.exists() else ""
+    )
+    n2 = run(install_neutrality_gen, env=fixed_env)
+    neutrality_hash2 = (
+        stable_json_digest(neutrality_file) if n2.returncode == 0 and neutrality_file.exists() else ""
+    )
+    neutrality_ok = (
+        n1.returncode == 0 and n2.returncode == 0 and neutrality_hash1 == neutrality_hash2
+    )
+    checks.append(
+        {
+            "name": "install_neutrality_report_generation",
+            "ok": neutrality_ok,
+            "details": "install_neutrality_report.json hash is stable across repeated generation",
+            "hashes": [neutrality_hash1, neutrality_hash2],
+        }
+    )
+    if not neutrality_ok:
+        failures.append("install neutrality report generation is not deterministic")
+
     STATUS.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

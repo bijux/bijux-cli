@@ -277,6 +277,7 @@ jobs:
           python3 scripts/status/generate_repl_recovery_reports.py
           python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
+          python3 scripts/status/generate_install_neutrality_reports.py
           python3 scripts/status/generate_packaging_ambiguity_reports.py
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
@@ -331,6 +332,10 @@ jobs:
       - name: Runtime unity gate
         run: |
           python3 scripts/status/check_runtime_unity.py --enforce
+
+      - name: Install neutrality gate
+        run: |
+          python3 scripts/status/enforce_install_neutrality_gate.py
 
       - name: Binary-vs-bridge parity artifact
         run: |
@@ -514,6 +519,8 @@ jobs:
           name: runtime-unity
           path: |
             artifacts/status/runtime_unity_report.json
+            artifacts/status/install_neutrality_report.json
+            artifacts/status/active_runtime_report.json
             artifacts/status/install_source_diagnostics.json
             artifacts/status/ambiguous_runtime_diagnostics.json
             artifacts/status/install_health_report.json
@@ -640,6 +647,8 @@ jobs:
             artifacts/status/repl_recovery_behavior_report.json
             artifacts/status/install_source_diagnostics.json
             artifacts/status/ambiguous_runtime_diagnostics.json
+            artifacts/status/install_neutrality_report.json
+            artifacts/status/active_runtime_report.json
             artifacts/status/packaging_ambiguity_report.json
             artifacts/status/install_state_assumptions_report.json
             artifacts/status/package_health_report.json

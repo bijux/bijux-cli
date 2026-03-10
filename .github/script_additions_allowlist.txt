@@ -13,3 +13,5 @@ scripts/status/generate_command_surface_inventory.py # generate python-path, ali
 scripts/status/generate_bridge_duplicate_law_report.py # generate python-bridge duplicate-law audit report to prove wrapper-only bridge behavior
 scripts/status/enforce_bridge_duplicate_law_policy.py # enforce duplicate-law bridge report remains zero to prevent bridge-side command law drift
 scripts/parity/check_binary_bridge_parity_gate.py # enforce binary-vs-python-bridge parity report has no exit/stdout/stderr drift
+scripts/status/generate_install_neutrality_reports.py # generate install-neutrality and active-runtime truth artifacts from runtime/package diagnostics
+scripts/status/enforce_install_neutrality_gate.py # enforce install ambiguity hardening tests and install-neutrality evidence completeness in CI
