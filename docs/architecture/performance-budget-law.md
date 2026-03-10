@@ -17,4 +17,4 @@ Evidence sources:
 - `artifacts/status/performance_benchmark_policy.json`
 - `crates/bijux-cli-bin/tests/performance_realism_hardening.rs`
 - `crates/bijux-cli-output/tests/output_rendering_performance.rs`
-- `crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs`
+- `crates/bijux-cli-bin/tests/repl_startup_performance_budget.rs`

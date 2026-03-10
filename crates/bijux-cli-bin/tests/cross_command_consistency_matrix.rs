@@ -9,6 +9,13 @@ use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
 use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
+use bijux_cli_install as _;
+use bijux_cli_output as _;
+use bijux_cli_routing as _;
+use shlex as _;
+use thiserror as _;
+use bijux_cli_python as _;
+use libc as _;
 use bijux_cli_repl::{execute_repl_line, startup_repl};
 use libc as _;
 use serde_json::Value;

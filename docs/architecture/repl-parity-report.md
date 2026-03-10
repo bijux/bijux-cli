@@ -14,12 +14,12 @@ Python references:
 
 Rust references:
 
-- `crates/bijux-cli-repl/src/session.rs`
-- `crates/bijux-cli-repl/src/history.rs`
-- `crates/bijux-cli-repl/src/completion.rs`
-- `crates/bijux-cli-repl/src/execution.rs`
-- `crates/bijux-cli-repl/tests/transcript_parity.rs`
-- `crates/bijux-cli-repl/tests/transcript_cases.rs`
+- `crates/bijux-cli-bin/src/session.rs`
+- `crates/bijux-cli-bin/src/history.rs`
+- `crates/bijux-cli-bin/src/completion.rs`
+- `crates/bijux-cli-bin/src/execution.rs`
+- `crates/bijux-cli-bin/tests/transcript_parity.rs`
+- `crates/bijux-cli-bin/tests/transcript_cases.rs`
 
 ## Baseline status for 341-360
 
