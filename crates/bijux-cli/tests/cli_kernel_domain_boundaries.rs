@@ -32,13 +32,7 @@ fn rs_files_under(root: &Path) -> Vec<PathBuf> {
 #[test]
 fn domain_modules_do_not_depend_on_cli_or_kernel_layers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let domain_roots = [
-        "config",
-        "install",
-        "plugin",
-        "query",
-        "routing",
-    ];
+    let domain_roots = ["config", "install", "plugin", "query", "routing"];
 
     let mut cli_offenders = Vec::new();
     let mut kernel_offenders = Vec::new();

@@ -122,8 +122,12 @@ fn direct_core_invocation_memory_root() {
 
 #[test]
 fn direct_core_invocation_memory_list() {
-    let out = run_app(&["bijux".to_string(), "memory".to_string(), "list".to_string()])
-        .expect("run_app should succeed");
+    let out = run_app(&[
+        "bijux".to_string(),
+        "memory".to_string(),
+        "list".to_string(),
+    ])
+    .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert_eq!(payload["status"], "ok");
@@ -132,8 +136,12 @@ fn direct_core_invocation_memory_list() {
 
 #[test]
 fn direct_core_invocation_plugins_root_list() {
-    let out = run_app(&["bijux".to_string(), "plugins".to_string(), "list".to_string()])
-        .expect("run_app should succeed");
+    let out = run_app(&[
+        "bijux".to_string(),
+        "plugins".to_string(),
+        "list".to_string(),
+    ])
+    .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload.get("plugins").is_some());
@@ -267,7 +275,10 @@ fn direct_core_invocation_dev_diagnostics_commands_expose_metadata() {
 }
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-state-law-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -316,9 +327,13 @@ fn state_read_paths_follow_normalized_resolution_with_flag_overrides() {
 
 #[test]
 fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
-    let out =
-        run_app(&["bijux".to_string(), "dev".to_string(), "cli".to_string(), "status".to_string()])
-            .expect("run_app should succeed");
+    let out = run_app(&[
+        "bijux".to_string(),
+        "dev".to_string(),
+        "cli".to_string(),
+        "status".to_string(),
+    ])
+    .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload["status_report"].is_object());
@@ -491,9 +506,18 @@ fn precedence_defaults_when_no_inputs() {
         },
     );
 
-    assert_eq!(policy.output_format, defaults.output_format.expect("defaults format"));
-    assert_eq!(policy.pretty_mode, defaults.pretty_mode.expect("defaults pretty"));
-    assert_eq!(policy.color_mode, defaults.color_mode.expect("defaults color"));
+    assert_eq!(
+        policy.output_format,
+        defaults.output_format.expect("defaults format")
+    );
+    assert_eq!(
+        policy.pretty_mode,
+        defaults.pretty_mode.expect("defaults pretty")
+    );
+    assert_eq!(
+        policy.color_mode,
+        defaults.color_mode.expect("defaults color")
+    );
     assert_eq!(policy.log_level, defaults.log_level.expect("defaults log"));
 }
 
@@ -551,8 +575,20 @@ fn quiet_mode_suppresses_streams_not_exit_semantics() {
 
 #[test]
 fn error_normalization_internal_plugin_usage_validation() {
-    assert_eq!(map_error_category_to_exit("internal"), bijux_cli::routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("plugin"), bijux_cli::routing::ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("usage"), bijux_cli::routing::ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("validation"), bijux_cli::routing::ExitCode::Usage);
+    assert_eq!(
+        map_error_category_to_exit("internal"),
+        bijux_cli::routing::ExitCode::Error
+    );
+    assert_eq!(
+        map_error_category_to_exit("plugin"),
+        bijux_cli::routing::ExitCode::Error
+    );
+    assert_eq!(
+        map_error_category_to_exit("usage"),
+        bijux_cli::routing::ExitCode::Usage
+    );
+    assert_eq!(
+        map_error_category_to_exit("validation"),
+        bijux_cli::routing::ExitCode::Usage
+    );
 }

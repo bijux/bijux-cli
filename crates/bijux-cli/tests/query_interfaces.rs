@@ -51,11 +51,17 @@ fn parity_status_query_shape_is_stable() {
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("artifacts/parity")).expect("mkdir parity");
     fs::create_dir_all(root.join("artifacts/status")).expect("mkdir status");
-    fs::write(root.join("artifacts/parity/command_parity_matrix.json"), "{\"ok\":true}\n")
-        .expect("write parity");
+    fs::write(
+        root.join("artifacts/parity/command_parity_matrix.json"),
+        "{\"ok\":true}\n",
+    )
+    .expect("write parity");
     fs::write(root.join("artifacts/status/status.json"), "{\"ok\":true}\n").expect("write status");
-    fs::write(root.join("artifacts/status/command_migration_matrix.json"), "{\"ok\":true}\n")
-        .expect("write migration");
+    fs::write(
+        root.join("artifacts/status/command_migration_matrix.json"),
+        "{\"ok\":true}\n",
+    )
+    .expect("write migration");
 
     let query = parity_status_query(&root);
     assert!(query.command_parity_matrix_exists);
