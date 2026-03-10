@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 ROUTING_TEST = ROOT / "crates" / "bijux-cli-routing" / "tests" / "registry_namespace_policy.rs"
 PLUGIN_TEST = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "plugin_namespace_regression.rs"
-CLI_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "plugin_cli_lifecycle.rs"
+CLI_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "plugin_cli_lifecycle.rs"
 CONSTANTS = ROOT / "crates" / "bijux-cli-plugin" / "src" / "constants.rs"
 PRODUCT_REGISTRY = ROOT / "docs" / "constitution" / "official_product_namespace_registry.json"
 

@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 TEST_FILES = [
-    ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "memory_command_matrix.rs",
-    ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "memory_parity.rs",
-    ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "memory_deep_behavior_extra.rs",
+    ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "memory_command_matrix.rs",
+    ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "memory_parity.rs",
+    ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "memory_deep_behavior_extra.rs",
 ]
 
 REQUIRED_TESTS = {
@@ -39,7 +39,7 @@ def run_cmd(args: list[str], env: dict[str, str] | None = None) -> subprocess.Co
     if env:
         merged.update(env)
     return subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args],
         cwd=ROOT,
         check=False,
         capture_output=True,

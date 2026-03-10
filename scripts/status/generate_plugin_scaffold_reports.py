@@ -11,7 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS_DIR = ROOT / "artifacts" / "status"
-SNAPSHOT_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots"
+SNAPSHOT_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "snapshots"
 
 
 def stable_generated_at() -> str:

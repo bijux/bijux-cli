@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_read_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "config_read_matrix.rs"
 
 REQUIRED_TESTS = {
     261: "root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior",
@@ -49,7 +49,7 @@ def main() -> int:
             "todo": todo,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in source else "missing",
-            "evidence": "crates/bijux-cli-core/tests/bin_surface/config_read_matrix.rs",
+            "evidence": "crates/bijux-cli/tests/bin_surface/config_read_matrix.rs",
         }
         for todo, fn_name in sorted(REQUIRED_TESTS.items())
     ]
@@ -82,7 +82,7 @@ def main() -> int:
             "status": "frozen",
             "rule": "Config reads must remain deterministic, explainable, and consistent across listing/get surfaces.",
             "evidence": [
-                "crates/bijux-cli-core/tests/bin_surface/config_read_matrix.rs",
+                "crates/bijux-cli/tests/bin_surface/config_read_matrix.rs",
                 "artifacts/status/config_read_matrix_artifact.json",
             ],
         },

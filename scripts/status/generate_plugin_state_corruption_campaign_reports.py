@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "randomized_plugin_state_corruption_campaigns.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "plugin_state_corruption_campaign_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "plugin_state_corruption_minimized_cases"
+CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "randomized_plugin_state_corruption_campaigns.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "plugin_state_corruption_campaign_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "plugin_state_corruption_minimized_cases"
 
 REQUIRED_TESTS = {
     141: (CAMPAIGN_TEST, "randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths"),
@@ -77,7 +77,7 @@ def main() -> int:
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "bin_surface",
             "randomized_plugin_state_corruption_campaigns::",
@@ -88,7 +88,7 @@ def main() -> int:
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "bin_surface",
             "plugin_state_corruption_campaign_regressions::",

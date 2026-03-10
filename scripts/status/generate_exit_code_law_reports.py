@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "exit_code_law_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "exit_code_law_matrix.rs"
 
 MATRIX: dict[str, list[dict[str, Any]]] = {
     "root": [
@@ -95,7 +95,7 @@ REQUIRED_TESTS = {
 
 def run_exit_code(args: list[str]) -> int:
     result = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -134,7 +134,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/exit_code_law_matrix.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/exit_code_law_matrix.rs",
             }
         )
 

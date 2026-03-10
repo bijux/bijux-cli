@@ -43,10 +43,10 @@ def main() -> int:
         if not item.exists():
             failures.append(f"missing required artifact: {item.relative_to(ROOT)}")
 
-    core_storage = read(ROOT / "crates/bijux-cli-core/src/config/storage.rs")
-    install_compat = read(ROOT / "crates/bijux-cli-core/src/install/compatibility.rs")
+    core_storage = read(ROOT / "crates/bijux-cli/src/config/storage.rs")
+    install_compat = read(ROOT / "crates/bijux-cli/src/install/compatibility.rs")
     repl_history = read(ROOT / "crates/bijux-cli-repl/src/history.rs")
-    core_app = read(ROOT / "crates/bijux-cli-core/src/app.rs")
+    core_app = read(ROOT / "crates/bijux-cli/src/app.rs")
 
     if "atomic_write_text(" not in core_storage:
         failures.append("core config repository does not use atomic_write_text")

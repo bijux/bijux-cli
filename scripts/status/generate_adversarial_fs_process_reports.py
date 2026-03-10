@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "adversarial_fs_process_campaigns.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "adversarial_fs_process_campaign_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "adversarial_fs_process_minimized_cases"
+CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "adversarial_fs_process_campaigns.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "adversarial_fs_process_campaign_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "adversarial_fs_process_minimized_cases"
 
 REQUIRED_TESTS = {
     181: (CAMPAIGN_TEST, "missing_parent_and_type_flip_path_cases_are_handled_without_corruption"),
@@ -75,14 +75,14 @@ def main() -> int:
         )
 
     campaign_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "adversarial_fs_process_campaigns::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "adversarial_fs_process_campaigns::"]
     )
     regression_run = run_test(
         [
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "bin_surface",
             "adversarial_fs_process_campaign_regressions::",

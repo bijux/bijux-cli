@@ -11,10 +11,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 STATUS_DIR = REPO_ROOT / "artifacts" / "status"
 
 RUNTIME_CRATE_SRCS = {
-    "bijux-cli-core": REPO_ROOT / "crates" / "bijux-cli-core" / "src",
+    "bijux-cli": REPO_ROOT / "crates" / "bijux-cli" / "src",
     "bijux-cli-routing": REPO_ROOT / "crates" / "bijux-cli-routing" / "src",
     "bijux-cli-output": REPO_ROOT / "crates" / "bijux-cli-output" / "src",
-    "bijux-cli-core::install": REPO_ROOT / "crates" / "bijux-cli-core" / "src" / "install",
+    "bijux-cli::install": REPO_ROOT / "crates" / "bijux-cli" / "src" / "install",
     "bijux-cli-plugin": REPO_ROOT / "crates" / "bijux-cli-plugin" / "src",
     "bijux-cli-python": REPO_ROOT / "crates" / "bijux-cli-python" / "src",
 }
@@ -36,7 +36,7 @@ def main() -> int:
         route_audit_assembly = text.count("route_audit_report(")
         report_builder_calls = text.count("build_report(")
         # core is the dispatcher and delegates report builders by design.
-        if crate == "bijux-cli-core":
+        if crate == "bijux-cli":
             report_builder_calls = 0
             bijux_dev_cli_imports = 0
             dev_cli_literals = 0

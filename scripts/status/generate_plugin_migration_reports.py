@@ -64,8 +64,8 @@ def main() -> None:
             "rust_owned": True,
             "python_era_assumptions": [],
             "evidence": [
-                "crates/bijux-cli-core/tests/bin_surface/plugin_cli_lifecycle.rs::python_and_rust_plugins_can_install_check_list_and_uninstall",
-                "crates/bijux-cli-core/tests/bin_surface/plugin_command_parity.rs",
+                "crates/bijux-cli/tests/bin_surface/plugin_cli_lifecycle.rs::python_and_rust_plugins_can_install_check_list_and_uninstall",
+                "crates/bijux-cli/tests/bin_surface/plugin_command_parity.rs",
             ],
         },
         {
@@ -75,7 +75,7 @@ def main() -> None:
                 "python scaffold runtime entrypoint remains plugin.py for compatibility"
             ],
             "evidence": [
-                "crates/bijux-cli-core/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust"
+                "crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust"
             ],
         },
         {
@@ -130,12 +130,12 @@ def main() -> None:
             **base,
             "python_scaffold_e2e_proof": {
                 "status": "complete",
-                "evidence_test": "crates/bijux-cli-core/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust",
+                "evidence_test": "crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust",
                 "kind": "python",
             },
             "rust_scaffold_e2e_proof": {
                 "status": "complete",
-                "evidence_test": "crates/bijux-cli-core/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust",
+                "evidence_test": "crates/bijux-cli/tests/bin_surface/plugin_scaffold_minimal.rs::scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust",
                 "kind": "rust",
             },
         },

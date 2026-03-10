@@ -23,9 +23,9 @@ def main() -> int:
                 "command": "dev cli runtime-identity",
                 "presentation_owner": "bijux-dev-cli",
                 "runtime_data_sources": [
-                    "bijux-cli-core::install::install_health_report",
-                    "bijux-cli-core::install::cargo_install_strategy",
-                    "bijux-cli-core::install::pip_install_strategy",
+                    "bijux-cli::install::install_health_report",
+                    "bijux-cli::install::cargo_install_strategy",
+                    "bijux-cli::install::pip_install_strategy",
                 ],
             },
             {
@@ -39,15 +39,15 @@ def main() -> int:
                 "command": "dev cli state-audit",
                 "presentation_owner": "bijux-dev-cli",
                 "runtime_data_sources": [
-                    "bijux-cli-core::state_path_status",
-                    "bijux-cli-core::state_diagnostics",
+                    "bijux-cli::state_path_status",
+                    "bijux-cli::state_diagnostics",
                 ],
             },
             {
                 "command": "dev cli state-doctor",
                 "presentation_owner": "bijux-dev-cli",
                 "runtime_data_sources": [
-                    "bijux-cli-core::state_diagnostics",
+                    "bijux-cli::state_diagnostics",
                 ],
             },
         ],

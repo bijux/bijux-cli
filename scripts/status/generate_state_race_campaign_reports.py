@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "state_race_campaigns.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "state_race_campaign_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "state_race_minimized_cases"
+CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "state_race_campaigns.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "state_race_campaign_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "state_race_minimized_cases"
 
 REQUIRED_TESTS = {
     161: (CAMPAIGN_TEST, "concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability"),
@@ -75,10 +75,10 @@ def main() -> int:
         )
 
     campaign_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "state_race_campaigns::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "state_race_campaigns::"]
     )
     regression_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "state_race_campaign_regressions::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "state_race_campaign_regressions::"]
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))

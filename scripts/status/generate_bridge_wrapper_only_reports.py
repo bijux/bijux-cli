@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 BRIDGE_TESTS = ROOT / "crates" / "bijux-cli-python" / "tests" / "bridge_bindings.rs"
-CROSS_SURFACE_TESTS = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cross_surface_equivalence.rs"
+CROSS_SURFACE_TESTS = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "cross_surface_equivalence.rs"
 
 
 def stable_generated_at() -> str:
@@ -81,7 +81,7 @@ def main() -> int:
         "sources": [
             "artifacts/status/bridge_duplicate_law_report.json",
             "crates/bijux-cli-python/tests/bridge_bindings.rs",
-            "crates/bijux-cli-core/tests/bin_surface/cross_surface_equivalence.rs",
+            "crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs",
         ],
         "duplicate_law": {
             "duplicate_rule_count": duplicate_count,

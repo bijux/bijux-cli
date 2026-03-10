@@ -9,17 +9,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOTS = {
-    "dev cli doctor": ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots" / "dev_cli_doctor_text.txt",
-    "dev cli routes": ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots" / "dev_cli_routes_text.txt",
-    "dev cli registry": ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots" / "dev_cli_registry_text.txt",
-    "dev cli env": ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots" / "dev_cli_env_text.txt",
+    "dev cli doctor": ROOT / "crates" / "bijux-cli" / "tests" / "snapshots" / "dev_cli_doctor_text.txt",
+    "dev cli routes": ROOT / "crates" / "bijux-cli" / "tests" / "snapshots" / "dev_cli_routes_text.txt",
+    "dev cli registry": ROOT / "crates" / "bijux-cli" / "tests" / "snapshots" / "dev_cli_registry_text.txt",
+    "dev cli env": ROOT / "crates" / "bijux-cli" / "tests" / "snapshots" / "dev_cli_env_text.txt",
 }
 
 
 def run_text(command: str) -> str:
     args = command.split()
     out = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "text"],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args, "--format", "text"],
         cwd=ROOT,
         check=False,
         capture_output=True,

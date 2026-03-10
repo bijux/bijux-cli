@@ -63,7 +63,7 @@ def main() -> int:
         failures.append("schema snapshot drift")
 
     # 755: command tree generation determinism.
-    cmd = ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", "dev", "cli", "routes", "--json", "--no-pretty"]
+    cmd = ["cargo", "run", "-q", "-p", "bijux-cli", "--", "dev", "cli", "routes", "--json", "--no-pretty"]
     first = run(cmd, env=fixed_env)
     second = run(cmd, env=fixed_env)
     command_tree_ok = first.returncode == 0 and second.returncode == 0 and first.stdout == second.stdout

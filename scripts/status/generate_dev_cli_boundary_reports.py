@@ -13,7 +13,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 DEV_FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "dev_cli_subcommands.txt"
-CORE_APP = ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs"
+CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 
 MAINTAINER_DIAGNOSTIC_COMMANDS = {
     "dev cli routes",
@@ -41,13 +41,13 @@ RUNTIME_OWNED_BEHAVIORS = [
     },
     {
         "behavior": "runtime command execution kernel",
-        "owner": "bijux-cli-core",
-        "evidence": "crates/bijux-cli-core/src/app.rs",
+        "owner": "bijux-cli",
+        "evidence": "crates/bijux-cli/src/app.rs",
     },
     {
         "behavior": "config persistence and state law",
-        "owner": "bijux-cli-core",
-        "evidence": "crates/bijux-cli-core/src/config",
+        "owner": "bijux-cli",
+        "evidence": "crates/bijux-cli/src/config",
     },
     {
         "behavior": "plugin registry lifecycle",
@@ -56,8 +56,8 @@ RUNTIME_OWNED_BEHAVIORS = [
     },
     {
         "behavior": "install and runtime identity primitives",
-        "owner": "bijux-cli-core::install",
-        "evidence": "crates/bijux-cli-core/src/install",
+        "owner": "bijux-cli::install",
+        "evidence": "crates/bijux-cli/src/install",
     },
     {
         "behavior": "output envelope and rendering",
@@ -102,15 +102,15 @@ def parse_dev_cli_implementations() -> dict[str, str]:
     implementations: dict[str, str] = {}
     for command in pattern.findall(source):
         key = f"dev cli {command}"
-        implementations[key] = "bijux-cli-core"
+        implementations[key] = "bijux-cli"
 
     for command in ["dev cli route-audit"]:
         if command in implementations:
-            implementations[command] = "bijux-cli-core + bijux-cli-routing"
+            implementations[command] = "bijux-cli + bijux-cli-routing"
 
     for command in ["dev cli runtime-identity", "dev cli package-health", "dev cli state-audit", "dev cli state-doctor"]:
         if command in implementations:
-            implementations[command] = "bijux-cli-core + bijux-cli-core::install + bijux-cli-plugin"
+            implementations[command] = "bijux-cli + bijux-cli::install + bijux-cli-plugin"
 
     delegated = {
         "dev cli routes": "dev_routes::build_report",
@@ -200,7 +200,7 @@ def main() -> int:
             "exposed_through_binary": True,
             "evidence": [
                 "crates/bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt",
-                "crates/bijux-cli-core/src/app.rs",
+                "crates/bijux-cli/src/app.rs",
             ],
         }
         dev_rows.append(row)

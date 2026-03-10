@@ -9,7 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "src" / "kernel_pipeline_tests.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "src" / "kernel_pipeline_tests.rs"
 
 REQUIRED_TESTS = {
     1: "kernel_pipeline_uses_one_canonical_entrypoint",
@@ -45,7 +45,7 @@ def stable_rows(source: str) -> list[dict[str, Any]]:
                 "todo": todo,
                 "test_name": test_name,
                 "status": "covered" if present else "missing",
-                "evidence": "crates/bijux-cli-core/src/kernel_pipeline_tests.rs",
+                "evidence": "crates/bijux-cli/src/kernel_pipeline_tests.rs",
             }
         )
     return rows

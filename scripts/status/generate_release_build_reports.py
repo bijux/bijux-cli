@@ -51,7 +51,7 @@ def file_info(path: Path) -> dict[str, Any]:
 
 
 def cargo_tree_top() -> list[dict[str, Any]]:
-    proc = run(["cargo", "tree", "-p", "bijux-cli-core", "-e", "normal", "--prefix", "none"])
+    proc = run(["cargo", "tree", "-p", "bijux-cli", "-e", "normal", "--prefix", "none"])
     if proc.returncode != 0:
         return []
     counter: Counter[str] = Counter()
@@ -60,7 +60,7 @@ def cargo_tree_top() -> list[dict[str, Any]]:
         if not line:
             continue
         name = line.split()[0]
-        if name.startswith("bijux-cli-"):
+        if name == "bijux-cli" or name.startswith("bijux-cli-"):
             continue
         counter[name] += 1
     return [
@@ -119,7 +119,7 @@ def main() -> int:
             "thiserror (from bijux-cli-python)",
         ],
         "disabled_default_features": [
-            "clap in bijux-cli-core",
+            "clap in bijux-cli",
             "clap in bijux-cli-routing",
             "pyo3 in bijux-cli-python",
         ],

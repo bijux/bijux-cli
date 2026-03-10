@@ -103,11 +103,11 @@ def main() -> None:
         "guarantees": [
             {
                 "name": "core config writes are atomic",
-                "evidence": "crates/bijux-cli-core/src/config/storage.rs uses atomic_write_text",
+                "evidence": "crates/bijux-cli/src/config/storage.rs uses atomic_write_text",
             },
             {
                 "name": "compatibility config writes are atomic",
-                "evidence": "crates/bijux-cli-core/src/install/compatibility.rs uses atomic_write_text",
+                "evidence": "crates/bijux-cli/src/install/compatibility.rs uses atomic_write_text",
             },
             {
                 "name": "plugin registry writes use temp+rename",
@@ -119,7 +119,7 @@ def main() -> None:
             },
             {
                 "name": "core history and memory writes are atomic",
-                "evidence": "crates/bijux-cli-core/src/app.rs::write_json_document uses atomic_write_text",
+                "evidence": "crates/bijux-cli/src/app.rs::write_json_document uses atomic_write_text",
             },
         ],
     }
@@ -134,11 +134,11 @@ def main() -> None:
             },
             {
                 "name": "state doctor surfaces degraded state with issues",
-                "evidence": "crates/bijux-cli-core/src/app.rs::state_diagnostics",
+                "evidence": "crates/bijux-cli/src/app.rs::state_diagnostics",
             },
             {
                 "name": "history corruption is tolerated with fallback parser",
-                "evidence": "crates/bijux-cli-core/src/app.rs::parse_history_entries",
+                "evidence": "crates/bijux-cli/src/app.rs::parse_history_entries",
             },
         ],
     }
@@ -147,11 +147,11 @@ def main() -> None:
         "generated_at": generated_at,
         "generator": "scripts/status/generate_state_law_reports.py",
         "canonical_services": [
-            "crates/bijux-cli-core/src/app.rs::resolve_state_paths",
-            "crates/bijux-cli-core/src/install/io.rs::atomic_write_text",
+            "crates/bijux-cli/src/app.rs::resolve_state_paths",
+            "crates/bijux-cli/src/install/io.rs::atomic_write_text",
         ],
         "hotspots": [
-            "crates/bijux-cli-core/src/app.rs",
+            "crates/bijux-cli/src/app.rs",
             "crates/bijux-cli-plugin/src/registry.rs",
             "crates/bijux-cli-repl/src/history.rs",
         ],

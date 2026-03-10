@@ -11,7 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_ROOT = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface"
+TEST_ROOT = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface"
 
 DOMAIN_RULES = {
     "commands": lambda rel: any(k in rel for k in ["command", "root", "cli_", "ported", "help"]),

@@ -43,7 +43,7 @@ INPUTS = {
 def run_json(command: str) -> dict:
     args = command.split()
     proc = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         check=True,
         capture_output=True,

@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "stream_discipline_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "stream_discipline_matrix.rs"
 
 CASES: list[dict[str, Any]] = [
     {"todo": 41, "name": "success_machine_json_stderr_empty", "args": ["status", "--format", "json", "--no-pretty"], "expect_code": 0, "expect_stdout_nonempty": True, "expect_stderr_empty": True},
@@ -59,7 +59,7 @@ def has_test(source: str, test_name: str) -> bool:
 
 def run_case(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -104,7 +104,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": test_name,
                 "status": "covered" if has_test(source, test_name) else "missing",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/stream_discipline_matrix.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/stream_discipline_matrix.rs",
             }
         )
     missing_todos = [row for row in todo_rows if row["status"] != "covered"]

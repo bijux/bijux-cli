@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cross_surface_equivalence.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "cross_surface_equivalence.rs"
 STATUS_DIR = ROOT / "artifacts" / "status"
 
 REQUIRED_TESTS: list[tuple[int, str, str]] = [
@@ -44,7 +44,7 @@ def main() -> int:
         row = {
             "todo": todo,
             "law": law,
-            "test": f"crates/bijux-cli-core/tests/bin_surface/cross_surface_equivalence.rs::{fn_name}",
+            "test": f"crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs::{fn_name}",
         }
         if f"fn {fn_name}(" in text:
             covered.append(row)
@@ -55,7 +55,7 @@ def main() -> int:
         "generator": "scripts/status/generate_cross_surface_reports.py",
         "scope": "cross-surface equivalence",
         "rule": "binary, direct-core, python bridge, and repl must agree for covered commands",
-        "verification_command": "cargo test -q -p bijux-cli-core --test bin_surface cross_surface_equivalence::",
+        "verification_command": "cargo test -q -p bijux-cli --test bin_surface cross_surface_equivalence::",
         "covered": covered,
         "missing": missing,
         "summary": {
@@ -80,7 +80,7 @@ def main() -> int:
         "law": "One command law across binary, core, python bridge, and repl for covered commands.",
         "freeze_rule": "New covered command paths must add cross-surface equivalence tests before merge.",
         "evidence": [
-            "crates/bijux-cli-core/tests/bin_surface/cross_surface_equivalence.rs",
+            "crates/bijux-cli/tests/bin_surface/cross_surface_equivalence.rs",
             "artifacts/status/cross_surface_equivalence_report.json",
             "artifacts/status/cross_surface_drift_report.json",
         ],

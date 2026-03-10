@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cross_command_consistency_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "cross_command_consistency_matrix.rs"
 
 REQUIRED_TESTS = {
     381: "inspect_and_dev_routes_agree_on_route_ownership",
@@ -56,7 +56,7 @@ def main() -> int:
                 "todo": todo,
                 "test": fn_name,
                 "status": "complete" if present else "missing",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/cross_command_consistency_matrix.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/cross_command_consistency_matrix.rs",
             }
         )
 

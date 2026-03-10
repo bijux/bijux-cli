@@ -11,7 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "diagnostics_trust_law_extra.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "diagnostics_trust_law_extra.rs"
 
 REQUIRED_TESTS = {
     361: "dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable",
@@ -95,7 +95,7 @@ EXPECTED_TOP_LEVEL_KEYS = {
 
 def run_json(args: list[str]) -> dict[str, Any]:
     out = subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args, "--format", "json", "--no-pretty"],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args, "--format", "json", "--no-pretty"],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -124,7 +124,7 @@ def main() -> int:
                 "todo": todo,
                 "test": test_name,
                 "status": "covered" if covered else "missing",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/diagnostics_trust_law_extra.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/diagnostics_trust_law_extra.rs",
             }
         )
 

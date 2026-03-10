@@ -17,7 +17,7 @@ BIN = ROOT / "target" / "release" / "bijux-rs"
 
 def run_build(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["cargo", "build", "-p", "bijux-cli-core", "--release"],
+        ["cargo", "build", "-p", "bijux-cli", "--release"],
         cwd=ROOT,
         check=False,
         capture_output=True,

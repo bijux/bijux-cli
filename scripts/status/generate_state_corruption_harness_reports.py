@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-HARNESS_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "randomized_state_corruption_harness.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "randomized_state_corruption_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "state_corruption_minimized_cases"
+HARNESS_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "randomized_state_corruption_harness.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "randomized_state_corruption_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "state_corruption_minimized_cases"
 
 REQUIRED_TESTS = {
     101: (HARNESS_TEST, "randomized_state_corruption_harness_exercises_all_mutators_across_supported_domains"),
@@ -79,7 +79,7 @@ def main() -> int:
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "randomized_state_corruption_harness",
         ]
@@ -89,7 +89,7 @@ def main() -> int:
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "randomized_state_corruption_regressions",
         ]

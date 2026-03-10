@@ -12,9 +12,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 
-CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "randomized_config_corruption_campaigns.rs"
-REGRESSION_TEST = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "config_corruption_campaign_regressions.rs"
-MIN_CASES_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "config_corruption_minimized_cases"
+CAMPAIGN_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "randomized_config_corruption_campaigns.rs"
+REGRESSION_TEST = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "config_corruption_campaign_regressions.rs"
+MIN_CASES_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "config_corruption_minimized_cases"
 
 REQUIRED_TESTS = {
     121: (CAMPAIGN_TEST, "randomized_corruption_campaigns_cover_config_reads_writes_and_all_mutation_subcommands"),
@@ -71,10 +71,10 @@ def main() -> int:
         )
 
     campaign_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "randomized_config_corruption_campaigns::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "randomized_config_corruption_campaigns::"]
     )
     regression_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "config_corruption_campaign_regressions::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "config_corruption_campaign_regressions::"]
     )
 
     minimized_cases = sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in MIN_CASES_DIR.glob("*.json"))
@@ -163,7 +163,7 @@ def main() -> int:
         "tasks": [139],
         "status": "complete" if campaign_run["ok"] else "partial",
         "deterministic_failure_class_required": True,
-        "evidence": "crates/bijux-cli-core/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set",
+        "evidence": "crates/bijux-cli/tests/bin_surface/randomized_config_corruption_campaigns.rs::repeated_run_corruption_inputs_are_deterministic_for_config_command_set",
     }
 
     contract = {

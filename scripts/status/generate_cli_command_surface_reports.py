@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 FIXTURE = ROOT / "crates" / "bijux-cli-routing" / "tests" / "fixtures" / "cli_subcommands.txt"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "cli_command_matrix.rs"
-BIN_TESTS_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "cli_command_matrix.rs"
+BIN_TESTS_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface"
 
 REQUIRED_TESTS = {
     223: "parity_cli_status_paths_and_self_test_against_current_behavior",
@@ -110,7 +110,7 @@ def main() -> int:
                 "command": command,
                 "status": "complete" if evidence else command_status(command, test_source),
                 "status_model": ["complete", "partial", "shim", "missing"],
-                "evidence": evidence[0] if evidence else "crates/bijux-cli-core/tests/bin_surface/cli_command_matrix.rs",
+                "evidence": evidence[0] if evidence else "crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs",
                 "evidence_links": evidence,
                 "user_value": user_value(command),
             }
@@ -124,7 +124,7 @@ def main() -> int:
             "todo": todo,
             "test": fn_name,
             "status": "complete" if f"fn {fn_name}(" in test_source else "missing",
-            "evidence": "crates/bijux-cli-core/tests/bin_surface/cli_command_matrix.rs",
+            "evidence": "crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs",
         }
         for todo, fn_name in sorted(REQUIRED_TESTS.items())
     ]
@@ -170,7 +170,7 @@ def main() -> int:
             "rule": "cli subcommands are covered by explicit parity, stream, formatting, malformed-input, and determinism tests.",
             "evidence": [
                 "crates/bijux-cli-routing/tests/fixtures/cli_subcommands.txt",
-                "crates/bijux-cli-core/tests/bin_surface/cli_command_matrix.rs",
+                "crates/bijux-cli/tests/bin_surface/cli_command_matrix.rs",
                 "artifacts/status/cli_command_coverage_report.json",
                 "artifacts/status/cli_command_matrix_artifact.json",
             ],

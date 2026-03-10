@@ -14,11 +14,11 @@ STATUS = ROOT / "artifacts" / "status"
 
 MANIFEST_TARGETS = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "plugin_manifest_fuzz_targets.rs"
 MANIFEST_REGRESSION = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "plugin_manifest_fuzz_regressions.rs"
-SCAFFOLD_TARGETS = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "plugin_scaffold_fuzz_targets.rs"
-SCAFFOLD_REGRESSION = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "plugin_scaffold_fuzz_regressions.rs"
+SCAFFOLD_TARGETS = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "plugin_scaffold_fuzz_targets.rs"
+SCAFFOLD_REGRESSION = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "plugin_scaffold_fuzz_regressions.rs"
 
 MANIFEST_MIN_DIR = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "fuzz" / "plugin_manifest_minimized_cases"
-SCAFFOLD_MIN_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "fuzz" / "plugin_scaffold_minimized_cases"
+SCAFFOLD_MIN_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "fuzz" / "plugin_scaffold_minimized_cases"
 
 REQUIRED_TESTS = {
     61: (MANIFEST_TARGETS, "fuzz_plugin_manifest_parsing_is_stable"),
@@ -85,14 +85,14 @@ def main() -> int:
     manifest_targets_run = run_test(["cargo", "test", "-p", "bijux-cli-plugin", "--test", "plugin_manifest_fuzz_targets"])
     manifest_reg_run = run_test(["cargo", "test", "-p", "bijux-cli-plugin", "--test", "plugin_manifest_fuzz_regressions"])
     scaffold_targets_run = run_test(
-        ["cargo", "test", "-p", "bijux-cli-core", "--test", "bin_surface", "plugin_scaffold_fuzz_targets::"]
+        ["cargo", "test", "-p", "bijux-cli", "--test", "bin_surface", "plugin_scaffold_fuzz_targets::"]
     )
     scaffold_reg_run = run_test(
         [
             "cargo",
             "test",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--test",
             "bin_surface",
             "plugin_scaffold_fuzz_regressions::",

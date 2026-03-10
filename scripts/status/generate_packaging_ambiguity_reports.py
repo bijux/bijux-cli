@@ -49,7 +49,7 @@ def main() -> None:
             "run",
             "-q",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--",
             "dev",
             "cli",
@@ -66,7 +66,7 @@ def main() -> None:
             "run",
             "-q",
             "-p",
-            "bijux-cli-core",
+            "bijux-cli",
             "--",
             "dev",
             "cli",
@@ -93,9 +93,9 @@ def main() -> None:
         "install_source_diagnostics": install_source,
         "ambiguous_runtime_diagnostics": ambiguous_runtime,
         "evidence_tests": [
-            "crates/bijux-cli-core/tests/bin_surface/install_ambiguity_hardening.rs::pip_binary_shadowed_by_cargo_binary_is_reported",
-            "crates/bijux-cli-core/tests/bin_surface/install_ambiguity_hardening.rs::cargo_binary_shadowed_by_pip_binary_is_reported",
-            "crates/bijux-cli-core/tests/bin_surface/install_ambiguity_hardening.rs::package_health_and_runtime_identity_cover_ambiguous_install_state",
+            "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::pip_binary_shadowed_by_cargo_binary_is_reported",
+            "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::cargo_binary_shadowed_by_pip_binary_is_reported",
+            "crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs::package_health_and_runtime_identity_cover_ambiguous_install_state",
         ],
     }
 

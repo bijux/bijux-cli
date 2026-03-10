@@ -23,7 +23,7 @@ def main() -> int:
             failures.append(f"{crate} still assembles route-audit report")
         if int(row.get("report_builder_calls_outside_core_exception", 0)) != 0:
             failures.append(f"{crate} still assembles maintainer report builders")
-        if crate != "bijux-cli-core" and int(row.get("dev_cli_literals", 0)) != 0:
+        if crate != "bijux-cli" and int(row.get("dev_cli_literals", 0)) != 0:
             failures.append(f"{crate} still contains dev cli workflow literals")
 
     if failures:

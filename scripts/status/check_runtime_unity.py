@@ -21,10 +21,10 @@ def read_text(path: Path) -> str:
 
 def check_python_bridge_uses_core_entrypoint() -> tuple[bool, str]:
     bindings = read_text(ROOT / "crates" / "bijux-cli-python" / "src" / "bindings.rs")
-    ok = "use bijux_cli_core::app::{run_app, AppRunResult};" in bindings and "match run_app(argv)" in bindings
-    detail = "python bridge executes through bijux_cli_core::app::run_app"
+    ok = "use bijux_cli::app::{run_app, AppRunResult};" in bindings and "match run_app(argv)" in bindings
+    detail = "python bridge executes through bijux_cli::app::run_app"
     if not ok:
-        detail = "python bridge does not use bijux_cli_core::app::run_app as canonical entrypoint"
+        detail = "python bridge does not use bijux_cli::app::run_app as canonical entrypoint"
     return ok, detail
 
 
@@ -53,10 +53,10 @@ def check_python_bridge_has_no_separate_output_semantics() -> tuple[bool, str]:
 
 
 def check_bin_crate_logic_boundary() -> tuple[bool, str]:
-    main_rs = read_text(ROOT / "crates" / "bijux-cli-core" / "src" / "bin" / "bijux-rs.rs")
-    core_rs = read_text(ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs")
+    main_rs = read_text(ROOT / "crates" / "bijux-cli" / "src" / "bin" / "bijux-rs.rs")
+    core_rs = read_text(ROOT / "crates" / "bijux-cli" / "src" / "app.rs")
     ok = (
-        "bijux_cli_core::app::run_app" in main_rs
+        "bijux_cli::app::run_app" in main_rs
         and "parse_intent" not in main_rs
         and "route_response" not in main_rs
         and "run_app(" in core_rs
@@ -103,7 +103,7 @@ def check_package_metadata_points_to_bijux() -> tuple[bool, str]:
 def check_runtime_identity_command_visible() -> tuple[bool, str]:
     parser = read_text(ROOT / "crates" / "bijux-cli-routing" / "src" / "parser.rs")
     registry = read_text(ROOT / "crates" / "bijux-cli-routing" / "src" / "registry.rs")
-    core = read_text(ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs")
+    core = read_text(ROOT / "crates" / "bijux-cli" / "src" / "app.rs")
     ok = all(
         token in parser + registry + core
         for token in (

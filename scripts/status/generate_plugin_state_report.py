@@ -56,7 +56,7 @@ def main() -> int:
         ],
         "overlap_parity_tests": [
             "crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs",
-            "crates/bijux-cli-core/tests/bin_surface/plugin_command_parity.rs",
+            "crates/bijux-cli/tests/bin_surface/plugin_command_parity.rs",
         ],
         "remaining_gaps": [
             "scaffold command parity against Python templates",

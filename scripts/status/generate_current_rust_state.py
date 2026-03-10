@@ -202,7 +202,7 @@ def parity_assertions() -> dict[str, object]:
 
 
 def parse_snapshot_coverage() -> list[str]:
-    snap_root = ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots"
+    snap_root = ROOT / "crates" / "bijux-cli" / "tests" / "snapshots"
     cmds: set[str] = set()
     if not snap_root.exists():
         return []
@@ -262,7 +262,7 @@ def collect_test_coverages() -> tuple[list[str], list[str]]:
 
 def parse_still_shimmed() -> list[str]:
     out: set[str] = set()
-    for p in [ROOT / "crates/bijux-cli-core/src/kernel.rs", ROOT / "docs/architecture/core-kernel-parity-audit.md"]:
+    for p in [ROOT / "crates/bijux-cli/src/kernel.rs", ROOT / "docs/architecture/core-kernel-parity-audit.md"]:
         txt = read_text(p)
         for line in txt.splitlines():
             if "PARITY-PARTIAL" in line or "shim" in line.lower():
@@ -388,7 +388,7 @@ def runtime_identity_rules() -> dict[str, object]:
     forbidden_public_runtime_names = {"bijux-rs", "bijux-cli-rs", "bijux-cli-py"}
     forbidden_present = sorted(name for name in python_entrypoints if name in forbidden_public_runtime_names)
 
-    cargo_bin = parse_toml(ROOT / "crates" / "bijux-cli-core" / "Cargo.toml")
+    cargo_bin = parse_toml(ROOT / "crates" / "bijux-cli" / "Cargo.toml")
     cargo_bins = [row.get("name", "") for row in cargo_bin.get("bin", []) if isinstance(row, dict)]
 
     return {

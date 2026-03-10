@@ -56,12 +56,12 @@ def parse_aliases() -> list[str]:
 
 def owner_for(command: str) -> str:
     if command.startswith("dev cli ") or command.startswith("cli "):
-        return "bijux-cli-core"
+        return "bijux-cli"
     if command.startswith("plugins ") or command.startswith("config "):
-        return "bijux-cli-core"
+        return "bijux-cli"
     if command.startswith("history") or command.startswith("memory"):
-        return "bijux-cli-core"
-    return "bijux-cli-core"
+        return "bijux-cli"
+    return "bijux-cli"
 
 
 def command_owner_mapping(commands: list[str]) -> list[dict[str, Any]]:
@@ -70,7 +70,7 @@ def command_owner_mapping(commands: list[str]) -> list[dict[str, Any]]:
         rows.append({
             "command": command,
             "owner_crate": owner_for(command),
-            "source": "crates/bijux-cli-core/src/app.rs",
+            "source": "crates/bijux-cli/src/app.rs",
         })
     return rows
 

@@ -11,13 +11,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 TEST_ROOTS = [
-    ROOT / "crates" / "bijux-cli-core" / "tests",
+    ROOT / "crates" / "bijux-cli" / "tests",
     ROOT / "crates" / "bijux-cli-repl" / "tests",
     ROOT / "crates" / "bijux-cli-python" / "tests",
     ROOT / "crates" / "bijux-cli-plugin" / "tests",
     ROOT / "crates" / "bijux-cli-routing" / "tests",
     ROOT / "crates" / "bijux-cli-contracts" / "tests",
-    ROOT / "crates" / "bijux-cli-core" / "tests",
+    ROOT / "crates" / "bijux-cli" / "tests",
 ]
 
 CATEGORY_RULES: dict[str, dict[str, list[str]]] = {
@@ -228,7 +228,7 @@ def main() -> int:
             {
                 "todo": 392,
                 "action": "deleted first weak test file",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/ported_command_goldens.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/ported_command_goldens.rs",
                 "status": "done",
             },
             {

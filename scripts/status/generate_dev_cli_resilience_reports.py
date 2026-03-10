@@ -20,7 +20,7 @@ def run(args: list[str], env: dict[str, str] | None = None) -> subprocess.Comple
     if env:
         merged.update(env)
     return subprocess.run(
-        ["cargo", "run", "-q", "-p", "bijux-cli-core", "--", *args],
+        ["cargo", "run", "-q", "-p", "bijux-cli", "--", *args],
         cwd=ROOT,
         capture_output=True,
         text=True,

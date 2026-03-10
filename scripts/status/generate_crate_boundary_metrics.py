@@ -208,7 +208,7 @@ def crate_decisions() -> list[dict[str, str]]:
             "reason": "schemas and envelope law are durable contracts shared by all runtimes",
         },
         {
-            "crate": "bijux-cli-core",
+            "crate": "bijux-cli",
             "status": "keep",
             "review": "must stay separate",
             "reason": "execution law center; merging outward increases coupling risk",
@@ -226,7 +226,7 @@ def crate_decisions() -> list[dict[str, str]]:
             "reason": "candidate only if output contracts become static and trivial",
         },
         {
-            "crate": "bijux-cli-core::install",
+            "crate": "bijux-cli::install",
             "status": "watch",
             "review": "paying rent with path/install diagnostics and channel policy",
             "reason": "keep independent while runtime identity and install parity remain active",
@@ -250,7 +250,7 @@ def crate_decisions() -> list[dict[str, str]]:
             "reason": "interactive session and transcript behavior are distinct runtime concerns",
         },
         {
-            "crate": "bijux-cli-core",
+            "crate": "bijux-cli",
             "status": "candidate-to-merge-later",
             "review": "thin executable wrapper currently acceptable",
             "reason": "revisit only after parity and runtime identity reports converge",

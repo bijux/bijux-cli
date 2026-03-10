@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 ROUTING_REPORTS = ROOT / "crates" / "bijux-cli-routing" / "src" / "reports.rs"
-CORE_APP = ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs"
+CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 DEV_ROUTES = ROOT / "crates" / "bijux-dev-cli" / "src" / "routes.rs"
 DEV_REGISTRY = ROOT / "crates" / "bijux-dev-cli" / "src" / "registry.rs"
 

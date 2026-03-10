@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 PARITY = ROOT / "artifacts" / "parity"
-TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "precedence_matrix.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli" / "tests" / "bin_surface" / "precedence_matrix.rs"
 
 
 def stable_generated_at() -> str:
@@ -34,7 +34,7 @@ def read_source_precedence() -> list[str]:
         "run",
         "-q",
         "-p",
-        "bijux-cli-core",
+        "bijux-cli",
         "--",
         "dev",
         "cli",
@@ -85,7 +85,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
-                "evidence": "crates/bijux-cli-core/tests/bin_surface/precedence_matrix.rs",
+                "evidence": "crates/bijux-cli/tests/bin_surface/precedence_matrix.rs",
             }
             for todo, name in rows
         ],
@@ -102,9 +102,9 @@ def main() -> None:
         "source_precedence": source_precedence,
         "shared_contract": "flags > env > config > defaults",
         "evidence": [
-            "crates/bijux-cli-core/tests/bin_surface/precedence_matrix.rs",
-            "crates/bijux-cli-core/src/kernel.rs",
-            "crates/bijux-cli-core/src/app.rs",
+            "crates/bijux-cli/tests/bin_surface/precedence_matrix.rs",
+            "crates/bijux-cli/src/kernel.rs",
+            "crates/bijux-cli/src/app.rs",
         ],
         "covers_todo": 119,
     }

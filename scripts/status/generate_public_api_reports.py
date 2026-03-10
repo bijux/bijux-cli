@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CRATES_DIR = ROOT / "crates"
 OUT_DIR = ROOT / "artifacts" / "status"
 TARGET_CRATES = {
-    "bijux-cli-core",
+    "bijux-cli",
     "bijux-cli-plugin",
     "bijux-cli-repl",
     "bijux-cli-routing",

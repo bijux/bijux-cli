@@ -16,7 +16,7 @@ MAPPINGS = [
     ("scripts/status/generate_install_truth_reports.py", "bijux dev cli package-health"),
     ("scripts/status/generate_docs_duplication_report.py", "bijux dev cli docs-audit"),
 ]
-CORE_APP = ROOT / "crates" / "bijux-cli-core" / "src" / "app.rs"
+CORE_APP = ROOT / "crates" / "bijux-cli" / "src" / "app.rs"
 
 
 def main() -> int:

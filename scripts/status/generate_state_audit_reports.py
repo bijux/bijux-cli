@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
 PARITY = ROOT / "artifacts" / "parity"
-SNAPSHOT_DIR = ROOT / "crates" / "bijux-cli-core" / "tests" / "snapshots"
+SNAPSHOT_DIR = ROOT / "crates" / "bijux-cli" / "tests" / "snapshots"
 
 
 def stable_generated_at() -> str:
@@ -74,7 +74,7 @@ def find_doctor_snapshots() -> list[str]:
         "dev_cli_state_audit_text.txt",
         "dev_cli_state_audit_no_color.txt",
     ]
-    return [f"crates/bijux-cli-core/tests/snapshots/{name}" for name in candidates if (SNAPSHOT_DIR / name).exists()]
+    return [f"crates/bijux-cli/tests/snapshots/{name}" for name in candidates if (SNAPSHOT_DIR / name).exists()]
 
 
 def main() -> None:
