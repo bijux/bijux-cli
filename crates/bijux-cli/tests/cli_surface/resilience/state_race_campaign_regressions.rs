@@ -114,7 +114,8 @@ fn run_case(path: &Path) {
 
 #[test]
 fn minimized_race_reproducers_replay_without_crashing() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/state_race_minimized_cases");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fuzz/minimized_cases/state_race_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read repro directory")
         .filter_map(Result::ok)

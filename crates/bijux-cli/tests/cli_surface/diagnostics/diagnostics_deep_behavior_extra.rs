@@ -108,7 +108,7 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
     let contracts =
         parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);
     let contracts_snapshot: Value =
-        serde_json::from_str(include_str!("../snapshots/ported/dev_cli_contracts.json"))
+        serde_json::from_str(include_str!("../../data/ported_snapshots/dev_cli_contracts.json"))
             .expect("contracts snapshot json");
     assert_eq!(contracts["schema_version"], contracts_snapshot["schema_version"]);
     assert_eq!(contracts["contracts"], contracts_snapshot["contracts"]);
@@ -116,7 +116,7 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
     let routes =
         parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
     let routes_snapshot: Value =
-        serde_json::from_str(include_str!("../snapshots/ported/dev_cli_routes.json"))
+        serde_json::from_str(include_str!("../../data/ported_snapshots/dev_cli_routes.json"))
             .expect("routes snapshot json");
     let snapshot_routes: BTreeSet<String> = routes_snapshot["routes"]
         .as_array()

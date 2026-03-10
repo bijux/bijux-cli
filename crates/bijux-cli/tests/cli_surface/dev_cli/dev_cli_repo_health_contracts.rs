@@ -1,8 +1,10 @@
 #![forbid(unsafe_code)]
-//! Contracts for `dev cli config *` ownership surfaces.
+//! Contracts for `dev cli repo *` maintainer health surfaces.
 
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::Path;
 use std::process::Command;
-use std::{collections::BTreeMap, fs, path::Path};
 
 use serde_json::Value;
 
@@ -23,16 +25,14 @@ fn run_ok_json(args: &[&str]) -> Value {
 }
 
 #[test]
-fn config_ownership_json_contracts_are_stable() {
+fn repo_health_json_contracts_are_stable() {
     let commands = [
-        (["dev", "cli", "config", "rust-owner"], "rust_owner"),
-        (["dev", "cli", "config", "python-owner"], "python_owner"),
-        (["dev", "cli", "config", "ownership"], "owners"),
-        (["dev", "cli", "config", "drift"], "drift"),
-        (["dev", "cli", "config", "shape"], "schemas"),
-        (["dev", "cli", "config", "evidence-map"], "evidence_ids"),
+        (["dev", "cli", "repo", "health"], "repo_health"),
+        (["dev", "cli", "repo", "drift"], "dead_scripts_references"),
+        (["dev", "cli", "repo", "inventories"], "stale_inventories"),
+        (["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
+        (["dev", "cli", "repo", "stale"], "stale_snapshots"),
     ];
-
     for (command, key) in commands {
         let first = run_ok_json(&command);
         let second = run_ok_json(&command);
@@ -47,40 +47,15 @@ fn config_ownership_json_contracts_are_stable() {
 }
 
 #[test]
-fn config_ownership_text_outputs_are_non_empty_and_structured() {
-    let commands = [
-        "dev cli config rust-owner",
-        "dev cli config python-owner",
-        "dev cli config ownership",
-        "dev cli config drift",
-        "dev cli config shape",
-        "dev cli config evidence-map",
-    ];
-    for command in commands {
-        let mut args: Vec<&str> = command.split_whitespace().collect();
-        args.push("--format");
-        args.push("text");
-        let out = run(&args);
-        assert!(out.status.success(), "text command failed for {command}");
-        let text = String::from_utf8(out.stdout).expect("utf8");
-        assert!(!text.trim().is_empty(), "text output empty for {command}");
-        assert!(
-            text.contains('{') || text.contains('['),
-            "text output should remain structured for {command}"
-        );
-    }
-}
-
-#[test]
-fn config_ownership_text_heads_match_snapshot() {
+fn repo_text_heads_match_snapshots() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
+        .join("cli_surface")
         .join("snapshots")
-        .join("dev_cli_config_ownership_text_heads.json");
+        .join("dev_cli_repo_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))
             .expect("parse snapshot");
-
     for (command, prefix) in expected {
         let mut args: Vec<&str> = command.split_whitespace().collect();
         args.push("--format");

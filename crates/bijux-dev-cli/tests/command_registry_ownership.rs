@@ -7,7 +7,8 @@ use bijux_dev_cli::{command_registry, DevCliCommand, MAINTAINER_COMMAND_NAMESPAC
 
 #[test]
 fn command_registry_covers_all_known_dev_cli_subcommands() {
-    let fixture = include_str!("../../bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt");
+    let fixture =
+        include_str!("../../bijux-cli/tests/data/fixtures/routing/dev_cli_subcommands.txt");
     let known: BTreeSet<String> = fixture
         .lines()
         .map(str::trim)

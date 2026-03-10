@@ -1,10 +1,8 @@
 #![forbid(unsafe_code)]
-//! Contracts for `dev cli python *` control-plane reports.
+//! Contracts for `dev cli config *` ownership surfaces.
 
-use std::collections::BTreeMap;
-use std::fs;
-use std::path::Path;
 use std::process::Command;
+use std::{collections::BTreeMap, fs, path::Path};
 
 use serde_json::Value;
 
@@ -25,14 +23,16 @@ fn run_ok_json(args: &[&str]) -> Value {
 }
 
 #[test]
-fn python_sovereignty_reports_have_stable_json_shapes() {
+fn config_ownership_json_contracts_are_stable() {
     let commands = [
-        (["dev", "cli", "python", "bridge-status"], "bridge_status"),
-        (["dev", "cli", "python", "surface-status"], "surface_status"),
-        (["dev", "cli", "python", "sovereignty-audit"], "python_sovereignty_audit"),
-        (["dev", "cli", "python", "drift"], "drift"),
-        (["dev", "cli", "python", "packaging"], "packaging"),
+        (["dev", "cli", "config", "rust-owner"], "rust_owner"),
+        (["dev", "cli", "config", "python-owner"], "python_owner"),
+        (["dev", "cli", "config", "ownership"], "owners"),
+        (["dev", "cli", "config", "drift"], "drift"),
+        (["dev", "cli", "config", "shape"], "schemas"),
+        (["dev", "cli", "config", "evidence-map"], "evidence_ids"),
     ];
+
     for (command, key) in commands {
         let first = run_ok_json(&command);
         let second = run_ok_json(&command);
@@ -47,24 +47,37 @@ fn python_sovereignty_reports_have_stable_json_shapes() {
 }
 
 #[test]
-fn python_desovereignization_text_head_matches_snapshot() {
-    let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("snapshots")
-        .join("dev_cli_python_desovereignization_text_head.txt");
-    let expected_head = fs::read_to_string(snapshot_path).expect("read snapshot");
-    let out = run(&["dev", "cli", "python", "sovereignty-audit", "--format", "text"]);
-    assert!(out.status.success(), "python sovereignty text command failed");
-    let text = String::from_utf8(out.stdout).expect("utf8");
-    assert!(text.starts_with(&expected_head), "python sovereignty text snapshot drift");
+fn config_ownership_text_outputs_are_non_empty_and_structured() {
+    let commands = [
+        "dev cli config rust-owner",
+        "dev cli config python-owner",
+        "dev cli config ownership",
+        "dev cli config drift",
+        "dev cli config shape",
+        "dev cli config evidence-map",
+    ];
+    for command in commands {
+        let mut args: Vec<&str> = command.split_whitespace().collect();
+        args.push("--format");
+        args.push("text");
+        let out = run(&args);
+        assert!(out.status.success(), "text command failed for {command}");
+        let text = String::from_utf8(out.stdout).expect("utf8");
+        assert!(!text.trim().is_empty(), "text output empty for {command}");
+        assert!(
+            text.contains('{') || text.contains('['),
+            "text output should remain structured for {command}"
+        );
+    }
 }
 
 #[test]
-fn python_text_heads_match_snapshots() {
+fn config_ownership_text_heads_match_snapshot() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
+        .join("cli_surface")
         .join("snapshots")
-        .join("dev_cli_python_text_heads.json");
+        .join("dev_cli_config_ownership_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))
             .expect("parse snapshot");

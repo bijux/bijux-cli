@@ -24,8 +24,8 @@ fn read_set(path: &str) -> BTreeSet<String> {
 
 #[test]
 fn command_tree_diff_report_counts_match_fixtures() {
-    let py = read_set("tests/routing/fixtures/python_documented_commands.txt");
-    let rs = read_set("tests/routing/fixtures/rust_routed_root_commands.txt");
+    let py = read_set("tests/data/fixtures/routing/python_documented_commands.txt");
+    let rs = read_set("tests/data/fixtures/routing/rust_routed_root_commands.txt");
 
     let overlap = py.intersection(&rs).count();
     let py_only = py.difference(&rs).count();

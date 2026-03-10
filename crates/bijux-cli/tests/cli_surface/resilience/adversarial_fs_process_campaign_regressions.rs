@@ -106,7 +106,7 @@ fn run_case(path: &Path) {
 #[test]
 fn minimized_adversarial_cases_replay_without_panics() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fuzz/adversarial_fs_process_minimized_cases");
+        .join("tests/fuzz/minimized_cases/adversarial_fs_process_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read minimized adversarial cases")
         .filter_map(Result::ok)

@@ -63,7 +63,7 @@ fn run_case(case_file: &Path) {
 #[test]
 fn minimized_plugin_state_corruption_cases_replay_without_crashing() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fuzz/plugin_state_corruption_minimized_cases");
+        .join("tests/fuzz/minimized_cases/plugin_state_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read case directory")
         .filter_map(Result::ok)

@@ -98,8 +98,8 @@ fn run_case(case_file: &Path) {
 
 #[test]
 fn minimized_config_corruption_campaign_cases_replay_without_crashing() {
-    let dir =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/config_corruption_minimized_cases");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fuzz/minimized_cases/config_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read case directory")
         .filter_map(Result::ok)

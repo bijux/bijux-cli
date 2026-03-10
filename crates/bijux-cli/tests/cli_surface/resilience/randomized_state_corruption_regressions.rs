@@ -85,8 +85,8 @@ fn run_case(path: &Path) {
 
 #[test]
 fn minimized_corrupted_state_reproducers_replay_without_crashing() {
-    let dir =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/state_corruption_minimized_cases");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fuzz/minimized_cases/state_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read minimized directory")
         .filter_map(Result::ok)

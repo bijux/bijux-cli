@@ -55,6 +55,7 @@ fn cockpit_json_contracts_are_stable() {
 fn cockpit_text_heads_match_snapshots() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
+        .join("cli_surface")
         .join("snapshots")
         .join("dev_cli_cockpit_text_heads.json");
     let expected: BTreeMap<String, String> =

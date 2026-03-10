@@ -11,7 +11,7 @@ fn run(args: &[&str]) -> std::process::Output {
 }
 
 fn dev_cli_commands() -> Vec<Vec<String>> {
-    include_str!("../../../bijux-cli/tests/routing/fixtures/dev_cli_subcommands.txt")
+    include_str!("../../data/fixtures/routing/dev_cli_subcommands.txt")
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| line.split_whitespace().map(ToString::to_string).collect())

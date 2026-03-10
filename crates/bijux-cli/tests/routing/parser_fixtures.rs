@@ -22,7 +22,7 @@ use semver as _;
 use thiserror as _;
 
 fn load_cases() -> Vec<ParseCase> {
-    let text = fs::read_to_string("tests/routing/fixtures/parse_cases.json")
+    let text = fs::read_to_string("tests/data/fixtures/routing/parse_cases.json")
         .expect("fixture file should load");
     serde_json::from_str(&text).expect("fixture json should parse")
 }

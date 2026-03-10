@@ -57,13 +57,13 @@ fn dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable() {
 
     let contracts_live = parse_json(&contracts_a.stdout);
     let contracts_snapshot: Value =
-        serde_json::from_str(include_str!("../snapshots/ported/dev_cli_contracts.json"))
+        serde_json::from_str(include_str!("../../data/ported_snapshots/dev_cli_contracts.json"))
             .expect("contracts snapshot");
     assert_eq!(contracts_live, contracts_snapshot);
 
     let routes_live = parse_json(&routes_a.stdout);
     let routes_snapshot: Value =
-        serde_json::from_str(include_str!("../snapshots/ported/dev_cli_routes.json"))
+        serde_json::from_str(include_str!("../../data/ported_snapshots/dev_cli_routes.json"))
             .expect("routes snapshot");
     let live_routes: BTreeSet<String> = routes_live["routes"]
         .as_array()
@@ -104,7 +104,7 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
     let registry_live =
         parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
     let registry_snapshot: Value =
-        serde_json::from_str(include_str!("../snapshots/ported/dev_cli_registry.json"))
+        serde_json::from_str(include_str!("../../data/ported_snapshots/dev_cli_registry.json"))
             .expect("registry snapshot");
     assert_eq!(registry_live, registry_snapshot);
 

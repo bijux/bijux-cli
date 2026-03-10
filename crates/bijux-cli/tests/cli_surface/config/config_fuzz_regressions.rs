@@ -19,7 +19,7 @@ fn run(args: &[&str]) -> std::process::Output {
 
 #[test]
 fn minimized_config_cases_replay_with_stable_exit_behavior() {
-    let cases_dir = Path::new("tests/fuzz/config_minimized_cases");
+    let cases_dir = Path::new("tests/fuzz/minimized_cases/config_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(cases_dir)
         .expect("minimized config cases directory must exist")
         .map(|entry| entry.expect("entry").path())

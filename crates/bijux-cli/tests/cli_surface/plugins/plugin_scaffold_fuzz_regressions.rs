@@ -23,7 +23,7 @@ fn run(args: &[String], plugins_dir: &Path) -> std::process::Output {
 
 #[test]
 fn minimized_scaffold_cases_replay_with_deterministic_exit_codes() {
-    let dir = Path::new("tests/fuzz/plugin_scaffold_minimized_cases");
+    let dir = Path::new("tests/fuzz/minimized_cases/plugin_scaffold_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("scaffold minimized corpus must exist")
         .map(|e| e.expect("entry").path())

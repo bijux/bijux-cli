@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Contracts for `dev cli repo *` maintainer health surfaces.
+//! Contracts for `dev cli python *` control-plane reports.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -25,13 +25,13 @@ fn run_ok_json(args: &[&str]) -> Value {
 }
 
 #[test]
-fn repo_health_json_contracts_are_stable() {
+fn python_sovereignty_reports_have_stable_json_shapes() {
     let commands = [
-        (["dev", "cli", "repo", "health"], "repo_health"),
-        (["dev", "cli", "repo", "drift"], "dead_scripts_references"),
-        (["dev", "cli", "repo", "inventories"], "stale_inventories"),
-        (["dev", "cli", "repo", "generated"], "stale_generated_artifacts"),
-        (["dev", "cli", "repo", "stale"], "stale_snapshots"),
+        (["dev", "cli", "python", "bridge-status"], "bridge_status"),
+        (["dev", "cli", "python", "surface-status"], "surface_status"),
+        (["dev", "cli", "python", "sovereignty-audit"], "python_sovereignty_audit"),
+        (["dev", "cli", "python", "drift"], "drift"),
+        (["dev", "cli", "python", "packaging"], "packaging"),
     ];
     for (command, key) in commands {
         let first = run_ok_json(&command);
@@ -47,14 +47,30 @@ fn repo_health_json_contracts_are_stable() {
 }
 
 #[test]
-fn repo_text_heads_match_snapshots() {
+fn python_desovereignization_text_head_matches_snapshot() {
     let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
+        .join("cli_surface")
         .join("snapshots")
-        .join("dev_cli_repo_text_heads.json");
+        .join("dev_cli_python_desovereignization_text_head.txt");
+    let expected_head = fs::read_to_string(snapshot_path).expect("read snapshot");
+    let out = run(&["dev", "cli", "python", "sovereignty-audit", "--format", "text"]);
+    assert!(out.status.success(), "python sovereignty text command failed");
+    let text = String::from_utf8(out.stdout).expect("utf8");
+    assert!(text.starts_with(&expected_head), "python sovereignty text snapshot drift");
+}
+
+#[test]
+fn python_text_heads_match_snapshots() {
+    let snapshot_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("cli_surface")
+        .join("snapshots")
+        .join("dev_cli_python_text_heads.json");
     let expected: BTreeMap<String, String> =
         serde_json::from_str(&fs::read_to_string(snapshot_path).expect("read snapshot"))
             .expect("parse snapshot");
+
     for (command, prefix) in expected {
         let mut args: Vec<&str> = command.split_whitespace().collect();
         args.push("--format");
