@@ -336,6 +336,8 @@ jobs:
           python3 scripts/status/generate_dev_cli_dispatch_ownership_reports.py
           python3 scripts/status/generate_dev_cli_interface_bridge_report.py
           python3 scripts/status/generate_runtime_dev_leakage_report.py
+          python3 scripts/status/generate_dev_cli_control_plane_bundle.py
+          python3 scripts/status/generate_dev_cli_scope_reassessment.py
           python3 scripts/status/generate_config_read_surface_reports.py
           python3 scripts/status/generate_config_mutation_surface_reports.py
           python3 scripts/status/generate_config_source_surface_reports.py
@@ -698,6 +700,14 @@ jobs:
       - name: Runtime dev leakage policy gate
         run: |
           python3 scripts/status/enforce_runtime_dev_leakage_policy.py
+
+      - name: Dev cli script replacement policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_script_replacement_policy.py
+
+      - name: Dev cli canonical control-plane policy gate
+        run: |
+          python3 scripts/status/enforce_dev_cli_canonical_control_plane_policy.py
 
       - name: New public API consumer warning
         run: |
@@ -1162,6 +1172,24 @@ jobs:
         with:
           name: runtime-dev-leakage
           path: artifacts/status/runtime_dev_leakage_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli control-plane bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-control-plane-bundle
+          path: artifacts/status/dev_cli_control_plane_bundle.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload runtime responsibility reassessment
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-responsibility-reassessment
+          path: artifacts/status/runtime_responsibility_reassessment.json
           if-no-files-found: warn
           retention-days: 14
 

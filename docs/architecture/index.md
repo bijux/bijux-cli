@@ -30,6 +30,7 @@ Engineers who need to understand the architectural choices behind bijux-cli, suc
 - [Rust config baseline parity milestone](rust-config-baseline-parity-milestone.md)
 - [Crate boundaries](crate_boundaries.md)
 - [Dev CLI control-plane boundary](dev_cli_control_plane_boundary.md)
+- [Dev CLI control-plane release truth](dev_cli_control_plane_release_truth.md)
 - [Runtime identity law](runtime_identity_law.md)
 - [Parser abuse hardening](parser-abuse-hardening.md)
 - [Namespace reservation law](namespace-reservation-law.md)

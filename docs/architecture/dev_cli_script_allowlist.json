@@ -1,0 +1,25 @@
+{
+  "allowed_remaining": [
+    "scripts/docs_builder/__init__.py",
+    "scripts/docs_builder/artifacts_pages/__init__.py",
+    "scripts/docs_builder/artifacts_pages/api_page.py",
+    "scripts/docs_builder/artifacts_pages/base.py",
+    "scripts/docs_builder/artifacts_pages/citation_page.py",
+    "scripts/docs_builder/artifacts_pages/compatibility_page.py",
+    "scripts/docs_builder/artifacts_pages/diagnostics_page.py",
+    "scripts/docs_builder/artifacts_pages/index_page.py",
+    "scripts/docs_builder/artifacts_pages/install_page.py",
+    "scripts/docs_builder/artifacts_pages/invariants_page.py",
+    "scripts/docs_builder/artifacts_pages/lint_page.py",
+    "scripts/docs_builder/artifacts_pages/quality_page.py",
+    "scripts/docs_builder/artifacts_pages/sbom_page.py",
+    "scripts/docs_builder/artifacts_pages/security_page.py",
+    "scripts/docs_builder/artifacts_pages/state_page.py",
+    "scripts/docs_builder/artifacts_pages/test_page.py",
+    "scripts/docs_builder/helpers.py",
+    "scripts/docs_builder/mkdocs_manager.py",
+    "scripts/docs_builder/models.py",
+    "scripts/git-hooks/prepare-commit-msg"
+  ],
+  "reason": "These scripts build the docs site generation pipeline and are not duplicate maintainer diagnostics that belong on dev-cli command surfaces."
+}
