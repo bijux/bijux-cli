@@ -1,16 +1,60 @@
 //! Maintainer crate health report assembly.
 
+use std::fs;
+use std::path::Path;
+
 use serde_json::{json, Value};
 
-use crate::{DevCliCommand, ReportContext};
+fn read_json_if_exists(path: &Path) -> Value {
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_else(|| json!({}))
+}
 
-/// Builds the maintainer crate health report envelope.
+/// Builds the maintainer crate health report payload.
 #[must_use]
-pub fn build_report(context: &ReportContext) -> Value {
+pub fn build_report(workspace_root: &Path) -> Value {
+    let metrics =
+        read_json_if_exists(&workspace_root.join("artifacts/status/crate_boundary_metrics.json"));
+    let report =
+        read_json_if_exists(&workspace_root.join("artifacts/status/crate_boundary_report.json"));
+    let state =
+        read_json_if_exists(&workspace_root.join("artifacts/status/current_rust_state.json"));
+    let public_api_by_crate =
+        read_json_if_exists(&workspace_root.join("artifacts/status/public_api_by_crate.json"));
+    let internal_only_candidates = read_json_if_exists(
+        &workspace_root.join("artifacts/status/internal_only_candidates_by_crate.json"),
+    );
+    let cross_crate_api_usage =
+        read_json_if_exists(&workspace_root.join("artifacts/status/cross_crate_api_usage.json"));
+    let duplication_hotspots =
+        read_json_if_exists(&workspace_root.join("artifacts/status/duplication_hotspots.json"));
+
     json!({
-        "command": DevCliCommand::CrateHealth.as_str(),
-        "generated_at": context.generated_at,
-        "data_source": context.data_source,
-        "owner": "bijux-dev-cli",
+        "crate_metrics": metrics,
+        "crate_report": report,
+        "public_api_counts": state.get("crates_public_api_counts").cloned().unwrap_or_else(|| json!([])),
+        "dependency_edges": state.get("crate_dependency_edges").cloned().unwrap_or_else(|| json!([])),
+        "public_api_by_crate": public_api_by_crate,
+        "internal_only_candidates_by_crate": internal_only_candidates,
+        "cross_crate_api_usage": cross_crate_api_usage,
+        "duplication_hotspots": duplication_hotspots,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::build_report;
+
+    #[test]
+    fn crate_health_report_shape_is_stable() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let report = build_report(&root);
+        assert!(report.get("crate_metrics").is_some());
+        assert!(report.get("crate_report").is_some());
+        assert!(report.get("duplication_hotspots").is_some());
+    }
 }
