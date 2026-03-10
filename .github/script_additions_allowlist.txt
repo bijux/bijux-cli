@@ -26,3 +26,4 @@ scripts/status/generate_reserved_namespace_test_matrix.py # generate plugin name
 scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecycle todo matrix artifact proving end-to-end lifecycle integration test coverage
 scripts/status/generate_plugin_failure_rollback_test_matrix.py # generate plugin failure/rollback todo matrix artifact proving failure injection and rollback coverage
 scripts/status/generate_plugin_discovery_determinism_reports.py # generate plugin discovery determinism report and frozen ordering law artifacts for TODOs 61-80
+scripts/status/generate_flag_normalization_matrix.py # generate flag normalization todo matrix artifact proving parser and conflict behavior coverage
