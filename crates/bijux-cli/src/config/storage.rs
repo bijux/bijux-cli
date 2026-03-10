@@ -34,7 +34,9 @@ impl ConfigRepository for FileConfigRepository {
                 continue;
             }
             let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
-                return Err(ConfigError::parse(format!("Malformed line {line_no}: {raw_line}")));
+                return Err(ConfigError::parse(format!(
+                    "Malformed line {line_no}: {raw_line}"
+                )));
             };
             let key = normalize_key(raw_key)?;
             let value = decode_quoted_value(raw_value.trim());
@@ -70,7 +72,10 @@ mod tests {
     use super::{ConfigRepository, FileConfigRepository};
 
     fn make_temp_dir(name: &str) -> PathBuf {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
         let path = std::env::temp_dir().join(format!("bijux-storage-{name}-{nanos}"));
         fs::create_dir_all(&path).expect("mkdir");
         path

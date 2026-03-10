@@ -14,7 +14,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -27,8 +30,10 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir()
-        .join(format!("bijux-config-read-matrix-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-config-read-matrix-{name}-{}",
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -46,8 +51,11 @@ fn root_config_list_empty_one_multiple_duplicate_comments_and_malformed_behavior
     fs::write(&empty, "").expect("write empty");
     fs::write(&one, "BIJUXCLI_ALPHA=1\n").expect("write one");
     fs::write(&multi, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write multi");
-    fs::write(&duplicate, "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=3\n# c\n\nBIJUXCLI_BETA=2\n")
-        .expect("write dup");
+    fs::write(
+        &duplicate,
+        "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=3\n# c\n\nBIJUXCLI_BETA=2\n",
+    )
+    .expect("write dup");
     fs::write(&malformed, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("write malformed");
 
     let empty_out = run(&[
@@ -221,19 +229,44 @@ fn config_get_json_yaml_text_quiet_and_no_color_behavior() {
     let yaml_text = String::from_utf8(yaml_out.stdout).expect("utf-8");
     assert!(yaml_text.contains("value:"));
 
-    let text_out =
-        run(&["cli", "config", "get", "alpha", "--format", "text", "--config-path", path]);
+    let text_out = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "text",
+        "--config-path",
+        path,
+    ]);
     assert_eq!(text_out.status.code(), Some(0));
     let text = String::from_utf8(text_out.stdout).expect("utf-8");
     assert!(text.contains("alpha"));
 
-    let quiet_out = run(&["cli", "config", "get", "alpha", "--quiet", "--config-path", path]);
+    let quiet_out = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--quiet",
+        "--config-path",
+        path,
+    ]);
     assert_eq!(quiet_out.status.code(), Some(0));
     assert!(quiet_out.stdout.is_empty());
     assert!(quiet_out.stderr.is_empty());
 
     let no_color_out = run_with_env(
-        &["cli", "config", "get", "alpha", "--format", "text", "--config-path", path],
+        &[
+            "cli",
+            "config",
+            "get",
+            "alpha",
+            "--format",
+            "text",
+            "--config-path",
+            path,
+        ],
         &[("NO_COLOR", "1")],
     );
     assert_eq!(no_color_out.status.code(), Some(0));
@@ -248,7 +281,14 @@ fn config_listing_repeated_run_determinism_and_field_order_stability() {
     fs::write(&file, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write file");
     let path = file.to_str().expect("utf-8");
 
-    let args = ["config", "--format", "json", "--no-pretty", "--config-path", path];
+    let args = [
+        "config",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        path,
+    ];
     let first = run(&args);
     let second = run(&args);
     assert_eq!(first.status.code(), Some(0));
@@ -258,5 +298,8 @@ fn config_listing_repeated_run_determinism_and_field_order_stability() {
     let body = String::from_utf8(first.stdout).expect("utf-8");
     let alpha = body.find("\"alpha\"").expect("alpha key");
     let beta = body.find("\"beta\"").expect("beta key");
-    assert!(alpha < beta, "stable field order should keep alpha before beta");
+    assert!(
+        alpha < beta,
+        "stable field order should keep alpha before beta"
+    );
 }

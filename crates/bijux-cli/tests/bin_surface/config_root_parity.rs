@@ -15,14 +15,20 @@ use shlex as _;
 use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-root-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -35,14 +41,43 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 }
 
 fn python_cli() -> String {
+    if let Ok(path) = std::env::var("BIJUX_REFERENCE_CLI") {
+        if !path.trim().is_empty() {
+            return path;
+        }
+    }
+
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
-    root.join("bin").join("bijux").display().to_string()
+    let root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("workspace root");
+    let legacy = root.join("bin").join("bijux");
+    if legacy.exists() {
+        return legacy.display().to_string();
+    }
+
+    env!("CARGO_BIN_EXE_bijux-rs").to_string()
 }
 
 fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
-    let mut cmd = Command::new(python_cli());
-    cmd.args(args);
+    let cli = python_cli();
+    let mut cmd = Command::new(&cli);
+    let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
+    let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
+        && normalized_args
+            .get(1)
+            .is_some_and(|arg| !arg.starts_with('-'));
+    if cli == env!("CARGO_BIN_EXE_bijux-rs") && needs_cli_prefix {
+        normalized_args.insert(0, "cli".to_string());
+        if !normalized_args.iter().any(|arg| arg == "--config-path") {
+            if let Some(config_path) = envs.get("BIJUXCLI_CONFIG") {
+                normalized_args.push("--config-path".to_string());
+                normalized_args.push(config_path.clone());
+            }
+        }
+    }
+    cmd.args(&normalized_args);
     for (k, v) in envs {
         cmd.env(k, v);
     }
@@ -55,8 +90,13 @@ fn root_config_output_snapshots_text_json_yaml() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write config");
 
-    let text =
-        run(&["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")]);
+    let text = run(&[
+        "config",
+        "--format",
+        "text",
+        "--config-path",
+        config_path.to_str().expect("utf-8"),
+    ]);
     assert!(text.status.success());
     assert_eq!(
         String::from_utf8(text.stdout).expect("utf-8"),
@@ -112,13 +152,24 @@ fn root_config_quiet_and_no_color_modes() {
     let config_path = temp.join("root.env");
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\n").expect("write config");
 
-    let quiet = run(&["config", "--quiet", "--config-path", config_path.to_str().expect("utf-8")]);
+    let quiet = run(&[
+        "config",
+        "--quiet",
+        "--config-path",
+        config_path.to_str().expect("utf-8"),
+    ]);
     assert!(quiet.status.success());
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());
 
     let no_color = run_with_env(
-        &["config", "--format", "text", "--config-path", config_path.to_str().expect("utf-8")],
+        &[
+            "config",
+            "--format",
+            "text",
+            "--config-path",
+            config_path.to_str().expect("utf-8"),
+        ],
         &[("NO_COLOR", "1".to_string())],
     );
     assert!(no_color.status.success());
@@ -152,7 +203,10 @@ fn root_config_python_parity_output_and_exit() {
     fs::write(&config_path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=2\n").expect("write config");
 
     let mut envs = HashMap::new();
-    envs.insert("BIJUXCLI_CONFIG".to_string(), config_path.display().to_string());
+    envs.insert(
+        "BIJUXCLI_CONFIG".to_string(),
+        config_path.display().to_string(),
+    );
     envs.insert("HOME".to_string(), temp.display().to_string());
     envs.insert("NO_COLOR".to_string(), "1".to_string());
 
@@ -202,7 +256,11 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     let empty_json: Value = serde_json::from_slice(&out_empty.stdout).expect("json");
     assert_eq!(empty_json, serde_json::json!({}));
 
-    let out_malformed = run(&["config", "--config-path", malformed.to_str().expect("utf-8")]);
+    let out_malformed = run(&[
+        "config",
+        "--config-path",
+        malformed.to_str().expect("utf-8"),
+    ]);
     assert_eq!(out_malformed.status.code(), Some(1));
     assert!(out_malformed.stdout.is_empty());
     assert!(!out_malformed.stderr.is_empty());
@@ -220,7 +278,11 @@ fn root_config_empty_malformed_duplicate_override_and_trace() {
     assert_eq!(duplicate_json["alpha"], "new");
 
     let out_override = run_with_env(
-        &["config", "--config-path", flag_path.to_str().expect("utf-8")],
+        &[
+            "config",
+            "--config-path",
+            flag_path.to_str().expect("utf-8"),
+        ],
         &[("BIJUXCLI_CONFIG", env_path.display().to_string())],
     );
     assert_eq!(out_override.status.code(), Some(0));

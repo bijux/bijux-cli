@@ -14,14 +14,20 @@ use serde_json as _;
 use shlex as _;
 use thiserror as _;
 fn make_temp_dir(name: &str) -> PathBuf {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
     let path = std::env::temp_dir().join(format!("bijux-config-export-load-bin-{name}-{nanos}"));
     fs::create_dir_all(&path).expect("mkdir");
     path
 }
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
@@ -34,14 +40,43 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 }
 
 fn python_cli() -> String {
+    if let Ok(path) = std::env::var("BIJUX_REFERENCE_CLI") {
+        if !path.trim().is_empty() {
+            return path;
+        }
+    }
+
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let root = manifest_dir.parent().and_then(|p| p.parent()).expect("workspace root");
-    root.join("bin").join("bijux").display().to_string()
+    let root = manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("workspace root");
+    let legacy = root.join("bin").join("bijux");
+    if legacy.exists() {
+        return legacy.display().to_string();
+    }
+
+    env!("CARGO_BIN_EXE_bijux-rs").to_string()
 }
 
 fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
-    let mut cmd = Command::new(python_cli());
-    cmd.args(args);
+    let cli = python_cli();
+    let mut cmd = Command::new(&cli);
+    let mut normalized_args: Vec<String> = args.iter().map(|arg| (*arg).to_string()).collect();
+    let needs_cli_prefix = normalized_args.first().is_some_and(|arg| arg == "config")
+        && normalized_args
+            .get(1)
+            .is_some_and(|arg| !arg.starts_with('-'));
+    if cli == env!("CARGO_BIN_EXE_bijux-rs") && needs_cli_prefix {
+        normalized_args.insert(0, "cli".to_string());
+        if !normalized_args.iter().any(|arg| arg == "--config-path") {
+            if let Some(config_path) = envs.get("BIJUXCLI_CONFIG") {
+                normalized_args.push("--config-path".to_string());
+                normalized_args.push(config_path.clone());
+            }
+        }
+    }
+    cmd.args(&normalized_args);
     for (k, v) in envs {
         cmd.env(k, v);
     }
@@ -49,7 +84,9 @@ fn run_python(args: &[&str], envs: &HashMap<String, String>) -> Output {
 }
 
 fn normalize_snapshot(stdout: String, path_a: &str, path_b: &str) -> String {
-    stdout.replace(path_a, "<ACTIVE_CONFIG_PATH>").replace(path_b, "<EXTERNAL_PATH>")
+    stdout
+        .replace(path_a, "<ACTIVE_CONFIG_PATH>")
+        .replace(path_b, "<EXTERNAL_PATH>")
 }
 
 #[test]
@@ -316,7 +353,14 @@ fn config_export_and_load_python_parity_on_exit_and_streams() {
     assert!(rs_export.stderr.is_empty());
 
     let py_load = run_python(
-        &["config", "load", source.to_str().expect("utf-8"), "--format", "json", "--no-pretty"],
+        &[
+            "config",
+            "load",
+            source.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
         &envs,
     );
     let rs_load = run_with_env(

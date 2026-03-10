@@ -14,7 +14,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("execute")
 }
 
 #[test]
@@ -33,8 +36,20 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
         let payload = fs::read(&case).expect("read case");
         fs::write(&scratch, payload).expect("write scratch");
 
-        let a = run(&["cli", "config", "list", "--config-path", scratch.to_str().expect("utf-8")]);
-        let b = run(&["cli", "config", "list", "--config-path", scratch.to_str().expect("utf-8")]);
+        let a = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            scratch.to_str().expect("utf-8"),
+        ]);
+        let b = run(&[
+            "cli",
+            "config",
+            "list",
+            "--config-path",
+            scratch.to_str().expect("utf-8"),
+        ]);
         assert_eq!(a.status.code(), b.status.code(), "case={}", case.display());
 
         let load_a = run(&[
@@ -53,6 +68,11 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
             "--config-path",
             scratch.to_str().expect("utf-8"),
         ]);
-        assert_eq!(load_a.status.code(), load_b.status.code(), "case={}", case.display());
+        assert_eq!(
+            load_a.status.code(),
+            load_b.status.code(),
+            "case={}",
+            case.display()
+        );
     }
 }

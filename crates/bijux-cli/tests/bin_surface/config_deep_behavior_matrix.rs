@@ -14,7 +14,10 @@ use shlex as _;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(args)
+        .output()
+        .expect("binary should execute")
 }
 
 fn run_json(args: &[&str]) -> Value {
@@ -66,7 +69,10 @@ fn config_key_normalization_and_parse_behavior_are_stable_across_repeated_inputs
     assert_eq!(first["alpha"], "1");
     assert_eq!(first["beta"], "two");
     assert_eq!(first["gamma"], "three");
-    assert!(first.get("# comment line").is_none(), "comments should not become config keys");
+    assert!(
+        first.get("# comment line").is_none(),
+        "comments should not become config keys"
+    );
 }
 
 #[test]
@@ -76,15 +82,42 @@ fn config_writer_ordering_and_formatting_rules_are_deterministic() {
     let path = config.to_string_lossy().to_string();
 
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_Z=9", "--config-path", &path]).status.code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_Z=9",
+            "--config-path",
+            &path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_A=1", "--config-path", &path]).status.code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_A=1",
+            "--config-path",
+            &path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_M=5", "--config-path", &path]).status.code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_M=5",
+            "--config-path",
+            &path
+        ])
+        .status
+        .code(),
         Some(0)
     );
 
@@ -96,10 +129,17 @@ fn config_writer_ordering_and_formatting_rules_are_deterministic() {
         .collect::<Vec<_>>();
     assert_eq!(
         lines,
-        vec!["BIJUXCLI_A=1".to_string(), "BIJUXCLI_M=5".to_string(), "BIJUXCLI_Z=9".to_string()],
+        vec![
+            "BIJUXCLI_A=1".to_string(),
+            "BIJUXCLI_M=5".to_string(),
+            "BIJUXCLI_Z=9".to_string()
+        ],
         "writer ordering should be deterministic and normalized"
     );
-    assert!(!written.contains("#"), "writer must not reintroduce dropped comments");
+    assert!(
+        !written.contains("#"),
+        "writer must not reintroduce dropped comments"
+    );
 }
 
 #[test]
@@ -113,9 +153,16 @@ fn config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values()
     let exported_path = exported.to_string_lossy().to_string();
 
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_ALPHA=hello world", "--config-path", &source_path])
-            .status
-            .code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_ALPHA=hello world",
+            "--config-path",
+            &source_path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
@@ -152,21 +199,42 @@ fn config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values()
         "yaml",
         "--pretty",
     ]);
-    let text_out =
-        run(&["cli", "config", "list", "--config-path", &source_path, "--format", "text"]);
+    let text_out = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        &source_path,
+        "--format",
+        "text",
+    ]);
     assert_eq!(yaml_out.status.code(), Some(0));
     assert_eq!(text_out.status.code(), Some(0));
 
     assert_eq!(
-        run(&["cli", "config", "export", &exported_path, "--config-path", &source_path])
-            .status
-            .code(),
+        run(&[
+            "cli",
+            "config",
+            "export",
+            &exported_path,
+            "--config-path",
+            &source_path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
-        run(&["cli", "config", "load", &exported_path, "--config-path", &target_path])
-            .status
-            .code(),
+        run(&[
+            "cli",
+            "config",
+            "load",
+            &exported_path,
+            "--config-path",
+            &target_path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     let loaded_json = run_json(&[
@@ -179,7 +247,10 @@ fn config_export_and_load_preserve_semantic_content_and_roundtrip_exact_values()
         "json",
         "--no-pretty",
     ]);
-    assert_eq!(json_export, loaded_json, "load+export should preserve semantic content");
+    assert_eq!(
+        json_export, loaded_json,
+        "load+export should preserve semantic content"
+    );
 
     let roundtrip_get = run_json(&[
         "cli",
@@ -202,15 +273,35 @@ fn config_unset_clear_and_repeated_mutations_follow_expected_semantics() {
     let path = config.to_string_lossy().to_string();
 
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_ALPHA=1", "--config-path", &path]).status.code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_ALPHA=1",
+            "--config-path",
+            &path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
-        run(&["cli", "config", "set", "BIJUXCLI_BETA=2", "--config-path", &path]).status.code(),
+        run(&[
+            "cli",
+            "config",
+            "set",
+            "BIJUXCLI_BETA=2",
+            "--config-path",
+            &path
+        ])
+        .status
+        .code(),
         Some(0)
     );
     assert_eq!(
-        run(&["cli", "config", "unset", "alpha", "--config-path", &path]).status.code(),
+        run(&["cli", "config", "unset", "alpha", "--config-path", &path])
+            .status
+            .code(),
         Some(0)
     );
     let missing = run(&[
@@ -226,7 +317,12 @@ fn config_unset_clear_and_repeated_mutations_follow_expected_semantics() {
     ]);
     assert_eq!(missing.status.code(), Some(2));
 
-    assert_eq!(run(&["cli", "config", "clear", "--config-path", &path]).status.code(), Some(0));
+    assert_eq!(
+        run(&["cli", "config", "clear", "--config-path", &path])
+            .status
+            .code(),
+        Some(0)
+    );
     let listed = run_json(&[
         "cli",
         "config",
@@ -237,15 +333,36 @@ fn config_unset_clear_and_repeated_mutations_follow_expected_semantics() {
         "json",
         "--no-pretty",
     ]);
-    assert_eq!(listed, serde_json::json!({}), "clear should remove all managed keys");
+    assert_eq!(
+        listed,
+        serde_json::json!({}),
+        "clear should remove all managed keys"
+    );
 
-    let first = run(&["cli", "config", "set", "BIJUXCLI_ALPHA=1", "--config-path", &path]);
-    let second = run(&["cli", "config", "set", "BIJUXCLI_ALPHA=1", "--config-path", &path]);
+    let first = run(&[
+        "cli",
+        "config",
+        "set",
+        "BIJUXCLI_ALPHA=1",
+        "--config-path",
+        &path,
+    ]);
+    let second = run(&[
+        "cli",
+        "config",
+        "set",
+        "BIJUXCLI_ALPHA=1",
+        "--config-path",
+        &path,
+    ]);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(second.status.code(), Some(0));
     let after_first = fs::read_to_string(&config).expect("read after first");
     let after_second = fs::read_to_string(&config).expect("read after second");
-    assert_eq!(after_first, after_second, "same-input repeated mutations should be deterministic");
+    assert_eq!(
+        after_first, after_second,
+        "same-input repeated mutations should be deterministic"
+    );
 }
 
 #[test]
@@ -255,10 +372,25 @@ fn root_and_cli_config_path_override_behavior_is_identical_for_list() {
     let path = config.to_string_lossy().to_string();
     fs::write(&config, "BIJUXCLI_SHARED=from-file\nBIJUXCLI_ANOTHER=x\n").expect("write config");
 
-    let root_list =
-        run(&["config", "list", "--config-path", &path, "--format", "json", "--no-pretty"]);
-    let cli_list =
-        run(&["cli", "config", "list", "--config-path", &path, "--format", "json", "--no-pretty"]);
+    let root_list = run(&[
+        "config",
+        "list",
+        "--config-path",
+        &path,
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
+    let cli_list = run(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        &path,
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
 
     assert_eq!(root_list.status.code(), Some(0));
     assert_eq!(cli_list.status.code(), Some(0));
@@ -294,22 +426,33 @@ fn config_doctor_and_state_doctor_agree_on_corrupted_config_findings() {
         "--no-pretty",
     ]);
 
-    let doctor_config_issues = doctor["issues"]["config"].as_array().expect("doctor config issues");
-    let state_config_issues =
-        state_doctor["doctor"]["issues"].as_array().expect("state doctor issues");
+    let doctor_config_issues = doctor["issues"]["config"]
+        .as_array()
+        .expect("doctor config issues");
+    let state_config_issues = state_doctor["doctor"]["issues"]
+        .as_array()
+        .expect("state doctor issues");
 
-    assert!(!doctor_config_issues.is_empty(), "dev cli doctor should report config corruption");
-    assert!(!state_config_issues.is_empty(), "state doctor should report config corruption");
     assert!(
-        doctor_config_issues
-            .iter()
-            .any(|row| row["message"].as_str().unwrap_or_default().contains("Malformed line")),
+        !doctor_config_issues.is_empty(),
+        "dev cli doctor should report config corruption"
+    );
+    assert!(
+        !state_config_issues.is_empty(),
+        "state doctor should report config corruption"
+    );
+    assert!(
+        doctor_config_issues.iter().any(|row| row["message"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("Malformed line")),
         "doctor must include malformed line detail"
     );
     assert!(
-        state_config_issues
-            .iter()
-            .any(|row| row["message"].as_str().unwrap_or_default().contains("Malformed line")),
+        state_config_issues.iter().any(|row| row["message"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("Malformed line")),
         "state doctor must include malformed line detail"
     );
 }

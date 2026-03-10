@@ -26,7 +26,10 @@ fn run_case(case_file: &Path) {
 
     let temp = std::env::temp_dir().join(format!(
         "bijux-config-campaign-repro-{}-{}",
-        case_file.file_stem().and_then(|s| s.to_str()).unwrap_or("case"),
+        case_file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("case"),
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&temp);
@@ -48,8 +51,10 @@ fn run_case(case_file: &Path) {
         }
     }
 
-    let out =
-        Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(&expanded).output().expect("run case");
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
+        .args(&expanded)
+        .output()
+        .expect("run case");
 
     assert!(
         matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
@@ -70,7 +75,10 @@ fn minimized_config_corruption_campaign_cases_replay_without_crashing() {
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
     files.sort();
-    assert!(!files.is_empty(), "must retain at least one minimized campaign case");
+    assert!(
+        !files.is_empty(),
+        "must retain at least one minimized campaign case"
+    );
 
     for case_file in files {
         run_case(&case_file);
