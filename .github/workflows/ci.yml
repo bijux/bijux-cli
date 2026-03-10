@@ -327,6 +327,7 @@ jobs:
           python3 scripts/status/generate_repl_hostile_session_reports.py
           python3 scripts/status/generate_repl_completion_reports.py
           python3 scripts/status/generate_python_bridge_execution_reports.py
+          python3 scripts/status/generate_python_bridge_conversion_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -448,6 +449,10 @@ jobs:
       - name: Python bridge execution gate
         run: |
           python3 scripts/status/enforce_python_bridge_execution_gate.py
+
+      - name: Python bridge conversion gate
+        run: |
+          python3 scripts/status/enforce_python_bridge_conversion_gate.py
 
       - name: Warn REPL-only semantic scope
         run: |
@@ -789,6 +794,20 @@ jobs:
             artifacts/status/python_bridge_execution_artifact.json
             artifacts/status/python_bridge_drift_artifact.json
             artifacts/status/python_bridge_execution_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload python bridge conversion artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-bridge-conversion
+          path: |
+            artifacts/status/bridge_conversion_artifact.json
+            artifacts/status/bridge_exception_mapping_artifact.json
+            artifacts/status/bridge_envelope_integrity_artifact.json
+            artifacts/status/bridge_conversion_drift_artifact.json
+            artifacts/status/bridge_conversion_contract.json
           if-no-files-found: warn
           retention-days: 14
 
