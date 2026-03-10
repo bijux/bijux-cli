@@ -14,10 +14,10 @@ use serde_json::{json, Value};
 use crate::interface::cli::help::render_command_help;
 use crate::cli::commands::{
     cli as cli_commands, dev as dev_commands, dev_cli as dev_cli_commands,
-    history as history_commands, memory as memory_commands, plugins as plugins_commands,
-    root as root_commands,
+    plugins as plugins_commands, root as root_commands,
 };
 use crate::cli::context::resolve_state_paths;
+use crate::features::{history as history_feature, memory as memory_feature};
 use crate::features::config::execute_config_command;
 use crate::output::{render_value, EmitterConfig};
 
@@ -102,10 +102,10 @@ fn route_response(
     if let Some(payload) = execute_config_command(normalized_path, argv, &compatibility_paths)? {
         return Ok(payload);
     }
-    if let Some(payload) = history_commands::try_handle(normalized_path, argv, &paths)? {
+    if let Some(payload) = history_feature::command::try_handle(normalized_path, argv, &paths)? {
         return Ok(payload);
     }
-    if let Some(payload) = memory_commands::try_handle(normalized_path, argv, &paths)? {
+    if let Some(payload) = memory_feature::command::try_handle(normalized_path, argv, &paths)? {
         return Ok(payload);
     }
     if let Some(payload) =
