@@ -417,6 +417,7 @@ jobs:
           python3 scripts/status/generate_dev_cli_invariants_reports.py
           python3 scripts/status/generate_dev_cli_parity_consistency_reports.py
           python3 scripts/status/generate_runtime_package_diagnostics_reports.py
+          python3 scripts/status/generate_dev_cli_state_diagnostics_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -427,6 +428,7 @@ jobs:
           python3 scripts/status/enforce_dev_cli_invariants_gate.py
           python3 scripts/status/enforce_dev_cli_parity_consistency_gate.py
           python3 scripts/status/enforce_runtime_package_diagnostics_gate.py
+          python3 scripts/status/enforce_dev_cli_state_diagnostics_gate.py
 
       - name: Warn on new script files without justification
         shell: bash
@@ -1576,6 +1578,10 @@ jobs:
             artifacts/parity/memory_parity_report.json
             artifacts/status/state_doctor_report.json
             artifacts/status/state_doctor_report.txt
+            artifacts/status/state_audit_truth_artifact.json
+            artifacts/status/state_doctor_truth_artifact.json
+            artifacts/status/corrupted_state_truth_artifact.json
+            artifacts/status/state_diagnostics_drift_artifact.json
           if-no-files-found: warn
           retention-days: 14
 
