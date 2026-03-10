@@ -81,7 +81,13 @@ fn parse_log_level(raw: Option<&String>) -> Result<Option<LogLevel>, ParseError>
 }
 
 fn global_flags_from_matches(matches: &ArgMatches) -> Result<ParsedGlobalFlags, ParseError> {
-    let output_format = parse_output_format(matches.get_one::<String>("format"))?;
+    let output_format = if matches.get_flag("json") {
+        Some(OutputFormat::Json)
+    } else if matches.get_flag("text") {
+        Some(OutputFormat::Text)
+    } else {
+        parse_output_format(matches.get_one::<String>("format"))?
+    };
     let color_mode = parse_color(matches.get_one::<String>("color"))?;
     let log_level = parse_log_level(matches.get_one::<String>("log-level"))?;
 
@@ -130,6 +136,18 @@ pub fn root_command() -> Command {
         .global(true);
     let config_path_arg =
         Arg::new("config-path").long("config-path").num_args(1).global(true).value_name("PATH");
+    let json_arg = Arg::new("json")
+        .long("json")
+        .action(ArgAction::SetTrue)
+        .overrides_with_all(["text", "format"])
+        .hide(true)
+        .global(true);
+    let text_arg = Arg::new("text")
+        .long("text")
+        .action(ArgAction::SetTrue)
+        .overrides_with_all(["json", "format"])
+        .hide(true)
+        .global(true);
 
     let config_group = Command::new("config")
         .subcommand_required(false)
@@ -236,6 +254,8 @@ pub fn root_command() -> Command {
             pretty_arg,
             no_pretty_arg,
             config_path_arg,
+            json_arg,
+            text_arg,
         ])
         .subcommand_required(false)
         .allow_external_subcommands(true)
