@@ -259,6 +259,16 @@ fn pipeline_runs_sync_and_async_handlers() {
     )
     .expect("async should execute");
     assert_eq!(async_result.exit_code, ExitCode::Success);
+    assert!(async_result.emission.is_some());
+    assert!(async_result.trace.is_some());
+    assert_eq!(
+        async_result
+            .emission
+            .as_ref()
+            .and_then(|emission| emission.payload.get("ok"))
+            .and_then(serde_json::Value::as_str),
+        Some("async")
+    );
 }
 
 #[test]
@@ -422,6 +432,7 @@ fn cancellation_paths_never_skip_exit_code_mapping() {
     assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
     assert_eq!(map_error_category_to_exit("plugin"), ExitCode::Error);
     assert_eq!(map_error_category_to_exit("internal"), ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("unknown"), ExitCode::Error);
 }
 
 #[test]
@@ -563,6 +574,7 @@ fn pipeline_invokes_plugin_and_repl_lifecycle_hooks() {
 fn maps_usage_category_to_stable_usage_exit_code() {
     assert_eq!(map_error_category_to_exit("usage"), ExitCode::Usage);
     assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
+    assert_ne!(map_error_category_to_exit("usage"), ExitCode::Error);
 }
 
 #[test]
@@ -570,14 +582,26 @@ fn maps_validation_plugin_and_internal_categories_to_stable_exit_codes() {
     assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
     assert_eq!(map_error_category_to_exit("plugin"), ExitCode::Error);
     assert_eq!(map_error_category_to_exit("internal"), ExitCode::Error);
+    assert_eq!(map_error_category_to_exit("anything-else"), ExitCode::Error);
 }
 
 #[test]
 fn kernel_usage_validation_plugin_internal_error_mapping_is_stable() {
-    assert_eq!(map_error_category_to_exit("usage"), ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("validation"), ExitCode::Usage);
-    assert_eq!(map_error_category_to_exit("plugin"), ExitCode::Error);
-    assert_eq!(map_error_category_to_exit("internal"), ExitCode::Error);
+    for (category, expected) in [
+        ("usage", ExitCode::Usage),
+        ("validation", ExitCode::Usage),
+        ("plugin", ExitCode::Error),
+        ("internal", ExitCode::Error),
+        ("unexpected", ExitCode::Error),
+    ] {
+        let observed = map_error_category_to_exit(category);
+        assert_eq!(observed, expected, "unexpected mapping for {category}");
+        assert_ne!(
+            observed,
+            ExitCode::Success,
+            "errors must never map to success"
+        );
+    }
 }
 
 #[test]
