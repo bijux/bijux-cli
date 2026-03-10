@@ -31,7 +31,7 @@ Areas where Rust plugin behavior already provides stronger guardrails:
 ## Overlap Parity Evidence
 
 - `crates/bijux-cli-plugin/tests/plugin_parity_read_paths.rs`
-- `crates/bijux-cli/tests/bin_surface/plugin_command_parity.rs`
+- `crates/bijux-cli/tests/cli_surface/plugin_command_parity.rs`
 - `artifacts/status/plugin_state_report.json`
 
 ## Known Gaps

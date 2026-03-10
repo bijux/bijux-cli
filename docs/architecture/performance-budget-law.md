@@ -15,6 +15,6 @@ Evidence sources:
 - `artifacts/status/performance_report.json`
 - `artifacts/status/performance_regression_budget.json`
 - `artifacts/status/performance_benchmark_policy.json`
-- `crates/bijux-cli/tests/bin_surface/performance_realism_hardening.rs`
+- `crates/bijux-cli/tests/cli_surface/performance_realism_hardening.rs`
 - `crates/bijux-cli-output/tests/output_rendering_performance.rs`
-- `crates/bijux-cli/tests/bin_surface/repl_startup_performance_budget.rs`
+- `crates/bijux-cli/tests/cli_surface/repl_startup_performance_budget.rs`

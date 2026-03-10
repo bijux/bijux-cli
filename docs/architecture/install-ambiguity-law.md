@@ -16,4 +16,4 @@ Evidence sources:
 - `artifacts/status/install_state_assumptions_report.json`
 - `artifacts/status/package_health_report.json`
 - `artifacts/status/package_health_report.txt`
-- `crates/bijux-cli/tests/bin_surface/install_ambiguity_hardening.rs`
+- `crates/bijux-cli/tests/cli_surface/install_ambiguity_hardening.rs`

@@ -16,7 +16,7 @@ Scope: tasks `181-193` for Rust config parity.
 ## Coverage
 
 - Binary parity suite:
-  - `crates/bijux-cli/tests/bin_surface/config_export_load_parity.rs`
+  - `crates/bijux-cli/tests/cli_surface/config_export_load_parity.rs`
 - Snapshots:
   - `crates/bijux-cli/tests/snapshots/config_export_json_compact.txt`
   - `crates/bijux-cli/tests/snapshots/config_export_yaml_pretty.txt`

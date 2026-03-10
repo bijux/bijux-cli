@@ -33,7 +33,7 @@ Scope: tasks 261-280 (first memory baseline).
 
 ## Tests added
 
-- `crates/bijux-cli/tests/bin_surface/memory_parity.rs`
+- `crates/bijux-cli/tests/cli_surface/memory_parity.rs`
 - `crates/bijux-cli/tests/snapshots/memory_list_text.txt`
 - `crates/bijux-cli/tests/snapshots/memory_list_yaml.txt`
 - `crates/bijux-cli/tests/app_direct_invocation.rs` memory cases

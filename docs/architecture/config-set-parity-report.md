@@ -12,10 +12,10 @@ Scope: `config set` command parity baseline and reliability checks.
 
 ## Coverage
 
-- Binary command coverage: `crates/bijux-cli/tests/bin_surface/config_set_parity.rs`
+- Binary command coverage: `crates/bijux-cli/tests/cli_surface/config_set_parity.rs`
 - Core command coverage: `crates/bijux-cli/tests/config_parity.rs`
 - Key/value rule coverage: `crates/bijux-cli/tests/config_key_value_parity.rs`
-- Python compatibility coverage: `crates/bijux-cli/tests/bin_surface/config_python_compatibility.rs`
+- Python compatibility coverage: `crates/bijux-cli/tests/cli_surface/config_python_compatibility.rs`
 
 ## Captured Outputs
 
