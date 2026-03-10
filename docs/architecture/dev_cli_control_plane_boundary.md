@@ -37,6 +37,14 @@ These files represent the frozen baseline for extraction. Extraction work must r
 - `dev cli status` report assembly is owned by `bijux-dev-cli`.
 - `bijux-cli-core` only passes runtime-resolved inputs and delegates these report builds.
 
+## Runtime Identity State Ownership Freeze
+
+- `dev cli runtime-identity` report assembly is owned by `bijux-dev-cli`.
+- `dev cli package-health` report assembly is owned by `bijux-dev-cli`.
+- `dev cli state-audit` report assembly is owned by `bijux-dev-cli`.
+- `dev cli state-doctor` report assembly is owned by `bijux-dev-cli`.
+- `bijux-cli-core` provides low-level state and install diagnostics inputs only.
+
 ## Operational Notes
 
 - `bijux-cli-bin` remains the canonical entrypoint and dispatch host.
