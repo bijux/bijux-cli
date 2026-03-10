@@ -45,6 +45,8 @@ def main() -> int:
 
     core_storage = read(ROOT / "crates/bijux-cli-core/src/config/storage.rs")
     install_compat = read(ROOT / "crates/bijux-cli-install/src/compatibility.rs")
+    repl_history = read(ROOT / "crates/bijux-cli-repl/src/history.rs")
+    core_app = read(ROOT / "crates/bijux-cli-core/src/app.rs")
 
     if "atomic_write_text(" not in core_storage:
         failures.append("core config repository does not use atomic_write_text")
@@ -55,6 +57,14 @@ def main() -> int:
         failures.append("core config repository still carries ad-hoc temp-file logic")
     if "with_extension(\"tmp\")" in install_compat:
         failures.append("install compatibility config still carries ad-hoc temp-file logic")
+    if "atomic_write_text(" not in repl_history:
+        failures.append("repl history flush does not use atomic_write_text")
+    if "fn flush_history" in repl_history and "fs::write(path" in repl_history:
+        failures.append("repl history flush still uses direct fs::write")
+    if "fn write_json_document" not in core_app:
+        failures.append("core app missing shared state write helper")
+    if "atomic_write_text(" not in core_app:
+        failures.append("core app state helper does not use atomic_write_text")
 
     inventory = read_json(STATUS / "state_file_inventory.json")
     files = inventory.get("state_files", []) if isinstance(inventory, dict) else []

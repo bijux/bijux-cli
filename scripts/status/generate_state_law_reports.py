@@ -69,7 +69,7 @@ def main() -> None:
                 "classification": "optional",
                 "path_source": "resolve_state_paths",
                 "reader": "read_memory_map",
-                "writer": "none (read-only command surface)",
+                "writer": "write_memory_map",
             },
             {
                 "id": "compatibility_config_file",
@@ -112,6 +112,14 @@ def main() -> None:
             {
                 "name": "plugin registry writes use temp+rename",
                 "evidence": "crates/bijux-cli-plugin/src/registry.rs::save_registry",
+            },
+            {
+                "name": "repl history writes are atomic",
+                "evidence": "crates/bijux-cli-repl/src/history.rs::flush_history uses atomic_write_text",
+            },
+            {
+                "name": "core history and memory writes are atomic",
+                "evidence": "crates/bijux-cli-core/src/app.rs::write_json_document uses atomic_write_text",
             },
         ],
     }
@@ -174,4 +182,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

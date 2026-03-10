@@ -74,7 +74,7 @@ fn enforces_internal_crate_boundaries() {
                 "bijux-cli-routing",
             ]),
         ),
-        ("bijux-cli-install", BTreeSet::from(["bijux-cli-contracts"])),
+        ("bijux-cli-install", BTreeSet::new()),
         ("bijux-cli-output", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"])),
         ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-contracts"])),
         (
@@ -86,6 +86,7 @@ fn enforces_internal_crate_boundaries() {
             BTreeSet::from([
                 "bijux-cli-contracts",
                 "bijux-cli-core",
+                "bijux-cli-install",
                 "bijux-cli-output",
                 "bijux-cli-routing",
             ]),

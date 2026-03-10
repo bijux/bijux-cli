@@ -10,6 +10,7 @@ rust-version.workspace = true
 [dependencies]
 bijux-cli-contracts = { path = "../bijux-cli-contracts" }
 bijux-cli-core = { path = "../bijux-cli-core" }
+bijux-cli-install = { path = "../bijux-cli-install" }
 bijux-cli-output = { path = "../bijux-cli-output" }
 bijux-cli-routing = { path = "../bijux-cli-routing" }
 serde_json = { workspace = true }

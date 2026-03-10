@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use bijux_cli_install::atomic_write_text;
+
 use crate::execution::execute_repl_line;
 use crate::types::{ReplError, ReplFrame, ReplSession};
 
@@ -93,7 +95,8 @@ pub fn flush_history(session: &ReplSession) -> Result<(), ReplError> {
     }
 
     let data = serde_json::to_string_pretty(&session.history)?;
-    fs::write(path, format!("{data}\n"))?;
+    atomic_write_text(path, &(data + "\n"))
+        .map_err(|err| std::io::Error::other(err.to_string()))?;
     Ok(())
 }
 

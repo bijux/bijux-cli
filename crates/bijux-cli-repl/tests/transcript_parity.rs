@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use bijux_cli_contracts as _;
 use bijux_cli_core as _;
+use bijux_cli_install as _;
 use bijux_cli_output as _;
 use bijux_cli_repl::{
     check_repl_budgets, completion_candidates, configure_history, execute_repl_input,
