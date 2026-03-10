@@ -19,7 +19,9 @@ use crate::conversions::{classify_core_error, classify_failure, python_exception
 /// Build python-bridge marker.
 #[must_use]
 pub fn python_bridge_marker() -> ContractMarker {
-    ContractMarker { namespace: "python-bridge".to_string() }
+    ContractMarker {
+        namespace: "python-bridge".to_string(),
+    }
 }
 
 /// Return command tree introspection payload as JSON.
@@ -130,7 +132,11 @@ pub fn plugins_list_binding_api() -> Result<String, CompatibilityError> {
 
 /// Execute `repl --help` through the bridge.
 pub fn repl_bootstrap_binding_api() -> Result<String, CompatibilityError> {
-    execution_facade_api(&["bijux".to_string(), "repl".to_string(), "--help".to_string()])
+    execution_facade_api(&[
+        "bijux".to_string(),
+        "repl".to_string(),
+        "--help".to_string(),
+    ])
 }
 
 /// Export known schema helpers for Python wrappers.
