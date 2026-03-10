@@ -44,6 +44,12 @@ Write-path hardening evidence must remain green:
 `artifacts/status/plugin_lifecycle_failure_injection_report.json` and
 `artifacts/status/plugin_rollback_proof_report.json`.
 
+## State Resilience Freeze
+History and memory resilience claims require:
+`artifacts/status/history_corruption_matrix.json`,
+`artifacts/status/memory_corruption_matrix.json`, and
+`artifacts/status/state_resilience_summary.json`.
+
 ## Contributor Status Rule
 Contributors describe observed reality in status updates using generated artifacts. Avoid aspirational language that is not yet evidenced.
 
