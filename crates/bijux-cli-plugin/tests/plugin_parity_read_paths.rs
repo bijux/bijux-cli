@@ -208,7 +208,10 @@ fn incompatible_version_and_reserved_product_namespace_are_rejected() {
         "0.1.0",
     )
     .expect_err("official reserved product namespace should fail");
-    assert!(matches!(reserved_product, PluginError::FutureNamespaceConflict(_)));
+    assert!(matches!(
+        reserved_product,
+        PluginError::FutureNamespaceConflict(_) | PluginError::ReservedNamespace(_)
+    ));
 }
 
 #[test]

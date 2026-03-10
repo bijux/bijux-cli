@@ -7,7 +7,7 @@
           "int_test_key"
         ],
         "message": "memory entries with wrong-type values detected",
-        "path": "/Users/bijan/.bijux/.memory.json",
+        "path": "<HOME>/.bijux/.memory.json",
         "severity": "warning"
       }
     ],

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T02:04:05.998333+00:00",
+  "generated_at": "2026-03-10T03:36:02.508491+00:00",
   "items": [
     {
       "crate": "bijux-cli-core",
@@ -7,7 +7,7 @@
       "cross_crate_users": [
         "bijux-cli-python"
       ],
-      "defined_at": "crates/bijux-cli-core/src/app.rs:39",
+      "defined_at": "crates/bijux-cli-core/src/app.rs:40",
       "kind": "struct",
       "symbol": "AppRunResult"
     },
@@ -131,14 +131,6 @@
     },
     {
       "crate": "bijux-cli-core",
-      "cross_crate_user_count": 0,
-      "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:249",
-      "kind": "fn",
-      "symbol": "assemble_context"
-    },
-    {
-      "crate": "bijux-cli-core",
       "cross_crate_user_count": 1,
       "cross_crate_users": [
         "bijux-cli-repl"
@@ -151,15 +143,7 @@
       "crate": "bijux-cli-core",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:310",
-      "kind": "fn",
-      "symbol": "execute_pipeline"
-    },
-    {
-      "crate": "bijux-cli-core",
-      "cross_crate_user_count": 0,
-      "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-core/src/kernel.rs:294",
+      "defined_at": "crates/bijux-cli-core/src/kernel.rs:298",
       "kind": "fn",
       "symbol": "map_error_category_to_exit"
     },
@@ -180,7 +164,7 @@
         "bijux-cli-python",
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-core/src/app.rs:1563",
+      "defined_at": "crates/bijux-cli-core/src/app.rs:1882",
       "kind": "fn",
       "symbol": "run_app"
     },
@@ -334,9 +318,10 @@
     },
     {
       "crate": "bijux-cli-install",
-      "cross_crate_user_count": 1,
+      "cross_crate_user_count": 2,
       "cross_crate_users": [
-        "bijux-cli-core"
+        "bijux-cli-core",
+        "bijux-cli-repl"
       ],
       "defined_at": "crates/bijux-cli-install/src/io.rs:12",
       "kind": "fn",
@@ -628,7 +613,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:11",
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:13",
       "kind": "const",
       "symbol": "CORE_NAMESPACES"
     },
@@ -638,7 +623,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:14",
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:16",
       "kind": "const",
       "symbol": "FUTURE_PRODUCT_NAMESPACES"
     },
@@ -730,7 +715,7 @@
       "crate": "bijux-cli-plugin",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:4",
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:6",
       "kind": "const",
       "symbol": "REGISTRY_VERSION"
     },
@@ -740,7 +725,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:7",
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:9",
       "kind": "const",
       "symbol": "RESERVED_NAMESPACES"
     },
@@ -834,7 +819,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:18",
+      "defined_at": "crates/bijux-cli-plugin/src/constants.rs:20",
       "kind": "fn",
       "symbol": "is_reserved_namespace"
     },
@@ -1232,7 +1217,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/history.rs:45",
+      "defined_at": "crates/bijux-cli-repl/src/history.rs:47",
       "kind": "fn",
       "symbol": "configure_history"
     },
@@ -1264,7 +1249,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/history.rs:84",
+      "defined_at": "crates/bijux-cli-repl/src/history.rs:86",
       "kind": "fn",
       "symbol": "flush_history"
     },
@@ -1280,7 +1265,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/history.rs:57",
+      "defined_at": "crates/bijux-cli-repl/src/history.rs:59",
       "kind": "fn",
       "symbol": "load_history"
     },
@@ -1312,7 +1297,7 @@
       "crate": "bijux-cli-repl",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-repl/src/history.rs:112",
+      "defined_at": "crates/bijux-cli-repl/src/history.rs:115",
       "kind": "fn",
       "symbol": "replay_history_command"
     },
@@ -1422,7 +1407,7 @@
       "cross_crate_users": [
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:18",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:19",
       "kind": "enum",
       "symbol": "RouteError"
     },
@@ -1432,7 +1417,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:35",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:36",
       "kind": "struct",
       "symbol": "RouteRegistry"
     },
@@ -1442,7 +1427,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:9",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:10",
       "kind": "enum",
       "symbol": "RouteTarget"
     },
@@ -1460,7 +1445,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:314",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:334",
       "kind": "fn",
       "symbol": "alias_rewrites"
     },
@@ -1470,7 +1455,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:303",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:323",
       "kind": "fn",
       "symbol": "built_in_paths"
     },
@@ -1478,7 +1463,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:75",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:85",
       "kind": "fn",
       "symbol": "cli_config_subcommands"
     },
@@ -1486,7 +1471,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:81",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:91",
       "kind": "fn",
       "symbol": "cli_plugins_subcommands"
     },
@@ -1494,7 +1479,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:69",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:79",
       "kind": "fn",
       "symbol": "cli_root_aliases"
     },
@@ -1504,7 +1489,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:87",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:97",
       "kind": "fn",
       "symbol": "dev_cli_subcommands"
     },
@@ -1514,7 +1499,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:111",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:121",
       "kind": "fn",
       "symbol": "is_known_route"
     },
@@ -1522,7 +1507,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:93",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:103",
       "kind": "fn",
       "symbol": "normalize_command_path"
     },
@@ -1532,7 +1517,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/parser.rs:291",
+      "defined_at": "crates/bijux-cli-routing/src/parser.rs:310",
       "kind": "fn",
       "symbol": "parse_intent"
     },
@@ -1542,7 +1527,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:190",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:211",
       "kind": "fn",
       "symbol": "register_plugin_namespace"
     },
@@ -1560,7 +1545,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:283",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:303",
       "kind": "fn",
       "symbol": "render_command_tree"
     },
@@ -1570,7 +1555,7 @@
       "cross_crate_users": [
         "bijux-cli-repl"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:134",
+      "defined_at": "crates/bijux-cli-routing/src/catalog.rs:147",
       "kind": "fn",
       "symbol": "repl_reference_commands"
     },
@@ -1581,7 +1566,7 @@
         "bijux-cli-core",
         "bijux-cli-install"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:209",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:230",
       "kind": "fn",
       "symbol": "resolve"
     },
@@ -1612,7 +1597,7 @@
       "cross_crate_users": [
         "bijux-cli-core"
       ],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:258",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:278",
       "kind": "fn",
       "symbol": "route_tree"
     },
@@ -1630,7 +1615,7 @@
       "crate": "bijux-cli-routing",
       "cross_crate_user_count": 0,
       "cross_crate_users": [],
-      "defined_at": "crates/bijux-cli-routing/src/registry.rs:234",
+      "defined_at": "crates/bijux-cli-routing/src/registry.rs:255",
       "kind": "fn",
       "symbol": "suggest_namespace"
     }

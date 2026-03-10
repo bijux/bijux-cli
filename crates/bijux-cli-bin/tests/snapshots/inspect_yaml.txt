@@ -31,6 +31,12 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - config
+  - list
+  canonical:
+  - config
+  source: compatibility-alias
+- alias:
+  - config
   - load
   canonical:
   - cli
@@ -63,43 +69,11 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
-  - contracts
-  canonical:
-  - dev
-  - cli
-  - contracts
-  source: compatibility-alias
-- alias:
-  - dev
-  - crate-health
-  canonical:
-  - dev
-  - cli
-  - crate-health
-  source: compatibility-alias
-- alias:
-  - dev
-  - docs
-  canonical:
-  - dev
-  - cli
-  - docs
-  source: compatibility-alias
-- alias:
-  - dev
   - docs-audit
   canonical:
   - dev
   - cli
   - docs-audit
-  source: compatibility-alias
-- alias:
-  - dev
-  - docs-prune-plan
-  canonical:
-  - dev
-  - cli
-  - docs-prune-plan
   source: compatibility-alias
 - alias:
   - dev
@@ -111,27 +85,19 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
-  - env
-  canonical:
-  - dev
-  - cli
-  - env
-  source: compatibility-alias
-- alias:
-  - dev
-  - fixture-audit
-  canonical:
-  - dev
-  - cli
-  - fixture-audit
-  source: compatibility-alias
-- alias:
-  - dev
   - inventory
   canonical:
   - dev
   - cli
   - inventory
+  source: compatibility-alias
+- alias:
+  - dev
+  - list-plugins
+  canonical:
+  - dev
+  - cli
+  - list-plugins
   source: compatibility-alias
 - alias:
   - dev
@@ -151,11 +117,11 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
-  - registry
+  - plugin-health
   canonical:
   - dev
   - cli
-  - registry
+  - plugin-health
   source: compatibility-alias
 - alias:
   - dev
@@ -167,43 +133,11 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - dev
-  - routes
-  canonical:
-  - dev
-  - cli
-  - routes
-  source: compatibility-alias
-- alias:
-  - dev
   - runtime-identity
   canonical:
   - dev
   - cli
   - runtime-identity
-  source: compatibility-alias
-- alias:
-  - dev
-  - script-audit
-  canonical:
-  - dev
-  - cli
-  - script-audit
-  source: compatibility-alias
-- alias:
-  - dev
-  - scripts-audit
-  canonical:
-  - dev
-  - cli
-  - scripts-audit
-  source: compatibility-alias
-- alias:
-  - dev
-  - snapshots-audit
-  canonical:
-  - dev
-  - cli
-  - snapshots-audit
   source: compatibility-alias
 - alias:
   - dev
@@ -251,6 +185,14 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - plugins
+  - disable
+  canonical:
+  - cli
+  - plugins
+  - disable
+  source: compatibility-alias
+- alias:
+  - plugins
   - doctor
   canonical:
   - cli
@@ -259,11 +201,25 @@ alias_rewrites:
   source: compatibility-alias
 - alias:
   - plugins
+  - enable
+  canonical:
+  - cli
+  - plugins
+  - enable
+  source: compatibility-alias
+- alias:
+  - plugins
   - explain
   canonical:
   - cli
   - plugins
   - explain
+  source: compatibility-alias
+- alias:
+  - plugins
+  - info
+  canonical:
+  - plugins
   source: compatibility-alias
 - alias:
   - plugins
@@ -343,6 +299,8 @@ alias_rewrites:
   source: compatibility-alias
 builtins:
 - segments:
+  - atlas
+- segments:
   - audit
 - segments:
   - cli
@@ -359,6 +317,10 @@ builtins:
   - cli
   - config
   - get
+- segments:
+  - cli
+  - config
+  - list
 - segments:
   - cli
   - config
@@ -391,11 +353,23 @@ builtins:
 - segments:
   - cli
   - plugins
+  - disable
+- segments:
+  - cli
+  - plugins
   - doctor
 - segments:
   - cli
   - plugins
+  - enable
+- segments:
+  - cli
+  - plugins
   - explain
+- segments:
+  - cli
+  - plugins
+  - info
 - segments:
   - cli
   - plugins
@@ -443,6 +417,15 @@ builtins:
 - segments:
   - config
 - segments:
+  - config
+  - list
+- segments:
+  - dev
+- segments:
+  - dev
+  - cli
+  - atlas
+- segments:
   - dev
   - cli
   - contracts
@@ -450,6 +433,10 @@ builtins:
   - dev
   - cli
   - crate-health
+- segments:
+  - dev
+  - cli
+  - di
 - segments:
   - dev
   - cli
@@ -481,11 +468,23 @@ builtins:
 - segments:
   - dev
   - cli
+  - list-plugins
+- segments:
+  - dev
+  - cli
+  - list-products
+- segments:
+  - dev
+  - cli
   - package-health
 - segments:
   - dev
   - cli
   - parity
+- segments:
+  - dev
+  - cli
+  - plugin-health
 - segments:
   - dev
   - cli
@@ -509,10 +508,6 @@ builtins:
 - segments:
   - dev
   - cli
-  - scripts-audit
-- segments:
-  - dev
-  - cli
   - snapshots-audit
 - segments:
   - dev
@@ -531,16 +526,42 @@ builtins:
 - segments:
   - history
 - segments:
+  - history
+  - clear
+- segments:
   - memory
 - segments:
   - memory
+  - clear
+- segments:
+  - memory
+  - delete
+- segments:
+  - memory
+  - get
+- segments:
+  - memory
   - list
+- segments:
+  - memory
+  - set
+- segments:
+  - plugins
 - segments:
   - plugins
   - check
 - segments:
   - plugins
+  - disable
+- segments:
+  - plugins
   - doctor
+- segments:
+  - plugins
+  - enable
+- segments:
+  - plugins
+  - info
 - segments:
   - plugins
   - inspect
@@ -569,6 +590,9 @@ contracts:
   version: v1
 plugin_origins: []
 reserved_namespaces:
+- name: atlas
+  owner: bijux-cli
+  reserved: true
 - name: cli
   owner: bijux-cli
   reserved: true
@@ -576,6 +600,9 @@ reserved_namespaces:
   owner: plugin
   reserved: false
 - name: completion
+  owner: bijux-cli
+  reserved: true
+- name: dag
   owner: bijux-cli
   reserved: true
 - name: dev
@@ -602,6 +629,10 @@ reserved_namespaces:
 route_sources:
 - owner: bijux-cli
   segments:
+  - atlas
+  source: built-in
+- owner: bijux-cli
+  segments:
   - audit
   source: built-in
 - owner: bijux-cli
@@ -626,6 +657,12 @@ route_sources:
   - cli
   - config
   - get
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - config
+  - list
   source: built-in
 - owner: bijux-cli
   segments:
@@ -676,13 +713,31 @@ route_sources:
   segments:
   - cli
   - plugins
+  - disable
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
   - doctor
   source: built-in
 - owner: bijux-cli
   segments:
   - cli
   - plugins
+  - enable
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
   - explain
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - cli
+  - plugins
+  - info
   source: built-in
 - owner: bijux-cli
   segments:
@@ -758,6 +813,21 @@ route_sources:
   source: built-in
 - owner: bijux-cli
   segments:
+  - config
+  - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - atlas
+  source: built-in
+- owner: bijux-cli
+  segments:
   - dev
   - cli
   - contracts
@@ -767,6 +837,12 @@ route_sources:
   - dev
   - cli
   - crate-health
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - di
   source: built-in
 - owner: bijux-cli
   segments:
@@ -814,6 +890,18 @@ route_sources:
   segments:
   - dev
   - cli
+  - list-plugins
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - list-products
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
   - package-health
   source: built-in
 - owner: bijux-cli
@@ -821,6 +909,12 @@ route_sources:
   - dev
   - cli
   - parity
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - dev
+  - cli
+  - plugin-health
   source: built-in
 - owner: bijux-cli
   segments:
@@ -856,12 +950,6 @@ route_sources:
   segments:
   - dev
   - cli
-  - scripts-audit
-  source: built-in
-- owner: bijux-cli
-  segments:
-  - dev
-  - cli
   - snapshots-audit
   source: built-in
 - owner: bijux-cli
@@ -892,12 +980,41 @@ route_sources:
   source: built-in
 - owner: bijux-cli
   segments:
+  - history
+  - clear
+  source: built-in
+- owner: bijux-cli
+  segments:
   - memory
   source: built-in
 - owner: bijux-cli
   segments:
   - memory
+  - clear
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
+  - delete
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
+  - get
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
   - list
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - memory
+  - set
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
   source: built-in
 - owner: bijux-cli
   segments:
@@ -907,7 +1024,22 @@ route_sources:
 - owner: bijux-cli
   segments:
   - plugins
+  - disable
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
   - doctor
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - enable
+  source: built-in
+- owner: bijux-cli
+  segments:
+  - plugins
+  - info
   source: built-in
 - owner: bijux-cli
   segments:

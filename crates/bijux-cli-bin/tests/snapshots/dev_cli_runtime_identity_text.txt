@@ -5,11 +5,15 @@
   "active_path_is_shadowed": true,
   "canonical_user_binary": "bijux",
   "diagnostics": {
+    "active_binary_mismatch_detected": false,
+    "active_binary_missing": false,
+    "broken_symlink_active_binary": false,
     "duplicate_install_detected": false,
     "legacy_installer_conflicts": [],
     "mismatched_wheel_binary_versions": false,
     "mixed_pip_cargo_install_detected": false,
     "path_shadowing_detected": true,
+    "python_bridge_supported": true,
     "stale_wrapper_detected": false,
     "stale_wrapper_scripts": []
   },
@@ -46,6 +50,7 @@
     "install source: unknown",
     "path shadowing: detected",
     "duplicate installs: not-detected",
-    "stale wrappers: not-detected"
+    "stale wrappers: not-detected",
+    "python bridge support: available"
   ]
 }

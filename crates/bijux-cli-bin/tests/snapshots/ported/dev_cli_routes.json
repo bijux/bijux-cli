@@ -49,6 +49,16 @@
     {
       "alias": [
         "config",
+        "list"
+      ],
+      "canonical": [
+        "config"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "config",
         "load"
       ],
       "canonical": [
@@ -97,36 +107,12 @@
     {
       "alias": [
         "dev",
-        "contracts"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "contracts"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
         "crate-health"
       ],
       "canonical": [
         "dev",
         "cli",
         "crate-health"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "docs"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "docs"
       ],
       "source": "compatibility-alias"
     },
@@ -169,36 +155,24 @@
     {
       "alias": [
         "dev",
-        "env"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "env"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "fixture-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "fixture-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
         "inventory"
       ],
       "canonical": [
         "dev",
         "cli",
         "inventory"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "dev",
+        "list-plugins"
+      ],
+      "canonical": [
+        "dev",
+        "cli",
+        "list-plugins"
       ],
       "source": "compatibility-alias"
     },
@@ -229,12 +203,12 @@
     {
       "alias": [
         "dev",
-        "registry"
+        "plugin-health"
       ],
       "canonical": [
         "dev",
         "cli",
-        "registry"
+        "plugin-health"
       ],
       "source": "compatibility-alias"
     },
@@ -247,18 +221,6 @@
         "dev",
         "cli",
         "route-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "routes"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "routes"
       ],
       "source": "compatibility-alias"
     },
@@ -283,30 +245,6 @@
         "dev",
         "cli",
         "script-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "scripts-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "scripts-audit"
-      ],
-      "source": "compatibility-alias"
-    },
-    {
-      "alias": [
-        "dev",
-        "snapshots-audit"
-      ],
-      "canonical": [
-        "dev",
-        "cli",
-        "snapshots-audit"
       ],
       "source": "compatibility-alias"
     },
@@ -381,6 +319,18 @@
     {
       "alias": [
         "plugins",
+        "disable"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "disable"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
         "doctor"
       ],
       "canonical": [
@@ -393,12 +343,34 @@
     {
       "alias": [
         "plugins",
+        "enable"
+      ],
+      "canonical": [
+        "cli",
+        "plugins",
+        "enable"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
         "explain"
       ],
       "canonical": [
         "cli",
         "plugins",
         "explain"
+      ],
+      "source": "compatibility-alias"
+    },
+    {
+      "alias": [
+        "plugins",
+        "info"
+      ],
+      "canonical": [
+        "plugins"
       ],
       "source": "compatibility-alias"
     },
@@ -523,6 +495,13 @@
     {
       "owner": "bijux-cli",
       "segments": [
+        "atlas"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
         "audit"
       ],
       "source": "built-in"
@@ -559,6 +538,15 @@
         "cli",
         "config",
         "get"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "config",
+        "list"
       ],
       "source": "built-in"
     },
@@ -636,6 +624,15 @@
       "segments": [
         "cli",
         "plugins",
+        "disable"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
         "doctor"
       ],
       "source": "built-in"
@@ -645,7 +642,25 @@
       "segments": [
         "cli",
         "plugins",
+        "enable"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
         "explain"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "cli",
+        "plugins",
+        "info"
       ],
       "source": "built-in"
     },
@@ -763,6 +778,30 @@
     {
       "owner": "bijux-cli",
       "segments": [
+        "config",
+        "list"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "atlas"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
         "dev",
         "cli",
         "contracts"
@@ -775,6 +814,15 @@
         "dev",
         "cli",
         "crate-health"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "di"
       ],
       "source": "built-in"
     },
@@ -846,6 +894,24 @@
       "segments": [
         "dev",
         "cli",
+        "list-plugins"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "list-products"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
         "package-health"
       ],
       "source": "built-in"
@@ -856,6 +922,15 @@
         "dev",
         "cli",
         "parity"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "dev",
+        "cli",
+        "plugin-health"
       ],
       "source": "built-in"
     },
@@ -901,15 +976,6 @@
         "dev",
         "cli",
         "script-audit"
-      ],
-      "source": "built-in"
-    },
-    {
-      "owner": "bijux-cli",
-      "segments": [
-        "dev",
-        "cli",
-        "scripts-audit"
       ],
       "source": "built-in"
     },
@@ -966,6 +1032,14 @@
     {
       "owner": "bijux-cli",
       "segments": [
+        "history",
+        "clear"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
         "memory"
       ],
       "source": "built-in"
@@ -974,7 +1048,46 @@
       "owner": "bijux-cli",
       "segments": [
         "memory",
+        "clear"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "memory",
+        "delete"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "memory",
+        "get"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "memory",
         "list"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "memory",
+        "set"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "plugins"
       ],
       "source": "built-in"
     },
@@ -990,7 +1103,31 @@
       "owner": "bijux-cli",
       "segments": [
         "plugins",
+        "disable"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "plugins",
         "doctor"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "plugins",
+        "enable"
+      ],
+      "source": "built-in"
+    },
+    {
+      "owner": "bijux-cli",
+      "segments": [
+        "plugins",
+        "info"
       ],
       "source": "built-in"
     },

@@ -339,6 +339,7 @@
     "cli config get my_key",
     "cli config get ok",
     "cli config get sample",
+    "cli config get sample_key",
     "cli config get unknown",
     "cli config load utf-8",
     "cli config reload",
@@ -484,7 +485,7 @@
     "status doctor history",
     "version"
   ],
-  "generated_at": "2026-03-10T03:01:08.839846+00:00",
+  "generated_at": "2026-03-10T03:06:37.134989+00:00",
   "generator": "scripts/status/generate_current_rust_state.py",
   "known_platform_assumptions": [
     {
@@ -515,17 +516,17 @@
     {
       "assumption": "\"config/history/plugins state defaults under HOME/.bijux unless explicit overrides are set\",",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 1498
+      "line": 1502
     },
     {
       "assumption": "\"XDG-style HOME locations are treated as regular HOME roots for compatibility paths\",",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 1499
+      "line": 1503
     },
     {
       "assumption": "\"completion files are generated under shell-specific directories derived from HOME\",",
       "file": "crates/bijux-cli-core/src/app.rs",
-      "line": 1501
+      "line": 1505
     },
     {
       "assumption": ".env(\"HOME\", &home)",
@@ -1498,6 +1499,7 @@
     "scripts/git-hooks/prepare-commit-msg",
     "scripts/helper_comments.py",
     "scripts/helper_pip_audit.py",
+    "scripts/parity/check_binary_bridge_parity_gate.py",
     "scripts/parity/check_command_parity_gates.py",
     "scripts/parity/generate_binary_bridge_parity.py",
     "scripts/parity/generate_command_parity_matrix.py",
@@ -1512,6 +1514,7 @@
     "scripts/status/check_runtime_unity.py",
     "scripts/status/check_status_reports_stale.py",
     "scripts/status/compatibility_baseline.json",
+    "scripts/status/enforce_bridge_duplicate_law_policy.py",
     "scripts/status/enforce_compatibility_shim_policy.py",
     "scripts/status/enforce_dev_cli_automation_policy.py",
     "scripts/status/enforce_diagnostics_law_policy.py",
@@ -1523,6 +1526,7 @@
     "scripts/status/enforce_route_law_policy.py",
     "scripts/status/enforce_state_law_policy.py",
     "scripts/status/enforce_test_quality_gates.py",
+    "scripts/status/generate_bridge_duplicate_law_report.py",
     "scripts/status/generate_cleanup_reports.py",
     "scripts/status/generate_command_migration_matrix.py",
     "scripts/status/generate_command_surface_inventory.py",
@@ -1735,6 +1739,7 @@
     "cli config get my_key",
     "cli config get ok",
     "cli config get sample",
+    "cli config get sample_key",
     "cli config get unknown",
     "cli config load utf-8",
     "cli config reload",

@@ -1,0 +1,12 @@
+{
+  "name": "replaypy",
+  "version": "0.1.0",
+  "schema_version": "v1",
+  "manifest_version": "v1",
+  "compatibility": { "min_inclusive": "0.1.0", "max_exclusive": null },
+  "namespace": "replaypy",
+  "kind": "python",
+  "aliases": [],
+  "entrypoint": "plugin:main",
+  "capabilities": []
+}

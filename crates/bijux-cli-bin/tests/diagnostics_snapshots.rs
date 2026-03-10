@@ -1,19 +1,47 @@
 #![forbid(unsafe_code)]
 //! Snapshot coverage for inspect and developer diagnostics command outputs.
 
+use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json as _;
 
 fn run_stdout(args: &[&str]) -> String {
+    let home = snapshot_home();
     let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
         .args(args)
+        .env("HOME", &home)
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "command failed for args: {args:?}");
-    String::from_utf8(output.stdout).expect("utf-8 output")
+    normalize_output(
+        String::from_utf8(output.stdout).expect("utf-8 output"),
+        home.as_path(),
+    )
+}
+
+fn snapshot_home() -> PathBuf {
+    let home = std::env::temp_dir().join("bijux-cli-diagnostics-snapshots-home");
+    let state_dir = home.join(".bijux");
+    fs::create_dir_all(&state_dir).expect("create snapshot home state dir");
+    fs::write(state_dir.join(".env"), "BIJUXCLI_ALPHA=1\n").expect("seed config");
+    fs::write(
+        state_dir.join(".history"),
+        "[]\n",
+    )
+    .expect("seed history");
+    fs::write(state_dir.join(".memory.json"), "{\"int_test_key\":42}\n").expect("seed memory");
+    home
+}
+
+fn normalize_output(output: String, home: &std::path::Path) -> String {
+    let home_text = home.display().to_string();
+    output.replace(&home_text, "<HOME>")
 }
 
 #[test]
@@ -87,13 +115,18 @@ fn state_diagnostics_no_color_snapshots_match() {
     ];
 
     for (args, expected) in cases {
+        let home = snapshot_home();
         let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
             .args(args)
+            .env("HOME", &home)
             .env("NO_COLOR", "1")
             .output()
             .expect("binary should execute");
         assert!(output.status.success(), "command failed for args: {args:?}");
-        let actual = String::from_utf8(output.stdout).expect("utf-8 output");
+        let actual = normalize_output(
+            String::from_utf8(output.stdout).expect("utf-8 output"),
+            home.as_path(),
+        );
         assert_eq!(actual, expected, "snapshot mismatch for args: {args:?}");
     }
 }

@@ -1,8 +1,10 @@
 {
   "ownership": {
     "bijux-cli": [
+      "atlas",
       "cli",
       "completion",
+      "dag",
       "dev",
       "doctor",
       "help",
@@ -21,6 +23,11 @@
   ],
   "registry": [
     {
+      "name": "atlas",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
       "name": "cli",
       "owner": "bijux-cli",
       "reserved": true
@@ -32,6 +39,11 @@
     },
     {
       "name": "completion",
+      "owner": "bijux-cli",
+      "reserved": true
+    },
+    {
+      "name": "dag",
       "owner": "bijux-cli",
       "reserved": true
     },

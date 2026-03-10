@@ -1,19 +1,19 @@
 {
   "category_counts": {
-    "parity": 27,
-    "perf": 1,
-    "property": 9,
+    "parity": 41,
+    "perf": 4,
+    "property": 10,
     "regression": 6,
-    "resilience": 5,
+    "resilience": 12,
     "snapshot": 8,
-    "weak": 1
+    "weak": 2
   },
   "flaky_tests": {
     "label": "flaky",
     "policy": "flaky tests must be explicitly tagged in ci metadata and tracked as debt",
     "tagging_source": "artifacts/status/flaky_tests.json"
   },
-  "generated_at": "2026-03-09T23:38:54.082489+00:00",
+  "generated_at": "2026-03-10T04:23:10.812859+00:00",
   "generator": "scripts/status/generate_test_quality_audit.py",
   "quality_rules": [
     "new commands require at least one failure-path test",
@@ -24,7 +24,7 @@
     "install changes require ambiguity or path-failure coverage",
     "no vanity test growth"
   ],
-  "test_file_count": 57,
+  "test_file_count": 83,
   "tests": [
     {
       "assert_count": 34,
@@ -36,12 +36,21 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 21,
+      "assert_count": 28,
       "category": "regression",
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
       "path": "crates/bijux-cli-bin/tests/command_execution.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 17,
+      "category": "resilience",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/config_corruption_hardening.rs",
       "shallow_score": 0
     },
     {
@@ -108,7 +117,52 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 43,
+      "assert_count": 54,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/cross_surface_equivalence.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 47,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/deterministic_hostile_state_matrix.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 48,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/deterministic_output_matrix.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 11,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/dev_cli_output_contracts.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 9,
+      "category": "resilience",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/diagnostics_contract_consistency.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 74,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -126,6 +180,15 @@
       "shallow_score": 4
     },
     {
+      "assert_count": 39,
+      "category": "regression",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/flag_normalization_matrix.rs",
+      "shallow_score": 0
+    },
+    {
       "assert_count": 14,
       "category": "snapshot",
       "has_exit_assertion": false,
@@ -135,7 +198,16 @@
       "shallow_score": 2
     },
     {
-      "assert_count": 32,
+      "assert_count": 19,
+      "category": "resilience",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/history_memory_resilience_hardening.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 40,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -144,12 +216,48 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 30,
+      "assert_count": 27,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/install_ambiguity_hardening.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 7,
+      "category": "parity",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/maintainer_control_plane.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 34,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
       "has_output_assertion": true,
       "path": "crates/bijux-cli-bin/tests/memory_parity.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 11,
+      "category": "perf",
+      "has_exit_assertion": false,
+      "has_failure_terms": false,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/performance_realism_hardening.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 55,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_cli_lifecycle.rs",
       "shallow_score": 0
     },
     {
@@ -162,6 +270,60 @@
       "shallow_score": 2
     },
     {
+      "assert_count": 37,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_discovery_determinism_matrix.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 23,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_failure_injection.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 39,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_failure_rollback_matrix.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 46,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_lifecycle_matrix.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 46,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_namespace_law.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 6,
+      "category": "parity",
+      "has_exit_assertion": false,
+      "has_failure_terms": false,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/plugin_scaffold_minimal.rs",
+      "shallow_score": 2
+    },
+    {
       "assert_count": 2,
       "category": "snapshot",
       "has_exit_assertion": false,
@@ -169,6 +331,24 @@
       "has_output_assertion": true,
       "path": "crates/bijux-cli-bin/tests/ported_command_goldens.rs",
       "shallow_score": 6
+    },
+    {
+      "assert_count": 46,
+      "category": "regression",
+      "has_exit_assertion": true,
+      "has_failure_terms": false,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/precedence_matrix.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 19,
+      "category": "parity",
+      "has_exit_assertion": true,
+      "has_failure_terms": false,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-bin/tests/python_command_port_parity.rs",
+      "shallow_score": 2
     },
     {
       "assert_count": 12,
@@ -216,7 +396,7 @@
       "shallow_score": 4
     },
     {
-      "assert_count": 132,
+      "assert_count": 159,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -279,16 +459,7 @@
       "shallow_score": 0
     },
     {
-      "assert_count": 19,
-      "category": "regression",
-      "has_exit_assertion": true,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-core/tests/execution_pipeline.rs",
-      "shallow_score": 0
-    },
-    {
-      "assert_count": 15,
+      "assert_count": 13,
       "category": "regression",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -316,6 +487,15 @@
     },
     {
       "assert_count": 4,
+      "category": "perf",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-output/tests/output_rendering_performance.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 4,
       "category": "parity",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -333,6 +513,15 @@
       "shallow_score": 2
     },
     {
+      "assert_count": 1,
+      "category": "weak",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
+      "shallow_score": 4
+    },
+    {
       "assert_count": 8,
       "category": "resilience",
       "has_exit_assertion": false,
@@ -342,7 +531,7 @@
       "shallow_score": 2
     },
     {
-      "assert_count": 5,
+      "assert_count": 14,
       "category": "regression",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -360,8 +549,8 @@
       "shallow_score": 2
     },
     {
-      "assert_count": 11,
-      "category": "regression",
+      "assert_count": 10,
+      "category": "resilience",
       "has_exit_assertion": false,
       "has_failure_terms": true,
       "has_output_assertion": false,
@@ -390,13 +579,13 @@
       "assert_count": 3,
       "category": "parity",
       "has_exit_assertion": true,
-      "has_failure_terms": true,
+      "has_failure_terms": false,
       "has_output_assertion": true,
       "path": "crates/bijux-cli-python/tests/bridge_binary_parity_report.rs",
-      "shallow_score": 0
+      "shallow_score": 2
     },
     {
-      "assert_count": 33,
+      "assert_count": 38,
       "category": "parity",
       "has_exit_assertion": true,
       "has_failure_terms": true,
@@ -417,13 +606,40 @@
       "assert_count": 3,
       "category": "parity",
       "has_exit_assertion": false,
-      "has_failure_terms": true,
+      "has_failure_terms": false,
       "has_output_assertion": false,
       "path": "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
+      "shallow_score": 4
+    },
+    {
+      "assert_count": 4,
+      "category": "resilience",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-repl/tests/history_write_resilience.rs",
       "shallow_score": 2
     },
     {
-      "assert_count": 42,
+      "assert_count": 22,
+      "category": "resilience",
+      "has_exit_assertion": true,
+      "has_failure_terms": true,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-repl/tests/repl_hostile_session_hardening.rs",
+      "shallow_score": 0
+    },
+    {
+      "assert_count": 4,
+      "category": "perf",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 44,
       "category": "parity",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -468,12 +684,21 @@
       "shallow_score": 4
     },
     {
-      "assert_count": 4,
+      "assert_count": 9,
       "category": "parity",
       "has_exit_assertion": false,
       "has_failure_terms": true,
       "has_output_assertion": false,
       "path": "crates/bijux-cli-routing/tests/legacy_forms_regression.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 19,
+      "category": "resilience",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-routing/tests/parser_abuse.rs",
       "shallow_score": 2
     },
     {
@@ -495,7 +720,7 @@
       "shallow_score": 4
     },
     {
-      "assert_count": 6,
+      "assert_count": 9,
       "category": "property",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -504,7 +729,7 @@
       "shallow_score": 2
     },
     {
-      "assert_count": 5,
+      "assert_count": 11,
       "category": "property",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -531,6 +756,15 @@
       "shallow_score": 2
     },
     {
+      "assert_count": 10,
+      "category": "property",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-routing/tests/route_law_consistency.rs",
+      "shallow_score": 2
+    },
+    {
       "assert_count": 4,
       "category": "property",
       "has_exit_assertion": false,
@@ -542,13 +776,14 @@
   ],
   "top_20_missing_failure_cases": [],
   "top_20_missing_packaging_scenarios": [
-    "pipx invocation parity",
     "multi-path binary shadowing",
     "release artifact integrity",
     "release note evidence gate",
     "homebrew channel parity placeholder"
   ],
-  "top_20_missing_parity_cases": [],
+  "top_20_missing_parity_cases": [
+    "scripts-audit parity"
+  ],
   "top_20_weakest_tests": [
     {
       "assert_count": 2,
@@ -575,6 +810,15 @@
       "has_failure_terms": true,
       "has_output_assertion": false,
       "path": "crates/bijux-cli-contracts/tests/serde_roundtrip.rs",
+      "shallow_score": 4
+    },
+    {
+      "assert_count": 1,
+      "category": "weak",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-plugin/tests/official_namespace_registry.rs",
       "shallow_score": 4
     },
     {
@@ -623,6 +867,15 @@
       "shallow_score": 4
     },
     {
+      "assert_count": 3,
+      "category": "parity",
+      "has_exit_assertion": false,
+      "has_failure_terms": false,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
+      "shallow_score": 4
+    },
+    {
       "assert_count": 5,
       "category": "snapshot",
       "has_exit_assertion": false,
@@ -661,10 +914,10 @@
     {
       "assert_count": 3,
       "category": "parity",
-      "has_exit_assertion": false,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs",
+      "has_exit_assertion": true,
+      "has_failure_terms": false,
+      "has_output_assertion": true,
+      "path": "crates/bijux-cli-python/tests/bridge_binary_parity_report.rs",
       "shallow_score": 2
     },
     {
@@ -678,6 +931,15 @@
     },
     {
       "assert_count": 4,
+      "category": "perf",
+      "has_exit_assertion": false,
+      "has_failure_terms": true,
+      "has_output_assertion": false,
+      "path": "crates/bijux-cli-output/tests/output_rendering_performance.rs",
+      "shallow_score": 2
+    },
+    {
+      "assert_count": 4,
       "category": "regression",
       "has_exit_assertion": false,
       "has_failure_terms": true,
@@ -687,47 +949,20 @@
     },
     {
       "assert_count": 4,
-      "category": "parity",
+      "category": "resilience",
       "has_exit_assertion": false,
       "has_failure_terms": true,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-routing/tests/legacy_forms_regression.rs",
+      "path": "crates/bijux-cli-repl/tests/history_write_resilience.rs",
       "shallow_score": 2
     },
     {
       "assert_count": 4,
-      "category": "property",
+      "category": "perf",
       "has_exit_assertion": false,
       "has_failure_terms": true,
       "has_output_assertion": false,
-      "path": "crates/bijux-cli-routing/tests/routing_fixture_sets.rs",
-      "shallow_score": 2
-    },
-    {
-      "assert_count": 5,
-      "category": "regression",
-      "has_exit_assertion": false,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-plugin/tests/plugin_namespace_regression.rs",
-      "shallow_score": 2
-    },
-    {
-      "assert_count": 5,
-      "category": "parity",
-      "has_exit_assertion": false,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-routing/tests/command_tree_diff_report.rs",
-      "shallow_score": 2
-    },
-    {
-      "assert_count": 5,
-      "category": "property",
-      "has_exit_assertion": false,
-      "has_failure_terms": true,
-      "has_output_assertion": false,
-      "path": "crates/bijux-cli-routing/tests/registry_namespace_policy.rs",
+      "path": "crates/bijux-cli-repl/tests/repl_startup_performance_budget.rs",
       "shallow_score": 2
     }
   ]

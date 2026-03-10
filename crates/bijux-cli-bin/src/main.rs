@@ -8,6 +8,10 @@ use std::process::ExitCode;
 use bijux_cli_core::kernel::map_error_category_to_exit;
 
 #[cfg(test)]
+use bijux_cli_python as _;
+#[cfg(test)]
+use bijux_cli_repl as _;
+#[cfg(test)]
 use libc as _;
 #[cfg(test)]
 use serde_json as _;

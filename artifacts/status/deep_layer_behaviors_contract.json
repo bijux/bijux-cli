@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T12:08:14.399932+00:00",
+  "generated_at": "2026-03-10T12:09:20.254080+00:00",
   "generator": "scripts/status/generate_deep_layer_test_coverage_reports.py",
   "policy": [
     "deep-layer behavior changes must map to at least one domain category report",

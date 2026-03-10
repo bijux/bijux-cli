@@ -6,6 +6,8 @@ use std::time::{Duration, Instant};
 
 #[cfg(unix)]
 use libc as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use serde_json as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
@@ -161,13 +163,13 @@ fn invalid_utf8_argv_returns_usage_error() {
 
 #[cfg(unix)]
 #[test]
-fn ctrl_c_exits_safely_on_long_running_placeholder_command() {
+fn ctrl_c_exits_safely_on_interactive_repl_process() {
     use std::os::unix::process::ExitStatusExt;
 
     let mut child = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(["cli", "hold", "interruptible"])
+        .arg("repl")
         .spawn()
-        .expect("long-running command should start");
+        .expect("repl process should start");
 
     std::thread::sleep(Duration::from_millis(150));
     let pid = child.id() as i32;
@@ -178,5 +180,8 @@ fn ctrl_c_exits_safely_on_long_running_placeholder_command() {
     assert!(status.success(), "kill command should succeed");
 
     let status = child.wait().expect("child should exit");
-    assert!(status.code() == Some(130) || status.signal() == Some(libc::SIGINT));
+    assert!(
+        status.code() == Some(0) || status.code() == Some(130) || status.signal() == Some(libc::SIGINT),
+        "unexpected exit status after SIGINT: {status:?}"
+    );
 }

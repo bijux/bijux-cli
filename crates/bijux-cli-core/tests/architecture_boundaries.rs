@@ -62,7 +62,10 @@ fn enforces_internal_crate_boundaries() {
         root.get("packages").and_then(Value::as_array).expect("metadata contains packages");
 
     let expected: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::from([
-        ("bijux-cli-bin", BTreeSet::from(["bijux-cli-core"])),
+        (
+            "bijux-cli-bin",
+            BTreeSet::from(["bijux-cli-core", "bijux-cli-python", "bijux-cli-repl"]),
+        ),
         ("bijux-cli-contracts", BTreeSet::new()),
         (
             "bijux-cli-core",

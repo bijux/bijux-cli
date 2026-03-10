@@ -69,6 +69,8 @@ name = "bijux-cli-bin"
 version = "0.1.0"
 dependencies = [
  "bijux-cli-core",
+ "bijux-cli-python",
+ "bijux-cli-repl",
  "libc",
  "serde_json",
 ]

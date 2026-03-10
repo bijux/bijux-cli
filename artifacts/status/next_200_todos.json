@@ -1,183 +1,13 @@
 {
-  "generated_at": "2026-03-10T00:08:41.154449+00:00",
+  "generated_at": "1970-01-01T00:00:00+00:00",
   "generator": "scripts/status/generate_truth_milestone_status.py",
   "items": [
-    {
-      "blocker": "not routed by rust yet",
-      "command": "config list",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "config",
-      "id": 1,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "history clear",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "history",
-      "id": 2,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "memory clear",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "memory",
-      "id": 3,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "memory delete",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "memory",
-      "id": 4,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "memory get",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "memory",
-      "id": 5,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "memory set",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "memory",
-      "id": 6,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "plugins info",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "plugin",
-      "id": 7,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "plugins install",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "plugin",
-      "id": 8,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "plugins scaffold",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "plugin",
-      "id": 9,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "plugins uninstall",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "plugin",
-      "id": 10,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "atlas",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 11,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "dev",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 12,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "dev atlas",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 13,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "dev di",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 14,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "dev list-plugins",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 15,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "dev list-products",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 16,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
-    {
-      "blocker": "not routed by rust yet",
-      "command": "plugins",
-      "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
-      "id": 17,
-      "owner": "routing-core",
-      "reason": "",
-      "status": "missing"
-    },
     {
       "blocker": "parity coverage incomplete",
       "command": "cli completion",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 18,
+      "id": 1,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -187,7 +17,7 @@
       "command": "cli doctor",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 19,
+      "id": 2,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -197,7 +27,7 @@
       "command": "cli inspect",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 20,
+      "id": 3,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -207,7 +37,7 @@
       "command": "cli paths",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 21,
+      "id": 4,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -217,7 +47,7 @@
       "command": "cli repl",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 22,
+      "id": 5,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -227,7 +57,7 @@
       "command": "cli self-test",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 23,
+      "id": 6,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -237,7 +67,7 @@
       "command": "cli status",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 24,
+      "id": 7,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -247,7 +77,7 @@
       "command": "cli version",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "cli",
-      "id": 25,
+      "id": 8,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -257,7 +87,7 @@
       "command": "cli config clear",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 26,
+      "id": 9,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -267,7 +97,7 @@
       "command": "cli config export",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 27,
+      "id": 10,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -277,7 +107,17 @@
       "command": "cli config get",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 28,
+      "id": 11,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config list",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "config",
+      "id": 12,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -287,7 +127,7 @@
       "command": "cli config load",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 29,
+      "id": 13,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -297,7 +137,7 @@
       "command": "cli config reload",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 30,
+      "id": 14,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -307,7 +147,7 @@
       "command": "cli config set",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 31,
+      "id": 15,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -317,7 +157,7 @@
       "command": "cli config unset",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 32,
+      "id": 16,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -327,7 +167,7 @@
       "command": "config",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 33,
+      "id": 17,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -337,7 +177,7 @@
       "command": "config clear",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 34,
+      "id": 18,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -347,7 +187,7 @@
       "command": "config export",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 35,
+      "id": 19,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -357,7 +197,17 @@
       "command": "config get",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 36,
+      "id": 20,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "config list",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "config",
+      "id": 21,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -367,7 +217,7 @@
       "command": "config load",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 37,
+      "id": 22,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -377,7 +227,7 @@
       "command": "config reload",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 38,
+      "id": 23,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -387,7 +237,7 @@
       "command": "config set",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 39,
+      "id": 24,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -397,7 +247,17 @@
       "command": "config unset",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "config",
-      "id": 40,
+      "id": 25,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli atlas",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 26,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -407,7 +267,7 @@
       "command": "dev cli contracts",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 41,
+      "id": 27,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -417,7 +277,17 @@
       "command": "dev cli crate-health",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 42,
+      "id": 28,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli di",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 29,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -427,7 +297,17 @@
       "command": "dev cli docs",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 43,
+      "id": 30,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli docs-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 31,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -437,7 +317,7 @@
       "command": "dev cli docs-prune-plan",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 44,
+      "id": 32,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -447,7 +327,7 @@
       "command": "dev cli doctor",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 45,
+      "id": 33,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -457,7 +337,7 @@
       "command": "dev cli env",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 46,
+      "id": 34,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -467,7 +347,7 @@
       "command": "dev cli fixture-audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 47,
+      "id": 35,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -477,7 +357,27 @@
       "command": "dev cli inventory",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 48,
+      "id": 36,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli list-plugins",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 37,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli list-products",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 38,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -487,7 +387,7 @@
       "command": "dev cli package-health",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 49,
+      "id": 39,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -497,7 +397,17 @@
       "command": "dev cli parity",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 50,
+      "id": 40,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli plugin-health",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 41,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -507,7 +417,17 @@
       "command": "dev cli registry",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 51,
+      "id": 42,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli route-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 43,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -517,7 +437,7 @@
       "command": "dev cli routes",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 52,
+      "id": 44,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -527,7 +447,17 @@
       "command": "dev cli runtime-identity",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 53,
+      "id": 45,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli script-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "dev-cli",
+      "id": 46,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -537,7 +467,7 @@
       "command": "dev cli scripts-audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 54,
+      "id": 47,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -547,7 +477,7 @@
       "command": "dev cli snapshots-audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 55,
+      "id": 48,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -557,7 +487,7 @@
       "command": "dev cli state-audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 56,
+      "id": 49,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -567,7 +497,7 @@
       "command": "dev cli state-doctor",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 57,
+      "id": 50,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -577,7 +507,7 @@
       "command": "dev cli status",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "dev-cli",
-      "id": 58,
+      "id": 51,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -587,7 +517,17 @@
       "command": "history",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "history",
-      "id": 59,
+      "id": 52,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "history clear",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "history",
+      "id": 53,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -597,7 +537,37 @@
       "command": "memory",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "memory",
-      "id": 60,
+      "id": 54,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory clear",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "memory",
+      "id": 55,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory delete",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "memory",
+      "id": 56,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory get",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "memory",
+      "id": 57,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -607,7 +577,17 @@
       "command": "memory list",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "memory",
-      "id": 61,
+      "id": 58,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "memory set",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "memory",
+      "id": 59,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -617,6 +597,26 @@
       "command": "cli plugins check",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
+      "id": 60,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins disable",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "plugin",
+      "id": 61,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins doctor",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "plugin",
       "id": 62,
       "owner": "rust-foundation",
       "reason": "",
@@ -624,7 +624,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins explain",
+      "command": "cli plugins enable",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 63,
@@ -634,7 +634,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins inspect",
+      "command": "cli plugins explain",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 64,
@@ -644,7 +644,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins list",
+      "command": "cli plugins info",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 65,
@@ -654,7 +654,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins reserved-names",
+      "command": "cli plugins inspect",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 66,
@@ -664,7 +664,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins schema",
+      "command": "cli plugins install",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 67,
@@ -674,7 +674,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "cli plugins where",
+      "command": "cli plugins list",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 68,
@@ -684,7 +684,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins explain",
+      "command": "cli plugins reserved-names",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 69,
@@ -694,7 +694,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins inspect",
+      "command": "cli plugins scaffold",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 70,
@@ -704,7 +704,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins list",
+      "command": "cli plugins schema",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 71,
@@ -714,7 +714,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins reserved-names",
+      "command": "cli plugins uninstall",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 72,
@@ -724,7 +724,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins schema",
+      "command": "cli plugins where",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 73,
@@ -734,7 +734,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "plugins where",
+      "command": "plugins disable",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
       "id": 74,
@@ -744,9 +744,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "audit",
+      "command": "plugins doctor",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 75,
       "owner": "rust-foundation",
       "reason": "",
@@ -754,9 +754,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "completion",
+      "command": "plugins enable",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 76,
       "owner": "rust-foundation",
       "reason": "",
@@ -764,9 +764,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev contracts",
+      "command": "plugins explain",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 77,
       "owner": "rust-foundation",
       "reason": "",
@@ -774,9 +774,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev crate-health",
+      "command": "plugins info",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 78,
       "owner": "rust-foundation",
       "reason": "",
@@ -784,9 +784,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev docs",
+      "command": "plugins inspect",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 79,
       "owner": "rust-foundation",
       "reason": "",
@@ -794,9 +794,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev docs-prune-plan",
+      "command": "plugins install",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 80,
       "owner": "rust-foundation",
       "reason": "",
@@ -804,9 +804,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev doctor",
+      "command": "plugins list",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 81,
       "owner": "rust-foundation",
       "reason": "",
@@ -814,9 +814,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev env",
+      "command": "plugins reserved-names",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 82,
       "owner": "rust-foundation",
       "reason": "",
@@ -824,9 +824,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev fixture-audit",
+      "command": "plugins scaffold",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 83,
       "owner": "rust-foundation",
       "reason": "",
@@ -834,9 +834,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev inventory",
+      "command": "plugins schema",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 84,
       "owner": "rust-foundation",
       "reason": "",
@@ -844,9 +844,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev package-health",
+      "command": "plugins uninstall",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 85,
       "owner": "rust-foundation",
       "reason": "",
@@ -854,9 +854,9 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev parity",
+      "command": "plugins where",
       "evidence": "artifacts/parity/command_parity_matrix.json",
-      "group": "root",
+      "group": "plugin",
       "id": 86,
       "owner": "rust-foundation",
       "reason": "",
@@ -864,7 +864,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev registry",
+      "command": "atlas",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 87,
@@ -874,7 +874,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev routes",
+      "command": "audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 88,
@@ -884,7 +884,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev runtime-identity",
+      "command": "completion",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 89,
@@ -894,7 +894,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev scripts-audit",
+      "command": "dev",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 90,
@@ -904,7 +904,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev snapshots-audit",
+      "command": "dev atlas",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 91,
@@ -914,7 +914,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev state-audit",
+      "command": "dev crate-health",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 92,
@@ -924,7 +924,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev state-doctor",
+      "command": "dev di",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 93,
@@ -934,7 +934,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "dev status",
+      "command": "dev docs-audit",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 94,
@@ -944,7 +944,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "docs",
+      "command": "dev docs-prune-plan",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 95,
@@ -954,7 +954,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "doctor",
+      "command": "dev doctor",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 96,
@@ -964,7 +964,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "inspect",
+      "command": "dev inventory",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 97,
@@ -974,7 +974,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "repl",
+      "command": "dev list-plugins",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 98,
@@ -984,7 +984,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "sleep",
+      "command": "dev list-products",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 99,
@@ -994,7 +994,7 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "status",
+      "command": "dev package-health",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 100,
@@ -1004,10 +1004,170 @@
     },
     {
       "blocker": "parity coverage incomplete",
-      "command": "version",
+      "command": "dev parity",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "root",
       "id": 101,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev plugin-health",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 102,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev route-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 103,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev runtime-identity",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 104,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev script-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 105,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev scripts-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 106,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev state-audit",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 107,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev state-doctor",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 108,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev status",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 109,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "docs",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 110,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "doctor",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 111,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "inspect",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 112,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 113,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "repl",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 114,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "sleep",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 115,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "status",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 116,
+      "owner": "rust-foundation",
+      "reason": "",
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "version",
+      "evidence": "artifacts/parity/command_parity_matrix.json",
+      "group": "root",
+      "id": 117,
       "owner": "rust-foundation",
       "reason": "",
       "status": "partial"
@@ -1017,7 +1177,7 @@
       "command": "plugins check",
       "evidence": "artifacts/parity/command_parity_matrix.json",
       "group": "plugin",
-      "id": 102,
+      "id": 118,
       "owner": "parity-council",
       "reason": "Rust emits normalized diagnostics while Python emits plugin-loader stderr traces.",
       "status": "different-by-decision"
@@ -1029,7 +1189,7 @@
     "plugin_state": "artifacts/status/plugin_state_report.json"
   },
   "summary": {
-    "count": 102,
+    "count": 118,
     "scope": "prioritized from generated parity status data only"
   }
 }

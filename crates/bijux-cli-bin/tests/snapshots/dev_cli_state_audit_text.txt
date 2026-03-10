@@ -7,7 +7,7 @@
           "int_test_key"
         ],
         "message": "memory entries with wrong-type values detected",
-        "path": "/Users/bijan/.bijux/.memory.json",
+        "path": "<HOME>/.bijux/.memory.json",
         "severity": "warning"
       }
     ],
@@ -19,34 +19,34 @@
       "exists": true,
       "is_dir": false,
       "is_file": true,
-      "path": "/Users/bijan/.bijux/.env",
+      "path": "<HOME>/.bijux/.env",
       "readable": true,
-      "size_bytes": 20,
+      "size_bytes": 17,
       "writable": true
     },
     "history": {
       "exists": true,
       "is_dir": false,
       "is_file": true,
-      "path": "/Users/bijan/.bijux/.history",
+      "path": "<HOME>/.bijux/.history",
       "readable": true,
-      "size_bytes": 464031,
+      "size_bytes": 3,
       "writable": true
     },
     "memory": {
       "exists": true,
       "is_dir": false,
       "is_file": true,
-      "path": "/Users/bijan/.bijux/.memory.json",
+      "path": "<HOME>/.bijux/.memory.json",
       "readable": true,
-      "size_bytes": 23,
+      "size_bytes": 20,
       "writable": true
     },
     "plugins_registry": {
       "exists": false,
       "is_dir": false,
       "is_file": false,
-      "path": "/Users/bijan/.bijux/.plugins/registry.json",
+      "path": "<HOME>/.bijux/.plugins/registry.json",
       "readable": false,
       "size_bytes": 0,
       "writable": true

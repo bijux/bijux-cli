@@ -7,6 +7,8 @@ use std::process::Command;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use libc as _;
 use serde_json as _;
 
