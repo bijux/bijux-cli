@@ -1,6 +1,6 @@
 use crate::app::run_app;
-use bijux_cli_routing::parser::root_command;
-use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use crate::routing::parser::root_command;
+use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 
 use super::history::push_history;
 use super::types::{
@@ -26,7 +26,6 @@ fn output_format_name(format: OutputFormat) -> &'static str {
         OutputFormat::Json => "json",
         OutputFormat::Yaml => "yaml",
         OutputFormat::Text => "text",
-        _ => "json",
     }
 }
 
@@ -109,7 +108,6 @@ fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> 
         match session.policy.pretty_mode {
             PrettyMode::Pretty => "--pretty",
             PrettyMode::Compact => "--no-pretty",
-            _ => "--pretty",
         }
         .to_string(),
     );
@@ -124,7 +122,6 @@ fn apply_session_policy_to_argv(session: &ReplSession, line_argv: &[String]) -> 
             ColorMode::Auto => "auto",
             ColorMode::Always => "always",
             ColorMode::Never => "never",
-            _ => "never",
         }
         .to_string(),
     );

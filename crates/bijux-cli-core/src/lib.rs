@@ -12,3 +12,4 @@ pub mod output;
 pub mod plugin;
 pub mod query;
 pub mod repl;
+pub mod routing;

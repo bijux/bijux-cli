@@ -10,9 +10,9 @@ rust-version.workspace = true
 [dependencies]
 anyhow.workspace = true
 futures = "0.3.31"
-bijux-cli-routing = { path = "../bijux-cli-routing", version = "0.1.0" }
 bijux-dev-cli = { path = "../bijux-dev-cli", version = "0.1.0" }
 clap = { version = "4.5.51", features = ["std"] }
+schemars = { version = "0.8.22", features = ["derive"] }
 semver = { version = "1.0.27", default-features = false, features = ["std"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -25,4 +25,5 @@ thiserror.workspace = true
 workspace = true
 
 [dev-dependencies]
+proptest = "1.6.0"
 tempfile.workspace = true

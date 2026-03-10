@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use bijux_cli_routing::ExecutionPolicy;
+use crate::routing::ExecutionPolicy;
 
 /// REPL startup latency budget in milliseconds.
 pub const REPL_STARTUP_LATENCY_BUDGET_MS: u128 = 50;
@@ -109,10 +109,10 @@ pub enum ReplEvent {
 pub enum ReplError {
     /// Command parser failed.
     #[error(transparent)]
-    Parser(#[from] bijux_cli_routing::parser::ParseError),
+    Parser(#[from] crate::routing::parser::ParseError),
     /// Routing failed.
     #[error(transparent)]
-    Route(#[from] bijux_cli_routing::registry::RouteError),
+    Route(#[from] crate::routing::registry::RouteError),
     /// Kernel failed.
     #[error("kernel execution failed")]
     Kernel(crate::kernel::KernelError),

@@ -22,11 +22,12 @@ use crate::plugin::{
     registry_path_from_plugins_dir, uninstall_plugin, validate_manifest, InstallPluginRequest,
     PluginTrustLevel, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
-use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
-use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
-use bijux_cli_routing::query::contracts_schema_query;
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
-use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
+use crate::routing::catalog::is_known_route as is_known_catalog_route;
+use crate::routing::inventory::{registry_inventory, route_inventory};
+use crate::routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use crate::routing::query::contracts_schema_query;
+use crate::routing::registry::{RouteRegistry, RouteTarget};
+use crate::routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
     cockpit as dev_cockpit, config as dev_config, contracts as dev_contracts,
     control_plane as dev_control_plane, crate_health as dev_crate_health,
@@ -866,10 +867,10 @@ fn route_response(
                 env!("CARGO_PKG_VERSION"),
                 RESERVED_NAMESPACES,
             )?;
-            if matches!(record.state, bijux_cli_routing::PluginLifecycleState::Disabled) {
+            if matches!(record.state, crate::routing::PluginLifecycleState::Disabled) {
                 anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
             }
-            if matches!(record.manifest.kind, bijux_cli_routing::PluginKind::ExternalExec) {
+            if matches!(record.manifest.kind, crate::routing::PluginKind::ExternalExec) {
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
@@ -1054,9 +1055,10 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             let context = ReportContext {
                 generated_at: String::new(),
-                data_source: "bijux-cli-routing".to_string(),
+                data_source: "bijux-cli-core::routing".to_string(),
             };
-            dev_routes::build_report(&registry, &context)
+            let inventory = route_inventory(&registry);
+            dev_routes::build_report_from_query(&inventory.routes, &inventory.aliases, &context)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "atlas" => {
             dev_control_plane::build_atlas_report()
@@ -1072,7 +1074,8 @@ fn route_response(
             dev_control_plane::build_plugin_list_report_from(plugins)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "route-audit" => {
-            dev_route_audit::build_report(&registry)
+            let inventory = route_inventory(&registry);
+            dev_route_audit::build_report_from_query(&inventory.routes, &inventory.aliases)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "inventory" => {
             dev_script_audit::build_inventory_report(&workspace_root())
@@ -1080,9 +1083,19 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "registry" => {
             let context = ReportContext {
                 generated_at: String::new(),
-                data_source: "bijux-cli-routing".to_string(),
+                data_source: "bijux-cli-core::routing".to_string(),
             };
-            dev_registry::build_report(&registry, &context)
+            let inventory = registry_inventory(&registry);
+            let namespaces: Vec<dev_registry::NamespaceInventoryRow> = inventory
+                .namespaces
+                .into_iter()
+                .map(|row| dev_registry::NamespaceInventoryRow {
+                    name: row.name.0,
+                    reserved: row.reserved,
+                    owner: row.owner,
+                })
+                .collect();
+            dev_registry::build_report_from_query(&namespaces, &context)
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "parity" => {
             dev_parity::build_report(&workspace_root())

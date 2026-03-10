@@ -74,7 +74,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::acquire_state_lock;
-    use super::compatibility::CompatibilityError;
+    use super::super::compatibility::CompatibilityError;
 
     fn make_temp_dir(name: &str) -> PathBuf {
         let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();

@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
+use crate::routing::OFFICIAL_PRODUCT_NAMESPACES;
 
 /// Registry schema version.
 pub const REGISTRY_VERSION: &str = "1";

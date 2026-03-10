@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use bijux_cli_routing::{
+use crate::routing::{
     ColorMode, DiagnosticRecord, ErrorEnvelopeV1, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel,
     OutputFormat, PrettyMode,
 };
@@ -123,15 +123,15 @@ impl SyncHandler for InternalErrorHandler {
     fn execute(&self, _ctx: &ExecutionContext) -> Result<serde_json::Value, ErrorEnvelopeV1> {
         Err(ErrorEnvelopeV1 {
             status: "error".to_string(),
-            error: bijux_cli_routing::ErrorPayloadV1 {
+            error: crate::routing::ErrorPayloadV1 {
                 category: "internal".to_string(),
                 code: "INTERNAL_FAILURE".to_string(),
                 message: "simulated panic normalization".to_string(),
                 details: None,
             },
-            meta: bijux_cli_routing::OutputEnvelopeMetaV1 {
+            meta: crate::routing::OutputEnvelopeMetaV1 {
                 version: "v1".to_string(),
-                command: bijux_cli_routing::CommandPath { segments: vec![] },
+                command: crate::routing::CommandPath { segments: vec![] },
                 timestamp: "1970-01-01T00:00:00Z".to_string(),
             },
         })

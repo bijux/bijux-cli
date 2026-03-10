@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing::PluginKind;
+use crate::routing::PluginKind;
 
 use super::errors::PluginError;
 use super::manifest::is_version_compatible;
@@ -20,7 +20,7 @@ pub fn load_time_diagnostics(
     let mut diagnostics = Vec::new();
 
     for (namespace, record) in &registry.plugins {
-        if record.state == bijux_cli_routing::PluginLifecycleState::Broken {
+        if record.state == crate::routing::PluginLifecycleState::Broken {
             diagnostics.push(PluginLoadDiagnostic {
                 namespace: namespace.clone(),
                 severity: "error".to_string(),

@@ -1,4 +1,4 @@
-use bijux_cli_routing::catalog::repl_reference_commands;
+use crate::routing::catalog::repl_reference_commands;
 
 /// Render stable REPL command reference text.
 #[must_use]

@@ -110,7 +110,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn set_pair(&self, raw_pair: &str) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let (key, value) = self.parse_set_pair(raw_pair)?;
         let mut values = self.load_map()?;
@@ -126,7 +126,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn unset_key(&self, raw_key: &str) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let key = normalize_key(raw_key)?;
         let mut values = self.load_map()?;
@@ -142,7 +142,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn clear_all(&self) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let removed_keys = self.load_map()?.len();
         let removed_file = self.repository.remove(self.path_provider.config_path())?;
@@ -156,7 +156,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn reload(&self) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let entry_count = self.load_map()?.len();
         Ok(json!({
@@ -168,7 +168,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn export_to(&self, target_path: &Path) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let values = self.load_map()?;
         self.repository.save(target_path, &values)?;
@@ -181,7 +181,7 @@ impl ConfigService for DefaultConfigService<StaticConfigPathProvider, FileConfig
 
     fn load_from(&self, source_path: &Path) -> Result<Value, ConfigError> {
         run_config_migrations(self.path_provider.config_path(), 1)
-            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+            .map_err(|err: crate::install::CompatibilityError| ConfigError::persistence(err.to_string()))?;
 
         let values = self.repository.load(source_path)?;
         self.repository.save(self.path_provider.config_path(), &values)?;
