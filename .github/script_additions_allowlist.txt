@@ -27,3 +27,4 @@ scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecy
 scripts/status/generate_plugin_failure_rollback_test_matrix.py # generate plugin failure/rollback todo matrix artifact proving failure injection and rollback coverage
 scripts/status/generate_plugin_discovery_determinism_reports.py # generate plugin discovery determinism report and frozen ordering law artifacts for TODOs 61-80
 scripts/status/generate_flag_normalization_matrix.py # generate flag normalization todo matrix artifact proving parser and conflict behavior coverage
+scripts/status/generate_precedence_reports.py # generate precedence regression matrix, machine-readable precedence report, and frozen precedence contract artifacts
