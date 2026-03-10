@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-03-10T12:48:30.849502+00:00",
+  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
+  "missing_todos": [],
+  "policy": "plugin/history/memory corruption campaigns are required hardening coverage",
+  "scope": "plugin/history/memory corruption hardening contract",
+  "status": "frozen",
+  "tasks": [
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    159,
+    160
+  ]
+}

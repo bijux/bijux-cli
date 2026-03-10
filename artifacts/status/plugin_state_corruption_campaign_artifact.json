@@ -1,0 +1,37 @@
+{
+  "campaign_suite": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "bijux-cli-bin",
+      "--test",
+      "randomized_plugin_state_corruption_campaigns"
+    ],
+    "exit_code": 0,
+    "ok": true,
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/randomized_plugin_state_corruption_campaigns.rs (target/debug/deps/randomized_plugin_state_corruption_campaigns-ea5ecdac2a1d1687)\n",
+    "stdout": "\nrunning 6 tests\ntest plugin_registry_rollback_preserves_coherence_after_failed_mutation_paths ... ok\ntest plugin_list_is_deterministic_for_identical_corrupted_registry ... ok\ntest history_and_memory_corruption_recovery_remains_stable_and_policy_compliant ... ok\ntest one_broken_plugin_never_hides_unrelated_healthy_plugins ... ok\ntest plugin_doctor_reports_corruption_injected_by_campaign ... ok\ntest randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s\n\n"
+  },
+  "generated_at": "2026-03-10T12:48:30.849502+00:00",
+  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
+  "scope": "plugin/history/memory corruption campaigns",
+  "status": "complete",
+  "tasks": [
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    154,
+    155
+  ]
+}

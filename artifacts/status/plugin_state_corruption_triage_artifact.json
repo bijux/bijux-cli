@@ -1,0 +1,11 @@
+{
+  "campaign_suite_ok": true,
+  "generated_at": "2026-03-10T12:48:30.849502+00:00",
+  "generator": "scripts/status/generate_plugin_state_corruption_campaign_reports.py",
+  "regression_suite_ok": true,
+  "scope": "plugin/history/memory corruption triage",
+  "status": "clean",
+  "tasks": [
+    157
+  ]
+}
