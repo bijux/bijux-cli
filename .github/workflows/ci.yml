@@ -269,6 +269,7 @@ jobs:
           python3 scripts/status/generate_truth_milestone_status.py
           python3 scripts/status/generate_status_reports.py
           python3 scripts/status/generate_repl_behavior_reports.py
+          python3 scripts/status/generate_docs_duplication_report.py
           python3 scripts/status/generate_install_truth_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
@@ -389,7 +390,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: docs-audit
-          path: artifacts/status/docs_audit.json
+          path: |
+            artifacts/status/docs_audit.json
+            artifacts/status/docs_duplication_report.json
           if-no-files-found: warn
           retention-days: 14
 
