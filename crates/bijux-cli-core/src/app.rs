@@ -21,8 +21,8 @@ use bijux_cli_plugin::{
     compatibility_warnings, disable_plugin, enable_plugin, inspect_plugin,
     install_plugin as install_plugin_manifest, is_reserved_namespace, list_plugins,
     load_time_diagnostics, plugin_doctor, plugin_origin_metadata, prune_registry_backup,
-    registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest, PluginTrustLevel,
-    CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
+    registry_path_from_plugins_dir, uninstall_plugin, validate_manifest, InstallPluginRequest,
+    PluginTrustLevel, CORE_NAMESPACES, FUTURE_PRODUCT_NAMESPACES, RESERVED_NAMESPACES,
 };
 use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
@@ -830,6 +830,11 @@ fn route_response(
                     .cloned()
                     .ok_or_else(|| anyhow::anyhow!("Missing argument: plugin name required"))?;
             let record = inspect_plugin(&plugin_registry_path, &plugin)?;
+            let _ = validate_manifest(
+                record.manifest.clone(),
+                env!("CARGO_PKG_VERSION"),
+                RESERVED_NAMESPACES,
+            )?;
             if matches!(record.state, bijux_cli_contracts::PluginLifecycleState::Disabled) {
                 anyhow::bail!("Invalid argument: plugin {plugin} is disabled");
             }
