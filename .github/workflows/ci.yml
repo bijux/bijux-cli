@@ -262,17 +262,45 @@ jobs:
         run: |
           python3 scripts/status/generate_crate_boundary_metrics.py
           python3 scripts/status/generate_public_api_reports.py
-          python3 scripts/status/generate_duplication_hotspots.py
           python3 scripts/status/generate_current_rust_state.py
-          python3 scripts/status/generate_dev_cli_inventory.py
-          python3 scripts/status/generate_docs_audit.py
           python3 scripts/status/generate_test_quality_audit.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
-          python3 scripts/status/generate_plugin_health_report.py
-          python3 scripts/status/generate_state_parity_reports.py
           python3 scripts/status/generate_truth_milestone_status.py
           python3 scripts/status/generate_status_reports.py
+          cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
+          cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
+          cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
+          cargo run -q -p bijux-cli-bin -- dev cli plugin-health --text > artifacts/status/plugin_health_report.txt
+          cargo run -q -p bijux-cli-bin -- dev cli crate-health --json --no-pretty > artifacts/status/duplication_hotspots.json
+          cargo run -q -p bijux-cli-bin -- dev cli state-audit --json --no-pretty > artifacts/status/state_audit_report.json
+          cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
+          cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
+
+      - name: Warn on new script files without justification
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE_SHA" ]; then
+            BASE_SHA="$(git rev-list --max-count=1 HEAD~1)"
+          fi
+          mapfile -t added < <(git diff --name-status "$BASE_SHA"...HEAD -- scripts | awk '$1=="A"{print $2}')
+          if [ "${#added[@]}" -eq 0 ]; then
+            echo "No new script files added."
+            exit 0
+          fi
+          allowlist=".github/script_additions_allowlist.txt"
+          missing=0
+          for path in "${added[@]}"; do
+            if ! grep -Eq "^[[:space:]]*${path//\//\\/}[[:space:]]*#" "$allowlist"; then
+              echo "NEW SCRIPT WARNING: add justification to $allowlist for $path"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Runtime unity gate
         run: |

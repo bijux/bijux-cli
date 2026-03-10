@@ -1,0 +1,2 @@
+# New scripts require an inline justification in this file.
+# Format: scripts/path/to/file.py # reason
