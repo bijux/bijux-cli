@@ -51,6 +51,41 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
             scratch.to_str().expect("utf-8"),
         ]);
         assert_eq!(a.status.code(), b.status.code(), "case={}", case.display());
+        assert_eq!(
+            a.stdout,
+            b.stdout,
+            "list stdout drift for case={}",
+            case.display()
+        );
+        assert_eq!(
+            a.stderr,
+            b.stderr,
+            "list stderr drift for case={}",
+            case.display()
+        );
+        if a.status.success() {
+            assert!(
+                a.stderr.is_empty(),
+                "list success should not write stderr for case={}",
+                case.display()
+            );
+            assert!(
+                !a.stdout.is_empty(),
+                "list success should emit stdout for case={}",
+                case.display()
+            );
+        } else {
+            assert!(
+                a.stdout.is_empty(),
+                "list failure should not write stdout for case={}",
+                case.display()
+            );
+            assert!(
+                !a.stderr.is_empty(),
+                "list failure should write stderr for case={}",
+                case.display()
+            );
+        }
 
         let load_a = run(&[
             "cli",
@@ -74,5 +109,40 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
             "case={}",
             case.display()
         );
+        assert_eq!(
+            load_a.stdout,
+            load_b.stdout,
+            "load stdout drift for case={}",
+            case.display()
+        );
+        assert_eq!(
+            load_a.stderr,
+            load_b.stderr,
+            "load stderr drift for case={}",
+            case.display()
+        );
+        if load_a.status.success() {
+            assert!(
+                load_a.stderr.is_empty(),
+                "load success should not write stderr for case={}",
+                case.display()
+            );
+            assert!(
+                !load_a.stdout.is_empty(),
+                "load success should emit stdout for case={}",
+                case.display()
+            );
+        } else {
+            assert!(
+                load_a.stdout.is_empty(),
+                "load failure should not write stdout for case={}",
+                case.display()
+            );
+            assert!(
+                !load_a.stderr.is_empty(),
+                "load failure should write stderr for case={}",
+                case.display()
+            );
+        }
     }
 }

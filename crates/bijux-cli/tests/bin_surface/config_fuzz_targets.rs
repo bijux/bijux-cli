@@ -40,6 +40,14 @@ fn run_json_ok(args: &[&str]) -> Value {
         "stderr={}",
         String::from_utf8_lossy(&out.stderr)
     );
+    assert!(
+        out.stderr.is_empty(),
+        "successful json command should keep stderr empty: {args:?}"
+    );
+    assert!(
+        !out.stdout.is_empty(),
+        "successful json command should emit stdout payload: {args:?}"
+    );
     serde_json::from_slice(&out.stdout).expect("json")
 }
 
@@ -106,6 +114,26 @@ fn fuzz_malformed_config_lines_fail_consistently() {
         ]);
         assert_eq!(a.status.code(), b.status.code());
         assert_ne!(a.status.code(), Some(0));
+        assert!(
+            a.stdout.is_empty(),
+            "malformed listing should not write stdout"
+        );
+        assert!(
+            b.stdout.is_empty(),
+            "malformed listing should not write stdout"
+        );
+        assert!(
+            !a.stderr.is_empty(),
+            "malformed listing should write stderr"
+        );
+        assert!(
+            !b.stderr.is_empty(),
+            "malformed listing should write stderr"
+        );
+        assert_eq!(
+            a.stderr, b.stderr,
+            "malformed listing diagnostics should be deterministic"
+        );
     }
 }
 
@@ -194,6 +222,14 @@ fn fuzz_null_byte_and_control_characters_are_handled_deterministically() {
         path.to_str().expect("utf-8"),
     ]);
     assert_eq!(null_case_a.status.code(), null_case_b.status.code());
+    assert_eq!(
+        null_case_a.stdout, null_case_b.stdout,
+        "null-byte stdout should be deterministic"
+    );
+    assert_eq!(
+        null_case_a.stderr, null_case_b.stderr,
+        "null-byte stderr should be deterministic"
+    );
 
     fs::write(&path, "BIJUXCLI_A=ok\nBIJUXCLI_B=bad\tvalue\n").expect("write tab");
     let tab_case = run(&[
@@ -204,6 +240,14 @@ fn fuzz_null_byte_and_control_characters_are_handled_deterministically() {
         path.to_str().expect("utf-8"),
     ]);
     assert_eq!(tab_case.status.code(), Some(3));
+    assert!(
+        tab_case.stdout.is_empty(),
+        "tab validation failures should not write stdout"
+    );
+    assert!(
+        !tab_case.stderr.is_empty(),
+        "tab validation failures should write stderr"
+    );
 }
 
 #[test]
@@ -221,6 +265,7 @@ fn fuzz_mixed_valid_invalid_content_never_silently_succeeds() {
     ]);
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
+    assert!(!out.stderr.is_empty());
 }
 
 #[test]
@@ -301,6 +346,20 @@ fn fuzz_config_load_import_parsing_is_deterministic() {
     ]);
     assert_eq!(a.status.code(), Some(0));
     assert_eq!(a.status.code(), b.status.code());
+    assert_eq!(a.stdout, b.stdout, "load stdout should be deterministic");
+    assert_eq!(a.stderr, b.stderr, "load stderr should be deterministic");
+
+    let listed = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        active.to_str().expect("utf-8"),
+    ]);
+    assert!(
+        !listed.as_object().expect("listed object").is_empty(),
+        "loaded config should contain entries"
+    );
 }
 
 #[test]
@@ -380,6 +439,8 @@ fn fuzz_key_normalization_and_value_validation_are_stable() {
         path.to_str().expect("utf-8"),
     ]);
     assert_eq!(bad_key.status.code(), Some(2));
+    assert!(bad_key.stdout.is_empty());
+    assert!(!bad_key.stderr.is_empty());
 
     let bad_value = run(&[
         "cli",
@@ -390,6 +451,8 @@ fn fuzz_key_normalization_and_value_validation_are_stable() {
         path.to_str().expect("utf-8"),
     ]);
     assert_eq!(bad_value.status.code(), Some(3));
+    assert!(bad_value.stdout.is_empty());
+    assert!(!bad_value.stderr.is_empty());
 }
 
 #[test]

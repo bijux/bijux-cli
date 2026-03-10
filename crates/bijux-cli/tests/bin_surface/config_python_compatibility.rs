@@ -205,4 +205,9 @@ fn config_get_missing_key_matches_python_failure_routing() {
     assert!(rs.stdout.is_empty());
     assert!(!py.stderr.is_empty());
     assert!(!rs.stderr.is_empty());
+
+    let py_error: Value = serde_json::from_slice(&py.stderr).expect("py stderr json");
+    let rs_error: Value = serde_json::from_slice(&rs.stderr).expect("rs stderr json");
+    assert_eq!(py_error["error"]["category"], rs_error["error"]["category"]);
+    assert_eq!(py_error["code"], rs_error["code"]);
 }
