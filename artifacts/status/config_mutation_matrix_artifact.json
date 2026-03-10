@@ -1,0 +1,148 @@
+{
+  "domains": [
+    {
+      "evidence": "config_mutation_matrix.rs",
+      "status": "complete",
+      "surface": "config set"
+    },
+    {
+      "evidence": "config_mutation_matrix.rs",
+      "status": "complete",
+      "surface": "config unset"
+    },
+    {
+      "evidence": "config_mutation_matrix.rs",
+      "status": "complete",
+      "surface": "config clear/reload"
+    },
+    {
+      "evidence": "config_mutation_matrix.rs",
+      "status": "complete",
+      "surface": "config export/load"
+    },
+    {
+      "evidence": "config_mutation_matrix.rs",
+      "status": "complete",
+      "surface": "rollback + retry idempotency"
+    }
+  ],
+  "generated_at": "2026-03-10T04:45:50.244221+00:00",
+  "generator": "scripts/status/generate_config_mutation_surface_reports.py",
+  "scope": "todo 281-299 config mutation matrix",
+  "todo_rows": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 281
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 282
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 283
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 284
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 285
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_set_create_replace_preserve_quoted_spaces_and_invalid_key",
+      "todo": 286
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_unset_existing_and_missing_keys",
+      "todo": 287
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_unset_existing_and_missing_keys",
+      "todo": 288
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_clear_populated_and_empty_and_reload_after_external_change",
+      "todo": 289
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_clear_populated_and_empty_and_reload_after_external_change",
+      "todo": 290
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_clear_populated_and_empty_and_reload_after_external_change",
+      "todo": 291
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_export_text_json_yaml_and_load_valid_malformed",
+      "todo": 292
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_export_text_json_yaml_and_load_valid_malformed",
+      "todo": 293
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_export_text_json_yaml_and_load_valid_malformed",
+      "todo": 294
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_export_text_json_yaml_and_load_valid_malformed",
+      "todo": 295
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_export_text_json_yaml_and_load_valid_malformed",
+      "todo": 296
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_mutation_rollback_and_retry_idempotency_proof",
+      "todo": 297
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_mutation_rollback_and_retry_idempotency_proof",
+      "todo": 298
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_mutation_matrix.rs",
+      "status": "complete",
+      "test": "config_mutation_rollback_and_retry_idempotency_proof",
+      "todo": 299
+    }
+  ]
+}

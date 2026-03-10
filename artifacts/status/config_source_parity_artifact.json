@@ -1,0 +1,126 @@
+{
+  "comparison": {
+    "config_get_source_path": "/Users/bijan/bijux/bijux-cli/target/tmp/config-source-reports/config.env",
+    "dev_cli_env_active_config_file": "/Users/bijan/bijux/bijux-cli/target/tmp/config-source-reports/config.env",
+    "dev_cli_env_source_precedence": [
+      "flags",
+      "env",
+      "config",
+      "defaults"
+    ]
+  },
+  "generated_at": "2026-03-10T04:45:50.276878+00:00",
+  "generator": "scripts/status/generate_config_source_surface_reports.py",
+  "scope": "todo 301-317 config precedence/source parity",
+  "status": "consistent",
+  "todo_rows": [
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "cli_flags_override_env_backed_values_and_config_path",
+      "todo": 301
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+      "todo": 302
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+      "todo": 303
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "cli_flags_override_env_backed_values_and_config_path",
+      "todo": 304
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "env_overrides_file_and_file_overrides_default_with_missing_fallback",
+      "todo": 305
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "malformed_and_duplicate_config_source_behavior_is_stable",
+      "todo": 306
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "malformed_and_duplicate_config_source_behavior_is_stable",
+      "todo": 307
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_metadata_and_dev_cli_env_precedence_are_reported",
+      "todo": 308
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_metadata_and_dev_cli_env_precedence_are_reported",
+      "todo": 309
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_metadata_and_dev_cli_env_precedence_are_reported",
+      "todo": 310
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+      "todo": 311
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+      "todo": 312
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+      "todo": 313
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+      "todo": 314
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "source_reports_json_text_are_deterministic_ignore_noise_and_env_order",
+      "todo": 315
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "cross_command_source_precedence_consistency",
+      "todo": 316
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "cross_command_source_precedence_consistency",
+      "todo": 317
+    },
+    {
+      "evidence": "crates/bijux-cli-bin/tests/config_source_precedence_matrix.rs",
+      "status": "complete",
+      "test": "cross_command_source_precedence_consistency",
+      "todo": 318
+    }
+  ]
+}

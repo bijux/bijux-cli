@@ -308,6 +308,8 @@ jobs:
           python3 scripts/status/generate_cli_command_surface_reports.py
           python3 scripts/status/generate_dev_cli_command_surface_reports.py
           python3 scripts/status/generate_config_read_surface_reports.py
+          python3 scripts/status/generate_config_mutation_surface_reports.py
+          python3 scripts/status/generate_config_source_surface_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -434,6 +436,10 @@ jobs:
       - name: Test-first domain gate
         run: |
           python3 scripts/status/enforce_test_first_domain_gates.py --enforce
+
+      - name: Config source consistency gate
+        run: |
+          python3 scripts/status/enforce_config_source_consistency.py
 
       - name: Performance regression gate
         run: |
@@ -804,6 +810,11 @@ jobs:
             artifacts/status/dev_cli_command_surface_domain_contract.json
             artifacts/status/config_read_matrix_artifact.json
             artifacts/status/config_read_domain_contract.json
+            artifacts/status/config_mutation_matrix_artifact.json
+            artifacts/status/config_mutation_domain_contract.json
+            artifacts/status/config_source_parity_artifact.json
+            artifacts/status/config_source_drift_artifact.json
+            artifacts/status/config_source_precedence_contract.json
             artifacts/status/release_build_consistency_report.json
             artifacts/status/release_artifact_manifest.json
             artifacts/status/release_evidence_bundle.json
