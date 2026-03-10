@@ -1,0 +1,56 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_next_minimalism_priorities.py",
+  "items": [
+    {
+      "complexity_score": 73,
+      "crate": "bijux-cli-core",
+      "rank": 1
+    },
+    {
+      "complexity_score": 61,
+      "crate": "bijux-cli-bin",
+      "rank": 2
+    },
+    {
+      "complexity_score": 60,
+      "crate": "bijux-cli-routing",
+      "rank": 3
+    },
+    {
+      "complexity_score": 38,
+      "crate": "bijux-cli-install",
+      "rank": 4
+    },
+    {
+      "complexity_score": 38,
+      "crate": "bijux-cli-plugin",
+      "rank": 5
+    },
+    {
+      "complexity_score": 34,
+      "crate": "bijux-cli-repl",
+      "rank": 6
+    },
+    {
+      "complexity_score": 32,
+      "crate": "bijux-cli-output",
+      "rank": 7
+    },
+    {
+      "complexity_score": 30,
+      "crate": "bijux-cli-contracts",
+      "rank": 8
+    },
+    {
+      "complexity_score": 24,
+      "crate": "bijux-cli-python",
+      "rank": 9
+    }
+  ],
+  "sources": [
+    "artifacts/status/ranked_crate_complexity.json"
+  ],
+  "title": "remaining accidental complexity hotspots",
+  "todo": 781
+}

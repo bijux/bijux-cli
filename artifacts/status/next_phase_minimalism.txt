@@ -1,0 +1,81 @@
+Next Simplification Priorities (Evidence-Ranked)
+
+remaining accidental complexity hotspots:
+- bijux-cli-core
+- bijux-cli-bin
+- bijux-cli-routing
+- bijux-cli-install
+- bijux-cli-plugin
+
+remaining python-era leftovers:
+- atlas
+- config list
+- dev
+- dev atlas
+- dev di
+
+remaining shims and aliases:
+- completion
+- config clear
+- config export
+- config get
+- config load
+
+remaining public APIs likely to be removed:
+- bijux-cli-core
+- bijux-cli-core
+- bijux-cli-core
+- bijux-cli-install
+- bijux-cli-install
+
+remaining state risks:
+- config
+- history
+- plugin_registry
+- memory
+
+remaining plugin lifecycle risks:
+- scaffold command parity against Python templates
+- full CLI lifecycle command parity for install/uninstall/enable/disable
+- end-to-end CLI plugin diagnostics parity for all failure classes
+- partial command: plugins scaffold
+- partial command: plugins install
+
+remaining packaging ambiguity risks:
+- active_binary_selection_is_ambiguous
+- path_shadowing_detected
+
+remaining repl divergence risks:
+- parity: cli repl
+- parity: repl
+- :exit
+- :help
+- :set trace|quiet|format
+
+remaining crate-boundary problems:
+- bijux-cli-core
+- bijux-cli-bin
+- bijux-cli-routing
+- bijux-cli-install
+- bijux-cli-plugin
+
+remaining docs worth deleting:
+- None
+- None
+- None
+- None
+- None
+
+remaining scripts worth deleting:
+- scripts/docs_builder/__init__.py
+- scripts/docs_builder/artifacts_pages/__init__.py
+- scripts/docs_builder/artifacts_pages/api_page.py
+- scripts/docs_builder/artifacts_pages/base.py
+- scripts/docs_builder/artifacts_pages/citation_page.py
+
+remaining weak tests worth replacing:
+- crates/bijux-cli-bin/tests/ported_command_goldens.rs
+- crates/bijux-cli-contracts/tests/schema_snapshots.rs
+- crates/bijux-cli-contracts/tests/serde_roundtrip.rs
+- crates/bijux-cli-routing/tests/command_tree_snapshot.rs
+- crates/bijux-cli-routing/tests/parser_fuzz.rs

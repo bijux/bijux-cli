@@ -1,0 +1,76 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_next_minimalism_priorities.py",
+  "items": [
+    {
+      "path": "scripts/docs_builder/__init__.py",
+      "rank": 1,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/__init__.py",
+      "rank": 2,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/api_page.py",
+      "rank": 3,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/base.py",
+      "rank": 4,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/citation_page.py",
+      "rank": 5,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/lint_page.py",
+      "rank": 6,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/quality_page.py",
+      "rank": 7,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/sbom_page.py",
+      "rank": 8,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/security_page.py",
+      "rank": 9,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/artifacts_pages/test_page.py",
+      "rank": 10,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/helpers.py",
+      "rank": 11,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/docs_builder/mkdocs_manager.py",
+      "rank": 12,
+      "reason": "still script-only"
+    },
+    {
+      "path": "scripts/git-hooks/prepare-commit-msg",
+      "rank": 13,
+      "reason": "still script-only"
+    }
+  ],
+  "sources": [
+    "artifacts/status/ranked_script_deletion_candidates.json"
+  ],
+  "title": "remaining scripts worth deleting",
+  "todo": 791
+}

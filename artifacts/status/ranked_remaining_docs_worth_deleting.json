@@ -1,0 +1,66 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_next_minimalism_priorities.py",
+  "items": [
+    {
+      "duplicate_count": 9,
+      "group": [
+        "docs/architecture/index.md",
+        "docs/concepts/index.md",
+        "docs/constitution/index.md",
+        "docs/examples/index.md",
+        "docs/getting-started/index.md",
+        "docs/guides/index.md",
+        "docs/index.md",
+        "docs/reference/current-python/index.md",
+        "docs/reference/index.md"
+      ],
+      "rank": 1
+    },
+    {
+      "duplicate_count": 2,
+      "group": [
+        "docs/architecture/repl-baseline.md",
+        "docs/reference/repl.md"
+      ],
+      "rank": 2
+    },
+    {
+      "duplicate_count": 2,
+      "group": [
+        "docs/architecture/repl-parity-report.md",
+        "docs/constitution/REPL_PARITY.md"
+      ],
+      "rank": 3
+    },
+    {
+      "duplicate_count": 2,
+      "group": [
+        "docs/concepts/plugin-lifecycle.md",
+        "docs/constitution/PLUGIN_LIFECYCLE.md"
+      ],
+      "rank": 4
+    },
+    {
+      "duplicate_count": 2,
+      "group": [
+        "docs/constitution/EXIT_CODES.md",
+        "docs/reference/exit-codes.md"
+      ],
+      "rank": 5
+    },
+    {
+      "duplicate_count": 2,
+      "group": [
+        "docs/examples/plugins.md",
+        "docs/guides/plugins.md"
+      ],
+      "rank": 6
+    }
+  ],
+  "sources": [
+    "artifacts/status/ranked_docs_deletion_candidates.json"
+  ],
+  "title": "remaining docs worth deleting",
+  "todo": 790
+}

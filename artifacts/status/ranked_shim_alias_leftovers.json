@@ -1,0 +1,579 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_next_minimalism_priorities.py",
+  "items": [
+    {
+      "id": "completion",
+      "justification": "legacy root shorthand remains for transition",
+      "kind": "alias",
+      "rank": 1,
+      "removal_plan": "remove once canonical route adoption is complete"
+    },
+    {
+      "id": "config clear",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 2,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config export",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 3,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config get",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 4,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config load",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 5,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config reload",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 6,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config set",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 7,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "config unset",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 8,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "dev crate-health",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 9,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev docs-audit",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 10,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev docs-prune-plan",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 11,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev doctor",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 12,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev inventory",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 13,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev package-health",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 14,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev parity",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 15,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev plugin-health",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 16,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev registry",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 17,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev route-audit",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 18,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev routes",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 19,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev runtime-identity",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 20,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev script-audit",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 21,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev scripts-audit",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 22,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev state-audit",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 23,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev state-doctor",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 24,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "dev status",
+      "justification": "legacy developer shortcut retained during command transition",
+      "kind": "alias",
+      "rank": 25,
+      "removal_plan": "drop after one stable release cycle with canonical-only docs"
+    },
+    {
+      "id": "doctor",
+      "justification": "legacy root shorthand remains for transition",
+      "kind": "alias",
+      "rank": 26,
+      "removal_plan": "remove once canonical route adoption is complete"
+    },
+    {
+      "id": "inspect",
+      "justification": "legacy root shorthand remains for transition",
+      "kind": "alias",
+      "rank": 27,
+      "removal_plan": "remove once canonical route adoption is complete"
+    },
+    {
+      "id": "plugins check",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 28,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins disable",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 29,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins doctor",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 30,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins enable",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 31,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins explain",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 32,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins inspect",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 33,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins install",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 34,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins list",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 35,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins reserved-names",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 36,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins scaffold",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 37,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins schema",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 38,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins uninstall",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 39,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "plugins where",
+      "justification": "legacy compatibility for core operator workflows",
+      "kind": "alias",
+      "rank": 40,
+      "removal_plan": "remove when compatibility policy no longer requires shorthand"
+    },
+    {
+      "id": "repl",
+      "justification": "legacy root shorthand remains for transition",
+      "kind": "alias",
+      "rank": 41,
+      "removal_plan": "remove once canonical route adoption is complete"
+    },
+    {
+      "id": "version",
+      "justification": "legacy root shorthand remains for transition",
+      "kind": "alias",
+      "rank": 42,
+      "removal_plan": "remove once canonical route adoption is complete"
+    },
+    {
+      "id": "completion",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 43,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config clear",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 44,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config export",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 45,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config get",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 46,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config load",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 47,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config reload",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 48,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config set",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 49,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "config unset",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 50,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev crate-health",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 51,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev docs-audit",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 52,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev docs-prune-plan",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 53,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev doctor",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 54,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev inventory",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 55,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev package-health",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 56,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev parity",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 57,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev registry",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 58,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev route-audit",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 59,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev routes",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 60,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev runtime-identity",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 61,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev script-audit",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 62,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev scripts-audit",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 63,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev state-audit",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 64,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev state-doctor",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 65,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "dev status",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 66,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "doctor",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 67,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "inspect",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 68,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins check",
+      "justification": "compatibility bridge remains until the next cleanup window",
+      "kind": "shim",
+      "rank": 69,
+      "removal_plan": "delete once canonical usage is stable and covered"
+    },
+    {
+      "id": "plugins doctor",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 70,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins explain",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 71,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins inspect",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 72,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins install",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 73,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins list",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 74,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins reserved-names",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 75,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins scaffold",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 76,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins schema",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 77,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins uninstall",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 78,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "plugins where",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 79,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "repl",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 80,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    },
+    {
+      "id": "version",
+      "justification": "blocked by parity coverage incomplete",
+      "kind": "shim",
+      "rank": 81,
+      "removal_plan": "remove after blocker closes and regression tests are green"
+    }
+  ],
+  "sources": [
+    "artifacts/status/live_compatibility_shims.json",
+    "artifacts/status/live_compatibility_aliases.json"
+  ],
+  "title": "remaining shims and aliases",
+  "todo": 783
+}

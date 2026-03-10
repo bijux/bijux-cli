@@ -1,0 +1,41 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_next_minimalism_priorities.py",
+  "items": [
+    {
+      "category": "parity",
+      "defensible": false,
+      "gap": "parity: cli repl",
+      "rank": 1
+    },
+    {
+      "category": "parity",
+      "defensible": false,
+      "gap": "parity: repl",
+      "rank": 2
+    },
+    {
+      "category": "meta-command",
+      "defensible": true,
+      "gap": ":exit",
+      "rank": 3
+    },
+    {
+      "category": "meta-command",
+      "defensible": true,
+      "gap": ":help",
+      "rank": 4
+    },
+    {
+      "category": "meta-command",
+      "defensible": true,
+      "gap": ":set trace|quiet|format",
+      "rank": 5
+    }
+  ],
+  "sources": [
+    "artifacts/status/ranked_repl_gaps.json"
+  ],
+  "title": "remaining repl divergence risks",
+  "todo": 788
+}
