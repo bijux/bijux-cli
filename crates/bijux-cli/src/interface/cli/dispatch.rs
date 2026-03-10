@@ -2,7 +2,6 @@
 
 use std::env;
 
-use crate::features::install::CompatibilityPaths;
 use crate::interface::cli::handlers::{
     cli as cli_handlers, config as config_handlers, developer as developer_handlers,
     developer_runtime as developer_runtime_handlers, history as history_handlers,
@@ -92,14 +91,9 @@ fn route_response(
     }
 
     let paths = resolve_state_paths(global_flags)?;
-    let compatibility_paths = CompatibilityPaths {
-        config_file: paths.config_file.clone(),
-        history_file: paths.history_file.clone(),
-        plugins_dir: paths.plugins_dir.clone(),
-    };
     let plugin_registry_path = paths.plugin_registry_file.clone();
     if let Some(payload) =
-        config_handlers::execute_config_command(normalized_path, argv, &compatibility_paths)?
+        config_handlers::execute_config_command(normalized_path, argv, &paths.config_file)?
     {
         return Ok(payload);
     }

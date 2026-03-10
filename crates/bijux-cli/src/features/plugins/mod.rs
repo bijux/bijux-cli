@@ -7,6 +7,7 @@ mod discovery;
 mod errors;
 mod manifest;
 mod models;
+pub(crate) mod operations;
 mod registry;
 /// Plugin scaffolding helpers for manifest and starter files.
 pub(crate) mod scaffold;

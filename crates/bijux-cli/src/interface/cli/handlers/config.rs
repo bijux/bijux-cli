@@ -1,63 +1,54 @@
 #![forbid(unsafe_code)]
 //! `config` command handlers.
 
-use crate::features::config::service::{
-    ConfigService, DefaultConfigService, StaticConfigPathProvider,
-};
-use crate::features::config::storage::FileConfigRepository;
-use crate::features::install::CompatibilityPaths;
-use crate::shared::argv::{command_option_value, command_positionals};
+use std::io::{self, IsTerminal, Read};
+use std::path::{Path, PathBuf};
+
 use anyhow::{anyhow, Result};
 use serde_json::Value;
-use std::io::{self, IsTerminal, Read};
-use std::path::PathBuf;
+
+use crate::features::config::operations as config_operations;
+use crate::shared::argv::{command_option_value, command_positionals};
 
 pub(crate) fn execute_config_command(
     normalized_path: &[String],
     argv: &[String],
-    paths: &CompatibilityPaths,
+    config_file: &Path,
 ) -> Result<Option<Value>> {
-    let service = DefaultConfigService::new(
-        StaticConfigPathProvider::new(paths.config_file.clone()),
-        FileConfigRepository,
-    );
-
     let result = match normalized_path {
-        [a] if a == "config" => {
-            Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
-        }
+        [a] if a == "config" => Some(config_operations::list_entries(config_file)?),
         [a, b] if a == "config" && b == "list" => {
-            Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::list_entries(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "list" => {
-            Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::list_entries(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             let positional = command_positionals(argv, &["cli", "config", "get"]);
             let raw_key =
                 positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
-            Some(service.get_value(raw_key).map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::get_value(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "set" => {
             let positional = command_positionals(argv, &["cli", "config", "set"]);
             let raw_pair = positional.first().cloned().or_else(read_pair_from_stdin_fallback);
             let raw_pair =
                 raw_pair.ok_or_else(|| anyhow!("Missing argument: KEY=VALUE required"))?;
-            Some(service.set_pair(&raw_pair).map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::set_pair(config_file, &raw_pair)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "unset" => {
             let positional = command_positionals(argv, &["cli", "config", "unset"]);
             let raw_key =
                 positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
-            Some(service.unset_key(raw_key).map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::unset_key(config_file, raw_key)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "clear" => {
             let _ = command_positionals(argv, &["cli", "config", "clear"]);
-            Some(service.clear_all().map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::clear_all(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "reload" => {
             let _ = command_positionals(argv, &["cli", "config", "reload"]);
-            Some(service.reload().map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::reload(config_file)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "export" => {
             let positional = command_positionals(argv, &["cli", "config", "export"]);
@@ -68,17 +59,13 @@ pub(crate) fn execute_config_command(
                 return Err(anyhow!("Unsupported format: text"));
             }
             let target_path = PathBuf::from(raw_path);
-            Some(service.export_to(&target_path).map_err(|err| anyhow!(err.to_string()))?)
+            Some(config_operations::export_to(config_file, &target_path)?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "load" => {
             let positional = command_positionals(argv, &["cli", "config", "load"]);
             let raw_path = positional.first().ok_or_else(|| anyhow!("Missing parameter: path"))?;
             let source_path = PathBuf::from(raw_path);
-            Some(
-                service
-                    .load_from(&source_path)
-                    .map_err(|err| anyhow!("Failed to load config: {}", err))?,
-            )
+            Some(config_operations::load_from(config_file, &source_path)?)
         }
         _ => None,
     };
