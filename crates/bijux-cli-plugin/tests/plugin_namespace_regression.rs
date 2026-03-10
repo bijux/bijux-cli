@@ -7,6 +7,7 @@ use std::sync::{Arc, Barrier};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_contracts as _;
+use bijux_cli_contracts::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_plugin::{
     install_plugin, load_registry, InstallPluginRequest, PluginError, PluginTrustLevel,
 };
@@ -129,7 +130,7 @@ fn rejects_future_official_product_namespaces() {
     let root = temp_dir("future-product-ns");
     let registry_path = root.join("registry.json");
 
-    for namespace in ["atlas", "cloud", "ops", "security"] {
+    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
         let error = install_plugin(
             &registry_path,
             InstallPluginRequest {
@@ -140,6 +141,29 @@ fn rejects_future_official_product_namespaces() {
             "0.1.0",
         )
         .expect_err("future product namespace should fail");
+        assert!(matches!(
+            error,
+            PluginError::FutureNamespaceConflict(_) | PluginError::ReservedNamespace(_)
+        ));
+    }
+}
+
+#[test]
+fn official_namespace_registry_changes_flow_into_plugin_validation() {
+    let root = temp_dir("official-registry-flow");
+    let registry_path = root.join("registry.json");
+
+    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
+        let error = install_plugin(
+            &registry_path,
+            InstallPluginRequest {
+                manifest_text: manifest_text(namespace, "official-registry-alias"),
+                source: format!("local:/tmp/{namespace}"),
+                trust_level: PluginTrustLevel::Community,
+            },
+            "0.1.0",
+        )
+        .expect_err("official registry namespace must be rejected");
         assert!(matches!(
             error,
             PluginError::FutureNamespaceConflict(_) | PluginError::ReservedNamespace(_)

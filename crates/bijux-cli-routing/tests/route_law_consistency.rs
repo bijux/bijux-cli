@@ -2,8 +2,9 @@
 //! Route-law consistency checks across root, cli/dev cli, and plugin dispatch.
 
 use bijux_cli_contracts as _;
+use bijux_cli_contracts::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_routing::catalog::normalize_command_path;
-use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
+use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
 use clap as _;
 use proptest as _;
 use serde as _;
@@ -38,7 +39,6 @@ fn root_cli_and_dev_cli_paths_follow_one_route_law() {
 fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("community").expect("plugin register");
-    registry.register_plugin_namespace("atlas").expect("plugin register");
 
     let plugin = registry
         .resolve(&["community".to_string(), "status".to_string()])
@@ -49,6 +49,28 @@ fn plugin_namespace_dispatch_stays_predictable_with_builtin_roots() {
         .resolve(&["dev".to_string(), "cli".to_string(), "routes".to_string()])
         .expect("builtin route should resolve");
     assert!(matches!(builtin, RouteTarget::BuiltIn));
+}
+
+#[test]
+fn route_tree_marks_official_product_namespaces_as_reserved() {
+    let registry = RouteRegistry::default();
+    let tree = registry.route_tree();
+    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
+        assert!(tree.iter().any(|item| {
+            item.name.0 == *namespace && item.reserved && item.owner == "bijux-cli"
+        }));
+    }
+}
+
+#[test]
+fn official_product_namespace_registry_drives_routing_rejections() {
+    let mut registry = RouteRegistry::default();
+    for namespace in OFFICIAL_PRODUCT_NAMESPACES {
+        let err = registry
+            .register_plugin_namespace(namespace)
+            .expect_err("official product namespace must stay reserved");
+        assert!(matches!(err, RouteError::Reserved(_)));
+    }
 }
 
 #[test]

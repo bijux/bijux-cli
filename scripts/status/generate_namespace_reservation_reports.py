@@ -14,6 +14,7 @@ ROUTING_TEST = ROOT / "crates" / "bijux-cli-routing" / "tests" / "registry_names
 PLUGIN_TEST = ROOT / "crates" / "bijux-cli-plugin" / "tests" / "plugin_namespace_regression.rs"
 CLI_TEST = ROOT / "crates" / "bijux-cli-bin" / "tests" / "plugin_cli_lifecycle.rs"
 CONSTANTS = ROOT / "crates" / "bijux-cli-plugin" / "src" / "constants.rs"
+PRODUCT_REGISTRY = ROOT / "docs" / "constitution" / "official_product_namespace_registry.json"
 
 
 def extract_array(text: str, const_name: str) -> list[str]:
@@ -35,6 +36,7 @@ def main() -> int:
     plugin_text = PLUGIN_TEST.read_text(encoding="utf-8")
     cli_text = CLI_TEST.read_text(encoding="utf-8")
     constants = CONSTANTS.read_text(encoding="utf-8")
+    product_registry = json.loads(PRODUCT_REGISTRY.read_text(encoding="utf-8"))
 
     abuse_checks = [
         ("421", "official_reserved_namespaces_take_precedence"),
@@ -87,7 +89,8 @@ def main() -> int:
         "reserved_namespaces": reserved,
         "core_namespaces": core,
         "future_product_namespaces": future,
-        "canonical_source": "crates/bijux-cli-plugin/src/constants.rs",
+        "canonical_source": "docs/constitution/official_product_namespace_registry.json",
+        "registry_entries": product_registry.get("entries", []),
     }
 
     STATUS.mkdir(parents=True, exist_ok=True)

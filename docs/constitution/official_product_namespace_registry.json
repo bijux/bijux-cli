@@ -1,0 +1,20 @@
+{
+  "schema_version": "v1",
+  "owner": "bijux-cli",
+  "policy": "reserve only namespaces that map to active or near-term official product binaries",
+  "entries": [
+    {
+      "namespace": "atlas",
+      "runtime_binary": "bijux-atlas",
+      "control_binary": "bijux-dev-atlas",
+      "status": "active"
+    },
+    {
+      "namespace": "dag",
+      "runtime_binary": "bijux-dag",
+      "control_binary": "bijux-dev-dag",
+      "status": "reserved"
+    }
+  ],
+  "placeholder_entries": []
+}

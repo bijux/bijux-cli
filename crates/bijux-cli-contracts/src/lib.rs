@@ -17,5 +17,5 @@ pub use contracts::{
     InspectReport, InvocationEvent, InvocationTrace, LogLevel, MemoryKeyList, MemorySummary,
     Namespace, NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
     PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
-    ResolvedConfigValue, RouteSourceMetadata,
+    ProductMountMetadata, ResolvedConfigValue, RouteSourceMetadata, OFFICIAL_PRODUCT_NAMESPACES,
 };

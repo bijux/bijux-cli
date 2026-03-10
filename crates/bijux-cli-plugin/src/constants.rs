@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+use bijux_cli_contracts::OFFICIAL_PRODUCT_NAMESPACES;
+
 /// Registry schema version.
 pub const REGISTRY_VERSION: &str = "1";
 
@@ -11,7 +13,7 @@ pub const RESERVED_NAMESPACES: &[&str] =
 pub const CORE_NAMESPACES: &[&str] = &["cli", "dev"];
 
 /// Reserved namespaces for future official Bijux product mounts.
-pub const FUTURE_PRODUCT_NAMESPACES: &[&str] = &["atlas", "cloud", "ops", "security"];
+pub const FUTURE_PRODUCT_NAMESPACES: &[&str] = OFFICIAL_PRODUCT_NAMESPACES;
 
 /// Return true if namespace is reserved for core or compatibility behavior.
 #[must_use]

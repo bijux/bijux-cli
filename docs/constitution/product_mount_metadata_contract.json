@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name": "product_mount_metadata",
+  "required_fields": [
+    "namespace",
+    "runtime_binary",
+    "control_binary"
+  ],
+  "optional_fields": [
+    "status"
+  ],
+  "notes": [
+    "No dynamic loading contract is promised.",
+    "No external ABI contract is promised.",
+    "No network registry contract is promised."
+  ]
+}

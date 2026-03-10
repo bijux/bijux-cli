@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use bijux_cli_contracts::{CommandPath, Namespace, NamespaceMetadata};
+use bijux_cli_contracts::{CommandPath, Namespace, NamespaceMetadata, OFFICIAL_PRODUCT_NAMESPACES};
 
 /// Route target categories.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -154,7 +154,7 @@ impl Default for RouteRegistry {
             ("dev state-doctor".to_string(), "dev cli state-doctor".to_string()),
         ]);
 
-        let reserved = BTreeSet::from([
+        let mut reserved = BTreeSet::from([
             "cli".to_string(),
             "dev".to_string(),
             "help".to_string(),
@@ -165,6 +165,7 @@ impl Default for RouteRegistry {
             "completion".to_string(),
             "inspect".to_string(),
         ]);
+        reserved.extend(OFFICIAL_PRODUCT_NAMESPACES.iter().map(|ns| ns.to_string()));
 
         Self { built_ins, plugin_namespaces: BTreeSet::new(), aliases, reserved }
     }

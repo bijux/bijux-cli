@@ -2,6 +2,7 @@
 //! Registry precedence and namespace-policy tests.
 
 use bijux_cli_contracts as _;
+use bijux_cli_contracts::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
 use clap as _;
 use proptest as _;
@@ -21,6 +22,13 @@ fn official_reserved_namespaces_take_precedence() {
         assert!(
             matches!(result, Err(RouteError::Reserved(_))),
             "expected reserved rejection for {ns}"
+        );
+    }
+    for ns in OFFICIAL_PRODUCT_NAMESPACES {
+        let result = registry.register_plugin_namespace(ns);
+        assert!(
+            matches!(result, Err(RouteError::Reserved(_))),
+            "expected reserved rejection for official namespace {ns}"
         );
     }
 }

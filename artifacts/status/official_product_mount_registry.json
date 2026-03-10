@@ -1,0 +1,24 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_product_mount_readiness_reports.py",
+  "registry": {
+    "entries": [
+      {
+        "control_binary": "bijux-dev-atlas",
+        "namespace": "atlas",
+        "runtime_binary": "bijux-atlas",
+        "status": "active"
+      },
+      {
+        "control_binary": "bijux-dev-dag",
+        "namespace": "dag",
+        "runtime_binary": "bijux-dag",
+        "status": "reserved"
+      }
+    ],
+    "owner": "bijux-cli",
+    "placeholder_entries": [],
+    "policy": "reserve only namespaces that map to active or near-term official product binaries",
+    "schema_version": "v1"
+  }
+}

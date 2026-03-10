@@ -2,3 +2,4 @@
 # Format: scripts/path/to/file.py # reason
 scripts/status/generate_plugin_scaffold_reports.py # generate scaffold file inventory, diff, and justification artifacts used by CI and status evidence
 scripts/status/enforce_plugin_scaffold_policy.py # enforce that every scaffolded file is justified and decorative files stay excluded
+scripts/status/generate_product_mount_readiness_reports.py # produce product-mount reservation registry/readiness/gap artifacts from canonical policy sources

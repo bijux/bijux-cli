@@ -1,0 +1,35 @@
+{
+  "canonical_source": "docs/constitution/official_product_namespace_registry.json",
+  "core_namespaces": [
+    "cli",
+    "dev"
+  ],
+  "future_product_namespaces": [],
+  "generated_at": "2026-03-10T02:16:14.016994+00:00",
+  "generator": "scripts/status/generate_namespace_reservation_reports.py",
+  "registry_entries": [
+    {
+      "control_binary": "bijux-dev-atlas",
+      "namespace": "atlas",
+      "runtime_binary": "bijux-atlas",
+      "status": "active"
+    },
+    {
+      "control_binary": "bijux-dev-dag",
+      "namespace": "dag",
+      "runtime_binary": "bijux-dag",
+      "status": "reserved"
+    }
+  ],
+  "reserved_namespaces": [
+    "cli",
+    "completion",
+    "dev",
+    "doctor",
+    "help",
+    "inspect",
+    "plugins",
+    "repl",
+    "version"
+  ]
+}

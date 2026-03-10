@@ -14,6 +14,8 @@ pub mod execution;
 pub mod marker;
 /// Plugin manifest and compatibility contracts.
 pub mod plugin;
+/// Official product-mount reservation contracts.
+pub mod product_mount;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
 pub use config::{
@@ -38,3 +40,4 @@ pub use marker::ContractMarker;
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1,
 };
+pub use product_mount::{OFFICIAL_PRODUCT_NAMESPACES, ProductMountMetadata};

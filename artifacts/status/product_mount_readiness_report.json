@@ -1,0 +1,27 @@
+{
+  "freeze_rule": "future-ready via metadata and tests; no speculative runtime expansion",
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_product_mount_readiness_reports.py",
+  "metadata_contract": {
+    "name": "product_mount_metadata",
+    "notes": [
+      "No dynamic loading contract is promised.",
+      "No external ABI contract is promised.",
+      "No network registry contract is promised."
+    ],
+    "optional_fields": [
+      "status"
+    ],
+    "required_fields": [
+      "namespace",
+      "runtime_binary",
+      "control_binary"
+    ],
+    "schema_version": "v1"
+  },
+  "official_namespaces": [
+    "atlas",
+    "dag"
+  ],
+  "placeholder_entries": []
+}

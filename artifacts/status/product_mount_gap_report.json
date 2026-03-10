@@ -1,0 +1,10 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_product_mount_readiness_reports.py",
+  "not_committed": [
+    "dynamic product runtime loading",
+    "external ABI stability guarantee for product plugins",
+    "network-distributed namespace registry"
+  ],
+  "why_missing": "kept intentionally out to avoid speculative core complexity"
+}

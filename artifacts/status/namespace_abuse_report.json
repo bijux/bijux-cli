@@ -1,0 +1,96 @@
+{
+  "generated_at": "2026-03-10T02:16:14.016994+00:00",
+  "generator": "scripts/status/generate_namespace_reservation_reports.py",
+  "rows": [
+    {
+      "evidence_test": "official_reserved_namespaces_take_precedence",
+      "status": "complete",
+      "todo": 421
+    },
+    {
+      "evidence_test": "official_reserved_namespaces_take_precedence",
+      "status": "complete",
+      "todo": 422
+    },
+    {
+      "evidence_test": "official_reserved_namespaces_take_precedence",
+      "status": "complete",
+      "todo": 423
+    },
+    {
+      "evidence_test": "official_reserved_namespaces_take_precedence",
+      "status": "complete",
+      "todo": 424
+    },
+    {
+      "evidence_test": "official_reserved_namespaces_take_precedence",
+      "status": "complete",
+      "todo": 425
+    },
+    {
+      "evidence_test": "rejects_future_official_product_namespaces",
+      "status": "complete",
+      "todo": 426
+    },
+    {
+      "evidence_test": "normalized_and_case_folded_namespace_collisions_are_rejected",
+      "status": "complete",
+      "todo": 427
+    },
+    {
+      "evidence_test": "normalized_and_case_folded_namespace_collisions_are_rejected",
+      "status": "complete",
+      "todo": 428
+    },
+    {
+      "evidence_test": "hidden_alias_paths_remain_builtin_when_namespace_resembles_alias_tail",
+      "status": "complete",
+      "todo": 429
+    },
+    {
+      "evidence_test": "plugin_uninstall_followed_by_reinstall_succeeds",
+      "status": "complete",
+      "todo": 430
+    },
+    {
+      "evidence_test": "concurrent_install_attempts_same_namespace_keep_registry_consistent",
+      "status": "complete",
+      "todo": 431
+    },
+    {
+      "evidence_test": "concurrent_registration_on_normalized_equivalent_namespaces_yields_single_winner",
+      "status": "complete",
+      "todo": 432
+    },
+    {
+      "evidence_test": "namespace_conflict_failure_does_not_mutate_existing_registry_entries",
+      "status": "complete",
+      "todo": 433
+    },
+    {
+      "evidence_test": "reserved_namespace_rejections_emit_clear_machine_readable_errors",
+      "status": "complete",
+      "todo": 434
+    },
+    {
+      "evidence_test": "reserved_namespace_rejections_emit_clear_machine_readable_errors",
+      "status": "complete",
+      "todo": 435
+    },
+    {
+      "evidence_test": "reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces",
+      "status": "complete",
+      "todo": 436
+    },
+    {
+      "evidence_test": "reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces",
+      "status": "complete",
+      "todo": 437
+    }
+  ],
+  "scope": "421-440 namespace and reservation abuse hardening",
+  "summary": {
+    "complete": 17,
+    "missing": 0
+  }
+}
