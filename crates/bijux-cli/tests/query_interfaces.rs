@@ -3,7 +3,7 @@
 
 use std::fs;
 
-use bijux_cli::query::{parity_status_query, state_diagnostics_query};
+use bijux_cli::features::diagnostics::{parity_status_query, state_diagnostics_query};
 
 #[test]
 fn state_diagnostics_query_shape_is_stable() {

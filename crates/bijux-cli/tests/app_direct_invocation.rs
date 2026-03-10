@@ -2,7 +2,7 @@
 //! Direct core invocation and parity-oriented policy tests.
 
 use anyhow as _;
-use bijux_cli::app::run_app;
+use bijux_cli::interface::cli::dispatch::run_app;
 use bijux_cli::kernel::{
     map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
 };

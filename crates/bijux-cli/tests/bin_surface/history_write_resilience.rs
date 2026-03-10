@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use bijux_cli as _;
-use bijux_cli::repl::{
+use bijux_cli::interface::repl::{
     configure_history, execute_repl_line, flush_history, load_history, startup_repl,
 };
 use bijux_cli_python as _;

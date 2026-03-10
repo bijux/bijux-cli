@@ -9,5 +9,5 @@ use bijux_cli_python as _;
 use libc as _;
 
 fn main() -> ExitCode {
-    bijux_cli::entrypoint::run_cli_from_env()
+    bijux_cli::bootstrap::run::run_cli_from_env()
 }

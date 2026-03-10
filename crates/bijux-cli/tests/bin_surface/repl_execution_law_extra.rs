@@ -5,8 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Output};
 
-use bijux_cli::app::run_app;
-use bijux_cli::repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput};
+use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::interface::repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput};
 use bijux_cli_python as _;
 use libc as _;
 use serde_json::Value;

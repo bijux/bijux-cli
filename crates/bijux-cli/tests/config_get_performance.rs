@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow as _;
-use bijux_cli::app::run_app;
+use bijux_cli::interface::cli::dispatch::run_app;
 use clap as _;
 use futures as _;
 use serde_json as _;

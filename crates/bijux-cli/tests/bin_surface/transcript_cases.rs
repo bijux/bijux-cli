@@ -7,8 +7,8 @@ use std::fs;
 use std::time::{Duration, Instant};
 
 use bijux_cli as _;
-use bijux_cli::app::run_app;
-use bijux_cli::repl::{
+use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::interface::repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line,
     inspect_last_error, load_history, register_plugin_completion_hook, repl_argv_from_line,
     startup_repl, startup_repl_with_diagnostics, ReplEvent, ReplInput,
@@ -221,7 +221,7 @@ fn transcript_case_command_failure_recovery_and_syntax_errors() {
     let failed = execute_repl_line(&mut session, "inspect unexpected")
         .expect("execution should return frame");
     let failed_frame = failed.expect("failure should emit frame");
-    assert_eq!(failed_frame.stream, bijux_cli::repl::ReplStream::Stderr);
+    assert_eq!(failed_frame.stream, bijux_cli::interface::repl::ReplStream::Stderr);
     assert!(failed_frame.content.contains("Usage: bijux"));
 
     let recovered = execute_repl_line(&mut session, "status").expect("session should recover");
@@ -299,7 +299,7 @@ fn reserved_namespace_collision_diagnostics_are_reported_in_session() {
     )
     .expect("command should execute");
     let failure = frame.expect("expected diagnostics frame");
-    assert_eq!(failure.stream, bijux_cli::repl::ReplStream::Stderr);
+    assert_eq!(failure.stream, bijux_cli::interface::repl::ReplStream::Stderr);
     assert!(failure.content.contains("reserved"));
 }
 
@@ -346,7 +346,7 @@ fn repl_startup_latency_stays_within_loaded_registry_budget() {
 fn repl_output_parity_with_non_interactive_cli_for_status() {
     let (mut session, _) = startup_repl("default", None);
     let repl = execute_repl_line(&mut session, "status").expect("repl status").expect("repl frame");
-    assert_eq!(repl.stream, bijux_cli::repl::ReplStream::Stdout);
+    assert_eq!(repl.stream, bijux_cli::interface::repl::ReplStream::Stdout);
     let repl_value: serde_json::Value = serde_json::from_str(&repl.content).expect("repl json");
 
     let cli = run_app(&[

@@ -110,7 +110,7 @@ pub fn build_report(input: RuntimeIdentityInput) -> Value {
         },
         "entrypoints": {
             "binary": "crates/bijux-cli/src/bin/bijux-rs.rs",
-            "core": "bijux_cli::app::run_app",
+            "core": "bijux_cli::interface::cli::dispatch::run_app",
             "python_bridge": "bijux_cli_python::bindings::execution_facade_api",
         },
         "package_channels": {

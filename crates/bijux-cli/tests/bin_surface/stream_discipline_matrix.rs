@@ -5,7 +5,7 @@
 use std::process::{Command, Output};
 
 use bijux_cli as _;
-use bijux_cli::repl::{execute_repl_line, startup_repl};
+use bijux_cli::interface::repl::{execute_repl_line, startup_repl};
 use bijux_cli_python as _;
 use bijux_cli_python::execution_outcome_api;
 use libc as _;

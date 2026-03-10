@@ -76,7 +76,8 @@ fn failure_output_routes_to_stderr_and_not_stdout() {
 #[test]
 fn bin_and_core_outputs_match_for_same_argv() {
     let argv = vec!["bijux-rs".to_string(), "cli".to_string(), "status".to_string()];
-    let core = bijux_cli::app::run_app(&argv).expect("core run_app should succeed");
+    let core =
+        bijux_cli::interface::cli::dispatch::run_app(&argv).expect("core run_app should succeed");
 
     let out = run_with(&["cli", "status"]);
     assert_eq!(out.status.code(), Some(core.exit_code));

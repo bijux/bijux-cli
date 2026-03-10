@@ -7,8 +7,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Output};
 
-use bijux_cli::app::run_app;
-use bijux_cli::repl::{execute_repl_line, startup_repl};
+use bijux_cli::interface::cli::dispatch::run_app;
+use bijux_cli::interface::repl::{execute_repl_line, startup_repl};
 use bijux_cli_python as _;
 use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use libc as _;

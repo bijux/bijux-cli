@@ -7,7 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use bijux_cli as _;
-use bijux_cli::repl::{
+use bijux_cli::interface::repl::{
     check_repl_budgets, completion_candidates, configure_history, execute_repl_input,
     execute_repl_line, flush_history, inspect_last_error, load_history,
     register_plugin_completion_hook, render_repl_command_reference, replay_history_command,
@@ -106,7 +106,7 @@ fn completion_rendering_and_history_replay_work() {
 fn startup_without_config_and_with_broken_plugins_is_supported() {
     let (_plain, _startup) = startup_repl("default", None);
     let (_session, _startup, diagnostics) =
-        bijux_cli::repl::startup_repl_with_diagnostics("default", None, &["community"]);
+        bijux_cli::interface::repl::startup_repl_with_diagnostics("default", None, &["community"]);
     assert_eq!(diagnostics.len(), 1);
 }
 
