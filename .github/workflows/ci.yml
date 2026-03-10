@@ -438,6 +438,8 @@ jobs:
             artifacts/status/what_is_partial.json
             artifacts/status/what_is_deferred.json
             artifacts/status/what_is_intentionally_different.json
+            artifacts/status/what_is_unproven.json
+            artifacts/status/next_200_todos.json
           if-no-files-found: warn
           retention-days: 14
 

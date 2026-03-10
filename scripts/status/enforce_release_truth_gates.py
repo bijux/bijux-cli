@@ -24,6 +24,7 @@ STATUS_FILES = [
     STATUS_DIR / "what_is_partial.json",
     STATUS_DIR / "what_is_deferred.json",
     STATUS_DIR / "what_is_intentionally_different.json",
+    STATUS_DIR / "what_is_unproven.json",
 ]
 
 
@@ -83,8 +84,10 @@ def main() -> int:
     public_claim_docs = [
         ROOT / "docs" / "HONEST_STATUS.md",
         ROOT / "docs" / "KNOWN_GAPS.md",
+        ROOT / "docs" / "WHAT_WE_WONT_CLAIM.md",
         ROOT / "docs" / "STABILITY_AND_BREAKAGE.md",
         ROOT / "docs" / "CONTRIBUTOR_ENGINEERING_RULES.md",
+        ROOT / "docs" / "MAINTAINER_MILESTONE_CHECKLIST.md",
         ROOT / "docs" / "index.md",
     ]
     docs = "\n".join(read_text(path) for path in public_claim_docs if path.exists())
@@ -94,6 +97,7 @@ def main() -> int:
     docs_audit = read_json(DOCS_AUDIT)
     plugin_state = read_json(PLUGIN_STATE)
     crate_metrics = read_json(CRATE_BOUNDARY_METRICS)
+    runtime_unity = read_json(STATUS_DIR / "runtime_unity_report.json")
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -104,18 +108,31 @@ def main() -> int:
     if has_claim(r"rust[-\s]*first\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
             failures.append("rust-first-complete claim blocked: parity matrix not converged")
+        elif not runtime_unity.get("ok", False):
+            failures.append("rust-first-complete claim blocked: runtime unity report is not healthy")
 
     if has_claim(r"plugin\s+system\s+complete", claims_text):
         partial = plugin_state.get("plugin_commands", {}).get("partial", [])
         if isinstance(partial, list) and partial:
             failures.append("plugin-system-complete claim blocked: plugin report still lists partial commands")
+        if not plugin_state.get("overlap_parity_tests"):
+            failures.append("plugin-system-complete claim blocked: plugin parity evidence is missing")
+        if not plugin_state.get("remaining_gaps") == []:
+            failures.append("plugin-system-complete claim blocked: plugin remaining gaps are not empty")
 
-    if has_claim(r"docs\s+done", claims_text):
+    if has_claim(r"docs\s+(done|cleaned\s*up)", claims_text):
+        if not docs_audit:
+            failures.append("docs-cleaned-up claim blocked: docs audit evidence missing")
+        markdown_count = int(docs_audit.get("markdown_count", 0))
+        if markdown_count <= 0:
+            failures.append("docs-cleaned-up claim blocked: docs audit does not include markdown inventory")
         markdown_count = int(docs_audit.get("markdown_count", 0))
         if markdown_count > int(docs_audit.get("target_long_form_docs_cap", 60)):
             failures.append(f"docs-done claim blocked: markdown_count={markdown_count} exceeds cap")
 
     if has_claim(r"tests\s+strong", claims_text):
+        if not TEST_AUDIT.exists():
+            failures.append("tests-strong claim blocked: test quality audit evidence missing")
         weak_count = weak_test_count()
         weak_threshold = 6
         if weak_count > weak_threshold:
