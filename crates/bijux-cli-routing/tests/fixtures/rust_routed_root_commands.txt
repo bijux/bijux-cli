@@ -6,6 +6,7 @@ version
 repl
 completion
 inspect
+atlas
 config
 history
 memory

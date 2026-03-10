@@ -2,6 +2,7 @@ cli status
 cli paths
 cli self-test
 cli config get
+cli config list
 cli config set
 cli config unset
 cli config clear
@@ -9,6 +10,7 @@ cli config reload
 cli config export
 cli config load
 cli plugins list
+cli plugins info
 cli plugins inspect
 cli plugins check
 cli plugins install

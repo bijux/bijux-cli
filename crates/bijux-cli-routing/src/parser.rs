@@ -151,6 +151,7 @@ pub fn root_command() -> Command {
 
     let config_group = Command::new("config")
         .subcommand_required(false)
+        .subcommand(Command::new("list"))
         .subcommand(Command::new("get").arg(Arg::new("key").num_args(1)))
         .subcommand(Command::new("set").arg(Arg::new("pair").num_args(1)))
         .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
@@ -161,6 +162,7 @@ pub fn root_command() -> Command {
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
+        .subcommand(Command::new("info"))
         .subcommand(Command::new("inspect"))
         .subcommand(Command::new("check").arg(Arg::new("plugin").num_args(1)))
         .subcommand(Command::new("enable").arg(Arg::new("plugin").num_args(1)))
@@ -217,10 +219,18 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("runtime-identity"))
         .subcommand(Command::new("docs-prune-plan"))
         .subcommand(Command::new("state-audit"))
-        .subcommand(Command::new("state-doctor"));
+        .subcommand(Command::new("state-doctor"))
+        .subcommand(Command::new("atlas").hide(true))
+        .subcommand(Command::new("di").hide(true))
+        .subcommand(Command::new("list-products").hide(true))
+        .subcommand(Command::new("list-plugins").hide(true));
 
     let dev_group = Command::new("dev")
         .subcommand(dev_cli_group.clone())
+        .subcommand(Command::new("atlas").hide(true))
+        .subcommand(Command::new("di").hide(true))
+        .subcommand(Command::new("list-products").hide(true))
+        .subcommand(Command::new("list-plugins").hide(true))
         // Legacy path support normalized later to `dev cli ...`.
         .subcommand(Command::new("route-audit").hide(true))
         .subcommand(Command::new("inventory").hide(true))
@@ -266,13 +276,22 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("repl"))
         .subcommand(Command::new("completion"))
         .subcommand(Command::new("inspect"))
+        .subcommand(Command::new("atlas"))
         .subcommand(
             Command::new("history")
+                .subcommand(Command::new("clear"))
                 .arg(Arg::new("limit").long("limit").short('l').num_args(1))
                 .arg(Arg::new("filter").long("filter").short('F').num_args(1))
                 .arg(Arg::new("sort").long("sort").num_args(1)),
         )
-        .subcommand(Command::new("memory").subcommand(Command::new("list")))
+        .subcommand(
+            Command::new("memory")
+                .subcommand(Command::new("list"))
+                .subcommand(Command::new("get").arg(Arg::new("key").num_args(1)))
+                .subcommand(Command::new("set").arg(Arg::new("pair").num_args(1)))
+                .subcommand(Command::new("delete").arg(Arg::new("key").num_args(1)))
+                .subcommand(Command::new("clear")),
+        )
 }
 
 fn extract_path(matches: &ArgMatches) -> Vec<String> {

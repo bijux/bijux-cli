@@ -30,6 +30,12 @@ pub(crate) fn execute_config_command(
         [a] if a == "config" => {
             Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
         }
+        [a, b] if a == "config" && b == "list" => {
+            Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "list" => {
+            Some(service.list_entries().map_err(|err| anyhow!(err.to_string()))?)
+        }
         [a, b, c] if a == "cli" && b == "config" && c == "get" => {
             let positional = command_positionals(argv, &["cli", "config", "get"]);
             let raw_key =

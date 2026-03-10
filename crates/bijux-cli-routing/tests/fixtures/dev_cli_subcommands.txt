@@ -20,3 +20,7 @@ dev cli runtime-identity
 dev cli docs-prune-plan
 dev cli state-audit
 dev cli state-doctor
+dev cli atlas
+dev cli di
+dev cli list-products
+dev cli list-plugins

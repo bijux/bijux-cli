@@ -395,6 +395,15 @@ fn read_history_entries(path: &Path, limit: usize) -> Result<Vec<Value>> {
     Ok(entries)
 }
 
+fn write_history_entries(path: &Path, entries: &[Value]) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let payload = serde_json::to_string_pretty(entries)?;
+    fs::write(path, format!("{payload}\n"))?;
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 struct ResolvedStatePaths {
     config_file: PathBuf,
@@ -445,6 +454,15 @@ fn read_memory_map(path: &Path) -> Result<serde_json::Map<String, Value>> {
         anyhow::bail!("Malformed memory state: expected JSON object");
     };
     Ok(object.clone())
+}
+
+fn write_memory_map(path: &Path, memory: &serde_json::Map<String, Value>) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let payload = serde_json::to_string_pretty(memory)?;
+    fs::write(path, format!("{payload}\n"))?;
+    Ok(())
 }
 
 fn state_path_status(path: &Path) -> Value {
@@ -611,10 +629,27 @@ fn route_response(
     let _ = registry.register_plugin_namespace("community");
 
     let target = match normalized_path {
-        [a] if a == "config" || a == "history" || a == "memory" => RouteTarget::BuiltIn,
+        [a]
+            if a == "config"
+                || a == "history"
+                || a == "memory"
+                || a == "plugins"
+                || a == "dev"
+                || a == "atlas" =>
+        {
+            RouteTarget::BuiltIn
+        }
+        [a, b] if a == "history" && b == "clear" => RouteTarget::BuiltIn,
+        [a, b]
+            if a == "memory"
+                && (b == "list" || b == "get" || b == "set" || b == "delete" || b == "clear") =>
+        {
+            RouteTarget::BuiltIn
+        }
         [a, b]
             if a == "plugins"
                 && (b == "list"
+                    || b == "info"
                     || b == "inspect"
                     || b == "check"
                     || b == "reserved-names"
@@ -728,6 +763,12 @@ fn route_response(
                 "topics": ["commands", "configuration", "plugins", "repl", "diagnostics"],
             })
         }
+        [a] if a == "atlas" => {
+            json!({
+                "status": "ok",
+                "mount": "atlas",
+            })
+        }
         [a] if a == "sleep" => {
             let duration_secs = argv
                 .get(2)
@@ -801,6 +842,13 @@ fn route_response(
             }
             json!({"entries": entries})
         }
+        [a, b] if a == "history" && b == "clear" => {
+            let removed = read_history_entries(&paths.history_file, usize::MAX)
+                .map(|entries| entries.len())
+                .unwrap_or(0);
+            write_history_entries(&paths.history_file, &[])?;
+            json!({"status": "cleared", "removed_entries": removed, "file": paths.history_file})
+        }
         [a] if a == "memory" => {
             let memory = read_memory_map(&paths.memory_file)?;
             json!({"status": "ok", "count": memory.len(), "message": "Memory command executed"})
@@ -811,11 +859,113 @@ fn route_response(
             keys.sort_unstable();
             json!({"status": "ok", "keys": keys, "count": keys.len()})
         }
+        [a, b] if a == "memory" && b == "get" => {
+            let key = command_positionals(argv, &["memory", "get"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY required"))?;
+            let memory = read_memory_map(&paths.memory_file)?;
+            json!({"status": "ok", "key": key, "value": memory.get(&key).cloned()})
+        }
+        [a, b] if a == "memory" && b == "set" => {
+            let raw_pair = command_positionals(argv, &["memory", "set"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY=VALUE required"))?;
+            let (key, value) = raw_pair
+                .split_once('=')
+                .ok_or_else(|| anyhow::anyhow!("Invalid argument: expected KEY=VALUE"))?;
+            let mut memory = read_memory_map(&paths.memory_file)?;
+            memory.insert(key.trim().to_string(), Value::String(value.trim().to_string()));
+            write_memory_map(&paths.memory_file, &memory)?;
+            json!({"status": "updated", "key": key.trim(), "value": value.trim(), "file": paths.memory_file})
+        }
+        [a, b] if a == "memory" && b == "delete" => {
+            let key = command_positionals(argv, &["memory", "delete"])
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("Missing argument: KEY required"))?;
+            let mut memory = read_memory_map(&paths.memory_file)?;
+            let existed = memory.remove(&key).is_some();
+            write_memory_map(&paths.memory_file, &memory)?;
+            json!({"status": "deleted", "key": key, "removed": existed, "file": paths.memory_file})
+        }
+        [a, b] if a == "memory" && b == "clear" => {
+            let removed = read_memory_map(&paths.memory_file)?.len();
+            write_memory_map(&paths.memory_file, &serde_json::Map::new())?;
+            json!({"status": "cleared", "removed_keys": removed, "file": paths.memory_file})
+        }
+        [a] if a == "plugins" => {
+            let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
+            json!({
+                "status": "ok",
+                "count": plugins.len(),
+                "plugins": plugins,
+                "directory": paths.plugins_dir,
+            })
+        }
+        [a, b] if a == "plugins" && b == "info" => {
+            let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
+            let warnings =
+                compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                    .unwrap_or_default();
+            json!({
+                "status": "ok",
+                "plugins": plugins,
+                "compatibility_warnings": warnings,
+                "registry_file": plugin_registry_path,
+            })
+        }
         [a, b] if a == "cli" && b == "self-test" => {
             json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
         }
+        [a] if a == "dev" => {
+            json!({
+                "status": "ok",
+                "entry_surface": "dev-cli",
+                "recommended_command": "bijux dev cli status",
+            })
+        }
+        [a, b] if a == "dev" && b == "atlas" => {
+            json!({
+                "status": "ok",
+                "mount": "atlas",
+                "entry_surface": "dev-cli",
+            })
+        }
+        [a, b] if a == "dev" && b == "di" => {
+            json!({
+                "status": "ok",
+                "container": "built-in",
+                "entry_surface": "dev-cli",
+            })
+        }
+        [a, b] if a == "dev" && b == "list-products" => {
+            json!({
+                "status": "ok",
+                "products": FUTURE_PRODUCT_NAMESPACES,
+            })
+        }
+        [a, b] if a == "dev" && b == "list-plugins" => {
+            json!({
+                "status": "ok",
+                "plugins": list_plugins(&plugin_registry_path).unwrap_or_default(),
+            })
+        }
         [a, b, c] if a == "cli" && b == "plugins" && c == "list" => {
             json!({"plugins": list_plugins(&plugin_registry_path).unwrap_or_default(), "directory": paths.plugins_dir})
+        }
+        [a, b, c] if a == "cli" && b == "plugins" && c == "info" => {
+            let plugins = list_plugins(&plugin_registry_path).unwrap_or_default();
+            let warnings =
+                compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION"))
+                    .unwrap_or_default();
+            json!({
+                "status": "ok",
+                "plugins": plugins,
+                "compatibility_warnings": warnings,
+                "registry_file": plugin_registry_path,
+            })
         }
         [a, b, c] if a == "cli" && b == "plugins" && c == "inspect" => {
             json!({
@@ -1038,6 +1188,18 @@ fn route_response(
         [a, b, c] if a == "dev" && b == "cli" && c == "routes" => {
             serde_json::to_value(routes_report(&registry))?
         }
+        [a, b, c] if a == "dev" && b == "cli" && c == "atlas" => {
+            json!({"status": "ok", "mount": "atlas", "entry_surface": "dev-cli"})
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "di" => {
+            json!({"status": "ok", "container": "built-in", "entry_surface": "dev-cli"})
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "list-products" => {
+            json!({"status": "ok", "products": FUTURE_PRODUCT_NAMESPACES})
+        }
+        [a, b, c] if a == "dev" && b == "cli" && c == "list-plugins" => {
+            json!({"status": "ok", "plugins": list_plugins(&plugin_registry_path).unwrap_or_default()})
+        }
         [a, b, c] if a == "dev" && b == "cli" && c == "route-audit" => {
             serde_json::to_value(route_audit_report(&registry))?
         }
@@ -1199,6 +1361,18 @@ fn route_response(
                 root.join("artifacts/status/command_migration_matrix.txt"),
             )
             .unwrap_or_default();
+            let documented_not_proven = read_json_if_exists(
+                &root.join("artifacts/status/documented_python_commands_not_proven_in_rust.json"),
+            );
+            let public_python_paths = read_json_if_exists(
+                &root.join("artifacts/status/public_python_paths_still_reachable.json"),
+            );
+            let legacy_alias_paths = read_json_if_exists(
+                &root.join("artifacts/status/legacy_alias_paths_still_accepted.json"),
+            );
+            let active_compat_shims = read_json_if_exists(
+                &root.join("artifacts/status/compatibility_shims_still_active.json"),
+            );
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1228,6 +1402,10 @@ fn route_response(
                     "python_only": migration_python_only,
                     "intentional_differences": migration_intentional,
                     "text": migration_text,
+                    "documented_python_not_proven": documented_not_proven,
+                    "public_python_paths_still_reachable": public_python_paths,
+                    "legacy_alias_paths_still_accepted": legacy_alias_paths,
+                    "compatibility_shims_still_active": active_compat_shims,
                 },
                 "next_phase_priorities": next_phase,
                 "next_phase_summary_text": next_phase_text,

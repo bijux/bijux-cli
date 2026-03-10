@@ -2,9 +2,11 @@
 //! Canonical command catalog for normalization and route recognition.
 
 const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "inspect", "completion", "repl"];
-const CLI_CONFIG_SUBCOMMANDS: &[&str] = &["get", "set", "unset", "clear", "reload", "export", "load"];
+const CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
+    "info",
     "inspect",
     "check",
     "install",
@@ -41,6 +43,10 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "docs-prune-plan",
     "state-audit",
     "state-doctor",
+    "atlas",
+    "di",
+    "list-products",
+    "list-plugins",
 ];
 const DEV_LEGACY_ALIASES: &[&str] = &[
     "inventory",
@@ -58,6 +64,10 @@ const DEV_LEGACY_ALIASES: &[&str] = &[
     "docs-prune-plan",
     "state-audit",
     "state-doctor",
+    "atlas",
+    "di",
+    "list-products",
+    "list-plugins",
 ];
 
 fn contains(values: &[&str], value: &str) -> bool {
@@ -117,9 +127,12 @@ pub fn is_known_route(path: &[String]) -> bool {
             true
         }
         [a, b, c] if a == "cli" && b == "config" && contains(CLI_CONFIG_SUBCOMMANDS, c) => true,
-        [a] if a == "config" || a == "history" || a == "memory" => true,
-        [a, b] if a == "memory" && b == "list" => true,
-        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" => true,
+        [a] if a == "config" || a == "history" || a == "memory" || a == "plugins" => true,
+        [a, b] if a == "history" && b == "clear" => true,
+        [a, b] if a == "memory" && (b == "list" || b == "get" || b == "set" || b == "delete" || b == "clear") => true,
+        [a] if a == "status" || a == "audit" || a == "docs" || a == "sleep" || a == "atlas" => {
+            true
+        }
         [a, b, c] if a == "cli" && b == "plugins" && contains(CLI_PLUGINS_SUBCOMMANDS, c) => {
             true
         }
