@@ -52,7 +52,9 @@ fn runtime_crates_do_not_import_dev_cli_crate() {
 fn query_interfaces_remain_structured_data_only_without_ui_rendering() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
     let query_files = [
-        "crates/bijux-cli/src/query.rs",
+        "crates/bijux-cli/src/query/mod.rs",
+        "crates/bijux-cli/src/query/state_diagnostics.rs",
+        "crates/bijux-cli/src/query/parity_status.rs",
         "crates/bijux-cli/src/install/query.rs",
         "crates/bijux-cli/src/routing/query.rs",
         "crates/bijux-cli/src/routing/inventory.rs",
