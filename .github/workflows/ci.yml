@@ -275,6 +275,7 @@ jobs:
           python3 scripts/status/generate_parser_abuse_report.py
           python3 scripts/status/generate_parser_fuzz_hardening_reports.py
           python3 scripts/status/generate_route_registry_fuzz_reports.py
+          python3 scripts/status/generate_config_fuzz_hardening_reports.py
           python3 scripts/status/generate_namespace_reservation_reports.py
           python3 scripts/status/generate_reserved_namespace_test_matrix.py
           python3 scripts/status/generate_plugin_lifecycle_test_matrix.py
@@ -560,6 +561,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_route_registry_fuzz_gate.py
 
+      - name: Config fuzz hardening gate
+        run: |
+          python3 scripts/status/enforce_config_fuzz_hardening_gate.py
+
       - name: Deterministic generation gate
         run: |
           python3 scripts/status/check_deterministic_generation.py
@@ -811,6 +816,19 @@ jobs:
             artifacts/status/route_fuzz_regression_artifact.json
             artifacts/status/registry_fuzz_regression_artifact.json
             artifacts/status/route_registry_fuzz_contract.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload config fuzz hardening artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-fuzz-hardening
+          path: |
+            artifacts/status/config_parser_crash_triage_artifact.json
+            artifacts/status/config_serializer_crash_triage_artifact.json
+            artifacts/status/config_fuzz_regression_artifact.json
+            artifacts/status/config_fuzz_contract.json
           if-no-files-found: warn
           retention-days: 14
 
