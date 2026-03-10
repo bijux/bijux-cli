@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate milestone truth status artifacts for done/left/partial/deferred/different."""
+"""Generate milestone truth status artifacts for done/left/partial/deferred/different/unproven."""
 
 from __future__ import annotations
 
@@ -112,6 +112,105 @@ def deferred_items(current_state: dict[str, Any], plugin_state: dict[str, Any]) 
     return deferred
 
 
+def unproven_items(
+    rows: list[dict[str, Any]],
+    current_state: dict[str, Any],
+    plugin_state: dict[str, Any],
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+
+    if rows:
+        uncovered = [
+            row.get("command")
+            for row in rows
+            if row.get("status") == "partial" and float(row.get("confidence", 0.0)) < 0.5
+        ]
+        if uncovered:
+            items.append(
+                {
+                    "area": "parity-confidence",
+                    "item": "low-confidence partial parity coverage",
+                    "reason": "partial rows still exist with low confidence scores",
+                    "evidence": "artifacts/parity/command_parity_matrix.json",
+                    "commands": uncovered[:40],
+                }
+            )
+
+    runtime_parity = current_state.get("runtime_parity_assertions", {})
+    if isinstance(runtime_parity, dict) and runtime_parity.get("violations"):
+        items.append(
+            {
+                "area": "runtime-law",
+                "item": "runtime law assertions unresolved",
+                "reason": "runtime parity assertions report violations",
+                "evidence": "artifacts/status/current_rust_state.json",
+            }
+        )
+
+    plugin_partial = plugin_state.get("plugin_commands", {}).get("partial", [])
+    if isinstance(plugin_partial, list) and plugin_partial:
+        items.append(
+            {
+                "area": "plugin-lifecycle",
+                "item": "plugin lifecycle coverage not fully proven",
+                "reason": "plugin commands still marked partial",
+                "evidence": "artifacts/status/plugin_state_report.json",
+                "commands": plugin_partial,
+            }
+        )
+
+    required = [
+        ROOT / "artifacts" / "parity" / "command_parity_matrix.json",
+        ROOT / "artifacts" / "status" / "runtime_unity_report.json",
+        ROOT / "artifacts" / "status" / "plugin_state_report.json",
+    ]
+    missing = [str(path.relative_to(ROOT)) for path in required if not path.exists()]
+    if missing:
+        items.append(
+            {
+                "area": "evidence-coverage",
+                "item": "required release evidence missing",
+                "reason": "one or more required evidence artifacts do not exist",
+                "evidence": missing,
+            }
+        )
+
+    return items
+
+
+def next_two_hundred_todos(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    generated: list[dict[str, Any]] = []
+    pending = [
+        row
+        for row in rows
+        if row.get("status") in {"missing", "partial", "different-by-decision", "intentionally-different"}
+    ]
+    pending.sort(
+        key=lambda row: (
+            {"missing": 0, "partial": 1, "different-by-decision": 2, "intentionally-different": 2}.get(
+                str(row.get("status", "missing")),
+                3,
+            ),
+            str(row.get("group", "")),
+            str(row.get("command", "")),
+        )
+    )
+    for idx, row in enumerate(pending[:200], start=1):
+        generated.append(
+            {
+                "id": idx,
+                "command": row.get("command"),
+                "group": row.get("group", "unknown"),
+                "status": row.get("status"),
+                "owner": row.get("owner", "unassigned"),
+                "blocker": row.get("blocker", ""),
+                "reason": row.get("reason", ""),
+                "evidence": "artifacts/parity/command_parity_matrix.json",
+            }
+        )
+    return generated
+
+
 def main() -> int:
     generated_at = datetime.now(timezone.utc).isoformat()
     rows = status_rows()
@@ -120,6 +219,8 @@ def main() -> int:
 
     done, partial, left, intentionally_different = split_commands(rows)
     deferred = deferred_items(current_state, plugin_state)
+    unproven = unproven_items(rows, current_state, plugin_state)
+    next_todos = next_two_hundred_todos(rows)
 
     shared = {
         "generated_at": generated_at,
@@ -172,6 +273,25 @@ def main() -> int:
                 "scope": "commands marked intentionally-different in parity matrix",
             },
             "items": intentionally_different,
+        },
+    )
+    write_status(
+        "what_is_unproven",
+        {
+            **shared,
+            "summary": {"count": len(unproven), "scope": "areas that still lack release-grade proof"},
+            "items": unproven,
+        },
+    )
+    write_status(
+        "next_200_todos",
+        {
+            **shared,
+            "summary": {
+                "count": len(next_todos),
+                "scope": "prioritized from generated parity status data only",
+            },
+            "items": next_todos,
         },
     )
     return 0
