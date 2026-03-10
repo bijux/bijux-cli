@@ -25,6 +25,7 @@ const DEV_CLI_SUBCOMMANDS: &[&str] = &[
     "rustdoc",
     "release",
     "evidence",
+    "config",
     "inventory",
     "routes",
     "registry",
@@ -90,6 +91,8 @@ const DEV_CLI_EVIDENCE_SUBCOMMANDS: &[&str] = &[
     "command-map",
     "parity-map",
 ];
+const DEV_CLI_CONFIG_SUBCOMMANDS: &[&str] =
+    &["rust-owner", "python-owner", "ownership", "drift", "shape", "evidence-map"];
 const DEV_CLI_SCRIPTS_SUBCOMMANDS: &[&str] = &[
     "remaining",
     "migrated",
@@ -222,6 +225,14 @@ pub fn is_known_route(path: &[String]) -> bool {
                 && b == "cli"
                 && c == "evidence"
                 && contains(DEV_CLI_EVIDENCE_SUBCOMMANDS, d) =>
+        {
+            true
+        }
+        [a, b, c, d]
+            if a == "dev"
+                && b == "cli"
+                && c == "config"
+                && contains(DEV_CLI_CONFIG_SUBCOMMANDS, d) =>
         {
             true
         }

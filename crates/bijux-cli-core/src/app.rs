@@ -29,7 +29,7 @@ use bijux_cli_routing::query::contracts_schema_query;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
 use bijux_dev_cli::{
-    contracts as dev_contracts, control_plane as dev_control_plane,
+    config as dev_config, contracts as dev_contracts, control_plane as dev_control_plane,
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     evidence as dev_evidence, package_health as dev_package_health, parity as dev_parity,
     registry as dev_registry, release as dev_release, route_audit as dev_route_audit,
@@ -514,6 +514,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1335,6 +1339,24 @@ fn route_response(
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "evidence" && d == "parity-map" => {
             dev_evidence::build_parity_map_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "rust-owner" => {
+            dev_config::build_rust_owner_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "python-owner" => {
+            dev_config::build_python_owner_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "ownership" => {
+            dev_config::build_ownership_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "drift" => {
+            dev_config::build_drift_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "shape" => {
+            dev_config::build_shape_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "config" && d == "evidence-map" => {
+            dev_config::build_evidence_map_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())

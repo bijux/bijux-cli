@@ -49,6 +49,8 @@ pub enum DevCliCommand {
     Env,
     /// `bijux dev cli contracts`
     Contracts,
+    /// `bijux dev cli config`
+    Config,
     /// `bijux dev cli runtime-identity`
     RuntimeIdentity,
     /// `bijux dev cli package-health`
@@ -108,6 +110,7 @@ impl DevCliCommand {
             Self::Registry => "dev cli registry",
             Self::Env => "dev cli env",
             Self::Contracts => "dev cli contracts",
+            Self::Config => "dev cli config",
             Self::RuntimeIdentity => "dev cli runtime-identity",
             Self::PackageHealth => "dev cli package-health",
             Self::StateAudit => "dev cli state-audit",
@@ -142,6 +145,7 @@ impl DevCliCommand {
             Self::Routes | Self::Registry | Self::RouteAudit => DevCliCommandGroup::Routing,
             Self::Env
             | Self::Contracts
+            | Self::Config
             | Self::RuntimeIdentity
             | Self::PackageHealth
             | Self::StateAudit
@@ -214,6 +218,12 @@ pub const fn command_registry() -> &'static [DevCliCommandMetadata] {
         },
         DevCliCommandMetadata {
             command: DevCliCommand::Contracts,
+            group: DevCliCommandGroup::Runtime,
+            visible: true,
+            owner: "bijux-dev-cli",
+        },
+        DevCliCommandMetadata {
+            command: DevCliCommand::Config,
             group: DevCliCommandGroup::Runtime,
             visible: true,
             owner: "bijux-dev-cli",

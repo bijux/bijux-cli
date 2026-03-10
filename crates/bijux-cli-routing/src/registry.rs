@@ -112,6 +112,7 @@ impl Default for RouteRegistry {
             "dev cli rustdoc".to_string(),
             "dev cli release".to_string(),
             "dev cli evidence".to_string(),
+            "dev cli config".to_string(),
             "dev cli plugin-health".to_string(),
             "dev cli status".to_string(),
             "dev cli script-audit".to_string(),

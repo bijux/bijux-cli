@@ -5,6 +5,7 @@
 //! This crate is intentionally focused on maintainer-facing report assembly and
 //! control-plane orchestration. Runtime command law remains in runtime crates.
 
+pub mod config;
 pub mod contracts;
 pub mod control_plane;
 pub mod crate_health;

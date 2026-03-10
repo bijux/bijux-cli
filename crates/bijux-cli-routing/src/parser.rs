@@ -260,6 +260,15 @@ pub fn root_command() -> Command {
                 .subcommand(Command::new("command-map"))
                 .subcommand(Command::new("parity-map")),
         )
+        .subcommand(
+            Command::new("config")
+                .subcommand(Command::new("rust-owner"))
+                .subcommand(Command::new("python-owner"))
+                .subcommand(Command::new("ownership"))
+                .subcommand(Command::new("drift"))
+                .subcommand(Command::new("shape"))
+                .subcommand(Command::new("evidence-map")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

@@ -1,0 +1,8 @@
+{
+  "dev cli config drift": "{\n  \"drift\": {\n    \"missing_rust_owner\": false,",
+  "dev cli config evidence-map": "{\n  \"config_behaviors\": {\n    \"corruption_evidence\": [",
+  "dev cli config ownership": "{\n  \"compatibility_shims\": [",
+  "dev cli config python-owner": "{\n  \"python_owner\": [",
+  "dev cli config rust-owner": "{\n  \"rust_owner\": [",
+  "dev cli config shape": "{\n  \"corruption_evidence\": ["
+}
