@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-03-10T00:41:37.442567+00:00",
+  "rows": [
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli repl",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "cli",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "repl",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "rust-foundation",
+      "python_available": true,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    }
+  ],
+  "source": "artifacts/parity/command_parity_matrix.json",
+  "summary": {
+    "complete": 0,
+    "missing": 0,
+    "partial": 2,
+    "total": 2
+  }
+}

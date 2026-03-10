@@ -1,0 +1,229 @@
+{
+  "commands": [
+    {
+      "blocker": "not routed by rust yet",
+      "command": "atlas",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "config list",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "config",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "dev",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "dev atlas",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "dev di",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "dev list-plugins",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "dev list-products",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "history clear",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "history",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "memory clear",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "memory",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "memory delete",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "memory",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "memory get",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "memory",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "memory set",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "memory",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "plugins",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "root",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    },
+    {
+      "blocker": "not routed by rust yet",
+      "command": "plugins info",
+      "confidence": 0.0,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "routing-core",
+      "python_available": true,
+      "reason": "",
+      "rust_available": false,
+      "status": "missing"
+    }
+  ],
+  "generated_at": "2026-03-10T00:41:37.443831+00:00"
+}

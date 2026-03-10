@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-10T00:41:37.442708+00:00",
+  "rows": [
+    {
+      "command": "config",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    },
+    {
+      "command": "doctor",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    },
+    {
+      "command": "history",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    },
+    {
+      "command": "plugins list",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    },
+    {
+      "command": "status",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    },
+    {
+      "command": "version",
+      "exit_match": true,
+      "status": "partial",
+      "stderr_match": true,
+      "stdout_match": false
+    }
+  ],
+  "source": "artifacts/parity/command_parity_diffs.json",
+  "summary": {
+    "exit_match": 6,
+    "stderr_match": 6,
+    "stdout_match": 0,
+    "total": 6
+  }
+}
