@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = ROOT / "artifacts" / "status"
-TEST_FILE = ROOT / "crates" / "bijux-cli-bin" / "tests" / "plugin_namespace_law.rs"
+TEST_FILE = ROOT / "crates" / "bijux-cli-core" / "tests" / "bin_surface" / "plugin_namespace_law.rs"
 
 
 def stable_generated_at() -> str:
@@ -62,7 +62,7 @@ def main() -> None:
                 "todo": todo,
                 "test_name": name,
                 "status": "complete" if name in test_names else "missing",
-                "evidence": "crates/bijux-cli-bin/tests/plugin_namespace_law.rs",
+                "evidence": "crates/bijux-cli-core/tests/bin_surface/plugin_namespace_law.rs",
             }
             for todo, name in rows
         ],

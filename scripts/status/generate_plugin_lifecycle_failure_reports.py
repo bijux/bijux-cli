@@ -43,31 +43,31 @@ def main() -> None:
                 "topic": "install write failures",
                 "tasks": [441, 442, 443, 444, 445, 446],
                 "tests": [
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries"
                 ],
             },
             {
                 "topic": "uninstall/disable/enable failure behavior",
                 "tasks": [447, 448, 449],
                 "tests": [
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state"
                 ],
             },
             {
                 "topic": "post-install integrity checks",
                 "tasks": [450, 451, 452, 453, 454],
                 "tests": [
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::plugin_check_fails_when_runtime_kind_becomes_unsupported",
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor",
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_entrypoint_disappears_after_install",
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_manifest_mutates_after_install",
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::plugin_check_fails_when_runtime_kind_becomes_unsupported",
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor",
                 ],
             },
             {
                 "topic": "retry idempotency",
                 "tasks": [456, 457],
                 "tests": [
-                    "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
+                    "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::install_and_uninstall_retries_are_idempotent_after_transient_write_failures"
                 ],
             },
         ],
@@ -83,8 +83,8 @@ def main() -> None:
             "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
             "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
             "crates/bijux-cli-plugin/tests/plugin_write_path_maturity.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
-            "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
-            "crates/bijux-cli-bin/tests/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
+            "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
+            "crates/bijux-cli-core/tests/bin_surface/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
         ],
     }
 
