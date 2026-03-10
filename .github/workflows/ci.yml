@@ -416,6 +416,7 @@ jobs:
           python3 scripts/status/generate_dev_cli_cockpit_reports.py
           python3 scripts/status/generate_dev_cli_invariants_reports.py
           python3 scripts/status/generate_dev_cli_parity_consistency_reports.py
+          python3 scripts/status/generate_runtime_package_diagnostics_reports.py
           python3 scripts/status/generate_dev_cli_ownership_report.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
@@ -425,6 +426,7 @@ jobs:
           python3 scripts/status/enforce_dev_cli_cockpit_gate.py
           python3 scripts/status/enforce_dev_cli_invariants_gate.py
           python3 scripts/status/enforce_dev_cli_parity_consistency_gate.py
+          python3 scripts/status/enforce_runtime_package_diagnostics_gate.py
 
       - name: Warn on new script files without justification
         shell: bash
@@ -1462,6 +1464,10 @@ jobs:
             artifacts/status/install_runtime_identity_artifact.json
             artifacts/status/install_ambiguity_artifact.json
             artifacts/status/package_health_artifact.json
+            artifacts/status/runtime_identity_diagnostics_artifact.json
+            artifacts/status/package_health_diagnostics_artifact.json
+            artifacts/status/install_ambiguity_diagnostics_artifact.json
+            artifacts/status/runtime_package_diagnostics_drift_artifact.json
             artifacts/status/install_runtime_identity_drift_artifact.json
             artifacts/status/install_runtime_identity_contract.json
           if-no-files-found: warn

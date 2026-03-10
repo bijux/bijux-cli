@@ -131,4 +131,6 @@ scripts/status/generate_dev_cli_invariants_reports.py # generate dev-cli command
 scripts/status/enforce_dev_cli_invariants_gate.py # enforce dev-cli invariants gate and fail CI on invariants drift or incomplete coverage
 scripts/status/generate_dev_cli_parity_consistency_reports.py # generate parity/migration truth, parity evidence consistency, and parity drift artifacts for release-input hardening
 scripts/status/enforce_dev_cli_parity_consistency_gate.py # enforce parity/migration consistency gate and fail CI when parity drift or migration truth regresses
+scripts/status/generate_runtime_package_diagnostics_reports.py # generate runtime-identity/package-health/install-ambiguity diagnostics artifacts and drift report for operator-trust hardening
+scripts/status/enforce_runtime_package_diagnostics_gate.py # enforce runtime/package diagnostics gate and fail CI on diagnostics drift
 scripts/status/enforce_adversarial_fs_process_gate.py # enforce CI failure when adversarial filesystem/process artifacts drift or hardening contract is not frozen
