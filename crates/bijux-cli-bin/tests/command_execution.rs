@@ -39,11 +39,14 @@ fn executes_root_commands() {
         (vec!["doctor"], "status"),
         (vec!["audit"], "checks"),
         (vec!["docs"], "topics"),
+        (vec!["atlas"], "mount"),
         (vec!["sleep", "0"], "slept_seconds"),
         (vec!["history"], "entries"),
         (vec!["memory"], "count"),
         (vec!["memory", "list"], "keys"),
         (vec!["plugins", "list"], "plugins"),
+        (vec!["plugins"], "plugins"),
+        (vec!["plugins", "info"], "plugins"),
         (vec!["plugins", "inspect"], "status"),
         (vec!["plugins", "doctor"], "doctor"),
         (vec!["plugins", "reserved-names"], "reserved_namespaces"),
@@ -77,6 +80,7 @@ fn executes_cli_namespace_commands() {
         (vec!["cli", "config", "set", "TEST_KEY=1"], "status"),
         (vec!["cli", "self-test"], "checks"),
         (vec!["cli", "plugins", "list"], "plugins"),
+        (vec!["cli", "plugins", "info"], "plugins"),
         (vec!["cli", "plugins", "inspect"], "compatibility_warnings"),
         (vec!["cli", "plugins", "doctor"], "doctor"),
     ];
@@ -137,6 +141,10 @@ fn executes_dev_cli_namespace_commands() {
         (vec!["dev", "cli", "docs-prune-plan"], "target_cap"),
         (vec!["dev", "cli", "state-audit"], "paths"),
         (vec!["dev", "cli", "state-doctor"], "doctor"),
+        (vec!["dev", "cli", "atlas"], "mount"),
+        (vec!["dev", "cli", "di"], "container"),
+        (vec!["dev", "cli", "list-products"], "products"),
+        (vec!["dev", "cli", "list-plugins"], "plugins"),
     ];
     for (args, required_key) in cases {
         let stdout = run(&args);
