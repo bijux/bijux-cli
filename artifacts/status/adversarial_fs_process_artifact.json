@@ -1,0 +1,29 @@
+{
+  "generated_at": "2026-03-10T12:55:58.226323+00:00",
+  "generator": "scripts/status/generate_adversarial_fs_process_reports.py",
+  "minimized_case_count": 3,
+  "minimized_cases": [
+    "crates/bijux-cli-bin/tests/fuzz/adversarial_fs_process_minimized_cases/config_missing_parent_set.json",
+    "crates/bijux-cli-bin/tests/fuzz/adversarial_fs_process_minimized_cases/history_directory_path.json",
+    "crates/bijux-cli-bin/tests/fuzz/adversarial_fs_process_minimized_cases/plugin_list_broken_registry.json"
+  ],
+  "regression_suite": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "bijux-cli-bin",
+      "--test",
+      "adversarial_fs_process_campaign_regressions"
+    ],
+    "exit_code": 0,
+    "ok": true,
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running tests/adversarial_fs_process_campaign_regressions.rs (target/debug/deps/adversarial_fs_process_campaign_regressions-6fd73d0eed776fb5)\n",
+    "stdout": "\nrunning 1 test\ntest minimized_adversarial_cases_replay_without_panics ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s\n\n"
+  },
+  "scope": "adversarial filesystem/process evidence artifact",
+  "status": "complete",
+  "tasks": [
+    199
+  ]
+}
