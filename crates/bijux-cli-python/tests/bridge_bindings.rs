@@ -12,7 +12,6 @@ use bijux_cli_python::{
     status_binding_api, version_binding_api, BridgeErrorKind, CompatibilityConfig, PathOverrides,
     ENV_CONFIG_PATH,
 };
-use bijux_cli_routing as _;
 use serde_json::Value;
 
 fn parse_json(text: &str) -> Value {

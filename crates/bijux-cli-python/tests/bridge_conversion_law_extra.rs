@@ -6,7 +6,6 @@ use bijux_cli_python::{
     classify_failure, command_tree_introspection_api, execution_facade_api, execution_outcome_api,
     plugin_registry_inspection_api, python_exception_tag, BridgeErrorKind,
 };
-use bijux_cli_routing as _;
 use serde_json::Value;
 use std::path::PathBuf;
 

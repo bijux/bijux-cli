@@ -7,7 +7,6 @@ use std::path::Path;
 
 use bijux_cli as _;
 use bijux_cli_python as _;
-use bijux_cli_routing as _;
 use serde_json as _;
 
 #[test]

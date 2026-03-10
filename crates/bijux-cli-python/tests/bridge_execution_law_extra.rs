@@ -5,7 +5,6 @@ use bijux_cli::app::run_app;
 use bijux_cli_python::{
     classify_failure, execution_facade_api, execution_outcome_api, BridgeErrorKind,
 };
-use bijux_cli_routing as _;
 use serde_json::Value;
 
 fn parse_json(text: &str) -> Value {

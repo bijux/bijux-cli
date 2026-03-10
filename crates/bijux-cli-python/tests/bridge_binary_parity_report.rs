@@ -2,7 +2,6 @@
 //! Generate and enforce parity artifact for binary vs python-bridge execution.
 
 use bijux_cli as _;
-use bijux_cli_routing as _;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;

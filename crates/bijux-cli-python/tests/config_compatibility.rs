@@ -13,7 +13,6 @@ use bijux_cli_python::{
     write_compatibility_config, CompatibilityConfig, CompatibilityError, PathOverrides,
     ENV_CONFIG_PATH, ENV_HISTORY_PATH,
 };
-use bijux_cli_routing as _;
 use serde_json as _;
 
 fn temp_dir(label: &str) -> PathBuf {

@@ -7,7 +7,7 @@ use std::hash::BuildHasher;
 use std::path::Path;
 
 use bijux_cli::app::{run_app, AppRunResult};
-use bijux_cli_routing::ContractMarker;
+use bijux_cli::routing::ContractMarker;
 use serde_json::{json, Value};
 
 use crate::compatibility::{
