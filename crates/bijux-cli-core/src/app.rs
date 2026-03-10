@@ -247,14 +247,14 @@ fn dev_cli_inventory_payload() -> Value {
             "script_classification_counts": script_summary,
         },
         "maintainer_script_replacements": [
-            {"from": "scripts/status/generate_current_rust_state.py", "to": "bijux dev cli status"},
+            {"from": "scripts/status/generate_status_reports.py", "to": "bijux dev cli status"},
+            {"from": "scripts/parity/generate_command_law_reports.py", "to": "bijux dev cli parity"},
+            {"from": "scripts/status/generate_route_law_reports.py", "to": "bijux dev cli route-audit"},
+            {"from": "scripts/status/generate_state_audit_reports.py", "to": "bijux dev cli state-audit"},
+            {"from": "scripts/status/generate_maintainer_control_plane_reports.py", "to": "bijux dev cli script-audit"},
             {"from": "scripts/status/generate_crate_boundary_metrics.py", "to": "bijux dev cli crate-health"},
-            {"from": "scripts/parity/run_rust_python_parity.py", "to": "bijux dev cli parity"},
-            {"from": "scripts/status/generate_dev_cli_inventory.py", "to": "bijux dev cli inventory"},
-            {"from": "scripts/status/generate_docs_audit.py", "to": "bijux dev cli docs-audit"},
-            {"from": "scripts/status/generate_state_parity_reports.py", "to": "bijux dev cli state-audit"},
-            {"from": "scripts/status/generate_plugin_health_report.py", "to": "bijux dev cli plugin-health"},
-            {"from": "scripts/status/generate_duplication_hotspots.py", "to": "bijux dev cli crate-health"},
+            {"from": "scripts/status/generate_install_truth_reports.py", "to": "bijux dev cli package-health"},
+            {"from": "scripts/status/generate_docs_duplication_report.py", "to": "bijux dev cli docs-audit"},
         ],
         "remaining_script_only_behaviors": remaining_script_only_behaviors,
         "remaining_task_runner_only_behaviors": remaining_task_runner_only_behaviors,
@@ -1382,6 +1382,19 @@ fn route_response(
             );
             let unowned_scripts =
                 read_json_if_exists(&root.join("artifacts/status/status_unowned_scripts.json"));
+            let maintainer_scripts = read_json_if_exists(
+                &root.join("artifacts/status/maintainer_scripts_outside_dev_cli.json"),
+            );
+            let maintainer_control_plane_commands = read_json_if_exists(
+                &root.join("artifacts/status/maintainer_control_plane_commands.json"),
+            );
+            let maintainer_control_plane_report = read_json_if_exists(
+                &root.join("artifacts/status/maintainer_control_plane_report.json"),
+            );
+            let maintainer_control_plane_text = fs::read_to_string(
+                root.join("artifacts/status/maintainer_control_plane_text_report.txt"),
+            )
+            .unwrap_or_default();
             let repl_only_behaviors =
                 read_json_if_exists(&root.join("artifacts/status/repl_only_behaviors.json"));
             let next_phase =
@@ -1478,6 +1491,10 @@ fn route_response(
                     "known_parity_gaps": known_parity_gaps,
                     "intentional_differences": intentional_differences,
                     "unowned_scripts": unowned_scripts,
+                    "maintainer_scripts_outside_dev_cli": maintainer_scripts,
+                    "maintainer_control_plane_commands": maintainer_control_plane_commands,
+                    "maintainer_control_plane_report": maintainer_control_plane_report,
+                    "maintainer_control_plane_text_report": maintainer_control_plane_text,
                     "repl_only_behaviors": repl_only_behaviors,
                     "plugin_lifecycle_ownership_report": plugin_lifecycle_ownership,
                     "plugin_scaffold_efficiency_report": plugin_scaffold_efficiency,

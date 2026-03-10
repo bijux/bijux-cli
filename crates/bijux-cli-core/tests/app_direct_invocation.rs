@@ -357,6 +357,10 @@ fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
     assert!(payload["reports"]["known_parity_gaps"].is_object());
     assert!(payload["reports"]["intentional_differences"].is_object());
     assert!(payload["reports"]["unowned_scripts"].is_object());
+    assert!(payload["reports"]["maintainer_scripts_outside_dev_cli"].is_object());
+    assert!(payload["reports"]["maintainer_control_plane_commands"].is_object());
+    assert!(payload["reports"]["maintainer_control_plane_report"].is_object());
+    assert!(payload["reports"]["maintainer_control_plane_text_report"].is_string());
     assert!(payload["reports"]["plugin_lifecycle_ownership_report"].is_object());
     assert!(payload["reports"]["plugin_scaffold_efficiency_report"].is_object());
     assert!(payload["reports"]["plugin_scaffold_lifecycle_proof_report"].is_object());

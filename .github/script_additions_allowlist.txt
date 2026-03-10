@@ -20,3 +20,5 @@ scripts/parity/enforce_parity_dashboard_gate.py # enforce parity dashboard compl
 scripts/status/generate_state_audit_reports.py # generate unified state behavior/corruption/rollback/path-resolution/doctor-snapshot artifacts and machine audit payload
 scripts/status/generate_plugin_migration_reports.py # generate unified plugin migration ownership/scaffold/proof/clarity artifacts and consolidated plugin migration report
 scripts/status/enforce_plugin_migration_policy.py # enforce plugin migration evidence completeness, rollback proofs, and strict frozen-law clarity contracts
+scripts/status/generate_maintainer_control_plane_reports.py # generate maintainer script inventory and required dev-cli cockpit command evidence artifacts
+scripts/status/enforce_maintainer_control_plane_policy.py # enforce maintainer cockpit command coverage plus stable json/text evidence for required dev-cli control-plane commands

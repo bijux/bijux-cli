@@ -297,6 +297,33 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --text > artifacts/status/plugin_health_report.txt
+          python3 - <<'PY'
+          import json, subprocess, pathlib
+          root = pathlib.Path("artifacts/status")
+          root.mkdir(parents=True, exist_ok=True)
+          commands = [
+              "dev cli status",
+              "dev cli parity",
+              "dev cli route-audit",
+              "dev cli state-audit",
+              "dev cli script-audit",
+              "dev cli crate-health",
+              "dev cli package-health",
+              "dev cli docs-audit",
+          ]
+          out = {}
+          for command in commands:
+              args = command.split()
+              j = subprocess.run(["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "json", "--no-pretty"], check=True, capture_output=True, text=True)
+              t = subprocess.run(["cargo", "run", "-q", "-p", "bijux-cli-bin", "--", *args, "--format", "text"], check=True, capture_output=True, text=True)
+              parsed = json.loads(j.stdout or "{}")
+              out[command] = {
+                  "json": parsed,
+                  "json_top_level_keys": sorted(parsed.keys()) if isinstance(parsed, dict) else [],
+                  "text": t.stdout,
+              }
+          (root / "dev_cli_control_plane_samples.json").write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
           cargo run -q -p bijux-cli-bin -- cli plugins doctor --format json --no-pretty > artifacts/status/plugin_doctor_runtime_sample.json
           cargo run -q -p bijux-cli-bin -- cli plugins explain cli --format json --no-pretty > artifacts/status/plugin_explain_runtime_sample.json
           cargo run -q -p bijux-cli-bin -- cli plugins where --format json --no-pretty > artifacts/status/plugin_where_runtime_sample.json
@@ -306,6 +333,7 @@ jobs:
           cargo run -q -p bijux-cli-bin -- dev cli state-doctor --text > artifacts/status/state_doctor_report.txt
           python3 scripts/status/generate_state_audit_reports.py
           python3 scripts/status/generate_plugin_migration_reports.py
+          python3 scripts/status/generate_maintainer_control_plane_reports.py
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --json --no-pretty > artifacts/status/script_only_behaviors.json
           cargo run -q -p bijux-cli-bin -- dev cli script-audit --text > artifacts/status/task_runner_only_behaviors.txt
 
@@ -423,6 +451,10 @@ jobs:
       - name: Plugin migration policy gate
         run: |
           python3 scripts/status/enforce_plugin_migration_policy.py
+
+      - name: Maintainer control-plane policy gate
+        run: |
+          python3 scripts/status/enforce_maintainer_control_plane_policy.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -670,6 +702,11 @@ jobs:
             artifacts/status/plugin_where_ownership_report.json
             artifacts/status/plugin_command_set_status.json
             artifacts/status/plugin_migration_report.json
+            artifacts/status/dev_cli_control_plane_samples.json
+            artifacts/status/maintainer_scripts_outside_dev_cli.json
+            artifacts/status/maintainer_control_plane_commands.json
+            artifacts/status/maintainer_control_plane_text_report.txt
+            artifacts/status/maintainer_control_plane_report.json
             artifacts/status/config_corruption_matrix.json
             artifacts/status/config_rollback_proof.json
             artifacts/status/history_corruption_matrix.json
