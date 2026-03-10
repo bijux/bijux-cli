@@ -10,15 +10,15 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_bin(args: &[&str]) -> io::Result<Output> {
     for attempt in 0..3 {
@@ -34,8 +34,8 @@ fn run_bin(args: &[&str]) -> io::Result<Output> {
 }
 
 fn run_case(path: &Path) {
-    let json: serde_json::Value = serde_json::from_str(&fs::read_to_string(path).expect("read case"))
-        .expect("parse case");
+    let json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(path).expect("read case")).expect("parse case");
     let kind = json["kind"].as_str().expect("kind");
 
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -66,7 +66,7 @@ fn run_case(path: &Path) {
                             "--config-path",
                             cfg.as_str(),
                         ])
-                            .expect("set alpha");
+                        .expect("set alpha");
                         assert!(matches!(out.status.code(), Some(0) | Some(1) | Some(2)));
                     }
                 }));
@@ -88,7 +88,7 @@ fn run_case(path: &Path) {
                         "--config-path",
                         writer_cfg.as_str(),
                     ])
-                        .expect("set");
+                    .expect("set");
                     assert!(matches!(out.status.code(), Some(0) | Some(1) | Some(2)));
                 }
             });
@@ -105,7 +105,7 @@ fn run_case(path: &Path) {
                         "--config-path",
                         reader_cfg.as_str(),
                     ])
-                        .expect("list");
+                    .expect("list");
                     assert!(matches!(out.status.code(), Some(0) | Some(1) | Some(2)));
                 }
             });

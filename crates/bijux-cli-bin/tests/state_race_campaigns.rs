@@ -10,20 +10,20 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
-    let path =
-        std::env::temp_dir().join(format!("bijux-state-race-{name}-{}-{nanos}", std::process::id()));
+    let path = std::env::temp_dir()
+        .join(format!("bijux-state-race-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
@@ -161,7 +161,7 @@ fn concurrent_config_readers_and_writers_preserve_file_shape_and_recoverability(
         "--config-path",
         cfg.as_str(),
     ])
-        .expect("final list");
+    .expect("final list");
     assert_known_status(&final_list, "final list");
 }
 
@@ -184,9 +184,15 @@ fn concurrent_config_export_load_and_read_paths_stay_non_corrupt() {
         thread::spawn(move || {
             for i in 0..50 {
                 fs::write(src.as_str(), format!("BIJUXCLI_ALPHA={i}\n")).expect("rewrite source");
-                let out =
-                    run_bin(&["cli", "config", "load", src.as_str(), "--config-path", cfg.as_str()])
-                        .expect("load");
+                let out = run_bin(&[
+                    "cli",
+                    "config",
+                    "load",
+                    src.as_str(),
+                    "--config-path",
+                    cfg.as_str(),
+                ])
+                .expect("load");
                 assert_known_status(&out, "load concurrent");
             }
         })
@@ -258,8 +264,12 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
     let root = temp_dir("state-read-races");
     let envs = shared_env(&root);
 
-    let plugins_dir = PathBuf::from(envs.iter().find(|(k, _)| *k == "BIJUXCLI_PLUGINS_DIR").expect("plugins env").1.clone());
-    let history = PathBuf::from(envs.iter().find(|(k, _)| *k == "BIJUXCLI_HISTORY_FILE").expect("history env").1.clone());
+    let plugins_dir = PathBuf::from(
+        envs.iter().find(|(k, _)| *k == "BIJUXCLI_PLUGINS_DIR").expect("plugins env").1.clone(),
+    );
+    let history = PathBuf::from(
+        envs.iter().find(|(k, _)| *k == "BIJUXCLI_HISTORY_FILE").expect("history env").1.clone(),
+    );
     let home = PathBuf::from(envs.iter().find(|(k, _)| *k == "HOME").expect("home env").1.clone());
     let memory = home.join(".bijux").join(".memory.json");
 
@@ -272,7 +282,9 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
     let registry_mutator = {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
-            let plugins_dir = PathBuf::from(env.iter().find(|(k, _)| *k == "BIJUXCLI_PLUGINS_DIR").expect("plugins").1.clone());
+            let plugins_dir = PathBuf::from(
+                env.iter().find(|(k, _)| *k == "BIJUXCLI_PLUGINS_DIR").expect("plugins").1.clone(),
+            );
             for i in 0..80 {
                 let body = format!("{{\"plugins\":[{{\"name\":\"p{i}\",\"path\":\"/tmp/p{i}\",\"enabled\":true}}]}}\n");
                 fs::write(plugins_dir.join("registry.json"), body).expect("rewrite registry");
@@ -284,7 +296,10 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
             for _ in 0..80 {
-                let out = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &env);
+                let out = run_with_env(
+                    &["cli", "plugins", "list", "--format", "json", "--no-pretty"],
+                    &env,
+                );
                 assert_known_status(&out, "plugins list race");
             }
         })
@@ -293,7 +308,9 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
     let history_writer = {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
-            let history = PathBuf::from(env.iter().find(|(k, _)| *k == "BIJUXCLI_HISTORY_FILE").expect("history").1.clone());
+            let history = PathBuf::from(
+                env.iter().find(|(k, _)| *k == "BIJUXCLI_HISTORY_FILE").expect("history").1.clone(),
+            );
             for i in 0..120 {
                 let mut existing = fs::read_to_string(&history).unwrap_or_default();
                 existing.push_str(&format!("status-{i}\n"));
@@ -316,7 +333,8 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
             for _ in 0..80 {
-                let out = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &env);
+                let out =
+                    run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &env);
                 assert_known_status(&out, "memory list race");
             }
         })
@@ -326,7 +344,10 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
             for _ in 0..80 {
-                let out = run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &env);
+                let out = run_with_env(
+                    &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+                    &env,
+                );
                 assert_known_status(&out, "state-doctor race");
             }
         })
@@ -336,7 +357,10 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
         let env = Arc::clone(&env_arc);
         thread::spawn(move || {
             for _ in 0..50 {
-                let out = run_with_env(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"], &env);
+                let out = run_with_env(
+                    &["dev", "cli", "state-audit", "--format", "json", "--no-pretty"],
+                    &env,
+                );
                 assert_known_status(&out, "state-audit race");
             }
         })
@@ -351,9 +375,11 @@ fn concurrent_history_plugin_registry_and_memory_reads_remain_stable() {
     audit_reader.join().expect("join audit reader");
 
     // Non-corruption invariant: final readers still execute under known status classes.
-    let plugin_final = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &env_arc);
+    let plugin_final =
+        run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &env_arc);
     let history_final = run_with_env(&["history", "--format", "json", "--no-pretty"], &env_arc);
-    let memory_final = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &env_arc);
+    let memory_final =
+        run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &env_arc);
     assert_known_status(&plugin_final, "final plugins list");
     assert_known_status(&history_final, "final history");
     assert_known_status(&memory_final, "final memory");
