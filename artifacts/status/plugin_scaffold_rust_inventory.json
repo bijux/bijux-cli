@@ -1,0 +1,10 @@
+{
+  "count": 2,
+  "files": [
+    "plugin.manifest.json",
+    "src/lib.rs"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_plugin_scaffold_reports.py",
+  "kind": "rust"
+}

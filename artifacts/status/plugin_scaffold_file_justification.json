@@ -1,0 +1,32 @@
+{
+  "classification_values": [
+    "essential",
+    "helpful",
+    "removable"
+  ],
+  "files": {
+    "python": {
+      "plugin.manifest.json": {
+        "classification": "essential",
+        "reason": "required for install, namespace validation, and lifecycle commands"
+      },
+      "plugin.py": {
+        "classification": "essential",
+        "reason": "runtime entrypoint for delegated python plugins"
+      }
+    },
+    "rust": {
+      "plugin.manifest.json": {
+        "classification": "essential",
+        "reason": "required for install, namespace validation, and lifecycle commands"
+      },
+      "src/lib.rs": {
+        "classification": "essential",
+        "reason": "runtime entrypoint module for delegated rust plugins"
+      }
+    }
+  },
+  "freeze_rule": "every scaffolded file must have a justification and decorative outputs stay excluded",
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_plugin_scaffold_reports.py"
+}

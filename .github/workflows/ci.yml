@@ -282,6 +282,7 @@ jobs:
           python3 scripts/status/generate_release_evidence_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
+          python3 scripts/status/generate_plugin_scaffold_reports.py
           python3 scripts/status/generate_compatibility_shim_reports.py
           python3 scripts/status/generate_route_law_reports.py
           python3 scripts/status/generate_state_law_reports.py
@@ -373,6 +374,10 @@ jobs:
       - name: Diagnostics law policy gate
         run: |
           python3 scripts/status/enforce_diagnostics_law_policy.py
+
+      - name: Plugin scaffold policy gate
+        run: |
+          python3 scripts/status/enforce_plugin_scaffold_policy.py
 
       - name: Maintainer automation policy gate
         run: |
@@ -634,6 +639,12 @@ jobs:
             artifacts/status/state_complexity_report.json
             artifacts/status/diagnostics_taxonomy.json
             artifacts/status/diagnostics_usefulness_review.json
+            artifacts/status/plugin_scaffold_python_inventory.json
+            artifacts/status/plugin_scaffold_rust_inventory.json
+            artifacts/status/plugin_scaffold_diff.json
+            artifacts/status/plugin_scaffold_non_behavioral_files.json
+            artifacts/status/plugin_scaffold_file_justification.json
+            artifacts/status/plugin_scaffold_minimalism_summary.txt
           if-no-files-found: warn
           retention-days: 14
 

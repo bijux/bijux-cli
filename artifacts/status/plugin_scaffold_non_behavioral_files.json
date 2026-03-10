@@ -1,0 +1,15 @@
+{
+  "decorative_candidates": [
+    "README.md",
+    "pyproject.toml",
+    "Cargo.toml",
+    ".gitignore"
+  ],
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_plugin_scaffold_reports.py",
+  "present_in_scaffold": {
+    "python": [],
+    "rust": []
+  },
+  "summary": "decorative files are excluded from minimal scaffold outputs"
+}

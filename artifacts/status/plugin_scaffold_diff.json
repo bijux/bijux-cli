@@ -1,0 +1,13 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "generator": "scripts/status/generate_plugin_scaffold_reports.py",
+  "python_only": [
+    "plugin.py"
+  ],
+  "rust_only": [
+    "src/lib.rs"
+  ],
+  "shared": [
+    "plugin.manifest.json"
+  ]
+}
