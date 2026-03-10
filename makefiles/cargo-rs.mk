@@ -76,7 +76,7 @@ test-rs:
 	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
 	cargo nextest run \
 		--workspace \
-		--config-file configs/nextest/nextest.toml \
+		--config-file configs/rust/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
@@ -102,7 +102,7 @@ test-all-rs:
 		--workspace \
 		--run-ignored all \
 		--retries 0 \
-		--config-file configs/nextest/nextest.toml \
+		--config-file configs/rust/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
@@ -130,7 +130,7 @@ coverage-rs:
 		--all-features \
 		--run-ignored all \
 		--retries 0 \
-		--config-file configs/nextest/nextest.toml \
+		--config-file configs/rust/nextest.toml \
 		--user-config-file none \
 		--profile "$(NEXTEST_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
@@ -146,8 +146,8 @@ audit-rs:
 	$(call rs_require_tool,cargo-audit)
 	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
 	@{ \
-		echo "run: cargo deny check"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check; \
+		echo "run: cargo deny check --config configs/rust/deny.toml"; \
+		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check --config configs/rust/deny.toml; \
 		echo; \
 		echo "run: cargo audit"; \
 		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo audit; \
