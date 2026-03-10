@@ -330,6 +330,7 @@ jobs:
           python3 scripts/status/generate_cli_command_surface_reports.py
           python3 scripts/status/generate_dev_cli_command_surface_reports.py
           python3 scripts/status/generate_dev_cli_boundary_reports.py
+          python3 scripts/status/generate_dev_cli_route_registry_ownership_diff.py
           python3 scripts/status/generate_config_read_surface_reports.py
           python3 scripts/status/generate_config_mutation_surface_reports.py
           python3 scripts/status/generate_config_source_surface_reports.py
@@ -1087,6 +1088,15 @@ jobs:
             artifacts/status/dev_cli_owned_behaviors_inventory.json
             artifacts/status/runtime_owned_behaviors_inventory.json
             artifacts/status/misplaced_dev_behaviors_report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload dev-cli route-registry ownership diff
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-cli-route-registry-ownership-diff
+          path: artifacts/status/dev_cli_route_registry_ownership_diff.json
           if-no-files-found: warn
           retention-days: 14
 

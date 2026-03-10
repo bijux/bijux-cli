@@ -22,6 +22,13 @@ Before extraction starts, maintainers must generate and review:
 
 These files represent the frozen baseline for extraction. Extraction work must reduce misplaced maintainer behavior while preserving command surface and output contracts.
 
+## Route and Registry Ownership Freeze
+
+- `dev cli routes` presentation assembly is owned by `bijux-dev-cli`.
+- `dev cli registry` presentation assembly is owned by `bijux-dev-cli`.
+- `bijux-cli-routing` exposes read-only query data for route and registry inventory.
+- `bijux-cli-core` delegates these maintainer presentations to `bijux-dev-cli`.
+
 ## Operational Notes
 
 - `bijux-cli-bin` remains the canonical entrypoint and dispatch host.
