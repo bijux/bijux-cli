@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -212,7 +213,17 @@ def next_two_hundred_todos(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def main() -> int:
-    generated_at = datetime.now(timezone.utc).isoformat()
+    source_date_epoch = subprocess.run(
+        ["sh", "-lc", "printf %s \"${SOURCE_DATE_EPOCH:-}\""],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if source_date_epoch.isdigit():
+        generated_at = datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+    else:
+        generated_at = "1970-01-01T00:00:00+00:00"
     rows = status_rows()
     current_state = read_json(CURRENT_STATE)
     plugin_state = read_json(PLUGIN_STATE)
@@ -294,6 +305,22 @@ def main() -> int:
             "items": next_todos,
         },
     )
+    left_lines = [
+        "What is left",
+        f"Generated at: {generated_at}",
+        f"Missing commands: {len(left)}",
+        f"Partial commands: {len(partial)}",
+        f"Deferred items: {len(deferred)}",
+        f"Unproven areas: {len(unproven)}",
+        "",
+        "Use these artifacts as source of truth:",
+        "- artifacts/status/what_is_left.json",
+        "- artifacts/status/what_is_partial.json",
+        "- artifacts/status/what_is_deferred.json",
+        "- artifacts/status/what_is_unproven.json",
+        "- artifacts/parity/parity_dashboard.json",
+    ]
+    (STATUS_DIR / "what_is_left.txt").write_text("\n".join(left_lines) + "\n", encoding="utf-8")
     return 0
 
 
