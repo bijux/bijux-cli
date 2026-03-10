@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-09T23:06:39.153700+00:00",
+  "generated_at": "2026-03-10T00:03:15.292719+00:00",
   "generator": "scripts/status/generate_truth_milestone_status.py",
   "items": [
     {
@@ -100,6 +100,22 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "cli plugins check",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins explain",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "cli plugins inspect",
       "confidence": 0.35,
       "group": "plugin",
@@ -109,6 +125,30 @@
     {
       "blocker": "parity coverage incomplete",
       "command": "cli plugins list",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins reserved-names",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins schema",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins where",
       "confidence": 0.35,
       "group": "plugin",
       "owner": "rust-foundation",
@@ -340,6 +380,22 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "dev cli state-audit",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev cli state-doctor",
+      "confidence": 0.35,
+      "group": "dev-cli",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "dev cli status",
       "confidence": 0.35,
       "group": "dev-cli",
@@ -468,6 +524,22 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "dev state-audit",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "dev state-doctor",
+      "confidence": 0.35,
+      "group": "root",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "dev status",
       "confidence": 0.35,
       "group": "root",
@@ -524,6 +596,14 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "plugins explain",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "plugins inspect",
       "confidence": 0.35,
       "group": "plugin",
@@ -534,6 +614,30 @@
       "blocker": "parity coverage incomplete",
       "command": "plugins list",
       "confidence": 0.7,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins reserved-names",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins schema",
+      "confidence": 0.35,
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "reason": ""
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins where",
+      "confidence": 0.35,
       "group": "plugin",
       "owner": "rust-foundation",
       "reason": ""
@@ -577,7 +681,7 @@
     "plugin_state": "artifacts/status/plugin_state_report.json"
   },
   "summary": {
-    "count": 71,
+    "count": 84,
     "scope": "commands marked partial in parity matrix"
   }
 }
