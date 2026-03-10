@@ -23,3 +23,4 @@ scripts/status/enforce_plugin_migration_policy.py # enforce plugin migration evi
 scripts/status/generate_maintainer_control_plane_reports.py # generate maintainer script inventory and required dev-cli cockpit command evidence artifacts
 scripts/status/enforce_maintainer_control_plane_policy.py # enforce maintainer cockpit command coverage plus stable json/text evidence for required dev-cli control-plane commands
 scripts/status/generate_reserved_namespace_test_matrix.py # generate plugin namespace-law todo matrix artifact proving reserved namespace rejection test coverage
+scripts/status/generate_plugin_lifecycle_test_matrix.py # generate plugin lifecycle todo matrix artifact proving end-to-end lifecycle integration test coverage

@@ -272,6 +272,7 @@ jobs:
           python3 scripts/status/generate_parser_abuse_report.py
           python3 scripts/status/generate_namespace_reservation_reports.py
           python3 scripts/status/generate_reserved_namespace_test_matrix.py
+          python3 scripts/status/generate_plugin_lifecycle_test_matrix.py
           python3 scripts/status/generate_plugin_lifecycle_failure_reports.py
           python3 scripts/status/generate_config_corruption_reports.py
           python3 scripts/status/generate_state_resilience_reports.py
@@ -691,6 +692,7 @@ jobs:
             artifacts/status/namespace_abuse_report.json
             artifacts/status/reserved_namespace_inventory.json
             artifacts/status/reserved_namespace_test_matrix.json
+            artifacts/status/plugin_lifecycle_test_matrix.json
             artifacts/status/plugin_lifecycle_failure_injection_report.json
             artifacts/status/plugin_rollback_proof_report.json
             artifacts/status/plugin_doctor_runtime_sample.json
