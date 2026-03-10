@@ -7,3 +7,5 @@ pub mod config;
 pub mod install;
 /// Plugin discovery, manifest validation, and registry state.
 pub mod plugins;
+/// Read-only runtime diagnostics query providers.
+pub mod diagnostics;
