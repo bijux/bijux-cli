@@ -16,6 +16,7 @@ This guide is the single source of truth for local setup, workflows, API validat
 - [Security & Supply Chain](#security-supply-chain)
 - [Tox Envs (Mirror CI)](#tox-envs-mirror-ci)
 - [Commits & PRs](#commits-prs)
+- [Rust Workspace Rules](#rust-workspace-rules)
 - [Troubleshooting](#troubleshooting)
 - [Community & Conduct](#community-conduct)
 
@@ -204,9 +205,6 @@ tox -av
 
 ## Commits & PRs
 
-For Rust workspace rules and architecture boundary checks, see
-`CONTRIBUTING_RUST.md`.
-
 ### Conventional Commits (required)
 
 ```
@@ -250,6 +248,57 @@ BREAKING CHANGE: <explanation>
   - `artifacts/parity/command_parity_matrix.json`
   - `artifacts/status/docs_audit.json`
   - `artifacts/status/test_quality_audit.json`
+
+[Back to top](#top)
+
+---
+
+<a id="rust-workspace-rules"></a>
+
+## Rust Workspace Rules
+
+### Purpose
+This section defines engineering standards for the Rust workspace in `bijux-cli`.
+
+### Workspace layout
+- `crates/bijux-cli-contracts`: shared durable contracts
+- `crates/bijux-cli-core`: execution kernel primitives
+- `crates/bijux-cli-routing`: command graph and resolution
+- `crates/bijux-cli-output`: output encoders and envelopes
+- `crates/bijux-cli-repl`: interactive shell orchestration
+- `crates/bijux-cli-plugin`: plugin lifecycle boundaries
+- `crates/bijux-cli-python`: Python compatibility bridge
+- `crates/bijux-cli-install`: install/update flow boundaries
+- `crates/bijux-cli-bin`: binary entrypoint
+
+### Non-negotiable rules
+- `unsafe` is forbidden workspace-wide.
+- Crate dependency boundaries must pass `architecture_boundaries` tests.
+- New public contract types belong in `bijux-cli-contracts`.
+- Command behavior changes must preserve documented compatibility contracts.
+- New maintainer automation defaults to `bijux dev cli` command entrypoints.
+- Direct script usage is allowed only as implementation detail behind routed dev-cli commands.
+
+### Local validation commands
+- `cargo fmt --all`
+- `cargo fmt-check`
+- `cargo check-workspace`
+- `cargo lint`
+- `cargo test --workspace`
+- `cargo test -p bijux-cli-core --test architecture_boundaries`
+
+### Dependency policy
+- Keep dependencies minimal and justified.
+- Use crates from `crates.io` only unless a security exception is documented.
+- Run policy checks with `cargo deny check` when `cargo-deny` is installed.
+
+### Design review checklist
+- Does the change preserve root grammar and namespace contracts?
+- Does the change preserve exit-code compatibility?
+- Does the change preserve stdout/stderr routing rules?
+- Does the change preserve plugin namespace and lifecycle contracts?
+- Does the change include tests for new behavior?
+- Does the change avoid large crate merges while parity/runtime identity reports remain partial?
 
 [Back to top](#top)
 
