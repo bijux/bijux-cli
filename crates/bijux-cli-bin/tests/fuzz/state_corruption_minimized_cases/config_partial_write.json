@@ -1,0 +1,7 @@
+{
+  "command": ["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
+  "config_text": "BIJUXCLI_ALPHA=1\nBIJUXCLI_BETA",
+  "history_text": "status\n",
+  "memory_text": "{\"alpha\":{}}",
+  "registry_text": "{\"plugins\":[]}"
+}

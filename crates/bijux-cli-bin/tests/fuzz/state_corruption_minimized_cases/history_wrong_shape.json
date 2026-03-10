@@ -1,0 +1,7 @@
+{
+  "command": ["history", "--format", "json", "--no-pretty"],
+  "config_text": "BIJUXCLI_ALPHA=1\n",
+  "history_text": "[{\"command\":\"status\"},42,{\"command\":\"doctor\"}]",
+  "memory_text": "{\"alpha\":{}}",
+  "registry_text": "{\"plugins\":[]}"
+}
