@@ -114,7 +114,6 @@ dev = [
   "uvicorn>=0.30.1,<1.0",
 
   "twine>=6.1.0,<7.0",
-  "towncrier>=23.0,<25.0",
 
   "mutmut>=3.0",
   "cosmic-ray>=4.0.0",
@@ -303,44 +302,3 @@ id = "CVE-2026-24049"
 dependency = "wheel"
 reason = "Build tool only; not in runtime."
 # --8<-- [end:security]
-
-# --8<-- [start:towncrier]
-[tool.towncrier]
-filename = "CHANGELOG.md"
-directory = "changelog.d"
-title_format = "## [{version}] – {project_date}"
-issue_format = "[#{issue}](https://github.com/bijux/bijux-cli/issues/{issue})"
-start_string = "<!-- towncrier start -->"
-all_bullets = true
-single_file = true
-
-[[tool.towncrier.type]]
-directory = "feature"
-name = "New Features"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "bugfix"
-name = "Bug Fixes"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "docs"
-name = "Documentation"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "refactor"
-name = "Refactoring"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "chore"
-name = "Miscellaneous Chores"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "trivial"
-name = "Trivial"
-showcontent = false
-# --8<-- [end:towncrier]

@@ -18,7 +18,6 @@ RM                    := rm -rf
 include makefiles/macro.mk
 include makefiles/api.mk
 include makefiles/build.mk
-include makefiles/changelog.mk
 include makefiles/citation.mk
 include makefiles/cargo-rs.mk
 include makefiles/dictionary.mk

@@ -7,7 +7,7 @@ path = [
   "**/*.html", "**/*.toml", "**/*.ini", "**/*.cfg", "**/*.conf",
   "**/*.env", "**/*.env.*", "**/*.yaml", "**/*.yml", "**/*.json",
   "**/*.cff", "**/*.dic", ".coverage*", ".gitattributes", ".gitignore",
-  "changelog.d/**", "**/.editorconfig", "artifacts/**", "scripts/git-hooks/**",
+  "**/.editorconfig", "artifacts/**", "scripts/git-hooks/**",
   "docs/assets/styles/**", "**/*.pyc",
 ]
 precedence = "override"

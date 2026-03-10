@@ -107,7 +107,7 @@ make api
 
 * Errors use **RFC 7807 Problem JSON**
 * Response shapes and pagination are stable or versioned
-* Breaking changes require a versioned path **and** a changelog entry
+* Breaking changes require a versioned path **and** updated release-truth evidence (`bijux dev cli release *`)
 
 [Back to top](#top)
 

@@ -141,4 +141,3 @@ watch:
   - scripts
   - config
   - tests
-  - changelog.d
