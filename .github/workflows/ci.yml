@@ -407,6 +407,7 @@ jobs:
           path: |
             artifacts/parity/command_parity_matrix.json
             artifacts/parity/command_parity_diffs.json
+            artifacts/parity/command_parity_summary.txt
             artifacts/parity/stdout_diff.md
             artifacts/parity/stderr_diff.md
             artifacts/parity/exit_code_diff.md

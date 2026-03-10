@@ -53,7 +53,7 @@ def split_commands(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], li
             done.append(record)
         elif status == "partial":
             partial.append(record)
-        elif status == "intentionally-different":
+        elif status in {"intentionally-different", "different-by-decision"}:
             intentionally_different.append(record)
         else:
             left.append(record)

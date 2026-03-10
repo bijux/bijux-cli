@@ -45,11 +45,13 @@ def has_claim(pattern: str, text: str) -> bool:
 
 def parity_stats() -> dict[str, int]:
     rows = read_json(PARITY_MATRIX).get("commands", [])
-    out = {"complete": 0, "partial": 0, "missing": 0, "intentionally-different": 0}
+    out = {"complete": 0, "partial": 0, "missing": 0, "different-by-decision": 0}
     for row in rows:
         status = str(row.get("status", "missing"))
         if status in out:
             out[status] += 1
+        elif status == "intentionally-different":
+            out["different-by-decision"] += 1
         else:
             out["missing"] += 1
     return out

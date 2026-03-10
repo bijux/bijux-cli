@@ -15,6 +15,7 @@ BASELINE = ROOT / "docs" / "architecture" / "parity" / "baseline_command_parity_
 STATUS_RANK = {
     "complete": 4,
     "intentionally-different": 3,
+    "different-by-decision": 3,
     "partial": 2,
     "missing": 1,
 }

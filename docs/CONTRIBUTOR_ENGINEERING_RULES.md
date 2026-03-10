@@ -9,6 +9,7 @@ This document defines contributor and reviewer rules that keep milestone claims 
 3. Route maintainer automation through `bijux dev cli` commands by default.
 4. Treat behavior contracts as stable; treat file and doc counts as non-contracts.
 5. Keep docs focused on law and change; move volatile status detail to generated artifacts.
+6. Use `artifacts/parity/command_parity_matrix.json` as the truth source for "done" command status.
 
 ## Required Evidence
 - `artifacts/parity/command_parity_matrix.json`
