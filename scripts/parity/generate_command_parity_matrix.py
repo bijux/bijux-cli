@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX_OUT = ROOT / "artifacts" / "parity" / "command_parity_matrix.json"
 DIFFS_OUT = ROOT / "artifacts" / "parity" / "command_parity_diffs.json"
+SUMMARY_TXT = ROOT / "artifacts" / "parity" / "command_parity_summary.txt"
 STDOUT_MD = ROOT / "artifacts" / "parity" / "stdout_diff.md"
 STDERR_MD = ROOT / "artifacts" / "parity" / "stderr_diff.md"
 EXIT_MD = ROOT / "artifacts" / "parity" / "exit_code_diff.md"
@@ -155,7 +156,7 @@ def build_matrix() -> tuple[list[dict], dict]:
         in_rust = command in rust_commands
 
         if command in intentional:
-            status = "intentionally-different"
+            status = "different-by-decision"
             reason = intentional[command]
             blocker = ""
             owner = "parity-council"
@@ -175,6 +176,22 @@ def build_matrix() -> tuple[list[dict], dict]:
             blocker = "parity coverage incomplete"
             owner = "rust-foundation"
 
+        evidence_links = [
+            "artifacts/parity/rust_python_parity_report.json",
+            "artifacts/parity/command_parity_diffs.json",
+        ]
+        if status == "different-by-decision":
+            evidence_links.append("docs/architecture/parity/intentional_differences.json")
+        diff_links = (
+            {
+                "stdout": "artifacts/parity/stdout_diff.md",
+                "stderr": "artifacts/parity/stderr_diff.md",
+                "exit_code": "artifacts/parity/exit_code_diff.md",
+                "help": "artifacts/parity/help_diff.md",
+            }
+            if row is not None
+            else {}
+        )
         matrix.append(
             {
                 "command": command,
@@ -186,6 +203,8 @@ def build_matrix() -> tuple[list[dict], dict]:
                 "confidence": confidence_for(row, status),
                 "python_available": in_python,
                 "rust_available": in_rust,
+                "evidence_links": evidence_links,
+                "diff_links": diff_links,
             }
         )
 
@@ -281,15 +300,66 @@ def write_markdown_diffs(diffs: list[dict]) -> None:
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def write_text_summary(matrix: list[dict]) -> None:
+    total = len(matrix)
+    counts = {
+        "complete": sum(1 for row in matrix if row["status"] == "complete"),
+        "partial": sum(1 for row in matrix if row["status"] == "partial"),
+        "missing": sum(1 for row in matrix if row["status"] == "missing"),
+        "different-by-decision": sum(
+            1 for row in matrix if row["status"] == "different-by-decision"
+        ),
+    }
+    plugin_rows = [row for row in matrix if row["group"] == "plugin"]
+    lines = [
+        "Command parity summary",
+        f"total: {total}",
+        f"complete: {counts['complete']}",
+        f"partial: {counts['partial']}",
+        f"missing: {counts['missing']}",
+        f"different-by-decision: {counts['different-by-decision']}",
+        "",
+        f"plugin-commands-total: {len(plugin_rows)}",
+        f"plugin-commands-complete: {sum(1 for row in plugin_rows if row['status'] == 'complete')}",
+        f"plugin-commands-partial: {sum(1 for row in plugin_rows if row['status'] == 'partial')}",
+        "",
+        "truth-source: artifacts/parity/command_parity_matrix.json",
+    ]
+    SUMMARY_TXT.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_TXT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     matrix, grouped = build_matrix()
     diffs = diff_rows()
+    plugin_rows = [row for row in matrix if row["group"] == "plugin"]
 
     matrix_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator": "scripts/parity/generate_command_parity_matrix.py",
         "commands": matrix,
         "groups": grouped,
+        "plugin_lifecycle": {
+            "commands": plugin_rows,
+            "summary": {
+                "total": len(plugin_rows),
+                "complete": sum(1 for row in plugin_rows if row["status"] == "complete"),
+                "partial": sum(1 for row in plugin_rows if row["status"] == "partial"),
+                "missing": sum(1 for row in plugin_rows if row["status"] == "missing"),
+                "different_by_decision": sum(
+                    1 for row in plugin_rows if row["status"] == "different-by-decision"
+                ),
+            },
+        },
+        "summary": {
+            "total": len(matrix),
+            "complete": sum(1 for row in matrix if row["status"] == "complete"),
+            "partial": sum(1 for row in matrix if row["status"] == "partial"),
+            "missing": sum(1 for row in matrix if row["status"] == "missing"),
+            "different_by_decision": sum(
+                1 for row in matrix if row["status"] == "different-by-decision"
+            ),
+        },
     }
     diffs_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -300,8 +370,10 @@ def main() -> int:
     write_json(MATRIX_OUT, matrix_payload)
     write_json(DIFFS_OUT, diffs_payload)
     write_markdown_diffs(diffs)
+    write_text_summary(matrix)
     print(f"wrote {MATRIX_OUT.relative_to(ROOT)}")
     print(f"wrote {DIFFS_OUT.relative_to(ROOT)}")
+    print(f"wrote {SUMMARY_TXT.relative_to(ROOT)}")
     return 0
 
 

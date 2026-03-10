@@ -1084,6 +1084,10 @@ fn route_response(
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_matrix.json"));
             let parity_diffs =
                 read_json_if_exists(&root.join("artifacts/parity/command_parity_diffs.json"));
+            let text_summary = fs::read_to_string(
+                root.join("artifacts/parity/command_parity_summary.txt"),
+            )
+            .unwrap_or_default();
             let config_parity =
                 read_json_if_exists(&root.join("artifacts/parity/config_parity_report.json"));
             let history_parity =
@@ -1095,6 +1099,8 @@ fn route_response(
                 "binary_bridge": bridge_parity,
                 "command_matrix": command_matrix,
                 "diffs": parity_diffs,
+                "text_summary": text_summary,
+                "plugin_lifecycle": command_matrix.get("plugin_lifecycle").cloned().unwrap_or_else(|| json!({})),
                 "state_parity": {
                     "config": config_parity,
                     "history": history_parity,
