@@ -16,9 +16,9 @@
 7. Review weak tests flagged by test audit:
    - `artifacts/status/test_quality_audit.json`
 8. Confirm package metadata consistency:
-   `python3.11 scripts/check-package-metadata.py`
+   `bijux dev cli package-health --format json --no-pretty`
 9. Confirm install channel verification:
-   `bash scripts/verify-install-channels.sh`
+   `bijux dev cli runtime-identity --format json --no-pretty`
 10. Confirm docs build succeeds.
 11. Review parity artifacts before release claims:
    - `artifacts/parity/command_parity_matrix.json`
