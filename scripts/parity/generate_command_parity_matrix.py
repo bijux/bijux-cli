@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,12 +40,17 @@ def run_cmd(args: list[str], cwd: Path | None = None) -> subprocess.CompletedPro
 
 
 def parse_python_command_tree() -> list[str]:
-    exe = ROOT / "bin" / "bijux"
-    if not exe.exists():
-        return []
+    local = ROOT / "bin" / "bijux"
+    if local.exists():
+        exe = str(local)
+    else:
+        resolved = shutil.which("bijux")
+        if resolved is None:
+            return []
+        exe = resolved
 
     def subcommands(path_tokens: tuple[str, ...]) -> list[str]:
-        proc = run_cmd([str(exe), *path_tokens, "--help"])
+        proc = run_cmd([exe, *path_tokens, "--help"])
         if proc.returncode != 0:
             return []
         out = []

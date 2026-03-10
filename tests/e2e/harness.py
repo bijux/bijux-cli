@@ -17,16 +17,12 @@ import tempfile
 
 def _find_bijux_binary() -> Path:
     exe_name = "bijux"
-    repo_root = Path(__file__).resolve().parents[2]
-
-    local = repo_root / "bin" / exe_name
-    if local.exists():
-        return local.resolve()
 
     sibling = Path(sys.executable).with_name(exe_name)
     if sibling.exists():
         return sibling.resolve()
 
+    repo_root = Path(__file__).resolve().parents[2]
     for p in repo_root.glob(f".tox/*/*/{exe_name}"):
         if p.is_file():
             return p.resolve()
@@ -39,7 +35,7 @@ def _find_bijux_binary() -> Path:
 
     raise FileNotFoundError(
         "Could not locate the 'bijux' binary in "
-        "$BIJUX_BIN, interpreter venv, tox envs, PATH, or project ./bin."
+        "$BIJUX_BIN, interpreter venv, tox envs, or PATH."
     )
 
 

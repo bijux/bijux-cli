@@ -17,7 +17,7 @@ JUNIT_XML_BENCHMARK   ?= $(TEST_ARTIFACTS_DIR)/junit-test-benchmark.xml
 TMP_DIR               ?= $(TEST_ARTIFACTS_DIR)/tmp
 HYPOTHESIS_DB_DIR     ?= $(TEST_ARTIFACTS_DIR)/hypothesis
 BENCHMARK_DIR         ?= $(TEST_ARTIFACTS_DIR)/benchmarks
-BIJUX_BIN             ?= bin/bijux
+BIJUX_BIN             ?= $(shell command -v bijux 2>/dev/null || command -v bijux-rs 2>/dev/null || echo artifacts/rust/target/debug/bijux)
 
 ENABLE_BENCH          ?= 1
 PYTEST_ADDOPTS_EXTRA  ?=

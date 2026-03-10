@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
@@ -77,12 +78,17 @@ def parse_rust_routed_commands() -> dict[str, list[str]]:
 
 
 def parse_python_command_tree() -> list[str]:
-    exe = ROOT / "bin" / "bijux"
-    if not exe.exists():
-        return []
+    local = ROOT / "bin" / "bijux"
+    if local.exists():
+        exe = str(local)
+    else:
+        resolved = shutil.which("bijux")
+        if resolved is None:
+            return []
+        exe = resolved
 
     def subcommands_for(path_tokens: tuple[str, ...]) -> list[str]:
-        args = [str(exe), *path_tokens, "--help"]
+        args = [exe, *path_tokens, "--help"]
         out = run_cmd(args)
         if not out:
             return []
