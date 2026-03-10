@@ -5,8 +5,10 @@ High-value documents only. Everything else is supporting detail.
 ## Current Status
 - [Honest status](HONEST_STATUS.md)
 - [Known gaps](KNOWN_GAPS.md)
+- [What we won't claim](WHAT_WE_WONT_CLAIM.md)
 - [Stability and breakage](STABILITY_AND_BREAKAGE.md)
 - [Contributor engineering rules](CONTRIBUTOR_ENGINEERING_RULES.md)
+- [Maintainer milestone checklist](MAINTAINER_MILESTONE_CHECKLIST.md)
 - [Plugin state](plugin_state.md)
 
 ## Core Law

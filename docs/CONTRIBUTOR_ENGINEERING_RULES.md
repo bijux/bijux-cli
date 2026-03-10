@@ -4,12 +4,13 @@
 This document defines contributor and reviewer rules that keep milestone claims tied to evidence.
 
 ## Rules
-1. Do not use completion language without parity, runtime, and test artifacts.
+1. Do not use status language without parity, runtime, and test artifacts.
 2. Reject hype wording that does not cite concrete generated evidence.
 3. Route maintainer automation through `bijux dev cli` commands by default.
 4. Treat behavior contracts as stable; treat file and doc counts as non-contracts.
 5. Keep docs focused on law and change; move volatile status detail to generated artifacts.
 6. Use `artifacts/parity/command_parity_matrix.json` as the truth source for "done" command status.
+7. Use `bijux dev cli status --format json` as first check before milestone claims.
 
 ## Required Evidence
 - `artifacts/parity/command_parity_matrix.json`
