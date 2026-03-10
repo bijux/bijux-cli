@@ -264,6 +264,7 @@ jobs:
           python3 scripts/status/generate_public_api_reports.py
           python3 scripts/status/generate_current_rust_state.py
           python3 scripts/status/generate_test_quality_audit.py
+          python3 scripts/status/generate_test_domain_value_reports.py
           python3 scripts/status/generate_flaky_test_labels.py
           python3 scripts/status/generate_plugin_state_report.py
           python3 scripts/status/generate_truth_milestone_status.py
@@ -426,6 +427,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_test_quality_gates.py
 
+      - name: Test-first domain gate
+        run: |
+          python3 scripts/status/enforce_test_first_domain_gates.py --enforce
+
       - name: Performance regression gate
         run: |
           python3 scripts/status/enforce_performance_regression_gates.py
@@ -548,6 +553,13 @@ jobs:
             artifacts/status/top_20_weakest_tests.json
             artifacts/status/top_20_missing_failure_cases.json
             artifacts/status/top_20_missing_parity_cases.json
+            artifacts/status/plugin_tests_by_value.json
+            artifacts/status/flag_tests_by_value.json
+            artifacts/status/determinism_tests_by_value.json
+            artifacts/status/missing_plugin_abuse_cases.json
+            artifacts/status/missing_flag_abuse_cases.json
+            artifacts/status/missing_deterministic_proof_cases.json
+            artifacts/status/test_first_domains_contract.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -714,6 +726,13 @@ jobs:
             artifacts/status/deterministic_output_report.json
             artifacts/status/determinism_dashboard.json
             artifacts/status/determinism_expectations.json
+            artifacts/status/plugin_tests_by_value.json
+            artifacts/status/flag_tests_by_value.json
+            artifacts/status/determinism_tests_by_value.json
+            artifacts/status/missing_plugin_abuse_cases.json
+            artifacts/status/missing_flag_abuse_cases.json
+            artifacts/status/missing_deterministic_proof_cases.json
+            artifacts/status/test_first_domains_contract.json
             artifacts/status/repeated_run_corruption_harness.json
             artifacts/status/deterministic_hostile_state_report.json
             artifacts/status/failure_class_stability_report.json

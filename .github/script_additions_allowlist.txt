@@ -33,3 +33,5 @@ scripts/status/run_corruption_repeat_harness.py # execute repeated-run corrupted
 scripts/status/generate_hostile_state_reports.py # generate hostile-state determinism report, failure-class stability report, and frozen deterministic-failure quality bar
 scripts/status/generate_cross_surface_reports.py # generate cross-surface equivalence/drift artifacts and freeze the binary-core-bridge-repl duality contract
 scripts/parity/check_cross_surface_drift_gate.py # fail CI when cross-surface equivalence coverage drifts from required command set
+scripts/status/generate_test_domain_value_reports.py # generate plugin/flag/determinism test-value reports, missing abuse/proof cases, and test-first domain contract artifact
+scripts/status/enforce_test_first_domain_gates.py # enforce test_type tagging plus plugin failure-path, flag precedence/conflict, and determinism repeated-run proof gates on changed tests
