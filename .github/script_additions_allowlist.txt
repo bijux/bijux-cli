@@ -43,6 +43,8 @@ scripts/status/generate_config_read_surface_reports.py # generate config read ma
 scripts/status/generate_config_mutation_surface_reports.py # generate config mutation matrix artifact and frozen rollback/idempotency mutation-domain contract from explicit config_mutation_matrix tests
 scripts/status/generate_config_source_surface_reports.py # generate config source precedence parity/drift artifacts and frozen observable precedence contract from explicit config_source_precedence_matrix tests
 scripts/status/enforce_config_source_consistency.py # enforce CI failure when source-report artifacts drift from actual config resolution behavior
+scripts/status/generate_kernel_invariants_reports.py # generate kernel invariants and drift artifacts for deep execution pipeline contract coverage
+scripts/status/enforce_kernel_invariants_gate.py # enforce CI failure when kernel invariant coverage or drift artifacts regress
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

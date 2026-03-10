@@ -292,6 +292,7 @@ jobs:
           python3 scripts/status/generate_packaging_ambiguity_reports.py
           python3 scripts/status/generate_performance_reports.py
           python3 scripts/status/generate_release_evidence_reports.py
+          python3 scripts/status/generate_kernel_invariants_reports.py
           python3 scripts/status/generate_release_build_reports.py
           python3 scripts/status/generate_migration_notes.py
           python3 scripts/status/generate_next_phase_priorities.py
@@ -438,6 +439,10 @@ jobs:
         run: |
           python3 scripts/status/enforce_release_truth_gates.py --enforce
 
+      - name: Kernel invariants gate
+        run: |
+          python3 scripts/status/enforce_kernel_invariants_gate.py --enforce
+
       - name: Deterministic generation gate
         run: |
           python3 scripts/status/check_deterministic_generation.py
@@ -533,6 +538,17 @@ jobs:
         with:
           name: current-rust-state
           path: artifacts/status/current_rust_state.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload kernel invariants artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-invariants
+          path: |
+            artifacts/status/kernel_invariants_report.json
+            artifacts/status/kernel_invariants_diff.json
           if-no-files-found: warn
           retention-days: 14
 
