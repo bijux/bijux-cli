@@ -7,7 +7,6 @@ use std::fs;
 
 use bijux_cli_core as _;
 use bijux_cli_install as _;
-use bijux_cli_output as _;
 use bijux_cli_repl::{
     completion_candidates, configure_history, load_history, register_plugin_completion_hook,
     startup_repl, startup_repl_with_diagnostics,

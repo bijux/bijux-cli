@@ -9,7 +9,6 @@ use std::time::{Duration, Instant};
 use bijux_cli_core as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
-use bijux_cli_output as _;
 use bijux_cli_repl::{
     completion_candidates, configure_history, execute_repl_input, execute_repl_line,
     inspect_last_error, load_history, register_plugin_completion_hook, repl_argv_from_line,

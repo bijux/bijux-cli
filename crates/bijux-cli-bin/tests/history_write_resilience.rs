@@ -6,7 +6,6 @@ use std::path::PathBuf;
 
 use bijux_cli_core as _;
 use bijux_cli_install as _;
-use bijux_cli_output as _;
 use bijux_cli_python as _;
 use bijux_cli_repl::{
     configure_history, execute_repl_line, flush_history, load_history, startup_repl,
