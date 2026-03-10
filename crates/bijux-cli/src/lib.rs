@@ -16,3 +16,4 @@ pub mod plugin;
 pub mod query;
 pub mod repl;
 pub mod routing;
+pub mod shared;
