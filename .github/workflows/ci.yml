@@ -277,6 +277,7 @@ jobs:
           python3 scripts/status/generate_plugin_discovery_determinism_reports.py
           python3 scripts/status/generate_flag_normalization_matrix.py
           python3 scripts/status/generate_precedence_reports.py
+          python3 scripts/status/generate_deterministic_output_reports.py
           python3 scripts/status/generate_plugin_lifecycle_failure_reports.py
           python3 scripts/status/generate_config_corruption_reports.py
           python3 scripts/status/generate_state_resilience_reports.py
@@ -703,6 +704,9 @@ jobs:
             artifacts/status/flag_normalization_matrix.json
             artifacts/status/precedence_regression_matrix.json
             artifacts/status/precedence_contract.json
+            artifacts/status/deterministic_output_report.json
+            artifacts/status/determinism_dashboard.json
+            artifacts/status/determinism_expectations.json
             artifacts/status/plugin_lifecycle_failure_injection_report.json
             artifacts/status/plugin_rollback_proof_report.json
             artifacts/status/plugin_doctor_runtime_sample.json
