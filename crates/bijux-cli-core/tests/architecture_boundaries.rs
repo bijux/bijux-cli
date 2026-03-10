@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow as _;
-use bijux_cli_contracts as _;
+use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
@@ -66,11 +66,9 @@ fn enforces_internal_crate_boundaries() {
             "bijux-cli-bin",
             BTreeSet::from(["bijux-cli-core", "bijux-cli-python", "bijux-cli-repl"]),
         ),
-        ("bijux-cli-contracts", BTreeSet::new()),
         (
             "bijux-cli-core",
             BTreeSet::from([
-                "bijux-cli-contracts",
                 "bijux-cli-install",
                 "bijux-cli-output",
                 "bijux-cli-plugin",
@@ -78,23 +76,22 @@ fn enforces_internal_crate_boundaries() {
             ]),
         ),
         ("bijux-cli-install", BTreeSet::new()),
-        ("bijux-cli-output", BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core"])),
-        ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-contracts"])),
+        ("bijux-cli-output", BTreeSet::from(["bijux-cli-core", "bijux-cli-routing"])),
+        ("bijux-cli-plugin", BTreeSet::from(["bijux-cli-routing"])),
         (
             "bijux-cli-python",
-            BTreeSet::from(["bijux-cli-contracts", "bijux-cli-core", "bijux-cli-install"]),
+            BTreeSet::from(["bijux-cli-core", "bijux-cli-install", "bijux-cli-routing"]),
         ),
         (
             "bijux-cli-repl",
             BTreeSet::from([
-                "bijux-cli-contracts",
                 "bijux-cli-core",
                 "bijux-cli-install",
                 "bijux-cli-output",
                 "bijux-cli-routing",
             ]),
         ),
-        ("bijux-cli-routing", BTreeSet::from(["bijux-cli-contracts"])),
+        ("bijux-cli-routing", BTreeSet::new()),
     ]);
 
     for pkg in packages {

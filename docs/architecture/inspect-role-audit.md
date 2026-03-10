@@ -40,4 +40,4 @@ Added contract types:
 - `AliasRewrite`
 - `InspectReport`
 
-These are now exported by `bijux-cli-contracts` and covered by serde roundtrip tests.
+These are now exported by `bijux-cli-routing` (`contracts` module) and covered by serde roundtrip tests.

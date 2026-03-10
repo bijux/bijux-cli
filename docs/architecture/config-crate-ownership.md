@@ -4,7 +4,7 @@ This document defines stable ownership boundaries for Rust config behavior.
 
 ## Ownership decisions
 
-- Config contracts: `bijux-cli-contracts`
+- Config contracts: `bijux-cli-routing` (`contracts` module)
 - Config storage and path compatibility: `bijux-cli-install`
 - Config command routing and identity: `bijux-cli-routing`
 - Config execution semantics and command handlers: `bijux-cli-core`
@@ -33,7 +33,7 @@ This document defines stable ownership boundaries for Rust config behavior.
 
 ## Domain placement
 
-- Durable and cross-crate config source contracts remain in `bijux-cli-contracts`.
+- Durable and cross-crate config source contracts remain in `bijux-cli-routing` (`contracts` module).
 - Storage compatibility and path resolution remain in `bijux-cli-install`.
 - Command handler internals remain in `bijux-cli-core` behind config service/repository boundaries.
 
