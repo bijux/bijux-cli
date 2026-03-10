@@ -7,15 +7,15 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
@@ -31,8 +31,8 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root =
-        std::env::temp_dir().join(format!("bijux-memory-matrix-{name}-{}-{nanos}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-memory-matrix-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -71,11 +71,17 @@ fn memory_root_and_list_missing_empty_valid_text_json_yaml() {
     let populated_json: Value = serde_json::from_slice(&populated.stdout).expect("json");
     assert_eq!(populated_json["count"], 2);
 
-    let text = run_with_env(&["memory", "list", "--format", "text"], &[("HOME", home.to_str().expect("utf-8"))]);
+    let text = run_with_env(
+        &["memory", "list", "--format", "text"],
+        &[("HOME", home.to_str().expect("utf-8"))],
+    );
     assert_eq!(text.status.code(), Some(0));
     assert!(String::from_utf8(text.stdout).expect("utf-8").contains("alpha"));
 
-    let yaml = run_with_env(&["memory", "list", "--format", "yaml", "--pretty"], &[("HOME", home.to_str().expect("utf-8"))]);
+    let yaml = run_with_env(
+        &["memory", "list", "--format", "yaml", "--pretty"],
+        &[("HOME", home.to_str().expect("utf-8"))],
+    );
     assert_eq!(yaml.status.code(), Some(0));
     assert!(String::from_utf8(yaml.stdout).expect("utf-8").contains("keys:"));
 
@@ -104,8 +110,11 @@ fn memory_malformed_wrong_type_missing_required_and_extra_fields() {
     let malformed_json: Value = serde_json::from_slice(&malformed.stdout).expect("json");
     assert_eq!(malformed_json["count"], 0);
 
-    fs::write(&mem_file, r#"{"alpha":1,"beta":{"value":2},"gamma":null,"delta":{"nested":true,"extra":"x"}}"#)
-        .expect("wrong type/extra fields");
+    fs::write(
+        &mem_file,
+        r#"{"alpha":1,"beta":{"value":2},"gamma":null,"delta":{"nested":true,"extra":"x"}}"#,
+    )
+    .expect("wrong type/extra fields");
     let mixed = run_with_env(
         &["memory", "list", "--format", "json", "--no-pretty"],
         &[("HOME", home.to_str().expect("utf-8"))],
@@ -135,7 +144,8 @@ fn memory_quiet_no_color_and_deterministic_repeated_runs() {
     let mem_file = bijux_dir.join(".memory.json");
     fs::write(&mem_file, r#"{"alpha":1,"beta":2}"#).expect("seed memory");
 
-    let quiet = run_with_env(&["memory", "list", "--quiet"], &[("HOME", home.to_str().expect("utf-8"))]);
+    let quiet =
+        run_with_env(&["memory", "list", "--quiet"], &[("HOME", home.to_str().expect("utf-8"))]);
     assert_eq!(quiet.status.code(), Some(0));
     assert!(quiet.stdout.is_empty());
     assert!(quiet.stderr.is_empty());

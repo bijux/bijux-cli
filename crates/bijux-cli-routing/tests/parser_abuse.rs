@@ -5,12 +5,12 @@ use bijux_cli_routing as _;
 use bijux_cli_routing::catalog::dev_cli_subcommands;
 use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
-use proptest as _;
-use serde as _;
-use serde_json as _;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn lcg(seed: &mut u64) -> u64 {
@@ -40,7 +40,9 @@ fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
                 argv.push("cli".to_string());
                 argv.push(pick(&cli_sub, &mut seed).to_string());
                 if argv[2] == "config" {
-                    argv.push(pick(&["get", "set", "unset", "clear", "load"], &mut seed).to_string());
+                    argv.push(
+                        pick(&["get", "set", "unset", "clear", "load"], &mut seed).to_string(),
+                    );
                 }
                 if argv[2] == "plugins" {
                     argv.push(pick(&plugin_sub, &mut seed).to_string());
@@ -60,7 +62,8 @@ fn randomized_malformed_argv_corpus_covers_root_cli_dev_and_plugin_entry() {
             argv.push(pick(&junk, &mut seed).to_string());
         }
 
-        let parsed = parse_intent(&argv).expect("parser should not panic on randomized malformed corpus");
+        let parsed =
+            parse_intent(&argv).expect("parser should not panic on randomized malformed corpus");
         assert!(parsed.command_path.len() <= 6, "path exploded for argv={argv:?}");
     }
 }
@@ -126,7 +129,8 @@ fn parser_shell_hostile_and_confusable_namespace_tokens_do_not_hijack_reserved_p
     assert!(hostile.normalized_path.is_empty());
 
     let confusable_dev =
-        parse_intent(&["bijux".into(), "dеv".into(), "cli".into(), "status".into()]).expect("parse");
+        parse_intent(&["bijux".into(), "dеv".into(), "cli".into(), "status".into()])
+            .expect("parse");
     // Cyrillic 'е' must not resolve to reserved `dev`.
     assert_ne!(confusable_dev.normalized_path, vec!["dev", "cli", "status"]);
 
@@ -155,9 +159,8 @@ fn unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguit
 fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
     let mut registry = RouteRegistry::default();
     for blocked in ["help", "version", "dev", "cli", "doctor"] {
-        let err = registry
-            .register_plugin_namespace(blocked)
-            .expect_err("blocked namespace should fail");
+        let err =
+            registry.register_plugin_namespace(blocked).expect_err("blocked namespace should fail");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
     }
 

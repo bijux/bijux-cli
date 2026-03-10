@@ -6,19 +6,20 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_case(case_file: &Path) {
-    let json: serde_json::Value = serde_json::from_str(&fs::read_to_string(case_file).expect("read case"))
-        .expect("parse case json");
+    let json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(case_file).expect("read case"))
+            .expect("parse case json");
 
     let args: Vec<String> = json["args"]
         .as_array()
@@ -42,7 +43,8 @@ fn run_case(case_file: &Path) {
     fs::create_dir_all(memory.parent().expect("memory parent")).expect("mkdir memory parent");
     fs::create_dir_all(&plugins).expect("mkdir plugins");
 
-    fs::write(plugins.join("registry.json"), json["registry_text"].as_str().unwrap_or_default()).expect("write registry");
+    fs::write(plugins.join("registry.json"), json["registry_text"].as_str().unwrap_or_default())
+        .expect("write registry");
     fs::write(&history, json["history_text"].as_str().unwrap_or_default()).expect("write history");
     fs::write(&memory, json["memory_text"].as_str().unwrap_or_default()).expect("write memory");
 
@@ -64,7 +66,8 @@ fn run_case(case_file: &Path) {
 
 #[test]
 fn minimized_plugin_state_corruption_cases_replay_without_crashing() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/plugin_state_corruption_minimized_cases");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fuzz/plugin_state_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read case directory")
         .filter_map(Result::ok)

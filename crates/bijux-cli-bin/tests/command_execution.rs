@@ -5,15 +5,15 @@ use std::process::Command;
 use std::{env, fs};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> String {
     let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -199,11 +199,8 @@ fn runtime_identity_reports_ambiguous_active_binary_selection() {
 
 #[test]
 fn runtime_identity_reports_python_bridge_support_diagnostic() {
-    let stdout = run_with_env(
-        &["dev", "cli", "runtime-identity"],
-        "BIJUX_PYTHON_BRIDGE_SUPPORTED",
-        "0",
-    );
+    let stdout =
+        run_with_env(&["dev", "cli", "runtime-identity"], "BIJUX_PYTHON_BRIDGE_SUPPORTED", "0");
     let payload: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
 }

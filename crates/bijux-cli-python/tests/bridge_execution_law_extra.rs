@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 //! Python bridge execution law coverage for TODOs 261-275.
 
-use bijux_cli_routing as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
 use bijux_cli_python::{
-    execution_facade_api, execution_outcome_api, BridgeErrorKind, classify_failure,
+    classify_failure, execution_facade_api, execution_outcome_api, BridgeErrorKind,
 };
+use bijux_cli_routing as _;
 use serde_json::Value;
 
 fn parse_json(text: &str) -> Value {
@@ -65,12 +65,10 @@ fn python_bridge_plugins_config_history_and_memory_match_binary_outputs() {
 }
 
 #[test]
-fn python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives() {
+fn python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_internal_representatives(
+) {
     let representative_failures = [
-        (
-            "usage",
-            vec!["bijux", "ghost", "status"],
-        ),
+        ("usage", vec!["bijux", "ghost", "status"]),
         (
             "validation",
             vec![
@@ -84,19 +82,10 @@ fn python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_
                 "/tmp/bijux-bridge-validation",
             ],
         ),
-        (
-            "plugin",
-            vec!["bijux", "cli", "plugins", "inspect", "community-missing"],
-        ),
+        ("plugin", vec!["bijux", "cli", "plugins", "inspect", "community-missing"]),
         (
             "internal",
-            vec![
-                "bijux",
-                "cli",
-                "config",
-                "load",
-                "/tmp/bijux-bridge-missing-config.env",
-            ],
+            vec!["bijux", "cli", "config", "load", "/tmp/bijux-bridge-missing-config.env"],
         ),
     ];
 
@@ -114,10 +103,7 @@ fn python_bridge_and_binary_agree_on_exit_codes_for_usage_validation_plugin_and_
 
 #[test]
 fn python_bridge_and_binary_agree_on_stream_routing_for_covered_commands() {
-    let commands = [
-        vec!["bijux", "status"],
-        vec!["bijux", "ghost", "status"],
-    ];
+    let commands = [vec!["bijux", "status"], vec!["bijux", "ghost", "status"]];
 
     for command in commands {
         let argv: Vec<String> = command.into_iter().map(ToString::to_string).collect();
@@ -140,8 +126,7 @@ fn python_bridge_and_binary_agree_on_stream_routing_for_covered_commands() {
 
 #[test]
 fn python_bridge_and_binary_agree_on_namespace_rejection_behavior() {
-    let argv =
-        vec!["bijux".to_string(), "ghost".to_string(), "status".to_string()];
+    let argv = vec!["bijux".to_string(), "ghost".to_string(), "status".to_string()];
     let bridge = parse_json(&execution_outcome_api(&argv).expect("bridge outcome"));
     let core = run_app(&argv).expect("binary execution");
 
@@ -158,10 +143,8 @@ fn python_bridge_and_binary_agree_on_namespace_rejection_behavior() {
 
 #[test]
 fn python_bridge_and_binary_help_outputs_match_for_representative_commands() {
-    let commands = [
-        vec!["bijux", "status", "--help"],
-        vec!["bijux", "cli", "plugins", "list", "--help"],
-    ];
+    let commands =
+        [vec!["bijux", "status", "--help"], vec!["bijux", "cli", "plugins", "list", "--help"]];
 
     for command in commands {
         let argv: Vec<String> = command.into_iter().map(ToString::to_string).collect();

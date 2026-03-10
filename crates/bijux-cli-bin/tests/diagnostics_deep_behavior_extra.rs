@@ -8,21 +8,18 @@ use std::process::{Command, Output};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
@@ -112,15 +109,19 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
         serde_json::json!(["flags", "env", "config", "defaults"])
     );
 
-    let contracts = parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);
-    let contracts_snapshot: Value = serde_json::from_str(include_str!("snapshots/ported/dev_cli_contracts.json"))
-        .expect("contracts snapshot json");
+    let contracts =
+        parse_json(&run(&["dev", "cli", "contracts", "--format", "json", "--no-pretty"]).stdout);
+    let contracts_snapshot: Value =
+        serde_json::from_str(include_str!("snapshots/ported/dev_cli_contracts.json"))
+            .expect("contracts snapshot json");
     assert_eq!(contracts["schema_version"], contracts_snapshot["schema_version"]);
     assert_eq!(contracts["contracts"], contracts_snapshot["contracts"]);
 
-    let routes = parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
-    let routes_snapshot: Value = serde_json::from_str(include_str!("snapshots/ported/dev_cli_routes.json"))
-        .expect("routes snapshot json");
+    let routes =
+        parse_json(&run(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let routes_snapshot: Value =
+        serde_json::from_str(include_str!("snapshots/ported/dev_cli_routes.json"))
+            .expect("routes snapshot json");
     let snapshot_routes: BTreeSet<String> = routes_snapshot["routes"]
         .as_array()
         .expect("snapshot routes")
@@ -151,7 +152,8 @@ fn dev_cli_env_contracts_routes_and_registry_match_current_snapshots_and_resolut
         .collect();
     assert!(snapshot_routes.is_subset(&current_routes));
 
-    let registry = parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
+    let registry =
+        parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
     let ownership = registry["ownership"].as_object().expect("ownership object");
     let plugin_names: BTreeSet<String> = ownership
         .get("plugin")
@@ -195,9 +197,8 @@ fn state_doctor_and_plugin_health_match_corruption_harness_findings() {
     let plugin_health = plugin_health_cmd.output().expect("plugin health");
     assert_eq!(plugin_health.status.code(), Some(0));
     let plugin_health_json = parse_json(&plugin_health.stdout);
-    let text_report = plugin_health_json["machine_report"]["text_report"]
-        .as_str()
-        .unwrap_or_default();
+    let text_report =
+        plugin_health_json["machine_report"]["text_report"].as_str().unwrap_or_default();
     assert!(text_report.contains("status: degraded"));
     assert_eq!(state_json["doctor"]["status"], "degraded");
 }

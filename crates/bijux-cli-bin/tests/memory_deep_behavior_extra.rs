@@ -7,15 +7,15 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
@@ -31,7 +31,8 @@ fn parse_json(bytes: &[u8]) -> Value {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-memory-extra-{name}-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-memory-extra-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
@@ -55,7 +56,10 @@ fn memory_state_parsing_is_stable_under_field_reordering_and_unknown_fields() {
     assert_eq!(second.status.code(), Some(0));
     let second_json = parse_json(&second.stdout);
 
-    assert_eq!(first_json["keys"], second_json["keys"], "field reorder should not change parsed keys");
+    assert_eq!(
+        first_json["keys"], second_json["keys"],
+        "field reorder should not change parsed keys"
+    );
 }
 
 #[test]
@@ -75,7 +79,10 @@ fn missing_and_empty_memory_states_are_intentionally_consistent() {
     assert_eq!(empty.status.code(), Some(0));
     let empty_json = parse_json(&empty.stdout);
 
-    assert_eq!(missing_json, empty_json, "missing and empty memory states should be intentionally consistent");
+    assert_eq!(
+        missing_json, empty_json,
+        "missing and empty memory states should be intentionally consistent"
+    );
 }
 
 #[test]
@@ -115,7 +122,8 @@ fn memory_wrong_type_and_missing_required_shape_failures_are_stable() {
     assert_eq!(wrong_type_err["status"], "error");
 
     fs::write(&memory, "{\"only\":\"string\"}").expect("write missing-required-shape");
-    let missing_required = run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
+    let missing_required =
+        run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(missing_required.status.code(), Some(0));
     let payload = parse_json(&missing_required.stdout);
     assert!(payload["keys"].as_array().expect("keys").iter().any(|v| v == "only"));
@@ -130,8 +138,10 @@ fn memory_state_audit_and_state_doctor_agree_on_malformed_state_findings() {
     fs::write(&memory, "{\"bad\":1}").expect("write wrong-type memory");
     let envs = [("HOME", home.display().to_string())];
 
-    let audit = run_with_env(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"], &envs);
-    let doctor = run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
+    let audit =
+        run_with_env(&["dev", "cli", "state-audit", "--format", "json", "--no-pretty"], &envs);
+    let doctor =
+        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(audit.status.code(), Some(0));
     assert_eq!(doctor.status.code(), Some(0));
 
@@ -178,13 +188,7 @@ fn memory_path_override_and_quiet_mode_keep_functional_semantics() {
     let normal_json = parse_json(&normal.stdout);
 
     let quiet = run_with_env(
-        &[
-            "memory",
-            "list",
-            "--quiet",
-            "--config-path",
-            fake_config.to_str().expect("utf-8"),
-        ],
+        &["memory", "list", "--quiet", "--config-path", fake_config.to_str().expect("utf-8")],
         &envs,
     );
     assert_eq!(quiet.status.code(), Some(0));
@@ -207,4 +211,3 @@ fn memory_path_override_and_quiet_mode_keep_functional_semantics() {
     let repeat_json = parse_json(&repeat.stdout);
     assert_eq!(normal_json, repeat_json, "path override should keep memory semantics stable");
 }
-

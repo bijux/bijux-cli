@@ -6,7 +6,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_python::{
@@ -15,6 +14,7 @@ use bijux_cli_python::{
     write_compatibility_config, CompatibilityConfig, CompatibilityError, PathOverrides,
     ENV_CONFIG_PATH, ENV_HISTORY_PATH,
 };
+use bijux_cli_routing as _;
 use serde_json as _;
 
 fn temp_dir(label: &str) -> PathBuf {

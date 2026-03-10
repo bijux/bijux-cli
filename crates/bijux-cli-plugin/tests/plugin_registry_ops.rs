@@ -6,12 +6,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing as _;
 use bijux_cli_plugin::{
     compatibility_check, disable_plugin, enable_plugin, install_plugin, load_registry,
     plugin_doctor, registry_path_from_plugins_dir, uninstall_plugin, InstallPluginRequest,
     PluginTrustLevel,
 };
+use bijux_cli_routing as _;
 use semver as _;
 use serde as _;
 use serde_json as _;
@@ -71,7 +71,8 @@ fn compatibility_and_doctor_report_failure_paths_deterministically() {
     let registry = load_registry(&registry_path).expect("registry should load");
     assert_eq!(registry.version, "1");
 
-    let missing_enable = enable_plugin(&registry_path, "ghost").expect_err("missing plugin should fail");
+    let missing_enable =
+        enable_plugin(&registry_path, "ghost").expect_err("missing plugin should fail");
     assert!(format!("{missing_enable}").contains("plugin not found"));
 
     let missing_disable =

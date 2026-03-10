@@ -2,16 +2,16 @@
 //! Parser fuzz targets for argv normalization and route safety.
 //! test_type: parser-fuzz
 
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_routing::catalog::{dev_cli_subcommands, normalize_command_path};
 use bijux_cli_routing::parser::{parse_intent, ParsedIntent};
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
-use proptest as _;
-use serde as _;
-use serde_json as _;
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn lcg(seed: &mut u64) -> u64 {
@@ -69,22 +69,16 @@ fn fuzz_root_argv_parsing_does_not_panic() {
 
 #[test]
 fn fuzz_cli_argv_parsing_does_not_panic() {
-    let cli_sub = ["status", "paths", "self-test", "config", "plugins", "doctor", "inspect", "version"];
+    let cli_sub =
+        ["status", "paths", "self-test", "config", "plugins", "doctor", "inspect", "version"];
     let config_sub = ["get", "set", "unset", "clear", "list", "export", "load", "reload"];
-    let plugin_sub = [
-        "list",
-        "inspect",
-        "install",
-        "uninstall",
-        "doctor",
-        "check",
-        "where",
-        "schema",
-    ];
+    let plugin_sub =
+        ["list", "inspect", "install", "uninstall", "doctor", "check", "where", "schema"];
     let mut seed = 0xA11C_E002_u64;
 
     for _ in 0..220 {
-        let mut argv = vec!["bijux".to_string(), "cli".to_string(), pick(&cli_sub, &mut seed).to_string()];
+        let mut argv =
+            vec!["bijux".to_string(), "cli".to_string(), pick(&cli_sub, &mut seed).to_string()];
         if argv[2] == "config" {
             argv.push(pick(&config_sub, &mut seed).to_string());
         }
@@ -107,7 +101,12 @@ fn fuzz_dev_cli_argv_parsing_does_not_panic() {
     let mut seed = 0xA11C_E003_u64;
 
     for _ in 0..240 {
-        let mut argv = vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), pick(dev_sub, &mut seed).to_string()];
+        let mut argv = vec![
+            "bijux".to_string(),
+            "dev".to_string(),
+            "cli".to_string(),
+            pick(dev_sub, &mut seed).to_string(),
+        ];
         argv.extend(random_suffix(&mut seed, 5));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
@@ -135,7 +134,11 @@ fn fuzz_plugin_command_argv_parsing_does_not_panic() {
     let mut seed = 0xA11C_E004_u64;
 
     for _ in 0..220 {
-        let mut argv = vec!["bijux".to_string(), "plugins".to_string(), pick(&plugin_sub, &mut seed).to_string()];
+        let mut argv = vec![
+            "bijux".to_string(),
+            "plugins".to_string(),
+            pick(&plugin_sub, &mut seed).to_string(),
+        ];
         argv.extend(random_suffix(&mut seed, 6));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
@@ -152,7 +155,8 @@ fn fuzz_config_command_argv_parsing_does_not_panic() {
     let mut seed = 0xA11C_E005_u64;
 
     for _ in 0..220 {
-        let mut argv = vec!["bijux".to_string(), "config".to_string(), pick(&sub, &mut seed).to_string()];
+        let mut argv =
+            vec!["bijux".to_string(), "config".to_string(), pick(&sub, &mut seed).to_string()];
         argv.extend(random_suffix(&mut seed, 6));
         let first = stable_parse(&argv);
         let second = stable_parse(&argv);
@@ -199,9 +203,11 @@ fn fuzz_mixed_global_local_flag_ordering_is_deterministic() {
         vec!["bijux", "cli", "status", "--color", "never", "--format", "json", "--no-pretty"],
     ];
 
-    let baseline = parse_intent(&variants[0].iter().map(|s| (*s).to_string()).collect::<Vec<_>>()).expect("baseline");
+    let baseline = parse_intent(&variants[0].iter().map(|s| (*s).to_string()).collect::<Vec<_>>())
+        .expect("baseline");
     for variant in variants.iter().skip(1) {
-        let parsed = parse_intent(&variant.iter().map(|s| (*s).to_string()).collect::<Vec<_>>()).expect("variant");
+        let parsed = parse_intent(&variant.iter().map(|s| (*s).to_string()).collect::<Vec<_>>())
+            .expect("variant");
         assert_eq!(parsed.normalized_path, baseline.normalized_path);
         assert_eq!(parsed.global_flags.output_format, baseline.global_flags.output_format);
         assert_eq!(parsed.global_flags.color_mode, baseline.global_flags.color_mode);
@@ -274,10 +280,12 @@ fn fuzz_help_path_parsing_and_alias_resolution_is_safe() {
         assert!(parsed.command_path.len() <= 6);
     }
 
-    let alias = parse_intent(&["bijux".into(), "plugins".into(), "inspect".into()]).expect("alias parse");
+    let alias =
+        parse_intent(&["bijux".into(), "plugins".into(), "inspect".into()]).expect("alias parse");
     assert_eq!(alias.normalized_path, vec!["cli", "plugins", "inspect"]);
 
-    let dev_alias = parse_intent(&["bijux".into(), "dev".into(), "doctor".into()]).expect("dev alias parse");
+    let dev_alias =
+        parse_intent(&["bijux".into(), "dev".into(), "doctor".into()]).expect("dev alias parse");
     assert_eq!(dev_alias.normalized_path, vec!["dev", "cli", "doctor"]);
 }
 
@@ -286,20 +294,25 @@ fn fuzz_namespace_normalization_and_reserved_rejection_stays_safe() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("my-plugin").expect("baseline namespace");
 
-    let normalized_collision = registry.register_plugin_namespace("my_plugin").expect_err("normalized collision");
+    let normalized_collision =
+        registry.register_plugin_namespace("my_plugin").expect_err("normalized collision");
     assert!(matches!(normalized_collision, RouteError::Conflict(_)));
 
-    let case_collision = registry.register_plugin_namespace("MY-PLUGIN").expect_err("case collision");
+    let case_collision =
+        registry.register_plugin_namespace("MY-PLUGIN").expect_err("case collision");
     assert!(matches!(case_collision, RouteError::Conflict(_)));
 
     let mut reserved = RouteRegistry::default();
     for ns in OFFICIAL_PRODUCT_NAMESPACES {
-        let err = reserved.register_plugin_namespace(ns).expect_err("reserved namespace must reject");
+        let err =
+            reserved.register_plugin_namespace(ns).expect_err("reserved namespace must reject");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
     }
 
     for built_in in ["cli", "dev", "help", "version", "doctor", "plugins", "inspect"] {
-        let err = reserved.register_plugin_namespace(built_in).expect_err("built-in namespace must reject");
+        let err = reserved
+            .register_plugin_namespace(built_in)
+            .expect_err("built-in namespace must reject");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));
     }
 }

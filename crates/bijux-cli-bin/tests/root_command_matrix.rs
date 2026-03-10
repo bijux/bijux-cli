@@ -4,21 +4,18 @@
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -122,8 +119,20 @@ fn parity_sleep_against_current_expected_behavior() {
 #[test]
 fn help_snapshot_exists_for_every_root_command() {
     let roots = [
-        "status", "version", "doctor", "inspect", "docs", "audit", "sleep", "config", "plugins",
-        "history", "memory", "repl", "completion", "atlas",
+        "status",
+        "version",
+        "doctor",
+        "inspect",
+        "docs",
+        "audit",
+        "sleep",
+        "config",
+        "plugins",
+        "history",
+        "memory",
+        "repl",
+        "completion",
+        "atlas",
     ];
     for cmd in roots {
         let out = run(&[cmd, "--help"]);
@@ -189,14 +198,8 @@ fn machine_readable_root_commands_support_json_and_yaml() {
 
 #[test]
 fn quiet_mode_is_supported_for_relevant_root_commands() {
-    let relevant: &[&[&str]] = &[
-        &["status"],
-        &["doctor"],
-        &["inspect"],
-        &["docs"],
-        &["audit"],
-        &["sleep", "0"],
-    ];
+    let relevant: &[&[&str]] =
+        &[&["status"], &["doctor"], &["inspect"], &["docs"], &["audit"], &["sleep", "0"]];
     for args in relevant {
         let mut quiet_args = args.to_vec();
         quiet_args.insert(0, "--quiet");

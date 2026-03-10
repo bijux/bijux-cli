@@ -5,30 +5,28 @@
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python::execution_outcome_api;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::execution_outcome_api;
 use bijux_cli_repl::{execute_repl_line, startup_repl};
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn bridge_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
         .chain(args.iter().map(|item| item.to_string()))
         .collect::<Vec<_>>();
-    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution")).expect("bridge json")
+    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution"))
+        .expect("bridge json")
 }
 
 #[test]
@@ -192,4 +190,3 @@ fn repl_exit_class_matches_binary_for_stream_routed_failures() {
         run(&["status", "--format", "json", "--no-pretty"]).status.code().unwrap_or(-1)
     );
 }
-

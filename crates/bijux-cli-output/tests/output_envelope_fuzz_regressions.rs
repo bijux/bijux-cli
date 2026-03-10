@@ -5,9 +5,9 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_output as _;
+use bijux_cli_routing as _;
 use serde as _;
 use serde_json as _;
 use serde_yaml as _;

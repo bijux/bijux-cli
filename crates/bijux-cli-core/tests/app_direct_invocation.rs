@@ -2,9 +2,6 @@
 //! Direct core invocation and parity-oriented policy tests.
 
 use anyhow as _;
-use bijux_cli_routing::{
-    ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode,
-};
 use bijux_cli_core::app::run_app;
 use bijux_cli_core::kernel::{
     map_error_category_to_exit, resolve_policy, ExecutionIntent, PolicyInputs,
@@ -13,6 +10,7 @@ use bijux_cli_install as _;
 use bijux_cli_output as _;
 use bijux_cli_plugin as _;
 use bijux_cli_routing as _;
+use bijux_cli_routing::{ColorMode, GlobalFlags, LogLevel, OutputFormat, PrettyMode};
 use clap as _;
 use futures as _;
 use serde_json::Value;
@@ -322,13 +320,9 @@ fn state_read_paths_follow_normalized_resolution_with_flag_overrides() {
 
 #[test]
 fn direct_core_invocation_dev_status_exposes_generated_report_bundle() {
-    let out = run_app(&[
-        "bijux".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "status".to_string(),
-    ])
-    .expect("run_app should succeed");
+    let out =
+        run_app(&["bijux".to_string(), "dev".to_string(), "cli".to_string(), "status".to_string()])
+            .expect("run_app should succeed");
     assert_eq!(out.exit_code, 0);
     let payload: Value = serde_json::from_str(&out.stdout).expect("valid json");
     assert!(payload["status_report"].is_object());

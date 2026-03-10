@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], envs: &[(&str, &str)]) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
@@ -26,7 +26,8 @@ fn run(args: &[&str], envs: &[(&str, &str)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-hostile-determinism-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-hostile-determinism-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -85,15 +86,7 @@ fn setup_external_plugin(root: &Path, plugins_dir: &Path, namespace: &str, entry
     .expect("write manifest");
 
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
-    let install = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &envs,
-    );
+    let install = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
     assert!(install.status.success());
 }
 
@@ -223,14 +216,8 @@ fn conflicting_plugin_installs_fail_deterministically() {
     let manifest = root.join("conflictplug_scaffold").join("plugin.manifest.json");
     let envs = [("BIJUXCLI_PLUGINS_DIR", plugins_dir.to_str().expect("utf-8"))];
 
-    let first = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &envs,
-    );
-    let second = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &envs,
-    );
+    let first = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
+    let second = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &envs);
     assert_eq!(first.status.code(), Some(1));
     assert_eq!(second.status.code(), Some(1));
     assert_eq!(first.stderr, second.stderr);

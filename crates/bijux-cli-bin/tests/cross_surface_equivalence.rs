@@ -6,23 +6,20 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::{run_app, AppRunResult};
-use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli_repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput, ReplStream};
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_binary(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_core_cmd(args: &[&str]) -> AppRunResult {
@@ -43,7 +40,8 @@ fn parse_json(text: &str) -> Value {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-cross-surface-{name}-{}", std::process::id()));
+    let path =
+        std::env::temp_dir().join(format!("bijux-cross-surface-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("create temp directory");
     path
@@ -214,7 +212,8 @@ fn binary_vs_python_bridge_namespace_rejection_behavior_matches() {
     let path_text = plugin_path.to_string_lossy().to_string();
 
     let bin = run_binary(&["cli", "plugins", "scaffold", "python", "cli", "--path", &path_text]);
-    let bridge = bridge_outcome(&["cli", "plugins", "scaffold", "python", "cli", "--path", &path_text]);
+    let bridge =
+        bridge_outcome(&["cli", "plugins", "scaffold", "python", "cli", "--path", &path_text]);
 
     assert_eq!(bridge["exit_code"].as_i64(), Some(i64::from(bin.status.code().unwrap_or(-1))));
     assert_eq!(bridge["stdout"].as_str().unwrap_or_default(), String::from_utf8_lossy(&bin.stdout));

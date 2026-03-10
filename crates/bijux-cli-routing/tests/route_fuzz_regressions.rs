@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 //! Route fuzz regression suite replaying minimized route-fuzz cases.
-//! test_type: route-fuzz-regression
+//! `test_type`: route-fuzz-regression
 
 use bijux_cli_routing as _;
 use proptest as _;

@@ -7,15 +7,15 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 #[derive(Clone, Copy, Debug)]
 enum Domain {
@@ -51,10 +51,7 @@ impl Lcg {
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -68,7 +65,11 @@ impl Lcg {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-state-corruption-{}-{}", name, std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "bijux-state-corruption-{}-{}",
+        name,
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp root");
     path
@@ -87,12 +88,14 @@ fn seed_for(domain: Domain) -> Vec<u8> {
     match domain {
         Domain::Config => b"BIJUXCLI_ALPHA=one\nBIJUXCLI_BETA=two\n".to_vec(),
         Domain::PluginRegistry => {
-            b"{\"plugins\":[{\"name\":\"sample\",\"path\":\"/tmp/sample\",\"enabled\":true}]}".to_vec()
+            b"{\"plugins\":[{\"name\":\"sample\",\"path\":\"/tmp/sample\",\"enabled\":true}]}"
+                .to_vec()
         }
         Domain::History => b"status\ndoctor\n".to_vec(),
         Domain::Memory => b"{\"alpha\":{\"value\":\"1\"},\"beta\":{\"value\":\"2\"}}".to_vec(),
         Domain::InstallMetadata => {
-            b"{\"install\":{\"channel\":\"cargo\",\"binary\":\"bijux-rs\",\"version\":\"0.0.0\"}}".to_vec()
+            b"{\"install\":{\"channel\":\"cargo\",\"binary\":\"bijux-rs\",\"version\":\"0.0.0\"}}"
+                .to_vec()
         }
     }
 }
@@ -149,9 +152,8 @@ fn apply_mutator(path: &Path, mutator: Mutator, rng: &mut Lcg, seed: &[u8]) -> i
         }
         Mutator::MissingFieldDeletion => {
             let text = String::from_utf8_lossy(seed);
-            let mutated = text
-                .replace("\"path\":\"/tmp/sample\",", "")
-                .replace("BIJUXCLI_BETA=two\n", "");
+            let mutated =
+                text.replace("\"path\":\"/tmp/sample\",", "").replace("BIJUXCLI_BETA=two\n", "");
             fs::write(path, mutated)
         }
         Mutator::ExtraFieldInsertion => {
@@ -228,12 +230,13 @@ fn exercise_domain(root: &Path, domain: Domain, target: &Path) -> Output {
             ],
             &envs,
         ),
-        Domain::PluginRegistry => run_with_env(
-            &["cli", "plugins", "doctor", "--format", "json", "--no-pretty"],
-            &envs,
-        ),
+        Domain::PluginRegistry => {
+            run_with_env(&["cli", "plugins", "doctor", "--format", "json", "--no-pretty"], &envs)
+        }
         Domain::History => run_with_env(&["history", "--format", "json", "--no-pretty"], &envs),
-        Domain::Memory => run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs),
+        Domain::Memory => {
+            run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs)
+        }
         Domain::InstallMetadata => {
             envs.push(("BIJUXCLI_INSTALL_STATE_FILE", target.display().to_string()));
             run_with_env(

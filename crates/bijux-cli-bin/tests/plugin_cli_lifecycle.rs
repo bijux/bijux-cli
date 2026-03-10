@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -31,7 +31,8 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let base = std::env::temp_dir().join(format!("bijux-plugin-cli-{}-{}", name, std::process::id()));
+    let base =
+        std::env::temp_dir().join(format!("bijux-plugin-cli-{}-{}", name, std::process::id()));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(&base).expect("mkdir temp");
     base
@@ -78,9 +79,11 @@ fn python_scaffold_install_list_inspect_uninstall_flow() {
     assert_eq!(install["status"], "installed");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-    assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
-        |item| item["manifest"]["namespace"] == "pyflow"
-    ));
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "pyflow"));
 
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
@@ -110,12 +113,7 @@ fn rust_scaffold_install_list_inspect_uninstall_flow() {
     );
 
     run_ok_json(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
         &plugins_dir,
     );
 
@@ -123,9 +121,11 @@ fn rust_scaffold_install_list_inspect_uninstall_flow() {
     assert_eq!(check["status"], "healthy");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-    assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
-        |item| item["manifest"]["namespace"] == "rustflow"
-    ));
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "rustflow"));
 
     let uninstall = run_ok_json(&["cli", "plugins", "uninstall", "rustflow"], &plugins_dir);
     assert_eq!(uninstall["status"], "uninstalled");
@@ -151,12 +151,7 @@ fn python_scaffold_broken_manifest_fails_install() {
     );
     fs::write(manifest_file(&scaffold_dir), "{broken-json").expect("corrupt manifest");
     let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));
@@ -197,12 +192,7 @@ fn rust_scaffold_broken_manifest_fails_install() {
     )
     .expect("write incompatible manifest");
     let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));
@@ -314,9 +304,11 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
         &plugins_dir,
     );
     let manifest = manifest_file(&scaffold_dir);
-    let first = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    let first =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert!(first.status.success());
-    let duplicate = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    let duplicate =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(duplicate.status.code(), Some(1));
 }
 
@@ -339,12 +331,7 @@ fn uninstall_failure_preserves_existing_registry_entries() {
         &plugins_dir,
     );
     run_ok_json(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
         &plugins_dir,
     );
 
@@ -352,9 +339,11 @@ fn uninstall_failure_preserves_existing_registry_entries() {
     assert_eq!(fail_uninstall.status.code(), Some(1));
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-    assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
-        |item| item["manifest"]["namespace"] == "keepplug"
-    ));
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "keepplug"));
 }
 
 #[test]
@@ -376,10 +365,7 @@ fn plugin_uninstall_followed_by_reinstall_succeeds() {
         &plugins_dir,
     );
     let manifest = manifest_file(&scaffold_dir);
-    run_ok_json(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     run_ok_json(&["cli", "plugins", "uninstall", "reinstallplug"], &plugins_dir);
     let reinstall = run_ok_json(
         &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
@@ -407,12 +393,7 @@ fn plugin_disable_rejects_check_and_enable_restores_check() {
         &plugins_dir,
     );
     run_ok_json(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
         &plugins_dir,
     );
 
@@ -504,10 +485,7 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_check() {
     )
     .expect("write external manifest");
 
-    run_ok_json(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     let check = run(&["cli", "plugins", "check", "externalplug"], &plugins_dir);
     assert_eq!(check.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&check.stderr).contains("not executable"));
@@ -563,7 +541,5 @@ fn reserved_names_and_explain_outputs_are_stable_for_rejected_namespaces() {
     let explain = run_ok_json(&["cli", "plugins", "explain", "cli"], &plugins_dir);
     assert_eq!(explain["plugin"], "cli");
     let diagnostics = explain["diagnostics"].as_array().expect("diagnostics");
-    assert!(diagnostics
-        .iter()
-        .any(|row| row["message"] == "namespace is reserved: cli"));
+    assert!(diagnostics.iter().any(|row| row["message"] == "namespace is reserved: cli"));
 }

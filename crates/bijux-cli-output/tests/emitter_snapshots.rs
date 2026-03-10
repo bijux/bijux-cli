@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 //! Snapshot tests for emitter outputs.
 
+use bijux_cli_core as _;
+use bijux_cli_output::{emit_error, emit_success, EmitterConfig};
 use bijux_cli_routing::{
     ColorMode, CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };
-use bijux_cli_core as _;
-use bijux_cli_output::{emit_error, emit_success, EmitterConfig};
 use serde as _;
 use serde_json::json;
 use serde_yaml as _;

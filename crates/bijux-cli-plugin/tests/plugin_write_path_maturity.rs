@@ -5,12 +5,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::PluginLifecycleState;
 use bijux_cli_plugin::{
     disable_plugin, enable_plugin, install_plugin, list_plugins, registry_path_from_plugins_dir,
     uninstall_plugin, InstallPluginRequest, PluginError, PluginTrustLevel,
 };
+use bijux_cli_routing as _;
+use bijux_cli_routing::PluginLifecycleState;
 use semver as _;
 use serde as _;
 use serde_json as _;

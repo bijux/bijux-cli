@@ -5,15 +5,15 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_help(args: &[&str]) -> String {
     let output = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -51,14 +51,8 @@ fn help_snapshots_match_expected_output() {
         (&["config", "--help"], include_str!("snapshots/help_config.txt")),
         (&["plugins", "--help"], include_str!("snapshots/help_plugins.txt")),
         (&["plugins", "install", "--help"], include_str!("snapshots/help_plugins_install.txt")),
-        (
-            &["plugins", "uninstall", "--help"],
-            include_str!("snapshots/help_plugins_uninstall.txt"),
-        ),
-        (
-            &["plugins", "scaffold", "--help"],
-            include_str!("snapshots/help_plugins_scaffold.txt"),
-        ),
+        (&["plugins", "uninstall", "--help"], include_str!("snapshots/help_plugins_uninstall.txt")),
+        (&["plugins", "scaffold", "--help"], include_str!("snapshots/help_plugins_scaffold.txt")),
         (&["plugins", "doctor", "--help"], include_str!("snapshots/help_plugins_doctor.txt")),
         (
             &["plugins", "reserved-names", "--help"],

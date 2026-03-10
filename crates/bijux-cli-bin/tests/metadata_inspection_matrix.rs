@@ -6,21 +6,18 @@ use std::collections::BTreeSet;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_json(args: &[&str]) -> Value {
@@ -79,18 +76,10 @@ fn every_routable_command_has_inspectable_metadata_and_stable_route_identity() {
     let inspect = run_json(&["inspect", "--format", "json", "--no-pretty"]);
     let routes = run_json(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]);
 
-    let inspect_routes: BTreeSet<String> = inspect["route_sources"]
-        .as_array()
-        .expect("route_sources")
-        .iter()
-        .map(route_key)
-        .collect();
-    let routed_routes: BTreeSet<String> = routes["routes"]
-        .as_array()
-        .expect("routes")
-        .iter()
-        .map(route_key)
-        .collect();
+    let inspect_routes: BTreeSet<String> =
+        inspect["route_sources"].as_array().expect("route_sources").iter().map(route_key).collect();
+    let routed_routes: BTreeSet<String> =
+        routes["routes"].as_array().expect("routes").iter().map(route_key).collect();
 
     assert!(!inspect_routes.is_empty(), "inspect route metadata should not be empty");
     assert_eq!(inspect_routes, routed_routes, "inspect route identity must match dev cli routes");
@@ -106,10 +95,13 @@ fn inspect_exposes_builtin_and_plugin_metadata_consistently() {
         assert!(row["segments"].is_array(), "built-in row should expose segments array");
     }
     for row in inspect["plugin_origins"].as_array().expect("plugin origins array") {
-        let has_path_identity =
-            row.get("segments").is_some_and(Value::is_array) || row.get("namespace").is_some_and(Value::is_string);
+        let has_path_identity = row.get("segments").is_some_and(Value::is_array)
+            || row.get("namespace").is_some_and(Value::is_string);
         assert!(has_path_identity, "plugin row should expose route segments or namespace");
-        assert!(row["owner"].is_string() || row["source"].is_string(), "plugin row should expose source metadata");
+        assert!(
+            row["owner"].is_string() || row["source"].is_string(),
+            "plugin row should expose source metadata"
+        );
     }
 }
 
@@ -119,9 +111,13 @@ fn inspect_routes_and_registry_agree_on_namespace_ownership_and_plugin_source_me
     let routes = run_json(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]);
     let registry = run_json(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]);
 
-    let inspect_roots = top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
+    let inspect_roots =
+        top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
     let route_roots = top_level_roots(routes["routes"].as_array().expect("routes"));
-    assert_eq!(inspect_roots, route_roots, "namespace ownership should agree across inspect and routes");
+    assert_eq!(
+        inspect_roots, route_roots,
+        "namespace ownership should agree across inspect and routes"
+    );
 
     let inspect_plugin_owners: BTreeSet<String> = inspect["plugin_origins"]
         .as_array()
@@ -169,18 +165,10 @@ fn command_metadata_fields_do_not_disappear_or_rename_silently() {
         assert!(second.get(key).is_some(), "missing required key in second payload: {key}");
     }
 
-    let first_keys: BTreeSet<String> = first
-        .as_object()
-        .expect("first payload should be object")
-        .keys()
-        .cloned()
-        .collect();
-    let second_keys: BTreeSet<String> = second
-        .as_object()
-        .expect("second payload should be object")
-        .keys()
-        .cloned()
-        .collect();
+    let first_keys: BTreeSet<String> =
+        first.as_object().expect("first payload should be object").keys().cloned().collect();
+    let second_keys: BTreeSet<String> =
+        second.as_object().expect("second payload should be object").keys().cloned().collect();
     assert_eq!(first_keys, second_keys, "top-level metadata keys should not drift silently");
 }
 
@@ -229,7 +217,8 @@ fn help_output_and_inspect_metadata_agree_on_command_names_and_grouping() {
     let help_commands = parse_help_commands(&help_text);
     assert!(!help_commands.is_empty(), "root help command list should be non-empty");
 
-    let inspect_roots = top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
+    let inspect_roots =
+        top_level_roots(inspect["route_sources"].as_array().expect("route_sources"));
     for must_exist in ["status", "cli", "dev", "config", "plugins", "history", "memory"] {
         assert!(help_commands.contains(must_exist), "help missing command {must_exist}");
         assert!(inspect_roots.contains(must_exist), "inspect missing root command {must_exist}");

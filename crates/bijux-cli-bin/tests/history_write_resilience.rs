@@ -4,28 +4,29 @@
 use std::fs;
 use std::path::PathBuf;
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
 use bijux_cli_python as _;
-use libc as _;
-use bijux_cli_repl::{configure_history, execute_repl_line, flush_history, load_history, startup_repl};
+use bijux_cli_repl::{
+    configure_history, execute_repl_line, flush_history, load_history, startup_repl,
+};
 use bijux_cli_routing as _;
+use bijux_cli_routing as _;
+use libc as _;
 use serde_json as _;
 use shlex as _;
 use thiserror as _;
 
 fn temp_history_path(name: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("bijux-repl-history-resilience-{name}-{}.json", std::process::id()))
+    std::env::temp_dir()
+        .join(format!("bijux-repl-history-resilience-{name}-{}.json", std::process::id()))
 }
 
 #[test]
 fn repl_exit_flush_reports_write_interruption_without_crashing_session() {
-    let bad_dir = std::env::temp_dir().join(format!(
-        "bijux-repl-history-write-blocked-{}",
-        std::process::id()
-    ));
+    let bad_dir = std::env::temp_dir()
+        .join(format!("bijux-repl-history-write-blocked-{}", std::process::id()));
     let _ = fs::remove_dir_all(&bad_dir);
     fs::create_dir_all(&bad_dir).expect("mkdir bad dir");
 
@@ -40,10 +41,8 @@ fn repl_exit_flush_reports_write_interruption_without_crashing_session() {
 
 #[test]
 fn repl_command_recording_survives_flush_failure_and_recovers_on_retry() {
-    let bad_dir = std::env::temp_dir().join(format!(
-        "bijux-repl-history-write-blocked-retry-{}",
-        std::process::id()
-    ));
+    let bad_dir = std::env::temp_dir()
+        .join(format!("bijux-repl-history-write-blocked-retry-{}", std::process::id()));
     let _ = fs::remove_dir_all(&bad_dir);
     fs::create_dir_all(&bad_dir).expect("mkdir bad dir");
     let good_path = temp_history_path("recording-retry-good");

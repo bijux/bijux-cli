@@ -4,8 +4,8 @@
 use std::time::{Duration, Instant};
 
 use bijux_cli_core as _;
-use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat};
 use bijux_cli_output::{render_value, EmitterConfig};
+use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat};
 use serde as _;
 use serde_json::json;
 use serde_yaml as _;
@@ -44,10 +44,7 @@ fn large_json_rendering_stays_within_budget() {
         assert!(rendered.starts_with('{'));
     }
     let elapsed = started.elapsed();
-    assert!(
-        elapsed < Duration::from_secs(3),
-        "large json render budget exceeded: {elapsed:?}"
-    );
+    assert!(elapsed < Duration::from_secs(3), "large json render budget exceeded: {elapsed:?}");
 }
 
 #[test]
@@ -68,8 +65,5 @@ fn large_yaml_rendering_stays_within_budget() {
         assert!(rendered.contains("entries:"));
     }
     let elapsed = started.elapsed();
-    assert!(
-        elapsed < Duration::from_secs(3),
-        "large yaml render budget exceeded: {elapsed:?}"
-    );
+    assert!(elapsed < Duration::from_secs(3), "large yaml render budget exceeded: {elapsed:?}");
 }

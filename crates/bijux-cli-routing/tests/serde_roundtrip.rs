@@ -12,13 +12,13 @@ use bijux_cli_routing::{
     OutputFormat, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV1, PrettyMode,
     RouteSourceMetadata,
 };
+use clap as _;
 use proptest as _;
+use schemars as _;
+use semver as _;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
-use clap as _;
-use schemars as _;
-use semver as _;
 use thiserror as _;
 
 fn roundtrip<T>(value: &T)
@@ -173,7 +173,8 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
         "status": "ok",
         "data": {"healthy": true}
     });
-    let output_err = serde_json::from_value::<OutputEnvelopeV1>(bad_output).expect_err("missing meta must fail");
+    let output_err =
+        serde_json::from_value::<OutputEnvelopeV1>(bad_output).expect_err("missing meta must fail");
     assert!(output_err.to_string().contains("meta"));
 
     let bad_error = json!({
@@ -189,7 +190,8 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
             "timestamp": "2026-03-09T00:00:00Z"
         }
     });
-    let err_envelope = serde_json::from_value::<ErrorEnvelopeV1>(bad_error).expect_err("wrong code type must fail");
+    let err_envelope = serde_json::from_value::<ErrorEnvelopeV1>(bad_error)
+        .expect_err("wrong code type must fail");
     let err_text = err_envelope.to_string();
     assert!(err_text.contains("invalid type") || err_text.contains("code"));
 
@@ -208,7 +210,7 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
         "entrypoint": "sample_plugin:main",
         "capabilities": []
     });
-    let manifest_err =
-        serde_json::from_value::<PluginManifestV1>(bad_manifest).expect_err("unknown plugin kind must fail");
+    let manifest_err = serde_json::from_value::<PluginManifestV1>(bad_manifest)
+        .expect_err("unknown plugin kind must fail");
     assert!(manifest_err.to_string().contains("kind"));
 }

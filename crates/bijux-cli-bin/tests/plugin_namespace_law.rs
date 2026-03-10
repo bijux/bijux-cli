@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -25,7 +25,8 @@ fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-plugin-ns-law-{name}-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-plugin-ns-law-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -174,10 +175,8 @@ fn rejects_normalized_collision_my_plugin_vs_my_plugin_hyphen() {
     let first =
         run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(first.status.code(), Some(0));
-    let second = run(
-        &["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let second =
+        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(second.status.code(), Some(1));
     let stderr = String::from_utf8(second.stderr).expect("stderr utf-8");
     assert!(
@@ -200,10 +199,8 @@ fn rejects_case_insensitive_normalized_collision() {
     let first =
         run(&["cli", "plugins", "install", first_manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(first.status.code(), Some(1));
-    let second = run(
-        &["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let second =
+        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(second.status.code(), Some(1));
     let first_stderr = String::from_utf8(first.stderr).expect("stderr utf-8");
     let second_stderr = String::from_utf8(second.stderr).expect("stderr utf-8");
@@ -248,10 +245,7 @@ fn rejects_empty_namespace() {
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let manifest = root.join("empty.json");
     write_manifest(&manifest, "", "empty", "plugin.py:run");
-    let out = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
     assert!(stderr.contains("plugin manifest field invalid: name"));
@@ -286,16 +280,7 @@ fn json_error_envelopes_for_namespace_rejection_are_stable() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
     let out = run(
-        &[
-            "--format",
-            "json",
-            "--no-pretty",
-            "cli",
-            "plugins",
-            "scaffold",
-            "python",
-            "cli",
-        ],
+        &["--format", "json", "--no-pretty", "cli", "plugins", "scaffold", "python", "cli"],
         &plugins_dir,
     );
     assert_eq!(out.status.code(), Some(1));
@@ -314,18 +299,8 @@ fn text_errors_for_namespace_rejection_are_stable() {
     let root = tmp_dir("text-envelope");
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir");
-    let out = run(
-        &[
-            "--format",
-            "text",
-            "cli",
-            "plugins",
-            "scaffold",
-            "python",
-            "cli",
-        ],
-        &plugins_dir,
-    );
+    let out =
+        run(&["--format", "text", "cli", "plugins", "scaffold", "python", "cli"], &plugins_dir);
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");

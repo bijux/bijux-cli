@@ -7,11 +7,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing as _;
 use bijux_cli_plugin::{
     discover_plugin_manifests, install_plugin, load_registry, refresh_discovery_cache,
     InstallPluginRequest, PluginDiscoveryCache, PluginError, PluginTrustLevel,
 };
+use bijux_cli_routing as _;
 use semver as _;
 use serde as _;
 use serde_json as _;

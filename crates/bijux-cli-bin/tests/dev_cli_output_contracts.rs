@@ -4,20 +4,17 @@
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use bijux_cli_routing as _;
+use libc as _;
 use shlex as _;
 use thiserror as _;
-use bijux_cli_repl as _;
-use libc as _;
 
 fn run_raw(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 #[test]
@@ -42,7 +39,10 @@ fn dev_cli_commands_support_json_and_text_flags() {
         let text_out = run_raw(&["dev", "cli", command, "--text"]);
         assert!(text_out.status.success(), "text run failed for {command}");
         let text = String::from_utf8(text_out.stdout).expect("text utf-8");
-        assert!(text.contains(key), "text output missing key marker `{key}` for command `{command}`");
+        assert!(
+            text.contains(key),
+            "text output missing key marker `{key}` for command `{command}`"
+        );
         assert!(!text.trim().is_empty(), "text output should not be empty for `{command}`");
     }
 }

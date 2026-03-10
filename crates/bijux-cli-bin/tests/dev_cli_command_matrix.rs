@@ -6,21 +6,18 @@ use std::collections::BTreeSet;
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -64,11 +61,12 @@ fn parity_for_key_dev_cli_commands_against_current_behavior() {
 
 #[test]
 fn help_snapshots_exist_for_all_dev_cli_subcommands() {
-    let commands: Vec<Vec<&str>> = include_str!("../../bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt")
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.split_whitespace().collect::<Vec<_>>())
-        .collect();
+    let commands: Vec<Vec<&str>> =
+        include_str!("../../bijux-cli-routing/tests/fixtures/dev_cli_subcommands.txt")
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| line.split_whitespace().collect::<Vec<_>>())
+            .collect();
 
     for cmd in commands {
         let mut args = cmd.clone();
@@ -134,10 +132,8 @@ fn stderr_stdout_and_exit_code_discipline_for_dev_cli_commands() {
         assert!(out.stderr.is_empty(), "stderr should be empty for {args:?}");
     }
 
-    let fail_cases: &[&[&str]] = &[
-        &["dev", "cli", "does-not-exist"],
-        &["dev", "cli", "state-doctor", "invalid"],
-    ];
+    let fail_cases: &[&[&str]] =
+        &[&["dev", "cli", "does-not-exist"], &["dev", "cli", "state-doctor", "invalid"]];
     for args in fail_cases {
         let out = run(args);
         assert_ne!(out.status.code(), Some(0), "expected failure for {args:?}");
@@ -216,7 +212,8 @@ fn consistency_across_dev_cli_routes_inspect_and_registry_state() {
 
 #[test]
 fn consistency_across_dev_cli_env_and_config_resolution_paths() {
-    let root = std::env::temp_dir().join(format!("bijux-dev-cli-env-consistency-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-dev-cli-env-consistency-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).expect("mkdir");
     let config = root.join("config.env");
@@ -231,9 +228,20 @@ fn consistency_across_dev_cli_env_and_config_resolution_paths() {
     let env_payload: Value = serde_json::from_slice(&env_report_out.stdout).expect("env json");
     assert_eq!(env_payload["active"]["config_file"], config_text);
 
-    let config_get_out = run(&["cli", "config", "get", "alpha", "--format", "json", "--no-pretty", "--config-path", &config_text]);
+    let config_get_out = run(&[
+        "cli",
+        "config",
+        "get",
+        "alpha",
+        "--format",
+        "json",
+        "--no-pretty",
+        "--config-path",
+        &config_text,
+    ]);
     assert!(config_get_out.status.success());
-    let config_payload: Value = serde_json::from_slice(&config_get_out.stdout).expect("config json");
+    let config_payload: Value =
+        serde_json::from_slice(&config_get_out.stdout).expect("config json");
     assert_eq!(config_payload["value"], "from-file");
 
     let _ = std::fs::remove_dir_all(&root);

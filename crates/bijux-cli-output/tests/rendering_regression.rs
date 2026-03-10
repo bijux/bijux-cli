@@ -3,12 +3,12 @@
 
 use std::collections::BTreeMap;
 
+use bijux_cli_core as _;
+use bijux_cli_output::{emit_error, emit_success, render_value, EmitterConfig, OutputStream};
 use bijux_cli_routing::{
     ColorMode, CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, LogLevel, Namespace,
     OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
 };
-use bijux_cli_core as _;
-use bijux_cli_output::{emit_error, emit_success, render_value, EmitterConfig, OutputStream};
 use serde as _;
 use serde_json::json;
 use serde_yaml as _;

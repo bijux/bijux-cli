@@ -6,18 +6,22 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-history-memory-hardening-{}-{}", name, std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "bijux-history-memory-hardening-{}-{}",
+        name,
+        std::process::id()
+    ));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -104,11 +108,8 @@ fn memory_truncated_wrong_type_missing_fields_and_extra_fields_are_handled_safel
     let truncated_payload = parse_json(&truncated.stdout);
     assert_eq!(truncated_payload["count"], 0);
 
-    fs::write(
-        &memory_file,
-        r#"{"alpha":1,"beta":{},"gamma":{"unexpected":true}}"#,
-    )
-    .expect("write mixed memory");
+    fs::write(&memory_file, r#"{"alpha":1,"beta":{},"gamma":{"unexpected":true}}"#)
+        .expect("write mixed memory");
 
     let list = run_with_env(
         &["memory", "list", "--format", "json", "--no-pretty"],

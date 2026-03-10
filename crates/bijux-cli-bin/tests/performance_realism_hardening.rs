@@ -7,15 +7,15 @@ use std::process::Command;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -76,7 +76,10 @@ fn startup_benchmarks_for_key_commands_stay_within_budget() {
 
     for (args, envs, iterations, budget_ms) in cases {
         let avg = average_duration_ms(args, &envs, iterations);
-        assert!(avg <= budget_ms, "startup budget exceeded for {args:?}: avg={avg}ms budget={budget_ms}ms");
+        assert!(
+            avg <= budget_ms,
+            "startup budget exceeded for {args:?}: avg={avg}ms budget={budget_ms}ms"
+        );
     }
 
     let config_get_ms = average_duration_ms(
@@ -112,24 +115,29 @@ fn startup_benchmarks_under_registry_config_and_history_stress_stay_within_budge
         &[("BIJUXCLI_PLUGINS_DIR", plugins_dir.display().to_string())],
         5,
     );
-    assert!(broken_registry_ms <= 500, "broken registry startup budget exceeded: {broken_registry_ms}ms");
+    assert!(
+        broken_registry_ms <= 500,
+        "broken registry startup budget exceeded: {broken_registry_ms}ms"
+    );
 
     let huge_plugins_dir = temp.join("plugins-large");
     fs::create_dir_all(&huge_plugins_dir).expect("mkdir large plugins");
     let large_records: Vec<String> = (0..2_500)
-        .map(|i| format!("{{\"namespace\":\"p{i}\",\"entrypoint\":\"plugin{i}.py\",\"enabled\":true}}"))
+        .map(|i| {
+            format!("{{\"namespace\":\"p{i}\",\"entrypoint\":\"plugin{i}.py\",\"enabled\":true}}")
+        })
         .collect();
-    fs::write(
-        huge_plugins_dir.join("registry.json"),
-        format!("[{}]", large_records.join(",")),
-    )
-    .expect("write large registry");
+    fs::write(huge_plugins_dir.join("registry.json"), format!("[{}]", large_records.join(",")))
+        .expect("write large registry");
     let large_registry_ms = average_duration_ms(
         &["plugins", "list", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_PLUGINS_DIR", huge_plugins_dir.display().to_string())],
         4,
     );
-    assert!(large_registry_ms <= 900, "large registry startup budget exceeded: {large_registry_ms}ms");
+    assert!(
+        large_registry_ms <= 900,
+        "large registry startup budget exceeded: {large_registry_ms}ms"
+    );
 
     let config_path = temp.join("large.env");
     let mut lines = String::new();
@@ -156,16 +164,18 @@ fn startup_benchmarks_under_registry_config_and_history_stress_stay_within_budge
     assert!(large_config_ms <= 650, "large config startup budget exceeded: {large_config_ms}ms");
 
     let history_path = temp.join("large.history.json");
-    let entries: Vec<String> = (0..20_000)
-        .map(|i| format!("{{\"command\":\"status\",\"timestamp\":{i}}}"))
-        .collect();
+    let entries: Vec<String> =
+        (0..20_000).map(|i| format!("{{\"command\":\"status\",\"timestamp\":{i}}}")).collect();
     fs::write(&history_path, format!("[{}]", entries.join(","))).expect("write large history");
     let large_history_ms = average_duration_ms(
         &["history", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_HISTORY_FILE", history_path.display().to_string())],
         4,
     );
-    assert!(large_history_ms <= 1200, "large history startup budget exceeded: {large_history_ms}ms");
+    assert!(
+        large_history_ms <= 1200,
+        "large history startup budget exceeded: {large_history_ms}ms"
+    );
 }
 
 #[test]
@@ -183,5 +193,8 @@ fn payload_size_benchmarks_for_key_commands_stay_within_budget() {
 
     assert!(version_bytes <= 4 * 1024, "version payload budget exceeded: {version_bytes} bytes");
     assert!(status_bytes <= 24 * 1024, "status payload budget exceeded: {status_bytes} bytes");
-    assert!(plugins_list_bytes <= 32 * 1024, "plugins list payload budget exceeded: {plugins_list_bytes} bytes");
+    assert!(
+        plugins_list_bytes <= 32 * 1024,
+        "plugins list payload budget exceeded: {plugins_list_bytes} bytes"
+    );
 }

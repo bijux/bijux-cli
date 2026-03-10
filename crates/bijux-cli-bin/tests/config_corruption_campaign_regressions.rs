@@ -6,19 +6,20 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_case(case_file: &Path) {
-    let json: serde_json::Value = serde_json::from_str(&fs::read_to_string(case_file).expect("read case"))
-        .expect("parse case json");
+    let json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(case_file).expect("read case"))
+            .expect("parse case json");
 
     let args: Vec<String> = json["args"]
         .as_array()
@@ -51,10 +52,8 @@ fn run_case(case_file: &Path) {
         }
     }
 
-    let out = Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(&expanded)
-        .output()
-        .expect("run case");
+    let out =
+        Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(&expanded).output().expect("run case");
 
     assert!(
         matches!(out.status.code(), Some(0) | Some(1) | Some(2)),
@@ -66,7 +65,8 @@ fn run_case(case_file: &Path) {
 
 #[test]
 fn minimized_config_corruption_campaign_cases_replay_without_crashing() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/config_corruption_minimized_cases");
+    let dir =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/config_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read case directory")
         .filter_map(Result::ok)

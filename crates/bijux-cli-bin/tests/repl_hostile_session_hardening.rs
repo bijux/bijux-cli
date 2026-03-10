@@ -1,12 +1,11 @@
 #![forbid(unsafe_code)]
 //! REPL hostile-session hardening coverage.
 
-use std::fs;
 use bijux_cli_python as _;
 use libc as _;
+use std::fs;
 use std::path::PathBuf;
 
-use bijux_cli_routing as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
@@ -16,17 +15,13 @@ use bijux_cli_repl::{
     startup_repl_with_diagnostics, ReplEvent, ReplInput, ReplStream,
 };
 use bijux_cli_routing as _;
+use bijux_cli_routing as _;
 use serde_json::Value;
 use shlex as _;
 use thiserror as _;
 
 fn temp_path(name: &str, ext: &str) -> PathBuf {
-    std::env::temp_dir().join(format!(
-        "bijux-repl-hostile-{}-{}.{}",
-        name,
-        std::process::id(),
-        ext
-    ))
+    std::env::temp_dir().join(format!("bijux-repl-hostile-{}-{}.{}", name, std::process::id(), ext))
 }
 
 #[test]
@@ -60,10 +55,7 @@ fn plugin_failure_config_readback_and_output_mode_switching_work_in_one_session(
 
     let config_path = temp_path("config", "env");
     let _ = fs::remove_file(&config_path);
-    let get_cmd = format!(
-        "cli config get alpha --config-path {}",
-        config_path.display()
-    );
+    let get_cmd = format!("cli config get alpha --config-path {}", config_path.display());
 
     let seeded = run_app(&[
         "bijux".to_string(),
@@ -128,11 +120,13 @@ fn quiet_trace_interrupt_and_eof_edge_cases_are_stable() {
     execute_repl_line(&mut session, "status").expect("trace status");
 
     execute_repl_line(&mut session, "community inspect").expect("plugin command");
-    let interrupt_plugin = execute_repl_input(&mut session, ReplInput::Interrupt).expect("interrupt plugin");
+    let interrupt_plugin =
+        execute_repl_input(&mut session, ReplInput::Interrupt).expect("interrupt plugin");
     assert!(matches!(interrupt_plugin, ReplEvent::Interrupted(_)));
 
     execute_repl_line(&mut session, "status").expect("prepare config interrupt case");
-    let interrupt_config = execute_repl_input(&mut session, ReplInput::Interrupt).expect("interrupt config");
+    let interrupt_config =
+        execute_repl_input(&mut session, ReplInput::Interrupt).expect("interrupt config");
     assert!(matches!(interrupt_config, ReplEvent::Interrupted(_)));
 
     execute_repl_input(&mut session, ReplInput::Line("status \\".to_string()))
@@ -144,7 +138,8 @@ fn quiet_trace_interrupt_and_eof_edge_cases_are_stable() {
 
 #[test]
 fn completion_and_startup_recover_under_broken_registry_and_corrupted_state() {
-    let (_session, _startup, diagnostics) = startup_repl_with_diagnostics("default", None, &["community"]);
+    let (_session, _startup, diagnostics) =
+        startup_repl_with_diagnostics("default", None, &["community"]);
     assert_eq!(diagnostics.len(), 1);
 
     let (mut session, _) = startup_repl("default", None);

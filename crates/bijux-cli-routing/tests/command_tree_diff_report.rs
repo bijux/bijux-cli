@@ -6,12 +6,12 @@ use std::fs;
 
 use bijux_cli_routing as _;
 use bijux_cli_routing as _;
-use proptest as _;
-use serde as _;
-use serde_json as _;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn read_set(path: &str) -> BTreeSet<String> {

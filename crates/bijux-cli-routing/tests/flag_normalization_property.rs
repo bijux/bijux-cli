@@ -3,12 +3,12 @@
 
 use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;
-use proptest::prelude::*;
-use serde as _;
-use serde_json as _;
 use clap as _;
+use proptest::prelude::*;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn strategy_for_known_path() -> impl Strategy<Value = Vec<String>> {

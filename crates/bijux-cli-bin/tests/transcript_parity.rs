@@ -1,12 +1,11 @@
 #![forbid(unsafe_code)]
 //! Transcript, parity, and resiliency regression tests for REPL runtime.
 
-use std::fs;
 use bijux_cli_python as _;
 use libc as _;
+use std::fs;
 use std::path::PathBuf;
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
@@ -16,6 +15,7 @@ use bijux_cli_repl::{
     register_plugin_completion_hook, render_repl_command_reference, replay_history_command,
     startup_repl, ReplEvent, ReplInput, ReplStream, REPL_MEMORY_BUDGET_BYTES,
 };
+use bijux_cli_routing as _;
 use bijux_cli_routing as _;
 use serde_json as _;
 use shlex as _;

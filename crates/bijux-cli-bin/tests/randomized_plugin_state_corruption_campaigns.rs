@@ -6,15 +6,15 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 struct Lcg {
     state: u64,
@@ -26,10 +26,7 @@ impl Lcg {
     }
 
     fn next_u64(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
+        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
         self.state
     }
 
@@ -52,7 +49,8 @@ enum Mutator {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-plugin-state-campaign-{name}-{}", std::process::id()));
+    let path = std::env::temp_dir()
+        .join(format!("bijux-plugin-state-campaign-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
@@ -115,7 +113,8 @@ fn randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths() 
     ];
 
     let mut rng = Lcg::new(0xBADC0FFEu64);
-    let registry_seed = "{\"plugins\":[{\"name\":\"sample\",\"path\":\"/tmp/sample\",\"enabled\":true}]}";
+    let registry_seed =
+        "{\"plugins\":[{\"name\":\"sample\",\"path\":\"/tmp/sample\",\"enabled\":true}]}";
     let history_seed = "status\ndoctor\n";
     let memory_seed = "{\"alpha\":{\"value\":\"1\"}}";
 
@@ -128,8 +127,10 @@ fn randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths() 
     ];
 
     for mutator in mutators {
-        fs::write(&registry, mutate_jsonish(registry_seed, mutator, &mut rng)).expect("write registry");
-        fs::write(&history, mutate_jsonish(history_seed, mutator, &mut rng)).expect("write history");
+        fs::write(&registry, mutate_jsonish(registry_seed, mutator, &mut rng))
+            .expect("write registry");
+        fs::write(&history, mutate_jsonish(history_seed, mutator, &mut rng))
+            .expect("write history");
         fs::write(&memory, mutate_jsonish(memory_seed, mutator, &mut rng)).expect("write memory");
 
         assert_known_status(
@@ -141,14 +142,20 @@ fn randomized_corruption_campaigns_cover_plugin_registry_and_state_read_paths() 
             "plugins check",
         );
         assert_known_status(
-            &run_with_env(&["cli", "plugins", "inspect", "sample", "--format", "json", "--no-pretty"], &envs),
+            &run_with_env(
+                &["cli", "plugins", "inspect", "sample", "--format", "json", "--no-pretty"],
+                &envs,
+            ),
             "plugins inspect",
         );
         assert_known_status(
             &run_with_env(&["cli", "plugins", "doctor", "--format", "json", "--no-pretty"], &envs),
             "plugins doctor",
         );
-        assert_known_status(&run_with_env(&["history", "--format", "json", "--no-pretty"], &envs), "history");
+        assert_known_status(
+            &run_with_env(&["history", "--format", "json", "--no-pretty"], &envs),
+            "history",
+        );
         assert_known_status(
             &run_with_env(&["memory", "list", "--format", "json", "--no-pretty"], &envs),
             "memory list",
@@ -217,7 +224,8 @@ fn plugin_list_is_deterministic_for_identical_corrupted_registry() {
     ];
 
     let first = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
-    let second = run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
+    let second =
+        run_with_env(&["cli", "plugins", "list", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(first.status.code(), second.status.code());
     assert_eq!(first.stdout, second.stdout);
     assert_eq!(first.stderr, second.stderr);
@@ -237,7 +245,10 @@ fn plugin_registry_rollback_preserves_coherence_after_failed_mutation_paths() {
     ];
 
     let before = fs::read_to_string(plugins.join("registry.json")).expect("before");
-    let _ = run_with_env(&["cli", "plugins", "inspect", "missing", "--format", "json", "--no-pretty"], &envs);
+    let _ = run_with_env(
+        &["cli", "plugins", "inspect", "missing", "--format", "json", "--no-pretty"],
+        &envs,
+    );
     let _ = run_with_env(&["cli", "plugins", "check", "--format", "json", "--no-pretty"], &envs);
     let after = fs::read_to_string(plugins.join("registry.json")).expect("after");
     assert_eq!(before, after);
@@ -272,7 +283,9 @@ fn plugin_doctor_reports_corruption_injected_by_campaign() {
     } else {
         let stderr = String::from_utf8_lossy(&out.stderr).to_ascii_lowercase();
         assert!(
-            stderr.contains("corrupt") || stderr.contains("registry") || out.status.code() == Some(1),
+            stderr.contains("corrupt")
+                || stderr.contains("registry")
+                || out.status.code() == Some(1),
             "doctor should surface plugin corruption in stderr or exit class"
         );
     }
@@ -288,7 +301,8 @@ fn history_and_memory_corruption_recovery_remains_stable_and_policy_compliant() 
     fs::create_dir_all(memory.parent().expect("memory parent")).expect("mkdir memory parent");
     fs::create_dir_all(&plugins).expect("mkdir plugins");
 
-    fs::write(&history, "[{\"command\":\"status\"},\"bad\",{\"command\":\"doctor\"}]").expect("write mixed history");
+    fs::write(&history, "[{\"command\":\"status\"},\"bad\",{\"command\":\"doctor\"}]")
+        .expect("write mixed history");
     fs::write(&memory, "{\"alpha\":1,\"beta\":{\"value\":\"2\"}} ").expect("write mixed memory");
 
     let envs = vec![

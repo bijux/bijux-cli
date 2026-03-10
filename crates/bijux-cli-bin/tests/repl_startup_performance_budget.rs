@@ -3,14 +3,14 @@
 
 use std::time::{Duration, Instant};
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
 use bijux_cli_python as _;
-use libc as _;
 use bijux_cli_repl::{estimated_session_memory_bytes, startup_repl};
 use bijux_cli_routing as _;
+use bijux_cli_routing as _;
+use libc as _;
 use serde_json as _;
 use shlex as _;
 use thiserror as _;
@@ -29,18 +29,18 @@ fn repl_startup_latency_stays_within_budget() {
 fn repl_startup_memory_estimate_stays_within_budget() {
     let (session, _) = startup_repl("benchmark", None);
     let estimated = estimated_session_memory_bytes(&session);
-    assert!(
-        estimated <= 512 * 1024,
-        "repl startup memory estimate exceeded: {estimated} bytes"
-    );
+    assert!(estimated <= 512 * 1024, "repl startup memory estimate exceeded: {estimated} bytes");
 }
 
 #[test]
 fn repl_startup_latency_with_plugin_completion_hooks_stays_within_budget() {
     let started = Instant::now();
     for _ in 0..10 {
-        let (_session, _startup, diagnostics) =
-            bijux_cli_repl::startup_repl_with_diagnostics("benchmark", None, &["community", "atlas", "plugins"]);
+        let (_session, _startup, diagnostics) = bijux_cli_repl::startup_repl_with_diagnostics(
+            "benchmark",
+            None,
+            &["community", "atlas", "plugins"],
+        );
         assert!(diagnostics.is_empty() || diagnostics.len() <= 3);
     }
     let elapsed = started.elapsed();

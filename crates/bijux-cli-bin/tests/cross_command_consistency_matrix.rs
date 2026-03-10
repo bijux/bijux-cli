@@ -8,23 +8,20 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::{command_tree_introspection_api, execution_outcome_api};
 use bijux_cli_repl::{execute_repl_line, startup_repl};
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_bin_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -44,7 +41,8 @@ fn bridge_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
         .chain(args.iter().map(|s| s.to_string()))
         .collect::<Vec<_>>();
-    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge outcome")).expect("bridge json")
+    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge outcome"))
+        .expect("bridge json")
 }
 
 fn temp_dir(name: &str) -> PathBuf {
@@ -52,7 +50,8 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir().join(format!("bijux-cross-command-{name}-{}-{nanos}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-cross-command-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
@@ -61,7 +60,8 @@ fn temp_dir(name: &str) -> PathBuf {
 #[test]
 fn inspect_and_dev_routes_agree_on_route_ownership() {
     let inspect = parse_json(&run_bin(&["inspect", "--format", "json", "--no-pretty"]).stdout);
-    let routes = parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let routes =
+        parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
 
     let inspect_routes: BTreeSet<String> = inspect["route_sources"]
         .as_array()
@@ -99,7 +99,8 @@ fn inspect_and_dev_routes_agree_on_route_ownership() {
 #[test]
 fn inspect_and_dev_registry_agree_on_plugin_ownership_model() {
     let inspect = parse_json(&run_bin(&["inspect", "--format", "json", "--no-pretty"]).stdout);
-    let registry = parse_json(&run_bin(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
+    let registry =
+        parse_json(&run_bin(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
 
     let inspect_reserved: BTreeSet<String> = inspect["reserved_namespaces"]
         .as_array()
@@ -174,7 +175,8 @@ fn doctor_and_state_audit_agree_on_corruption_detection_when_applicable() {
 #[test]
 fn plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules() {
     let list = parse_json(&run_bin(&["plugins", "list", "--format", "json", "--no-pretty"]).stdout);
-    let registry = parse_json(&run_bin(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
+    let registry =
+        parse_json(&run_bin(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
     let reserved: BTreeSet<String> = registry["registry"]
         .as_array()
         .expect("registry")
@@ -185,7 +187,10 @@ fn plugins_list_and_dev_registry_agree_on_installed_plugin_namespace_rules() {
 
     for plugin in list["plugins"].as_array().expect("plugins") {
         if let Some(namespace) = plugin["manifest"]["namespace"].as_str() {
-            assert!(!reserved.contains(namespace), "installed plugin namespace should not overlap reserved set");
+            assert!(
+                !reserved.contains(namespace),
+                "installed plugin namespace should not overlap reserved set"
+            );
         }
     }
 }
@@ -216,8 +221,8 @@ fn repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status
     ]);
     assert_eq!(session.last_exit_code, bin_config.status.code().unwrap_or(-1));
 
-    let _repl_plugins =
-        execute_repl_line(&mut session, "plugins list --format json --no-pretty").expect("repl plugins");
+    let _repl_plugins = execute_repl_line(&mut session, "plugins list --format json --no-pretty")
+        .expect("repl plugins");
     let bin_plugins = run_bin(&["plugins", "list", "--format", "json", "--no-pretty"]);
     assert_eq!(session.last_exit_code, bin_plugins.status.code().unwrap_or(-1));
 
@@ -231,19 +236,31 @@ fn repl_execution_matches_non_interactive_for_config_get_plugins_list_and_status
 fn binary_and_python_bridge_agree_on_config_history_memory_and_diagnostics_outputs() {
     let bin_config = run_bin(&["config", "--format", "json", "--no-pretty"]);
     let bridge_config = bridge_outcome(&["config", "--format", "json", "--no-pretty"]);
-    assert_eq!(bridge_config["exit_code"].as_i64(), Some(i64::from(bin_config.status.code().unwrap_or(-1))));
+    assert_eq!(
+        bridge_config["exit_code"].as_i64(),
+        Some(i64::from(bin_config.status.code().unwrap_or(-1)))
+    );
 
     let bin_history = run_bin(&["history", "--format", "json", "--no-pretty"]);
     let bridge_history = bridge_outcome(&["history", "--format", "json", "--no-pretty"]);
-    assert_eq!(bridge_history["exit_code"].as_i64(), Some(i64::from(bin_history.status.code().unwrap_or(-1))));
+    assert_eq!(
+        bridge_history["exit_code"].as_i64(),
+        Some(i64::from(bin_history.status.code().unwrap_or(-1)))
+    );
 
     let bin_memory = run_bin(&["memory", "list", "--format", "json", "--no-pretty"]);
     let bridge_memory = bridge_outcome(&["memory", "list", "--format", "json", "--no-pretty"]);
-    assert_eq!(bridge_memory["exit_code"].as_i64(), Some(i64::from(bin_memory.status.code().unwrap_or(-1))));
+    assert_eq!(
+        bridge_memory["exit_code"].as_i64(),
+        Some(i64::from(bin_memory.status.code().unwrap_or(-1)))
+    );
 
     let bin_diagnostics = run_bin(&["doctor", "--format", "json", "--no-pretty"]);
     let bridge_diagnostics = bridge_outcome(&["doctor", "--format", "json", "--no-pretty"]);
-    assert_eq!(bridge_diagnostics["exit_code"].as_i64(), Some(i64::from(bin_diagnostics.status.code().unwrap_or(-1))));
+    assert_eq!(
+        bridge_diagnostics["exit_code"].as_i64(),
+        Some(i64::from(bin_diagnostics.status.code().unwrap_or(-1)))
+    );
 }
 
 #[test]
@@ -285,7 +302,8 @@ fn command_tree_export_is_identical_across_binary_and_bridge() {
     assert_eq!(bin.status.code(), Some(0));
     let bin_payload = parse_json(&bin.stdout);
     let bridge_outcome = bridge_outcome(&["inspect", "--format", "json", "--no-pretty"]);
-    let bridge_payload = parse_json(bridge_outcome["stdout"].as_str().unwrap_or_default().as_bytes());
+    let bridge_payload =
+        parse_json(bridge_outcome["stdout"].as_str().unwrap_or_default().as_bytes());
     assert_eq!(bin_payload, bridge_payload);
 
     let tree = parse_json(command_tree_introspection_api().as_bytes());
@@ -295,8 +313,10 @@ fn command_tree_export_is_identical_across_binary_and_bridge() {
 
 #[test]
 fn route_ownership_is_stable_across_repeated_runs() {
-    let first = parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
-    let second = parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let first =
+        parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
+    let second =
+        parse_json(&run_bin(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]).stdout);
     assert_eq!(first["routes"], second["routes"]);
     assert_eq!(first["aliases"], second["aliases"]);
 }
@@ -327,24 +347,12 @@ fn output_envelopes_do_not_drift_across_surfaces() {
     let core_error = parse_json(core.stderr.as_bytes());
     let bridge_error = parse_json(bridge["stderr"].as_str().unwrap_or_default().as_bytes());
 
-    let mut bin_keys = bin_error
-        .as_object()
-        .expect("bin error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
-    let mut core_keys = core_error
-        .as_object()
-        .expect("core error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
-    let mut bridge_keys = bridge_error
-        .as_object()
-        .expect("bridge error")
-        .keys()
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut bin_keys =
+        bin_error.as_object().expect("bin error").keys().cloned().collect::<Vec<_>>();
+    let mut core_keys =
+        core_error.as_object().expect("core error").keys().cloned().collect::<Vec<_>>();
+    let mut bridge_keys =
+        bridge_error.as_object().expect("bridge error").keys().cloned().collect::<Vec<_>>();
     bin_keys.sort();
     core_keys.sort();
     bridge_keys.sort();

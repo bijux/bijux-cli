@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 //! Parser intent normalization tests.
-//! test_type: flag-precedence-conflict
+//! `test_type`: flag-precedence-conflict
 
 use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;

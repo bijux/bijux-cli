@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -31,7 +31,8 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let base = std::env::temp_dir().join(format!("bijux-plugin-failure-{}-{}", name, std::process::id()));
+    let base =
+        std::env::temp_dir().join(format!("bijux-plugin-failure-{}-{}", name, std::process::id()));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(&base).expect("mkdir temp");
     base
@@ -92,15 +93,8 @@ fn install_reports_write_failures_and_preserves_existing_registry_entries() {
     write_python_manifest(&second_manifest, "candidateplug", "plugin:main");
 
     set_read_only_dir(&plugins_dir);
-    let out = run(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            second_manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    let out =
+        run(&["cli", "plugins", "install", second_manifest.to_str().expect("utf-8")], &plugins_dir);
     set_writable_dir(&plugins_dir);
 
     assert_eq!(out.status.code(), Some(1));
@@ -125,7 +119,8 @@ fn plugin_check_fails_when_entrypoint_disappears_after_install() {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o755)).expect("set executable");
+        fs::set_permissions(&entrypoint, fs::Permissions::from_mode(0o755))
+            .expect("set executable");
     }
     fs::write(
         &manifest,
@@ -165,14 +160,12 @@ fn plugin_check_fails_when_manifest_mutates_after_install() {
     install(&plugins_dir, &manifest);
 
     let registry_path = plugins_dir.join("registry.json");
-    let mut registry: Value = serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
-        .expect("parse registry");
+    let mut registry: Value =
+        serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
+            .expect("parse registry");
     registry["plugins"]["mutateplug"]["manifest"]["entrypoint"] = Value::String("".to_string());
-    fs::write(
-        &registry_path,
-        serde_json::to_string_pretty(&registry).expect("serialize registry"),
-    )
-    .expect("write mutated registry");
+    fs::write(&registry_path, serde_json::to_string_pretty(&registry).expect("serialize registry"))
+        .expect("write mutated registry");
 
     let check = run(&["cli", "plugins", "check", "mutateplug"], &plugins_dir);
     assert_eq!(check.status.code(), Some(1));
@@ -190,14 +183,12 @@ fn plugin_check_fails_when_runtime_kind_becomes_unsupported() {
     install(&plugins_dir, &manifest);
 
     let registry_path = plugins_dir.join("registry.json");
-    let mut registry: Value = serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
-        .expect("parse registry");
+    let mut registry: Value =
+        serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
+            .expect("parse registry");
     registry["plugins"]["nativeplug"]["manifest"]["kind"] = Value::String("native".to_string());
-    fs::write(
-        &registry_path,
-        serde_json::to_string_pretty(&registry).expect("serialize registry"),
-    )
-    .expect("write mutated registry");
+    fs::write(&registry_path, serde_json::to_string_pretty(&registry).expect("serialize registry"))
+        .expect("write mutated registry");
 
     let check = run(&["cli", "plugins", "check", "nativeplug"], &plugins_dir);
     assert_eq!(check.status.code(), Some(1));
@@ -219,14 +210,13 @@ fn check_fails_on_broken_registry_record_and_list_stays_usable_after_doctor() {
     install(&plugins_dir, &bad_manifest);
 
     let registry_path = plugins_dir.join("registry.json");
-    let mut registry: Value = serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
-        .expect("parse registry");
-    registry["plugins"]["brokenplug"]["manifest"] = Value::String("invalid-manifest-shape".to_string());
-    fs::write(
-        &registry_path,
-        serde_json::to_string_pretty(&registry).expect("serialize registry"),
-    )
-    .expect("write broken registry record");
+    let mut registry: Value =
+        serde_json::from_str(&fs::read_to_string(&registry_path).expect("read registry"))
+            .expect("parse registry");
+    registry["plugins"]["brokenplug"]["manifest"] =
+        Value::String("invalid-manifest-shape".to_string());
+    fs::write(&registry_path, serde_json::to_string_pretty(&registry).expect("serialize registry"))
+        .expect("write broken registry record");
 
     let check = run(&["cli", "plugins", "check", "brokenplug"], &plugins_dir);
     assert_eq!(check.status.code(), Some(1));
@@ -274,14 +264,13 @@ fn install_and_uninstall_retries_are_idempotent_after_transient_write_failures()
     write_python_manifest(&manifest, "retryplug", "plugin:main");
 
     set_read_only_dir(&plugins_dir);
-    let first_install = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let first_install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     set_writable_dir(&plugins_dir);
     assert_eq!(first_install.status.code(), Some(1));
 
-    let second_install = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    let second_install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert!(second_install.status.success());
 
     set_read_only_dir(&plugins_dir);

@@ -4,15 +4,16 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use bijux_cli_routing as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
 use bijux_cli_python::{
-    classify_failure, cli_status_binding_api, command_tree_introspection_api, config_resolution_api,
-    doctor_binding_api, execution_facade_api, execution_outcome_api, plugins_list_binding_api,
-    repl_bootstrap_binding_api, schema_export_helpers_api, status_binding_api, version_binding_api,
-    BridgeErrorKind, CompatibilityConfig, PathOverrides, ENV_CONFIG_PATH,
+    classify_failure, cli_status_binding_api, command_tree_introspection_api,
+    config_resolution_api, doctor_binding_api, execution_facade_api, execution_outcome_api,
+    plugins_list_binding_api, repl_bootstrap_binding_api, schema_export_helpers_api,
+    status_binding_api, version_binding_api, BridgeErrorKind, CompatibilityConfig, PathOverrides,
+    ENV_CONFIG_PATH,
 };
+use bijux_cli_routing as _;
 use serde_json::Value;
 
 fn parse_json(text: &str) -> Value {
@@ -194,7 +195,11 @@ fn binary_and_bridge_use_same_command_registry_contract() {
         .filter_map(|segments| segments.as_array())
         .filter_map(|segments| {
             let parts: Vec<&str> = segments.iter().filter_map(Value::as_str).collect();
-            if parts.is_empty() { None } else { Some(parts.join(" ")) }
+            if parts.is_empty() {
+                None
+            } else {
+                Some(parts.join(" "))
+            }
         })
         .collect();
 
@@ -238,12 +243,8 @@ fn binary_and_bridge_use_same_namespace_rejection_logic() {
 
 #[test]
 fn binary_and_bridge_use_same_plugin_registry_logic_for_listing() {
-    let argv = vec![
-        "bijux".to_string(),
-        "cli".to_string(),
-        "plugins".to_string(),
-        "list".to_string(),
-    ];
+    let argv =
+        vec!["bijux".to_string(), "cli".to_string(), "plugins".to_string(), "list".to_string()];
     let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert_eq!(bridge, core);
@@ -266,7 +267,8 @@ fn runtime_identity_matches_between_binary_and_bridge() {
 
 #[test]
 fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() {
-    let root = std::env::temp_dir().join(format!("bijux-bridge-config-precedence-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-bridge-config-precedence-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).expect("create temp root");
     let config = root.join("config.env");
@@ -293,12 +295,8 @@ fn execution_path_keeps_config_precedence_identical_between_binary_and_bridge() 
 
 #[test]
 fn diagnostics_payloads_match_between_binary_and_bridge() {
-    let argv = vec![
-        "bijux".to_string(),
-        "dev".to_string(),
-        "cli".to_string(),
-        "doctor".to_string(),
-    ];
+    let argv =
+        vec!["bijux".to_string(), "dev".to_string(), "cli".to_string(), "doctor".to_string()];
     let bridge = parse_json(&execution_facade_api(&argv).expect("bridge"));
     let core = parse_json(&run_app(&argv).expect("core").stdout);
     assert_eq!(bridge["issues"], core["issues"]);

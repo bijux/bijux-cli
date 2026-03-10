@@ -7,15 +7,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn temp_home(label: &str) -> PathBuf {
     let path = env::temp_dir().join(format!("bijux-parity-{label}-{}", std::process::id()));
@@ -92,7 +92,8 @@ fn memory_set_get_delete_clear_have_expected_exit_and_streams() {
     let clear = run_with_home(&["memory", "clear"], &home);
     assert_eq!(clear.status.code(), Some(0));
     let clear_stdout = String::from_utf8(clear.stdout).expect("utf8 stdout");
-    let clear_payload: serde_json::Value = serde_json::from_str(&clear_stdout).expect("json payload");
+    let clear_payload: serde_json::Value =
+        serde_json::from_str(&clear_stdout).expect("json payload");
     assert_eq!(clear_payload["status"], "cleared");
 
     let _ = fs::remove_dir_all(home);

@@ -4,16 +4,16 @@
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-#[cfg(unix)]
-use libc as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
+use bijux_cli_python as _;
+use bijux_cli_repl as _;
 use bijux_cli_routing as _;
+#[cfg(unix)]
+use libc as _;
+use serde_json as _;
 use shlex as _;
 use thiserror as _;
-use bijux_cli_repl as _;
-use serde_json as _;
 
 fn run_with(args: &[&str]) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
@@ -186,7 +186,9 @@ fn ctrl_c_exits_safely_on_interactive_repl_process() {
 
     let status = child.wait().expect("child should exit");
     assert!(
-        status.code() == Some(0) || status.code() == Some(130) || status.signal() == Some(libc::SIGINT),
+        status.code() == Some(0)
+            || status.code() == Some(130)
+            || status.signal() == Some(libc::SIGINT),
         "unexpected exit status after SIGINT: {status:?}"
     );
 }

@@ -7,18 +7,19 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("bijux-install-ambiguity-{}-{}", name, std::process::id()));
+    let dir =
+        env::temp_dir().join(format!("bijux-install-ambiguity-{}-{}", name, std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -34,7 +35,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> std::process::Output 
 }
 
 fn run_identity(envs: &[(&str, String)]) -> Value {
-    let out = run_with_env(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
+    let out =
+        run_with_env(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"], envs);
     assert_eq!(out.status.code(), Some(0));
     serde_json::from_slice(&out.stdout).expect("json")
 }
@@ -112,14 +114,13 @@ fn stale_wrapper_and_deleted_cached_runtime_are_detected() {
     let root = tmp_dir("stale-wrapper");
     let wrappers = root.join("wrappers");
     fs::create_dir_all(&wrappers).expect("mkdir wrappers");
-    fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n").expect("write wrapper");
+    fs::write(wrappers.join("bijux.sh"), "#!/bin/sh\nexec /missing/bijux\n")
+        .expect("write wrapper");
 
     let deleted_runtime = root.join("deleted-bijux");
     let path = env::join_paths([&wrappers]).expect("join path").to_string_lossy().to_string();
-    let payload = run_identity(&[
-        ("PATH", path),
-        ("BIJUX_BIN", deleted_runtime.display().to_string()),
-    ]);
+    let payload =
+        run_identity(&[("PATH", path), ("BIJUX_BIN", deleted_runtime.display().to_string())]);
 
     assert_eq!(payload["diagnostics"]["stale_wrapper_detected"], true);
     assert_eq!(payload["diagnostics"]["active_binary_missing"], true);
@@ -140,10 +141,8 @@ fn missing_python_runtime_support_is_reported_while_rust_binary_is_active() {
     fs::write(bin.join("bijux"), "#!/bin/sh\n").expect("write binary");
     let path = env::join_paths([&bin]).expect("join").to_string_lossy().to_string();
 
-    let payload = run_identity(&[
-        ("PATH", path),
-        ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string()),
-    ]);
+    let payload =
+        run_identity(&[("PATH", path), ("BIJUX_PYTHON_BRIDGE_SUPPORTED", "0".to_string())]);
     assert_eq!(payload["diagnostics"]["python_bridge_supported"], false);
     assert!(payload["active_binary"].as_str().expect("active").contains("/bin/bijux"));
 }
@@ -344,9 +343,18 @@ fn cli_paths_under_overridden_home_are_consistent() {
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
 
     let expected_prefix = root.join(".bijux");
-    assert!(payload["config"].as_str().expect("config").contains(expected_prefix.to_str().expect("utf-8")));
-    assert!(payload["history"].as_str().expect("history").contains(expected_prefix.to_str().expect("utf-8")));
-    assert!(payload["plugins"].as_str().expect("plugins").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["config"]
+        .as_str()
+        .expect("config")
+        .contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["history"]
+        .as_str()
+        .expect("history")
+        .contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["plugins"]
+        .as_str()
+        .expect("plugins")
+        .contains(expected_prefix.to_str().expect("utf-8")));
 }
 
 #[test]
@@ -362,9 +370,18 @@ fn cli_paths_under_xdg_style_home_root_are_consistent() {
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
 
     let expected_prefix = root.join(".bijux");
-    assert!(payload["config"].as_str().expect("config").contains(expected_prefix.to_str().expect("utf-8")));
-    assert!(payload["history"].as_str().expect("history").contains(expected_prefix.to_str().expect("utf-8")));
-    assert!(payload["plugins"].as_str().expect("plugins").contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["config"]
+        .as_str()
+        .expect("config")
+        .contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["history"]
+        .as_str()
+        .expect("history")
+        .contains(expected_prefix.to_str().expect("utf-8")));
+    assert!(payload["plugins"]
+        .as_str()
+        .expect("plugins")
+        .contains(expected_prefix.to_str().expect("utf-8")));
 }
 
 #[test]

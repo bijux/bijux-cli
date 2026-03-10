@@ -6,15 +6,15 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 struct Reproducer {
     command: Vec<String>,
@@ -89,7 +89,8 @@ fn run_case(path: &Path) {
 
 #[test]
 fn minimized_corrupted_state_reproducers_replay_without_crashing() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/state_corruption_minimized_cases");
+    let dir =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/state_corruption_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read minimized directory")
         .filter_map(Result::ok)

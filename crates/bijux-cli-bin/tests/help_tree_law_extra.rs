@@ -8,23 +8,20 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python::execution_outcome_api;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::execution_outcome_api;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
@@ -46,7 +43,8 @@ fn bridge_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
         .chain(args.iter().map(|s| s.to_string()))
         .collect::<Vec<_>>();
-    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution")).expect("bridge json")
+    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution"))
+        .expect("bridge json")
 }
 
 fn temp_dir(name: &str) -> PathBuf {
@@ -54,7 +52,8 @@ fn temp_dir(name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir().join(format!("bijux-help-law-{name}-{}-{nanos}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-help-law-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -148,7 +147,12 @@ fn dev_cli_help_lists_subcommands_in_stable_order() {
     assert_eq!(a.status.code(), Some(0));
     assert_eq!(a.stdout, b.stdout);
     let commands = parse_help_commands(&String::from_utf8(a.stdout).expect("utf-8"));
-    assert!(commands.starts_with(&["inventory".into(), "routes".into(), "route-audit".into(), "registry".into()]));
+    assert!(commands.starts_with(&[
+        "inventory".into(),
+        "routes".into(),
+        "route-audit".into(),
+        "registry".into()
+    ]));
     assert!(commands.contains(&"env".to_string()));
     assert!(commands.contains(&"runtime-identity".to_string()));
 }
@@ -175,13 +179,16 @@ fn plugin_installed_help_keeps_builtin_order_stable() {
     let before_cmds = parse_help_commands(&String::from_utf8(before.stdout).expect("utf-8"));
     let after_cmds = parse_help_commands(&String::from_utf8(after.stdout).expect("utf-8"));
 
-    let before_builtin: Vec<&str> = before_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
-    let after_builtin: Vec<&str> = after_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
+    let before_builtin: Vec<&str> =
+        before_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
+    let after_builtin: Vec<&str> =
+        after_cmds.iter().map(String::as_str).filter(|s| *s != "help").collect();
     for window in before_builtin.windows(2) {
         let left = window[0];
         let right = window[1];
         let left_pos = after_builtin.iter().position(|item| *item == left).expect("left present");
-        let right_pos = after_builtin.iter().position(|item| *item == right).expect("right present");
+        let right_pos =
+            after_builtin.iter().position(|item| *item == right).expect("right present");
         assert!(left_pos < right_pos, "built-in order changed between {left} and {right}");
     }
 }
@@ -238,15 +245,18 @@ fn inspect_metadata_agrees_with_help_names_and_command_tree_export() {
     let routes = json(&["dev", "cli", "routes", "--format", "json", "--no-pretty"]);
     let root_help = run(&["--help"]);
     assert_eq!(root_help.status.code(), Some(0));
-    let help_commands: BTreeSet<String> = parse_help_commands(&String::from_utf8(root_help.stdout).expect("utf-8"))
-        .into_iter()
-        .collect();
+    let help_commands: BTreeSet<String> =
+        parse_help_commands(&String::from_utf8(root_help.stdout).expect("utf-8"))
+            .into_iter()
+            .collect();
 
     let inspect_roots: BTreeSet<String> = inspect["route_sources"]
         .as_array()
         .expect("route_sources")
         .iter()
-        .filter_map(|row| row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str))
+        .filter_map(|row| {
+            row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str)
+        })
         .map(ToString::to_string)
         .collect();
 
@@ -254,7 +264,9 @@ fn inspect_metadata_agrees_with_help_names_and_command_tree_export() {
         .as_array()
         .expect("routes")
         .iter()
-        .filter_map(|row| row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str))
+        .filter_map(|row| {
+            row["segments"].as_array().and_then(|segments| segments.first()).and_then(Value::as_str)
+        })
         .map(ToString::to_string)
         .collect();
 

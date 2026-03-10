@@ -6,15 +6,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_stdout(args: &[&str]) -> String {
     let home = snapshot_home();
@@ -24,10 +24,7 @@ fn run_stdout(args: &[&str]) -> String {
         .output()
         .expect("binary should execute");
     assert!(output.status.success(), "command failed for args: {args:?}");
-    normalize_output(
-        String::from_utf8(output.stdout).expect("utf-8 output"),
-        home.as_path(),
-    )
+    normalize_output(String::from_utf8(output.stdout).expect("utf-8 output"), home.as_path())
 }
 
 fn snapshot_home() -> PathBuf {
@@ -35,11 +32,7 @@ fn snapshot_home() -> PathBuf {
     let state_dir = home.join(".bijux");
     fs::create_dir_all(&state_dir).expect("create snapshot home state dir");
     fs::write(state_dir.join(".env"), "BIJUXCLI_ALPHA=1\n").expect("seed config");
-    fs::write(
-        state_dir.join(".history"),
-        "[]\n",
-    )
-    .expect("seed history");
+    fs::write(state_dir.join(".history"), "[]\n").expect("seed history");
     fs::write(state_dir.join(".memory.json"), "{\"int_test_key\":42}\n").expect("seed memory");
     home
 }

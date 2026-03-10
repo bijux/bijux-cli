@@ -2,8 +2,8 @@
 //! Registry precedence and namespace-policy tests.
 
 use bijux_cli_routing as _;
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -40,12 +40,14 @@ fn normalized_and_case_folded_namespace_collisions_are_rejected() {
     let mut registry = RouteRegistry::default();
     registry.register_plugin_namespace("my-plugin").expect("baseline namespace should register");
 
-    let normalized_collision =
-        registry.register_plugin_namespace("my_plugin").expect_err("normalized collision must fail");
+    let normalized_collision = registry
+        .register_plugin_namespace("my_plugin")
+        .expect_err("normalized collision must fail");
     assert!(matches!(normalized_collision, RouteError::Conflict(_)));
 
-    let case_collision =
-        registry.register_plugin_namespace("MY-PLUGIN").expect_err("case-folding collision must fail");
+    let case_collision = registry
+        .register_plugin_namespace("MY-PLUGIN")
+        .expect_err("case-folding collision must fail");
     assert!(matches!(case_collision, RouteError::Conflict(_)));
 }
 
@@ -71,10 +73,7 @@ fn concurrent_registration_on_normalized_equivalent_namespaces_yields_single_win
         let sync = Arc::clone(&barrier);
         handles.push(std::thread::spawn(move || {
             sync.wait();
-            shared
-                .lock()
-                .expect("lock registry")
-                .register_plugin_namespace(namespace)
+            shared.lock().expect("lock registry").register_plugin_namespace(namespace)
         }));
     }
 

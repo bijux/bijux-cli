@@ -7,15 +7,15 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_bijux-rs"));
@@ -27,7 +27,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-history-extra-{name}-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-history-extra-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -45,20 +46,16 @@ fn history_doctor_and_state_doctor_agree_on_history_corruption_findings() {
     let envs = [("BIJUXCLI_HISTORY_FILE", history.display().to_string())];
 
     let doctor = run_with_env(&["dev", "cli", "doctor", "--format", "json", "--no-pretty"], &envs);
-    let state_doctor = run_with_env(
-        &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
-        &envs,
-    );
+    let state_doctor =
+        run_with_env(&["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(doctor.status.code(), Some(0));
     assert_eq!(state_doctor.status.code(), Some(0));
 
     let doctor_json = parse_json(&doctor.stdout);
     let state_json = parse_json(&state_doctor.stdout);
 
-    let doctor_has_history_issue = doctor_json["issues"]["history"]
-        .as_array()
-        .map(|rows| !rows.is_empty())
-        .unwrap_or(false);
+    let doctor_has_history_issue =
+        doctor_json["issues"]["history"].as_array().map(|rows| !rows.is_empty()).unwrap_or(false);
     let state_has_history_issue = state_json["doctor"]["issues"]
         .as_array()
         .map(|rows| rows.iter().any(|row| row["area"] == "history"))
@@ -96,6 +93,8 @@ fn history_output_is_stable_under_filesystem_metadata_changes() {
 
     let second = run_with_env(&["history", "--format", "json", "--no-pretty"], &envs);
     assert_eq!(second.status.code(), Some(0));
-    assert_eq!(first.stdout, second.stdout, "history output should not drift on metadata-only change");
+    assert_eq!(
+        first.stdout, second.stdout,
+        "history output should not drift on metadata-only change"
+    );
 }
-

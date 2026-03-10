@@ -7,15 +7,15 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn make_temp_dir(name: &str) -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -97,7 +97,8 @@ fn memory_wrong_type_state_and_missing_state_file_behaviors_are_stable() {
     let home = temp.join("home");
     let memory_file = home.join(".bijux").join(".memory.json");
     fs::create_dir_all(memory_file.parent().expect("parent")).expect("mkdir");
-    fs::write(&memory_file, "{\"alpha\":1,\"beta\":{\"nested\":1}}").expect("write wrong-type memory");
+    fs::write(&memory_file, "{\"alpha\":1,\"beta\":{\"nested\":1}}")
+        .expect("write wrong-type memory");
 
     let out_wrong_type = run_with_env(
         &["dev", "cli", "state-doctor", "--format", "json", "--no-pretty"],
@@ -162,10 +163,7 @@ fn memory_command_with_config_path_override_keeps_stable_json_contract() {
         ("BIJUXCLI_CONFIG", config_path.display().to_string()),
     ];
 
-    let out = run_with_env(
-        &args,
-        &envs,
-    );
+    let out = run_with_env(&args, &envs);
     let repeat = run_with_env(
         &[
             "memory",

@@ -6,21 +6,18 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl::{execute_repl_input, execute_repl_line, startup_repl, ReplInput};
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run_bin(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn parse_json(bytes: &[u8]) -> Value {
@@ -116,7 +113,8 @@ fn repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli() 
 
     let _ = execute_repl_input(&mut repl, ReplInput::Line(":set quiet on".to_string()))
         .expect("quiet on");
-    let quiet = execute_repl_line(&mut repl, "status --format json --no-pretty").expect("quiet status");
+    let quiet =
+        execute_repl_line(&mut repl, "status --format json --no-pretty").expect("quiet status");
     assert!(quiet.is_none());
 
     let _ = execute_repl_input(&mut repl, ReplInput::Line(":set quiet off".to_string()))
@@ -149,9 +147,8 @@ fn repl_quiet_trace_json_yaml_and_history_semantics_match_non_interactive_cli() 
 fn repl_help_for_builtin_and_plugin_commands_matches_non_interactive_help() {
     let (mut repl, _) = startup_repl("", None);
 
-    let repl_help = execute_repl_line(&mut repl, "help status")
-        .expect("repl help")
-        .expect("help frame");
+    let repl_help =
+        execute_repl_line(&mut repl, "help status").expect("repl help").expect("help frame");
     let bin_help = run_bin(&["help", "status"]);
     let bin_help_text = String::from_utf8(bin_help.stdout).expect("utf-8");
     assert!(repl_help.content.contains("Usage:"));

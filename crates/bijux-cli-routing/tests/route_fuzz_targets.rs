@@ -5,12 +5,12 @@
 use bijux_cli_routing as _;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry};
 use bijux_cli_routing::reports::{registry_report, routes_report};
-use proptest as _;
-use serde as _;
-use serde_json as _;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn shuffled(values: &[&str], seed: u64) -> Vec<String> {

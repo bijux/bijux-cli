@@ -2,9 +2,9 @@
 //! Route-law consistency checks across root, cli/dev cli, and plugin dispatch.
 
 use bijux_cli_routing as _;
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_routing::catalog::normalize_command_path;
 use bijux_cli_routing::registry::{RouteError, RouteRegistry, RouteTarget};
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use proptest as _;
 use serde as _;
 use serde_json as _;
@@ -85,6 +85,10 @@ fn removed_legacy_special_cases_are_unknown_while_canonical_paths_still_resolve(
     let legacy_registry = registry.resolve(&["dev".to_string(), "registry".to_string()]);
     assert!(legacy_registry.is_err());
 
-    assert!(registry.resolve(&["dev".to_string(), "cli".to_string(), "routes".to_string()]).is_ok());
-    assert!(registry.resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()]).is_ok());
+    assert!(registry
+        .resolve(&["dev".to_string(), "cli".to_string(), "routes".to_string()])
+        .is_ok());
+    assert!(registry
+        .resolve(&["dev".to_string(), "cli".to_string(), "registry".to_string()])
+        .is_ok());
 }

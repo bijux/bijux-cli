@@ -7,23 +7,20 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python::execution_outcome_api;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::execution_outcome_api;
 use bijux_cli_repl::{execute_repl_line, startup_repl};
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn code(args: &[&str]) -> i32 {
@@ -35,12 +32,14 @@ fn bridge_exit(args: &[&str]) -> i32 {
         .chain(args.iter().map(|item| item.to_string()))
         .collect::<Vec<_>>();
     let value: Value =
-        serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution")).expect("bridge json");
+        serde_json::from_str(&execution_outcome_api(&argv).expect("bridge execution"))
+            .expect("bridge json");
     value["exit_code"].as_i64().unwrap_or(-1) as i32
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-exit-code-law-{name}-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-exit-code-law-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
@@ -220,13 +219,23 @@ fn corrupted_state_and_missing_file_failures_do_not_drift_in_exit_class() {
     let config_text = config.to_string_lossy().to_string();
 
     let corrupted_text = code(&["config", "--config-path", &config_text]);
-    let corrupted_json = code(&["config", "--config-path", &config_text, "--format", "json", "--no-pretty"]);
+    let corrupted_json =
+        code(&["config", "--config-path", &config_text, "--format", "json", "--no-pretty"]);
     assert_eq!(corrupted_text, 1);
     assert_eq!(corrupted_json, corrupted_text);
 
     let missing = root.join("missing.env").to_string_lossy().to_string();
     let missing_text = code(&["config", "get", "alpha", "--config-path", &missing]);
-    let missing_json = code(&["config", "get", "alpha", "--config-path", &missing, "--format", "json", "--no-pretty"]);
+    let missing_json = code(&[
+        "config",
+        "get",
+        "alpha",
+        "--config-path",
+        &missing,
+        "--format",
+        "json",
+        "--no-pretty",
+    ]);
     assert_eq!(missing_text, 2);
     assert_eq!(missing_json, missing_text);
 }

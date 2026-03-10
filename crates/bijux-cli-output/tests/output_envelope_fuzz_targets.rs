@@ -4,12 +4,12 @@
 
 use std::collections::BTreeMap;
 
-use bijux_cli_routing::{
-    CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, Namespace,
-    OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat,
-};
 use bijux_cli_core as _;
 use bijux_cli_output::{emit_error, emit_success, render_value, EmitterConfig, OutputStream};
+use bijux_cli_routing::{
+    CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1,
+    OutputEnvelopeV1, OutputFormat,
+};
 use serde as _;
 use serde_json::{json, Value};
 use serde_yaml as _;
@@ -141,12 +141,7 @@ fn fuzz_nested_diagnostics_multiline_unicode_empty_and_large_payload_rendering()
 
 #[test]
 fn fuzz_malformed_envelope_deserialization_is_rejected() {
-    let malformed = [
-        "{",
-        "[]",
-        "{\"status\":\"ok\"}",
-        "{\"status\":\"error\",\"meta\":{}}",
-    ];
+    let malformed = ["{", "[]", "{\"status\":\"ok\"}", "{\"status\":\"error\",\"meta\":{}}"];
     for sample in malformed {
         let parsed = serde_json::from_str::<OutputEnvelopeV1>(sample);
         assert!(parsed.is_err());

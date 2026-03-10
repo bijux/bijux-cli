@@ -45,21 +45,12 @@ fn removed_dev_aliases_no_longer_normalize_to_dev_cli_commands() {
         (vec!["dev".to_string(), "docs".to_string()], vec!["dev", "docs"]),
         (vec!["dev".to_string(), "env".to_string()], vec!["dev", "env"]),
         (vec!["dev".to_string(), "contracts".to_string()], vec!["dev", "contracts"]),
-        (
-            vec!["dev".to_string(), "snapshots-audit".to_string()],
-            vec!["dev", "snapshots-audit"],
-        ),
-        (
-            vec!["dev".to_string(), "fixture-audit".to_string()],
-            vec!["dev", "fixture-audit"],
-        ),
+        (vec!["dev".to_string(), "snapshots-audit".to_string()], vec!["dev", "snapshots-audit"]),
+        (vec!["dev".to_string(), "fixture-audit".to_string()], vec!["dev", "fixture-audit"]),
     ];
     for (path, expected) in cases {
         let intent = normalize_command_path(&path);
-        assert_eq!(
-            intent,
-            expected.into_iter().map(ToString::to_string).collect::<Vec<_>>()
-        );
+        assert_eq!(intent, expected.into_iter().map(ToString::to_string).collect::<Vec<_>>());
     }
 }
 

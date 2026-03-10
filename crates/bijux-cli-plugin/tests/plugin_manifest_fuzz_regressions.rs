@@ -5,8 +5,8 @@
 use std::fs;
 use std::path::Path;
 
-use bijux_cli_routing as _;
 use bijux_cli_plugin::{parse_manifest_v1, validate_manifest};
+use bijux_cli_routing as _;
 use semver as _;
 use serde as _;
 use serde_json as _;

@@ -5,15 +5,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::{json, Value};
+use shlex as _;
+use thiserror as _;
 
 fn workspace_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -40,8 +40,7 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> (i32, String, String) {
     for (key, value) in envs {
         command.env(key, value);
     }
-    let output =
-        command.output().expect("binary run");
+    let output = command.output().expect("binary run");
     (
         output.status.code().unwrap_or(1),
         String::from_utf8(output.stdout).expect("stdout utf-8"),
@@ -79,10 +78,8 @@ fn plugins_check_parity_exit_and_stream_routing_matches_capture_overlap() {
         .iter()
         .filter_map(|(key, value)| value.as_str().map(|text| (key.to_string(), text.to_string())))
         .collect();
-    let env_refs: Vec<(&str, &str)> = owned_env
-        .iter()
-        .map(|(key, value)| (key.as_str(), value.as_str()))
-        .collect();
+    let env_refs: Vec<(&str, &str)> =
+        owned_env.iter().map(|(key, value)| (key.as_str(), value.as_str())).collect();
 
     let (code, out, err) = run_with_env(&args, &env_refs);
     let expected_code = py["exit_code"].as_i64().unwrap_or(0) as i32;

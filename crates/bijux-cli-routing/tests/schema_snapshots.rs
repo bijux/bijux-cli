@@ -5,15 +5,15 @@
 use bijux_cli_routing::schema::{
     error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v1_schema,
 };
-use proptest as _;
-use serde as _;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
 use thiserror as _;
 
-fn render(schema: schemars::schema::RootSchema) -> String {
-    serde_json::to_string_pretty(&schema).expect("schema should serialize")
+fn render(schema: &schemars::schema::RootSchema) -> String {
+    serde_json::to_string_pretty(schema).expect("schema should serialize")
 }
 
 #[test]
@@ -34,8 +34,10 @@ fn schema_snapshots_are_deterministic_and_match_expected_files() {
     ];
 
     for (builder, path) in cases {
-        let first = render(builder());
-        let second = render(builder());
+        let first_schema = builder();
+        let second_schema = builder();
+        let first = render(&first_schema);
+        let second = render(&second_schema);
         assert_eq!(first, second, "schema generation must be repeated-run deterministic: {path}");
 
         let expected = std::fs::read_to_string(path).expect("snapshot file should exist");

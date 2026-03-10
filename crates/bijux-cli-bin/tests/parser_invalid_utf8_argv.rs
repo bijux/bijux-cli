@@ -3,15 +3,15 @@
 //! test_type: parser-fuzz
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 #[cfg(unix)]
 #[test]
@@ -30,7 +30,8 @@ fn malformed_utf8_argv_is_rejected_without_panic() {
     assert!(output.stdout.is_empty());
     let stderr = String::from_utf8(output.stderr).expect("stderr utf-8");
     assert!(
-        stderr.to_lowercase().contains("invalid utf-8") || stderr.to_lowercase().contains("invalid utf8"),
+        stderr.to_lowercase().contains("invalid utf-8")
+            || stderr.to_lowercase().contains("invalid utf8"),
         "stderr should report invalid utf-8 argv, got: {stderr}"
     );
 }

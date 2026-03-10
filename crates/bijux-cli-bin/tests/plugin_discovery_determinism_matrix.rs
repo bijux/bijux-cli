@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -31,7 +31,8 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("bijux-plugin-discovery-matrix-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir()
+        .join(format!("bijux-plugin-discovery-matrix-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir
@@ -56,10 +57,7 @@ fn scaffold_manifest(root: &Path, plugins_dir: &Path, namespace: &str) -> PathBu
 
 fn install_python(root: &Path, plugins_dir: &Path, namespace: &str) {
     let manifest = scaffold_manifest(root, plugins_dir, namespace);
-    let out = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], plugins_dir);
     assert!(out.status.success(), "install should succeed for {namespace}");
 }
 
@@ -84,10 +82,7 @@ fn install_external_exec(root: &Path, plugins_dir: &Path, namespace: &str, entry
         ),
     )
     .expect("write external manifest");
-    let out = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], plugins_dir);
     assert!(out.status.success(), "external install should succeed");
 }
 
@@ -186,17 +181,13 @@ fn deterministic_route_registration_after_uninstall_reinstall_cycles() {
     let plugins_dir = root.join("plugins");
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     let manifest = scaffold_manifest(&root, &plugins_dir, "cycleplug");
-    let first_install = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let first_install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert!(first_install.status.success());
 
     run_ok_json(&["cli", "plugins", "uninstall", "cycleplug"], &plugins_dir);
-    let second_install = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let second_install =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert!(second_install.status.success());
 
     let out = run(&["cycleplug", "--help"], &plugins_dir);
@@ -212,14 +203,10 @@ fn deterministic_namespace_conflict_resolution_messages() {
     install_python(&root, &plugins_dir, "dupeplug");
 
     let manifest = root.join("dupeplug_scaffold").join("plugin.manifest.json");
-    let first = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
-    let second = run(
-        &["cli", "plugins", "install", manifest.to_str().expect("utf-8")],
-        &plugins_dir,
-    );
+    let first =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
+    let second =
+        run(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     assert_eq!(first.status.code(), Some(1));
     assert_eq!(second.status.code(), Some(1));
     assert_eq!(first.stderr, second.stderr);
@@ -264,14 +251,10 @@ fn deterministic_plugins_inspect_json_output() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "jsoninspect");
 
-    let first = run(
-        &["--format", "json", "--no-pretty", "cli", "plugins", "inspect"],
-        &plugins_dir,
-    );
-    let second = run(
-        &["--format", "json", "--no-pretty", "cli", "plugins", "inspect"],
-        &plugins_dir,
-    );
+    let first =
+        run(&["--format", "json", "--no-pretty", "cli", "plugins", "inspect"], &plugins_dir);
+    let second =
+        run(&["--format", "json", "--no-pretty", "cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(first.status.code(), Some(0));
     assert_eq!(first.stdout, second.stdout);
 }
@@ -331,7 +314,8 @@ fn discovery_is_stable_under_broken_symlink_entries() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
     install_python(&root, &plugins_dir, "symlinkplug");
 
-    symlink(root.join("missing-target"), plugins_dir.join("broken-link")).expect("create broken symlink");
+    symlink(root.join("missing-target"), plugins_dir.join("broken-link"))
+        .expect("create broken symlink");
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
     let names = plugin_names(&listed);

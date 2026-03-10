@@ -7,12 +7,12 @@ use std::collections::BTreeMap;
 use bijux_cli_routing::{
     CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
-use proptest as _;
-use serde as _;
-use serde_json::json;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json::json;
 use thiserror as _;
 
 fn meta() -> OutputEnvelopeMetaV1 {

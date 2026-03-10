@@ -4,21 +4,18 @@
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_ok_json(args: &[&str]) -> Value {
@@ -92,6 +89,9 @@ fn required_maintainer_commands_emit_skimmable_text() {
         let text = String::from_utf8(out.stdout).expect("utf8");
         assert!(!text.trim().is_empty(), "text output empty for {command}");
         assert!(text.len() <= 2_000_000, "text output unexpectedly huge for {command}");
-        assert!(text.contains('{') || text.contains('['), "text output should be structured for {command}");
+        assert!(
+            text.contains('{') || text.contains('['),
+            "text output should be structured for {command}"
+        );
     }
 }

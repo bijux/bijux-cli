@@ -6,15 +6,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -31,18 +31,15 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("bijux-plugin-lifecycle-{name}-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("bijux-plugin-lifecycle-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp root");
     root
 }
 
 fn manifest_path(scaffold_dir: &Path) -> String {
-    scaffold_dir
-        .join("plugin.manifest.json")
-        .to_str()
-        .expect("utf-8")
-        .to_string()
+    scaffold_dir.join("plugin.manifest.json").to_str().expect("utf-8").to_string()
 }
 
 fn scaffold_and_install(kind: &str, namespace: &str, root: &Path, plugins_dir: &Path) -> String {
@@ -92,9 +89,11 @@ fn python_scaffold_install_list_inspect_uninstall_end_to_end() {
     scaffold_and_install("python", "pychain", &root, &plugins_dir);
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-    assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
-        |item| item["manifest"]["namespace"] == "pychain"
-    ));
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "pychain"));
 
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
@@ -112,9 +111,11 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
     scaffold_and_install("rust", "rustchain", &root, &plugins_dir);
 
     let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-    assert!(listed["plugins"].as_array().expect("plugins array").iter().any(
-        |item| item["manifest"]["namespace"] == "rustchain"
-    ));
+    assert!(listed["plugins"]
+        .as_array()
+        .expect("plugins array")
+        .iter()
+        .any(|item| item["manifest"]["namespace"] == "rustchain"));
 
     let inspected = run_ok_json(&["cli", "plugins", "inspect"], &plugins_dir);
     assert_eq!(inspected["status"], "loaded");
@@ -186,10 +187,7 @@ fn duplicate_install_force_flag_behavior_is_deterministic_when_unsupported() {
     fs::create_dir_all(&plugins_dir).expect("mkdir plugins");
 
     let manifest = scaffold_and_install("python", "forceplug", &root, &plugins_dir);
-    let out = run(
-        &["cli", "plugins", "install", manifest.as_str(), "--force"],
-        &plugins_dir,
-    );
+    let out = run(&["cli", "plugins", "install", manifest.as_str(), "--force"], &plugins_dir);
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty());
     assert!(String::from_utf8_lossy(&out.stderr).contains("Usage: bijux"));
@@ -231,15 +229,7 @@ fn plugin_check_after_entrypoint_deletion_reports_stable_failure() {
     fs::write(&entry_file, "#!/bin/sh\necho ok\n").expect("write entrypoint");
     let manifest = root.join("goneplug.manifest.json");
     write_external_exec_manifest(&manifest, "goneplug", &entry_file);
-    run_ok_json(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            manifest.to_str().expect("utf-8"),
-        ],
-        &plugins_dir,
-    );
+    run_ok_json(&["cli", "plugins", "install", manifest.to_str().expect("utf-8")], &plugins_dir);
     fs::remove_file(entry_file).expect("remove entrypoint file");
 
     let out = run(&["cli", "plugins", "check", "goneplug"], &plugins_dir);
@@ -376,12 +366,7 @@ fn plugin_check_reports_healthy_and_unhealthy_in_same_registry() {
     let unhealthy_manifest = root.join("unhealthyplug.manifest.json");
     write_external_exec_manifest(&unhealthy_manifest, "unhealthyplug", &entry_file);
     run_ok_json(
-        &[
-            "cli",
-            "plugins",
-            "install",
-            unhealthy_manifest.to_str().expect("utf-8"),
-        ],
+        &["cli", "plugins", "install", unhealthy_manifest.to_str().expect("utf-8")],
         &plugins_dir,
     );
     fs::remove_file(entry_file).expect("remove entrypoint");

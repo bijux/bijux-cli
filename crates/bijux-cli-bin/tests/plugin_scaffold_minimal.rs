@@ -7,15 +7,15 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str], plugins_dir: &Path) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
@@ -38,7 +38,8 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 }
 
 fn tmp_dir(name: &str) -> PathBuf {
-    let base = std::env::temp_dir().join(format!("bijux-plugin-minimal-{}-{}", name, std::process::id()));
+    let base =
+        std::env::temp_dir().join(format!("bijux-plugin-minimal-{}-{}", name, std::process::id()));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(&base).expect("mkdir temp");
     base
@@ -76,12 +77,7 @@ fn expected_snapshot(path: &str) -> BTreeSet<String> {
         "rust" => include_str!("snapshots/plugin_scaffold_rust_minimal_files.txt"),
         _ => panic!("unknown snapshot"),
     };
-    content
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(str::to_string)
-        .collect()
+    content.lines().map(str::trim).filter(|line| !line.is_empty()).map(str::to_string).collect()
 }
 
 #[test]
@@ -117,23 +113,16 @@ fn scaffold_minimal_layout_is_stable_and_runnable_for_python_and_rust() {
         }
 
         run_ok_json(
-            &[
-                "cli",
-                "plugins",
-                "install",
-                manifest_file(&scaffold_dir).to_str().expect("utf-8"),
-            ],
+            &["cli", "plugins", "install", manifest_file(&scaffold_dir).to_str().expect("utf-8")],
             &plugins_dir,
         );
 
         let listed = run_ok_json(&["cli", "plugins", "list"], &plugins_dir);
-        assert!(
-            listed["plugins"]
-                .as_array()
-                .expect("plugins array")
-                .iter()
-                .any(|item| item["manifest"]["namespace"] == namespace)
-        );
+        assert!(listed["plugins"]
+            .as_array()
+            .expect("plugins array")
+            .iter()
+            .any(|item| item["manifest"]["namespace"] == namespace));
 
         let check = run_ok_json(&["cli", "plugins", "check", namespace], &plugins_dir);
         assert_eq!(check["status"], "healthy");

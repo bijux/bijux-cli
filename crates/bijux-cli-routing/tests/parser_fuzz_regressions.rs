@@ -8,12 +8,12 @@ use std::path::Path;
 use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;
 use bijux_cli_routing::registry::RouteRegistry;
-use proptest as _;
-use serde as _;
-use serde_json as _;
 use clap as _;
+use proptest as _;
 use schemars as _;
 use semver as _;
+use serde as _;
+use serde_json as _;
 use thiserror as _;
 
 fn split_argv(line: &str) -> Vec<String> {
@@ -46,9 +46,18 @@ fn minimized_parser_cases_do_not_crash_and_are_deterministic() {
         for argv in read_case_file(&file) {
             let first = parse_intent(&argv).expect("minimized case parse should not fail");
             let second = parse_intent(&argv).expect("second parse should not fail");
-            assert_eq!(first.command_path, second.command_path, "command path drift for case {file:?}");
-            assert_eq!(first.normalized_path, second.normalized_path, "normalized path drift for case {file:?}");
-            assert_eq!(first.global_flags, second.global_flags, "global flags drift for case {file:?}");
+            assert_eq!(
+                first.command_path, second.command_path,
+                "command path drift for case {file:?}"
+            );
+            assert_eq!(
+                first.normalized_path, second.normalized_path,
+                "normalized path drift for case {file:?}"
+            );
+            assert_eq!(
+                first.global_flags, second.global_flags,
+                "global flags drift for case {file:?}"
+            );
         }
     }
 }

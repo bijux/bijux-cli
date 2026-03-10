@@ -14,14 +14,14 @@ proptest! {
     fn namespace_normalization_is_kebab_case(raw in "[A-Za-z0-9_ /-]{1,32}") {
         let normalized = Namespace::normalize(&raw);
         prop_assert!(normalized.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-'));
-        if !normalized.is_empty() {
+        if normalized.is_empty() {
+            prop_assert!(Namespace::new(&raw).is_err());
+        } else {
             prop_assert!(!normalized.starts_with('-'));
             prop_assert!(!normalized.ends_with('-'));
             prop_assert!(!normalized.contains("--"));
             let ns = Namespace::new(&raw).expect("normalized namespace should be valid");
             prop_assert_eq!(ns.as_str(), normalized);
-        } else {
-            prop_assert!(Namespace::new(&raw).is_err());
         }
     }
 

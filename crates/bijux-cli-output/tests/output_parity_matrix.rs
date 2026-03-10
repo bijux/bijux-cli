@@ -4,10 +4,10 @@
 use std::collections::BTreeMap;
 use std::fs;
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_output as _;
+use bijux_cli_routing as _;
 use serde as _;
 use serde::Deserialize;
 use serde_json::Value;

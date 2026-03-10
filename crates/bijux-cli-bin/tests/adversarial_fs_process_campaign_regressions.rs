@@ -6,19 +6,19 @@ use std::path::Path;
 use std::process::Command;
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn run_case(path: &Path) {
-    let json: serde_json::Value = serde_json::from_str(&fs::read_to_string(path).expect("read case"))
-        .expect("parse case");
+    let json: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(path).expect("read case")).expect("parse case");
 
     let args: Vec<String> = json["args"]
         .as_array()
@@ -39,10 +39,15 @@ fn run_case(path: &Path) {
     let plugins = temp.join("plugins");
     let history = temp.join("history.log");
     fs::create_dir_all(&plugins).expect("mkdir plugins");
-    fs::write(&config, json["config_text"].as_str().unwrap_or("BIJUXCLI_ALPHA=1\n")).expect("write config");
-    fs::write(plugins.join("registry.json"), json["registry_text"].as_str().unwrap_or("{\"plugins\":[]}"))
-        .expect("write registry");
-    fs::write(&history, json["history_text"].as_str().unwrap_or("status\n")).expect("write history");
+    fs::write(&config, json["config_text"].as_str().unwrap_or("BIJUXCLI_ALPHA=1\n"))
+        .expect("write config");
+    fs::write(
+        plugins.join("registry.json"),
+        json["registry_text"].as_str().unwrap_or("{\"plugins\":[]}"),
+    )
+    .expect("write registry");
+    fs::write(&history, json["history_text"].as_str().unwrap_or("status\n"))
+        .expect("write history");
 
     let mut expanded = Vec::new();
     for arg in args {
@@ -70,7 +75,8 @@ fn run_case(path: &Path) {
 
 #[test]
 fn minimized_adversarial_cases_replay_without_panics() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fuzz/adversarial_fs_process_minimized_cases");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fuzz/adversarial_fs_process_minimized_cases");
     let mut files: Vec<_> = fs::read_dir(dir)
         .expect("read minimized adversarial cases")
         .filter_map(Result::ok)

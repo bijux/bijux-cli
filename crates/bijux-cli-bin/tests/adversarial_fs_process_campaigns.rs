@@ -6,18 +6,19 @@ use std::path::PathBuf;
 use std::process::{Command, Output, Stdio};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json as _;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("bijux-fs-process-adversarial-{name}-{}", std::process::id()));
+    let path = std::env::temp_dir()
+        .join(format!("bijux-fs-process-adversarial-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir temp");
     path
@@ -83,8 +84,8 @@ fn missing_parent_and_type_flip_path_cases_are_handled_without_corruption() {
 #[test]
 #[cfg(unix)]
 fn broken_symlink_and_permission_denied_paths_surface_stable_failures() {
-    use std::os::unix::fs::PermissionsExt;
     use std::os::unix::fs::symlink;
+    use std::os::unix::fs::PermissionsExt;
 
     let root = temp_dir("symlink-permissions");
 
@@ -122,7 +123,8 @@ fn broken_symlink_and_permission_denied_paths_surface_stable_failures() {
         &["history", "--format", "json", "--no-pretty"],
         &[("BIJUXCLI_HISTORY_FILE", history.display().to_string())],
     );
-    fs::set_permissions(&history, fs::Permissions::from_mode(0o644)).expect("restore history perms");
+    fs::set_permissions(&history, fs::Permissions::from_mode(0o644))
+        .expect("restore history perms");
     assert_known_status(&hist_out, "unreadable history");
 
     let cfg_dir = root.join("cfgdir");
@@ -131,14 +133,7 @@ fn broken_symlink_and_permission_denied_paths_surface_stable_failures() {
     fs::write(&config, "BIJUXCLI_ALPHA=1\n").expect("seed config");
     fs::set_permissions(&cfg_dir, fs::Permissions::from_mode(0o555)).expect("chmod cfgdir");
     let write_fail = run_with_env(
-        &[
-            "cli",
-            "config",
-            "set",
-            "alpha=2",
-            "--config-path",
-            config.to_str().expect("utf-8"),
-        ],
+        &["cli", "config", "set", "alpha=2", "--config-path", config.to_str().expect("utf-8")],
         &[],
     );
     fs::set_permissions(&cfg_dir, fs::Permissions::from_mode(0o755)).expect("restore cfgdir");

@@ -3,8 +3,8 @@
 
 use std::collections::BTreeSet;
 
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_plugin as _;
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use semver as _;
 use serde::Deserialize;
 use sha2 as _;
@@ -27,7 +27,8 @@ fn official_product_registry_matches_reserved_namespace_contract() {
     ))
     .expect("registry json should parse");
 
-    let file_set: BTreeSet<String> = registry.entries.into_iter().map(|row| row.namespace).collect();
+    let file_set: BTreeSet<String> =
+        registry.entries.into_iter().map(|row| row.namespace).collect();
     let contract_set: BTreeSet<String> =
         OFFICIAL_PRODUCT_NAMESPACES.iter().map(|item| (*item).to_string()).collect();
 

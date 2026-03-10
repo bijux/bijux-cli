@@ -2,15 +2,21 @@
 //! Plugin manifest fuzz targets for parsing and validation boundaries.
 //! test_type: plugin-manifest-fuzz
 
-use bijux_cli_routing as _;
 use bijux_cli_plugin::{parse_manifest_v1, validate_manifest, PluginError};
+use bijux_cli_routing as _;
 use semver as _;
 use serde as _;
 use serde_json as _;
 use sha2 as _;
 use thiserror as _;
 
-fn manifest_json(namespace: &str, kind: &str, entrypoint: &str, aliases: &str, compatibility: &str) -> String {
+fn manifest_json(
+    namespace: &str,
+    kind: &str,
+    entrypoint: &str,
+    aliases: &str,
+    compatibility: &str,
+) -> String {
     format!(
         r#"{{
   "name": "{namespace}",
@@ -32,7 +38,13 @@ fn fuzz_plugin_manifest_parsing_is_stable() {
     let corpus = [
         "{broken-json",
         "{}",
-        &manifest_json("alpha", "delegated", "alpha.plugin:run", "[]", r#"{"min_inclusive":"0.1.0","max_exclusive":"2.0.0"}"#),
+        &manifest_json(
+            "alpha",
+            "delegated",
+            "alpha.plugin:run",
+            "[]",
+            r#"{"min_inclusive":"0.1.0","max_exclusive":"2.0.0"}"#,
+        ),
     ];
 
     for sample in corpus {
@@ -63,7 +75,8 @@ fn fuzz_plugin_manifest_validation_covers_required_and_optional_fields() {
         r#"{"min_inclusive":"0.1.0","max_exclusive":null}"#,
     ))
     .expect("parse");
-    let validated_optional = validate_manifest(with_empty_optional_aliases, "0.1.0", &[]).expect("validate");
+    let validated_optional =
+        validate_manifest(with_empty_optional_aliases, "0.1.0", &[]).expect("validate");
     assert!(validated_optional.manifest.aliases.is_empty());
 }
 
@@ -102,7 +115,8 @@ fn fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced() {
         r#"{"min_inclusive":"0.1.0","max_exclusive":"2.0.0"}"#,
     ))
     .expect("parse");
-    let delegated_err = validate_manifest(delegated_bad, "0.1.0", &[]).expect_err("delegated entrypoint invalid");
+    let delegated_err =
+        validate_manifest(delegated_bad, "0.1.0", &[]).expect_err("delegated entrypoint invalid");
     assert!(matches!(delegated_err, PluginError::InvalidEntrypoint { .. }));
 
     let external_bad = parse_manifest_v1(&manifest_json(
@@ -113,7 +127,8 @@ fn fuzz_plugin_entrypoint_path_parsing_by_kind_is_enforced() {
         r#"{"min_inclusive":"0.1.0","max_exclusive":"2.0.0"}"#,
     ))
     .expect("parse");
-    let external_err = validate_manifest(external_bad, "0.1.0", &[]).expect_err("external entrypoint invalid");
+    let external_err =
+        validate_manifest(external_bad, "0.1.0", &[]).expect_err("external entrypoint invalid");
     assert!(matches!(external_err, PluginError::InvalidEntrypoint { .. }));
 }
 

@@ -1,13 +1,13 @@
 #![forbid(unsafe_code)]
 //! Python bridge conversion and exception mapping coverage for TODOs 281-295.
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_install as _;
 use bijux_cli_python::{
     classify_failure, command_tree_introspection_api, execution_facade_api, execution_outcome_api,
     plugin_registry_inspection_api, python_exception_tag, BridgeErrorKind,
 };
+use bijux_cli_routing as _;
 use serde_json::Value;
 use std::path::PathBuf;
 
@@ -30,7 +30,8 @@ fn python_exception_mapping_covers_usage_validation_plugin_and_internal_failures
 #[test]
 fn error_and_success_envelope_fields_survive_python_conversion_intact() {
     let success = parse_json(
-        &execution_outcome_api(&["bijux".to_string(), "status".to_string()]).expect("status outcome"),
+        &execution_outcome_api(&["bijux".to_string(), "status".to_string()])
+            .expect("status outcome"),
     );
     for key in ["exit_code", "stdout", "stderr", "error_kind"] {
         assert!(success.get(key).is_some(), "missing success field: {key}");
@@ -83,23 +84,16 @@ fn diagnostics_and_inspection_payloads_survive_conversion_with_stable_shape() {
 #[test]
 fn bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitive_lists() {
     let payload = parse_json(
-        &execution_outcome_api(&["bijux".to_string(), "status".to_string()]).expect("status outcome"),
+        &execution_outcome_api(&["bijux".to_string(), "status".to_string()])
+            .expect("status outcome"),
     );
-    let keys = payload
-        .as_object()
-        .expect("object")
-        .keys()
-        .map(|k| k.as_str())
-        .collect::<Vec<_>>();
+    let keys = payload.as_object().expect("object").keys().map(|k| k.as_str()).collect::<Vec<_>>();
     assert_eq!(keys, vec!["error_kind", "exit_code", "stderr", "stdout"]);
 
     let tree = parse_json(&command_tree_introspection_api());
     let namespaces = tree["namespaces"].as_array().expect("namespaces array");
-    let mut sorted = namespaces
-        .iter()
-        .filter_map(Value::as_str)
-        .map(ToString::to_string)
-        .collect::<Vec<_>>();
+    let mut sorted =
+        namespaces.iter().filter_map(Value::as_str).map(ToString::to_string).collect::<Vec<_>>();
     let original = sorted.clone();
     sorted.sort();
     sorted.dedup();
@@ -108,9 +102,9 @@ fn bridge_conversions_preserve_field_names_optional_semantics_and_order_sensitiv
 
 #[test]
 fn conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly() {
-    let missing_registry = plugin_registry_inspection_api(
-        &PathBuf::from("/tmp/bijux-nonexistent-registry-does-not-exist.json"),
-    )
+    let missing_registry = plugin_registry_inspection_api(&PathBuf::from(
+        "/tmp/bijux-nonexistent-registry-does-not-exist.json",
+    ))
     .expect("missing registry should be normalized");
     let parsed = parse_json(&missing_registry);
     assert_eq!(parsed["version"], "1");
@@ -119,7 +113,9 @@ fn conversion_failures_and_unsupported_runtime_conditions_are_normalized_clearly
     #[cfg(not(feature = "python-extension"))]
     {
         // Without the extension feature, the Rust bridge still exposes stable APIs.
-        let marker = parse_json(&execution_facade_api(&["bijux".to_string(), "version".to_string()]).expect("version"));
+        let marker = parse_json(
+            &execution_facade_api(&["bijux".to_string(), "version".to_string()]).expect("version"),
+        );
         assert!(marker.get("version").is_some() || marker.get("status").is_some());
     }
 }

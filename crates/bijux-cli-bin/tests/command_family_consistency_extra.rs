@@ -7,23 +7,20 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core::app::run_app;
-use bijux_cli_python::execution_outcome_api;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
 use bijux_cli_python as _;
-use libc as _;
+use bijux_cli_python::execution_outcome_api;
 use bijux_cli_repl::{execute_repl_line, startup_repl};
+use bijux_cli_routing as _;
+use libc as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
@@ -79,7 +76,8 @@ fn bridge_outcome(args: &[&str]) -> Value {
     let argv = std::iter::once("bijux".to_string())
         .chain(args.iter().map(|s| s.to_string()))
         .collect::<Vec<_>>();
-    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge outcome")).expect("bridge json")
+    serde_json::from_str(&execution_outcome_api(&argv).expect("bridge outcome"))
+        .expect("bridge json")
 }
 
 #[test]
@@ -132,9 +130,8 @@ fn cli_paths_match_state_audit_paths_view() {
 
     assert_eq!(paths["config"], audit["paths"]["config"]["path"]);
     assert_eq!(paths["history"], audit["paths"]["history"]["path"]);
-    let plugins_registry_path = audit["paths"]["plugins_registry"]["path"]
-        .as_str()
-        .expect("plugins registry path");
+    let plugins_registry_path =
+        audit["paths"]["plugins_registry"]["path"].as_str().expect("plugins registry path");
     let plugins_dir = Path::new(plugins_registry_path)
         .parent()
         .expect("plugins registry parent")

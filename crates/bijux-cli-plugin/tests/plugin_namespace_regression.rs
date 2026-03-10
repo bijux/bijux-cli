@@ -6,11 +6,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Barrier};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use bijux_cli_routing as _;
-use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use bijux_cli_plugin::{
     install_plugin, load_registry, InstallPluginRequest, PluginError, PluginTrustLevel,
 };
+use bijux_cli_routing as _;
+use bijux_cli_routing::OFFICIAL_PRODUCT_NAMESPACES;
 use semver as _;
 use serde as _;
 use serde_json as _;

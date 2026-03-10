@@ -8,15 +8,15 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
@@ -220,7 +220,9 @@ fn state_doctor_reports_config_corruption_and_partial_write_artifact() {
     assert_eq!(payload["doctor"]["status"], "degraded");
     let issues = payload["doctor"]["issues"].as_array().expect("issues array");
     assert!(issues.iter().any(|item| item["area"] == "config"));
-    assert!(issues.iter().any(|item| item["message"] == "partial-write rollback artifact detected"));
+    assert!(issues
+        .iter()
+        .any(|item| item["message"] == "partial-write rollback artifact detected"));
 }
 
 #[test]

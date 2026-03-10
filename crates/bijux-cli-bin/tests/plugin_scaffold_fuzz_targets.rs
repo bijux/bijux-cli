@@ -8,15 +8,15 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -45,11 +45,7 @@ fn fuzz_scaffold_option_parsing_and_template_expansion_inputs_are_stable() {
     let plugins = root.join("plugins");
     fs::create_dir_all(&plugins).expect("plugins dir");
 
-    let cases = [
-        ("python", "alpha-fuzz"),
-        ("rust", "beta-fuzz"),
-        ("python", "gamma-fuzz"),
-    ];
+    let cases = [("python", "alpha-fuzz"), ("rust", "beta-fuzz"), ("python", "gamma-fuzz")];
 
     for (kind, namespace) in cases {
         let target = root.join(format!("{namespace}-{kind}"));
@@ -195,10 +191,8 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
 }"#,
     )
     .expect("write manifest");
-    let install_ext = run(
-        &["cli", "plugins", "install", ext_manifest.to_str().expect("utf-8")],
-        &plugins,
-    );
+    let install_ext =
+        run(&["cli", "plugins", "install", ext_manifest.to_str().expect("utf-8")], &plugins);
     assert_eq!(install_ext.status.code(), Some(0));
 
     let check = run(&["cli", "plugins", "check", "extcheck"], &plugins);

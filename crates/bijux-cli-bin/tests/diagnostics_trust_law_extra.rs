@@ -8,21 +8,18 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_bijux-rs"))
-        .args(args)
-        .output()
-        .expect("binary should execute")
+    Command::new(env!("CARGO_BIN_EXE_bijux-rs")).args(args).output().expect("binary should execute")
 }
 
 fn run_env(args: &[&str], envs: &[(&str, &Path)]) -> Output {
@@ -43,7 +40,8 @@ fn temp_dir(label: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let path = std::env::temp_dir().join(format!("bijux-diagnostics-trust-{label}-{}-{nanos}", std::process::id()));
+    let path = std::env::temp_dir()
+        .join(format!("bijux-diagnostics-trust-{label}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&path);
     fs::create_dir_all(&path).expect("mkdir");
     path
@@ -63,12 +61,14 @@ fn dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable() {
 
     let contracts_live = parse_json(&contracts_a.stdout);
     let contracts_snapshot: Value =
-        serde_json::from_str(include_str!("snapshots/ported/dev_cli_contracts.json")).expect("contracts snapshot");
+        serde_json::from_str(include_str!("snapshots/ported/dev_cli_contracts.json"))
+            .expect("contracts snapshot");
     assert_eq!(contracts_live, contracts_snapshot);
 
     let routes_live = parse_json(&routes_a.stdout);
     let routes_snapshot: Value =
-        serde_json::from_str(include_str!("snapshots/ported/dev_cli_routes.json")).expect("routes snapshot");
+        serde_json::from_str(include_str!("snapshots/ported/dev_cli_routes.json"))
+            .expect("routes snapshot");
     let live_routes: BTreeSet<String> = routes_live["routes"]
         .as_array()
         .expect("live routes")
@@ -105,19 +105,27 @@ fn dev_cli_contracts_and_routes_match_snapshot_semantics_and_are_byte_stable() {
 
 #[test]
 fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() {
-    let registry_live = parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
+    let registry_live =
+        parse_json(&run(&["dev", "cli", "registry", "--format", "json", "--no-pretty"]).stdout);
     let registry_snapshot: Value =
-        serde_json::from_str(include_str!("snapshots/ported/dev_cli_registry.json")).expect("registry snapshot");
+        serde_json::from_str(include_str!("snapshots/ported/dev_cli_registry.json"))
+            .expect("registry snapshot");
     assert_eq!(registry_live, registry_snapshot);
 
-    let env_live = parse_json(&run(&["dev", "cli", "env", "--format", "json", "--no-pretty"]).stdout);
-    assert_eq!(env_live["source_precedence"], serde_json::json!(["flags", "env", "config", "defaults"]));
+    let env_live =
+        parse_json(&run(&["dev", "cli", "env", "--format", "json", "--no-pretty"]).stdout);
+    assert_eq!(
+        env_live["source_precedence"],
+        serde_json::json!(["flags", "env", "config", "defaults"])
+    );
     assert!(env_live["active"]["config_file"].is_string());
 
-    let parity = parse_json(&run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]).stdout);
+    let parity =
+        parse_json(&run(&["dev", "cli", "parity", "--format", "json", "--no-pretty"]).stdout);
     assert!(parity["binary_bridge"]["cases"].as_array().is_some_and(|v| !v.is_empty()));
 
-    let crate_health = parse_json(&run(&["dev", "cli", "crate-health", "--format", "json", "--no-pretty"]).stdout);
+    let crate_health =
+        parse_json(&run(&["dev", "cli", "crate-health", "--format", "json", "--no-pretty"]).stdout);
     let crates: BTreeSet<String> = crate_health["crate_metrics"]["crate_decisions"]
         .as_array()
         .expect("crate decisions")
@@ -129,7 +137,8 @@ fn dev_cli_registry_env_parity_crate_health_and_docs_audit_reflect_live_truth() 
         assert!(crates.contains(expected), "crate-health missing {expected}");
     }
 
-    let docs_audit = parse_json(&run(&["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"]).stdout);
+    let docs_audit =
+        parse_json(&run(&["dev", "cli", "docs-audit", "--format", "json", "--no-pretty"]).stdout);
     let docs = docs_audit["docs"].as_array().expect("docs list");
     assert!(!docs.is_empty(), "docs audit must list documentation files");
     let docs_paths: BTreeSet<&str> = docs.iter().filter_map(Value::as_str).collect();
@@ -157,11 +166,15 @@ fn doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_
     assert!(issues[0]["message"].as_str().unwrap_or_default().contains("Malformed line"));
     assert!(issues[0]["path"].is_string());
 
-    let plugin_health = parse_json(&run(&["dev", "cli", "plugin-health", "--format", "json", "--no-pretty"]).stdout);
+    let plugin_health = parse_json(
+        &run(&["dev", "cli", "plugin-health", "--format", "json", "--no-pretty"]).stdout,
+    );
     let text_report = plugin_health["machine_report"]["text_report"].as_str().unwrap_or_default();
     assert!(text_report.contains("Use `bijux dev cli plugin-health --format json`"));
 
-    let runtime = parse_json(&run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]).stdout);
+    let runtime = parse_json(
+        &run(&["dev", "cli", "runtime-identity", "--format", "json", "--no-pretty"]).stdout,
+    );
     if runtime["active_binary_selection_is_ambiguous"].as_bool().unwrap_or(false) {
         let summary = runtime["text_summary"].as_array().expect("text summary");
         let summary_text = summary.iter().filter_map(Value::as_str).collect::<Vec<_>>().join("\n");
@@ -172,7 +185,8 @@ fn doctor_plugin_doctor_and_runtime_identity_provide_actionable_diagnostics_for_
 #[test]
 fn diagnostics_do_not_invent_unsupported_remediation_steps() {
     let outputs = [
-        String::from_utf8(run(&["dev", "cli", "doctor", "--format", "text"]).stdout).expect("doctor text"),
+        String::from_utf8(run(&["dev", "cli", "doctor", "--format", "text"]).stdout)
+            .expect("doctor text"),
         String::from_utf8(run(&["dev", "cli", "plugin-health", "--format", "text"]).stdout)
             .expect("plugin-health text"),
         String::from_utf8(run(&["dev", "cli", "runtime-identity", "--format", "text"]).stdout)
@@ -190,7 +204,8 @@ fn diagnostics_do_not_invent_unsupported_remediation_steps() {
 
 #[test]
 fn diagnostics_text_is_boring_and_json_is_machine_friendly() {
-    let text = String::from_utf8(run(&["dev", "cli", "doctor", "--format", "text"]).stdout).expect("text");
+    let text =
+        String::from_utf8(run(&["dev", "cli", "doctor", "--format", "text"]).stdout).expect("text");
     let lower = text.to_lowercase();
     for promotional in ["awesome", "amazing", "revolutionary", "best-in-class", "delightful"] {
         assert!(!lower.contains(promotional), "diagnostics text should remain neutral");

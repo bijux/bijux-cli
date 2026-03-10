@@ -41,7 +41,11 @@ impl AsyncHandler for AsyncOk {
         &self,
         _ctx: &ExecutionContext,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<serde_json::Value, ErrorEnvelopeV1>> + Send + '_>,
+        Box<
+            dyn std::future::Future<Output = Result<serde_json::Value, ErrorEnvelopeV1>>
+                + Send
+                + '_,
+        >,
     > {
         Box::pin(future::ready(Ok(json!({"ok": "async"}))))
     }
@@ -53,7 +57,11 @@ impl AsyncHandler for AsyncDeterministic {
         &self,
         ctx: &ExecutionContext,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<serde_json::Value, ErrorEnvelopeV1>> + Send + '_>,
+        Box<
+            dyn std::future::Future<Output = Result<serde_json::Value, ErrorEnvelopeV1>>
+                + Send
+                + '_,
+        >,
     > {
         Box::pin(future::ready(Ok(json!({
             "command": ctx.intent.command_path.join(" "),
@@ -243,9 +251,8 @@ fn kernel_pipeline_uses_one_canonical_entrypoint() {
         Arc::new(AtomicBool::new(false)),
         true,
     );
-    let result =
-        execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
-            .expect("pipeline should execute");
+    let result = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+        .expect("pipeline should execute");
     assert_eq!(result.exit_code, ExitCode::Success);
     assert!(result.trace.is_some(), "canonical kernel execution should expose trace");
 }
@@ -277,9 +284,8 @@ fn sync_and_async_handlers_produce_equivalent_normalized_results() {
 
     let sync = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
         .expect("sync should execute");
-    let async_out =
-        execute_pipeline(&ctx, &Handler::Async(Box::new(AsyncDeterministic)), &[], &[])
-            .expect("async should execute");
+    let async_out = execute_pipeline(&ctx, &Handler::Async(Box::new(AsyncDeterministic)), &[], &[])
+        .expect("async should execute");
 
     assert_eq!(sync.exit_code, async_out.exit_code);
     assert_eq!(sync.emission, async_out.emission);
@@ -422,13 +428,9 @@ fn repl_lifecycle_hooks_do_not_mutate_non_repl_command_semantics() {
     );
     let baseline = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
         .expect("baseline should run");
-    let with_hooks = execute_pipeline(
-        &ctx,
-        &Handler::Sync(Box::new(SyncDeterministic)),
-        &[],
-        &lifecycle,
-    )
-    .expect("with hooks should run");
+    let with_hooks =
+        execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &lifecycle)
+            .expect("with hooks should run");
 
     assert_eq!(baseline.exit_code, with_hooks.exit_code);
     assert_eq!(baseline.emission, with_hooks.emission);
@@ -557,12 +559,20 @@ fn trace_mode_adds_diagnostics_without_changing_payload_shape() {
     let events = Arc::new(Mutex::new(Vec::<String>::new()));
     let diagnostics: Vec<Arc<dyn DiagnosticsHook>> =
         vec![Arc::new(CapturingDiag { events: events.clone() })];
-    let plain =
-        execute_pipeline(&plain_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &diagnostics, &[])
-            .expect("plain");
-    let traced =
-        execute_pipeline(&traced_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &diagnostics, &[])
-            .expect("traced");
+    let plain = execute_pipeline(
+        &plain_ctx,
+        &Handler::Sync(Box::new(SyncDeterministic)),
+        &diagnostics,
+        &[],
+    )
+    .expect("plain");
+    let traced = execute_pipeline(
+        &traced_ctx,
+        &Handler::Sync(Box::new(SyncDeterministic)),
+        &diagnostics,
+        &[],
+    )
+    .expect("traced");
 
     assert_eq!(plain.exit_code, traced.exit_code);
     assert_eq!(plain.emission, traced.emission);
@@ -597,12 +607,10 @@ fn quiet_mode_suppresses_streams_but_preserves_result_category() {
         false,
     );
 
-    let noisy =
-        execute_pipeline(&noisy_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
-            .expect("noisy");
-    let quiet =
-        execute_pipeline(&quiet_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
-            .expect("quiet");
+    let noisy = execute_pipeline(&noisy_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+        .expect("noisy");
+    let quiet = execute_pipeline(&quiet_ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+        .expect("quiet");
     assert_eq!(noisy.exit_code, quiet.exit_code);
     assert!(noisy.emission.is_some());
     assert!(quiet.emission.is_none());
@@ -675,12 +683,10 @@ fn repeated_run_kernel_invariants_harness_for_representative_commands() {
             Arc::new(AtomicBool::new(false)),
             true,
         );
-        let first =
-            execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
-                .expect("first");
-        let second =
-            execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
-                .expect("second");
+        let first = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+            .expect("first");
+        let second = execute_pipeline(&ctx, &Handler::Sync(Box::new(SyncDeterministic)), &[], &[])
+            .expect("second");
         assert_eq!(first.exit_code, second.exit_code, "exit mismatch for {argv:?}");
         assert_eq!(first.emission, second.emission, "emission mismatch for {argv:?}");
     }

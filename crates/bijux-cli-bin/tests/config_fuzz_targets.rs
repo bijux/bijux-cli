@@ -9,15 +9,15 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bijux_cli_core as _;
-use bijux_cli_python as _;
 use bijux_cli_install as _;
 use bijux_cli_output as _;
-use bijux_cli_routing as _;
-use shlex as _;
-use thiserror as _;
+use bijux_cli_python as _;
 use bijux_cli_repl as _;
+use bijux_cli_routing as _;
 use libc as _;
 use serde_json::Value;
+use shlex as _;
+use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -53,13 +53,11 @@ fn seeded_pairs(seed: u64, n: usize) -> Vec<(String, String)> {
 fn fuzz_dotenv_style_config_parsing_is_stable() {
     let root = temp_dir("dotenv");
     let path = root.join("config.env");
-    fs::write(
-        &path,
-        "# comment\nBIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=two\nBIJUXCLI_GAMMA=3\n",
-    )
-    .expect("write");
+    fs::write(&path, "# comment\nBIJUXCLI_ALPHA=1\nBIJUXCLI_BETA=two\nBIJUXCLI_GAMMA=3\n")
+        .expect("write");
 
-    let json = run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json =
+        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
     assert_eq!(json["alpha"], "1");
     assert_eq!(json["beta"], "two");
     assert_eq!(json["gamma"], "3");
@@ -85,7 +83,8 @@ fn fuzz_duplicate_key_handling_keeps_last_value() {
     let path = root.join("dupes.env");
     fs::write(&path, "BIJUXCLI_ALPHA=1\nBIJUXCLI_ALPHA=2\nBIJUXCLI_ALPHA=3\n").expect("write");
 
-    let json = run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json =
+        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
     assert_eq!(json["alpha"], "3");
 }
 
@@ -93,13 +92,11 @@ fn fuzz_duplicate_key_handling_keeps_last_value() {
 fn fuzz_weird_whitespace_handling_is_stable() {
     let root = temp_dir("whitespace");
     let path = root.join("w.env");
-    fs::write(
-        &path,
-        "   BIJUXCLI_ALPHA   =value   \n\tBIJUXCLI_BETA=  two words  \n# c\n",
-    )
-    .expect("write");
+    fs::write(&path, "   BIJUXCLI_ALPHA   =value   \n\tBIJUXCLI_BETA=  two words  \n# c\n")
+        .expect("write");
 
-    let json = run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json =
+        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
     assert_eq!(json["alpha"], "value");
     assert_eq!(json["beta"], "two words");
 }
@@ -114,7 +111,8 @@ fn fuzz_quote_parsing_and_escape_parsing_are_stable() {
     )
     .expect("write");
 
-    let json = run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
+    let json =
+        run_json_ok(&["cli", "config", "list", "--config-path", path.to_str().expect("utf-8")]);
     assert_eq!(json["a"], "\"quoted value\"");
     assert_eq!(json["b"], "'single quoted'");
     assert_eq!(json["c"], "\"a\"b\"");
@@ -159,7 +157,8 @@ fn fuzz_config_export_serialization_roundtrips_for_random_inputs() {
     for (k, v) in seeded_pairs(77, 32) {
         expected.insert(k.clone(), v.clone());
         let pair = format!("{k}={v}");
-        let out = run(&["cli", "config", "set", &pair, "--config-path", active.to_str().expect("utf-8")]);
+        let out =
+            run(&["cli", "config", "set", &pair, "--config-path", active.to_str().expect("utf-8")]);
         assert_eq!(out.status.code(), Some(0), "stderr={}", String::from_utf8_lossy(&out.stderr));
     }
 
@@ -173,7 +172,8 @@ fn fuzz_config_export_serialization_roundtrips_for_random_inputs() {
     ]);
     assert_eq!(export.status.code(), Some(0));
 
-    let loaded = run_json_ok(&["cli", "config", "list", "--config-path", exported.to_str().expect("utf-8")]);
+    let loaded =
+        run_json_ok(&["cli", "config", "list", "--config-path", exported.to_str().expect("utf-8")]);
     for (k, v) in expected {
         assert_eq!(loaded[k], v);
     }
@@ -229,7 +229,8 @@ fn fuzz_roundtrip_parse_serialize_parse_is_semantically_stable() {
         assert_eq!(out.status.code(), Some(0));
     }
 
-    let before = run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
+    let before =
+        run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
     let export = run(&[
         "cli",
         "config",
@@ -239,7 +240,13 @@ fn fuzz_roundtrip_parse_serialize_parse_is_semantically_stable() {
         active.to_str().expect("utf-8"),
     ]);
     assert_eq!(export.status.code(), Some(0));
-    let after = run_json_ok(&["cli", "config", "list", "--config-path", roundtrip.to_str().expect("utf-8")]);
+    let after = run_json_ok(&[
+        "cli",
+        "config",
+        "list",
+        "--config-path",
+        roundtrip.to_str().expect("utf-8"),
+    ]);
     assert_eq!(before, after);
 }
 
@@ -257,7 +264,14 @@ fn fuzz_key_normalization_and_value_validation_are_stable() {
         path.to_str().expect("utf-8"),
     ]);
     assert_eq!(ok.status.code(), Some(0));
-    let got = run_json_ok(&["cli", "config", "get", "mixedkey", "--config-path", path.to_str().expect("utf-8")]);
+    let got = run_json_ok(&[
+        "cli",
+        "config",
+        "get",
+        "mixedkey",
+        "--config-path",
+        path.to_str().expect("utf-8"),
+    ]);
     assert_eq!(got["value"], "value");
 
     let bad_key = run(&[
@@ -322,7 +336,8 @@ fn fuzz_no_silent_key_loss_invariant_holds_under_repeated_exports() {
         assert_eq!(load.status.code(), Some(0));
     }
 
-    let listed = run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
+    let listed =
+        run_json_ok(&["cli", "config", "list", "--config-path", active.to_str().expect("utf-8")]);
     for k in keys {
         assert!(listed.get(&k).is_some(), "missing key after repeated export/load: {k}");
     }

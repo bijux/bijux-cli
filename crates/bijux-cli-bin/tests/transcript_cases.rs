@@ -1,12 +1,11 @@
 #![forbid(unsafe_code)]
 //! Expanded transcript parity and resiliency cases for REPL runtime.
 
-use std::fs;
 use bijux_cli_python as _;
 use libc as _;
+use std::fs;
 use std::time::{Duration, Instant};
 
-use bijux_cli_routing as _;
 use bijux_cli_core as _;
 use bijux_cli_core::app::run_app;
 use bijux_cli_install as _;
@@ -16,6 +15,7 @@ use bijux_cli_repl::{
     inspect_last_error, load_history, register_plugin_completion_hook, repl_argv_from_line,
     startup_repl, startup_repl_with_diagnostics, ReplEvent, ReplInput,
 };
+use bijux_cli_routing as _;
 use bijux_cli_routing::parser::parse_intent;
 use serde_json as _;
 use shlex as _;
@@ -298,10 +298,7 @@ fn reserved_namespace_collision_diagnostics_are_reported_in_session() {
     let temp = std::env::temp_dir().join("bijux-repl-reserved-namespace");
     let frame = execute_repl_line(
         &mut session,
-        &format!(
-            "cli plugins scaffold python cli --path {}",
-            temp.display()
-        ),
+        &format!("cli plugins scaffold python cli --path {}", temp.display()),
     )
     .expect("command should execute");
     let failure = frame.expect("expected diagnostics frame");
