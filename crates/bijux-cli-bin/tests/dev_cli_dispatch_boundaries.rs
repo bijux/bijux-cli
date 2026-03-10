@@ -7,7 +7,7 @@ fn main_entrypoint_stays_thin_and_route_agnostic() {
         .expect("read main.rs");
 
     assert!(
-        source.contains("bijux_cli_core::app::run_app"),
+        source.contains("bijux_cli_core::entrypoint::run_cli_from_env"),
         "main entrypoint must delegate command execution to core app"
     );
     assert!(
