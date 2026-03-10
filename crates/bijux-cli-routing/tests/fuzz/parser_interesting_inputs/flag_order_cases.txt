@@ -1,0 +1,5 @@
+bijux --format json cli status --no-pretty
+bijux cli status --format json --no-pretty
+bijux --pretty --no-pretty cli status
+bijux cli status --pretty --no-pretty --pretty
+bijux --json --text cli status

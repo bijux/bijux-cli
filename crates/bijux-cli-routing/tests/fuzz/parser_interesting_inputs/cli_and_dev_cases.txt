@@ -1,0 +1,6 @@
+bijux cli status
+bijux cli config get alpha
+bijux cli plugins inspect
+bijux dev cli routes
+bijux dev doctor
+bijux dev cli runtime-identity --format json --no-pretty

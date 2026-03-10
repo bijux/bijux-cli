@@ -1,0 +1,6 @@
+bijux plugins inspect
+bijux plugins list
+bijux dev doctor
+bijux dev routes
+bijux community run
+bijux commnad list
