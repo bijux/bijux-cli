@@ -218,6 +218,18 @@ pub fn root_command() -> Command {
                         .arg(Arg::new("output-dir").long("output-dir").num_args(1).required(true)),
                 ),
         )
+        .subcommand(
+            Command::new("rustdoc")
+                .subcommand(Command::new("audit"))
+                .subcommand(Command::new("coverage"))
+                .subcommand(Command::new("broken-links"))
+                .subcommand(Command::new("public-api"))
+                .subcommand(Command::new("examples"))
+                .subcommand(Command::new("migrate-website-api-docs"))
+                .subcommand(Command::new("build-proof"))
+                .subcommand(Command::new("workspace-coverage-proof"))
+                .subcommand(Command::new("python-link-proof")),
+        )
         .subcommand(Command::new("inventory"))
         .subcommand(Command::new("routes"))
         .subcommand(Command::new("route-audit"))

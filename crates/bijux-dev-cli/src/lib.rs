@@ -17,6 +17,7 @@ pub mod reporting;
 pub mod route_audit;
 pub mod routes;
 pub mod runtime_identity;
+pub mod rustdoc;
 pub mod script_audit;
 pub mod scripts;
 pub mod state_audit;

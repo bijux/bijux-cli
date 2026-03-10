@@ -33,8 +33,8 @@ use bijux_dev_cli::{
     crate_health as dev_crate_health, docs_audit as dev_docs_audit, env as dev_env,
     package_health as dev_package_health, parity as dev_parity, registry as dev_registry,
     route_audit as dev_route_audit, routes as dev_routes, runtime_identity as dev_runtime_identity,
-    script_audit as dev_script_audit, scripts as dev_scripts, state_audit as dev_state_audit,
-    status as dev_status, ReportContext,
+    rustdoc as dev_rustdoc, script_audit as dev_script_audit, scripts as dev_scripts,
+    state_audit as dev_state_audit, status as dev_status, ReportContext,
 };
 use serde_json::{json, Value};
 
@@ -501,6 +501,10 @@ fn route_response(
             RouteTarget::BuiltIn
         }
         [a, b, c, d] if a == "dev" && b == "cli" && c == "scripts" => {
+            let _ = d;
+            RouteTarget::BuiltIn
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" => {
             let _ = d;
             RouteTarget::BuiltIn
         }
@@ -1210,6 +1214,37 @@ fn route_response(
             let output_dir = command_option_value(argv, "--output-dir")
                 .ok_or_else(|| anyhow::anyhow!("Missing argument: --output-dir required"))?;
             dev_scripts::build_provenance_statement_report(&tag, Path::new(&output_dir))
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "audit" => {
+            dev_rustdoc::build_audit_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "coverage" => {
+            dev_rustdoc::build_coverage_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "broken-links" => {
+            dev_rustdoc::build_broken_links_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "public-api" => {
+            dev_rustdoc::build_public_api_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "examples" => {
+            dev_rustdoc::build_examples_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "rustdoc" && d == "migrate-website-api-docs" =>
+        {
+            dev_rustdoc::build_migration_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "build-proof" => {
+            dev_rustdoc::build_build_proof_report(&workspace_root())
+        }
+        [a, b, c, d]
+            if a == "dev" && b == "cli" && c == "rustdoc" && d == "workspace-coverage-proof" =>
+        {
+            dev_rustdoc::build_workspace_coverage_proof_report(&workspace_root())
+        }
+        [a, b, c, d] if a == "dev" && b == "cli" && c == "rustdoc" && d == "python-link-proof" => {
+            dev_rustdoc::build_python_link_proof_report(&workspace_root())
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "docs-audit" => {
             dev_docs_audit::build_report(&workspace_root())
