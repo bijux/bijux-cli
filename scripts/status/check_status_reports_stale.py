@@ -36,8 +36,13 @@ def main() -> int:
     if compatibility.returncode != 0:
         print(compatibility.stderr.strip() or compatibility.stdout.strip())
         return compatibility.returncode
+    parity_law = run(["python3", "scripts/parity/generate_command_law_reports.py"])
+    if parity_law.returncode != 0:
+        print(parity_law.stderr.strip() or parity_law.stdout.strip())
+        return parity_law.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
+    parity_diff = run(["git", "diff", "--name-only", "--", "artifacts/parity"])
     changed = [
         line.strip()
         for line in diff.stdout.splitlines()
@@ -68,6 +73,27 @@ def main() -> int:
     if changed:
         print("STATUS REPORT STALE: regenerate and commit updated artifacts:")
         for item in changed:
+            print(f" - {item}")
+        return 1
+
+    parity_changed = [
+        line.strip()
+        for line in parity_diff.stdout.splitlines()
+        if line.strip()
+        in {
+            "artifacts/parity/command_precedence_report.json",
+            "artifacts/parity/command_flag_normalization_report.json",
+            "artifacts/parity/command_stream_report.json",
+            "artifacts/parity/command_exit_code_report.json",
+            "artifacts/parity/command_help_diff_report.json",
+            "artifacts/parity/command_machine_output_diff_report.json",
+            "artifacts/parity/parity_dashboard.json",
+            "artifacts/parity/parity_dashboard.txt",
+        }
+    ]
+    if parity_changed:
+        print("PARITY REPORT STALE: regenerate and commit updated parity artifacts:")
+        for item in parity_changed:
             print(f" - {item}")
         return 1
 

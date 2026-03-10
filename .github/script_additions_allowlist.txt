@@ -15,3 +15,5 @@ scripts/status/enforce_bridge_duplicate_law_policy.py # enforce duplicate-law br
 scripts/parity/check_binary_bridge_parity_gate.py # enforce binary-vs-python-bridge parity report has no exit/stdout/stderr drift
 scripts/status/generate_install_neutrality_reports.py # generate install-neutrality and active-runtime truth artifacts from runtime/package diagnostics
 scripts/status/enforce_install_neutrality_gate.py # enforce install ambiguity hardening tests and install-neutrality evidence completeness in CI
+scripts/parity/generate_command_law_reports.py # generate command-level precedence/flags/stream/exit/help/machine-output reports and consolidated parity dashboard
+scripts/parity/enforce_parity_dashboard_gate.py # enforce parity dashboard completeness and command-law report presence for release evidence

@@ -348,6 +348,7 @@ jobs:
       - name: Command parity matrix artifact
         run: |
           python3 scripts/parity/generate_command_parity_matrix.py
+          python3 scripts/parity/generate_command_law_reports.py
 
       - name: Command migration matrix artifact
         run: |
@@ -357,6 +358,10 @@ jobs:
       - name: Command parity regression gate
         run: |
           python3 scripts/parity/check_command_parity_gates.py --enforce
+
+      - name: Parity dashboard gate
+        run: |
+          python3 scripts/parity/enforce_parity_dashboard_gate.py
 
       - name: Release truth gate
         run: |
@@ -562,6 +567,14 @@ jobs:
             artifacts/parity/stderr_diff.md
             artifacts/parity/exit_code_diff.md
             artifacts/parity/help_diff.md
+            artifacts/parity/command_precedence_report.json
+            artifacts/parity/command_flag_normalization_report.json
+            artifacts/parity/command_stream_report.json
+            artifacts/parity/command_exit_code_report.json
+            artifacts/parity/command_help_diff_report.json
+            artifacts/parity/command_machine_output_diff_report.json
+            artifacts/parity/parity_dashboard.json
+            artifacts/parity/parity_dashboard.txt
           if-no-files-found: warn
           retention-days: 14
 

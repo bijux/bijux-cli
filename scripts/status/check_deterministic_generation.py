@@ -96,6 +96,24 @@ def main() -> int:
     if not parity_ok:
         failures.append("parity artifact generation is not deterministic")
 
+    parity_law_gen = ["python3", "scripts/parity/generate_command_law_reports.py"]
+    l1 = run(parity_law_gen, env=fixed_env)
+    law_file = PARITY / "parity_dashboard.json"
+    law_hash1 = stable_json_digest(law_file) if l1.returncode == 0 and law_file.exists() else ""
+    l2 = run(parity_law_gen, env=fixed_env)
+    law_hash2 = stable_json_digest(law_file) if l2.returncode == 0 and law_file.exists() else ""
+    law_ok = l1.returncode == 0 and l2.returncode == 0 and law_hash1 == law_hash2
+    checks.append(
+        {
+            "name": "parity_dashboard_generation",
+            "ok": law_ok,
+            "details": "parity_dashboard.json hash is stable across repeated generation",
+            "hashes": [law_hash1, law_hash2],
+        }
+    )
+    if not law_ok:
+        failures.append("parity dashboard generation is not deterministic")
+
     migration_gen = ["python3", "scripts/status/generate_command_migration_matrix.py"]
     m1 = run(migration_gen, env=fixed_env)
     migration_file = STATUS / "command_migration_matrix.json"

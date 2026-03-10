@@ -16,6 +16,7 @@ DOCS_AUDIT = ROOT / "artifacts" / "status" / "docs_audit.json"
 TEST_AUDIT = ROOT / "artifacts" / "status" / "test_quality_audit.json"
 CRATE_BOUNDARY_METRICS = ROOT / "artifacts" / "status" / "crate_boundary_metrics.json"
 STATUS_DIR = ROOT / "artifacts" / "status"
+PARITY_DIR = ROOT / "artifacts" / "parity"
 README = ROOT / "README.md"
 
 STATUS_FILES = [
@@ -98,6 +99,7 @@ def main() -> int:
     plugin_state = read_json(PLUGIN_STATE)
     crate_metrics = read_json(CRATE_BOUNDARY_METRICS)
     runtime_unity = read_json(STATUS_DIR / "runtime_unity_report.json")
+    parity_dashboard = read_json(PARITY_DIR / "parity_dashboard.json")
 
     if has_claim(r"feature\s+complete", claims_text):
         if stats["missing"] > 0 or stats["partial"] > 0:
@@ -143,6 +145,13 @@ def main() -> int:
     boundary_rules = crate_metrics.get("rules", {})
     if not bool(boundary_rules.get("no_large_merge_until_parity_stronger", False)):
         failures.append("crate merge freeze rule missing in crate boundary metrics artifact")
+
+    if not parity_dashboard:
+        failures.append("release review blocked: missing artifacts/parity/parity_dashboard.json")
+    else:
+        coverage = parity_dashboard.get("summary", {}).get("coverage", {})
+        if int(coverage.get("parity_tests", 0)) <= 0:
+            failures.append("release review blocked: parity dashboard reports zero parity_tests")
 
     # Evidence rule for README: promotional quality claims require artifact references.
     if has_claim(r"\b(98%\+ coverage|1,800\+ tests|feature complete|production ready)\b", readme):
