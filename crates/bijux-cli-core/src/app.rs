@@ -11,8 +11,9 @@ use anyhow::Result;
 use bijux_cli_install::{
     atomic_write_text, canonical_crate_name, cargo_install_strategy, default_compatibility_paths,
     discover_compatibility_paths, install_health_report, load_compatibility_config,
-    pip_install_strategy, post_install_hint, CompatibilityConfig, CompatibilityPaths,
-    PackageChannel, PathOverrides, ENV_CONFIG_PATH, ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
+    pip_install_strategy, post_install_hint, query::runtime_identity_query, CompatibilityConfig,
+    CompatibilityPaths, InstallHealthReport, PackageChannel, PathOverrides, ENV_CONFIG_PATH,
+    ENV_HISTORY_PATH, ENV_PLUGINS_PATH,
 };
 use bijux_cli_output::{render_value, EmitterConfig};
 use bijux_cli_plugin::{
@@ -24,6 +25,7 @@ use bijux_cli_plugin::{
 };
 use bijux_cli_routing::catalog::is_known_route as is_known_catalog_route;
 use bijux_cli_routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
+use bijux_cli_routing::query::contracts_schema_query;
 use bijux_cli_routing::registry::{RouteRegistry, RouteTarget};
 use bijux_cli_routing::reports::route_audit_report;
 use bijux_cli_routing::{ColorMode, LogLevel, OutputFormat, PrettyMode};
@@ -39,6 +41,7 @@ use serde_json::{json, Value};
 use crate::argv::command_positionals;
 use crate::config::execute_config_command;
 use crate::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::query::state_diagnostics_query;
 
 /// In-memory process output and exit result produced by the core app runner.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -311,26 +314,15 @@ fn write_json_document(path: &Path, value: &Value) -> Result<()> {
     Ok(())
 }
 
-fn state_path_status(path: &Path) -> Value {
-    let exists = path.exists();
-    let metadata = fs::metadata(path).ok();
-    let is_file = metadata.as_ref().is_some_and(|m| m.is_file());
-    let is_dir = metadata.as_ref().is_some_and(|m| m.is_dir());
-    let size_bytes = metadata.as_ref().map_or(0_u64, |m| m.len());
-    let readable = fs::read(path).is_ok();
-    let writable = if exists {
-        fs::OpenOptions::new().append(true).open(path).is_ok()
-    } else {
-        path.parent().is_some_and(|parent| fs::create_dir_all(parent).is_ok())
-    };
+fn state_path_status_value(status: &crate::query::StatePathStatus) -> Value {
     json!({
-        "path": path,
-        "exists": exists,
-        "is_file": is_file,
-        "is_dir": is_dir,
-        "size_bytes": size_bytes,
-        "readable": readable,
-        "writable": writable,
+        "path": status.path,
+        "exists": status.exists,
+        "is_file": status.is_file,
+        "is_dir": status.is_dir,
+        "size_bytes": status.size_bytes,
+        "readable": status.readable,
+        "writable": status.writable,
     })
 }
 
@@ -1186,12 +1178,18 @@ fn route_response(
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "state-audit" => {
             let corruption = state_diagnostics(&paths);
+            let state_query = state_diagnostics_query(
+                &paths.config_file,
+                &paths.history_file,
+                &plugin_registry_path,
+                &paths.memory_file,
+            );
             dev_state_audit::build_report(
                 dev_state_audit::StatePathStatusInput {
-                    config: state_path_status(&paths.config_file),
-                    history: state_path_status(&paths.history_file),
-                    plugins_registry: state_path_status(&plugin_registry_path),
-                    memory: state_path_status(&paths.memory_file),
+                    config: state_path_status_value(&state_query.config),
+                    history: state_path_status_value(&state_query.history),
+                    plugins_registry: state_path_status_value(&state_query.plugins_registry),
+                    memory: state_path_status_value(&state_query.memory),
                 },
                 corruption,
             )
@@ -1215,15 +1213,32 @@ fn route_response(
             })
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "contracts" => {
-            dev_contracts::build_report(env!("CARGO_PKG_VERSION"))
+            let contracts_query = contracts_schema_query();
+            dev_contracts::build_report_from_query(
+                env!("CARGO_PKG_VERSION"),
+                &contracts_query.schema_ids,
+                &contracts_query.schema_version,
+            )
         }
         [a, b, c] if a == "dev" && b == "cli" && c == "runtime-identity" => {
-            let install_report = install_health_report(
+            let install_query = runtime_identity_query(
                 &env::var("PATH").unwrap_or_default(),
                 env::var("BIJUX_BIN").ok().as_deref(),
                 env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
                 env!("CARGO_PKG_VERSION"),
             );
+            let install_report = InstallHealthReport {
+                active_binary: install_query.active_binary,
+                path_binaries: install_query.path_binaries,
+                has_path_shadowing: install_query.has_path_shadowing,
+                has_duplicate_installs: install_query.has_duplicate_installs,
+                stale_wrapper_scripts: install_query.stale_wrapper_scripts,
+                has_mismatched_wheel_binary_versions: install_query
+                    .has_mismatched_wheel_binary_versions,
+                legacy_installer_conflicts: install_query.legacy_installer_conflicts,
+                active_binary_missing: install_query.active_binary_missing,
+                broken_symlink_active_binary: install_query.broken_symlink_active_binary,
+            };
             let python_bridge_supported = !matches!(
                 env::var("BIJUX_PYTHON_BRIDGE_SUPPORTED"),
                 Ok(value) if matches!(value.as_str(), "0" | "false" | "FALSE")

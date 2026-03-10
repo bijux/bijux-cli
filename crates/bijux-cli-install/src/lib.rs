@@ -7,6 +7,7 @@ mod diagnostics;
 mod io;
 mod metadata;
 mod paths;
+pub mod query;
 mod state;
 
 pub use compatibility::{
