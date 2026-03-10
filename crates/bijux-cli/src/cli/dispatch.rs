@@ -1,12 +1,9 @@
 //! Top-level application entrypoint and route execution.
 
 use std::env;
-use std::thread;
-use std::time::Duration;
 
 use anyhow::Result;
-use crate::install::{install_health_report, post_install_hint, CompatibilityPaths};
-use crate::plugin::{compatibility_warnings, plugin_origin_metadata};
+use crate::install::CompatibilityPaths;
 use crate::routing::catalog::is_known_route as is_known_catalog_route;
 use crate::routing::parser::{parse_intent, root_command, ParsedGlobalFlags};
 use crate::routing::registry::{RouteRegistry, RouteTarget};
@@ -15,8 +12,9 @@ use serde_json::{json, Value};
 
 use crate::cli::commands::help::render_command_help;
 use crate::cli::commands::{
-    dev as dev_commands, dev_cli as dev_cli_commands, history as history_commands,
-    memory as memory_commands, plugins as plugins_commands,
+    cli as cli_commands, dev as dev_commands, dev_cli as dev_cli_commands,
+    history as history_commands, memory as memory_commands, plugins as plugins_commands,
+    root as root_commands,
 };
 use crate::cli::context::resolve_state_paths;
 use crate::config::execute_config_command;
@@ -164,141 +162,16 @@ fn route_response(
     {
         return Ok(payload);
     }
+    if let Some(payload) =
+        cli_commands::try_handle(normalized_path, &paths, &registry, &plugin_registry_path)
+    {
+        return Ok(payload);
+    }
+    if let Some(payload) = root_commands::try_handle(normalized_path, argv) {
+        return Ok(payload);
+    }
 
-    let payload = match normalized_path {
-        [a, b] if a == "cli" && b == "version" => {
-            json!({"version": env!("CARGO_PKG_VERSION")})
-        }
-        [a, b] if a == "cli" && b == "doctor" => {
-            let install_report = install_health_report(
-                &env::var("PATH").unwrap_or_default(),
-                env::var("BIJUX_BIN").ok().as_deref(),
-                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
-                env!("CARGO_PKG_VERSION"),
-            );
-            json!({
-                "status": "healthy",
-                "checks": ["routing", "output", "config", "install"],
-                "install": {
-                    "has_path_shadowing": install_report.has_path_shadowing,
-                    "has_duplicate_installs": install_report.has_duplicate_installs,
-                    "stale_wrapper_scripts": install_report.stale_wrapper_scripts,
-                    "legacy_installer_conflicts": false,
-                    "has_mismatched_wheel_binary_versions": install_report.has_mismatched_wheel_binary_versions,
-                }
-            })
-        }
-        [a, b] if a == "cli" && b == "repl" => {
-            json!({"status": "ready", "mode": "repl", "history_file": paths.history_file})
-        }
-        [a, b] if a == "cli" && b == "completion" => {
-            json!({"shells": ["bash", "zsh", "fish", "powershell"]})
-        }
-        [a, b] if a == "cli" && b == "inspect" => {
-            let route_sources: Vec<Value> = registry
-                .built_in_paths()
-                .into_iter()
-                .map(|path| {
-                    let segments: Vec<String> = path.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "segments": segments,
-                        "owner": "bijux-cli",
-                        "source": "built-in",
-                    })
-                })
-                .collect();
-            json!({
-                "status": "ok",
-                "reserved_namespaces": registry.route_tree(),
-                "builtins": registry.built_in_paths(),
-                "route_sources": route_sources,
-                "alias_rewrites": registry.alias_rewrites().into_iter().map(|(alias, canonical)| {
-                    let alias_segments: Vec<String> = alias.segments.into_iter().map(|s| s.0).collect();
-                    let canonical_segments: Vec<String> = canonical.segments.into_iter().map(|s| s.0).collect();
-                    json!({
-                        "alias": alias_segments,
-                        "canonical": canonical_segments,
-                        "source": "compatibility-alias",
-                    })
-                }).collect::<Vec<_>>(),
-                "plugin_origins": plugin_origin_metadata(&plugin_registry_path).unwrap_or_default(),
-                "compatibility_warnings": compatibility_warnings(&plugin_registry_path, env!("CARGO_PKG_VERSION")).unwrap_or_default(),
-                "contracts": {
-                    "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v1"],
-                    "version": "v1",
-                }
-            })
-        }
-        [a, b] if a == "cli" && b == "status" => {
-            json!({"status": "ok", "runtime": "rust-foundation"})
-        }
-        [a] if a == "status" => {
-            json!({"status": "ok", "runtime": "rust-foundation"})
-        }
-        [a] if a == "audit" => {
-            json!({
-                "status": "ok",
-                "checks": ["config", "paths", "plugins", "history"],
-                "issues": []
-            })
-        }
-        [a] if a == "docs" => {
-            json!({
-                "status": "ok",
-                "topics": ["commands", "configuration", "plugins", "repl", "diagnostics"],
-            })
-        }
-        [a] if a == "atlas" => {
-            json!({
-                "status": "ok",
-                "mount": "atlas",
-            })
-        }
-        [a] if a == "sleep" => {
-            let duration_secs = argv
-                .get(2)
-                .and_then(|raw| raw.parse::<f64>().ok())
-                .map(|v| v.clamp(0.0, 2.0))
-                .unwrap_or(0.0);
-            if duration_secs > 0.0 {
-                thread::sleep(Duration::from_secs_f64(duration_secs));
-            }
-            json!({"status": "ok", "slept_seconds": duration_secs})
-        }
-        [a, b] if a == "cli" && b == "paths" => {
-            let install_report = install_health_report(
-                &env::var("PATH").unwrap_or_default(),
-                env::var("BIJUX_BIN").ok().as_deref(),
-                env::var("BIJUX_WHEEL_VERSION").ok().as_deref(),
-                env!("CARGO_PKG_VERSION"),
-            );
-            let hint =
-                install_report.active_binary.as_deref().map(post_install_hint).unwrap_or_else(
-                    || {
-                        "Run `bijux version` and `bijux cli doctor` to verify your environment."
-                            .to_string()
-                    },
-                );
-            json!({
-                "config": paths.config_file,
-                "history": paths.history_file,
-                "plugins": paths.plugins_dir,
-                "active_binary": install_report.active_binary,
-                "path_binaries": install_report.path_binaries,
-                "post_install_hint": hint
-            })
-        }
-        [a, b] if a == "cli" && b == "self-test" => {
-            json!({"status": "ok", "checks": ["routing", "contracts", "emitters"]})
-        }
-        [a, b, c] if a == "cli" && b == "hold" && c == "interruptible" => {
-            for _ in 0..200_u16 {
-                thread::sleep(Duration::from_millis(50));
-            }
-            json!({"status": "completed"})
-        }
-        _ => json!({"status": "error", "message": "unknown route"}),
-    };
+    let payload = json!({"status": "error", "message": "unknown route"});
 
     Ok(payload)
 }
