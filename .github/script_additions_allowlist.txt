@@ -64,6 +64,9 @@ scripts/status/enforce_diagnostics_deep_behavior_gate.py # enforce CI failure wh
 scripts/status/generate_command_family_consistency_reports.py # generate command-family consistency, cross-family drift, shared-law proof, and migration-requirement artifacts
 scripts/status/enforce_command_family_consistency_gate.py # enforce CI failure on covered command-family consistency drift
 scripts/status/warn_uncovered_command_family_scope.py # emit CI warning when command-family consistency scope remains uncovered
+scripts/status/generate_repl_execution_law_reports.py # generate repl shared-law, repl-vs-cli diff, drift policy, and frozen repl execution law artifacts
+scripts/status/enforce_repl_execution_law_gate.py # enforce CI failure when covered repl shared-law checks drift
+scripts/status/warn_repl_only_semantic_scope.py # emit CI warning if repl-only semantics appear without explicit justification marker
 scripts/status/generate_history_surface_reports.py # generate history command coverage, matrix, corruption artifacts, and frozen history-read domain contract from explicit history_command_matrix tests
 scripts/status/generate_memory_surface_reports.py # generate memory command coverage, matrix, corruption, python-parity artifacts, and frozen memory-read domain contract from explicit memory matrix/parity tests
 scripts/status/generate_diagnostics_surface_reports.py # generate diagnostics command coverage, matrix, shape-drift artifacts, and frozen diagnostics operator-truth contract from explicit diagnostics_command_matrix tests

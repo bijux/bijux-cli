@@ -323,6 +323,7 @@ jobs:
           python3 scripts/status/generate_history_surface_reports.py
           python3 scripts/status/generate_memory_surface_reports.py
           python3 scripts/status/generate_diagnostics_surface_reports.py
+          python3 scripts/status/generate_repl_execution_law_reports.py
           python3 scripts/status/generate_command_family_closure_reports.py
           python3 scripts/status/generate_cross_surface_consistency_law_reports.py
           python3 scripts/status/generate_simplification_reports.py
@@ -428,6 +429,14 @@ jobs:
       - name: Command-family consistency gate
         run: |
           python3 scripts/status/enforce_command_family_consistency_gate.py
+
+      - name: REPL execution law gate
+        run: |
+          python3 scripts/status/enforce_repl_execution_law_gate.py
+
+      - name: Warn REPL-only semantic scope
+        run: |
+          python3 scripts/status/warn_repl_only_semantic_scope.py
 
       - name: Warn uncovered command-family scope
         run: |
@@ -708,6 +717,19 @@ jobs:
             artifacts/status/cross_family_drift_artifact.json
             artifacts/status/shared_law_proof_artifact.json
             artifacts/status/command_family_consistency_requirement.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload REPL execution law artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: repl-execution-law
+          path: |
+            artifacts/status/repl_shared_law_artifact.json
+            artifacts/status/repl_cli_diff_artifact.json
+            artifacts/status/repl_shared_law_drift_artifact.json
+            artifacts/status/repl_shared_law_contract.json
           if-no-files-found: warn
           retention-days: 14
 
