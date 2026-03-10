@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-10T00:48:09.180899+00:00",
+  "generated_at": "2026-03-10T03:01:23.507188+00:00",
   "rows": [
     {
       "blocker": "parity coverage incomplete",
@@ -36,6 +36,22 @@
     {
       "blocker": "parity coverage incomplete",
       "command": "cli config get",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "config",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli config list",
       "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
@@ -183,20 +199,20 @@
       "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "config list",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "config",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
       "blocker": "parity coverage incomplete",
@@ -284,20 +300,20 @@
       "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "history clear",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "history",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
       "blocker": "parity coverage incomplete",
@@ -316,52 +332,52 @@
       "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "memory clear",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "memory",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "memory delete",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "memory",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "memory get",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "memory",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
       "blocker": "parity coverage incomplete",
@@ -380,27 +396,27 @@
       "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "memory set",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "memory",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     }
   ],
   "source": "artifacts/parity/command_parity_matrix.json",
   "summary": {
     "complete": 0,
-    "missing": 6,
-    "partial": 18,
-    "total": 24
+    "missing": 0,
+    "partial": 25,
+    "total": 25
   }
 }

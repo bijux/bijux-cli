@@ -15,7 +15,7 @@ OUT = ROOT / "artifacts" / "status" / "runtime_unity_report.json"
 def read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
-    except FileNotFoundError:
+    except (FileNotFoundError, UnicodeDecodeError):
         return ""
 
 

@@ -3,7 +3,7 @@
     {
       "command": "atlas",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -42,6 +42,14 @@
     },
     {
       "command": "cli config get",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "cli config list",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -113,6 +121,14 @@
       "stderr_stdout_checks": false
     },
     {
+      "command": "cli plugins disable",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
       "command": "cli plugins doctor",
       "exit_code_checks": false,
       "failure_tests": true,
@@ -121,7 +137,23 @@
       "stderr_stdout_checks": false
     },
     {
+      "command": "cli plugins enable",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
       "command": "cli plugins explain",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "cli plugins info",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -267,7 +299,7 @@
     {
       "command": "config list",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -307,7 +339,7 @@
     {
       "command": "dev",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -315,7 +347,15 @@
     {
       "command": "dev atlas",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "dev cli atlas",
+      "exit_code_checks": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -330,6 +370,14 @@
     },
     {
       "command": "dev cli crate-health",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "dev cli di",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -393,6 +441,22 @@
       "stderr_stdout_checks": false
     },
     {
+      "command": "dev cli list-plugins",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "dev cli list-products",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
       "command": "dev cli package-health",
       "exit_code_checks": false,
       "failure_tests": true,
@@ -402,6 +466,14 @@
     },
     {
       "command": "dev cli parity",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "dev cli plugin-health",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -489,14 +561,6 @@
       "stderr_stdout_checks": false
     },
     {
-      "command": "dev contracts",
-      "exit_code_checks": false,
-      "failure_tests": true,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
       "command": "dev crate-health",
       "exit_code_checks": false,
       "failure_tests": true,
@@ -506,14 +570,6 @@
     },
     {
       "command": "dev di",
-      "exit_code_checks": false,
-      "failure_tests": false,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
-      "command": "dev docs",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -545,22 +601,6 @@
       "stderr_stdout_checks": false
     },
     {
-      "command": "dev env",
-      "exit_code_checks": false,
-      "failure_tests": true,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
-      "command": "dev fixture-audit",
-      "exit_code_checks": false,
-      "failure_tests": true,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
       "command": "dev inventory",
       "exit_code_checks": false,
       "failure_tests": true,
@@ -571,7 +611,7 @@
     {
       "command": "dev list-plugins",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -579,7 +619,7 @@
     {
       "command": "dev list-products",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -601,7 +641,7 @@
       "stderr_stdout_checks": false
     },
     {
-      "command": "dev registry",
+      "command": "dev plugin-health",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -610,14 +650,6 @@
     },
     {
       "command": "dev route-audit",
-      "exit_code_checks": false,
-      "failure_tests": true,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
-      "command": "dev routes",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -642,14 +674,6 @@
     },
     {
       "command": "dev scripts-audit",
-      "exit_code_checks": false,
-      "failure_tests": true,
-      "output_snapshots": false,
-      "parity_tests": false,
-      "stderr_stdout_checks": false
-    },
-    {
-      "command": "dev snapshots-audit",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -707,7 +731,7 @@
     {
       "command": "history clear",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -731,7 +755,7 @@
     {
       "command": "memory clear",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -739,7 +763,7 @@
     {
       "command": "memory delete",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -747,7 +771,7 @@
     {
       "command": "memory get",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -763,7 +787,7 @@
     {
       "command": "memory set",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -771,7 +795,7 @@
     {
       "command": "plugins",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -785,7 +809,23 @@
       "stderr_stdout_checks": false
     },
     {
+      "command": "plugins disable",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
       "command": "plugins doctor",
+      "exit_code_checks": false,
+      "failure_tests": true,
+      "output_snapshots": false,
+      "parity_tests": false,
+      "stderr_stdout_checks": false
+    },
+    {
+      "command": "plugins enable",
       "exit_code_checks": false,
       "failure_tests": true,
       "output_snapshots": false,
@@ -803,7 +843,7 @@
     {
       "command": "plugins info",
       "exit_code_checks": false,
-      "failure_tests": false,
+      "failure_tests": true,
       "output_snapshots": false,
       "parity_tests": false,
       "stderr_stdout_checks": false
@@ -905,5 +945,5 @@
       "stderr_stdout_checks": true
     }
   ],
-  "generated_at": "2026-03-10T00:48:09.182113+00:00"
+  "generated_at": "2026-03-10T03:01:23.509112+00:00"
 }

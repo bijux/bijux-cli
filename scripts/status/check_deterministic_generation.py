@@ -140,6 +140,28 @@ def main() -> int:
     if not inventory_ok:
         failures.append("command surface inventory generation is not deterministic")
 
+    bridge_dup_gen = ["python3", "scripts/status/generate_bridge_duplicate_law_report.py"]
+    b1 = run(bridge_dup_gen, env=fixed_env)
+    bridge_dup_file = STATUS / "bridge_duplicate_law_report.json"
+    bridge_hash1 = (
+        stable_json_digest(bridge_dup_file) if b1.returncode == 0 and bridge_dup_file.exists() else ""
+    )
+    b2 = run(bridge_dup_gen, env=fixed_env)
+    bridge_hash2 = (
+        stable_json_digest(bridge_dup_file) if b2.returncode == 0 and bridge_dup_file.exists() else ""
+    )
+    bridge_ok = b1.returncode == 0 and b2.returncode == 0 and bridge_hash1 == bridge_hash2
+    checks.append(
+        {
+            "name": "bridge_duplicate_law_report_generation",
+            "ok": bridge_ok,
+            "details": "bridge_duplicate_law_report.json hash is stable across repeated generation",
+            "hashes": [bridge_hash1, bridge_hash2],
+        }
+    )
+    if not bridge_ok:
+        failures.append("bridge duplicate-law report generation is not deterministic")
+
     STATUS.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

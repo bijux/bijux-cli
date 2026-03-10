@@ -291,6 +291,7 @@ jobs:
           python3 scripts/status/generate_route_law_reports.py
           python3 scripts/status/generate_state_law_reports.py
           python3 scripts/status/generate_diagnostics_law_reports.py
+          python3 scripts/status/generate_bridge_duplicate_law_report.py
           cargo run -q -p bijux-cli-bin -- dev cli inventory --json --no-pretty > artifacts/status/dev_cli_inventory.json
           cargo run -q -p bijux-cli-bin -- dev cli docs-audit --json --no-pretty > artifacts/status/docs_audit.json
           cargo run -q -p bijux-cli-bin -- dev cli plugin-health --json --no-pretty > artifacts/status/plugin_health_report.json
@@ -334,6 +335,10 @@ jobs:
       - name: Binary-vs-bridge parity artifact
         run: |
           python3 scripts/parity/generate_binary_bridge_parity.py
+
+      - name: Binary-vs-bridge parity gate
+        run: |
+          python3 scripts/parity/check_binary_bridge_parity_gate.py --enforce
 
       - name: Command parity matrix artifact
         run: |
@@ -391,6 +396,10 @@ jobs:
       - name: Diagnostics law policy gate
         run: |
           python3 scripts/status/enforce_diagnostics_law_policy.py
+
+      - name: Bridge duplicate law policy gate
+        run: |
+          python3 scripts/status/enforce_bridge_duplicate_law_policy.py
 
       - name: Plugin scaffold policy gate
         run: |
@@ -604,6 +613,7 @@ jobs:
           name: status-report
           path: |
             artifacts/status/status*.json
+            artifacts/status/bridge_duplicate_law_report.json
             artifacts/status/command_migration_matrix.json
             artifacts/status/command_migration_matrix.txt
             artifacts/status/command_migration_rust_partial.json

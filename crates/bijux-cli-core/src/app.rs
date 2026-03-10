@@ -1373,6 +1373,9 @@ fn route_response(
             let active_compat_shims = read_json_if_exists(
                 &root.join("artifacts/status/compatibility_shims_still_active.json"),
             );
+            let bridge_duplicate_law = read_json_if_exists(
+                &root.join("artifacts/status/bridge_duplicate_law_report.json"),
+            );
             json!({
                 "status_report": status_report,
                 "reports": {
@@ -1406,6 +1409,7 @@ fn route_response(
                     "public_python_paths_still_reachable": public_python_paths,
                     "legacy_alias_paths_still_accepted": legacy_alias_paths,
                     "compatibility_shims_still_active": active_compat_shims,
+                    "bridge_duplicate_law_report": bridge_duplicate_law,
                 },
                 "next_phase_priorities": next_phase,
                 "next_phase_summary_text": next_phase_text,

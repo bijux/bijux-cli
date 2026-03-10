@@ -1,9 +1,25 @@
 {
-  "generated_at": "2026-03-10T00:48:09.180371+00:00",
+  "generated_at": "2026-03-10T03:01:23.505567+00:00",
   "rows": [
     {
       "blocker": "parity coverage incomplete",
       "command": "cli plugins check",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins disable",
       "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
@@ -35,7 +51,39 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "cli plugins enable",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "cli plugins explain",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "cli plugins info",
       "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
@@ -196,7 +244,39 @@
     },
     {
       "blocker": "parity coverage incomplete",
+      "command": "plugins disable",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
       "command": "plugins doctor",
+      "confidence": 0.35,
+      "diff_links": {},
+      "evidence_links": [
+        "artifacts/parity/rust_python_parity_report.json",
+        "artifacts/parity/command_parity_diffs.json"
+      ],
+      "group": "plugin",
+      "owner": "rust-foundation",
+      "python_available": false,
+      "reason": "",
+      "rust_available": true,
+      "status": "partial"
+    },
+    {
+      "blocker": "parity coverage incomplete",
+      "command": "plugins enable",
       "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
@@ -227,20 +307,20 @@
       "status": "partial"
     },
     {
-      "blocker": "not routed by rust yet",
+      "blocker": "parity coverage incomplete",
       "command": "plugins info",
-      "confidence": 0.0,
+      "confidence": 0.35,
       "diff_links": {},
       "evidence_links": [
         "artifacts/parity/rust_python_parity_report.json",
         "artifacts/parity/command_parity_diffs.json"
       ],
       "group": "plugin",
-      "owner": "routing-core",
+      "owner": "rust-foundation",
       "python_available": true,
       "reason": "",
-      "rust_available": false,
-      "status": "missing"
+      "rust_available": true,
+      "status": "partial"
     },
     {
       "blocker": "parity coverage incomplete",
@@ -379,8 +459,8 @@
   "source": "artifacts/parity/command_parity_matrix.json",
   "summary": {
     "complete": 0,
-    "missing": 1,
-    "partial": 21,
-    "total": 23
+    "missing": 0,
+    "partial": 27,
+    "total": 28
   }
 }

@@ -24,6 +24,10 @@ def main() -> int:
     if inventory.returncode != 0:
         print(inventory.stderr.strip() or inventory.stdout.strip())
         return inventory.returncode
+    bridge_dup = run(["python3", "scripts/status/generate_bridge_duplicate_law_report.py"])
+    if bridge_dup.returncode != 0:
+        print(bridge_dup.stderr.strip() or bridge_dup.stdout.strip())
+        return bridge_dup.returncode
 
     diff = run(["git", "diff", "--name-only", "--", "artifacts/status"])
     changed = [
@@ -38,6 +42,7 @@ def main() -> int:
             or line.strip() == "artifacts/status/public_python_paths_still_reachable.json"
             or line.strip() == "artifacts/status/legacy_alias_paths_still_accepted.json"
             or line.strip() == "artifacts/status/compatibility_shims_still_active.json"
+            or line.strip() == "artifacts/status/bridge_duplicate_law_report.json"
         )
     ]
     if changed:
